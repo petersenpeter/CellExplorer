@@ -57,17 +57,18 @@ if ischar(basepath)
     if exist('session.mat')
         disp('Loading local session.mat')
         load('session.mat')
-        try LoadSession
-            if ~exist('cell_metrics')
-                return
-            end
-        catch
-            warning('Failed to load cell_metrics');
-            return
+        if isempty(session.SpikeSorting.RelativePath)
+            cluster_path = '';
+        else
+            cluster_path = session.SpikeSorting.RelativePath{1};
         end
+        load(fullfile(cluster_path,'cell_metrics.mat'));
+        initializeSession;
+        
     elseif exist('cell_metrics.mat')
         disp('Loading local cell_metrics.mat')
         load('cell_metrics.mat')
+        
         initializeSession
     else
         warning('Neither session.mat or cell_metrics.mat exist in base folder')
@@ -336,9 +337,10 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
         jjj = find(ripple_channels{SpikeGroup} == cell_metrics.MaxChannel(ii));
         plot(ripple_time_axis,ripple_average{SpikeGroup}(:,jjj)-(jjj-1)*0.04,':k','linewidth',3)
     end
-    
     title(['SWR SpikeGroup ', num2str(SpikeGroup)]),xlabel('Time (ms)'), ylabel('Ripple (mV)')
-    axis tight, gridxy(-120),gridxy(-170),gridxy(120),xlim([-220,ripple_time_axis(end)+50]), xticks([-120:40:120])
+    axis tight, ax6 = axis; grid on
+    plot([-120, -120;-170,-170;120,120], [ax6(3) ax6(4)],'color','k');
+    xlim([-220,ripple_time_axis(end)+50]), xticks([-120:40:120])
     ht1 = text(0.03,0.01,'Superficial','Units','normalized','FontWeight','Bold','Color','r');
     ht2 = text(0.22,0.01,'Deep','Units','normalized','FontWeight','Bold','Color','b'); set(ht1,'Rotation',90), set(ht2,'Rotation',90)
     ht3 = text(0.97,0.01,'Depth (µm)','Units','normalized','Color','k'); set(ht1,'Rotation',90), set(ht3,'Rotation',90)
@@ -932,7 +934,6 @@ fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
                 if exist(fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name,'DeepSuperficial_ChClass.mat'))
                     cd(fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name));
                     load(fullfile(cluster_path,'cell_metrics.mat'));
-                    
                     
                     initializeSession;
                     
