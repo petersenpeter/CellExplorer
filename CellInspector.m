@@ -117,10 +117,13 @@ colored_string = strcat('<html><font color="', classColorsHex' ,'">' ,classNames
 listbox_cell_classification = uicontrol('Style','listbox','Position',[515 255 40 50],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyReleaseFcn', {@keyPress});
 
 % Deep/Superficial
-button_deepsuperficial = uicontrol('Style','pushbutton','Position',[515 165 40 20],'Units','normalized','String',['D/S: ', DeepSuperficial{ii}],'Callback',@(src,evnt)buttonDeepSuperficial,'KeyReleaseFcn', {@keyPress});
+button_deepsuperficial = uicontrol('Style','pushbutton','Position',[515 160 40 20],'Units','normalized','String',['D/S: ', DeepSuperficial{ii}],'Callback',@(src,evnt)buttonDeepSuperficial,'KeyReleaseFcn', {@keyPress});
+
+% Custom labels
+button_labels = uicontrol('Style','pushbutton','Position',[515 110 40 20],'Units','normalized','String',['Label: ', cell_metrics.Labels{ii}],'Callback',@(src,evnt)buttonLabel,'KeyReleaseFcn', {@keyPress});
 
 % Brain region
-button_brainregion = uicontrol('Style','pushbutton','Position',[515 140 40 20],'Units','normalized','String',['Region: ', cell_metrics.BrainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyReleaseFcn', {@keyPress});
+button_brainregion = uicontrol('Style','pushbutton','Position',[515 135 40 20],'Units','normalized','String',['Region: ', cell_metrics.BrainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyReleaseFcn', {@keyPress});
 
 % Select unit from t-SNE space
 uicontrol('Style','pushbutton','Position',[515 345 40 20],'Units','normalized','String','Select unit','Callback',@(src,evnt)buttonSelectFromPlot(),'KeyReleaseFcn', {@keyPress});
@@ -134,23 +137,23 @@ uicontrol('Style','text','Position',[515 235 40 15],'Units','normalized','String
 listbox_celltypes = uicontrol('Style','listbox','Position',[515 190 40 50],'Units','normalized','String',strcat(classNames,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(classNames),'Callback',@(src,evnt)buttonSelectSubset());
 
 % ACG window size
-button_ACG = uicontrol('Style','pushbutton','Position',[515 115 40 20],'Units','normalized','String','ACG 100ms','Callback',@(src,evnt)buttonACG(),'KeyReleaseFcn', {@keyPress});
+button_ACG = uicontrol('Style','pushbutton','Position',[515 85 40 20],'Units','normalized','String','ACG 100ms','Callback',@(src,evnt)buttonACG(),'KeyReleaseFcn', {@keyPress});
 
 % Show detected synaptic connections
-button_SynMono = uicontrol('Style','pushbutton','Position',[515 90 40 20],'Units','normalized','String','MonoSyn: All','Callback',@(src,evnt)buttonMonoSyn(),'Visible','on','KeyReleaseFcn', {@keyPress});
+button_SynMono = uicontrol('Style','pushbutton','Position',[515 60 40 20],'Units','normalized','String','MonoSyn: All','Callback',@(src,evnt)buttonMonoSyn(),'Visible','on','KeyReleaseFcn', {@keyPress});
 
 % Load database session button
-button_db = uicontrol('Style','pushbutton','Position',[515 60 40 20],'Units','normalized','String','Load dataset','Callback',@(src,evnt)LoadDatabaseSession(),'Visible','off','KeyReleaseFcn', {@keyPress});
+button_db = uicontrol('Style','pushbutton','Position',[515 35 40 20],'Units','normalized','String','Load dataset','Callback',@(src,evnt)LoadDatabaseSession(),'Visible','off','KeyReleaseFcn', {@keyPress});
 % popup_db_menu = uicontrol('Style','popupmenu','Position',[515 85 40 10],'Units','normalized','String','test','HorizontalAlignment','left','Visible','off');
 if EnableDatabase
     button_db.Visible='On';
 end
 
 % Save classification
-uicontrol('Style','pushbutton','Position',[515 35 40 20],'Units','normalized','String','Save classification','Callback',@(src,evnt)buttonSave,'KeyReleaseFcn', {@keyPress});
+uicontrol('Style','pushbutton','Position',[515 10 40 20],'Units','normalized','String','Save classification','Callback',@(src,evnt)buttonSave,'KeyReleaseFcn', {@keyPress});
 
 % Exit button
-uicontrol('Style','pushbutton','Position',[515 10 40 20],'Units','normalized','String','Exit','Callback',@(src,evnt)buttonExit());
+% uicontrol('Style','pushbutton','Position',[515 10 40 20],'Units','normalized','String','Exit','Callback',@(src,evnt)buttonExit());
 
 % Custom plotting menues
 uicontrol('Style','text','Position',[10 385 45 10],'Units','normalized','String','Select X data','HorizontalAlignment','left');
@@ -181,6 +184,9 @@ ui_title = uicontrol('Style','text','Position',[5 410 200 10],'Units','normalize
 % % % % % % % % % % % % % % % % % % % % % %
 
 while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
+    if ~ishandle(fig)
+        break
+    else
     if strcmp(ui_table.Visible,'on')
         ui_table.Data = [fieldsMenu,num2cell(table_metrics(ii,:)')];
     end
@@ -346,15 +352,20 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     ht3 = text(0.97,0.01,'Depth (µm)','Units','normalized','Color','k'); set(ht1,'Rotation',90), set(ht3,'Rotation',90)
     
     uiwait(fig);
+    end
 end
-close(fig);
-
+if ishandle(fig)
+    close(fig); 
+end
 fprintf('%d pyramidal cells. \n',length(find(clusClas==1)));
 fprintf('%d interneurons. \n',length(find(clusClas==2)));
 fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Embedded functions
+% % % % % % % % % % % % % % % % % % % % % %
+
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function buttonCellType(newString)
@@ -417,6 +428,17 @@ fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
         end
     end
 
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function buttonLabel
+        Label = inputdlg({'Assign label to cell'},'Custom label',[1 40],{cell_metrics.Labels{ii}});
+        if ~isempty(Label)
+        cell_metrics.Labels{ii} = Label{1};
+        button_labels.String = ['Label: ', cell_metrics.Labels{ii}];
+        ui_terminal.String = ['Label: Unit ', num2str(ii), ' labeled as ', Label{1}];
+        end
+    end
+
 % % % % % % % % % % % % % % % % % % % % % % 
 
     function buttonBrainRegion
@@ -468,6 +490,7 @@ fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
         end
         button_deepsuperficial.String = ['D/S: ', DeepSuperficial{ii}];
         button_brainregion.String = ['Region: ', cell_metrics.BrainRegion{ii}];
+        button_labels.String = ['Label: ', cell_metrics.Labels{ii}];
         uiresume(fig);
     end
 
@@ -486,6 +509,7 @@ fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
         end
         button_deepsuperficial.String = ['D/S: ', DeepSuperficial{ii}];
         button_brainregion.String = ['Region: ', cell_metrics.BrainRegion{ii}];
+        button_labels.String = ['Label: ', cell_metrics.Labels{ii}];
         uiresume(fig);
     end
 
@@ -556,6 +580,7 @@ fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
             end
             button_deepsuperficial.String = ['D/S: ', DeepSuperficial{ii}];
             button_brainregion.String = ['Region: ', cell_metrics.BrainRegion{ii}];
+            button_labels.String = ['Label: ', cell_metrics.Labels{ii}];
             uiresume(fig);
         else
             ui_terminal.String = ['No units with selected classification'];
@@ -769,6 +794,9 @@ fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
 
     function initializeSession
         ii = 1;
+        if ~isfield(cell_metrics, 'Labels')
+            cell_metrics.Labels = repmat({''},1,size(cell_metrics.CellID,2));
+        end
         % cell_classification_PutativeCellType
         cell_metrics.PutativeCellType = repmat({'Pyramidal Cell'},1,size(cell_metrics.CellID,2));
         % Interneuron classification
@@ -886,6 +914,8 @@ fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
         button_deepsuperficial.String = ['D/S: ', DeepSuperficial{ii}];
         % Button brain region
         button_brainregion.String = ['Region: ', cell_metrics.BrainRegion{ii}];
+        % Button label
+        button_labels.String = ['Label: ', cell_metrics.Labels{ii}];
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
