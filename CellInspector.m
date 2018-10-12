@@ -161,7 +161,7 @@ uicontrol('Style','text','Position',[10 350 45 10],'Units','normalized','String'
 
 popup_x = uicontrol('Style','popupmenu','Position',[5 375 40 10],'Units','normalized','String',fieldsMenu,'Value',6,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX());
 popup_y = uicontrol('Style','popupmenu','Position',[5 340 40 10],'Units','normalized','String',fieldsMenu,'Value',5,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY());
-popup_z = uicontrol('Style','popupmenu','Position',[5 305 40 10],'Units','normalized','String',fieldsMenu,'Value',12,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ());
+popup_z = uicontrol('Style','popupmenu','Position',[5 305 40 10],'Units','normalized','String',fieldsMenu,'Value',13,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ());
 
 checkbox_logx = uicontrol('Style','checkbox','Position',[5 365 40 10],'Units','normalized','String','Log X scale','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotXLog());
 checkbox_logy = uicontrol('Style','checkbox','Position',[5 330 40 10],'Units','normalized','String','Log Y scale','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotYLog());
@@ -792,23 +792,32 @@ fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
 
 % % % % % % % % % % % % % % % % % % % % % %
 
+    function reclassify_celltypes
+        
+        % cell_classification_PutativeCellType
+        cell_metrics.PutativeCellType = repmat({'Pyramidal Cell'},1,size(cell_metrics.CellID,2));
+        
+        % Interneuron classification
+        cell_metrics.PutativeCellType(cell_metrics.ACG_tau_decay>30) = repmat({'Interneuron'},sum(cell_metrics.ACG_tau_decay>30),1);
+        cell_metrics.PutativeCellType(cell_metrics.ACG_tau_rise>3) = repmat({'Interneuron'},sum(cell_metrics.ACG_tau_rise>3),1);
+        cell_metrics.PutativeCellType(cell_metrics.TroughToPeak<=0.425  & ismember(cell_metrics.PutativeCellType, 'Interneuron')) = repmat({'Narrow Interneuron'},sum(cell_metrics.TroughToPeak<=0.425  & (ismember(cell_metrics.PutativeCellType, 'Interneuron'))),1);
+        cell_metrics.PutativeCellType(cell_metrics.TroughToPeak>0.425  & ismember(cell_metrics.PutativeCellType, 'Interneuron')) = repmat({'Wide Interneuron'},sum(cell_metrics.TroughToPeak>0.425  & (ismember(cell_metrics.PutativeCellType, 'Interneuron'))),1);
+
+        % Pyramidal cell classification
+        cell_metrics.PutativeCellType(cell_metrics.derivative_TroughtoPeak<0.17 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.derivative_TroughtoPeak<0.17 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
+        cell_metrics.PutativeCellType(cell_metrics.derivative_TroughtoPeak>0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.derivative_TroughtoPeak>0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
+        cell_metrics.PutativeCellType(cell_metrics.derivative_TroughtoPeak>=0.17 & cell_metrics.derivative_TroughtoPeak<=0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.derivative_TroughtoPeak>=0.17 & cell_metrics.derivative_TroughtoPeak<=0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
+        uiresume(fig);
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function initializeSession
         ii = 1;
         if ~isfield(cell_metrics, 'Labels')
             cell_metrics.Labels = repmat({''},1,size(cell_metrics.CellID,2));
         end
-        % cell_classification_PutativeCellType
-        cell_metrics.PutativeCellType = repmat({'Pyramidal Cell'},1,size(cell_metrics.CellID,2));
-        % Interneuron classification
-        cell_metrics.PutativeCellType(cell_metrics.ACG_tau_decay>30) = repmat({'Interneuron'},sum(cell_metrics.ACG_tau_decay>30),1);
-        cell_metrics.PutativeCellType(cell_metrics.ACG_tau_rise>3) = repmat({'Interneuron'},sum(cell_metrics.ACG_tau_rise>3),1);
-        cell_metrics.PutativeCellType(cell_metrics.TroughToPeak<0.4  & ismember(cell_metrics.PutativeCellType, 'Interneuron')) = repmat({'Narrow Interneuron'},sum(cell_metrics.TroughToPeak<0.4  & (ismember(cell_metrics.PutativeCellType, 'Interneuron'))),1);
-        cell_metrics.PutativeCellType(cell_metrics.TroughToPeak>0.4  & ismember(cell_metrics.PutativeCellType, 'Interneuron')) = repmat({'Wide Interneuron'},sum(cell_metrics.TroughToPeak>0.4  & (ismember(cell_metrics.PutativeCellType, 'Interneuron'))),1);
-        % Pyramidal cell classification
-        cell_metrics.PutativeCellType(cell_metrics.derivative_TroughtoPeak<0.17 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.derivative_TroughtoPeak<0.17 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
-        cell_metrics.PutativeCellType(cell_metrics.derivative_TroughtoPeak>0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.derivative_TroughtoPeak>0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
-        cell_metrics.PutativeCellType(cell_metrics.derivative_TroughtoPeak>=0.17 & cell_metrics.derivative_TroughtoPeak<=0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.derivative_TroughtoPeak>=0.17 & cell_metrics.derivative_TroughtoPeak<=0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
-        
+
         % Cell type initialization
         clusClas = zeros(1,length(cell_metrics.PutativeCellType));
         clusClas(strcmp(cell_metrics.PutativeCellType,''))=0;
@@ -878,7 +887,7 @@ fprintf('%d non-classified cells. \n',length(find(clusClas==0)));
         plotZ_title = 'Deep Superficial (µm)';
         popup_x.Value = 6;
         popup_y.Value = 5;
-        popup_z.Value = 12;
+        popup_z.Value = 13;
         
         listbox_celltypes.Value = 1:length(classNames);
         classes2plot = 0:length(classNames)-1;
