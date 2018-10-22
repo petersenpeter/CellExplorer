@@ -1,17 +1,19 @@
 function cell_metrics = CellInspector(varargin)
 % Inspect and perform cell classifications
 %
-% INPUT
-% basepath: basepath can be a path, cell_metrics structure, or database ID.
+% INPUT 
+% varargin
 %
 % Example calls:
-% CellInspector                         % Load from current path, assumed to be a basepath
-% CellInspector('basepath',basepath)    % Load from basepath
-% CellInspector('metrics',cell_metrics) % Load from cell_metrics, assume current path to be a basepath
-% CellInspector('id',10985)             % Load from database
-% CellInspector('session','rec1')       % Load from database
-%
-%
+% CellInspector                             % Load from current path, assumed to be a basepath
+% CellInspector('basepath',basepath)        % Load from basepath
+% CellInspector('metrics',cell_metrics)     % Load from cell_metrics, assume current path to be a basepath
+% CellInspector('id',10985)                 % Load from database
+% CellInspector('session','rec1')           % Load from database
+% CellInspector('sessions',{'rec1','rec2'}) % Load batch from database
+% CellInspector('sessionIDs',{10985,2845})  % Load batch from database
+% CellInspector('clusteringpaths',{'path1','[path1'}) % Load batch from a list with paths
+
 % By Peter Petersen and Manuel Valero
 % petersen.peter@gmail.com
 
@@ -48,7 +50,6 @@ exit = 0;
 ACG_type = 'Narrow'; % Narrow, Wide, Viktor
 MonoSynDisp = 'None'; % None, Selected, All
 classColors = [[.5,.5,.5];[.2,.2,.8];[.2,.8,.2];[0.2,0.8,0.8];[.8,.2,.2];[0.8,0.2,0.8]];
-% classColorsHex = reshape(sprintf('%02X',(classColors*0.7.')*255),6,[]).';
 
 classColorsHex = rgb2hex(classColors*0.7);
 classColorsHex = cellstr(classColorsHex(:,2:end));
@@ -125,10 +126,8 @@ elseif ~isempty(sessionIDs)
     end
 elseif ~isempty(sessionsin)
     if EnableDatabase
-        cell_metrics = LoadCellMetricBatch('sessions',sessionsin);
-        initializeSession
-        try
-            
+        try cell_metrics = LoadCellMetricBatch('sessions',sessionsin);
+            initializeSession
         catch
             warning('Failed to load dataset');
             return
@@ -312,19 +311,11 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             
             switch MonoSynDisp
                 case 'All'
-                    %                 putativeSubset = find(sum(ismember(cell_metrics.PutativeConnections,subset)')==2);
                     if ~isempty(putativeSubset)
-                        %                     a1 = cell_metrics.PutativeConnections(putativeSubset,1);
-                        %                     a2 = cell_metrics.PutativeConnections(putativeSubset,2);
                         plot([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],'k')
                     end
                 case 'Selected'
-                    %                 putativeSubset = find(sum(ismember(cell_metrics.PutativeConnections,subset)')==2);
                     if ~isempty(putativeSubset)
-                        %                     a1 = cell_metrics.PutativeConnections(putativeSubset,1);
-                        %                     a2 = cell_metrics.PutativeConnections(putativeSubset,2);
-                        inbound = find(a2 == ii);
-                        outbound = find(a1 == ii);
                         plot([plotX(a1(inbound));plotX(a2(inbound))],[plotY(a1(inbound));plotY(a2(inbound))],'k')
                         plot([plotX(a1(outbound));plotX(a2(outbound))],[plotY(a1(outbound));plotY(a2(outbound))],'m')
                     end
@@ -344,19 +335,11 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             
             switch MonoSynDisp
                 case 'All'
-                    %                 putativeSubset = find(sum(ismember(cell_metrics.PutativeConnections,subset)')==2);
                     if ~isempty(putativeSubset)
-                        %                     a1 = cell_metrics.PutativeConnections(putativeSubset,1);
-                        %                     a2 = cell_metrics.PutativeConnections(putativeSubset,2);
                         plot3([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],[plotZ(a1);plotZ(a2)],'k')
                     end
                 case 'Selected'
-                    %                 putativeSubset = find(sum(ismember(cell_metrics.PutativeConnections,subset)')==2);
                     if ~isempty(putativeSubset)
-                        %                     a1 = cell_metrics.PutativeConnections(putativeSubset,1);
-                        %                     a2 = cell_metrics.PutativeConnections(putativeSubset,2);
-                        inbound = find(a2 == ii);
-                        outbound = find(a1 == ii);
                         plot3([plotX(a1(inbound));plotX(a2(inbound))],[plotY(a1(inbound));plotY(a2(inbound))],[plotZ(a1(inbound));plotZ(a2(inbound))],'k')
                         plot3([plotX(a1(outbound));plotX(a2(outbound))],[plotY(a1(outbound));plotY(a2(outbound))],[plotZ(a1(outbound));plotZ(a2(outbound))],'m')
                     end
@@ -406,8 +389,7 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     
     delete(subfig_ax2.Children)
     subfig_ax(2) = axes('Parent',subfig_ax2);
-    
-    %     subfig_ax(2) = subplot(2,3,2);
+
     hold on,
     for jj = classes2plot
         scatter(cell_metrics.TroughToPeak(find(clusClas==jj)) * 1000, cell_metrics.BurstIndex_Royer2012(find(clusClas==jj)), -7*(log(cell_metrics.BurstIndex_Royer2012(find(clusClas==jj)))-10),...
@@ -454,7 +436,6 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     
     delete(subfig_ax4.Children)
     subfig_ax(4) = axes('Parent',subfig_ax4);
-    %     subplot(2,3,4);
     hold on, cla,
     time_waveforms = [1:size(cell_metrics.SpikeWaveforms,1)]/20-0.8;
     if strcmp(WaveformsPlot,'Single')
@@ -475,7 +456,6 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     
     delete(subfig_ax5.Children)
     subfig_ax(5) = axes('Parent',subfig_ax5);
-    %     subplot(2,3,5);
     hold on
     if strcmp(ACG_type,'Narrow')
         bar([-100:100]/2,cell_metrics.ACG2(:,ii),1,'FaceColor',col,'EdgeColor',col)
@@ -507,7 +487,6 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     
     delete(subfig_ax6.Children)
     subfig_ax(6) = axes('Parent',subfig_ax6);
-    %     subplot(2,3,6);
     hold on
     if any(strcmp(CustomPlotOptions{CustomCellPlot},{'SWR','RippleCorrelogram'}))
         SpikeGroup = cell_metrics.SpikeGroup(ii);
@@ -533,7 +512,7 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             
             if any(ripple_channels{SpikeGroup} == cell_metrics.MaxChannel(ii))
                 jjj = find(ripple_channels{SpikeGroup} == cell_metrics.MaxChannel(ii));
-                plot(ripple_time_axis,ripple_average{SpikeGroup}(:,jjj)-(jjj-1)*0.04,':k','linewidth',3)
+                plot(ripple_time_axis,ripple_average{SpikeGroup}(:,jjj)-(jjj-1)*0.04,':k','linewidth',2)
             end
         end
         title(['SWR SpikeGroup ', num2str(SpikeGroup)]),xlabel('Time (ms)'), ylabel('Ripple (mV)')
@@ -578,7 +557,7 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
         set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
         
     elseif strcmp(CustomPlotOptions{CustomCellPlot},'SWR Correllogram')
-        plot([-200:200],cell_metrics.RippleCorrelogram(:,ii),'color', col), title('Ripple Correlogram'), xlabel('time'),ylabel('Voltage')
+        plot([-200:200],cell_metrics.RippleCorrelogram(:,ii),'color', col,'linewidth',1), title('Ripple Correlogram'), xlabel('time'),ylabel('Voltage')
         axis tight, ax6 = axis; grid on, hold on,
         plot([0, 0], [ax6(3) ax6(4)],'color','k');
         set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
@@ -749,7 +728,6 @@ end
                 BrainRegionsList.String = BrainRegions(temp);
             else
                 BrainRegionsList.String = {''};
-                
             end
         end
         function  CloseBrainRegions_dialog
@@ -1107,7 +1085,6 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
     function keyPress(src, e)
-        e.Key
         switch e.Key
             case 'rightarrow'
                 advance
@@ -1151,7 +1128,6 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
     function reclassify_celltypes
-        
         % cell_classification_PutativeCellType
         cell_metrics.PutativeCellType = repmat({'Pyramidal Cell'},1,size(cell_metrics.CellID,2));
         
@@ -1228,9 +1204,6 @@ end
         
         fieldsMenu = fieldsMenu(find(fields_to_keep));
         fieldsMenu(find(contains(fieldsMenu,'General')))=[];
-        %         if isfield(fieldsMenu,'General')
-        %             fieldsMenu = rmfield(fieldsMenu,'General');
-        %         end
         
         % Metric table initialization
         table_metrics = [];
@@ -1285,6 +1258,7 @@ end
         
         % Button Deep-Superficial
         button_deepsuperficial.String = ['D/S: ', DeepSuperficial{ii}];
+        
         % Button brain region
         button_brainregion.String = ['Region: ', cell_metrics.BrainRegion{ii}];
         % Button label
@@ -1321,8 +1295,7 @@ end
         if ~isempty(indx)
             if length(indx)==1
                 %             id = db_menu_values{indx};
-                try
-                    sessions = bz_load_sessions('session',db_menu_items{indx});
+                try sessions = bz_load_sessions('session',db_menu_items{indx});
                     session = sessions{1};
                     LoadSession
                 catch
@@ -1423,9 +1396,7 @@ end
         % Handle response
         switch answer
             case 'Update existing metrics'
-                saveMetrics(cell_metrics);
-                try
-                    
+                try saveMetrics(cell_metrics);
                 catch exception
                     warning('Failed to save metrics');
                     disp(exception.identifier)
@@ -1439,8 +1410,7 @@ end
                     [file,SavePath] = uiputfile('cell_metrics.mat','Save metrics');
                 end
                 if SavePath ~= 0
-                    try
-                        saveMetrics(cell_metrics,fullfile(SavePath,file));
+                    try saveMetrics(cell_metrics,fullfile(SavePath,file));
                     catch exception
                         warning('Failed to save the file');
                         disp(exception.identifier)
@@ -1500,7 +1470,6 @@ end
 
 function [ hex ] = rgb2hex(rgb)
 % rgb2hex converts rgb color values to hex color format.
-% * * * * * * * * * * * * * * * * * * * *
 % Chad A. Greene, April 2014
 assert(nargin==1,'This function requires an RGB input.')
 assert(isnumeric(rgb)==1,'Function input must be numeric.')
