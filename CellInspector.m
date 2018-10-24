@@ -1,5 +1,5 @@
 function cell_metrics = CellInspector(varargin)
-% Inspect and perform cell classifications
+% Inspect and perform cell classification
 %
 % INPUT 
 % varargin
@@ -13,6 +13,7 @@ function cell_metrics = CellInspector(varargin)
 % CellInspector('sessions',{'rec1','rec2'}) % Load batch from database
 % CellInspector('sessionIDs',{10985,2845})  % Load batch from database
 % CellInspector('clusteringpaths',{'path1','[path1'}) % Load batch from a list with paths
+% CellInspector('basepaths',{'path1','[path1'}) % Load batch from a list with paths
 
 % By Peter Petersen and Manuel Valero
 % petersen.peter@gmail.com
@@ -114,8 +115,10 @@ elseif ~isempty(id) || ~isempty(sessionin)
     end
 elseif ~isempty(sessionIDs)
     if EnableDatabase
-        try cell_metrics = LoadCellMetricBatch('sessionIDs',sessionIDs);
-            initializeSession
+        cell_metrics = LoadCellMetricBatch('sessionIDs',sessionIDs);
+        initializeSession
+        try 
+            
         catch
             warning('Failed to load dataset');
             return
@@ -137,6 +140,14 @@ elseif ~isempty(sessionsin)
         return
     end
 elseif ~isempty(clusteringpaths)
+    try cell_metrics = LoadCellMetricBatch('clusteringpaths',clusteringpaths);
+        initializeSession
+    catch
+        warning('Failed to load dataset');
+        return
+    end
+elseif ~isempty(basepaths)
+    clusteringpaths = basepaths;
     try cell_metrics = LoadCellMetricBatch('clusteringpaths',clusteringpaths);
         initializeSession
     catch
@@ -236,9 +247,9 @@ uicontrol('Style','pushbutton','Position',[515 10 40 20],'Units','normalized','S
 uicontrol('Style','text','Position',[10 385 45 10],'Units','normalized','String','Select X data','HorizontalAlignment','left');
 uicontrol('Style','text','Position',[10 350 45 10],'Units','normalized','String','Select Y data','HorizontalAlignment','left');
 
-popup_x = uicontrol('Style','popupmenu','Position',[5 375 40 10],'Units','normalized','String',fieldsMenu,'Value',6,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX());
-popup_y = uicontrol('Style','popupmenu','Position',[5 340 40 10],'Units','normalized','String',fieldsMenu,'Value',5,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY());
-popup_z = uicontrol('Style','popupmenu','Position',[5 305 40 10],'Units','normalized','String',fieldsMenu,'Value',13,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ());
+popup_x = uicontrol('Style','popupmenu','Position',[5 375 40 10],'Units','normalized','String',fieldsMenu,'Value',20,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX());
+popup_y = uicontrol('Style','popupmenu','Position',[5 340 40 10],'Units','normalized','String',fieldsMenu,'Value',25,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY());
+popup_z = uicontrol('Style','popupmenu','Position',[5 305 40 10],'Units','normalized','String',fieldsMenu,'Value',18,'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ());
 
 checkbox_logx = uicontrol('Style','checkbox','Position',[5 365 40 10],'Units','normalized','String','Log X scale','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotXLog());
 checkbox_logy = uicontrol('Style','checkbox','Position',[5 330 40 10],'Units','normalized','String','Log Y scale','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotYLog());
@@ -673,7 +684,7 @@ end
         
         if isempty(BrainRegions_list)
             load('BrainRegions.mat');
-            BrainRegions_list = strcat(BrainRegions(:,2),' (',BrainRegions(:,1),')');
+            BrainRegions_list = strcat(BrainRegions(:,1),' (',BrainRegions(:,2),')');
             BrainRegions_acronym = BrainRegions(:,2);
             clear BrainRegions;
         end
@@ -1217,15 +1228,15 @@ end
         tSNE_plot = tsne(zscore(X'));
         
         % Setting initial settings for plots, popups and listboxes
-        plotX = cell_metrics.ACG_tau_rise;
-        plotY  = cell_metrics.ACG_tau_decay;
+        plotX = cell_metrics.FiringRate;
+        plotY  = cell_metrics.PeakVoltage;
         plotZ  = cell_metrics.DeepSuperficialDistance;
-        plotX_title = 'ACG tau rise';
-        plotY_title = 'ACG tau decay';
-        plotZ_title = 'Deep Superficial (µm)';
-        popup_x.Value = 6;
-        popup_y.Value = 5;
-        popup_z.Value = 13;
+        plotX_title = 'Firing rate (Hz)';
+        plotY_title = 'Peak voltage (uV)';
+        plotZ_title = 'Deep-Superficial depth (µm)';
+        popup_x.Value = 20;
+        popup_y.Value = 25;
+        popup_z.Value = 18;
         
         listbox_celltypes.Value = 1:length(classNames);
         classes2plot = 0:length(classNames)-1;
@@ -1280,6 +1291,8 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
     function LoadDatabaseSession
+        ui_terminal.String = ['Loading datasets from database...'];
+        drawnow
         options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
         options.CertificateFilename=('');
         bz_db = webread('https://buzsakilab.com/wp/wp-json/frm/v2/views/15356/',options,'page_size','5000','sorted','1');
@@ -1426,7 +1439,8 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
     function saveMetrics(cell_metrics,file)
-        
+        ui_terminal.String = ['Saving metrics...'];
+        drawnow
         numeric_fields = fieldnames(cell_metrics);
         cell_metrics = rmfield(cell_metrics,{numeric_fields{find(contains(numeric_fields,'_num'))}});
         cell_metrics.DeepSuperficial = DeepSuperficial;
