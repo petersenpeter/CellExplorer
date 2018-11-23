@@ -1,46 +1,51 @@
 function cell_metrics_batch = LoadCellMetricBatch(varargin)
-% Load metrics across sessions
+%   saveAs               - name of .mat file
 
+% Load metrics across sessions
 p = inputParser;
-addParameter(p,'sessionIDs',[],@iscell);
-addParameter(p,'sessions',[],@iscell);
-addParameter(p,'basepaths',[],@iscell);
-addParameter(p,'clusteringpaths',[],@iscell);
+addParameter(p,'sessionIDs',{},@iscell);
+addParameter(p,'sessions',{},@iscell);
+addParameter(p,'basepaths',{},@iscell);
+addParameter(p,'clusteringpaths',{},@iscell);
+addParameter(p,'saveAs','cell_metrics',@isstr);
 
 parse(p,varargin{:})
 sessionNames = p.Results.sessions;
 sessionIDs = p.Results.sessionIDs;
-% basepaths = p.Results.basepaths;
+basepaths = p.Results.basepaths;
 clusteringpaths = p.Results.clusteringpaths;
+saveAs = p.Results.saveAs;
 
-bz_database = bz_database_credentials;
+bz_database = db_credentials;
 cell_metrics2 = [];
 subfields2 = [];
 subfieldstypes = [];
 subfieldssizes = [];
 
 if ~isempty(sessionNames)
-for iii = 1:length(sessionNames)
-    disp(['Loading session ', num2str(iii), ' of ', num2str(length(sessionNames)),': ', sessionNames{iii}])
-    sessions = bz_load_sessions('session',sessionNames{iii});
-    session = sessions{1};
-    if ~isempty(session.SpikeSorting.RelativePath)
-        clustering_paths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name, session.SpikeSorting.RelativePath{1});
-    else
-        clustering_paths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name);
+    for iii = 1:length(sessionNames)
+        disp(['Loading ', num2str(iii), ' of ', num2str(length(sessionNames)),': ', sessionNames{iii}])
+        sessions = db_load_sessions('session',sessionNames{iii});
+        session = sessions{1};
+        basepaths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name);
+        if ~isempty(session.SpikeSorting.RelativePath)
+            clustering_paths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name, session.SpikeSorting.RelativePath{1});
+        else
+            clustering_paths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name);
+        end
     end
-end
 elseif ~isempty(sessionIDs)
-for iii = 1:length(sessionIDs)
-    disp(['Loading session ', num2str(iii), ' of ', num2str(length(sessionIDs)),': ', sessionIDs{iii}])
-    sessions = bz_load_sessions('id',sessionIDs{iii});
-    session = sessions{1};
-    if ~isempty(session.SpikeSorting.RelativePath)
-        clustering_paths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name, session.SpikeSorting.RelativePath{1});
-    else
-        clustering_paths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name);
+    for iii = 1:length(sessionIDs)
+        disp(['Loading ', num2str(iii), ' of ', num2str(length(sessionIDs)),': ', sessionIDs{iii}])
+        sessions = bz_load_sessions('id',sessionIDs{iii});
+        session = sessions{1};
+        basepaths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name);
+        if ~isempty(session.SpikeSorting.RelativePath)
+            clustering_paths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name, session.SpikeSorting.RelativePath{1});
+        else
+            clustering_paths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name);
+        end
     end
-end
 elseif ~isempty(clusteringpaths)
     clustering_paths = clusteringpaths;
 else
@@ -48,7 +53,7 @@ else
 end
 
 for iii = 1:length(clustering_paths)
-    cell_metrics2{iii} = load(fullfile(clustering_paths{iii},'cell_metrics.mat'));
+    cell_metrics2{iii} = load(fullfile(clustering_paths{iii},[saveAs,'.mat']));
     subfields2 = [subfields2(:);fieldnames(cell_metrics2{iii}.cell_metrics)];
     temp = struct2cell(structfun(@class,cell_metrics2{iii}.cell_metrics,'UniformOutput',false));
     subfieldstypes = [subfieldstypes(:);temp(:)];
@@ -65,7 +70,7 @@ cell_metrics_fieldnames(contains(cell_metrics_fieldnames,{'TruePositive','FalseP
 h = 0;
 cell_metrics_batch = [];
 for iii = 1:length(cell_metrics2)
-    if exist('sessionNames')
+    if exist('sessionNames') && ~isempty(sessionNames)
         disp(['Concatenating session ', num2str(iii), ' of ', num2str(length(cell_metrics2)),': ', sessionNames{iii}])
     else
         disp(['Concatenating session ', num2str(iii), ' of ', num2str(length(cell_metrics2)),': ', clustering_paths{iii}])
@@ -79,8 +84,16 @@ for iii = 1:length(cell_metrics2)
     cell_metrics_batch.BatchIDs(h+1:hh+h) = iii*ones(1,hh);
     cell_metrics_batch.General.Batch{iii} = cell_metrics.General;
     cell_metrics_batch.General.Paths{iii} = clustering_paths{iii};
+    if ~isempty(basepaths{iii})
+        cell_metrics_batch.General.basepaths{iii} = basepaths{iii};
+    else
+        cell_metrics_batch.General.basepaths{iii} = clustering_paths{iii};
+    end
     
     for ii = 1:length(cell_metrics_fieldnames)
+%         if strcmp(cell_metrics_fieldnames{ii},'DeepSuperficial')
+%            1
+%         end
         if ~isfield(cell_metrics,cell_metrics_fieldnames{ii}) && ~strcmp(cell_metrics_fieldnames{ii},'PutativeConnections')
             if strcmp(subfieldstypes{ii},'double')
                 if length(subfieldssizes{ii})==3
