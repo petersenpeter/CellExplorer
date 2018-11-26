@@ -71,9 +71,9 @@ h = 0;
 cell_metrics_batch = [];
 for iii = 1:length(cell_metrics2)
     if exist('sessionNames') && ~isempty(sessionNames)
-        disp(['Concatenating session ', num2str(iii), ' of ', num2str(length(cell_metrics2)),': ', sessionNames{iii}])
+        disp(['Concatenating ', num2str(iii), '/', num2str(length(cell_metrics2)),': ', sessionNames{iii}])
     else
-        disp(['Concatenating session ', num2str(iii), ' of ', num2str(length(cell_metrics2)),': ', clustering_paths{iii}])
+        disp(['Concatenating ', num2str(iii), '/', num2str(length(cell_metrics2)),': ', clustering_paths{iii}])
     end
     cell_metrics = cell_metrics2{iii}.cell_metrics;
     hh = size(cell_metrics.CellID,2);

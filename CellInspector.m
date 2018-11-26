@@ -215,7 +215,7 @@ subfig_ax(6) = axes('Parent',subfig_ax6);
 uicontrol('Style','pushbutton','Position',[505 395 25 20],'Units','normalized','String','<','Callback',@(src,evnt)back,'KeyReleaseFcn', {@keyPress});
 uicontrol('Style','pushbutton','Position',[530 395 25 20],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyReleaseFcn', {@keyPress});
 
-% Select unit from t-SNE space
+% Select unit from spaces
 uicontrol('Style','pushbutton','Position',[505 370 25 20],'Units','normalized','String','+ Select','Callback',@(src,evnt)buttonSelectFromPlot(),'KeyReleaseFcn', {@keyPress});
 
 % Select group with polygon buttons
@@ -993,10 +993,30 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 [~,idx] = min(hypot(tSNE_SpikeWaveforms(subset,1)-u,tSNE_SpikeWaveforms(subset,2)-v));
                 ii = subset(idx);
                 ui_terminal.String = ['Unit ', num2str(ii), ' selected from Waveforms t-SNE visualization'];
+            elseif axnum == 4 && strcmp(WaveformsPlot,'All')
+                    x1 = time_waveforms'*ones(1,length(subset));
+                    y1 = cell_metrics.SpikeWaveforms_zscored(:,subset);
+                    [~,In] = min(hypot(x1(subset)-u,y1(subset)-v));
+                    In = unique(floor(In/length(time_waveforms)))+1;
+                    ui_terminal.String = [num2str(length(In)), ' units selected from Waveforms'];
             elseif axnum == 5 && strcmp(ACGPlot,'tSNE')
                 [~,idx] = min(hypot(tSNE_ACG2(subset,1)-u,tSNE_ACG2(subset,2)-v));
                 ii = subset(idx);
                 ui_terminal.String = ['Unit ', num2str(ii), ' selected from Autocorrelogram t-SNE visualization'];
+             elseif axnum == 5 && strcmp(ACGPlot,'All')
+                    if strcmp(ACG_type,'Narrow')
+                        x1 = ([-100:100]/2)'*ones(1,length(subset));
+                        y1 = cell_metrics.ACG2(:,subset);
+                    elseif strcmp(ACG_type,'Viktor')
+                        x1 = ([-30:30]/2)'*ones(1,length(subset));
+                        y1 = cell_metrics.ACG2(41+30:end-40-30,subset);
+                    else
+                        x1 = ([-500:500])'*ones(1,length(subset));
+                        y1 = cell_metrics.ACG(:,subset);
+                    end
+                    [~,In] = min(hypot(x1(subset)-u,y1(subset)-v));
+                    In = unique(floor(In/length(time_waveforms)))+1;
+                    ui_terminal.String = [num2str(length(In)), ' units selected from Waveforms'];
             end
             listbox_deepsuperficial.Value = cell_metrics.DeepSuperficial_num(ii);
             button_brainregion.String = ['Region: ', cell_metrics.BrainRegion{ii}];
@@ -1377,6 +1397,21 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 
 % % % % % % % % % % % % % % % % % % % % % %
 
+    function goToCell
+        opts.Interpreter = 'tex';
+        answer = inputdlg({'Select the cell id to go to'},'Go to cell...',[1 40],{''},opts);
+        if ~isempty(answer) && ~isempty(str2num(answer{1}))
+            answer = str2num(answer{1});
+            if answer > 0 && answer <= size(cell_metrics.TroughToPeak,2)
+                ii = answer;
+                uiresume(fig);
+                ui_terminal.String = ['Unit ' num2str(ii) ' selected.'];
+            end
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function keyPress(src, e)
         switch e.Key
             case 'rightarrow'
@@ -1413,6 +1448,8 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 reclassify_celltypes;
             case 't'
                 buttonACG;
+            case 'g'
+                goToCell;
         end
     end
 
@@ -1920,5 +1957,5 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
 function HelpDialog
-helpdlg({'     Navigation','<    : Navigate left', '>    : Navigate right','   ','      Cell assigments:','1-6  : Assign Cell-types','D/S  : Assign Deep/Superficial','L    : Assign Label','Z    : Undo assignment', 'R    : Reclassify cell types','   ',',/.    : Navigate forward/back advanced cell plot','A    : Change Autocorrelation view (Single/All/tSNE)','W    : Change SpikeWaveform view (Single/All/tSNE)','T    : Change ACG window size (30ms/100ms/1sec)', 'F    : Display ACG triple-exponential fit','C    : Display histograms and significance tests', 'M    : Calculate and display significance matrix for all metrics'},'CellInspector shortcut keys');
+helpdlg({'     Navigation','<    : Navigate left', '>    : Navigate right','G    : Go to a specific cell','   ','      Cell assigments:','1-6  : Assign Cell-types','D/S  : Assign Deep/Superficial','L    : Assign Label','Z    : Undo assignment', 'R    : Reclassify cell types','   ',',/.    : Navigate forward/back advanced cell plot','A    : Change Autocorrelation view (Single/All/tSNE)','W    : Change SpikeWaveform view (Single/All/tSNE)','T    : Change ACG window size (30ms/100ms/1sec)', 'F    : Display ACG triple-exponential fit','C    : Display histograms and significance tests', 'M    : Calculate and display significance matrix for all metrics'},'CellInspector shortcut keys');
 end
