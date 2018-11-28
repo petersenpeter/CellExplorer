@@ -58,13 +58,13 @@ classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = [];
 BrainRegions_list = []; BrainRegions_acronym = []; cell_class_count = [];  CustomCellPlot = 1; CustomPlotOptions = '';
 WaveformsPlot = ''; customPlotHistograms = 0; plotACGfit = 0; basename = ''; clasLegend = 0; Colorval = 1; plotClas = [];
 ColorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; exit = 0; tSNE_fields = ''; MonoSynDispIn = '';
-plotXdata = 'FiringRate'; plotYdata = 'PeakVoltage'; plotZdata = 'DeepSuperficialDistance';
+plotXdata = 'FiringRate'; plotYdata = 'PeakVoltage'; plotZdata = 'DeepSuperficialDistance'; DisplayMetricsTable = 0;
 
 % % % % % % % % % % % % % % % % % % % % % %
-% General settings
+% User preferences for the Cell-inspector
 % % % % % % % % % % % % % % % % % % % % % %
 
-CellInspector_Settings
+CellInspector_Preferences
 
 classColorsHex = rgb2hex(classColors*0.7);
 classColorsHex = cellstr(classColorsHex(:,2:end));
@@ -212,19 +212,25 @@ subfig_ax(5) = axes('Parent',subfig_ax5);
 subfig_ax(6) = axes('Parent',subfig_ax6);
 
 % Navigation buttons
-uicontrol('Style','pushbutton','Position',[505 395 25 20],'Units','normalized','String','<','Callback',@(src,evnt)back,'KeyReleaseFcn', {@keyPress});
-uicontrol('Style','pushbutton','Position',[530 395 25 20],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyReleaseFcn', {@keyPress});
+uicontrol('Style','pushbutton','Position',[505 400 25 18],'Units','normalized','String','<','Callback',@(src,evnt)back,'KeyReleaseFcn', {@keyPress});
+uicontrol('Style','pushbutton','Position',[530 400 25 18],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyReleaseFcn', {@keyPress});
 
-% Select unit from spaces
-uicontrol('Style','pushbutton','Position',[505 370 25 20],'Units','normalized','String','+ Select','Callback',@(src,evnt)buttonSelectFromPlot(),'KeyReleaseFcn', {@keyPress});
+% Select unit from spaces & group with polygon buttons
+uicontrol('Style','pushbutton','Position',[505 380 25 18],'Units','normalized','String','+ Select','Callback',@(src,evnt)buttonSelectFromPlot(),'KeyReleaseFcn', {@keyPress});
+uicontrol('Style','pushbutton','Position',[530 380 25 18],'Units','normalized','String','O Poly','Callback',@(src,evnt)GroupSelectFromPlot,'KeyReleaseFcn', {@keyPress});
 
-% Select group with polygon buttons
-uicontrol('Style','pushbutton','Position',[530 370 25 20],'Units','normalized','String','O Poly','Callback',@(src,evnt)GroupSelectFromPlot,'KeyReleaseFcn', {@keyPress});
+% Changing Waveform and ACG view
+uicontrol('Style','pushbutton','Position',[505 360 25 18],'Units','normalized','String','Waveforms','Callback',@(src,evnt)toggleWaveformsPlot,'KeyReleaseFcn', {@keyPress});
+uicontrol('Style','pushbutton','Position',[530 360 25 18],'Units','normalized','String','ACG','Callback',@(src,evnt)toggleACGplot,'KeyReleaseFcn', {@keyPress});
+
+% Navigate custom plot
+uicontrol('Style','pushbutton','Position',[505 340 25 18],'Units','normalized','String','<<','Callback',@(src,evnt)toggleCellPlotBack,'KeyReleaseFcn', {@keyPress});
+uicontrol('Style','pushbutton','Position',[530 340 25 18],'Units','normalized','String','>>','Callback',@(src,evnt)toggleCellPlotAdvance,'KeyReleaseFcn', {@keyPress});
 
 % Cell classification
-uicontrol('Style','text','Position',[505 325 50 15],'Units','normalized','String','Cell Classification','HorizontalAlignment','center');
+uicontrol('Style','text','Position',[505 323 50 15],'Units','normalized','String','Cell Classification','HorizontalAlignment','center');
 colored_string = strcat('<html><font color="', classColorsHex' ,'">' ,classNames,' (', classNumbers, ')</font></html>');
-listbox_cell_classification = uicontrol('Style','listbox','Position',[505 280 50 50],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyReleaseFcn', {@keyPress});
+listbox_cell_classification = uicontrol('Style','listbox','Position',[505 278 50 50],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyReleaseFcn', {@keyPress});
 
 % Deep/Superficial
 uicontrol('Style','text','Position',[505 195 50 15],'Units','normalized','String','Deep-Superficial','HorizontalAlignment','center');
@@ -279,9 +285,10 @@ checkbox_groups = uicontrol('Style','checkbox','Position',[5 205 45 10],'Units',
 % Table with metrics for selected cell
 ui_table = uitable(fig,'Data',[fieldsMenu,num2cell(table_metrics(1,:)')],'Position',[10 30 150 575],'ColumnWidth',{85, 46},'columnname',{'Metrics',''},'RowName',[]);
 checkbox_showtable = uicontrol('Style','checkbox','Position',[5 2 50 10],'Units','normalized','String','Show Metrics table','HorizontalAlignment','left','Value',1,'Callback',@(src,evnt)buttonShowMetrics());
+if DisplayMetricsTable==0; ui_table.Visible='Off'; checkbox_showtable.Value = 0; end 
 
 % Terminal output line
-ui_terminal = uicontrol('Style','text','Position',[60 2 320 10],'Units','normalized','String','Welcome to the Cell-Inspector. Press H to learn shortcut keys.','HorizontalAlignment','left','FontSize',10);
+ui_terminal = uicontrol('Style','text','Position',[60 2 320 10],'Units','normalized','String','Welcome to the Cell-Inspector. Press H to learn keyboard shortcuts.','HorizontalAlignment','left','FontSize',10);
 
 % Title line with name of current session
 ui_title = uicontrol('Style','text','Position',[5 410 200 10],'Units','normalized','String',['Session: ', cell_metrics.General.basename,' with ', num2str(size(cell_metrics.TroughToPeak,2)), ' units'],'HorizontalAlignment','left','FontSize',13);
@@ -334,9 +341,10 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     % % % % % % % % % % % % % % % % % % % % % %
     % Subfig 1
     % % % % % % % % % % % % % % % % % % % % % %
-    
-    axes(subfig_ax1.Children);
-    [az,el] = view;
+    if customPlotHistograms == 0
+        axes(subfig_ax1.Children);
+        [az,el] = view;
+    end
     delete(subfig_ax1.Children)
     subfig_ax(1) = axes('Parent',subfig_ax1);
     if customPlotHistograms == 0
@@ -784,7 +792,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         history_classification(hist_idx).DeepSuperficial_num = cell_metrics.DeepSuperficial_num(ii);
         
         cell_metrics.DeepSuperficial{ii} = deepSuperficialNames{listbox_deepsuperficial.Value};
-        cell_metrics.DeepSuperficial_num(ii) = find(strcmp(groups_ids.DeepSuperficial_num,deepSuperficialNames{listbox_deepsuperficial.Value}));
+        cell_metrics.DeepSuperficial_num(ii) = listbox_deepsuperficial.Value;
         
         ui_terminal.String = ['Deep/Superficial: Unit ', num2str(ii), ' classified as ', cell_metrics.DeepSuperficial{ii}];
         if strcmp(plotX_title,'DeepSuperficial_num')
@@ -796,6 +804,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         if strcmp(plotZ_title,'DeepSuperficial_num')
             plotZ = cell_metrics.DeepSuperficial_num;
         end
+        uiresume(fig);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1415,15 +1424,23 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
     function keyPress(src, e)
         switch e.Key
             case 'rightarrow'
-                advance
+                advance;
             case 'leftarrow'
-                back
-            case 's'
-                buttonDeepSuperficial
-            case 'd'
-                buttonDeepSuperficial
+                back;
             case {'1','2','3','4','5','6','7','8','9'}
                 buttonCellType(str2num(e.Key));
+            case 's'
+                listbox_deepsuperficial.Value = find(strcmp(deepSuperficialNames,'Superficial'));
+                buttonDeepSuperficial;
+            case 'd'
+                listbox_deepsuperficial.Value = find(strcmp(deepSuperficialNames,'Deep'));
+                buttonDeepSuperficial;
+            case 'u'
+                listbox_deepsuperficial.Value = find(strcmp(deepSuperficialNames,'Unknown'));
+                buttonDeepSuperficial;
+            case 'c'
+                listbox_deepsuperficial.Value = find(strcmp(deepSuperficialNames,'Cortical'));
+                buttonDeepSuperficial;
             case 'a'
                 toggleACGplot;
             case 'f'
@@ -1438,7 +1455,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 buttonLabel;
             case 'w'
                 toggleWaveformsPlot;
-            case 'c'
+            case 'q'
                 togglePlotHistograms;
             case 'm'
                 SignificanceMetricsMatrix;
@@ -1450,6 +1467,21 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 buttonACG;
             case 'g'
                 goToCell;
+            case 'p'
+                LoadPreferences;
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+    
+    function LoadPreferences
+        answer = questdlg('Settings are stored in CellInspector_Settings.m. Click Yes to load settings.', ...
+            'Settings', ...
+            'Yes','Cancel','Yes');
+        switch answer
+            case 'Yes'
+                ui_terminal.String = ['Opening settings file...'];
+                edit CellInspector_Preferences.m
         end
     end
 
@@ -1459,8 +1491,6 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         answer = questdlg('Are yo sure you want to reclassify all your cells?', ...
             'Reclassification', ...
             'Yes','Cancel','Cancel');
-        % Handle response
-        answer
         switch answer
             case 'Yes'
                 ui_terminal.String = ['Reclassifying cells...'];
@@ -1494,8 +1524,6 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 end
                 uiresume(fig);
         end
-        
-        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1545,7 +1573,13 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         fieldsMenu(find(contains(fieldsMenu,'SpatialCoherence')))=[];
         
         for i = 1:length(fieldsMenu)
-            if iscell(cell_metrics.(fieldsMenu{i})) && ~strcmp(fieldsMenu{i},'firing_rate_map_states')
+            if strcmp(fieldsMenu{i},'DeepSuperficial')
+                cell_metrics.DeepSuperficial_num = ones(1,length(cell_metrics.DeepSuperficial));
+                for j = 1:length(deepSuperficialNames)
+                    cell_metrics.DeepSuperficial_num(strcmp(cell_metrics.DeepSuperficial,classNames{j}))=j;
+                end
+                groups_ids.DeepSuperficial_num = deepSuperficialNames;
+            elseif iscell(cell_metrics.(fieldsMenu{i})) && ~strcmp(fieldsMenu{i},'firing_rate_map_states')
                 %                 temp = cellfun(@isempty,cell_metrics.(fieldsMenu{i}));
                 [cell_metrics.([fieldsMenu{i},'_num']),ID] = findgroups(cell_metrics.(fieldsMenu{i}));
                 groups_ids.([fieldsMenu{i},'_num']) = ID;
@@ -1957,5 +1991,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
 function HelpDialog
-helpdlg({'     Navigation','<    : Navigate left', '>    : Navigate right','G    : Go to a specific cell','   ','      Cell assigments:','1-6  : Assign Cell-types','D/S  : Assign Deep/Superficial','L    : Assign Label','Z    : Undo assignment', 'R    : Reclassify cell types','   ',',/.    : Navigate forward/back advanced cell plot','A    : Change Autocorrelation view (Single/All/tSNE)','W    : Change SpikeWaveform view (Single/All/tSNE)','T    : Change ACG window size (30ms/100ms/1sec)', 'F    : Display ACG triple-exponential fit','C    : Display histograms and significance tests', 'M    : Calculate and display significance matrix for all metrics'},'CellInspector shortcut keys');
+    opts.Interpreter = 'tex';
+    opts.WindowStyle = 'modal';
+    msgbox({'Navigation','<    : Navigate to next cell', '>    : Navigate to previous cell','G    : Go to a specific cell','   ','Cell assigments:','1-6  : Assign Cell-types','D/S  : Assign Deep, Superficial, Cortical(C) and Unknown (U)','L    : Assign Label','Z    : Undo assignment', 'R    : Reclassify cell types','   ','Other shortcuts',',/.    : Navigate forward/back advanced cell plot','A    : Change Autocorrelation view (Single/All/tSNE)','W    : Change SpikeWaveform view (Single/All/tSNE)','T    : Change ACG window size (30ms/100ms/1sec)', 'F    : Display ACG triple-exponential fit','Q    : Display histograms and significance tests', 'M    : Calculate and display significance matrix for all metrics','P    : Open preferences for the Cell-Inspector'},'Cell-Inspector keyboard shortcuts','help',opts);
 end
