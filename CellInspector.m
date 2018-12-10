@@ -59,6 +59,11 @@ BrainRegions_list = []; BrainRegions_acronym = []; cell_class_count = [];  Custo
 WaveformsPlot = ''; customPlotHistograms = 0; plotACGfit = 0; basename = ''; clasLegend = 0; Colorval = 1; plotClas = [];
 ColorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; exit = 0; tSNE_fields = ''; MonoSynDispIn = '';
 plotXdata = 'FiringRate'; plotYdata = 'PeakVoltage'; plotZdata = 'DeepSuperficialDistance'; DisplayMetricsTable = 0;
+Colorstr = []; popup_customplot = []; WaveformsPlotIn = 'Single'; ACGPlotIn = 'Single'; deepSuperficialNames = ''; 
+ACG_type = 'Normal'; MonoSynDisp = ''; MonoSynDisp = '';  ACGPlot = '';  tSNE_ACG2 = [];  tSNE_SpikeWaveforms = []; 
+
+fig = figure('KeyReleaseFcn', {@keyPress},'Name','Cell inspector','NumberTitle','off','renderer','opengl');
+
 
 % % % % % % % % % % % % % % % % % % % % % %
 % User preferences for the Cell-inspector
@@ -71,9 +76,9 @@ classColorsHex = cellstr(classColorsHex(:,2:end));
 classNumbers = cellstr(num2str([1:length(classNames)]'))';
 plotClasGroups = classNames;
 
-warning('off','MATLAB:deblank:NonStringInput')
-
-% % % % % % % % % % % % % % % % % % % % % %
+warning('off','MATLAB:deblank:NonStringInput') 
+warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame') 
+% % % % % % % % % % % % % % % % % % % % % % 
 % Database initialization
 % % % % % % % % % % % % % % % % % % % % % %
 
@@ -96,14 +101,14 @@ elseif ~isempty(id) || ~isempty(sessionin)
         disp('Loading session from database')
         if ~isempty(id)
             try
-                [session, basename, basepath, clusteringpath] = db_set_path('id',id);
+                [session, basename, basepath, clusteringpath] = db_set_path('id',id,'saveMat',false);
             catch
                 warning('Failed to load dataset');
                 return
             end
         else
             try
-                [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin);
+                [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin,'saveMat',false);
             catch
                 warning('Failed to load dataset');
                 return
@@ -185,8 +190,12 @@ else
         
         initializeSession
     else
-        warning('Neither session.mat or cell_metrics.mat exist in base folder')
-        return
+        if EnableDatabase
+            LoadDatabaseSession;
+        else
+            warning('Neither session.mat or cell_metrics.mat exist in base folder')
+            return
+        end
     end
     
 end
@@ -194,8 +203,6 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 % UI initialization
 % % % % % % % % % % % % % % % % % % % % % %
-
-fig = figure('KeyReleaseFcn', {@keyPress},'Name','Cell inspector','NumberTitle','off','renderer','opengl');
 
 % Scattergroup uipanel
 subfig_ax1 = uipanel('position',[0.09 0.5 0.28 0.5],'BorderType','none');
@@ -211,65 +218,86 @@ subfig_ax(4) = axes('Parent',subfig_ax4);
 subfig_ax(5) = axes('Parent',subfig_ax5);
 subfig_ax(6) = axes('Parent',subfig_ax6);
 
+pannel_Navigation = uipanel('Title','Navigation','TitlePosition','centertop','FontSize',12,'Position',[0.895 0.89 0.1 0.105],'Units','normalized');
+pannel_CellAssignment = uipanel('Title','Cell assignments','TitlePosition','centertop','FontSize',12,'Position',[0.895 0.50 0.1 0.385],'Units','normalized');
+pannel_DisplaySettings = uipanel('Title','Display Settings','TitlePosition','centertop','FontSize',12,'Position',[0.895 0.125 0.1 0.37],'Units','normalized');
+pannel_LoadSave = uipanel('Title','File handling','TitlePosition','centertop','FontSize',12,'Position',[0.895 0.01 0.1 0.105],'Units','normalized');
+
 % Navigation buttons
-uicontrol('Style','pushbutton','Position',[505 400 25 18],'Units','normalized','String','<','Callback',@(src,evnt)back,'KeyReleaseFcn', {@keyPress});
-uicontrol('Style','pushbutton','Position',[530 400 25 18],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyReleaseFcn', {@keyPress});
+uicontrol('Parent',pannel_Navigation,'Style','pushbutton','Position',[2 15 24 12],'Units','normalized','String','<','Callback',@(src,evnt)back,'KeyReleaseFcn', {@keyPress});
+uicontrol('Parent',pannel_Navigation,'Style','pushbutton','Position',[27 15 24 12],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyReleaseFcn', {@keyPress});
 
-% Select unit from spaces & group with polygon buttons
-uicontrol('Style','pushbutton','Position',[505 380 25 18],'Units','normalized','String','+ Select','Callback',@(src,evnt)buttonSelectFromPlot(),'KeyReleaseFcn', {@keyPress});
-uicontrol('Style','pushbutton','Position',[530 380 25 18],'Units','normalized','String','O Poly','Callback',@(src,evnt)GroupSelectFromPlot,'KeyReleaseFcn', {@keyPress});
-
-% Changing Waveform and ACG view
-uicontrol('Style','pushbutton','Position',[505 360 25 18],'Units','normalized','String','Waveforms','Callback',@(src,evnt)toggleWaveformsPlot,'KeyReleaseFcn', {@keyPress});
-uicontrol('Style','pushbutton','Position',[530 360 25 18],'Units','normalized','String','ACG','Callback',@(src,evnt)toggleACGplot,'KeyReleaseFcn', {@keyPress});
-
-% Navigate custom plot
-uicontrol('Style','pushbutton','Position',[505 340 25 18],'Units','normalized','String','<<','Callback',@(src,evnt)toggleCellPlotBack,'KeyReleaseFcn', {@keyPress});
-uicontrol('Style','pushbutton','Position',[530 340 25 18],'Units','normalized','String','>>','Callback',@(src,evnt)toggleCellPlotAdvance,'KeyReleaseFcn', {@keyPress});
+% Select cell from spaces & group with polygon buttons
+uicontrol('Parent',pannel_Navigation,'Style','pushbutton','Position',[2 2 24 12],'Units','normalized','String','+ Select','Callback',@(src,evnt)buttonSelectFromPlot,'KeyReleaseFcn', {@keyPress});
+uicontrol('Parent',pannel_Navigation,'Style','pushbutton','Position',[27 2 24 12],'Units','normalized','String','GoTo','Callback',@(src,evnt)goToCell,'KeyReleaseFcn', {@keyPress});
 
 % Cell classification
-uicontrol('Style','text','Position',[505 323 50 15],'Units','normalized','String','Cell Classification','HorizontalAlignment','center');
+% uicontrol('Parent',pannel_CellAssignment,'Style','text','Position',[2 142 50 10],'Units','normalized','String','Cell-type','HorizontalAlignment','center');
 colored_string = strcat('<html><font color="', classColorsHex' ,'">' ,classNames,' (', classNumbers, ')</font></html>');
-listbox_cell_classification = uicontrol('Style','listbox','Position',[505 278 50 50],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyReleaseFcn', {@keyPress});
+listbox_cell_classification = uicontrol('Parent',pannel_CellAssignment,'Style','listbox','Position',[2 100 50 45],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyReleaseFcn', {@keyPress});
+uicontrol('Parent',pannel_CellAssignment,'Style','pushbutton','Position',[2 80 50 15],'Units','normalized','String','Select group from plots','Callback',@(src,evnt)GroupSelectFromPlot,'KeyReleaseFcn', {@keyPress});
 
 % Deep/Superficial
-uicontrol('Style','text','Position',[505 195 50 15],'Units','normalized','String','Deep-Superficial','HorizontalAlignment','center');
-listbox_deepsuperficial = uicontrol('Style','listbox','Position',[505 160 50 40],'Units','normalized','String',deepSuperficialNames,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)buttonDeepSuperficial,'KeyReleaseFcn', {@keyPress});
-
-% Custom labels
-button_labels = uicontrol('Style','pushbutton','Position',[505 110 50 20],'Units','normalized','String',['Label: ', cell_metrics.Labels{ii}],'Callback',@(src,evnt)buttonLabel,'KeyReleaseFcn', {@keyPress});
+uicontrol('Parent',pannel_CellAssignment,'Style','text','Position',[2 67 50 10],'Units','normalized','String','Deep-Superficial','HorizontalAlignment','center');
+listbox_deepsuperficial = uicontrol('Parent',pannel_CellAssignment,'Style','listbox','Position',[2 40 50 30],'Units','normalized','String',deepSuperficialNames,'max',1,'min',1,'Value',cell_metrics.DeepSuperficial_num(ii),'Callback',@(src,evnt)buttonDeepSuperficial,'KeyReleaseFcn', {@keyPress});
 
 % Brain region
-button_brainregion = uicontrol('Style','pushbutton','Position',[505 135 50 20],'Units','normalized','String',['Region: ', cell_metrics.BrainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyReleaseFcn', {@keyPress});
+button_brainregion = uicontrol('Parent',pannel_CellAssignment,'Style','pushbutton','Position',[2 20 50 15],'Units','normalized','String',['Region: ', cell_metrics.BrainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyReleaseFcn', {@keyPress});
+
+% Custom labels
+button_labels = uicontrol('Parent',pannel_CellAssignment,'Style','pushbutton','Position',[2 3 50 15],'Units','normalized','String',['Label: ', cell_metrics.Labels{ii}],'Callback',@(src,evnt)buttonLabel,'KeyReleaseFcn', {@keyPress});
+
 
 % Select subset of cell type
 updateCellCount
-uicontrol('Style','text','Position',[505 260 50 15],'Units','normalized','String','Display cell-types','HorizontalAlignment','center');
-listbox_celltypes = uicontrol('Style','listbox','Position',[505 215 50 50],'Units','normalized','String',strcat(classNames,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(classNames),'Callback',@(src,evnt)buttonSelectSubset(),'KeyReleaseFcn', {@keyPress});
+uicontrol('Parent',pannel_DisplaySettings,'Style','text','Position',[2 129 50 10],'Units','normalized','String','Cell-types','HorizontalAlignment','center');
+listbox_celltypes = uicontrol('Parent',pannel_DisplaySettings,'Style','listbox','Position',[2 82 50 50],'Units','normalized','String',strcat(classNames,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(classNames),'Callback',@(src,evnt)buttonSelectSubset(),'KeyReleaseFcn', {@keyPress});
 
-% ACG window size
-button_ACG = uicontrol('Style','pushbutton','Position',[505 60 50 20],'Units','normalized','String','ACG','Callback',@(src,evnt)buttonACG(),'KeyReleaseFcn', {@keyPress});
-if strcmp(ACG_type,'Narrow'); button_ACG.String = 'ACG: 100ms'; elseif strcmp(ACG_type,'Viktor'); button_ACG.String = 'ACG: 30ms'; else; button_ACG.String = 'ACG: 1s'; end
+% Navigate custom plot
+uicontrol('Parent',pannel_DisplaySettings,'Style','text','Position',[2 69 50 10],'Units','normalized','String','Custom plot options','HorizontalAlignment','center');
+popup_customplot = uicontrol('Parent',pannel_DisplaySettings,'Style','popupmenu','Position',[2 62 50 10],'Units','normalized','String',CustomPlotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)CustomCellPlotFunc,'KeyReleaseFcn', {@keyPress});
+
+% Changing Waveform and ACG view
+uicontrol('Parent',pannel_DisplaySettings,'Style','text','Position',[2 49 25 10],'Units','normalized','String','Waveforms','HorizontalAlignment','center');
+popup_waveforms = uicontrol('Parent',pannel_DisplaySettings,'Style','popupmenu','Position',[2 42 25 10],'Units','normalized','String',{'Single','All','tSNE'},'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleWaveformsPlot,'KeyReleaseFcn', {@keyPress});
+if strcmp(WaveformsPlotIn,'Single'); popup_waveforms.Value = 1; elseif strcmp(WaveformsPlotIn,'All'); popup_waveforms.Value = 2; else; popup_waveforms.Value = 3; end
+
+uicontrol('Parent',pannel_DisplaySettings,'Style','text','Position',[27 49 25 10],'Units','normalized','String','ACGs','HorizontalAlignment','center');
+popup_ACGs = uicontrol('Parent',pannel_DisplaySettings,'Style','popupmenu','Position',[27 42 25 10],'Units','normalized','String',{'Single','All','tSNE'},'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleACGplot,'KeyReleaseFcn', {@keyPress});
+if strcmp(ACGPlotIn,'Single'); popup_ACGs.Value = 1; elseif strcmp(ACGPlotIn,'All'); popup_ACGs.Value = 2; else; popup_ACGs.Value = 3; end
 
 % Show detected synaptic connections
-button_SynMono = uicontrol('Style','pushbutton','Position',[505 85 50 20],'Units','normalized','String',['MonoSyn:' MonoSynDispIn],'Callback',@(src,evnt)buttonMonoSyn(),'Visible','on','KeyReleaseFcn', {@keyPress});
+uicontrol('Parent',pannel_DisplaySettings,'Style','text','Position',[2 29 25 10],'Units','normalized','String','MonoSyn','HorizontalAlignment','center');
+popup_SynMono = uicontrol('Parent',pannel_DisplaySettings,'Style','popupmenu','Position',[2 22 25 10],'Units','normalized','String',{'None','Selected','All'},'max',1,'min',1,'Value',1,'Callback',@(src,evnt)buttonMonoSyn,'KeyReleaseFcn', {@keyPress});
+
+% ACG window size
+uicontrol('Parent',pannel_DisplaySettings,'Style','text','Position',[27 29 25 10],'Units','normalized','String','ACG window','HorizontalAlignment','center');
+popup_ACG = uicontrol('Parent',pannel_DisplaySettings,'Style','popupmenu','Position',[27 22 25 10],'Units','normalized','String',{'30ms','100ms','1s'},'max',1,'min',1,'Value',1,'Callback',@(src,evnt)buttonACG,'KeyReleaseFcn', {@keyPress});
+if strcmp(ACG_type,'Normal'); popup_ACG.Value = 2; elseif strcmp(ACG_type,'Narrow'); popup_ACG.Value = 1; else; popup_ACG.Value = 3; end
+
+uicontrol('Parent',pannel_DisplaySettings,'Style','text','Position',[2 9 50 10],'Units','normalized','String','Display synaptic connections','HorizontalAlignment','center');
+checkbox_SynMono1 = uicontrol('Parent',pannel_DisplaySettings,'Style','checkbox','Position',[3 2 20 10],'Units','normalized','String','Custom','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(fig));
+checkbox_SynMono2 = uicontrol('Parent',pannel_DisplaySettings,'Style','checkbox','Position',[21 2 20 10],'Units','normalized','String','Classic','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(fig));
+checkbox_SynMono3 = uicontrol('Parent',pannel_DisplaySettings,'Style','checkbox','Position',[38 2 18 10],'Units','normalized','String','tSNE','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(fig));
 
 % Load database session button
-button_db = uicontrol('Style','pushbutton','Position',[505 35 50 20],'Units','normalized','String','Load dataset','Callback',@(src,evnt)LoadDatabaseSession(),'Visible','off','KeyReleaseFcn', {@keyPress});
+button_db = uicontrol('Parent',pannel_LoadSave,'Style','pushbutton','Position',[2 15 50 12],'Units','normalized','String','Load dataset from database','Callback',@(src,evnt)LoadDatabaseSession(),'Visible','off','KeyReleaseFcn', {@keyPress});
 if EnableDatabase
     button_db.Visible='On';
 end
 
 % Save classification
-uicontrol('Style','pushbutton','Position',[505 10 50 20],'Units','normalized','String','Save classification','Callback',@(src,evnt)buttonSave,'KeyReleaseFcn', {@keyPress});
+uicontrol('Parent',pannel_LoadSave,'Style','pushbutton','Position',[2 2 50 12],'Units','normalized','String','Save classification','Callback',@(src,evnt)buttonSave,'KeyReleaseFcn', {@keyPress});
+
+
 
 % Custom plotting menues
 uicontrol('Style','text','Position',[8 385 45 10],'Units','normalized','String','Select X data','HorizontalAlignment','left');
 uicontrol('Style','text','Position',[8 350 45 10],'Units','normalized','String','Select Y data','HorizontalAlignment','left');
 
-popup_x = uicontrol('Style','popupmenu','Position',[5 375 45 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX());
-popup_y = uicontrol('Style','popupmenu','Position',[5 340 45 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY());
-popup_z = uicontrol('Style','popupmenu','Position',[5 305 45 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ());
+popup_x = uicontrol('Style','popupmenu','Position',[5 375 50 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX());
+popup_y = uicontrol('Style','popupmenu','Position',[5 340 50 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY());
+popup_z = uicontrol('Style','popupmenu','Position',[5 305 50 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ());
 
 checkbox_logx = uicontrol('Style','checkbox','Position',[5 365 45 10],'Units','normalized','String','Log X scale','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotXLog());
 checkbox_logy = uicontrol('Style','checkbox','Position',[5 330 45 10],'Units','normalized','String','Log Y scale','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotYLog());
@@ -285,14 +313,21 @@ checkbox_groups = uicontrol('Style','checkbox','Position',[5 205 45 10],'Units',
 % Table with metrics for selected cell
 ui_table = uitable(fig,'Data',[fieldsMenu,num2cell(table_metrics(1,:)')],'Position',[10 30 150 575],'ColumnWidth',{85, 46},'columnname',{'Metrics',''},'RowName',[]);
 checkbox_showtable = uicontrol('Style','checkbox','Position',[5 2 50 10],'Units','normalized','String','Show Metrics table','HorizontalAlignment','left','Value',1,'Callback',@(src,evnt)buttonShowMetrics());
-if DisplayMetricsTable==0; ui_table.Visible='Off'; checkbox_showtable.Value = 0; end 
+if DisplayMetricsTable==0; ui_table.Visible='Off'; checkbox_showtable.Value = 0; end
 
 % Terminal output line
 ui_terminal = uicontrol('Style','text','Position',[60 2 320 10],'Units','normalized','String','Welcome to the Cell-Inspector. Press H to learn keyboard shortcuts.','HorizontalAlignment','left','FontSize',10);
 
 % Title line with name of current session
-ui_title = uicontrol('Style','text','Position',[5 410 200 10],'Units','normalized','String',['Session: ', cell_metrics.General.basename,' with ', num2str(size(cell_metrics.TroughToPeak,2)), ' units'],'HorizontalAlignment','left','FontSize',13);
+ui_title = uicontrol('Style','text','Position',[5 410 200 10],'Units','normalized','String',['Session: ', cell_metrics.General.basename,' with ', num2str(size(cell_metrics.TroughToPeak,2)), ' cells'],'HorizontalAlignment','left','FontSize',13);
 % ui_details = uicontrol('Style','text','Position',[5 400 200 10],'Units','normalized','String',{['Session: ', cell_metrics.General.basename],[num2str(size(cell_metrics_all.TroughToPeak,2)),', shank ']},'HorizontalAlignment','left','FontSize',15);
+
+% Maximazing figure
+if ~verLessThan('matlab', '9.4')
+    set(fig,'WindowState','maximize')
+else 
+    drawnow; frame_h = get(fig,'JavaFrame'); set(frame_h,'Maximized',1); % 
+end
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Main loop of UI
@@ -370,22 +405,23 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             end
             plot(plotX(ii), plotY(ii),'xk', 'LineWidth', 2, 'MarkerSize',20)
             
-            
-            switch MonoSynDisp
-                case 'All'
-                    if ~isempty(putativeSubset)
-                        plot([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],'k')
-                    end
-                case 'Selected'
-                    if ~isempty(putativeSubset)
-                        plot([plotX(a1(inbound));plotX(a2(inbound))],[plotY(a1(inbound));plotY(a2(inbound))],'k')
-                        plot([plotX(a1(outbound));plotX(a2(outbound))],[plotY(a1(outbound));plotY(a2(outbound))],'m')
-                    end
+            if  checkbox_SynMono1.Value == 1
+                switch MonoSynDisp
+                    case 'All'
+                        if ~isempty(putativeSubset)
+                            plot([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],'k')
+                        end
+                    case 'Selected'
+                        if ~isempty(putativeSubset)
+                            plot([plotX(a1(inbound));plotX(a2(inbound))],[plotY(a1(inbound));plotY(a2(inbound))],'k')
+                            plot([plotX(a1(outbound));plotX(a2(outbound))],[plotY(a1(outbound));plotY(a2(outbound))],'m')
+                        end
+                end
             end
             
         else
-             view([az,el]);
-%             view([40 20]);
+            view([az,el]);
+            %             view([40 20]);
             if PlotZLog == 1
                 set(gca, 'ZScale', 'log')
             else
@@ -398,16 +434,18 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             end
             plot3(plotX(ii), plotY(ii), plotZ(ii),'xk', 'LineWidth', 2, 'MarkerSize',20)
             
-            switch MonoSynDisp
-                case 'All'
-                    if ~isempty(putativeSubset)
-                        plot3([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],[plotZ(a1);plotZ(a2)],'k')
-                    end
-                case 'Selected'
-                    if ~isempty(putativeSubset)
-                        plot3([plotX(a1(inbound));plotX(a2(inbound))],[plotY(a1(inbound));plotY(a2(inbound))],[plotZ(a1(inbound));plotZ(a2(inbound))],'k')
-                        plot3([plotX(a1(outbound));plotX(a2(outbound))],[plotY(a1(outbound));plotY(a2(outbound))],[plotZ(a1(outbound));plotZ(a2(outbound))],'m')
-                    end
+            if  checkbox_SynMono1.Value == 1
+                switch MonoSynDisp
+                    case 'All'
+                        if ~isempty(putativeSubset)
+                            plot3([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],[plotZ(a1);plotZ(a2)],'k')
+                        end
+                    case 'Selected'
+                        if ~isempty(putativeSubset)
+                            plot3([plotX(a1(inbound));plotX(a2(inbound))],[plotY(a1(inbound));plotY(a2(inbound))],[plotZ(a1(inbound));plotZ(a2(inbound))],'k')
+                            plot3([plotX(a1(outbound));plotX(a2(outbound))],[plotY(a1(outbound));plotY(a2(outbound))],[plotZ(a1(outbound));plotZ(a2(outbound))],'m')
+                        end
+                end
             end
             
             zlabel(plotZ_title, 'Interpreter', 'none')
@@ -490,17 +528,18 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     if ~isempty(clr)
         legendscatter = gscatter(cell_metrics.TroughToPeak(subset) * 1000, cell_metrics.BurstIndex_Royer2012(subset), plotClas(subset), clr,'',25,'off');
     end
+
     %     for jj = classes2plot
     %         scatter(cell_metrics.TroughToPeak(subset) * 1000, cell_metrics.BurstIndex_Royer2012(subset), 45,...
     %             'MarkerFaceColor', clr(jj+1,:), 'MarkerEdgeColor','none','MarkerFaceAlpha',.7,'Parent', subfig_ax(2));
     %     end
-    ylabel('BurstIndex Royer2012'); xlabel('Trough-to-Peak (µs)'), title(['Unit ', num2str(ii),'/' num2str(size(cell_metrics.TroughToPeak,2)), '  Class: ', classNames{clusClas(ii)}])
-    set(gca, 'YScale', 'log')
+    ylabel('BurstIndex Royer2012'); xlabel('Trough-to-Peak (µs)'), title(['Cell ', num2str(ii),'/' num2str(size(cell_metrics.TroughToPeak,2)), '  Class: ', classNames{clusClas(ii)}])
+    set(gca, 'YScale', 'log'); axis tight
     
     % cell to check
     plot(cell_metrics.TroughToPeak(ii) * 1000, cell_metrics.BurstIndex_Royer2012(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'Parent', subfig_ax(2));
     
-    if ~isempty(putativeSubset)
+    if ~isempty(putativeSubset) && checkbox_SynMono2.Value == 1
         switch MonoSynDisp
             case 'All'
                 plot([cell_metrics.TroughToPeak(a1);cell_metrics.TroughToPeak(a2)] * 1000,[cell_metrics.BurstIndex_Royer2012(a1);cell_metrics.BurstIndex_Royer2012(a2)],'k')
@@ -509,9 +548,9 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
                 plot([cell_metrics.TroughToPeak(a1(outbound));cell_metrics.TroughToPeak(a2(outbound))] * 1000,[cell_metrics.BurstIndex_Royer2012(a1(outbound));cell_metrics.BurstIndex_Royer2012(a2(outbound))],'m')
         end
     end
-
-    legend(legendscatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northwest','Box','off','AutoUpdate','off'); %set(hLeg,'visible','on');
-    
+    if ~isempty(subset)
+        legend(legendscatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northwest','Box','off','AutoUpdate','off');
+    end
     % % % % % % % % % % % % % % % % % % % % % %
     % Subfig 3
     % % % % % % % % % % % % % % % % % % % % % %
@@ -522,7 +561,23 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     if ~isempty(clr)
         gscatter(tSNE_plot(subset,1), tSNE_plot(subset,2), plotClas(subset), clr,'',20,'off');
     end
-    plot(tSNE_plot(ii,1), tSNE_plot(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20);
+    plot(tSNE_plot(ii,1), tSNE_plot(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20); axis tight
+    
+    if checkbox_SynMono3.Value == 1
+        plotX1 = tSNE_plot(subset,1)';
+        plotY1 = tSNE_plot(subset,2)';
+        switch MonoSynDisp
+            case 'All'
+                if ~isempty(putativeSubset)
+                    plot([plotX1(a1);plotX1(a2)],[plotY1(a1);plotY1(a2)],'k')
+                end
+            case 'Selected'
+                if ~isempty(putativeSubset)
+                    plot([plotX1(a1(inbound));plotX1(a2(inbound))],[plotY1(a1(inbound));plotY1(a2(inbound))],'k')
+                    plot([plotX1(a1(outbound));plotX1(a2(outbound))],[plotY1(a1(outbound));plotY1(a2(outbound))],'m')
+                end
+        end
+    end
     
     legend('off'), title('t-SNE Cell class visualization')
     
@@ -560,10 +615,10 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     subfig_ax(5) = axes('Parent',subfig_ax5);
     hold on
     if strcmp(ACGPlot,'Single')
-        if strcmp(ACG_type,'Narrow')
+        if strcmp(ACG_type,'Normal')
             bar([-100:100]/2,cell_metrics.ACG2(:,ii),1,'FaceColor',col,'EdgeColor',col)
             xticks([-50:10:50]),xlim([-50,50])
-        elseif strcmp(ACG_type,'Viktor')
+        elseif strcmp(ACG_type,'Narrow')
             bar([-30:30]/2,cell_metrics.ACG2(41+30:end-40-30,ii),1,'FaceColor',col,'EdgeColor',col)
             xticks([-15:5:15]),xlim([-15,15])
         else
@@ -575,7 +630,7 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             a = cell_metrics.ACG_tau_decay(ii); b = cell_metrics.ACG_tau_rise(ii); c = cell_metrics.ACG_c(ii); d = cell_metrics.ACG_d(ii);
             e = cell_metrics.ACG_asymptote(ii); f = cell_metrics.ACG_refrac(ii); g = cell_metrics.ACG_tau_burst(ii); h = cell_metrics.ACG_h(ii);
             x = 1:0.2:50;
-            fiteqn = max(c*exp(-(x-f)/a)-d*exp(-(x-f)/b)+e+h*exp(-(x-f)/g),0)*max(cell_metrics.ACG2(:,ii));
+            fiteqn = max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0);
             plot([-flip(x),x],[flip(fiteqn),fiteqn],'linewidth',2,'color',[0,0,0,0.7])
         end
         
@@ -584,26 +639,26 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
         
         xlabel('Time (ms)'), ylabel('Rate (Hz)'),title(['Autocorrelogram - firing rate: ', num2str(cell_metrics.FiringRate(ii),3),'Hz'])
     elseif strcmp(ACGPlot,'All')
-        if strcmp(ACG_type,'Narrow')
+        if strcmp(ACG_type,'Normal')
             for jj = 1:length(classes2plotSubset)
                 set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
                 plot([-100:100]/2,cell_metrics.ACG2(:,set1), 'color', [clr(jj,:),0.2])
             end
-            plot([-100:100]/2,cell_metrics.ACG2(:,ii), 'color', 'k')
+            plot([-100:100]/2,cell_metrics.ACG2(:,ii), 'color', 'k','linewidth',1.5)
             xticks([-50:10:50]),xlim([-50,50])
-        elseif strcmp(ACG_type,'Viktor')
+        elseif strcmp(ACG_type,'Narrow')
             for jj = 1:length(classes2plotSubset)
                 set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
                 plot([-30:30]/2,cell_metrics.ACG2(41+30:end-40-30,set1), 'color', [clr(jj,:),0.2])
             end
-            plot([-30:30]/2,cell_metrics.ACG2(41+30:end-40-30,ii), 'color', 'k')
+            plot([-30:30]/2,cell_metrics.ACG2(41+30:end-40-30,ii), 'color', 'k','linewidth',1.5)
             xticks([-15:5:15]),xlim([-15,15])
         else
             for jj = 1:length(classes2plotSubset)
                 set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
                 plot([-500:500],cell_metrics.ACG(:,set1), 'color', [clr(jj,:),0.2])
             end
-            plot([-500:500],cell_metrics.ACG(:,ii), 'color', 'k')
+            plot([-500:500],cell_metrics.ACG(:,ii), 'color', 'k','linewidth',1.5)
             xticks([-500:100:500]),xlim([-500,500])
         end
         xlabel('Time (ms)'), ylabel('Rate (Hz)'),title(['Autocorrelogram - firing rate: ', num2str(cell_metrics.FiringRate(ii),3),'Hz'])
@@ -633,7 +688,7 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             plot((SWR.SWR_diff{SpikeGroup}*50)+SWR.ripple_time_axis(1)-50,-[0:size(SWR.SWR_diff{SpikeGroup},2)-1]*0.04,'-k','linewidth',2)
             
             for jj = 1:size(SWR.ripple_average{SpikeGroup},2)
-                text(SWR.ripple_time_axis(end)+5,SWR.ripple_average{SpikeGroup}(1,jj)-(jj-1)*0.04,[num2str(round(SWR.DeepSuperficial_ChDistance(SWR.ripple_channels{SpikeGroup}(jj))))])
+                text(SWR.ripple_time_axis(end)+5,SWR.ripple_average{SpikeGroup}(end,jj)-(jj-1)*0.04,[num2str(round(SWR.DeepSuperficial_ChDistance(SWR.ripple_channels{SpikeGroup}(jj))))])
                 %         text((ripple_power_temp(jj)*50)+SWR.ripple_time_axis(1)-50+12,-(jj-1)*0.04,num2str(SWR.ripple_channels{SpikeGroup}(jj)))
                 if strcmp(SWR.DeepSuperficial_ChClass(SWR.ripple_channels{SpikeGroup}(jj)),'Superficial')
                     plot(SWR.ripple_time_axis,SWR.ripple_average{SpikeGroup}(:,jj)-(jj-1)*0.04,'r','linewidth',1)
@@ -660,51 +715,50 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             title(['SWR SpikeGroup ', num2str(SpikeGroup)]),xlabel('Time (ms)'), ylabel('Ripple (mV)')
             ht1 = text(0.02,0.03,'Superficial','Units','normalized','FontWeight','Bold','Color','r');
             ht2 = text(0.02,0.97,'Deep','Units','normalized','FontWeight','Bold','Color','b');
-            ht3 = text(1.03,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
+            ht3 = text(0.98,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
         end
         
-    elseif any(strcmp(CustomPlotOptions{CustomCellPlot},{'firing_rate_map'}))
-        if isfield(cell_metrics,'firing_rate_map')
-            plot([1:size(cell_metrics.firing_rate_map,1)]*3,cell_metrics.firing_rate_map(:,ii),'color', col,'linewidth',2), title('Firing rate map'), xlabel('Position (cm)'),ylabel('Rate (Hz)'), hold on
+    elseif any(strcmp(CustomPlotOptions{CustomCellPlot},{'Firing rate map'}))
+        if isfield(cell_metrics,'firing_rate_map') && ~isempty(cell_metrics.firing_rate_map{ii})
+            firing_rate_map = cell_metrics.firing_rate_map{ii};
+            plot([1:size(firing_rate_map,1)]*3,firing_rate_map,'color', col,'linewidth',2), xlabel('Position (cm)'),ylabel('Rate (Hz)'), hold on
             hold on
             switch MonoSynDisp
                 case {'All'}
                     if ~isempty(outbound)
-                        plot([1:size(cell_metrics.firing_rate_map,1)]*3,cell_metrics.firing_rate_map(:,a2(outbound)),'color', 'm')
-                        plot([1:size(cell_metrics.firing_rate_map,1)]*3,mean(cell_metrics.firing_rate_map(:,a2(outbound)),2),'color', 'm','linewidth',2)
+                        plot([1:length(firing_rate_map)]*3,horzcat(cell_metrics.firing_rate_map{a2(outbound)}),'color', 'm')
+                        plot([1:length(firing_rate_map)]*3,mean(horzcat(cell_metrics.firing_rate_map{a2(outbound)}),2),'color', 'm','linewidth',2)
                     end
                     if ~isempty(inbound)
-                        plot([1:size(cell_metrics.firing_rate_map,1)]*3,cell_metrics.firing_rate_map(:,a1(inbound)),'color', 'k')
-                        plot([1:size(cell_metrics.firing_rate_map,1)]*3,mean(cell_metrics.firing_rate_map(:,a1(inbound)),2),'color', 'k','linewidth',2)
+                        plot([1:length(firing_rate_map)]*3,horzcat(cell_metrics.firing_rate_map{a1(inbound)}),'color', 'k')
+                        plot([1:length(firing_rate_map)]*3,mean(horzcat( cell_metrics.firing_rate_map{a1(inbound)}),2),'color', 'k','linewidth',2)
                         
                     end
                 case 'Selected'
                     if ~isempty(outbound)
-                        plot([1:size(cell_metrics.firing_rate_map,1)]*3,cell_metrics.firing_rate_map(:,a2(outbound)),'color', 'm')
+                        plot([1:length(firing_rate_map)]*3,horzcat(cell_metrics.firing_rate_map{a2(outbound)}),'color', 'm')
                     end
                     if ~isempty(inbound)
-                        plot([1:size(cell_metrics.firing_rate_map,1)]*3,cell_metrics.firing_rate_map(:,a1(inbound)),'color', 'k')
+                        plot([1:length(firing_rate_map)]*3,horzcat(cell_metrics.firing_rate_map{a1(inbound)}),'color', 'k')
                     end
             end
             axis tight, ax6 = axis; grid on,
             set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
             plot([45, 45;130,130]', [ax6(3) ax6(4)],'--','color','k');
+        else
+            text(0.5,0.5,'No firing rate map for this cell','FontWeight','bold','HorizontalAlignment','center')
         end
+        title('Firing rate map')
         
-        %     elseif strcmp(CustomCellPlot,'firing_rate_map2')
-        %         if length(cell_metrics.firing_rate_map_states)>=ii && ~isempty(cell_metrics.firing_rate_map_states{ii})
-        %             plot(cell_metrics.firing_rate_map_states{ii})
-        %         end
-        %         xlabel('Position'),ylabel('Rate (Hz)'), title('Firing rate map states'),
-        %         axis tight, ax6 = axis; grid on, hold on,
-        %         set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
     elseif strcmp(CustomPlotOptions{CustomCellPlot},'optoPSTH')
-        if isfield(cell_metrics,'optoPSTH')
+        if isfield(cell_metrics,'optoPSTH') && any(~isnan(cell_metrics.optoPSTH(:,ii)))
             plot([-1:0.1:1],cell_metrics.optoPSTH(:,ii),'color', col,'linewidth',2),
+            axis tight, ax6 = axis; grid on, hold on,
+            plot([0, 0], [ax6(3) ax6(4)],'color','k');
+        else
+            text(0.5,0.5,'No PSTH for this cell','FontWeight','bold','HorizontalAlignment','center')
         end
         title('opto PSTH'), xlabel('Time (s)'),ylabel('Rate (Hz)')
-        axis tight, ax6 = axis; grid on, hold on,
-        plot([0, 0], [ax6(3) ax6(4)],'color','k');
         set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
         
     elseif strcmp(CustomPlotOptions{CustomCellPlot},'SWR Correllogram')
@@ -713,7 +767,27 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
         plot([0, 0], [ax6(3) ax6(4)],'color','k');
         set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
     else
-        plot(cell_metrics.(CustomPlotOptions{CustomCellPlot})(:,ii),'color', col,'linewidth',2), title(CustomPlotOptions{CustomCellPlot}, 'Interpreter', 'none'), xlabel(''),ylabel('')
+        plot(cell_metrics.(CustomPlotOptions{CustomCellPlot})(:,ii),'color', col,'linewidth',2), hold on
+        switch MonoSynDisp
+            case {'All'}
+                if ~isempty(outbound)
+                    plot(cell_metrics.(CustomPlotOptions{CustomCellPlot})(:,a2(outbound)),'color', 'm')
+                    plot(mean(cell_metrics.(CustomPlotOptions{CustomCellPlot})(:,a2(outbound)),2),'color', 'm','linewidth',2)
+                end
+                if ~isempty(inbound)
+                    plot(cell_metrics.(CustomPlotOptions{CustomCellPlot})(:,a1(inbound)),'color', 'k')
+                    plot(mean(cell_metrics.(CustomPlotOptions{CustomCellPlot})(:,a1(inbound)),2),'color', 'k','linewidth',2)
+                    
+                end
+            case 'Selected'
+                if ~isempty(outbound)
+                    plot(cell_metrics.(CustomPlotOptions{CustomCellPlot})(:,a2(outbound)),'color', 'm')
+                end
+                if ~isempty(inbound)
+                    plot(cell_metrics.(CustomPlotOptions{CustomCellPlot})(:,a1(inbound)),'color', 'k')
+                end
+        end
+        title(CustomPlotOptions{CustomCellPlot}, 'Interpreter', 'none'), xlabel(''),ylabel('')
         axis tight, ax6 = axis; grid on, hold on,
         plot([0, 0], [ax6(3) ax6(4)],'color','k');
         set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
@@ -747,19 +821,19 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 
     function buttonCellType(selectedClas)
         if any(selectedClas == [1:length(classNames)])
-        hist_idx = size(history_classification,2)+1;
-        history_classification(hist_idx).CellIDs = ii;
-        history_classification(hist_idx).CellTypes = clusClas(ii);
-        history_classification(hist_idx).DeepSuperficial = cell_metrics.DeepSuperficial{ii};
-        history_classification(hist_idx).BrainRegion = cell_metrics.BrainRegion{ii};
-        history_classification(hist_idx).DeepSuperficial_num = cell_metrics.DeepSuperficial_num(ii);
-        
-        clusClas(ii) = selectedClas;
-        %         cell_metrics.PutativeCellType{ii} = classNames{selectedClas};
-        ui_terminal.String = ['Celltype: Unit ', num2str(ii), ' classified as ', classNames{selectedClas}];
-        updateCellCount
-        updatePlotClas
-        advance;
+            hist_idx = size(history_classification,2)+1;
+            history_classification(hist_idx).CellIDs = ii;
+            history_classification(hist_idx).CellTypes = clusClas(ii);
+            history_classification(hist_idx).DeepSuperficial = cell_metrics.DeepSuperficial{ii};
+            history_classification(hist_idx).BrainRegion = cell_metrics.BrainRegion{ii};
+            history_classification(hist_idx).DeepSuperficial_num = cell_metrics.DeepSuperficial_num(ii);
+            
+            clusClas(ii) = selectedClas;
+            %         cell_metrics.PutativeCellType{ii} = classNames{selectedClas};
+            ui_terminal.String = ['Celltype: Cell ', num2str(ii), ' classified as ', classNames{selectedClas}];
+            updateCellCount
+            updatePlotClas
+            advance;
         end
     end
 
@@ -775,7 +849,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         
         clusClas(ii) = listbox_cell_classification.Value;
         %         cell_metrics.PutativeCellType{ii} = classNames{listbox_cell_classification.Value};
-        ui_terminal.String = ['Celltype: Unit ', num2str(ii), ' classified as ', classNames{clusClas(ii)}];
+        ui_terminal.String = ['Celltype: Cell ', num2str(ii), ' classified as ', classNames{clusClas(ii)}];
         updateCellCount
         updatePlotClas
         advance;
@@ -794,7 +868,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         cell_metrics.DeepSuperficial{ii} = deepSuperficialNames{listbox_deepsuperficial.Value};
         cell_metrics.DeepSuperficial_num(ii) = listbox_deepsuperficial.Value;
         
-        ui_terminal.String = ['Deep/Superficial: Unit ', num2str(ii), ' classified as ', cell_metrics.DeepSuperficial{ii}];
+        ui_terminal.String = ['Deep/Superficial: Cell ', num2str(ii), ' classified as ', cell_metrics.DeepSuperficial{ii}];
         if strcmp(plotX_title,'DeepSuperficial_num')
             plotX = cell_metrics.DeepSuperficial_num;
         end
@@ -804,6 +878,8 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         if strcmp(plotZ_title,'DeepSuperficial_num')
             plotZ = cell_metrics.DeepSuperficial_num;
         end
+        updatePlotClas
+        updateCount
         uiresume(fig);
     end
 
@@ -814,7 +890,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         if ~isempty(Label)
             cell_metrics.Labels{ii} = Label{1};
             button_labels.String = ['Label: ', cell_metrics.Labels{ii}];
-            ui_terminal.String = ['Label: Unit ', num2str(ii), ' labeled as ', Label{1}];
+            ui_terminal.String = ['Label: Cell ', num2str(ii), ' labeled as ', Label{1}];
         end
     end
 
@@ -848,7 +924,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
             button_brainregion.String = ['Region: ', SelectedBrainRegion];
             [cell_metrics.BrainRegion_num,ID] = findgroups(cell_metrics.BrainRegion);
             groups_ids.BrainRegion_num = ID;
-            ui_terminal.String = ['Brain region: Unit ', num2str(ii), ' classified as ', SelectedBrainRegion];
+            ui_terminal.String = ['Brain region: Cell ', num2str(ii), ' classified as ', SelectedBrainRegion];
             uiresume(fig);
         end
         if strcmp(plotX_title,'BrainRegion_num')
@@ -937,15 +1013,15 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 % % % % % % % % % % % % % % % % % % % % % %
 
     function buttonACG
-        if strcmp(ACG_type,'Viktor')
+        if popup_ACG.Value == 1
             ACG_type = 'Narrow';
-            button_ACG.String = 'ACG: 100ms';
-            ui_terminal.String = 'Autocorrelogram window adjusted to 100 ms';
-        elseif strcmp(ACG_type,'Wide')
-            ACG_type = 'Viktor';
             button_ACG.String = 'ACG: 30ms';
             ui_terminal.String = 'Autocorrelogram window adjusted to 30 ms';
-        else
+        elseif popup_ACG.Value == 2
+            ACG_type = 'Normal';
+            button_ACG.String = 'ACG: 100ms';
+            ui_terminal.String = 'Autocorrelogram window adjusted to 100 ms';
+        elseif popup_ACG.Value == 3
             ACG_type = 'Wide';
             button_ACG.String = 'ACG: 1s';
             ui_terminal.String = 'Autocorrelogram window adjusted to 1 sec';
@@ -956,15 +1032,15 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 % % % % % % % % % % % % % % % % % % % % % %
 
     function buttonMonoSyn
-        if strcmp(MonoSynDisp,'None')
-            MonoSynDisp = 'Selected';
-            button_SynMono.String = 'MonoSyn: Selected';
-            ui_terminal.String = 'Synaptic connections for selected cell';
-        elseif strcmp(MonoSynDisp,'All')
+        if popup_SynMono.Value == 1
             MonoSynDisp = 'None';
             button_SynMono.String = 'MonoSyn: None';
             ui_terminal.String = 'Hiding Synaptic connections';
-        elseif strcmp(MonoSynDisp,'Selected')
+        elseif popup_SynMono.Value == 2
+            MonoSynDisp = 'Selected';
+            button_SynMono.String = 'MonoSyn: Selected';
+            ui_terminal.String = 'Synaptic connections for selected cell';
+        elseif popup_SynMono.Value == 3
             MonoSynDisp = 'All';
             button_SynMono.String = 'MonoSyn: All';
             ui_terminal.String = 'Synaptic connections for all cells';
@@ -983,56 +1059,58 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 
     function buttonSelectFromPlot
         if ~isempty(subset)
-            ui_terminal.String = ['Select a unit by clicking the top subplots near a point'];
+            ui_terminal.String = ['Select a cell by clicking the top subplots near a point'];
             [u,v] = ginput(1);
             axnum = find(ismember(subfig_ax, gca));
             if axnum == 1
                 [~,idx] = min(hypot(plotX(subset)-u,plotY(subset)-v));
                 ii = subset(idx);
-                ui_terminal.String = ['Unit ', num2str(ii), ' selected from custom metrics'];
+                ui_terminal.String = ['Cell ', num2str(ii), ' selected from custom metrics'];
             elseif axnum == 2
                 [~,idx] = min(hypot(cell_metrics.TroughToPeak(subset)-u/1000,log10(cell_metrics.BurstIndex_Royer2012(subset))-log10(v)));
                 ii = subset(idx);
-                ui_terminal.String = ['Unit ', num2str(ii), ' selected from waveform metrics'];
+                ui_terminal.String = ['Cell ', num2str(ii), ' selected from waveform metrics'];
             elseif axnum == 3
                 [~,idx] = min(hypot(tSNE_plot(subset,1)-u,tSNE_plot(subset,2)-v));
                 ii = subset(idx);
-                ui_terminal.String = ['Unit ', num2str(ii), ' selected from t-SNE visualization'];
+                ui_terminal.String = ['Cell ', num2str(ii), ' selected from t-SNE visualization'];
             elseif axnum == 4 && strcmp(WaveformsPlot,'tSNE')
                 [~,idx] = min(hypot(tSNE_SpikeWaveforms(subset,1)-u,tSNE_SpikeWaveforms(subset,2)-v));
                 ii = subset(idx);
-                ui_terminal.String = ['Unit ', num2str(ii), ' selected from Waveforms t-SNE visualization'];
+                ui_terminal.String = ['Cell ', num2str(ii), ' selected from Waveforms t-SNE visualization'];
             elseif axnum == 4 && strcmp(WaveformsPlot,'All')
-                    x1 = time_waveforms'*ones(1,length(subset));
-                    y1 = cell_metrics.SpikeWaveforms_zscored(:,subset);
-                    [~,In] = min(hypot(x1(subset)-u,y1(subset)-v));
-                    In = unique(floor(In/length(time_waveforms)))+1;
-                    ui_terminal.String = [num2str(length(In)), ' units selected from Waveforms'];
+                x1 = time_waveforms'*ones(1,length(subset));
+                y1 = cell_metrics.SpikeWaveforms_zscored(:,subset);
+                [~,In] = min(hypot(x1(:)-u,y1(:)-v));
+                In = unique(floor(In/length(time_waveforms)))+1;
+                ii = subset(In);
+                ui_terminal.String = ['Cell ', num2str(ii), ' selected from Waveforms'];
             elseif axnum == 5 && strcmp(ACGPlot,'tSNE')
                 [~,idx] = min(hypot(tSNE_ACG2(subset,1)-u,tSNE_ACG2(subset,2)-v));
                 ii = subset(idx);
-                ui_terminal.String = ['Unit ', num2str(ii), ' selected from Autocorrelogram t-SNE visualization'];
-             elseif axnum == 5 && strcmp(ACGPlot,'All')
-                    if strcmp(ACG_type,'Narrow')
-                        x1 = ([-100:100]/2)'*ones(1,length(subset));
-                        y1 = cell_metrics.ACG2(:,subset);
-                    elseif strcmp(ACG_type,'Viktor')
-                        x1 = ([-30:30]/2)'*ones(1,length(subset));
-                        y1 = cell_metrics.ACG2(41+30:end-40-30,subset);
-                    else
-                        x1 = ([-500:500])'*ones(1,length(subset));
-                        y1 = cell_metrics.ACG(:,subset);
-                    end
-                    [~,In] = min(hypot(x1(subset)-u,y1(subset)-v));
-                    In = unique(floor(In/length(time_waveforms)))+1;
-                    ui_terminal.String = [num2str(length(In)), ' units selected from Waveforms'];
+                ui_terminal.String = ['Cell ', num2str(ii), ' selected from Autocorrelogram t-SNE visualization'];
+            elseif axnum == 5 && strcmp(ACGPlot,'All')
+                if strcmp(ACG_type,'Normal')
+                    x1 = ([-100:100]/2)'*ones(1,length(subset));
+                    y1 = cell_metrics.ACG2(:,subset);
+                elseif strcmp(ACG_type,'Narrow')
+                    x1 = ([-30:30]/2)'*ones(1,length(subset));
+                    y1 = cell_metrics.ACG2(41+30:end-40-30,subset);
+                else
+                    x1 = ([-500:500])'*ones(1,length(subset));
+                    y1 = cell_metrics.ACG(:,subset);
+                end
+                [~,In] = min(hypot(x1(:)-u,y1(:)-v));
+                In = unique(floor(In/size(x1,1)))+1;
+                ii = subset(In);
+                ui_terminal.String = ['Cell ', num2str(ii), ' selected from Waveforms'];
             end
             listbox_deepsuperficial.Value = cell_metrics.DeepSuperficial_num(ii);
             button_brainregion.String = ['Region: ', cell_metrics.BrainRegion{ii}];
             button_labels.String = ['Label: ', cell_metrics.Labels{ii}];
             uiresume(fig);
         else
-            ui_terminal.String = ['No units with selected classification'];
+            ui_terminal.String = ['No cells with selected classification'];
         end
     end
 
@@ -1040,7 +1118,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 
     function GroupSelectFromPlot
         if ~isempty(subset)
-            ui_terminal.String = ['Select units by drawing a polygon with your mouse. Complete with a right click, cancel last point with middle click.'];
+            ui_terminal.String = ['Select cells by drawing a polygon with your mouse. Complete with a right click, cancel last point with middle click.'];
             ax = get(fig,'CurrentAxes');
             polygon_coords = [];
             hold(ax, 'on');
@@ -1065,34 +1143,36 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 end
                 
             end
-            plot([polygon_coords(:,1);polygon_coords(1,1)],[polygon_coords(:,2);polygon_coords(1,2)],'.-k');
+            if ~isempty(polygon_coords)
+                plot([polygon_coords(:,1);polygon_coords(1,1)],[polygon_coords(:,2);polygon_coords(1,2)],'.-k');
+            end
             hold(ax, 'off')
             clear h2
             if size(polygon_coords,1)>2
                 axnum = find(ismember(subfig_ax, gca));
                 if axnum == 1
                     In = find(inpolygon(plotX(subset), plotY(subset), polygon_coords(:,1)',polygon_coords(:,2)'));
-                    ui_terminal.String = [num2str(length(In)), ' units selected from custom metrics'];
+                    ui_terminal.String = [num2str(length(In)), ' cells selected from custom metrics'];
                 elseif axnum == 2
                     In = find(inpolygon(cell_metrics.TroughToPeak(subset)*1000, log10(cell_metrics.BurstIndex_Royer2012(subset)), polygon_coords(:,1), log10(polygon_coords(:,2))));
-                    ui_terminal.String = [num2str(length(In)), ' units selected from waveform metrics'];
+                    ui_terminal.String = [num2str(length(In)), ' cells selected from waveform metrics'];
                 elseif axnum == 3
                     In = find(inpolygon(tSNE_plot(subset,1), tSNE_plot(subset,2), polygon_coords(:,1)',polygon_coords(:,2)'));
-                    ui_terminal.String = [num2str(length(In)), ' units selected from t-SNE visualization'];
+                    ui_terminal.String = [num2str(length(In)), ' cells selected from t-SNE visualization'];
                 elseif axnum == 4 && strcmp(WaveformsPlot,'All')
                     x1 = time_waveforms'*ones(1,length(subset));
                     y1 = cell_metrics.SpikeWaveforms_zscored(:,subset);
                     In = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
                     In = unique(floor(In/length(time_waveforms)))+1;
-                    ui_terminal.String = [num2str(length(In)), ' units selected from Waveforms'];
+                    ui_terminal.String = [num2str(length(In)), ' cells selected from Waveforms'];
                 elseif axnum == 4 && strcmp(WaveformsPlot,'tSNE')
                     In = find(inpolygon(tSNE_SpikeWaveforms(subset,1), tSNE_SpikeWaveforms(subset,2), polygon_coords(:,1)',polygon_coords(:,2)'));
-                    ui_terminal.String = [num2str(length(In)), ' units selected from t-SNE waveforms visualization'];
+                    ui_terminal.String = [num2str(length(In)), ' cells selected from t-SNE waveforms visualization'];
                 elseif axnum == 5 && strcmp(ACGPlot,'All')
-                    if strcmp(ACG_type,'Narrow')
+                    if strcmp(ACG_type,'Normal')
                         x1 = ([-100:100]/2)'*ones(1,length(subset));
                         y1 = cell_metrics.ACG2(:,subset);
-                    elseif strcmp(ACG_type,'Viktor')
+                    elseif strcmp(ACG_type,'Narrow')
                         x1 = ([-30:30]/2)'*ones(1,length(subset));
                         y1 = cell_metrics.ACG2(41+30:end-40-30,subset);
                     else
@@ -1101,13 +1181,13 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                     end
                     In = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
                     In = unique(floor(In/size(x1,1)))+1;
-                    ui_terminal.String = [num2str(length(In)), ' units selected from Autocorrelograms'];
+                    ui_terminal.String = [num2str(length(In)), ' cells selected from Autocorrelograms'];
                 elseif axnum == 5 && strcmp(ACGPlot,'tSNE')
                     In = find(inpolygon(tSNE_ACG2(subset,1), tSNE_ACG2(subset,2), polygon_coords(:,1)',polygon_coords(:,2)'));
-                    ui_terminal.String = [num2str(length(In)), ' units selected from t-SNE waveforms visualization'];
+                    ui_terminal.String = [num2str(length(In)), ' cells selected from t-SNE waveforms visualization'];
                 end
                 if length(In)>0 && any(axnum == [1,2,3,4,5])
-                    [selectedClas,tf] = listdlg('PromptString',['Assign cell-type to ' num2str(length(In)) ' units'],'ListString',colored_string,'SelectionMode','single','ListSize',[200,150]);
+                    [selectedClas,tf] = listdlg('PromptString',['Assign cell-type to ' num2str(length(In)) ' cells'],'ListString',colored_string,'SelectionMode','single','ListSize',[200,150]);
                     if ~isempty(selectedClas)
                         hist_idx = size(history_classification,2)+1;
                         history_classification(hist_idx).CellIDs = subset(In);
@@ -1120,20 +1200,20 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                         clusClas(subset(In)) = selectedClas;
                         %                         cell_metrics.PutativeCellType(subset(In)) = repmat({classNames{selectedClas}},length(In),1);
                         updateCellCount
-                        ui_terminal.String = [num2str(length(In)), ' units assigned to ', classNames{selectedClas}, ' from t-SNE visualization'];
+                        ui_terminal.String = [num2str(length(In)), ' cells assigned to ', classNames{selectedClas}, ' from t-SNE visualization'];
                         updatePlotClas
                         uiresume(fig);
                     end
                 else
-                    ui_terminal.String = ['0 units selected'];
+                    ui_terminal.String = ['0 cells selected'];
                     uiresume(fig);
                 end
             else
-                ui_terminal.String = ['0 units selected'];
+                ui_terminal.String = ['0 cells selected'];
                 uiresume(fig);
             end
         else
-            ui_terminal.String = ['No units with selected classification'];
+            ui_terminal.String = ['No cells with selected classification'];
         end
     end
 
@@ -1203,10 +1283,12 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
             checkbox_groups.Visible='On';
             if checkbox_groups.Value == 0
                 plotClas = cell_metrics.(Colorstr{Colorval});
-                if iscell(plotClas)
-                    plotClas = findgroups(plotClas);
-                end
                 plotClasGroups = groups_ids.([Colorstr{Colorval} '_num']);
+                if iscell(plotClas) && ~strcmp(Colorstr{Colorval},'DeepSuperficial')
+                    plotClas = findgroups(plotClas);
+                elseif strcmp(Colorstr{Colorval},'DeepSuperficial')
+                    [~,plotClas] = ismember(plotClas,plotClasGroups);
+                end
                 color_class_count = histc(plotClas,[1:length(plotClasGroups)]);
                 color_class_count = cellstr(num2str(color_class_count'))';
                 listbox_groups.String = strcat(plotClasGroups,' (',color_class_count,')'); %  plotClasGroups;
@@ -1217,13 +1299,16 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 plotClas = clusClas;
                 plotClasGroups = classNames;
                 plotClas2 = cell_metrics.(Colorstr{Colorval});
-                if iscell(plotClas2)
-                    plotClas2 = findgroups(plotClas2);
-                end
                 plotClasGroups2 = groups_ids.([Colorstr{Colorval} '_num']);
+                if iscell(plotClas2) && ~strcmp(Colorstr{Colorval},'DeepSuperficial')
+                    plotClas2 = findgroups(plotClas2);
+                elseif strcmp(Colorstr{Colorval},'DeepSuperficial')
+                    [~,plotClas2] = ismember(plotClas2,plotClasGroups2);
+                end
+ 
                 color_class_count = histc(plotClas2,[1:length(plotClasGroups2)]);
                 color_class_count = cellstr(num2str(color_class_count'))';
-                listbox_groups.String = strcat(plotClasGroups2,' (',color_class_count,')'); %  plotClasGroups;
+                listbox_groups.String = strcat(plotClasGroups2,' (',color_class_count,')');
                 listbox_groups.Value = 1:length(plotClasGroups2);
                 groups2plot = 1:length(plotClasGroups);
                 groups2plot2 = 1:length(plotClasGroups2);
@@ -1315,16 +1400,11 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         end
     end
 
-% % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % %
 
-    function toggleCellPlotAdvance
-        if CustomCellPlot ==size(CustomPlotOptions,1)
-            CustomCellPlot = 1;
-        else
-            CustomCellPlot = CustomCellPlot+1;
-        end
-        plotstring = strcat(CustomPlotOptions,', ');
-        ui_terminal.String = ['Displaying ', CustomPlotOptions{CustomCellPlot}, '. Available options: ', plotstring{:}];
+    function CustomCellPlotFunc
+        CustomCellPlot = popup_customplot.Value;
+        ui_terminal.String = ['Displaying ', CustomPlotOptions{CustomCellPlot}];
         uiresume(fig);
     end
 
@@ -1346,29 +1426,16 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         uiresume(fig);
     end
 
-% % % % % % % % % % % % % % % % % % % % % %
-
-    function toggleCellPlotBack
-        if CustomCellPlot == 1
-            CustomCellPlot = size(CustomPlotOptions,1);
-        else
-            CustomCellPlot = CustomCellPlot-1;
-        end
-        plotstring = strcat(CustomPlotOptions,', ');
-        ui_terminal.String = ['Displaying ', CustomPlotOptions{CustomCellPlot}, '. Available options: ', plotstring{:}];
-        uiresume(fig);
-    end
-
-% % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % %
 
     function toggleWaveformsPlot
-        if strcmp(WaveformsPlot,'Single')
-            WaveformsPlot = 'All';
-            ui_terminal.String = 'Displaying all waveforms';
-        elseif  strcmp(WaveformsPlot,'tSNE')
+        if popup_waveforms.Value == 1
             WaveformsPlot = 'Single';
             ui_terminal.String = 'Displaying single waveform with std';
-        elseif  strcmp(WaveformsPlot,'All')
+        elseif popup_waveforms.Value == 2
+            WaveformsPlot = 'All';
+            ui_terminal.String = 'Displaying all waveforms';
+        elseif popup_waveforms.Value == 3
             WaveformsPlot = 'tSNE';
             ui_terminal.String = 'Displaying t-SNE space with waveforms';
         end
@@ -1378,13 +1445,13 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 % % % % % % % % % % % % % % % % % % % % % %
 
     function toggleACGplot
-        if strcmp(ACGPlot,'tSNE')
+        if popup_ACGs.Value == 1
             ACGPlot = 'Single';
             ui_terminal.String = 'Displaying single ACG';
-        elseif strcmp(ACGPlot,'Single')
-            ACGPlot = 'All';
+        elseif popup_ACGs.Value == 2
+             ACGPlot = 'All';
             ui_terminal.String = 'Displaying all ACGs';
-        elseif strcmp(ACGPlot,'All')
+        elseif popup_ACGs.Value == 3
             ACGPlot = 'tSNE';
             ui_terminal.String = 'Displaying t-SNE space with ACGs';
         end
@@ -1414,7 +1481,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
             if answer > 0 && answer <= size(cell_metrics.TroughToPeak,2)
                 ii = answer;
                 uiresume(fig);
-                ui_terminal.String = ['Unit ' num2str(ii) ' selected.'];
+                ui_terminal.String = ['Cell ' num2str(ii) ' selected.'];
             end
         end
     end
@@ -1447,10 +1514,6 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 toggleACGfit;
             case 'z'
                 undoClassification;
-            case 'period'
-                toggleCellPlotAdvance;
-            case 'comma'
-                toggleCellPlotBack;
             case 'l'
                 buttonLabel;
             case 'w'
@@ -1469,11 +1532,13 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 goToCell;
             case 'p'
                 LoadPreferences;
+            case 'b'
+                buttonBrainRegion;
         end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function LoadPreferences
         answer = questdlg('Settings are stored in CellInspector_Settings.m. Click Yes to load settings.', ...
             'Settings', ...
@@ -1546,8 +1611,11 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 disp('Loading existing SWR profiles from cell_metrics structure')
                 SWR_batch = cell_metrics.General.SWR_batch;
             elseif length(unique(cell_metrics.SpikeSortingID)) == 1
-                SWR_batch = load('DeepSuperficial_ChClass.mat');
-                
+                if exist('DeepSuperficial_ChClass.mat')
+                    SWR_batch = load('DeepSuperficial_ChClass.mat');
+                else
+                    SWR_batch = [];
+                end
             else
                 fprintf(['Loading SWR-LFP profiles (', num2str(length(cell_metrics.General.basepaths)),' sessions) \n'])
                 SWR_batch = [];
@@ -1570,16 +1638,17 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         fieldsMenu = sort(fieldnames(cell_metrics));
         groups_ids = [];
         fieldsMenu(find(contains(fieldsMenu,'firing_rate_map_states')))=[];
+         fieldsMenu(find(contains(fieldsMenu,'firing_rate_map')))=[];
         fieldsMenu(find(contains(fieldsMenu,'SpatialCoherence')))=[];
         
         for i = 1:length(fieldsMenu)
             if strcmp(fieldsMenu{i},'DeepSuperficial')
                 cell_metrics.DeepSuperficial_num = ones(1,length(cell_metrics.DeepSuperficial));
                 for j = 1:length(deepSuperficialNames)
-                    cell_metrics.DeepSuperficial_num(strcmp(cell_metrics.DeepSuperficial,classNames{j}))=j;
+                    cell_metrics.DeepSuperficial_num(strcmp(cell_metrics.DeepSuperficial,deepSuperficialNames{j}))=j;
                 end
                 groups_ids.DeepSuperficial_num = deepSuperficialNames;
-            elseif iscell(cell_metrics.(fieldsMenu{i})) && ~strcmp(fieldsMenu{i},'firing_rate_map_states')
+            elseif iscell(cell_metrics.(fieldsMenu{i})) && ~any(strcmp(fieldsMenu{i},{'firing_rate_map_states','firing_rate_map'}))
                 %                 temp = cellfun(@isempty,cell_metrics.(fieldsMenu{i}));
                 [cell_metrics.([fieldsMenu{i},'_num']),ID] = findgroups(cell_metrics.(fieldsMenu{i}));
                 groups_ids.([fieldsMenu{i},'_num']) = ID;
@@ -1589,6 +1658,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         fieldsMenu = sort(fieldnames(cell_metrics));
         fields_to_keep = [];
         fieldsMenu(find(contains(fieldsMenu,'firing_rate_map_states')))=[];
+        fieldsMenu(find(contains(fieldsMenu,'firing_rate_map')))=[];
         fieldsMenu(find(contains(fieldsMenu,'SpatialCoherence')))=[];
         fieldsMenu(find(contains(fieldsMenu,'PutativeConnections')))=[];
         fieldsMenu(find(contains(fieldsMenu,'placecell_stability')))=[];
@@ -1644,7 +1714,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         listbox_celltypes.Value = 1:length(classNames);
         classes2plot = 1:length(classNames);
         
-        ui_title.String = ['Session: ', cell_metrics.General.basename,' with ', num2str(size(cell_metrics.TroughToPeak,2)), ' units'];
+        ui_title.String = ['Session: ', cell_metrics.General.basename,' with ', num2str(size(cell_metrics.TroughToPeak,2)), ' cells'];
         
         
         if isfield(cell_metrics,'PutativeConnections')
@@ -1678,7 +1748,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         button_labels.String = ['Label: ', cell_metrics.Labels{ii}];
         
         cell_metrics.SpikeWaveforms_zscored = zscore(cell_metrics.SpikeWaveforms);
-        WaveformsPlot = 'Single';
+        WaveformsPlot = WaveformsPlotIn;
         
         CustomPlotOptions = fieldnames(cell_metrics);
         temp =  struct2cell(structfun(@class,cell_metrics,'UniformOutput',false));
@@ -1687,13 +1757,18 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         
         CustomPlotOptions = ['SWR'; 'SWR Correllogram'; CustomPlotOptions( find(strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.SpikeCount,2)))]; % 'tSNE Waveforms';'tSNE AutoCG';
         CustomPlotOptions(find(contains(CustomPlotOptions,{'PutativeConnections','TruePositive','FalsePositive','ACG','ACG2','SpikeWaveform'})))=[];
+        if isfield(cell_metrics,'firing_rate_map')
+            CustomPlotOptions = {CustomPlotOptions{:},'Firing rate map'}';
+        end
         CustomCellPlot = 1;
+        popup_customplot.String = CustomPlotOptions;
+        popup_customplot.Value = 1;
         
         % Custom colorgroups
         ColorMenu = sort(fieldnames(cell_metrics));
         fields2keep = [];
         for i = 1:length(ColorMenu)
-            if iscell(cell_metrics.(ColorMenu{i})) && ~any(strcmp(ColorMenu{i},{'PutativeCellType','firing_rate_map_states'}) )
+            if iscell(cell_metrics.(ColorMenu{i})) && ~any(strcmp(ColorMenu{i},{'PutativeCellType','firing_rate_map_states','firing_rate_map'}) )
                 fields2keep = [fields2keep,i];
             end
         end
@@ -1703,7 +1778,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         popup_groups.Value = 1;
         clasLegend = 0;
         listbox_groups.Visible='Off';
-        ACGPlot = 'Single';
+        ACGPlot = ACGPlotIn;
         checkbox_groups.Value = 0;
     end
 
@@ -1715,22 +1790,24 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         drawnow
         options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
         options.CertificateFilename=('');
-        bz_db = webread([bz_database.rest_api.address,'views/15356/'],options,'page_size','5000','sorted','1');
+        bz_db = webread([bz_database.rest_api.address,'views/15356/'],options,'page_size','5000','sorted','1','cellmetrics',1);
         sessions = loadjson(bz_db.renderedHtml);
         [db_menu_items,index] = sort(cellfun(@(x) x.Name,sessions,'UniformOutput',false));
         db_menu_values = cellfun(@(x) x.Id,sessions,'UniformOutput',false);
         db_menu_values = db_menu_values(index);
-        db_menu_items2 = strcat(db_menu_items, ' (',db_menu_values, ')');
-        ui_terminal.String = ['Datasets loaded from database'];
-        
+        db_menu_items2 = strcat(db_menu_items);
+        ui_terminal.String = ['Please select datasets to load.'];
+        drawnow
         [indx,tf] = listdlg('PromptString',['Select dataset to load'],'ListString',db_menu_items2,'SelectionMode','multiple','ListSize',[300,350]);
         if ~isempty(indx)
             if length(indx)==1
                 try
-                    [session, basename, basepath, clusteringpath] = db_set_path('session',db_menu_items{indx});
+                    [session, basename, basepath, clusteringpath] = db_set_path('session',db_menu_items{indx},'saveMat',false);
                     %                     sessions = db_load_sessions('session',db_menu_items{indx});
                     %                     session = sessions{1};
                     SWR_in = {};
+                    ui_terminal.String = ['Loading single session...'];
+                    drawnow
                     LoadSession
                 catch
                     warning('Failed to load dataset from database');
@@ -1738,17 +1815,30 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 end
             else
                 try
+                    ui_terminal.String = ['Loading batch of sessions...'];
+                    drawnow
                     cell_metrics = LoadCellMetricBatch('sessions',db_menu_items(indx));
                     SWR_in = {};
                 catch
                     warning('Failed to load all dataset from database');
                     ui_terminal.String = [db_menu_items(indx),': Error loading dataset from database'];
                 end
+                ui_terminal.String = ['Initializing session(s)...'];
+                drawnow
                 initializeSession
+                ui_terminal.String = ['Session(s) loaded successfully.'];
+                drawnow
             end
+            %         else
+            %             if ~exist('cell_metrics')
+            %                 exit = 1;
+            %                 return
+            %             end
         end
-        %         end
-        uiresume(fig);
+        
+        if ishandle(fig)
+            uiresume(fig);
+        end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1790,13 +1880,14 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
             cell_metrics.DeepSuperficial_num(history_classification(end).CellIDs) = history_classification(end).DeepSuperficial_num;
             
             if length(history_classification(end).CellIDs) == 1
-                ui_terminal.String = ['Reversed classification for unit ', num2str(history_classification(end).CellIDs)];
+                ui_terminal.String = ['Reversed classification for cell ', num2str(history_classification(end).CellIDs)];
             else
                 ui_terminal.String = ['Reversed classification for ' num2str(length(history_classification(end).CellIDs)), ' cells'];
             end
             history_classification(end) = [];
             updateCellCount
             updatePlotClas
+            updateCount
             
             % Button Deep-Superficial
             listbox_deepsuperficial.Value = cell_metrics.DeepSuperficial_num(ii);
@@ -1819,6 +1910,42 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         cell_class_count = histc(clusClas,[1:length(classNames)]);
         cell_class_count = cellstr(num2str(cell_class_count'))';
         listbox_celltypes.String = strcat(classNames,' (',cell_class_count,')');
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function updateCount
+        if Colorval > 1
+            if checkbox_groups.Value == 0
+                plotClas = cell_metrics.(Colorstr{Colorval});
+                plotClasGroups = groups_ids.([Colorstr{Colorval} '_num']);
+                if iscell(plotClas) && ~strcmp(Colorstr{Colorval},'DeepSuperficial')
+                    plotClas = findgroups(plotClas);
+                elseif strcmp(Colorstr{Colorval},'DeepSuperficial')
+                    [~,plotClas] = ismember(plotClas,plotClasGroups);
+                end
+                color_class_count = histc(plotClas,[1:length(plotClasGroups)]);
+                color_class_count = cellstr(num2str(color_class_count'))';
+                listbox_groups.String = strcat(plotClasGroups,' (',color_class_count,')'); %  plotClasGroups;
+%                 groups2plot = 1:length(plotClasGroups);
+%                 groups2plot2 = 1:length(plotClasGroups);
+            else
+                plotClas = clusClas;
+                plotClasGroups = classNames;
+                plotClas2 = cell_metrics.(Colorstr{Colorval});
+                plotClasGroups2 = groups_ids.([Colorstr{Colorval} '_num']);
+                if iscell(plotClas2) && ~strcmp(Colorstr{Colorval},'DeepSuperficial')
+                    plotClas2 = findgroups(plotClas2);
+                elseif strcmp(Colorstr{Colorval},'DeepSuperficial')
+                    [~,plotClas2] = ismember(plotClas2,plotClasGroups2);
+                end
+                color_class_count = histc(plotClas2,[1:length(plotClasGroups2)]);
+                color_class_count = cellstr(num2str(color_class_count'))';
+                listbox_groups.String = strcat(plotClasGroups2,' (',color_class_count,')');
+%                 groups2plot = 1:length(plotClasGroups);
+%                 groups2plot2 = 1:length(plotClasGroups2);
+            end
+        end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1991,7 +2118,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
 function HelpDialog
-    opts.Interpreter = 'tex';
-    opts.WindowStyle = 'modal';
-    msgbox({'Navigation','<    : Navigate to next cell', '>    : Navigate to previous cell','G    : Go to a specific cell','   ','Cell assigments:','1-6  : Assign Cell-types','D/S  : Assign Deep, Superficial, Cortical(C) and Unknown (U)','L    : Assign Label','Z    : Undo assignment', 'R    : Reclassify cell types','   ','Other shortcuts',',/.    : Navigate forward/back advanced cell plot','A    : Change Autocorrelation view (Single/All/tSNE)','W    : Change SpikeWaveform view (Single/All/tSNE)','T    : Change ACG window size (30ms/100ms/1sec)', 'F    : Display ACG triple-exponential fit','Q    : Display histograms and significance tests', 'M    : Calculate and display significance matrix for all metrics','P    : Open preferences for the Cell-Inspector'},'Cell-Inspector keyboard shortcuts','help',opts);
+opts.Interpreter = 'tex';
+opts.WindowStyle = 'modal';
+msgbox({'Navigation','<    : Navigate to next cell', '>    : Navigate to previous cell','G    : Go to a specific cell','   ','Cell assigments:','1-6  : Assign Cell-types','D/S  : Assign Deep, Superficial, Cortical(C) and Unknown (U)','B    : Assign Brain region','L    : Assign Label','Z    : Undo assignment', 'R    : Reclassify cell types','   ','Other shortcuts', 'F    : Display ACG triple-exponential fit','Q    : Display histograms and significance tests', 'M    : Calculate and display significance matrix for all metrics','P    : Open preferences for the Cell-Inspector',''},'Cell-Inspector keyboard shortcuts','help',opts);
 end

@@ -1,7 +1,7 @@
 function cell_metrics_batch = LoadCellMetricBatch(varargin)
+% Load metrics across sessions
 %   saveAs               - name of .mat file
 
-% Load metrics across sessions
 p = inputParser;
 addParameter(p,'sessionIDs',{},@iscell);
 addParameter(p,'sessions',{},@iscell);
@@ -24,7 +24,7 @@ subfieldssizes = [];
 
 if ~isempty(sessionNames)
     for iii = 1:length(sessionNames)
-        disp(['Loading ', num2str(iii), ' of ', num2str(length(sessionNames)),': ', sessionNames{iii}])
+        disp(['Loading ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}])
         sessions = db_load_sessions('session',sessionNames{iii});
         session = sessions{1};
         basepaths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name);
@@ -36,7 +36,7 @@ if ~isempty(sessionNames)
     end
 elseif ~isempty(sessionIDs)
     for iii = 1:length(sessionIDs)
-        disp(['Loading ', num2str(iii), ' of ', num2str(length(sessionIDs)),': ', sessionIDs{iii}])
+        disp(['Loading ', num2str(iii), '/', num2str(length(sessionIDs)),': ', sessionIDs{iii}])
         sessions = bz_load_sessions('id',sessionIDs{iii});
         session = sessions{1};
         basepaths{iii} = fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name);
@@ -91,12 +91,11 @@ for iii = 1:length(cell_metrics2)
     end
     
     for ii = 1:length(cell_metrics_fieldnames)
-%         if strcmp(cell_metrics_fieldnames{ii},'DeepSuperficial')
-%            1
-%         end
         if ~isfield(cell_metrics,cell_metrics_fieldnames{ii}) && ~strcmp(cell_metrics_fieldnames{ii},'PutativeConnections')
             if strcmp(subfieldstypes{ii},'double')
                 if length(subfieldssizes{ii})==3
+                    
+%                 elseif any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
 
                 elseif length(subfieldssizes{ii})==2 && subfieldssizes{ii}(1) > 0
                     cell_metrics_batch.(cell_metrics_fieldnames{ii})(:,h+1:hh+h) = nan(subfieldssizes{ii}(1:end-1),hh);
@@ -112,7 +111,7 @@ for iii = 1:length(cell_metrics2)
                     cell_metrics_batch.(cell_metrics_fieldnames{ii}) = [cell_metrics_batch.(cell_metrics_fieldnames{ii});cell_metrics.(cell_metrics_fieldnames{ii})+h];
                 end
             elseif strcmp(subfieldstypes{ii},'double')
-                if isempty(cell_metrics.(cell_metrics_fieldnames{ii})) && length(subfieldssizes{ii})==2 && subfieldssizes{ii}(1) > 0
+                if isempty(cell_metrics.(cell_metrics_fieldnames{ii})) && length(subfieldssizes{ii})==2 && subfieldssizes{ii}(1) > 0%% && ~any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
                     cell_metrics_batch.(cell_metrics_fieldnames{ii})(:,h+1:hh+h) = nan(subfieldssizes{ii}(1:end-1),hh);
                 elseif isempty(cell_metrics.(cell_metrics_fieldnames{ii})) && length(subfieldssizes{ii})==1
                     cell_metrics_batch.(cell_metrics_fieldnames{ii})(h+1:hh+h) = nan(1,hh);
@@ -121,8 +120,11 @@ for iii = 1:length(cell_metrics2)
                         for iiii=1:size(cell_metrics.(cell_metrics_fieldnames{ii}),3)
 %                             cell_metrics_batch.(cell_metrics_fieldnames{ii}){h+iiii} = cell_metrics.(cell_metrics_fieldnames{ii})(:,:,iiii);
                         end
-                    elseif subfieldssizes{ii}(1)>1
+                    elseif subfieldssizes{ii}(1)>1 %&& ~any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
                         cell_metrics_batch.(cell_metrics_fieldnames{ii})(:,h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii});
+                        
+                    elseif subfieldssizes{ii}(1)>1 %&& any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
+                        cell_metrics_batch.(cell_metrics_fieldnames{ii}){iii} = cell_metrics.(cell_metrics_fieldnames{ii});
                     else
                         if ~isempty(cell_metrics.(cell_metrics_fieldnames{ii}))
                             cell_metrics_batch.(cell_metrics_fieldnames{ii})(h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii});

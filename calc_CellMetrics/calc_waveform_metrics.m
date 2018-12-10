@@ -1,4 +1,4 @@
-function waveform_metrics = calc_waveform_metrics(SpikeWaveforms)
+function waveform_metrics = calc_waveform_metrics(SpikeWaveforms,sr_in)
 waveform_metrics = [];
 m = 0;
 n = 0;
@@ -23,7 +23,11 @@ subplot(2,2,[1,3]), hold on
 sr = 40000;
 
 for m = 1:size(SpikeWaveforms,1)
-    wave = interp1([1:size(SpikeWaveforms,2)],zscore(SpikeWaveforms(m,:)),[1:0.5:32,32],'spline');
+    if sr_in < sr
+        wave = interp1([1:size(SpikeWaveforms,2)],zscore(SpikeWaveforms(m,:)),[1:0.5:32,32],'spline');
+    else
+        wave = SpikeWaveforms(m,:);
+    end
     wave_diff{m} = diff(wave);
     wave_diff2{m} = diff(wave,2);
     [MIN2,I2] = min(wave(22:42));
@@ -62,8 +66,9 @@ for m = 1:size(SpikeWaveforms,1)
             n = n+1;
             wave_cut(n,:) = wave(3:end-2);
             wave_diff_cut(n,:) = wave_diff{m}(3:end-2);
-            if I2+45-length(wave)>0
-                wave_align(n,:) = wave(I2:I2+45);
+            if I2+45-length(wave)>=0
+                temp = I2+45-length(wave)
+                wave_align(n,:) = wave(I2-temp:I2+45-temp);
             else
                 wave_align(n,:) = wave(I2:I2+45);
             end

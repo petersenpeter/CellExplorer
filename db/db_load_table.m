@@ -1,4 +1,6 @@
 function db_out = db_load_table(table,search_term)
+% By Peter Petersen
+% petersen.peter@gmail.com
 
 switch lower(table)
     % Project info

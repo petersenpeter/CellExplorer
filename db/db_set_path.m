@@ -4,15 +4,12 @@ p = inputParser;
 addParameter(p,'id',[],@isnumeric);
 addParameter(p,'session',[],@isstr);
 addParameter(p,'sessionstruct',[],@isstruct);
-
+addParameter(p,'saveMat',true,@islogical);
 parse(p,varargin{:})
 id = p.Results.id;
 sessionin = p.Results.session;
 sessionstruct = p.Results.sessionstruct;
-
-basename = ''; 
-basepath = ''; 
-clusteringpath = '';
+saveMat = p.Results.saveMat;
 
 if ~isempty(id)
     sessions = db_load_sessions('id',id);
@@ -25,9 +22,17 @@ else
 end
 
 db_database = db_credentials;
+defined_repositories = fieldnames(db_database.repositories);
+if ~contains(defined_repositories,{session.General.Repositories{1}})
+   warning(['The repository has not been defined. Please specify the path for ' session.General.Repositories{1},' in db_credentials.m']);
+   edit db_credentials
+   return
+end
 cd(fullfile(db_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name))
-% session = bz_update_session(session);
-%     save('session.mat','session')
+
+if saveMat
+    save('session.mat','session')
+end
 basename = session.General.Name;
 basepath = fullfile(db_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name);
 
@@ -36,3 +41,6 @@ if ~isempty(session.SpikeSorting.RelativePath)
 else
     clusteringpath = basepath;
 end
+session.General.BaseName = basename;
+session.General.BasePath =  basepath;
+session.General.ClusteringPath = clusteringpath;
