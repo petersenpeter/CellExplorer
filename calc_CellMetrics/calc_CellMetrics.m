@@ -1,7 +1,7 @@
 function cell_metrics = calc_CellMetrics(varargin)
 %   This function calculates cell metrics based on buzsaki lab standards.
 %   Most metrics are single value per cell, either numeric or string, but
-%   certain metrics are vectors like the autocorrelogram.
+%   certain metrics are vectors like the autocorrelograms, waveforms or theta phase responses.
 %   The metrics are based on a number of features: Spikes, Waveforms, PCA features,
 %   the ACGs and CCGs, LFP, theta and ripples
 %
@@ -42,6 +42,7 @@ addParameter(p,'submitToDatabase',false,@islogical);
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 addParameter(p,'plots',true,@islogical);
+
 parse(p,varargin{:})
 
 id = p.Results.id;
@@ -117,7 +118,7 @@ cell_metrics.General.CellCount = length(spikes.total);
 
 
 % Waveform based calculations
-if contains(metrics,{'waveform_metrics','all'}) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
+if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
     if ~exist(fullfile(clusteringpath,[basename,'.waveform_metrics.cellinfo.mat'])) || forceReload == true
         disp('* Calculating waveform classifications: Trough-to-peak latency, Peak toltage');
         [SpikeWaveforms,SpikeWaveforms_std,PeakVoltage_all,ClusterID] = LoadNeurosuiteWaveforms(clusteringpath,basename,sr,TimeRestriction);
@@ -130,14 +131,14 @@ end
 
 
 % PCA features based calculations
-if contains(metrics,{'PCA_features','all'}) && ~any(contains(excludeMetrics,{'PCA_features'}))
+if any(contains(metrics,{'PCA_features','all'})) && ~any(contains(excludeMetrics,{'PCA_features'}))
     disp('* Calculating PCA classifications: Isolation distance, L-Ratio')
     [IsolationDistance_all,LRatio_all,ClusterID2] = LoadNeurosuiteFeatures(clusteringpath,basename,sr,TimeRestriction);
 end
 
 
 % ACG & CCG based classification
-if contains(metrics,{'ACG_metrics','all'}) && ~any(contains(excludeMetrics,{'ACG_metrics'}))
+if any(contains(metrics,{'ACG_metrics','all'})) && ~any(contains(excludeMetrics,{'ACG_metrics'}))
     if ~exist(fullfile(clusteringpath,[basename,'.ACG_metrics.cellinfo.mat'])) || forceReload == true
         disp('* Calculating CCG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets')
         [ACG,ACG2,ThetaModulationIndex,BurstIndex_Royer2012,BurstIndex_Doublets] = calc_ACG_metrics(clusteringpath,sr,TimeRestriction);
@@ -167,7 +168,7 @@ end
 
 
 % Deep-Superficial by ripple polarity reversal
-if contains(metrics,{'DeepSuperficial','all'}) && ~any(contains(excludeMetrics,{'DeepSuperficial'}))
+if any(contains(metrics,{'DeepSuperficial','all'})) && ~any(contains(excludeMetrics,{'DeepSuperficial'}))
     disp('* Deep-Superficial by ripple polarity reversal')
     if ~exist(fullfile(basepath,'DeepSuperficial_ChClass.mat')) || forceReload == true
         classification_DeepSuperficial(session)
@@ -180,7 +181,7 @@ end
 
 
 % Ripple modulation
-if contains(metrics,{'ripple_metrics','all'}) && ~any(contains(excludeMetrics,{'ripple_metrics'}))
+if any(contains(metrics,{'ripple_metrics','all'})) && ~any(contains(excludeMetrics,{'ripple_metrics'}))
     disp('* Calculating ripple metrics')
     load(fullfile(basepath,[basename,'.ripples.events.mat']));
     [RippleModulationIndex,RipplePeakDelay,RippleCorrelogram] = calc_RippleModulationIndex(ripples,clusteringpath,sr,TimeRestriction);
@@ -192,7 +193,7 @@ end
 
 
 % Pytative MonoSynatic connections
-if contains(metrics,{'MonoSynaptic_connections','all'}) && ~any(contains(excludeMetrics,{'MonoSynaptic_connections'}))
+if any(contains(metrics,{'MonoSynaptic_connections','all'})) && ~any(contains(excludeMetrics,{'MonoSynaptic_connections'}))
     disp('* Calculating MonoSynaptic connections')
     if ~exist(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat'])) || forceReload == true
         spikeIDs = [spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)];
@@ -226,7 +227,7 @@ end
 
 
 % Theta related activity
-if contains(metrics,{'theta_metrics','all'}) && ~any(contains(excludeMetrics,{'theta_metrics'}))
+if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetrics,{'theta_metrics'}))
     disp('* Calculating theta metrics');
     if exist(fullfile(basepath,'animal.mat'))
         recording.name = basename;
@@ -277,24 +278,35 @@ if contains(metrics,{'theta_metrics','all'}) && ~any(contains(excludeMetrics,{'t
 end
 
 % Spatial related metrics
-if contains(metrics,{'spatial_metrics','all'}) && ~any(contains(excludeMetrics,{'spatial_metrics'}))
+if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetrics,{'spatial_metrics'}))
     disp('* Calculating spatial metrics');
-    field2remove = {'firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell'};
+    field2remove = {'firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
     if exist(fullfile(basepath,'firing_rate_map.mat'))
         disp('  Loaded firing_rate_map.mat succesfully');
         temp2 = load(fullfile(basepath,'firing_rate_map.mat'));
         if cell_metrics.General.CellCount == size(temp2.firing_rate_map_average.unit,2)
-            cell_metrics.firing_rate_map = num2cell(temp2.firing_rate_map_average.unit,1);
-            cell_metrics.placefield_peak_rate = max(temp2.firing_rate_map_average.unit);
-            cell_metrics.General.timeaxis.firing_rate_map = temp2.firing_rate_map_average.xhist;
-            cell_metrics.General.timeaxis.firing_rate_map_states = temp2.firing_rate_map.xhist;
+            cell_metrics.FiringRateMap = num2cell(temp2.firing_rate_map_average.unit,1);
+            cell_metrics.SpatialPeakRate = max(temp2.firing_rate_map_average.unit);
+            cell_metrics.General.timeaxis.FiringRateMap = temp2.firing_rate_map_average.xhist;
+            cell_metrics.General.timeaxis.FiringRateMapStates = temp2.firing_rate_map.xhist;
             for j = 1:cell_metrics.General.CellCount
                 temp = place_cell_condition(temp2.firing_rate_map_average.unit(:,j));
                 cell_metrics.SpatialCoherence(j) = temp.SpatialCoherence;
-                cell_metrics.place_cell(j) = temp.condition;
-                cell_metrics.placefield_count(j) = temp.placefield_count;
+                cell_metrics.PlaceCell(j) = temp.condition;
+                cell_metrics.PlaceFieldsCount(j) = temp.placefield_count;
+                temp3 = cumsum(sort(temp2.firing_rate_map_average.unit(:,j),'descend'));
+                if ~all(temp3==0)
+                    cell_metrics.SpatialCoverageIndex(j) = find(temp3>0.75*temp3(end),1)/(length(temp3)*0.75); % Spatial coverage index (Royer, NN 2012)
+                    cum_firing1 = cumsum(sort(temp2.firing_rate_map_average.unit(:,j)));
+                    cum_firing1 = cum_firing1/max(cum_firing1);
+                    cell_metrics.SpatialGiniCoeff(j) = 1-2*sum(cum_firing1)./length(cum_firing1); 
+                else
+                    cell_metrics.SpatialCoverageIndex(j) = nan;
+                    cell_metrics.SpatialGiniCoeff(j) = nan;
+                end
+                
 %                 cell_metrics.firing_rate_map_states = [];
 %                 cell_metrics.firing_rate_map_states{j} = permute(temp2.firing_rate_map.unit,[1,3,2]);
             end
@@ -308,11 +320,11 @@ if contains(metrics,{'spatial_metrics','all'}) && ~any(contains(excludeMetrics,{
 end
 
 % Perturbation metrics
-if contains(metrics,{'perturbation_metrics','all'}) && ~any(contains(excludeMetrics,{'perturbation_metrics'}))
+if any(contains(metrics,{'perturbation_metrics','all'})) && ~any(contains(excludeMetrics,{'perturbation_metrics'}))
     if exist(fullfile(basepath,'optogenetics.mat'))
         disp('* Calculating perturbation metrics');
         spikes2 = loadClusteringData(basename,session.SpikeSorting.Format{1},clusteringpath,1);
-        cell_metrics.optoPSTH = [];
+        cell_metrics.OptoPSTH = [];
         temp = load('optogenetics.mat');
         trigger = temp.optogenetics.peak;
         edges = [-1:0.1:1.1];
@@ -321,9 +333,9 @@ if contains(metrics,{'perturbation_metrics','all'}) && ~any(contains(excludeMetr
             for jj = 1:length(trigger)
                 psth = psth + histc(spikes2.times{j}'-trigger(jj),edges);
             end
-            cell_metrics.optoPSTH(:,j) = (psth(1:end-1)/length(trigger))/0.1;
+            cell_metrics.OptoPSTH(:,j) = (psth(1:end-1)/length(trigger))/0.1;
         end
-        figure, plot(edges(1:end-1), cell_metrics.optoPSTH)
+        figure, plot(edges(1:end-1), cell_metrics.OptoPSTH)
     end
 end
 
@@ -360,25 +372,27 @@ for j = 1:cell_metrics.General.CellCount
     cell_metrics.CV2(j) = mean(CV2_temp(CV2_temp<1.9));
     
     % Burstiness_Mizuseki2011
-    % Fraction of spikes with a ISI for following or preceding spikes < 0.006
     bursty = [];
     for jj = 2 : length(spikes.times{j}) - 1
         bursty(jj) =  any(diff(spikes.times{j}(jj-1 : jj + 1)) < 0.006);
     end
-    cell_metrics.BurstIndex_Mizuseki2012(j) = length(find(bursty > 0))/length(bursty);
+    cell_metrics.BurstIndex_Mizuseki2012(j) = length(find(bursty > 0))/length(bursty); % Fraction of spikes with a ISI for following or preceding spikes < 0.006
     
     % Waveform metrics
-    if contains(metrics,{'waveform_metrics','all'}) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
-        cell_metrics.SpikeWaveforms(:,j) = SpikeWaveforms(find(ClusterID2 == spikes.cluID(j)),:);
-        cell_metrics.SpikeWaveforms_std(:,j) = SpikeWaveforms_std(find(ClusterID2 == spikes.cluID(j)),:);
+    if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
+        field2remove = {'derivative_TroughtoPeak'};
+        test = isfield(cell_metrics,field2remove);
+        cell_metrics = rmfield(cell_metrics,field2remove(test));
+        cell_metrics.SpikeWaveforms(:,j) = SpikeWaveforms(find(ClusterID == spikes.cluID(j)),:);
+        cell_metrics.SpikeWaveforms_std(:,j) = SpikeWaveforms_std(find(ClusterID == spikes.cluID(j)),:);
         cell_metrics.PeakVoltage(j) = PeakVoltage_all(find(ClusterID == spikes.cluID(j)));
         cell_metrics.TroughToPeak(j) = waveform_metrics.TroughtoPeak(find(ClusterID == spikes.cluID(j)));
-        cell_metrics.derivative_TroughtoPeak(j) = waveform_metrics.derivative_TroughtoPeak(find(ClusterID == spikes.cluID(j)));
+        cell_metrics.TroughtoPeakDerivative(j) = waveform_metrics.derivative_TroughtoPeak(find(ClusterID == spikes.cluID(j)));
         cell_metrics.AB_ratio(j) = waveform_metrics.AB_ratio(find(ClusterID == spikes.cluID(j)));
     end
     
     % Isolation metrics
-    if contains(metrics,{'PCA_features','all'}) && ~any(contains(excludeMetrics,'PCA_features'))
+    if any(contains(metrics,{'PCA_features','all'})) && ~any(contains(excludeMetrics,'PCA_features'))
         cell_metrics.IsolationDistance(j) = IsolationDistance_all(find(ClusterID2 == spikes.cluID(j)));
         cell_metrics.LRatio(j) = LRatio_all(find(ClusterID2 == spikes.cluID(j)));
     end
@@ -387,7 +401,7 @@ for j = 1:cell_metrics.General.CellCount
     cell_metrics.RefractoryPeriodViolation(j) = 1000*length(find(diff(spikes.times{j})<0.002))/spikes.total(j);
     
     %  Deep-Superficial
-    if contains(metrics,{'DeepSuperficial','all'}) && ~any(contains(excludeMetrics,{'DeepSuperficial'}))
+    if any(contains(metrics,{'DeepSuperficial','all'})) && ~any(contains(excludeMetrics,{'DeepSuperficial'}))
         if exist('DeepSuperficial_ChClass')
             cell_metrics.DeepSuperficial(j) = DeepSuperficial_ChClass(cell_metrics.MaxChannel(j)); % cell_deep_superficial OK
             cell_metrics.DeepSuperficialDistance(j) = DeepSuperficial_ChDistance(cell_metrics.MaxChannel(j)); % cell_deep_superficial_distance
@@ -400,7 +414,7 @@ if ~isfield(cell_metrics,'Labels')
 end
 
 % cell_classification_PutativeCellType
-if contains(metrics,{'Celltype_classification','all'}) && ~any(contains(excludeMetrics,{'Celltype_classification'}))
+if any(contains(metrics,{'Celltype_classification','all'})) && ~any(contains(excludeMetrics,{'Celltype_classification'}))
     disp('* Performing cell-type classification');
     cell_metrics.PutativeCellType = repmat({'Pyramidal Cell'},1,cell_metrics.General.CellCount);
     
@@ -411,12 +425,12 @@ if contains(metrics,{'Celltype_classification','all'}) && ~any(contains(excludeM
     cell_metrics.PutativeCellType(cell_metrics.TroughToPeak>0.425  & ismember(cell_metrics.PutativeCellType, 'Interneuron')) = repmat({'Wide Interneuron'},sum(cell_metrics.TroughToPeak>0.425  & (ismember(cell_metrics.PutativeCellType, 'Interneuron'))),1);
     
     % Pyramidal cell classification
-    cell_metrics.PutativeCellType(cell_metrics.derivative_TroughtoPeak<0.17 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.derivative_TroughtoPeak<0.17 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
-    cell_metrics.PutativeCellType(cell_metrics.derivative_TroughtoPeak>0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.derivative_TroughtoPeak>0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
-    cell_metrics.PutativeCellType(cell_metrics.derivative_TroughtoPeak>=0.17 & cell_metrics.derivative_TroughtoPeak<=0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.derivative_TroughtoPeak>=0.17 & cell_metrics.derivative_TroughtoPeak<=0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
+    cell_metrics.PutativeCellType(cell_metrics.TroughtoPeakDerivative<0.17 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.TroughtoPeakDerivative<0.17 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
+    cell_metrics.PutativeCellType(cell_metrics.TroughtoPeakDerivative>0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.TroughtoPeakDerivative>0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
+    cell_metrics.PutativeCellType(cell_metrics.TroughtoPeakDerivative>=0.17 & cell_metrics.TroughtoPeakDerivative<=0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.TroughtoPeakDerivative>=0.17 & cell_metrics.TroughtoPeakDerivative<=0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
 end
 
-if contains(removeMetrics,{'DeepSuperficial'})
+if any(contains(removeMetrics,{'DeepSuperficial'}))
     disp('* Removing DeepSuperficial metrics')
     field2remove = {'DeepSuperficial','DeepSuperficialDistance'};
     test = isfield(cell_metrics,field2remove);
@@ -444,14 +458,14 @@ end
 
 % Plots
 if plots
-    X = [cell_metrics.FiringRateISI; cell_metrics.ThetaModulationIndex; cell_metrics.BurstIndex_Mizuseki2012;  cell_metrics.TroughToPeak; cell_metrics.derivative_TroughtoPeak; cell_metrics.AB_ratio; cell_metrics.BurstIndex_Royer2012;cell_metrics.ACG_tau_rise;cell_metrics.ACG_tau_decay;cell_metrics.CV2];
-    Y = tsne(zscore(X'));
-    
+    X = [cell_metrics.FiringRateISI; cell_metrics.ThetaModulationIndex; cell_metrics.BurstIndex_Mizuseki2012;  cell_metrics.TroughToPeak; cell_metrics.TroughtoPeakDerivative; cell_metrics.AB_ratio; cell_metrics.BurstIndex_Royer2012;cell_metrics.ACG_tau_rise;cell_metrics.ACG_tau_decay;cell_metrics.CV2]';
+    Y = tsne(X);
+    goodrows = not(any(isnan(X),2));
     if isfield(cell_metrics,'DeepSuperficial')
     figure,
-    gscatter(Y(:,1),Y(:,2),cell_metrics.PutativeCellType'), title('Cell type classification shown in tSNE space'), hold on
-    plot(Y(find(strcmp(cell_metrics.DeepSuperficial,'Superficial')),1),Y(find(strcmp(cell_metrics.DeepSuperficial,'Superficial')),2),'xk')
-    plot(Y(find(strcmp(cell_metrics.DeepSuperficial,'Deep')),1),Y(find(strcmp(cell_metrics.DeepSuperficial,'Deep')),2),'ok')
+    gscatter(Y(:,1),Y(:,2),cell_metrics.PutativeCellType(goodrows)'), title('Cell type classification shown in tSNE space'), hold on
+    plot(Y(find(strcmp(cell_metrics.DeepSuperficial(goodrows),'Superficial')),1),Y(find(strcmp(cell_metrics.DeepSuperficial(goodrows),'Superficial')),2),'xk')
+    plot(Y(find(strcmp(cell_metrics.DeepSuperficial(goodrows),'Deep')),1),Y(find(strcmp(cell_metrics.DeepSuperficial(goodrows),'Deep')),2),'ok')
     xlabel('o = Deep, x = Superficial')
     end
     
@@ -491,14 +505,14 @@ if plots
     end
     
     figure,
-    plot3(cell_metrics.ACG_tau_rise,cell_metrics.ACG_tau_decay,cell_metrics.derivative_TroughtoPeak,'.')
-    xlabel('Tau decay'), ylabel('Tau rise'), zlabel('derivative_TroughtoPeak')
+    plot3(cell_metrics.ACG_tau_rise,cell_metrics.ACG_tau_decay,cell_metrics.TroughtoPeakDerivative,'.')
+    xlabel('Tau decay'), ylabel('Tau rise'), zlabel('Derivative Trough-to-Peak')
     
     if isfield(cell_metrics,'DeepSuperficial')
     figure, hold on
     CellTypeGroups = unique(cell_metrics.PutativeCellType);
     colorgroups = {'k','g','b','r','c','m'};
-    plotX = cell_metrics.derivative_TroughtoPeak;
+    plotX = cell_metrics.TroughtoPeakDerivative;
     plotY = cell_metrics.ACG_tau_decay;
     plotZ = cell_metrics.DeepSuperficialDistance;
     for iii = 1:length(CellTypeGroups)

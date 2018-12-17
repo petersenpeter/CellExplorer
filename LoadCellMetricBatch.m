@@ -84,6 +84,8 @@ for iii = 1:length(cell_metrics2)
     cell_metrics_batch.BatchIDs(h+1:hh+h) = iii*ones(1,hh);
     cell_metrics_batch.General.Batch{iii} = cell_metrics.General;
     cell_metrics_batch.General.Paths{iii} = clustering_paths{iii};
+    cell_metrics_batch.General.basenames{iii} = cell_metrics.General.basename;
+    
     if ~isempty(basepaths{iii})
         cell_metrics_batch.General.basepaths{iii} = basepaths{iii};
     else

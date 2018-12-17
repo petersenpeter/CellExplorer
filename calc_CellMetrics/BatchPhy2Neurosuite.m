@@ -3,7 +3,7 @@
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
 %% % Batch Phy2Neurosuite from DB
-sessionNames = {'PeterP-2013-09-04'};
+sessionNames = {'Peter_MS21_180719_155941_concat'};
 for iii = 1:length(sessionNames)
     disp(['*** Phy2Neurosuite: ', num2str(iii),' of ', num2str(length(sessionNames)),' sessions'])
     [session, basename, basepath, clusteringpath] = db_set_path('session',sessionNames{iii});
@@ -14,7 +14,7 @@ end
 %% Batch Cell metrics from DB
 for iii = 1:length(sessionNames)
     disp(['*** Processing cells metrics: ', num2str(iii),'/', num2str(length(sessionNames)),' sessions: ' sessionNames{iii}])
-    cell_metrics = calc_CellMetrics('session',sessionNames{iii}); % ,'plots',false,'submitToDatabase', true, 'metrics','ACG_metrics','forceReload',true
+    cell_metrics = calc_CellMetrics('session',sessionNames{iii},'submitToDatabase', false,'metrics',{'spatial_metrics'}); % ,'plots',false,'submitToDatabase', true, 'metrics','ACG_metrics','forceReload',true
 %     close all
 end
 
