@@ -88,7 +88,12 @@ warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame')
 
 if exist('db_credentials') == 2
     bz_database = db_credentials;
-    EnableDatabase = 1;
+    if ~strcmp(bz_database.rest_api.username,'user')
+        EnableDatabase = 1;
+    else
+        EnableDatabase = 0;
+        disp('Please provide your database credentials in ''db_credentials.m'' ')
+    end
 else
     EnableDatabase = 0;
 end
@@ -944,27 +949,32 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 
     function AddNewCellYype
         opts.Interpreter = 'tex';
-            NewClass = inputdlg({'Name of new cell-type'},'Add cell type...',[1 40],{''},opts);
-            if ~isempty(NewClass) && ~any(strcmp(NewClass,classNames))
-                colorpick = uisetcolor(rand(1,3),'Select cell color');
-                classNames = [classNames,NewClass];
-                classColors = [classColors;colorpick];
-                colored_string = DefineCellTypeList;
-                listbox_cell_classification.String = colored_string;
-                
-                if Colorval == 1
-                    plotClasGroups = classNames;
-                elseif Colorval > 1 && checkbox_groups.Value == 1
-                    plotClasGroups = classNames;
-                end
-                
-                updateCellCount;
-                listbox_celltypes.Value = [listbox_celltypes.Value,size(listbox_celltypes.String,1)];
-                updatePlotClas;
-                classes2plot = listbox_celltypes.Value;
-                ui_terminal.String = ['New cell type added: ' NewClass{1}];
-                uiresume(fig);
+        NewClass = inputdlg({'Name of new cell-type'},'Add cell type...',[1 40],{''},opts);
+        if ~isempty(NewClass) && ~any(strcmp(NewClass,classNames))
+            colorpick = rand(1,3);
+            try
+                colorpick = uisetcolor(colorpick,'Select cell color');
+            catch
+                warning('Failed to load color palet');
             end
+            classNames = [classNames,NewClass];
+            classColors = [classColors;colorpick];
+            colored_string = DefineCellTypeList;
+            listbox_cell_classification.String = colored_string;
+            
+            if Colorval == 1
+                plotClasGroups = classNames;
+            elseif Colorval > 1 && checkbox_groups.Value == 1
+                plotClasGroups = classNames;
+            end
+            
+            updateCellCount;
+            listbox_celltypes.Value = [listbox_celltypes.Value,size(listbox_celltypes.String,1)];
+            updatePlotClas;
+            classes2plot = listbox_celltypes.Value;
+            ui_terminal.String = ['New cell type added: ' NewClass{1}];
+            uiresume(fig);
+        end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
