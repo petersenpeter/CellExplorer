@@ -1,5 +1,5 @@
 % % % % % % % % % % % % % % % % % % % % % %
-% User preferences for the Cell-inspector
+% Cell-inspector User Preferences  
 % % % % % % % % % % % % % % % % % % % % % %
 
 % Display settings
