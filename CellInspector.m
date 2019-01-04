@@ -1839,7 +1839,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                         uiresume(fig);
                     end
                 end
-            case 'space'
+            case 'n'
                 AdjustGUI;
         end
     end
@@ -2503,5 +2503,5 @@ end
 function HelpDialog
 opts.Interpreter = 'tex';
 opts.WindowStyle = 'modal';
-msgbox({'Navigation','<    : Navigate to next cell', '>    : Navigate to previous cell','.     : Navigate to next cell with same class',',     : Navigate to previous cell with same class','G   : Go to a specific cell','Numpad0    : Navigate to first cell', 'Numpad1-9 : Navigate to next cell with that numeric class','   ','Cell assigments:','1-9 : Assign Cell-types','D   : Assign Deep','S   : Assign Superficial','C   : Assign Cortical','U   : Assign Unknown','B    : Assign Brain region','L    : Assign Label','+    : Add Cell-type','Z    : Undo assignment', 'R    : Reclassify cell types','   ','Other shortcuts', 'K    : Calculate and display significance matrix for all metrics (KS-test)','P    : Open preferences for the Cell-Inspector','M    : Show/Hide menubar','Space    : Change layout [6, 5 or 4 subplots]','','Visit the Cell-inspector''s Github wiki section for further help',''},'Cell-Inspector keyboard shortcuts','help',opts);
+msgbox({'Navigation','<    : Navigate to next cell', '>    : Navigate to previous cell','.     : Navigate to next cell with same class',',     : Navigate to previous cell with same class','G   : Go to a specific cell','Numpad0    : Navigate to first cell', 'Numpad1-9 : Navigate to next cell with that numeric class','   ','Cell assigments:','1-9 : Assign Cell-types','D   : Assign Deep','S   : Assign Superficial','C   : Assign Cortical','U   : Assign Unknown','B    : Assign Brain region','L    : Assign Label','+    : Add Cell-type','Z    : Undo assignment', 'R    : Reclassify cell types','   ','Other shortcuts', 'K    : Calculate and display significance matrix for all metrics (KS-test)','P    : Open preferences for the Cell-Inspector','M    : Show/Hide menubar','N    : Change layout [6, 5 or 4 subplots]','','Visit the Cell-inspector''s Github wiki section for further help',''},'Cell-Inspector keyboard shortcuts','help',opts);
 end
