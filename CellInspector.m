@@ -76,6 +76,15 @@ CellInspector_Preferences
 
 
 % % % % % % % % % % % % % % % % % % % % % %
+% Checking for Matlab version requirements (Matlab R2017a)
+% % % % % % % % % % % % % % % % % % % % % % 
+
+if verLessThan('matlab', '9.2')
+    warning('The Cell-inspector is only fully compatible and tested with Matlab version 9.2 and forward (Matlab R2017a)')
+    return
+end
+
+% % % % % % % % % % % % % % % % % % % % % %
 % Turning off select warnings
 % % % % % % % % % % % % % % % % % % % % % %
 
@@ -2145,12 +2154,12 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                     uiresume(fig);
                 end
             else
+                msgbox('Please provide your database credentials in ''db\_credentials.m'' ',CreateStruct);
                 edit db_credentials
-                helpdlg('Please provide your database credentials in ''db_credentials.m'' ');
                 
             end
         else
-            helpdlg({'Database tools not installed. To install, follow the steps below: ','1. Go to the Cell inspector Github webpage','2. download the database tools', '3. Add the db directory to your Matlab path', '4. Provide your credentials in the db_credentials file and try again.'});
+            msgbox({'Database tools not installed. To install, follow the steps below: ','1. Go to the Cell inspector Github webpage','2. Download the database tools', '3. Add the db directory to your Matlab path', '4. Provide your credentials in db\_credentials.m and try again.'},CreateStruct);
         end
         
     end
