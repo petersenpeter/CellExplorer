@@ -63,7 +63,8 @@ plotXdata = 'FiringRate'; plotYdata = 'PeakVoltage'; plotZdata = 'DeepSuperficia
 Colorstr = []; popup_customplot = []; WaveformsPlotIn = 'Single'; ACGPlotIn = 'Single'; deepSuperficialNames = '';
 ACG_type = 'Normal'; MonoSynDisp = ''; MonoSynDisp = '';  ACGPlot = '';  tSNE_ACG2 = [];  tSNE_SpikeWaveforms = [];
 classColors = [];   plotClasGroups = [];  plotClas2 = []; layoutGUI = 0; displayMenu = 0; 
-CreateStruct.Interpreter = 'tex'; CreateStruct.WindowStyle = 'modal';
+CreateStruct.Interpreter = 'tex'; CreateStruct.WindowStyle = 'modal'; displayInhibitory = false; displayExcitatory = false;
+cells_excitatory = []; cells_inhibitory = []; cells_inhibitory_subset = []; cells_excitatory_subset = []; 
 
 fig = figure('KeyPressFcn', {@keyPress},'Name','Cell inspector','NumberTitle','off','renderer','opengl', 'MenuBar', 'None');
 
@@ -374,7 +375,7 @@ checkbox_groups = uicontrol('Parent',pannel_Custom,'Style','checkbox','Position'
 
 % Table with metrics for selected cell
 ui_table = uitable(fig,'Data',[fieldsMenu,num2cell(table_metrics(1,:)')],'Units','normalized','Position',[0.005 0.028 0.09 0.51],'ColumnWidth',{85, 46},'columnname',{'Metrics',''},'RowName',[]); % [10 10 150 575] {85, 46}
-checkbox_showtable = uicontrol('Style','checkbox','Position',[5 2 50 10],'Units','normalized','String','Show Metrics table','HorizontalAlignment','left','Value',1,'Callback',@(src,evnt)buttonShowMetrics());
+checkbox_showtable = uicontrol('Style','checkbox','Position',[5 2 50 10],'Units','normalized','String','Show Metrics table','HorizontalAlignment','left','Value',1,'Callback',@(src,evnt)buttonShowMetrics(),'KeyPressFcn', {@keyPress});
 if DisplayMetricsTable==0; ui_table.Visible='Off'; checkbox_showtable.Value = 0; end
 
 % Terminal output line
@@ -432,6 +433,14 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
         outbound = find(a1 == ii);
     end
     
+    % Synaptic cell types
+    if displayExcitatory && ~isempty(cells_excitatory)
+        cells_excitatory_subset = intersect(subset,cells_excitatory);
+    end
+    if displayInhibitory && ~isempty(cells_inhibitory)
+        cells_inhibitory_subset = intersect(subset,cells_inhibitory);
+    end
+    
     % Group display definition
     if Colorval == 1
         clr = classColors(intersect(classes2plot,clusClas(subset)),:);
@@ -477,22 +486,32 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
         end
         
         if Plot3axis == 0
+            set(subfig_ax(1),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
             view([0 90]);
             if ~isempty(clr)
                 legendscatter = gscatter(plotX(subset), plotY(subset), plotClas(subset), clr,'',20,'off');
+                set(legendscatter,'HitTest','off')
             end
+            
+            if displayExcitatory && ~isempty(cells_excitatory_subset)
+                plot(plotX(cells_excitatory_subset), plotY(cells_excitatory_subset),'^k', 'HitTest','off')
+            end
+            if displayInhibitory && ~isempty(cells_inhibitory_subset)
+                plot(plotX(cells_inhibitory_subset), plotY(cells_inhibitory_subset),'ok', 'HitTest','off')
+            end
+            
             plot(plotX(ii), plotY(ii),'xk', 'LineWidth', 2, 'MarkerSize',20)
             
             if  checkbox_SynMono1.Value == 1
                 switch MonoSynDisp
                     case 'All'
                         if ~isempty(putativeSubset)
-                            plot([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],'k')
+                            plot([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],'k','HitTest','off')
                         end
                     case 'Selected'
                         if ~isempty(putativeSubset)
-                            plot([plotX(a1(inbound));plotX(a2(inbound))],[plotY(a1(inbound));plotY(a2(inbound))],'k')
-                            plot([plotX(a1(outbound));plotX(a2(outbound))],[plotY(a1(outbound));plotY(a2(outbound))],'m')
+                            plot([plotX(a1(inbound));plotX(a2(inbound))],[plotY(a1(inbound));plotY(a2(inbound))],'k','HitTest','off')
+                            plot([plotX(a1(outbound));plotX(a2(outbound))],[plotY(a1(outbound));plotY(a2(outbound))],'m','HitTest','off')
                         end
                 end
             end
@@ -511,6 +530,14 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
                 set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
                 legendscatter(jj) = scatter3(plotX(set1), plotY(set1), plotZ(set1), 'MarkerFaceColor', clr(jj,:), 'MarkerEdgeColor','none','MarkerFaceAlpha',.7);
             end
+            
+            if displayExcitatory && ~isempty(cells_excitatory_subset)
+                plot3(plotX(cells_excitatory_subset), plotY(cells_excitatory_subset), plotZ(cells_excitatory_subset),'^k', 'HitTest','off')
+            end
+            if displayInhibitory && ~isempty(cells_inhibitory_subset)
+                plot3(plotX(cells_inhibitory_subset), plotY(cells_inhibitory_subset), plotZ(cells_inhibitory_subset),'ok', 'HitTest','off')
+            end
+            
             plot3(plotX(ii), plotY(ii), plotZ(ii),'xk', 'LineWidth', 2, 'MarkerSize',20)
             
             if  checkbox_SynMono1.Value == 1
@@ -582,7 +609,7 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             if length(unique(plotClas(subset)))==2
                 G1 = plotX(subset);
                 G = findgroups(plotClas(subset));
-                if length(subset(G==1))>0 && length(subset(G==2))>0
+                if ~isempty(subset(G==1)) && length(subset(G==2))>0
                     [h,p] = kstest2(plotX(subset(G==1)),plotX(subset(G==2)));
                     text(1.04,0.01,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Rotation',90)
                     [h,p] = kstest2(plotY(subset(G==1)),plotY(subset(G==2)));
@@ -623,25 +650,32 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     if strcmp(subfig_ax2.Visible,'on')
         delete(subfig_ax2.Children)
         subfig_ax(2) = axes('Parent',subfig_ax2);
+        set(subfig_ax(2),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
         
-        hold on,
         if ~isempty(clr)
             legendscatter = gscatter(cell_metrics.TroughToPeak(subset) * 1000, cell_metrics.BurstIndex_Royer2012(subset), plotClas(subset), clr,'',25,'off');
+            set(legendscatter,'HitTest','off')
+        end
+        if displayExcitatory && ~isempty(cells_excitatory_subset)
+            plot(cell_metrics.TroughToPeak(cells_excitatory_subset) * 1000, cell_metrics.BurstIndex_Royer2012(cells_excitatory_subset),'^k', 'HitTest','off')
+        end
+        if displayInhibitory && ~isempty(cells_inhibitory_subset)
+            plot(cell_metrics.TroughToPeak(cells_inhibitory_subset) * 1000, cell_metrics.BurstIndex_Royer2012(cells_inhibitory_subset),'ok', 'HitTest','off')
         end
         
         ylabel('Burst Index (Royer 2012)'); xlabel('Trough-to-Peak (µs)'),
         set(gca, 'YScale', 'log'); axis tight
         
         % cell to check
-        plot(cell_metrics.TroughToPeak(ii) * 1000, cell_metrics.BurstIndex_Royer2012(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'Parent', subfig_ax(2));
+        plot(cell_metrics.TroughToPeak(ii) * 1000, cell_metrics.BurstIndex_Royer2012(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'Parent', subfig_ax(2),'HitTest','off');
         
         if ~isempty(putativeSubset) && checkbox_SynMono2.Value == 1
             switch MonoSynDisp
                 case 'All'
-                    plot([cell_metrics.TroughToPeak(a1);cell_metrics.TroughToPeak(a2)] * 1000,[cell_metrics.BurstIndex_Royer2012(a1);cell_metrics.BurstIndex_Royer2012(a2)],'k')
+                    plot([cell_metrics.TroughToPeak(a1);cell_metrics.TroughToPeak(a2)] * 1000,[cell_metrics.BurstIndex_Royer2012(a1);cell_metrics.BurstIndex_Royer2012(a2)],'k','HitTest','off')
                 case 'Selected'
-                    plot([cell_metrics.TroughToPeak(a1(inbound));cell_metrics.TroughToPeak(a2(inbound))] * 1000,[cell_metrics.BurstIndex_Royer2012(a1(inbound));cell_metrics.BurstIndex_Royer2012(a2(inbound))],'k')
-                    plot([cell_metrics.TroughToPeak(a1(outbound));cell_metrics.TroughToPeak(a2(outbound))] * 1000,[cell_metrics.BurstIndex_Royer2012(a1(outbound));cell_metrics.BurstIndex_Royer2012(a2(outbound))],'m')
+                    plot([cell_metrics.TroughToPeak(a1(inbound));cell_metrics.TroughToPeak(a2(inbound))] * 1000,[cell_metrics.BurstIndex_Royer2012(a1(inbound));cell_metrics.BurstIndex_Royer2012(a2(inbound))],'k','HitTest','off')
+                    plot([cell_metrics.TroughToPeak(a1(outbound));cell_metrics.TroughToPeak(a2(outbound))] * 1000,[cell_metrics.BurstIndex_Royer2012(a1(outbound));cell_metrics.BurstIndex_Royer2012(a2(outbound))],'m','HitTest','off')
             end
         end
         if ~isempty(subset) && layoutGUI == 0
@@ -656,11 +690,20 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     if strcmp(subfig_ax3.Visible,'on')
         delete(subfig_ax3.Children)
         subfig_ax(3) = axes('Parent',subfig_ax3);
+        set(subfig_ax(3),'ButtonDownFcn',@ClicktoSelectFromPlot)
         cla, hold on
         if ~isempty(clr)
             legendscatter = gscatter(tSNE_plot(subset,1), tSNE_plot(subset,2), plotClas(subset), clr,'',20,'off');
+            set(legendscatter,'HitTest','off')
         end
-        plot(tSNE_plot(ii,1), tSNE_plot(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20); axis tight
+        if displayExcitatory && ~isempty(cells_excitatory_subset)
+            plot(tSNE_plot(cells_excitatory_subset,1), tSNE_plot(cells_excitatory_subset,2),'^k', 'HitTest','off')
+        end
+        if displayInhibitory && ~isempty(cells_inhibitory_subset)
+            plot(tSNE_plot(cells_inhibitory_subset,1), tSNE_plot(cells_inhibitory_subset,2),'ok', 'HitTest','off')
+        end
+        
+        plot(tSNE_plot(ii,1), tSNE_plot(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off'); axis tight
         
         if ~isempty(putativeSubset) && checkbox_SynMono3.Value == 1
             plotX1 = tSNE_plot(:,1)';
@@ -668,12 +711,12 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             switch MonoSynDisp
                 case 'All'
                     if ~isempty(putativeSubset)
-                        plot([plotX1(a1);plotX1(a2)],[plotY1(a1);plotY1(a2)],'k')
+                        plot([plotX1(a1);plotX1(a2)],[plotY1(a1);plotY1(a2)],'k','HitTest','off')
                     end
                 case 'Selected'
                     if ~isempty(putativeSubset)
-                        plot([plotX1(a1(inbound));plotX1(a2(inbound))],[plotY1(a1(inbound));plotY1(a2(inbound))],'k')
-                        plot([plotX1(a1(outbound));plotX1(a2(outbound))],[plotY1(a1(outbound));plotY1(a2(outbound))],'m')
+                        plot([plotX1(a1(inbound));plotX1(a2(inbound))],[plotY1(a1(inbound));plotY1(a2(inbound))],'k','HitTest','off')
+                        plot([plotX1(a1(outbound));plotX1(a2(outbound))],[plotY1(a1(outbound));plotY1(a2(outbound))],'m','HitTest','off')
                     end
             end
         end
@@ -690,6 +733,7 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     col = classColors(clusClas(ii),:);
     delete(subfig_ax4.Children)
     subfig_ax(4) = axes('Parent',subfig_ax4);
+    set(subfig_ax(4),'ButtonDownFcn',@ClicktoSelectFromPlot)
     hold on, cla,
     time_waveforms = [1:size(cell_metrics.SpikeWaveforms,1)]/20-0.8;
     if strcmp(WaveformsPlot,'Single')
@@ -699,12 +743,13 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     elseif strcmp(WaveformsPlot,'All')
         for jj = 1:length(classes2plotSubset)
             set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
-            plot(time_waveforms, cell_metrics.SpikeWaveforms_zscored(:,set1), 'color', [clr(jj,:),0.2])
+            plot(time_waveforms, cell_metrics.SpikeWaveforms_zscored(:,set1), 'color', [clr(jj,:),0.2],'HitTest','off')
         end
-        plot(time_waveforms, cell_metrics.SpikeWaveforms_zscored(:,ii), 'color', 'k','linewidth',2), grid on
+        plot(time_waveforms, cell_metrics.SpikeWaveforms_zscored(:,ii), 'color', 'k','linewidth',2,'HitTest','off'), grid on
         xlabel('Time (ms)'),title('Waveform zscored'), axis tight, hLeg = legend('p'); set(hLeg,'visible','off');
     elseif strcmp(WaveformsPlot,'tSNE')
-        gscatter(tSNE_SpikeWaveforms(subset,1), tSNE_SpikeWaveforms(subset,2), plotClas(subset), clr,'',20,'off');
+        legendscatter4 = gscatter(tSNE_SpikeWaveforms(subset,1), tSNE_SpikeWaveforms(subset,2), plotClas(subset), clr,'',20,'off');
+        set(legendscatter4,'HitTest','off')
         title('Waveforms - tSNE visualization'), axis tight, xlabel(''),ylabel(''), hold on
         plot(tSNE_SpikeWaveforms(ii,1), tSNE_SpikeWaveforms(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20);
     end
@@ -716,7 +761,8 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     
     delete(subfig_ax5.Children)
     subfig_ax(5) = axes('Parent',subfig_ax5);
-    hold on
+    set(subfig_ax(5),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
+
     if strcmp(ACGPlot,'Single')
         if strcmp(ACG_type,'Normal')
             bar([-100:100]/2,cell_metrics.ACG2(:,ii),1,'FaceColor',col,'EdgeColor',col)
@@ -745,28 +791,29 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
         if strcmp(ACG_type,'Normal')
             for jj = 1:length(classes2plotSubset)
                 set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
-                plot([-100:100]/2,cell_metrics.ACG2(:,set1), 'color', [clr(jj,:),0.2])
+                plot([-100:100]/2,cell_metrics.ACG2(:,set1), 'color', [clr(jj,:),0.2],'HitTest','off')
             end
-            plot([-100:100]/2,cell_metrics.ACG2(:,ii), 'color', 'k','linewidth',1.5)
+            plot([-100:100]/2,cell_metrics.ACG2(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
             xticks([-50:10:50]),xlim([-50,50])
         elseif strcmp(ACG_type,'Narrow')
             for jj = 1:length(classes2plotSubset)
                 set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
                 plot([-30:30]/2,cell_metrics.ACG2(41+30:end-40-30,set1), 'color', [clr(jj,:),0.2])
             end
-            plot([-30:30]/2,cell_metrics.ACG2(41+30:end-40-30,ii), 'color', 'k','linewidth',1.5)
+            plot([-30:30]/2,cell_metrics.ACG2(41+30:end-40-30,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
             xticks([-15:5:15]),xlim([-15,15])
         else
             for jj = 1:length(classes2plotSubset)
                 set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
-                plot([-500:500],cell_metrics.ACG(:,set1), 'color', [clr(jj,:),0.2])
+                plot([-500:500],cell_metrics.ACG(:,set1), 'color', [clr(jj,:),0.2],'HitTest','off')
             end
-            plot([-500:500],cell_metrics.ACG(:,ii), 'color', 'k','linewidth',1.5)
+            plot([-500:500],cell_metrics.ACG(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
             xticks([-500:100:500]),xlim([-500,500])
         end
         xlabel('Time (ms)'), ylabel('Rate (Hz)'),title(['Autocorrelogram - firing rate: ', num2str(cell_metrics.FiringRate(ii),3),'Hz'])
     elseif strcmp(ACGPlot,'tSNE')
-        gscatter(tSNE_ACG2(subset,1), tSNE_ACG2(subset,2), plotClas(subset), clr,'',20,'off');
+        legendscatter5 = gscatter(tSNE_ACG2(subset,1), tSNE_ACG2(subset,2), plotClas(subset), clr,'',20,'off');
+        set(legendscatter5,'HitTest','off')
         title('Autocorrelogram - tSNE visualization'), axis tight, xlabel(''),ylabel(''), hold on
         plot(tSNE_ACG2(ii,1), tSNE_ACG2(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20);
     end
@@ -825,7 +872,7 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
     elseif any(strcmp(CustomPlotOptions{CustomCellPlot},{'Firing rate map'}))
         if isfield(cell_metrics,'FiringRateMap') && ~isempty(cell_metrics.FiringRateMap{ii})
             FiringRateMap = cell_metrics.FiringRateMap{ii};
-            plot([1:size(FiringRateMap,1)]*3,FiringRateMap,'color', col,'linewidth',2), xlabel('Position (cm)'),ylabel('Rate (Hz)'), hold on
+            plot([1:size(FiringRateMap,1)]*3,FiringRateMap,'.-','color', col,'linewidth',2), xlabel('Position (cm)'),ylabel('Rate (Hz)'), hold on
             hold on
             switch MonoSynDisp
                 case {'All'}
@@ -859,23 +906,64 @@ while ii <= size(cell_metrics.TroughToPeak,2) & exit == 0
             plot([-1:0.1:1],cell_metrics.optoPSTH(:,ii),'color', col,'linewidth',2),
             axis tight, ax6 = axis; grid on, hold on,
             plot([0, 0], [ax6(3) ax6(4)],'color','k');
+            switch MonoSynDisp
+                case {'All'}
+                    if ~isempty(outbound)
+                        plot([-1:0.1:1],cell_metrics.optoPSTH(:,a2(outbound)),'color', 'm')
+                        plot([-1:0.1:1],mean(cell_metrics.optoPSTH(:,a2(outbound)),2),'color', 'm', 'linewidth',2)
+                    end
+                    if ~isempty(inbound)
+                        plot([-1:0.1:1],cell_metrics.optoPSTH(:,a1(inbound)),'color', 'k')
+                        plot([-1:0.1:1],mean(cell_metrics.optoPSTH(:,a1(inbound)),2),'color', 'k', 'linewidth',2)
+                        
+                    end
+                case 'Selected'
+                    if ~isempty(outbound)
+                        plot([-1:0.1:1],cell_metrics.optoPSTH(:,a2(outbound)),'color', 'm')
+                    end
+                    if ~isempty(inbound)
+                        plot([-1:0.1:1],cell_metrics.optoPSTH(:,a1(inbound)),'color', 'k')
+                    end
+            end
         else
             text(0.5,0.5,'No PSTH for this cell','FontWeight','bold','HorizontalAlignment','center')
         end
+        
         title('opto PSTH'), xlabel('Time (s)'),ylabel('Rate (Hz)')
         set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
         
     elseif strcmp(CustomPlotOptions{CustomCellPlot},'SWR Correllogram')
-        plot([-200:200],cell_metrics.RippleCorrelogram(:,ii),'color', col,'linewidth',1), title('Ripple Correlogram'), xlabel('time'),ylabel('Voltage')
+        plot([-200:200],cell_metrics.RippleCorrelogram(:,ii),'color', col,'linewidth',2), title('Ripple Correlogram'), xlabel('time'),ylabel('Voltage')
         axis tight, ax6 = axis; grid on, hold on,
         plot([0, 0], [ax6(3) ax6(4)],'color','k');
         set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
-        
+        if ~isempty(putativeSubset)
+            switch MonoSynDisp
+                case {'All'}
+                    if ~isempty(outbound)
+                        plot([-200:200],cell_metrics.RippleCorrelogram(:,a2(outbound)),'color', 'm')
+                        plot([-200:200],mean(cell_metrics.RippleCorrelogram(:,a2(outbound)),2),'color', 'm', 'linewidth',2)
+                    end
+                    if ~isempty(inbound)
+                        plot([-200:200],cell_metrics.RippleCorrelogram(:,a1(inbound)),'color', 'k')
+                        plot([-200:200],mean(cell_metrics.RippleCorrelogram(:,a1(inbound)),2),'color', 'k', 'linewidth',2)
+                        
+                    end
+                case 'Selected'
+                    if ~isempty(outbound)
+                        plot([-200:200],cell_metrics.RippleCorrelogram(:,a2(outbound)),'color', 'm')
+                    end
+                    if ~isempty(inbound)
+                        plot([-200:200],cell_metrics.RippleCorrelogram(:,a1(inbound)),'color', 'k')
+                    end
+            end
+        end
+            
     elseif strcmp(CustomPlotOptions{CustomCellPlot},'ThetaPhaseResponse')
         if isfield(cell_metrics,'ThetaPhaseResponse') && any(~isnan(cell_metrics.ThetaPhaseResponse(:,ii)))
             plot(cell_metrics.General.timeaxis.ThetaPhaseResponse,cell_metrics.(CustomPlotOptions{CustomCellPlot})(:,ii),'color', col,'linewidth',2), hold on
             axis tight, ax6 = axis; grid on, hold on,
-            %             plot([0, 0], [ax6(3) ax6(4)],'color','k');
+            
             if ~isempty(putativeSubset)
                 switch MonoSynDisp
                     case {'All'}
@@ -999,7 +1087,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 
     function AddNewCellYype
         opts.Interpreter = 'tex';
-        NewClass = inputdlg({'Name of new cell-type'},'Add cell type...',[1 40],{''},opts);
+        NewClass = inputdlg({'Name of new cell-type'},'Add cell type',[1 40],{''},opts);
         if ~isempty(NewClass) && ~any(strcmp(NewClass,classNames))
             colorpick = rand(1,3);
             try
@@ -1132,6 +1220,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         uicontrol('Parent',BrainRegions_dialog,'Style','pushbutton','Position',[300, 10, 290, 30],'String','Cancel','Callback',@(src,evnt)CancelBrainRegions_dialog);
         uicontrol('Parent',BrainRegions_dialog,'Style', 'text', 'String', 'Search term', 'Position', [10, 325, 580, 20],'HorizontalAlignment','left');
         uicontrol('Parent',BrainRegions_dialog,'Style', 'text', 'String', 'Selct brain region below', 'Position', [10, 270, 580, 20],'HorizontalAlignment','left');
+        uicontrol(BrainRegionsTextfield)
         uiwait(BrainRegions_dialog);
         function UpdateBrainRegionsList
             temp = contains(BrainRegions,BrainRegionsTextfield.String,'IgnoreCase',true);
@@ -1282,16 +1371,46 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         uiresume(fig);
     end
 
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function ClicktoSelectFromPlot(h,~)
+        if ~isempty(subset)
+            axnum = find(ismember(subfig_ax, gca));
+            um_axes = get(gca,'CurrentPoint');
+            u = um_axes(1,1);
+            v = um_axes(1,2);
+            SelectFromPlot(u,v);
+        else
+            ui_terminal.String = ['No cells with selected classification'];
+        end
+        
+        % get(h, 'selectiontype')
+        % 'normal' for left moue button
+        % 'alt' for right mouse button
+        % 'extend' for middle mouse button
+        % 'open' on double click
+    end
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function buttonSelectFromPlot
         if ~isempty(subset)
-            ui_terminal.String = ['Select a cell by clicking the top subplots near a point'];
+            ui_terminal.String = ['Select a cell by clicking a scatter point or line'];
             if Plot3axis
                 rotate3d(subfig_ax(1),'off')
             end
             [u,v] = ginput(1);
-            axnum = find(ismember(subfig_ax, gca));
+            SelectFromPlot(u,v);
+        else
+            ui_terminal.String = ['No cells with selected classification'];
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function SelectFromPlot(u,v)
+        axnum = find(ismember(subfig_ax, gca));
             if axnum == 1
                 [~,idx] = min(hypot(plotX(subset)-u,plotY(subset)-v));
                 ii = subset(idx);
@@ -1334,14 +1453,15 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 In = unique(floor(In/size(x1,1)))+1;
                 ii = subset(In);
                 ui_terminal.String = ['Cell ', num2str(ii), ' selected from Waveforms'];
+            elseif axnum == 6 && any(strcmp(MonoSynDisp,{'Selected','All'}))
+                if ~isempty(outbound) || ~isempty(inbound)
+                    
+                end
             end
             listbox_deepsuperficial.Value = cell_metrics.DeepSuperficial_num(ii);
             button_brainregion.String = ['Region: ', cell_metrics.BrainRegion{ii}];
             button_labels.String = ['Label: ', cell_metrics.Labels{ii}];
             uiresume(fig);
-        else
-            ui_terminal.String = ['No cells with selected classification'];
-        end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1711,17 +1831,18 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
     function goToCell
         if isfield(cell_metrics.General,'basenames')
             choice = '';
-            GoTo_dialog = dialog('Position', [300, 300, 300, 350],'Name','Go to cell...'); movegui(GoTo_dialog,'center')
+            GoTo_dialog = dialog('Position', [300, 300, 300, 350],'Name','Go to cell'); movegui(GoTo_dialog,'center')
             BrainRegionsList = uicontrol('Parent',GoTo_dialog,'Style', 'ListBox', 'String', cell_metrics.General.basenames, 'Position', [10, 50, 280, 220],'Value',1,'Callback',@(src,evnt)CloseGoTo_dialog);
             BrainRegionsTextfield = uicontrol('Parent',GoTo_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 300, 280, 25],'Callback',@(src,evnt)UpdateBrainRegionsList,'HorizontalAlignment','left');
             %             uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Go to session','Callback',@(src,evnt)CloseGoTo_dialog);
             uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Cancel','Callback',@(src,evnt)CancelGoTo_dialog);
-            uicontrol('Parent',GoTo_dialog,'Style', 'text', 'String', 'Provide the cell id to go to', 'Position', [10, 325, 280, 20],'HorizontalAlignment','left');
-            uicontrol('Parent',GoTo_dialog,'Style', 'text', 'String', 'Select session to go to', 'Position', [10, 270, 280, 20],'HorizontalAlignment','left');
+            uicontrol('Parent',GoTo_dialog,'Style', 'text', 'String', 'Provide the cell id to go to and press enter', 'Position', [10, 325, 280, 20],'HorizontalAlignment','left');
+            uicontrol('Parent',GoTo_dialog,'Style', 'text', 'String', 'Click the session to go to', 'Position', [10, 270, 280, 20],'HorizontalAlignment','left');
+            uicontrol(BrainRegionsTextfield)
             uiwait(GoTo_dialog);
         else
             opts.Interpreter = 'tex';
-            answer = inputdlg({'Select the cell id to go to'},'Go to cell...',[1 40],{''},opts);
+            answer = inputdlg({'Select the cell id to go to'},'Go to cell',[1 40],{''},opts);
             if ~isempty(answer) && ~isempty(str2num(answer{1}))
                 answer = str2num(answer{1});
                 if answer > 0 && answer <= size(cell_metrics.TroughToPeak,2)
@@ -1817,6 +1938,36 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                 LoadPreferences;
             case 'b'
                 buttonBrainRegion;
+            case 'x'
+                buttonSelectFromPlot;
+            case 'e'
+                displayExcitatory = ~displayExcitatory;
+                ui_terminal.String = ['Toggle highlighting excitatory cells (triangles). Count: ', num2str(length(cells_excitatory))];
+                uiresume(fig);
+            case 'i'
+                displayInhibitory = ~displayInhibitory;
+                ui_terminal.String = ['Toggle highlighting inhibitory cells (circles), Count: ', num2str(length(cells_inhibitory))];
+                uiresume(fig);
+            case 'o'
+                if isfield(cell_metrics,'BatchIDs')
+                    if exist(cell_metrics.General.Paths{cell_metrics.BatchIDs(ii)})==7
+                        cd(cell_metrics.General.Paths{cell_metrics.BatchIDs(ii)});
+                        if ispc
+                            winopen(cell_metrics.General.Paths{cell_metrics.BatchIDs(ii)});
+                        elseif ismac
+                            syscmd = ['open ', cell_metrics.General.Paths{cell_metrics.BatchIDs(ii)}, ' &'];
+                            system(syscmd);
+                        else
+                            filebrowser;
+                        end
+                    end
+                else
+                    if ispc
+                        winopen(pwd);
+                    else
+                        filebrowser;
+                    end
+                end
             case {'hyphen','add'}
                 AddNewCellYype;
             case 'pagedown'
@@ -1847,12 +1998,10 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 % % % % % % % % % % % % % % % % % % % % % %
 
     function LoadPreferences
-        answer = questdlg('Settings are stored in CellInspector_Settings.m. Click Yes to load settings.', ...
-            'Settings', ...
-            'Yes','Cancel','Yes');
+        answer = questdlg('Settings are stored in CellInspector_Settings.m. Click Yes to load settings.', 'Settings', 'Yes','Cancel','Yes');
         switch answer
             case 'Yes'
-                ui_terminal.String = ['Opening settings file...'];
+                ui_terminal.String = ['Opening settings file'];
                 edit CellInspector_Preferences.m
         end
     end
@@ -1860,13 +2009,11 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 % % % % % % % % % % % % % % % % % % % % % %
 
     function reclassify_celltypes
-        answer = questdlg('Are yo sure you want to reclassify all your cells?', ...
-            'Reclassification', ...
-            'Yes','Cancel','Cancel');
+        answer = questdlg('Are yo sure you want to reclassify all your cells?', 'Reclassification', 'Yes','Cancel','Cancel');
         switch answer
             case 'Yes'
-                ui_terminal.String = ['Reclassifying cells...'];
-                disp('Reclassifying cells...')
+                ui_terminal.String = ['Reclassifying cells'];
+                disp('Reclassifying cells')
                 hist_idx = size(history_classification,2)+1;
                 history_classification(hist_idx).CellIDs = 1:size(cell_metrics.TroughToPeak,2);
                 history_classification(hist_idx).CellTypes = clusClas;
@@ -1951,6 +2098,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         fieldsMenu = sort(fieldnames(cell_metrics));
         groups_ids = [];
         fieldsMenu(find(contains(fieldsMenu,'FiringRateMapStates')))=[];
+        fieldsMenu(find(contains(fieldsMenu,'firing_rate_map_states')))=[];
         fieldsMenu(find(contains(fieldsMenu,'FiringRateMap')))=[];
         fieldsMenu(find(contains(fieldsMenu,'SpatialCoherence')))=[];
         
@@ -1999,7 +2147,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
             tSNE_SpikeWaveforms = cell_metrics.General.tSNE_SpikeWaveforms;
             tSNE_plot = cell_metrics.General.tSNE_plot;
         else
-            disp('Calculating tSNE spaces...')
+            disp('Calculating tSNE spaces')
             tSNE_ACG2 = tsne([cell_metrics.ACG2(ceil(size(cell_metrics.ACG2,1)/2):end,:)]');
             tSNE_SpikeWaveforms = tsne(cell_metrics.SpikeWaveforms');
             tSNE_fields = intersect(tSNE_fields,fieldnames(cell_metrics));
@@ -2009,7 +2157,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         end
         
         % Setting initial settings for plots, popups and listboxes
-        disp('Initializing and setting preferences...')
+        disp('Initializing and applying preferences')
         popup_x.String = fieldsMenu;
         popup_y.String = fieldsMenu;
         popup_z.String = fieldsMenu;
@@ -2093,6 +2241,11 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         listbox_groups.Visible='Off';
         ACGPlot = ACGPlotIn;
         checkbox_groups.Value = 0;
+        
+        if isfield(cell_metrics,'SynapticEffect') 
+            cells_excitatory = find(strcmp(cell_metrics.SynapticEffect,'Excitatory'));
+            cells_inhibitory = find(strcmp(cell_metrics.SynapticEffect,'Inhibitory'));
+        end
     end
 
 
@@ -2102,7 +2255,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         if exist('db_credentials') == 2
             bz_database = db_credentials;
             if ~strcmp(bz_database.rest_api.username,'user')
-                ui_terminal.String = ['Loading datasets from database...'];
+                ui_terminal.String = ['Loading datasets from database'];
                 drawnow
                 options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
                 options.CertificateFilename=('');
@@ -2122,7 +2275,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                             %                     sessions = db_load_sessions('session',db_menu_items{indx});
                             %                     session = sessions{1};
                             SWR_in = {};
-                            ui_terminal.String = ['Loading single session...'];
+                            ui_terminal.String = ['Loading single session'];
                             drawnow
                             LoadSession
                             msgbox('Succesfully loaded session',CreateStruct);
@@ -2132,7 +2285,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                         end
                     else
                         try
-                            ui_terminal.String = ['Loading batch of sessions...'];
+                            ui_terminal.String = ['Loading batch of sessions'];
                             drawnow
                             cell_metrics = LoadCellMetricBatch('sessions',db_menu_items(indx));
                             SWR_in = {};
@@ -2140,7 +2293,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
                             warning('Failed to load all dataset from database');
                             ui_terminal.String = [db_menu_items(indx),': Error loading dataset from database'];
                         end
-                        ui_terminal.String = ['Initializing session(s)...'];
+                        ui_terminal.String = ['Initializing session(s)'];
                         drawnow
                         initializeSession
                         ui_terminal.String = ['Session(s) loaded successfully.'];
@@ -2312,7 +2465,7 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
 % % % % % % % % % % % % % % % % % % % % % %
 
     function saveMetrics(cell_metrics,file)
-        ui_terminal.String = ['Saving metrics...'];
+        ui_terminal.String = ['Saving metrics'];
         drawnow
         numeric_fields = fieldnames(cell_metrics);
         cell_metrics = rmfield(cell_metrics,{numeric_fields{find(contains(numeric_fields,'_num'))}});
@@ -2415,6 +2568,13 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
     function rotateFig1
         axes(subfig_ax1.Children);
         rotate3d(subfig_ax(1),'on');
+        h = rotate3d(subfig_ax(1));
+        h.Enable = 'on';
+        
+        setAllowAxesRotate(h,subfig_ax(2),false);
+        set(fig,'ButtonDownFCN','disp(''clicked'')');
+        set(h,'ButtonDownFilter',@myRotateFilter);
+        
         try
             % this works in R2014b, and maybe beyond:
             [hManager.WindowListenerHandles.Enabled] = deal(false);  % HG2
@@ -2423,6 +2583,16 @@ cell_metrics.General.tSNE_plot = tSNE_plot;
         end
         set(fig, 'WindowKeyPressFcn', []);
         set(fig, 'KeyPressFcn', {@keyPress});
+        
+    end
+
+    function [disallowRotation] = myRotateFilter(obj,eventdata)
+        disallowRotation = false;
+        % if a ButtonDownFcn has been defined for the object, then use that
+        if isfield(get(obj),'ButtonDownFcn')
+            disallowRotation = ~isempty(get(obj,'ButtonDownFcn'));
+        end
+        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -2503,5 +2673,5 @@ end
 function HelpDialog
 opts.Interpreter = 'tex';
 opts.WindowStyle = 'modal';
-msgbox({'Navigation','<    : Navigate to next cell', '>    : Navigate to previous cell','.     : Navigate to next cell with same class',',     : Navigate to previous cell with same class','G   : Go to a specific cell','Numpad0    : Navigate to first cell', 'Numpad1-9 : Navigate to next cell with that numeric class','   ','Cell assigments:','1-9 : Assign Cell-types','D   : Assign Deep','S   : Assign Superficial','C   : Assign Cortical','U   : Assign Unknown','B    : Assign Brain region','L    : Assign Label','+    : Add Cell-type','Z    : Undo assignment', 'R    : Reclassify cell types','   ','Other shortcuts', 'K    : Calculate and display significance matrix for all metrics (KS-test)','P    : Open preferences for the Cell-Inspector','M    : Show/Hide menubar','N    : Change layout [6, 5 or 4 subplots]','','Visit the Cell-inspector''s Github wiki section for further help',''},'Cell-Inspector keyboard shortcuts','help',opts);
+msgbox({'Navigation','<    : Navigate to next cell', '>    : Navigate to previous cell','.     : Navigate to next cell with same class',',     : Navigate to previous cell with same class','G   : Go to a specific cell','X    : Select cell from plot','Numpad0     : Navigate to first cell', 'Numpad1-9 : Navigate to next cell with that numeric class','   ','Cell assigments','1-9 : Assign Cell-types','D   : Assign Deep','S   : Assign Superficial','C   : Assign Cortical','U   : Assign Unknown','B    : Assign Brain region','L    : Assign Label','+    : Add Cell-type','Z    : Undo assignment', 'R    : Reclassify cell types','   ','Display shortcuts','M    : Show/Hide menubar','N    : Change layout [6, 5 or 4 subplots]','E     : Highlight excitatory cells (triangles)','I      : Highlight inhibitory cells (circles)','     ','Other shortcuts', 'K    : Calculate and display significance matrix for all metrics (KS-test)','P    : Open preferences for the Cell-Inspector','O    : Open the file directory of the selected cell','','Visit the Cell-inspector''s Github wiki section for further help',''},'Cell-Inspector keyboard shortcuts','help',opts);
 end

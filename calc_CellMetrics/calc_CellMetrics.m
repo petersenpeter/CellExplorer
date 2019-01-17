@@ -88,7 +88,8 @@ session.Extracellular.SrLFP = sessionInfo.rates.lfp; % Sampling rate of lfp file
 save('session.mat','session')
 sr = session.Extracellular.Sr;
 
-spikes = loadClusteringData(basename,session.SpikeSorting.Format{1},clusteringpath,1);
+spikes = loadClusteringData(basename,session.SpikeSorting.Format{1},clusteringpath);
+
 if ~isempty(TimeRestriction)
     if size(TimeRestriction,2) ~= 2
         error('TimeRestriction has to be a Nx2 matrix')
@@ -100,6 +101,7 @@ if ~isempty(TimeRestriction)
             spikes.times{j} =  spikes.times{j}(indeces2keep);
             spikes.ids{j} =  spikes.ids{j}(indeces2keep);
             spikes.amplitudes{j} =  spikes.amplitudes{j}(indeces2keep);
+            spikes.total(j) =  length(indeces2keep);
         end
         indeces2keep = any(spikes.spindices(:,1) >= TimeRestriction(:,1)' & spikes.spindices(:,1) <= TimeRestriction(:,2)', 2);
         spikes.spindices = spikes.spindices(indeces2keep,:);
@@ -107,6 +109,7 @@ if ~isempty(TimeRestriction)
 end
 
 if exist(fullfile(clusteringpath,[saveAs,'.mat']))
+    disp(['Loading existing metrics: ' saveAs])
     load(fullfile(clusteringpath,[saveAs,'.mat']))
 else
     cell_metrics = [];
@@ -206,6 +209,8 @@ if any(contains(metrics,{'MonoSynaptic_connections','all'})) && ~any(contains(ex
     
     if ~isempty(mono_res.sig_con)
         cell_metrics.PutativeConnections = mono_res.sig_con; % Vectors with cell pairs
+        cell_metrics.SynapticEffect = repmat({'Unknown'},1,cell_metrics.General.CellCount);
+        cell_metrics.SynapticEffect(cell_metrics.PutativeConnections(:,1)) = repmat({'Excitatory'},1,size(cell_metrics.PutativeConnections,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
         cell_metrics.SynapticConnectionsOut = zeros(1,cell_metrics.General.CellCount);
         cell_metrics.SynapticConnectionsIn = zeros(1,cell_metrics.General.CellCount);
         [a,b]=hist(cell_metrics.PutativeConnections(:,1),unique(cell_metrics.PutativeConnections(:,1)));
@@ -221,11 +226,6 @@ if any(contains(metrics,{'MonoSynaptic_connections','all'})) && ~any(contains(ex
     cell_metrics.FalsePositive = mono_res.FalsePositive; % Matrix
 end
 
-
-% Synaptic effect
-% cell_metrics.SynapticEffect = {}; % cell_synapticeffect
-
-
 % Theta related activity
 if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetrics,{'theta_metrics'}))
     disp('* Calculating theta metrics');
@@ -235,10 +235,8 @@ if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetric
         recording.ch_theta = session.ChannelTags.Theta.Channels;
         recording.sr = session.Extracellular.Sr;
         recording.sr_lfp = session.Extracellular.SrLFP;
-        [signal_phase,~,signal_freq] = calcInstantaneousTheta(recording);
-        theta.phase = signal_phase;
-        theta.freq = signal_freq;
-        theta.sr_freq = 10;
+        InstantaneousTheta = calcInstantaneousTheta(recording);
+%         theta.sr_freq = 10;
         load(fullfile(basepath,'animal.mat'));
         theta_bins =[-1:0.05:1]*pi;
         cell_metrics.ThetaPhasePeak = nan(1,cell_metrics.General.CellCount);
@@ -247,10 +245,10 @@ if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetric
         cell_metrics.ThetaEntrainment = nan(1,cell_metrics.General.CellCount);
         
         for j = 1:size(spikes.times,2)
-            spikes.ts{j} = spikes.ts{j}(spikes.ts{j}/sr < length(signal_phase)/recording.sr_lfp);
-            spikes.times{j} = spikes.times{j}(spikes.ts{j}/sr < length(signal_phase)/recording.sr_lfp);
+            spikes.ts{j} = spikes.ts{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/recording.sr_lfp);
+            spikes.times{j} = spikes.times{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/recording.sr_lfp);
             spikes.ts_eeg{j} = ceil(spikes.ts{j}/16);
-            spikes.theta_phase{j} = signal_phase(spikes.ts_eeg{j});
+            spikes.theta_phase{j} = InstantaneousTheta.signal_phase(spikes.ts_eeg{j});
             spikes.speed{j} = interp1(animal.time,animal.speed,spikes.times{j});
             if sum(spikes.speed{j} > 10)> 500
                 [counts,centers] = histcounts(spikes.theta_phase{j}(spikes.speed{j} > 10),theta_bins, 'Normalization', 'probability');
@@ -306,9 +304,6 @@ if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetr
                     cell_metrics.SpatialCoverageIndex(j) = nan;
                     cell_metrics.SpatialGiniCoeff(j) = nan;
                 end
-                
-%                 cell_metrics.firing_rate_map_states = [];
-%                 cell_metrics.firing_rate_map_states{j} = permute(temp2.firing_rate_map.unit,[1,3,2]);
             end
             disp('  Spatial metrics succesfully calculated');
         else
@@ -346,13 +341,14 @@ cell_metrics.Species = repmat({session.General.Species},1,cell_metrics.General.C
 cell_metrics.Strain = repmat({session.General.Strain},1,cell_metrics.General.CellCount);
 cell_metrics.GeneticLine = repmat({session.General.GeneticLine},1,cell_metrics.General.CellCount);
 cell_metrics.SessionName = repmat({session.General.Name},1,cell_metrics.General.CellCount);
-
 % cell_metrics.Promoter = {}; % cell_promoter
 
 for j = 1:cell_metrics.General.CellCount
     cell_metrics.SessionID(j) = str2num(session.General.EntryID); % cell_sessionid OK
     cell_metrics.SpikeSortingID(j) = session.SpikeSorting.EntryIDs(1); % cell_spikesortingid OK
-    cell_metrics.CellID(j) =  spikes.cluID(j); % cell_sortingid OK
+    cell_metrics.CellID(j) =  spikes.UID(j); % cell_id OK
+    cell_metrics.UID(j) =  spikes.UID(j); % cell_id OK
+    cell_metrics.CluID(j) =  spikes.cluID(j); % cell_sortingid OK
     cell_metrics.BrainRegion{j} = findBrainRegion(spikes.maxWaveformCh(j),BrainRegions); % cell_brainregion OK
     cell_metrics.SpikeGroup(j) = spikes.shankID(j); % cell_spikegroup OK
     cell_metrics.MaxChannel(j) = spikes.maxWaveformCh(j); % cell_maxchannel OK
@@ -360,7 +356,13 @@ for j = 1:cell_metrics.General.CellCount
     % Spike times based metrics
     cell_metrics.SpikeCount(j) = spikes.total(j); % cell_spikecount OK
     if ~isempty(TimeRestriction)
-        cell_metrics.FiringRate(j) = spikes.total(j)/((spikes.times{j}(end)-spikes.times{j}(1))-sum(diff(TimeRestriction))); % cell_firingrate OK
+        TimeRestriction_start = max(find( TimeRestriction(:,1) < spikes.times{j}(1)));
+        TimeRestriction_end = min(find( TimeRestriction(:,2) > spikes.times{j}(end)));
+        spike_window = sum(diff(TimeRestriction(TimeRestriction_start:TimeRestriction_end,:)'));
+        spike_window = spike_window - (spikes.times{j}(1)) - TimeRestriction(TimeRestriction_start,1);
+        spike_window = spike_window - (TimeRestriction(TimeRestriction_end,2)-spikes.times{j}(end));
+        
+        cell_metrics.FiringRate(j) = spikes.total(j)/spike_window; % cell_firingrate OK
     else
         cell_metrics.FiringRate(j) = spikes.total(j)/((spikes.times{j}(end)-spikes.times{j}(1))); % cell_firingrate OK
     end
@@ -452,7 +454,7 @@ end
 
 % Saving cells
 if saveMat
-    disp('* Saving cells to cell_metrics.mat');
+    disp(['* Saving cells to', saveAs,'.mat']);
     save(fullfile(clusteringpath,[saveAs,'.mat']),'cell_metrics','-v7.3','-nocompression')
 end
 
