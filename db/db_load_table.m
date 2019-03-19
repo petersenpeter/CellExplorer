@@ -88,7 +88,6 @@ if ~isempty(bz_db)
             db_out.(bz_db.(entrylist{j}).meta.Name).General = bz_db.(entrylist{j}).meta;
             db_out.(bz_db.(entrylist{j}).meta.Name).General.Id = bz_db.(entrylist{j}).id;
             db_out.(bz_db.(entrylist{j}).meta.Name).General.EntryKey = entrylist{j};
-            
         else
             label = ['id_', bz_db.(entrylist{j}).id];
             db_out.(label) = bz_db.(entrylist{j}).meta;

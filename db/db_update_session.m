@@ -1,52 +1,97 @@
-function session = db_update_session(session)
-bz_database = db_credentials;
-web_address = [bz_database.rest_api.address, 'entries/' session.General.EntryID];
-cd(fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.General.Name))
+function session = db_update_session(session,varargin)
 
-if session.General.Duration == 0
+p = inputParser;
+addParameter(p,'forceReload',false,@islogical);
+
+parse(p,varargin{:})
+
+forceReload = p.Results.forceReload;
+
+bz_database = db_credentials;
+web_address = [bz_database.rest_api.address, 'entries/' session.general.entryID];
+cd(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.general.name))
+sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
+
+% % % % % % % % % % % % % % % % % % % % 
+% Extracellular
+% % % % % % % % % % % % % % % % % % % % 
+if session.general.duration == 0 | forceReload
+    sr = sessionInfo.rates.wideband;
     Intan_rec_info = read_Intan_RHD2000_file_Peter(pwd);
-    fname = [session.General.Name '.dat'];
+    fname = [session.general.name '.dat'];
     nChannels = size(Intan_rec_info.amplifier_channels,2);
-%     Sr = Intan_rec_info.frequency_parameters.amplifier_sample_rate;
+    sr = Intan_rec_info.frequency_parameters.amplifier_sample_rate;
     temp_ = dir(fname);
 
-    session.Extracellular.nChannels = nChannels;
-    session.Extracellular.FileFormat = 'dat';
-    session.Extracellular.Precision = 'int16';
-    session.Extracellular.nSamples = temp_.bytes/nChannels/2;
-    session.General.Duration = temp_.bytes/Sr/nChannels/2;
+    session.extracellular.nChannels = nChannels;
+    session.extracellular.fileFormat = 'dat';
+    session.extracellular.precision = 'int16';
+    session.extracellular.nSamples = temp_.bytes/nChannels/2;
+    session.general.duration = temp_.bytes/sr/nChannels/2;
     
-    sessionInfo = bz_getSessionInfo(session.General.BasePath,'noPrompts',true);
-    session.Extracellular.nChannels = sessionInfo.nChannels; % Number of channels
-    session.Extracellular.nGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
-    session.Extracellular.Groups = sessionInfo.spikeGroups.groups; % Spike groups
-    session.Extracellular.Sr = sessionInfo.rates.wideband; % Sampling rate of dat file
-    session.Extracellular.SrLFP = sessionInfo.rates.lfp; % Sampling rate of lfp file
+    session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
+    session.extracellular.nGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
+    session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
+    session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
+    session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
     options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
     options.CertificateFilename=('');
-    webwrite(web_address,options,'form_id','143','h1nhs',session.Extracellular.nChannels,'wnvla',session.Extracellular.Sr,'ngvax',session.General.Duration,'s2l9r',session.Extracellular.nSamples,'jr29w',session.Extracellular.Precision);
+    webwrite(web_address,options,'form_id','143','h1nhs',session.extracellular.nChannels,'wnvla',session.extracellular.sr,'ngvax',session.general.duration,'s2l9r',session.extracellular.nSamples,'jr29w',session.extracellular.precision);
 end
 
-if any(session.SubSessions.Duration == 0)
-    Duration = [];
-%     Duration_string = '{ "form_id" : 143, "r0g5h": { '
-    for i = 1:size(session.SubSessions.Name,2)
-        % fname = [session.SubSessions.Name{1} '.dat'];
+% % % % % % % % % % % % % % % % % % % % 
+% Subsessions
+% % % % % % % % % % % % % % % % % % % % 
+if any(session.subSessions.duration == 0) | forceReload
+    duration = [];
+    for i = 1:size(session.subSessions.name,2)
         fname = 'amplifier.dat';
-        if exist(fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.SubSessions.Name{i}, fname))
-            temp_ = dir(fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.SubSessions.Name{i}, fname));
-        elseif exist(fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.SubSessions.Name{i}, [session.SubSessions.Name{i},'.dat']))
-            temp_ = dir(fullfile(bz_database.repositories.(session.General.Repositories{1}), session.General.Animal, session.SubSessions.Name{i}, [session.SubSessions.Name{i},'.dat']));
+        if exist(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.subSessions.name{i}, fname))
+            temp_ = dir(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.subSessions.name{i}, fname));
+        elseif exist(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.subSessions.name{i}, [session.subSessions.name{i},'.dat']))
+            temp_ = dir(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.subSessions.name{i}, [session.subSessions.name{i},'.dat']));
         end
-        Duration(i) = temp_.bytes/session.Extracellular.Sr/session.Extracellular.nChannels/2;
-%         Duration_string = [Duration_string, ' "', num2str(session.SubSessions.SubSessionIds(i)), '" : { "2309" : 10 },' ];
-        web_address1 = [bz_database.rest_api.address,'entries/', num2str(session.SubSessions.EntryIDs(i))];
+        duration(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
+        web_address1 = [bz_database.rest_api.address,'entries/', num2str(session.subSessions.entryIDs(i))];
         options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
-        webwrite(web_address1,options,'5ssi4',Duration(i));
+        webwrite(web_address1,options,'5ssi4',duration(i));
     end
-%     Duration_string = [Duration_string(1:end-1), '}}']
     
-    session.SubSessions.Duration = Duration;
-%     options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
-    %webwrite(web_address,options,Duration_string);
+    session.subSessions.duration = duration;
 end
+
+% % % % % % % % % % % % % % % % % % % % 
+% SpikeGroups
+% % % % % % % % % % % % % % % % % % % %  
+jsonStructure = [];
+jsonStructure.form_id = 143; % Form id of sessions
+jsonStructure.ca5yu.form = 191; % Form id of spikeGroups repeatable section
+jsonStructure.fiElD_2463 = length(sessionInfo.spikeGroups.groups); % nSpikeGroups
+
+for i = 1:length(sessionInfo.spikeGroups.groups)
+    shank_label = ['shank' num2str(i)];
+    channels = sprintf('%.0f,' , sessionInfo.spikeGroups.groups{i}); channels = channels(1:end-1);
+    jsonStructure.ca5yu.(shank_label).fiElD_2460 = i; % Group
+    jsonStructure.ca5yu.(shank_label).fiElD_2461 = channels; % Channels
+    jsonStructure.ca5yu.(shank_label).fiElD_2562 = ''; % Label
+    jsonStructure.ca5yu.(shank_label).fiElD_2462 = '1'; % Counter
+end
+jsonStructure = jsonencode(jsonStructure);
+jsonStructure = strrep(jsonStructure,'fiElD_','');
+options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+% options.CertificateFilename=('');
+webwrite(web_address,jsonStructure,options);
+
+
+% SpikeGroups with form-type submission
+% for i = 1:length(sessionInfo.spikeGroups.groups)
+%     i
+%     if i <= length(session.extracellular.spikeGroups.entryIDs)
+%         options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
+%         web_address1 = [bz_database.rest_api.address,'entries/', num2str(session.extracellular.spikeGroups.entryIDs(i))];
+%         Channels = sprintf('%.0f,' , sessionInfo.spikeGroups.groups{i}); channels = channels(1:end-1);
+%         webwrite(web_address1,options,'i08ch',num2str(i),'ji7jw',channels,'wv8l3','1');
+%     else
+%         warning(['SpikeGroup ' num2str(i), ' has not been updated.'])
+%     end
+% end
