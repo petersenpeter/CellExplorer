@@ -1,27 +1,34 @@
 function cell_metrics = calc_CellMetrics(varargin)
-%   This function calculates cell metrics based on buzsaki lab standards.
-%   Most metrics are single value per cell, either numeric or string, but
-%   certain metrics are vectors like the autocorrelograms, waveforms or theta phase responses.
+%   This function calculates cell metrics for a given recording/session
+%   Most metrics are single value per cell, either numeric or string type, but
+%   certain metrics are vectors like the autocorrelograms or cell with double content like waveforms.
 %   The metrics are based on a number of features: Spikes, Waveforms, PCA features,
-%   the ACGs and CCGs, LFP, theta and ripples
+%   the ACG and CCGs, LFP, theta, ripples and so fourth
+%
+%   Check the wiki of the Cell Explorer for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
 %
 %   INPUTS
-%   id                   - takes a database id as input
-%   session              - takes a database session as input
-%   basepath             - path to recording (where .dat/.clu/etc files are)
-%   clusteringpath       - path to cluster data if different from basepath
-%   metrics              - [default = 'all'] which metrics should be calculated. A cell with strings
-%   Examples:             'waveform_metrics','PCA_features','ACG_metrics', 'DeepSuperficial',
-%                         'ripple_metrics','MonoSynaptic_connections','Celltype_classification','spatial_metrics'
-%                         'perturbation_metrics','theta_metrics'
-%   excludeMetrics       - [default = 'none'] any metrics to exclude
-%   removeMetrics        - [default = 'none'] any metrics to remove
-%   TimeRestriction      - [default = 'none'] any time intervals to exclude
-%   forceReload          - logical [default = false] Recalculate existing metrics
-%   submitToDatabase     - logical [default = false] Submit cell metrics to database
-%   saveMat              - save metrics to cell_metrics.mat
-%   saveAs               - name of .mat file
-%   plots                - logical [default = true] Plot metrics
+%   id                     - takes a database id as input
+%   session                - takes a database sessionName as input
+%   basepath               - path to session (base directory)
+%   clusteringpath         - path to cluster data if different from basepath
+%   metrics                - which metrics should be calculated. A cell with strings
+%   Examples:                'waveform_metrics','PCA_features','acg_metrics','deepSuperficial',
+%                            'ripple_metrics','monoSynaptic_connections','spatial_metrics'
+%                            'perturbation_metrics','theta_metrics','psth_metrics'
+%   excludeMetrics         - Any metrics to exclude
+%   removeMetrics          - Any metrics to remove (supports only deepSuperficial at this point)
+%   keepCellClassification - Keep existing cell type classifications
+%   timeRestriction        - Any time intervals to exclude
+%   useNeurosuiteWaveforms - Use Neurosuite files to get waveforms and PCAs
+%   forceReload            - logical. Recalculate existing metrics
+%   submitToDatabase       - logical. Submit cell metrics to database
+%   saveMat                - save metrics to cell_metrics.mat
+%   saveAs                 - name of .mat file
+%   plots                  - logical. Plot summary figures
+%
+%   OUTPUT
+%   Cell_metrics matlab structure
 
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -35,10 +42,12 @@ addParameter(p,'clusteringpath',pwd,@isstr);
 addParameter(p,'metrics','all',@iscellstr);
 addParameter(p,'excludeMetrics','none',@iscellstr);
 addParameter(p,'removeMetrics','none',@isstr);
-addParameter(p,'TimeRestriction',[],@isnumeric);
+addParameter(p,'timeRestriction',[],@isnumeric);
+addParameter(p,'useNeurosuiteWaveforms',true,@islogical);
+addParameter(p,'keepCellClassification',true,@islogical);
 
 addParameter(p,'forceReload',false,@islogical);
-addParameter(p,'submitToDatabase',false,@islogical);
+addParameter(p,'submitToDatabase',true,@islogical);
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 addParameter(p,'plots',true,@islogical);
@@ -53,7 +62,9 @@ clusteringpath = p.Results.clusteringpath;
 metrics = p.Results.metrics;
 excludeMetrics = p.Results.excludeMetrics;
 removeMetrics = p.Results.removeMetrics;
-TimeRestriction = p.Results.TimeRestriction;
+timeRestriction = p.Results.timeRestriction;
+useNeurosuiteWaveforms = p.Results.useNeurosuiteWaveforms;
+keepCellClassification = p.Results.keepCellClassification;
 
 forceReload = p.Results.forceReload;
 submitToDatabase = p.Results.submitToDatabase;
@@ -61,427 +72,608 @@ saveMat = p.Results.saveMat;
 saveAs = p.Results.saveAs;
 plots = p.Results.plots;
 
+timerCalcMetrics = tic;
+
 if ~isempty(id) || ~isempty(sessionin) || ~isempty(sessionStruct)
     bz_database = db_credentials;
     if ~isempty(id)
         [session, basename, basepath, clusteringpath] = db_set_path('id',id);
     elseif ~isempty(sessionStruct)
         [session, basename, basepath, clusteringpath] = db_set_path('session',sessionStruct);
-        session.General.EntryID = ''; % DB id
-        session.SpikeSorting.EntryIDs{1} = ''; % DB id
+        session.general.entryID = ''; % DB id
+        session.spikeSorting.entryIDs{1} = ''; % DB id
     else
         [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin);
     end
-    
-    
-    BrainRegions = (fieldnames(session.BrainRegions));
-    findBrainRegion = @(Channel,BrainRegions) BrainRegions{find([(struct2array(structfun(@(x) any(Channel==x.Channels)==1, session.BrainRegions,'UniformOutput',false)))])};
 end
 
 % Loading parameters from sessionInfo (Buzcode)
-sessionInfo = bz_getSessionInfo(session.General.BasePath,'noPrompts',true);
-session.Extracellular.nChannels = sessionInfo.nChannels; % Number of channels
-session.Extracellular.nGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
-session.Extracellular.Groups = sessionInfo.spikeGroups.groups; % Spike groups
-session.Extracellular.Sr = sessionInfo.rates.wideband; % Sampling rate of dat file
-session.Extracellular.SrLFP = sessionInfo.rates.lfp; % Sampling rate of lfp file
-save('session.mat','session')
-sr = session.Extracellular.Sr;
+sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
+session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
+session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
+session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
+session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
+session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
+save('session.mat','session','-v7.3','-nocompression')
+sr = session.extracellular.sr;
+srLfp = session.extracellular.srLfp;
 
-spikes = loadClusteringData(basename,session.SpikeSorting.Format{1},clusteringpath);
+spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath);
 
-if ~isempty(TimeRestriction)
-    if size(TimeRestriction,2) ~= 2
-        error('TimeRestriction has to be a Nx2 matrix')
+if ~isempty(timeRestriction)
+    if size(timeRestriction,2) ~= 2
+        error('timeRestriction has to be a Nx2 matrix')
     else
         for j = 1:size(spikes.times,2)
             indeces2keep = [];
-            indeces2keep = find(any(spikes.times{j} >= TimeRestriction(:,1)' & spikes.times{j} <= TimeRestriction(:,2)', 2));
+            indeces2keep = find(any(spikes.times{j} >= timeRestriction(:,1)' & spikes.times{j} <= timeRestriction(:,2)', 2));
             spikes.ts{j} =  spikes.ts{j}(indeces2keep);
             spikes.times{j} =  spikes.times{j}(indeces2keep);
             spikes.ids{j} =  spikes.ids{j}(indeces2keep);
             spikes.amplitudes{j} =  spikes.amplitudes{j}(indeces2keep);
             spikes.total(j) =  length(indeces2keep);
         end
-        indeces2keep = any(spikes.spindices(:,1) >= TimeRestriction(:,1)' & spikes.spindices(:,1) <= TimeRestriction(:,2)', 2);
+        indeces2keep = any(spikes.spindices(:,1) >= timeRestriction(:,1)' & spikes.spindices(:,1) <= timeRestriction(:,2)', 2);
         spikes.spindices = spikes.spindices(indeces2keep,:);
     end
 end
 
-if exist(fullfile(clusteringpath,[saveAs,'.mat']))
+if exist(fullfile(clusteringpath,[saveAs,'.mat']),'file')
     disp(['Loading existing metrics: ' saveAs])
     load(fullfile(clusteringpath,[saveAs,'.mat']))
 else
     cell_metrics = [];
 end
-cell_metrics.General.basepath = basepath;
-cell_metrics.General.basename = basename;
-cell_metrics.General.clusteringpath = clusteringpath;
-cell_metrics.General.CellCount = length(spikes.total);
+
+% if isfield(cell_metrics,'PutativeCellType')
+%     cell_metrics.putativeCellType = cell_metrics.PutativeCellType;
+% end
+% listSubfields = fieldnames(cell_metrics);
+% for i = 1:length(listSubfields)
+%     isUpperCase = isstrprop(listSubfields{i},'upper');
+%     if isUpperCase(1)==1
+%         cell_metrics = rmfield(cell_metrics,listSubfields{i});
+%     end
+% end
+
+cell_metrics.general.basepath = basepath;
+cell_metrics.general.basename = basename;
+cell_metrics.general.clusteringpath = clusteringpath;
+cell_metrics.general.cellCount = length(spikes.total);
 
 
 % Waveform based calculations
 if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
-    if ~exist(fullfile(clusteringpath,[basename,'.waveform_metrics.cellinfo.mat'])) || forceReload == true
-        disp('* Calculating waveform classifications: Trough-to-peak latency, Peak toltage');
-        [SpikeWaveforms,SpikeWaveforms_std,PeakVoltage_all,ClusterID] = LoadNeurosuiteWaveforms(clusteringpath,basename,sr,TimeRestriction);
-        waveform_metrics = calc_waveform_metrics(SpikeWaveforms,sr);
-        save(fullfile(clusteringpath,[basename,'.waveform_metrics.cellinfo.mat']),'waveform_metrics','SpikeWaveforms','SpikeWaveforms_std','PeakVoltage_all','ClusterID')
-    else
-        load(fullfile(clusteringpath,[basename,'.waveform_metrics.cellinfo.mat']))
+    if ~all(isfield(cell_metrics,{'filtWaveform','timeWaveform','filtWaveform_std','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || forceReload == true
+        disp('* Getting waveforms');
+        if all(isfield(spikes,{'filtWaveform','filtWaveform_std','peakVoltage','cluID'}))
+            waveforms.filtWaveform = spikes.filtWaveform;
+            waveforms.timeWaveform = ([1:length(waveforms.filtWaveform{1})]/sr)*1000-0.8;
+            waveforms.filtWaveform_std = spikes.filtWaveform_std; % waveforms.filtWaveform; % TODO
+            waveforms.peakVoltage = spikes.peakVoltage;
+            waveforms.UID = spikes.UID;
+        elseif useNeurosuiteWaveforms
+            waveforms = LoadNeurosuiteWaveforms(spikes,session,timeRestriction);
+        elseif any(~isfield(spikes,{'filtWaveform','filtWaveform_std','peakVoltage','cluID'}))
+            spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'forceReload',true);
+            %             spikes = GetWaveformsFromDat(spikes,sessionInfo);
+            waveforms.filtWaveform = spikes.filtWaveform;
+            waveforms.timeWaveform = ([1:length(waveforms.filtWaveform{1})]/sr)*1000-0.8;
+            waveforms.filtWaveform_std = spikes.filtWaveform_std; % waveforms.filtWaveform; % TODO
+            waveforms.peakVoltage = spikes.peakVoltage;
+            waveforms.UID = spikes.UID;
+        end
+        disp('* Calculating waveform classifications: Trough-to-peak latency, Peak voltage');
+        waveform_metrics = calc_waveform_metrics(waveforms.filtWaveform,sr);
+        field2remove = {'derivative_TroughtoPeak','filtWaveform','filtWaveform_std'};
+        test = isfield(cell_metrics,field2remove);
+        cell_metrics = rmfield(cell_metrics,field2remove(test));
+        for j = 1:cell_metrics.general.cellCount
+            cell_metrics.filtWaveform{j} = waveforms.filtWaveform{j};
+            cell_metrics.timeWaveform{j} = waveforms.timeWaveform;
+            cell_metrics.filtWaveform_std{j} =  waveforms.filtWaveform_std{j};
+            cell_metrics.peakVoltage(j) = waveforms.peakVoltage(j);
+            cell_metrics.troughToPeak(j) = waveform_metrics.troughtoPeak(j);
+            cell_metrics.troughtoPeakDerivative(j) = waveform_metrics.derivative_TroughtoPeak(j);
+            cell_metrics.ab_ratio(j) = waveform_metrics.ab_ratio(j);
+        end
     end
 end
-
 
 % PCA features based calculations
 if any(contains(metrics,{'PCA_features','all'})) && ~any(contains(excludeMetrics,{'PCA_features'}))
     disp('* Calculating PCA classifications: Isolation distance, L-Ratio')
-    [IsolationDistance_all,LRatio_all,ClusterID2] = LoadNeurosuiteFeatures(clusteringpath,basename,sr,TimeRestriction);
+    if ~all(isfield(cell_metrics,{'isolationDistance','lRatio'})) || forceReload == true
+        if useNeurosuiteWaveforms
+            PCA_features = LoadNeurosuiteFeatures(spikes,session,timeRestriction); %(clusteringpath,basename,sr,timeRestriction);
+            for j = 1:cell_metrics.general.cellCount
+                cell_metrics.isolationDistance(j) = PCA_features.isolationDistance(find(PCA_features.UID == spikes.UID(j)));
+                cell_metrics.lRatio(j) = PCA_features.lRatio(find(PCA_features.UID == spikes.UID(j)));
+            end
+        else
+            disp('  No PCAs available')
+        end
+    end
 end
 
 
 % ACG & CCG based classification
-if any(contains(metrics,{'ACG_metrics','all'})) && ~any(contains(excludeMetrics,{'ACG_metrics'}))
-    if ~exist(fullfile(clusteringpath,[basename,'.ACG_metrics.cellinfo.mat'])) || forceReload == true
+if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,{'acg_metrics'}))
+    if ~all(isfield(cell_metrics,{'acg','acg2','thetaModulationIndex','burstIndex_Royer2012','burstIndex_Doublets','acg_tau_decay','acg_tau_rise'})) || forceReload == true
         disp('* Calculating CCG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets')
-        [ACG,ACG2,ThetaModulationIndex,BurstIndex_Royer2012,BurstIndex_Doublets] = calc_ACG_metrics(clusteringpath,sr,TimeRestriction);
+        acg_metrics = calc_ACG_metrics(spikes)%(clusteringpath,sr,timeRestriction);
+        
         disp('* Fitting double exponential to ACG')
-        fit_params = fit_ACG(ACG2);
-        save(fullfile(clusteringpath,[basename,'.ACG_metrics.cellinfo.mat']),'ACG','ACG2','ThetaModulationIndex','BurstIndex_Royer2012','fit_params','BurstIndex_Doublets')
-    else
-        load(fullfile(clusteringpath,[basename,'.ACG_metrics.cellinfo.mat']))
+        fit_params = fit_ACG(acg_metrics.acg2);
+
+        cell_metrics.acg = acg_metrics.acg; % Wide: 1000ms wide CCG with 1ms bins
+        cell_metrics.acg2 = acg_metrics.acg2; % Narrow: 100ms wide CCG with 0.5ms bins
+        cell_metrics.thetaModulationIndex = acg_metrics.thetaModulationIndex; % cell_tmi
+        cell_metrics.burstIndex_Royer2012 = acg_metrics.burstIndex_Royer2012; % cell_burstRoyer2012
+        cell_metrics.burstIndex_Doublets = acg_metrics.burstIndex_Doublets;
+        
+        cell_metrics.acg_tau_decay = fit_params.acg_tau_decay;
+        cell_metrics.acg_tau_rise = fit_params.acg_tau_rise;
+        cell_metrics.acg_c = fit_params.acg_c;
+        cell_metrics.acg_d = fit_params.acg_d;
+        cell_metrics.acg_asymptote = fit_params.acg_asymptote;
+        cell_metrics.acg_refrac = fit_params.acg_refrac;
+        cell_metrics.acg_fit_rsquare = fit_params.acg_fit_rsquare;
+        cell_metrics.acg_tau_burst = fit_params.acg_tau_burst;
+        cell_metrics.acg_h = fit_params.acg_h;
+        
+        cell_metrics.general.ccg = acg_metrics.ccg;
+        cell_metrics.general.ccg_time = acg_metrics.ccg_time;
     end
-    
-    cell_metrics.ACG = ACG; % Wide: 1000ms wide CCG with 1ms bins
-    cell_metrics.ACG2 = ACG2; % Narrow: 100ms wide CCG with 0.5ms bins
-    cell_metrics.ThetaModulationIndex = ThetaModulationIndex; % cell_tmi
-    cell_metrics.BurstIndex_Royer2012 = BurstIndex_Royer2012; % cell_burstRoyer2012
-    cell_metrics.BurstIndex_Doublets = BurstIndex_Doublets;
-    
-    cell_metrics.ACG_tau_decay = fit_params.ACG_tau_decay;
-    cell_metrics.ACG_tau_rise = fit_params.ACG_tau_rise;
-    cell_metrics.ACG_c = fit_params.ACG_c;
-    cell_metrics.ACG_d = fit_params.ACG_d;
-    cell_metrics.ACG_asymptote = fit_params.ACG_asymptote;
-    cell_metrics.ACG_refrac = fit_params.ACG_refrac;
-    cell_metrics.ACG_fit_rsquare = fit_params.ACG_fit_rsquare;
-    cell_metrics.ACG_tau_burst = fit_params.ACG_tau_burst;
-    cell_metrics.ACG_h = fit_params.ACG_h;
 end
 
 
 % Deep-Superficial by ripple polarity reversal
-if any(contains(metrics,{'DeepSuperficial','all'})) && ~any(contains(excludeMetrics,{'DeepSuperficial'}))
+if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
     disp('* Deep-Superficial by ripple polarity reversal')
-    if ~exist(fullfile(basepath,'DeepSuperficial_ChClass.mat')) || forceReload == true
-        classification_DeepSuperficial(session)
+    if ~exist(fullfile(basepath, [basename, '.lfp']),'file')
+        disp('Creating lfp file')
+        bz_LFPfromDat(pwd,'noPrompts',true)
     end
-    temp = load(fullfile(basepath,'DeepSuperficial_ChClass.mat'));
-    DeepSuperficial_ChDistance = temp.DeepSuperficial_ChDistance; %
-    DeepSuperficial_ChClass = temp.DeepSuperficial_ChClass;% cell_deep_superficial
-    cell_metrics.General.DeepSuperficial_file = fullfile(basepath,'DeepSuperficial_ChClass.mat');
+    
+    if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') || forceReload == true)
+        if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple')
+            disp('  Using RippleNoise reference channel')
+            RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
+            ripples = bz_FindRipples('basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
+        elseif isfield(session.channelTags,'Ripple')
+            ripples = bz_FindRipples('basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
+        else
+            warning('Ripple')
+        end
+    end
+    
+    deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
+    if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') & (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || forceReload == true)
+        if ~exist(deepSuperficial_file,'file')
+            classification_DeepSuperficial(session)
+        end
+        load(deepSuperficial_file)
+        cell_metrics.general.SWR = deepSuperficialfromRipple;
+        deepSuperficial_ChDistance = deepSuperficialfromRipple.channelDistance; %
+        deepSuperficial_ChClass = deepSuperficialfromRipple.channelClass;% cell_deep_superficial
+        cell_metrics.general.deepSuperficial_file = deepSuperficial_file;
+        
+        for j = 1:cell_metrics.general.cellCount
+            cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes.maxWaveformCh1(j)); % cell_deep_superficial OK
+            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes.maxWaveformCh(j)+1); % cell_deep_superficial_distance
+        end
+    end
+    
 end
 
 
 % Ripple modulation
 if any(contains(metrics,{'ripple_metrics','all'})) && ~any(contains(excludeMetrics,{'ripple_metrics'}))
     disp('* Calculating ripple metrics')
-    load(fullfile(basepath,[basename,'.ripples.events.mat']));
-    [RippleModulationIndex,RipplePeakDelay,RippleCorrelogram] = calc_RippleModulationIndex(ripples,clusteringpath,sr,TimeRestriction);
-    cell_metrics.RippleModulationIndex = RippleModulationIndex; % cell_ripple_modulation
-    cell_metrics.RipplePeakDelay = RipplePeakDelay; % cell_ripple_peak_delay
-    cell_metrics.RippleCorrelogram = RippleCorrelogram;
-    cell_metrics.General.ripples_file = fullfile(basepath,[basename,'.ripples.events.mat']);
+    if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
+        load(fullfile(basepath,[basename,'.ripples.events.mat']));
+        [PSTH,PSTH_time] = calc_PSTH(ripples.peaks,spikes);
+        [rippleModulationIndex,ripplePeakDelay,rippleCorrelogram] = calc_RippleModulationIndex(PSTH,PSTH_time);
+        cell_metrics.rippleModulationIndex = rippleModulationIndex; % cell_ripple_modulation
+        cell_metrics.ripplePeakDelay = ripplePeakDelay; % cell_ripple_peak_delay
+        cell_metrics.rippleCorrelogram = num2cell(rippleCorrelogram,1);
+        cell_metrics.general.rippleCorrelogram.event_file = fullfile(basepath,[basename,'.ripples.events.mat']);
+        cell_metrics.general.rippleCorrelogram.x_bins = PSTH_time*1000;
+        cell_metrics.general.rippleCorrelogram.x_label = 'Time (ms)';
+    end
 end
 
 
-% Pytative MonoSynatic connections
-if any(contains(metrics,{'MonoSynaptic_connections','all'})) && ~any(contains(excludeMetrics,{'MonoSynaptic_connections'}))
+% Pytative MonoSynaptic connections
+if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(excludeMetrics,{'monoSynaptic_connections'}))
     disp('* Calculating MonoSynaptic connections')
-    if ~exist(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat'])) || forceReload == true
+    if ~exist(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'file') || forceReload == true
         spikeIDs = [spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)];
         mono_res = bz_MonoSynConvClick(spikeIDs,spikes.spindices(:,1),'plot',true);
-        save(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'mono_res');
+        save(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
     else
         disp('  Loading previous detected MonoSynaptic connections')
         load(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'mono_res');
     end
     
     if ~isempty(mono_res.sig_con)
-        cell_metrics.PutativeConnections = mono_res.sig_con; % Vectors with cell pairs
-        cell_metrics.SynapticEffect = repmat({'Unknown'},1,cell_metrics.General.CellCount);
-        cell_metrics.SynapticEffect(cell_metrics.PutativeConnections(:,1)) = repmat({'Excitatory'},1,size(cell_metrics.PutativeConnections,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
-        cell_metrics.SynapticConnectionsOut = zeros(1,cell_metrics.General.CellCount);
-        cell_metrics.SynapticConnectionsIn = zeros(1,cell_metrics.General.CellCount);
-        [a,b]=hist(cell_metrics.PutativeConnections(:,1),unique(cell_metrics.PutativeConnections(:,1)));
-        cell_metrics.SynapticConnectionsOut(b) = a; cell_metrics.SynapticConnectionsOut = cell_metrics.SynapticConnectionsOut(1:cell_metrics.General.CellCount);
-        [a,b]=hist(cell_metrics.PutativeConnections(:,2),unique(cell_metrics.PutativeConnections(:,2)));
-        cell_metrics.SynapticConnectionsIn(b) = a; cell_metrics.SynapticConnectionsIn = cell_metrics.SynapticConnectionsIn(1:cell_metrics.General.CellCount);
+        cell_metrics.putativeConnections = mono_res.sig_con; % Vectors with cell pairs
+        cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_metrics.general.cellCount);
+        cell_metrics.synapticEffect(cell_metrics.putativeConnections(:,1)) = repmat({'Excitatory'},1,size(cell_metrics.putativeConnections,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
+        cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
+        cell_metrics.synapticConnectionsIn = zeros(1,cell_metrics.general.cellCount);
+        [a,b]=hist(cell_metrics.putativeConnections(:,1),unique(cell_metrics.putativeConnections(:,1)));
+        cell_metrics.synapticConnectionsOut(b) = a; cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);
+        [a,b]=hist(cell_metrics.putativeConnections(:,2),unique(cell_metrics.putativeConnections(:,2)));
+        cell_metrics.synapticConnectionsIn(b) = a; cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
+%         cell_metrics.truePositive = mono_res.truePositive; % Matrix
+%         cell_metrics.falsePositive = mono_res.falsePositive; % Matrix
     else
-        cell_metrics.PutativeConnections = [];
-        cell_metrics.SynapticConnectionsOut = zeros(1,cell_metrics.General.CellCount);
-        cell_metrics.SynapticConnectionsIn = zeros(1,cell_metrics.General.CellCount);
+        cell_metrics.putativeConnections = [];
+        cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
+        cell_metrics.synapticConnectionsIn = zeros(1,cell_metrics.general.cellCount);
     end
-    cell_metrics.TruePositive = mono_res.TruePositive; % Matrix
-    cell_metrics.FalsePositive = mono_res.FalsePositive; % Matrix
 end
 
 % Theta related activity
 if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetrics,{'theta_metrics'}))
     disp('* Calculating theta metrics');
-    if exist(fullfile(basepath,'animal.mat'))
-        recording.name = basename;
-        recording.nChannels = session.Extracellular.nChannels;
-        recording.ch_theta = session.ChannelTags.Theta.Channels;
-        recording.sr = session.Extracellular.Sr;
-        recording.sr_lfp = session.Extracellular.SrLFP;
-        InstantaneousTheta = calcInstantaneousTheta(recording);
-%         theta.sr_freq = 10;
+    if exist(fullfile(basepath,'animal.mat'),'file')
+        InstantaneousTheta = calcInstantaneousTheta2(session);
         load(fullfile(basepath,'animal.mat'));
         theta_bins =[-1:0.05:1]*pi;
-        cell_metrics.ThetaPhasePeak = nan(1,cell_metrics.General.CellCount);
-        cell_metrics.ThetaPhaseTrough = nan(1,cell_metrics.General.CellCount);
-        cell_metrics.ThetaPhaseResponse = nan(length(theta_bins)-1,cell_metrics.General.CellCount);
-        cell_metrics.ThetaEntrainment = nan(1,cell_metrics.General.CellCount);
+        cell_metrics.thetaPhasePeak = nan(1,cell_metrics.general.cellCount);
+        cell_metrics.thetaPhaseTrough = nan(1,cell_metrics.general.cellCount);
+%         cell_metrics.thetaPhaseResponse = nan(length(theta_bins)-1,cell_metrics.general.cellCount);
+        cell_metrics.thetaEntrainment = nan(1,cell_metrics.general.cellCount);
+        
+        spikes2 = spikes;
+        
+        if isfield(cell_metrics,'thetaPhaseResponse')
+            cell_metrics = rmfield(cell_metrics,'thetaPhaseResponse');
+        end
         
         for j = 1:size(spikes.times,2)
-            spikes.ts{j} = spikes.ts{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/recording.sr_lfp);
-            spikes.times{j} = spikes.times{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/recording.sr_lfp);
-            spikes.ts_eeg{j} = ceil(spikes.ts{j}/16);
-            spikes.theta_phase{j} = InstantaneousTheta.signal_phase(spikes.ts_eeg{j});
-            spikes.speed{j} = interp1(animal.time,animal.speed,spikes.times{j});
-            if sum(spikes.speed{j} > 10)> 500
-                [counts,centers] = histcounts(spikes.theta_phase{j}(spikes.speed{j} > 10),theta_bins, 'Normalization', 'probability');
+            spikes2.ts{j} = spikes2.ts{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/srLfp);
+            spikes2.times{j} = spikes2.times{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/srLfp);
+            spikes2.ts_eeg{j} = ceil(spikes2.ts{j}/16);
+            spikes2.theta_phase{j} = InstantaneousTheta.signal_phase(spikes2.ts_eeg{j});
+            spikes2.speed{j} = interp1(animal.time,animal.speed,spikes2.times{j});
+            if sum(spikes2.speed{j} > 10)> 500
+                
+                [counts,centers] = histcounts(spikes2.theta_phase{j}(spikes2.speed{j} > 10),theta_bins, 'Normalization', 'probability');
                 counts = nanconv(counts,[1,1,1,1,1]/5,'edge');
                 [~,tem2] = max(counts);
                 [~,tem3] = min(counts);
-                cell_metrics.ThetaPhasePeak(j) = centers(tem2)+diff(centers([1,2]))/2;
-                cell_metrics.ThetaPhaseTrough(j) = centers(tem3)+diff(centers([1,2]))/2;
-                cell_metrics.ThetaPhaseResponse(:,j) = counts;
-                cell_metrics.ThetaEntrainment(j) = max(counts)/min(counts);
+                cell_metrics.thetaPhaseResponse{j} = counts';
+                cell_metrics.thetaPhasePeak(j) = centers(tem2)+diff(centers([1,2]))/2;
+                cell_metrics.thetaPhaseTrough(j) = centers(tem3)+diff(centers([1,2]))/2;
+                cell_metrics.thetaEntrainment(j) = max(counts)/min(counts);
+            else
+                cell_metrics.thetaPhaseResponse{j} = nan(length(theta_bins)-1,1);
             end
         end
-        cell_metrics.General.timeaxis.ThetaPhaseResponse = centers(1:end-1)+diff(centers([1,2]))/2;
+        cell_metrics.general.thetaPhaseResponse.x_bins = theta_bins(1:end-1)+diff(theta_bins([1,2]))/2;
         
         figure, subplot(2,2,1)
-        plot(cell_metrics.General.timeaxis.ThetaPhaseResponse,cell_metrics.ThetaPhaseResponse),title('Theta entrainment during locomotion'), xlim([-1,1]*pi)
+        plot(cell_metrics.general.thetaPhaseResponse.x_bins,horzcat(cell_metrics.thetaPhaseResponse{:})),title('Theta entrainment during locomotion'), xlim([-1,1]*pi)
         subplot(2,2,2)
-        plot(cell_metrics.ThetaPhaseTrough,cell_metrics.ThetaPhasePeak,'o'),xlabel('Trough'),ylabel('Peak')
+        plot(cell_metrics.thetaPhaseTrough,cell_metrics.thetaPhasePeak,'o'),xlabel('Trough'),ylabel('Peak')
         subplot(2,2,3)
-        histogram(cell_metrics.ThetaEntrainment,30),title('Theta entrainment')
+        histogram(cell_metrics.thetaEntrainment,30),title('Theta entrainment')
         subplot(2,2,4)
-        histogram(cell_metrics.ThetaPhaseTrough,[-1:0.2:1]*pi),title('Theta trough and peak'), hold on
-        histogram(cell_metrics.ThetaPhasePeak,[-1:0.2:1]*pi), legend({'Trough','Peak'})
+        histogram(cell_metrics.thetaPhaseTrough,[-1:0.2:1]*pi),title('Theta trough and peak'), hold on
+        histogram(cell_metrics.thetaPhasePeak,[-1:0.2:1]*pi), legend({'Trough','Peak'})
     end
 end
 
 % Spatial related metrics
 if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetrics,{'spatial_metrics'}))
     disp('* Calculating spatial metrics');
-    field2remove = {'firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate'};
+    field2remove = {'firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate','FiringRateMap','FiringRateMap_CoolingStates','FiringRateMap_StimStates','FiringRateMap_LeftRight'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
-    if exist(fullfile(basepath,'firing_rate_map.mat'))
-        disp('  Loaded firing_rate_map.mat succesfully');
-        temp2 = load(fullfile(basepath,'firing_rate_map.mat'));
-        if cell_metrics.General.CellCount == size(temp2.firing_rate_map_average.unit,2)
-            cell_metrics.FiringRateMap = num2cell(temp2.firing_rate_map_average.unit,1);
-            cell_metrics.SpatialPeakRate = max(temp2.firing_rate_map_average.unit);
-            cell_metrics.General.timeaxis.FiringRateMap = temp2.firing_rate_map_average.xhist;
-            cell_metrics.General.timeaxis.FiringRateMapStates = temp2.firing_rate_map.xhist;
-            for j = 1:cell_metrics.General.CellCount
-                temp = place_cell_condition(temp2.firing_rate_map_average.unit(:,j));
-                cell_metrics.SpatialCoherence(j) = temp.SpatialCoherence;
-                cell_metrics.PlaceCell(j) = temp.condition;
-                cell_metrics.PlaceFieldsCount(j) = temp.placefield_count;
-                temp3 = cumsum(sort(temp2.firing_rate_map_average.unit(:,j),'descend'));
-                if ~all(temp3==0)
-                    cell_metrics.SpatialCoverageIndex(j) = find(temp3>0.75*temp3(end),1)/(length(temp3)*0.75); % Spatial coverage index (Royer, NN 2012)
-                    cum_firing1 = cumsum(sort(temp2.firing_rate_map_average.unit(:,j)));
-                    cum_firing1 = cum_firing1/max(cum_firing1);
-                    cell_metrics.SpatialGiniCoeff(j) = 1-2*sum(cum_firing1)./length(cum_firing1); 
-                else
-                    cell_metrics.SpatialCoverageIndex(j) = nan;
-                    cell_metrics.SpatialGiniCoeff(j) = nan;
+    
+    % General firing rate map
+    if exist(fullfile(basepath,'firingRateMap.mat'),'file')
+        temp2 = load(fullfile(basepath,'firingRateMap.mat'));
+        disp('  Loaded firingRateMap.mat succesfully');
+        if isfield(temp2,'firingRateMap')
+            firingRateMap = temp2.firingRateMap;
+            
+            if cell_metrics.general.cellCount == length(firingRateMap.total)
+                cell_metrics.firingRateMap = num2cell(firingRateMap.unit,1);
+                cell_metrics.spatialPeakRate = max(firingRateMap.unit);
+                if isfield(firingRateMap,'x_bins')
+                    cell_metrics.general.firingRateMap.x_bins = firingRateMap.x_bins;
                 end
+                if isfield(firingRateMap,'boundaries')
+                    cell_metrics.general.firingRateMap.boundaries = firingRateMap.boundaries;
+                end
+                
+                cell_metrics.general.firingRateMap.x_bins = firingRateMap.x_bins;
+                cell_metrics.general.firingRateMap.boundaries = firingRateMap.boundaries;
+                
+                for j = 1:cell_metrics.general.cellCount
+                    temp = place_cell_condition(firingRateMap.unit(:,j)');
+                    cell_metrics.spatialCoherence(j) = temp.SpatialCoherence;
+                    cell_metrics.placeCell(j) = temp.condition;
+                    cell_metrics.placeFieldsCount(j) = temp.placefield_count;
+                    temp3 = cumsum(sort(firingRateMap.unit(:,j),'descend'));
+                    if ~all(temp3==0)
+                        cell_metrics.spatialCoverageIndex(j) = find(temp3>0.75*temp3(end),1)/(length(temp3)*0.75); % Spatial coverage index (Royer, NN 2012)
+                        cum_firing1 = cumsum(sort(firingRateMap.unit(:,j)));
+                        cum_firing1 = cum_firing1/max(cum_firing1);
+                        cell_metrics.spatialGiniCoeff(j) = 1-2*sum(cum_firing1)./length(cum_firing1);
+                    else
+                        cell_metrics.spatialCoverageIndex(j) = nan;
+                        cell_metrics.spatialGiniCoeff(j) = nan;
+                    end
+                end
+                disp('  Spatial metrics succesfully calculated');
+            else
+                warning(['Number of cells firing rate maps (', num2str(size(firingRateMap.unit,2)),  ') does not corresponds to the number of cells in spikes structure (', num2str(size(spikes.UID,2)) ,')' ])
             end
-            disp('  Spatial metrics succesfully calculated');
-        else
-            warning(['Number of cells firing rate maps (', num2str(size(temp2.firing_rate_map_average.unit,2)),  ') does not corresponds to the number of cells in spikes structure (', num2str(size(spikes.UID,2)) ,')' ])
         end
+        
     else
-        disp('  No firing_rate_map.mat file found');
+        disp('  No firingRateMap.mat file found');
+    end
+    
+    % State dependent firing rate maps
+    firingRateMap_filelist = dir(fullfile(basepath,'firingRateMap_*.mat')); firingRateMap_filelist = {firingRateMap_filelist.name};
+
+    for i = 1:length(firingRateMap_filelist)
+        temp2 = load(fullfile(basepath,firingRateMap_filelist{i}));
+        firingRateMapName = firingRateMap_filelist{i}(1:end-4);
+        disp(['  Loaded ' firingRateMap_filelist{i} ' succesfully']);
+        firingRateMap = temp2.(firingRateMapName);
+        if cell_metrics.general.cellCount == size(firingRateMap.unit,2) & length(firingRateMap.x_bins) == size(firingRateMap.unit,1)
+            cell_metrics.(firingRateMapName){1} = firingRateMap.unit;
+            if isfield(firingRateMap,'x_bins')
+                cell_metrics.general.(firingRateMapName).x_bins = firingRateMap.x_bins;
+            end
+            if isfield(firingRateMap,'x_label')
+                cell_metrics.general.(firingRateMapName).x_label = firingRateMap.x_label;
+            end
+            if isfield(firingRateMap,'boundaries')
+                cell_metrics.general.(firingRateMapName).boundaries = firingRateMap.boundaries;
+            end
+            if isfield(firingRateMap,'labels')
+                cell_metrics.general.(firingRateMapName).labels = firingRateMap.labels;
+            end
+            if isfield(firingRateMap,'boundaries_labels')
+                cell_metrics.general.(firingRateMapName).boundaries_labels = firingRateMap.boundaries_labels;
+            end
+        end
+    end
+    
+    if isfield(cell_metrics,'firingRateMap_LeftRight')
+        if isfield(firingRateMap,'splitter_bins')
+            splitter_bins = firingRateMap.splitter_bins;
+            cell_metrics.general.(firingRateMapName).splitter_bins = firingRateMap.splitter_bins;
+        else
+            splitter_bins = find( cell_metrics.general.firingRateMap_LeftRight.x_bins < cell_metrics.general.firingRateMap_LeftRight.boundaries(1) );
+            cell_metrics.general.(firingRateMapName).splitter_bins = splitter_bins;
+        end
+        splitter_bins = find( cell_metrics.general.firingRateMap_LeftRight.x_bins < cell_metrics.general.firingRateMap_LeftRight.boundaries(1) );
+        for j = 1:cell_metrics.general.cellCount
+            cell_metrics.spatialSplitterDegree(j) = sum(abs(cell_metrics.firingRateMap_LeftRight{1}(splitter_bins,j,1) - cell_metrics.firingRateMap_LeftRight{1}(splitter_bins,j,2)))/sum(cell_metrics.firingRateMap_LeftRight{1}(splitter_bins,j,1) + cell_metrics.firingRateMap_LeftRight{1}(splitter_bins,j,2) + length(splitter_bins));
+        end
     end
 end
 
 % Perturbation metrics
 if any(contains(metrics,{'perturbation_metrics','all'})) && ~any(contains(excludeMetrics,{'perturbation_metrics'}))
-    if exist(fullfile(basepath,'optogenetics.mat'))
+    if exist(fullfile(basepath,'optogenetics.mat'),'file')
         disp('* Calculating perturbation metrics');
-        spikes2 = loadClusteringData(basename,session.SpikeSorting.Format{1},clusteringpath,1);
-        cell_metrics.OptoPSTH = [];
+        spikes2 = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,1);
+        if isfield(cell_metrics,'optoPSTH')
+            cell_metrics = rmfield(cell_metrics,'optoPSTH');
+        end
+        cell_metrics.psth_optostim = [];
         temp = load('optogenetics.mat');
         trigger = temp.optogenetics.peak;
-        edges = [-1:0.1:1.1];
-        for j = 1:cell_metrics.General.CellCount
+        edges = [-1:0.1:1];
+        for j = 1:cell_metrics.general.cellCount
             psth = zeros(size(edges));
             for jj = 1:length(trigger)
                 psth = psth + histc(spikes2.times{j}'-trigger(jj),edges);
             end
-            cell_metrics.OptoPSTH(:,j) = (psth(1:end-1)/length(trigger))/0.1;
+            cell_metrics.psth_optostim{j} = (psth(1:end-1)/length(trigger))/0.1;
+            cell_metrics.psth_optostim{j} = cell_metrics.psth_optostim{j}(:);
         end
-        figure, plot(edges(1:end-1), cell_metrics.OptoPSTH)
+        
+        cell_metrics.general.psth_optostim.x_label = 'Time (s)';
+        cell_metrics.general.psth_optostim.x_bins = edges(1:end-1)+(edges(2)-edges(1))/2;
+        figure, plot(cell_metrics.general.psth_optostim.x_bins, horzcat(cell_metrics.psth_optostim{:}))
+    end
+end
+
+% PSTH metrics
+if any(contains(metrics,{'psth_metrics','all'})) && ~any(contains(excludeMetrics,{'psth_metrics'}))
+    disp('* Calculating perturbation metrics');
+    
+    % PSTH response
+    psth_filelist = dir(fullfile(basepath,'psth_*.mat')); psth_filelist = {psth_filelist.name};
+    
+    for i = 1:length(psth_filelist)
+        temp2 = load(fullfile(basepath,psth_filelist{i}));
+        psth_type = psth_filelist{i}(1:end-4);
+        disp(['  Loaded ' psth_filelist{i} ' succesfully']);
+        psth_response = temp2.(psth_type);
+        if cell_metrics.general.cellCount == size(psth_response.unit,2) & length(psth_response.x_bins) == size(psth_response.unit,1)
+            cell_metrics.(psth_type){1} = psth_response.unit;
+            if isfield(psth_response,'x_label')
+                cell_metrics.general.(psth_type).x_label = psth_response.x_bins;
+            end
+            if isfield(psth_response,'x_bins')
+                cell_metrics.general.(psth_type).x_bins = psth_response.x_bins;
+            end
+            if isfield(psth_response,'boundaries')
+                cell_metrics.general.(psth_type).boundaries = psth_response.boundaries;
+            end
+            if isfield(psth_response,'labels')
+                cell_metrics.general.(psth_type).labels = psth_response.labels;
+            end
+            if isfield(psth_response,'boundaries_labels')
+                cell_metrics.general.(psth_type).boundaries_labels = psth_response.boundaries_labels;
+            end
+        end
     end
 end
 
 % Other metrics
-cell_metrics.Animal = repmat({session.General.Animal},1,cell_metrics.General.CellCount);
-cell_metrics.Sex = repmat({session.General.Sex},1,cell_metrics.General.CellCount);
-cell_metrics.Species = repmat({session.General.Species},1,cell_metrics.General.CellCount);
-cell_metrics.Strain = repmat({session.General.Strain},1,cell_metrics.General.CellCount);
-cell_metrics.GeneticLine = repmat({session.General.GeneticLine},1,cell_metrics.General.CellCount);
-cell_metrics.SessionName = repmat({session.General.Name},1,cell_metrics.General.CellCount);
-% cell_metrics.Promoter = {}; % cell_promoter
+session.general.sessionName = session.general.name;
+listMetrics = {'animal','sex','species','strain','geneticLine','sessionName'};
+for i = find(isfield(session.general,listMetrics))
+    cell_metrics.(listMetrics{i}) = repmat({session.general.(listMetrics{i})},1,cell_metrics.general.cellCount);
+end
+% cell_metrics.promoter = {}; % cell_promoter
 
-for j = 1:cell_metrics.General.CellCount
-    cell_metrics.SessionID(j) = str2num(session.General.EntryID); % cell_sessionid OK
-    cell_metrics.SpikeSortingID(j) = session.SpikeSorting.EntryIDs(1); % cell_spikesortingid OK
-    cell_metrics.CellID(j) =  spikes.UID(j); % cell_id OK
+% Firing rate across time
+firingRateAcrossTime_binsize = 3*60;
+if max(cellfun(@max,spikes.times))/firingRateAcrossTime_binsize<40
+    firingRateAcrossTime_binsize = ceil((max(cellfun(@max,spikes.times))/40)/10)*10;
+end
+cell_metrics.general.firingRateAcrossTime.x_edges = [0:firingRateAcrossTime_binsize:max(cellfun(@max,spikes.times))];
+cell_metrics.general.firingRateAcrossTime.x_bins = cell_metrics.general.firingRateAcrossTime.x_edges(1:end-1)+firingRateAcrossTime_binsize/2;
+cell_metrics.general.firingRateAcrossTime.boundaries = cumsum(session.subSessions.duration);
+cell_metrics.general.firingRateAcrossTime.boundaries_labels = session.subSessions.behavioralParadigm;
+% cell_metrics.firingRateAcrossTime = mat2cell(zeros(length(cell_metrics.general.firingRateAcrossTime.x_bins),cell_metrics.general.cellCount));
+
+chListBrainRegions = findBrainRegion(session);
+
+for j = 1:cell_metrics.general.cellCount
+    cell_metrics.sessionID(j) = str2num(session.general.entryID); % cell_sessionid OK
+    cell_metrics.spikeSortingID(j) = session.spikeSorting.entryIDs(1); % cell_spikesortingid OK
+    cell_metrics.cellID(j) =  spikes.UID(j); % cell_id OK
     cell_metrics.UID(j) =  spikes.UID(j); % cell_id OK
-    cell_metrics.CluID(j) =  spikes.cluID(j); % cell_sortingid OK
-    cell_metrics.BrainRegion{j} = findBrainRegion(spikes.maxWaveformCh(j),BrainRegions); % cell_brainregion OK
-    cell_metrics.SpikeGroup(j) = spikes.shankID(j); % cell_spikegroup OK
-    cell_metrics.MaxChannel(j) = spikes.maxWaveformCh(j); % cell_maxchannel OK
+    cell_metrics.cluID(j) =  spikes.cluID(j); % cell_sortingid OK
+    cell_metrics.brainRegion{j} = chListBrainRegions{spikes.maxWaveformCh1(j)}; % cell_brainregion OK
+    cell_metrics.spikeGroup(j) = spikes.shankID(j); % cell_spikegroup OK
+    cell_metrics.maxWaveformCh(j) = spikes.maxWaveformCh1(j)-1; % cell_maxchannel OK
+    cell_metrics.maxWaveformCh1(j) = spikes.maxWaveformCh1(j); % cell_maxchannel OK
     
     % Spike times based metrics
-    cell_metrics.SpikeCount(j) = spikes.total(j); % cell_spikecount OK
-    if ~isempty(TimeRestriction)
-        TimeRestriction_start = max(find( TimeRestriction(:,1) < spikes.times{j}(1)));
-        TimeRestriction_end = min(find( TimeRestriction(:,2) > spikes.times{j}(end)));
-        spike_window = sum(diff(TimeRestriction(TimeRestriction_start:TimeRestriction_end,:)'));
-        spike_window = spike_window - (spikes.times{j}(1)) - TimeRestriction(TimeRestriction_start,1);
-        spike_window = spike_window - (TimeRestriction(TimeRestriction_end,2)-spikes.times{j}(end));
+    cell_metrics.spikeCount(j) = spikes.total(j); % cell_spikecount OK
+    if ~isempty(timeRestriction)
+        timeRestriction_start = max(find( timeRestriction(:,1) < spikes.times{j}(1)));
+        timeRestriction_end = min(find( timeRestriction(:,2) > spikes.times{j}(end)));
+        spike_window = sum(diff(timeRestriction(timeRestriction_start:timeRestriction_end,:)'));
+        spike_window = spike_window - (spikes.times{j}(1)) - timeRestriction(timeRestriction_start,1);
+        spike_window = spike_window - (timeRestriction(timeRestriction_end,2)-spikes.times{j}(end));
         
-        cell_metrics.FiringRate(j) = spikes.total(j)/spike_window; % cell_firingrate OK
+        cell_metrics.firingRate(j) = spikes.total(j)/spike_window; % cell_firingrate OK
     else
-        cell_metrics.FiringRate(j) = spikes.total(j)/((spikes.times{j}(end)-spikes.times{j}(1))); % cell_firingrate OK
+        cell_metrics.firingRate(j) = spikes.total(j)/((spikes.times{j}(end)-spikes.times{j}(1))); % cell_firingrate OK
     end
+    
+    % Firing rate across time
+    temp = histcounts(spikes.times{j},cell_metrics.general.firingRateAcrossTime.x_edges)/firingRateAcrossTime_binsize;
+    cell_metrics.firingRateAcrossTime{j} = temp(:);
     
     % CV2
     tau = diff(spikes.times{j});
-    cell_metrics.FiringRateISI(j) = 1/mean(tau); % cell_firingrate OK
+    cell_metrics.firingRateISI(j) = 1/median(tau);
     CV2_temp = 2*abs(tau(1:end-1) - tau(2:end)) ./ (tau(1:end-1) + tau(2:end));
-    cell_metrics.CV2(j) = mean(CV2_temp(CV2_temp<1.9));
+    cell_metrics.cv2(j) = mean(CV2_temp(CV2_temp<1.9));
     
     % Burstiness_Mizuseki2011
     bursty = [];
     for jj = 2 : length(spikes.times{j}) - 1
         bursty(jj) =  any(diff(spikes.times{j}(jj-1 : jj + 1)) < 0.006);
     end
-    cell_metrics.BurstIndex_Mizuseki2012(j) = length(find(bursty > 0))/length(bursty); % Fraction of spikes with a ISI for following or preceding spikes < 0.006
-    
-    % Waveform metrics
-    if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
-        field2remove = {'derivative_TroughtoPeak'};
-        test = isfield(cell_metrics,field2remove);
-        cell_metrics = rmfield(cell_metrics,field2remove(test));
-        cell_metrics.SpikeWaveforms(:,j) = SpikeWaveforms(find(ClusterID == spikes.cluID(j)),:);
-        cell_metrics.SpikeWaveforms_std(:,j) = SpikeWaveforms_std(find(ClusterID == spikes.cluID(j)),:);
-        cell_metrics.PeakVoltage(j) = PeakVoltage_all(find(ClusterID == spikes.cluID(j)));
-        cell_metrics.TroughToPeak(j) = waveform_metrics.TroughtoPeak(find(ClusterID == spikes.cluID(j)));
-        cell_metrics.TroughtoPeakDerivative(j) = waveform_metrics.derivative_TroughtoPeak(find(ClusterID == spikes.cluID(j)));
-        cell_metrics.AB_ratio(j) = waveform_metrics.AB_ratio(find(ClusterID == spikes.cluID(j)));
-    end
-    
-    % Isolation metrics
-    if any(contains(metrics,{'PCA_features','all'})) && ~any(contains(excludeMetrics,'PCA_features'))
-        cell_metrics.IsolationDistance(j) = IsolationDistance_all(find(ClusterID2 == spikes.cluID(j)));
-        cell_metrics.LRatio(j) = LRatio_all(find(ClusterID2 == spikes.cluID(j)));
-    end
+    cell_metrics.burstIndex_Mizuseki2012(j) = length(find(bursty > 0))/length(bursty); % Fraction of spikes with a ISI for following or preceding spikes < 0.006
     
     % cell_refractoryperiodviolation
-    cell_metrics.RefractoryPeriodViolation(j) = 1000*length(find(diff(spikes.times{j})<0.002))/spikes.total(j);
-    
-    %  Deep-Superficial
-    if any(contains(metrics,{'DeepSuperficial','all'})) && ~any(contains(excludeMetrics,{'DeepSuperficial'}))
-        if exist('DeepSuperficial_ChClass')
-            cell_metrics.DeepSuperficial(j) = DeepSuperficial_ChClass(cell_metrics.MaxChannel(j)); % cell_deep_superficial OK
-            cell_metrics.DeepSuperficialDistance(j) = DeepSuperficial_ChDistance(cell_metrics.MaxChannel(j)); % cell_deep_superficial_distance
-        end
-    end
+    cell_metrics.refractoryPeriodViolation(j) = 1000*length(find(diff(spikes.times{j})<0.002))/spikes.total(j);
 end
 
-if ~isfield(cell_metrics,'Labels')
-    cell_metrics.Labels = repmat({''},1,cell_metrics.General.CellCount);
+if ~isfield(cell_metrics,'labels')
+    cell_metrics.labels = repmat({''},1,cell_metrics.general.cellCount);
 end
 
-% cell_classification_PutativeCellType
-if any(contains(metrics,{'Celltype_classification','all'})) && ~any(contains(excludeMetrics,{'Celltype_classification'}))
-    disp('* Performing cell-type classification');
-    cell_metrics.PutativeCellType = repmat({'Pyramidal Cell'},1,cell_metrics.General.CellCount);
+% cell_classification_putativeCellType
+if ~isfield(cell_metrics,'putativeCellType') || ~keepCellClassification
+    disp('* Performing Cell-type classification');
+    cell_metrics.putativeCellType = repmat({'Pyramidal Cell'},1,cell_metrics.general.cellCount);
     
     % Interneuron classification
-    cell_metrics.PutativeCellType(cell_metrics.ACG_tau_decay>30) = repmat({'Interneuron'},sum(cell_metrics.ACG_tau_decay>30),1);
-    cell_metrics.PutativeCellType(cell_metrics.ACG_tau_rise>3) = repmat({'Interneuron'},sum(cell_metrics.ACG_tau_rise>3),1);
-    cell_metrics.PutativeCellType(cell_metrics.TroughToPeak<=0.425  & ismember(cell_metrics.PutativeCellType, 'Interneuron')) = repmat({'Narrow Interneuron'},sum(cell_metrics.TroughToPeak<=0.425  & (ismember(cell_metrics.PutativeCellType, 'Interneuron'))),1);
-    cell_metrics.PutativeCellType(cell_metrics.TroughToPeak>0.425  & ismember(cell_metrics.PutativeCellType, 'Interneuron')) = repmat({'Wide Interneuron'},sum(cell_metrics.TroughToPeak>0.425  & (ismember(cell_metrics.PutativeCellType, 'Interneuron'))),1);
+    cell_metrics.putativeCellType(cell_metrics.acg_tau_decay>30) = repmat({'Interneuron'},sum(cell_metrics.acg_tau_decay>30),1);
+    cell_metrics.putativeCellType(cell_metrics.acg_tau_rise>3) = repmat({'Interneuron'},sum(cell_metrics.acg_tau_rise>3),1);
+    cell_metrics.putativeCellType(cell_metrics.troughToPeak<=0.425  & ismember(cell_metrics.putativeCellType, 'Interneuron')) = repmat({'Narrow Interneuron'},sum(cell_metrics.troughToPeak<=0.425  & (ismember(cell_metrics.putativeCellType, 'Interneuron'))),1);
+    cell_metrics.putativeCellType(cell_metrics.troughToPeak>0.425  & ismember(cell_metrics.putativeCellType, 'Interneuron')) = repmat({'Wide Interneuron'},sum(cell_metrics.troughToPeak>0.425  & (ismember(cell_metrics.putativeCellType, 'Interneuron'))),1);
     
     % Pyramidal cell classification
-    cell_metrics.PutativeCellType(cell_metrics.TroughtoPeakDerivative<0.17 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.TroughtoPeakDerivative<0.17 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
-    cell_metrics.PutativeCellType(cell_metrics.TroughtoPeakDerivative>0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.TroughtoPeakDerivative>0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
-    cell_metrics.PutativeCellType(cell_metrics.TroughtoPeakDerivative>=0.17 & cell_metrics.TroughtoPeakDerivative<=0.3 & ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.TroughtoPeakDerivative>=0.17 & cell_metrics.TroughtoPeakDerivative<=0.3 & (ismember(cell_metrics.PutativeCellType, 'Pyramidal Cell'))),1);
+    cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative<0.17 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.troughtoPeakDerivative<0.17 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
+    cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.troughtoPeakDerivative>0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
+    cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
 end
 
-if any(contains(removeMetrics,{'DeepSuperficial'}))
-    disp('* Removing DeepSuperficial metrics')
-    field2remove = {'DeepSuperficial','DeepSuperficialDistance'};
+
+if any(contains(removeMetrics,{'deepSuperficial'}))
+    disp('* Removing deepSuperficial metrics')
+    field2remove = {'deepSuperficial','deepSuperficialDistance'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
-    cell_metrics.DeepSuperficial = repmat({'Unknown'},1,cell_metrics.General.CellCount);
-    cell_metrics.DeepSuperficialDistance = nan(1,cell_metrics.General.CellCount);
+    cell_metrics.deepSuperficial = repmat({'Unknown'},1,cell_metrics.general.cellCount);
+    cell_metrics.deepSuperficialDistance = nan(1,cell_metrics.general.cellCount);
 end
 
-if ~isfield(cell_metrics,'DeepSuperficial')
-    cell_metrics.DeepSuperficial = repmat({'Unknown'},1,cell_metrics.General.CellCount);
-    cell_metrics.DeepSuperficialDistance = nan(1,cell_metrics.General.CellCount);
+if ~isfield(cell_metrics,'deepSuperficial')
+    cell_metrics.deepSuperficial = repmat({'Unknown'},1,cell_metrics.general.cellCount);
+    cell_metrics.deepSuperficialDistance = nan(1,cell_metrics.general.cellCount);
 end
 
 % Submitting to database
 if submitToDatabase
     disp('* Submitting cells to database');
-    cell_metrics = db_submit_cells(cell_metrics,session);
+    try
+        cell_metrics = db_submit_cells(cell_metrics,session);
+    catch
+        disp('* Failed to submit to database');
+    end
 end
 
 % Saving cells
 if saveMat
-    disp(['* Saving cells to', saveAs,'.mat']);
+    disp(['* Saving cells to ''', saveAs,'''.mat']);
+    dirname = 'revisions_cell_metrics';
+    if ~(exist(fullfile(clusteringpath,dirname),'dir'))
+        mkdir(fullfile(clusteringpath,dirname));
+    end
+    if exist(fullfile(clusteringpath,[saveAs,'.mat']),'file')
+        copyfile(fullfile(clusteringpath,[saveAs,'.mat']), fullfile(clusteringpath, dirname, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']));
+    end
     save(fullfile(clusteringpath,[saveAs,'.mat']),'cell_metrics','-v7.3','-nocompression')
 end
 
 % Plots
 if plots
-    X = [cell_metrics.FiringRateISI; cell_metrics.ThetaModulationIndex; cell_metrics.BurstIndex_Mizuseki2012;  cell_metrics.TroughToPeak; cell_metrics.TroughtoPeakDerivative; cell_metrics.AB_ratio; cell_metrics.BurstIndex_Royer2012;cell_metrics.ACG_tau_rise;cell_metrics.ACG_tau_decay;cell_metrics.CV2]';
+    X = [cell_metrics.firingRateISI; cell_metrics.thetaModulationIndex; cell_metrics.burstIndex_Mizuseki2012;  cell_metrics.troughToPeak; cell_metrics.troughtoPeakDerivative; cell_metrics.ab_ratio; cell_metrics.burstIndex_Royer2012; cell_metrics.acg_tau_rise; cell_metrics.acg_tau_decay; cell_metrics.cv2]';
     Y = tsne(X);
     goodrows = not(any(isnan(X),2));
-    if isfield(cell_metrics,'DeepSuperficial')
-    figure,
-    gscatter(Y(:,1),Y(:,2),cell_metrics.PutativeCellType(goodrows)'), title('Cell type classification shown in tSNE space'), hold on
-    plot(Y(find(strcmp(cell_metrics.DeepSuperficial(goodrows),'Superficial')),1),Y(find(strcmp(cell_metrics.DeepSuperficial(goodrows),'Superficial')),2),'xk')
-    plot(Y(find(strcmp(cell_metrics.DeepSuperficial(goodrows),'Deep')),1),Y(find(strcmp(cell_metrics.DeepSuperficial(goodrows),'Deep')),2),'ok')
-    xlabel('o = Deep, x = Superficial')
+    if isfield(cell_metrics,'deepSuperficial')
+        figure,
+        gscatter(Y(:,1),Y(:,2),cell_metrics.putativeCellType(goodrows)'), title('Cell type classification shown in tSNE space'), hold on
+        plot(Y(find(strcmp(cell_metrics.deepSuperficial(goodrows),'Superficial')),1),Y(find(strcmp(cell_metrics.deepSuperficial(goodrows),'Superficial')),2),'xk')
+        plot(Y(find(strcmp(cell_metrics.deepSuperficial(goodrows),'Deep')),1),Y(find(strcmp(cell_metrics.deepSuperficial(goodrows),'Deep')),2),'ok')
+        xlabel('o = Deep, x = Superficial')
     end
     
     figure,
-    histogram(cell_metrics.SpikeGroup,[0:14]+0.5),xlabel('Spike groups'), ylabel('Count')
+    histogram(cell_metrics.spikeGroup,[0:14]+0.5),xlabel('Spike groups'), ylabel('Count')
     
     figure, subplot(2,2,1)
-    histogram(cell_metrics.BurstIndex_Mizuseki2012,40),xlabel('BurstIndex Mizuseki2012'), ylabel('Count')
+    histogram(cell_metrics.burstIndex_Mizuseki2012,40),xlabel('BurstIndex Mizuseki2012'), ylabel('Count')
     subplot(2,2,2)
-    histogram(cell_metrics.CV2,40),xlabel('CV2'), ylabel('Count')
+    histogram(cell_metrics.cv2,40),xlabel('CV2'), ylabel('Count')
     subplot(2,2,3)
-    histogram(cell_metrics.RefractoryPeriodViolation,40),xlabel('Refractory period violation (‰)'), ylabel('Count')
+    histogram(cell_metrics.refractoryPeriodViolation,40),xlabel('Refractory period violation (‰)'), ylabel('Count')
     subplot(2,2,4)
-    histogram(cell_metrics.ThetaModulationIndex,40),xlabel('Theta modulation index'), ylabel('Count')
+    histogram(cell_metrics.thetaModulationIndex,40),xlabel('Theta modulation index'), ylabel('Count')
     
     figure, subplot(2,2,1)
     histogram(CV2_temp,40),xlabel('CV2_temp'), ylabel('Count')
@@ -491,14 +683,14 @@ if plots
     % ACG metrics
     figure
     window_limits = [-50:50];
-    order_ACGmetrics = {'BurstIndex_Royer2012','ACG_tau_rise','ACG_tau_decay','BurstIndex_Mizuseki2012'};
+    order_acgmetrics = {'burstIndex_Royer2012','acg_tau_rise','acg_tau_decay','burstIndex_Mizuseki2012'};
     order = {'ascend','descend','descend'};
     for j = 1:3
-        [~,index] = sort(cell_metrics.(order_ACGmetrics{j}),order{j});
-        temp = cell_metrics.ACG(window_limits+501,index)./(ones(length(window_limits),1)*max(cell_metrics.ACG(window_limits+501,index)));
+        [~,index] = sort(cell_metrics.(order_acgmetrics{j}),order{j});
+        temp = cell_metrics.acg(window_limits+501,index)./(ones(length(window_limits),1)*max(cell_metrics.acg(window_limits+501,index)));
         
         subplot(2,3,j),
-        imagesc(window_limits,[],temp'),title(order_ACGmetrics{j},'interpreter','none')
+        imagesc(window_limits,[],temp'),title(order_acgmetrics{j},'interpreter','none')
         subplot(2,3,3+j),
         mpdc10 = [size(temp,2):-1:1;1:size(temp,2);size(temp,2):-1:1]/size(temp,2); hold on
         for j = 1:size(temp,2)
@@ -507,26 +699,27 @@ if plots
     end
     
     figure,
-    plot3(cell_metrics.ACG_tau_rise,cell_metrics.ACG_tau_decay,cell_metrics.TroughtoPeakDerivative,'.')
+    plot3(cell_metrics.acg_tau_rise,cell_metrics.acg_tau_decay,cell_metrics.troughtoPeakDerivative,'.')
     xlabel('Tau decay'), ylabel('Tau rise'), zlabel('Derivative Trough-to-Peak')
     
-    if isfield(cell_metrics,'DeepSuperficial')
-    figure, hold on
-    CellTypeGroups = unique(cell_metrics.PutativeCellType);
-    colorgroups = {'k','g','b','r','c','m'};
-    plotX = cell_metrics.TroughtoPeakDerivative;
-    plotY = cell_metrics.ACG_tau_decay;
-    plotZ = cell_metrics.DeepSuperficialDistance;
-    for iii = 1:length(CellTypeGroups)
-        indexes = find(strcmp(cell_metrics.PutativeCellType,CellTypeGroups{iii}));
-        scatter3(plotX(indexes),plotY(indexes),plotZ(indexes),30,'MarkerFaceColor',colorgroups{iii}, 'MarkerEdgeColor','none','MarkerFaceAlpha',.7)
-    end
-    if isfield(cell_metrics,'PutativeConnections') && ~isempty(cell_metrics.PutativeConnections)
-        a1 = cell_metrics.PutativeConnections(:,1);
-        a2 = cell_metrics.PutativeConnections(:,2);
-        plot3([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],[plotZ(a1);plotZ(a2)],'k')
-    end
-    xlabel('Tau decay'), ylabel('Tau rise'), zlabel('DeepSuperficialDistance')
+    if isfield(cell_metrics,'deepSuperficial')
+        figure, hold on
+        CellTypeGroups = unique(cell_metrics.putativeCellType);
+        colorgroups = {'k','g','b','r','c','m'};
+        plotX = cell_metrics.troughtoPeakDerivative;
+        plotY = cell_metrics.acg_tau_decay;
+        plotZ = cell_metrics.deepSuperficialDistance;
+        for iii = 1:length(CellTypeGroups)
+            indexes = find(strcmp(cell_metrics.putativeCellType,CellTypeGroups{iii}));
+            scatter3(plotX(indexes),plotY(indexes),plotZ(indexes),30,'MarkerFaceColor',colorgroups{iii}, 'MarkerEdgeColor','none','MarkerFaceAlpha',.7)
+        end
+        if isfield(cell_metrics,'putativeConnections') && ~isempty(cell_metrics.putativeConnections)
+            a1 = cell_metrics.putativeConnections(:,1);
+            a2 = cell_metrics.putativeConnections(:,2);
+            plot3([plotX(a1);plotX(a2)],[plotY(a1);plotY(a2)],[plotZ(a1);plotZ(a2)],'k')
+        end
+        xlabel('Tau decay'), ylabel('Tau rise'), zlabel('deepSuperficialDistance')
     end
 end
-disp('* Cell metrics calculations complete')
+toc(timerCalcMetrics)
+disp(['* Cell metrics calculations complete.'])

@@ -22,11 +22,11 @@ figure
 subplot(2,2,[1,3]), hold on
 sr = 40000;
 
-for m = 1:size(SpikeWaveforms,1)
+for m = 1:length(SpikeWaveforms)
     if sr_in < sr
-        wave = interp1([1:size(SpikeWaveforms,2)],zscore(SpikeWaveforms(m,:)),[1:0.5:32,32],'spline');
+        wave = interp1([1:length(SpikeWaveforms{m})],zscore(SpikeWaveforms{m}),[1:0.5:32,32],'spline');
     else
-        wave = SpikeWaveforms(m,:);
+        wave = SpikeWaveforms{m};
     end
     wave_diff{m} = diff(wave);
     wave_diff2{m} = diff(wave,2);
@@ -86,12 +86,12 @@ for m = 1:size(SpikeWaveforms,1)
     end
 end
 
-waveform_metrics.PeaktoTrough = t_before/sr*1000;
-waveform_metrics.TroughtoPeak = t_after/sr*1000;
+waveform_metrics.peaktoTrough = t_before/sr*1000;
+waveform_metrics.troughtoPeak = t_after/sr*1000;
 waveform_metrics.derivative_TroughtoPeak = t_after_diff/sr*1000;
 waveform_metrics.peakA = peakA;
 waveform_metrics.peakB = peakB;
-waveform_metrics.AB_ratio = (peakB-peakA)./(peakA+peakB);
+waveform_metrics.ab_ratio = (peakB-peakA)./(peakA+peakB);
 waveform_metrics.trough = trough;
 
 axis tight
