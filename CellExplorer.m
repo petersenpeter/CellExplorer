@@ -23,7 +23,6 @@ function cell_metrics = CellExplorer(varargin)
 % petersen.peter@gmail.com
 
 % TODO
-% PSTH rastermaps
 % Adjust deepSuperficial channel/spike groups in the GUI
 % Adjust synaptic connections in the GUI or be able to rerun the detection
 % Ground truth cell type classifiations
@@ -65,31 +64,32 @@ SWR_in = p.Results.SWR;
 % Initialization of variables and figure
 % % % % % % % % % % % % % % % % % % % % % %
 
-UI = []; UI.settings.plotZLog = 0; UI.settings.plot3axis = 0; UI.settings.plotXdata = 'firingRate'; UI.settings.plotYdata = 'peakVoltage'; 
-UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.displayMetricsTable = 0; colorStr = []; 
-UI.settings.customCellPlotIn1 = 'Single waveform'; UI.settings.customCellPlotIn2 = 'Single ACG'; UI.settings.deepSuperficial = ''; 
-UI.settings.acgType = 'Normal'; UI.settings.cellTypeColors = []; UI.settings.monoSynDispIn = ''; UI.settings.layout = 3; 
-UI.settings.displayMenu = 0; UI.settings.displayInhibitory = false; UI.settings.displayExcitatory = false; 
-UI.settings.customCellPlotIn3 = 'thetaPhaseResponse'; UI.settings.customCellPlotIn4 = 'firingRateMap'; 
+UI = []; UI.settings.plotZLog = 0; UI.settings.plot3axis = 0; UI.settings.plotXdata = 'firingRate'; UI.settings.plotYdata = 'peakVoltage';
+UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.displayMetricsTable = 0; colorStr = [];
+UI.settings.customCellPlotIn1 = 'Single waveform'; UI.settings.customCellPlotIn2 = 'Single ACG'; UI.settings.deepSuperficial = '';
+UI.settings.acgType = 'Normal'; UI.settings.cellTypeColors = []; UI.settings.monoSynDispIn = ''; UI.settings.layout = 3;
+UI.settings.displayMenu = 0; UI.settings.displayInhibitory = false; UI.settings.displayExcitatory = false;
+UI.settings.customCellPlotIn3 = 'thetaPhaseResponse'; UI.settings.customCellPlotIn4 = 'firingRateMap';
 UI.settings.customCellPlotIn5 = 'firingRateMap'; UI.settings.customCellPlotIn6 = 'firingRateMap'; UI.settings.plotCountIn = 'GUI 3+3';
-UI.settings.tSNE_calcNarrowAcg = true; UI.settings.tSNE_calcFiltWaveform = true; UI.settings.tSNE_metrics = ''; 
+UI.settings.tSNE_calcNarrowAcg = true; UI.settings.tSNE_calcFiltWaveform = true; UI.settings.tSNE_metrics = '';
 UI.settings.tSNE_calcWideAcg = true; UI.settings.dispLegend = 1;
 
 db_menu_values = []; db_menu_items = []; clusClas = []; plotX = []; plotY = []; plotZ = []; timerVal = tic;
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
 brainRegions_list = []; brainRegions_acronym = []; cell_class_count = [];  customCellPlot3 = 1; customCellPlot4 = 1; customPlotOptions = '';
-customCellPlot1 = ''; customPlotHistograms = 0; plotAcgFit = 0; basename = ''; clasLegend = 0; Colorval = 1; plotClas = [];
-colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; exit = 0;  monoSynDisp = ''; customCellPlot2 = ''; 
-plotClasGroups = [];  plotClas2 = [];  SWR_batch = []; general = []; 
+customCellPlot1 = ''; customPlotHistograms = 0; plotAcgFit = 0; basename = ''; clasLegend = 0; Colorval = 1; plotClas = []; plotClas11 = [];
+colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; exit = 0;  monoSynDisp = ''; customCellPlot2 = '';
+plotClasGroups = [];  plotClas2 = [];  SWR_batch = []; general = []; plotAverage_nbins = 40;
 cellsExcitatory = []; cellsInhibitory = []; cellsInhibitory_subset = []; cellsExcitatory_subset = []; ii_history = 1;
-subsetPlots1 = []; subsetPlots2 = []; subsetPlots3 = []; subsetPlots4 = []; subsetPlots5 = []; subsetPlots6 = []; 
-tSNE_metrics = []; BatchMode = false; ClickedCells = []; classificationTrackChanges = []; time_waveforms_zscored = []; spikes = []; 
-spikesPlots = []; globalZoom = cell(1,9); createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal'; 
+subsetPlots1 = []; subsetPlots2 = []; subsetPlots3 = []; subsetPlots4 = []; subsetPlots5 = []; subsetPlots6 = [];
+tSNE_metrics = []; BatchMode = false; ClickedCells = []; classificationTrackChanges = []; time_waveforms_zscored = []; spikes = [];
+spikesPlots = []; globalZoom = cell(1,9); createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal'; events = [];
 
 CellExplorerVersion = '1.0';
 
 UI.fig = figure('KeyPressFcn', {@keyPress},'Name',['Cell Explorer v' CellExplorerVersion],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot);
 hManager = uigetmodemanager(UI.fig);
+
 
 % % % % % % % % % % % % % % % % % % % % % %
 % User preferences for the Cell Explorer
@@ -126,7 +126,7 @@ if exist('db_credentials') == 2
         enableDatabase = 1;
     else
         enableDatabase = 0;
-        disp('Please provide your database credentials in ''db_credentials.m'' ')
+%         disp('Please provide your database credentials in ''db_credentials.m'' ')
     end
 else
     enableDatabase = 0;
@@ -281,7 +281,7 @@ UI.panel.navigation = uipanel('Title','Navigation','TitlePosition','centertop','
 UI.panel.cellAssignment = uipanel('Title','Cell assignments','TitlePosition','centertop','Position',[0.895 0.548 0.1 0.365],'Units','normalized');
 UI.panel.displaySettings = uipanel('Title','Display Settings','TitlePosition','centertop','Position',[0.895 0.115 0.1 0.425],'Units','normalized');
 UI.panel.loadSave = uipanel('Title','File handling','TitlePosition','centertop','Position',[0.895 0.01 0.1 0.095],'Units','normalized');
-UI.panel.custom = uipanel('Title','Plot selection','TitlePosition','centertop','Position',[0.005 0.55 0.09 0.415],'Units','normalized');
+UI.panel.custom = uipanel('Title','Plot selection','TitlePosition','centertop','Position',[0.005 0.54 0.09 0.435],'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % %
 % Message log
@@ -407,30 +407,31 @@ uicontrol('Parent',UI.panel.loadSave,'Style','pushbutton','Position',[2 2 50 12]
 % % % % % % % % % % % % % % % % % % % %
 
 % Custom plotting menues
-uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 149 20 10],'Units','normalized','String','X data','HorizontalAlignment','left');
-UI.checkbox.logx = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[28 152 18 10],'Units','normalized','String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 142 44 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 159 20 10],'Units','normalized','String','X data','HorizontalAlignment','left');
+UI.checkbox.logx = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[28 162 18 10],'Units','normalized','String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress});
+UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 152 44 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress});
 
-uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 129 20 10],'Units','normalized','String','Y data','HorizontalAlignment','left');
-UI.checkbox.logy = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[28 132 18 10],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 122 44 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 139 20 10],'Units','normalized','String','Y data','HorizontalAlignment','left');
+UI.checkbox.logy = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[28 142 18 10],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress});
+UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 132 44 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress});
 
-UI.checkbox.showz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 112 24 10],'Units','normalized','String','Z data','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlot3axis(),'KeyPressFcn', {@keyPress});
-UI.checkbox.logz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[28 112 18 10],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 102 44 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress});
+UI.checkbox.showz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 122 24 10],'Units','normalized','String','Z data','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlot3axis(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[28 122 18 10],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress});
+UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 112 44 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress});
 UI.popupmenu.zData.Enable = 'Off';
 UI.checkbox.logz.Enable = 'Off';
 
 % Custom plot
-uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 90 45 10],'Units','normalized','String','Plot style','HorizontalAlignment','left');
-UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 82 44 10],'Units','normalized','String',{'Scatter plot','+ Smooth histograms','+ Stairs histograms'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)togglePlotHistograms,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 100 45 10],'Units','normalized','String','Plot style','HorizontalAlignment','left');
+UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 92 44 10],'Units','normalized','String',{'Scatter plot','+ Smooth histograms','+ Stairs histograms'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)togglePlotHistograms,'KeyPressFcn', {@keyPress});
 
 % Custom colors
-uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 70 45 10],'Units','normalized','String','Color group','HorizontalAlignment','left');
-UI.popupmenu.groups = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 62 44 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
-UI.listbox.groups = uicontrol('Parent',UI.panel.custom,'Style','listbox','Position',[3 12 42 50],'Units','normalized','String',{'Type 1','Type 2','Type 3'},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Visible','Off');
-UI.checkbox.groups = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 2 44 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Visible','Off');
-UI.checkbox.legend = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[24 72 22 10],'Units','normalized','String','Legend','HorizontalAlignment','right','Callback',@(src,evnt)buttonDispLegend(),'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 80 45 10],'Units','normalized','String','Color group','HorizontalAlignment','left');
+UI.popupmenu.groups = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 72 44 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
+UI.checkbox.legend = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[24 82 22 10],'Units','normalized','String','Legend','HorizontalAlignment','right','Callback',@(src,evnt)buttonDispLegend(),'KeyPressFcn', {@keyPress});
+UI.listbox.groups = uicontrol('Parent',UI.panel.custom,'Style','listbox','Position',[3 22 42 50],'Units','normalized','String',{'Type 1','Type 2','Type 3'},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Visible','Off');
+UI.checkbox.groups = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 12 44 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Visible','Off');
+UI.checkbox.compare = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 2 44 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress});
 UI.checkbox.legend.Value = UI.settings.dispLegend;
 
 % % % % % % % % % % % % % % % % % % % %
@@ -491,13 +492,22 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
     
     if ~isempty(groups2plot2) && Colorval ~=1
         if UI.checkbox.groups.Value == 0
-            subset2 = find(ismember(plotClas,groups2plot2));
+            subset2 = find(ismember(plotClas11,groups2plot2));
+            plotClas = plotClas11;
         else
             subset2 = find(ismember(plotClas2,groups2plot2));
         end
         subset = intersect(subset,subset2);
     end
-    
+    if UI.checkbox.compare.Value == 1
+        plotClas = ones(1,length(plotClas));
+        plotClas(subset) = 2;
+        subset = 1:length(plotClas);
+        classes2plotSubset = unique(plotClas);
+        plotClasGroups = {'Other cells','Selected cells'};
+    else
+        classes2plotSubset = intersect(plotClas(subset),classes2plot);
+    end
     if isfield(cell_metrics,'putativeConnections')
         putativeSubset = find(sum(ismember(cell_metrics.putativeConnections,subset)')==2);
     else
@@ -520,8 +530,10 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
     end
     
     % Group display definition
-    if Colorval == 1 ||  UI.checkbox.groups.Value == 1
-        clr = UI.settings.cellTypeColors(intersect(classes2plot,clusClas(subset)),:);
+    if UI.checkbox.compare.Value == 1
+        clr = UI.settings.cellTypeColors(intersect(classes2plotSubset,plotClas(subset)),:);
+    elseif Colorval == 1 ||  UI.checkbox.groups.Value == 1
+        clr = UI.settings.cellTypeColors(intersect(classes2plot,plotClas(subset)),:);
     else
         clr = hsv(length(nanUnique(plotClas(subset))))*0.8;
         if isnan(clr)
@@ -529,13 +541,13 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
         end
     end
     
-    classes2plotSubset = intersect(plotClas(subset),classes2plot);
+    
     if isfield(cell_metrics,'sessionName')
         UI.title.String = ['Cell: ', num2str(ii),'/', num2str(size(cell_metrics.firingRate,2)),' from ', cell_metrics.sessionName{ii}, '.  Class: ', UI.settings.cellTypes{clusClas(ii)}];
     else
         UI.title.String = ['Cell: ', num2str(ii),'/', num2str(size(cell_metrics.firingRate,2)),'.  Class: ', UI.settings.cellTypes{clusClas(ii)}];
     end
-
+    
     
     % % % % % % % % % % % % % % % % % % % % % %
     % Subfig 1
@@ -553,11 +565,11 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
     subfig_ax(1) = axes('Parent',UI.panel.subfig_ax1);
     if customPlotHistograms == 0
         if UI.settings.layout == 1
-            set(subfig_ax(1),'LooseInset',get(gca,'TightInset'))
+            set(subfig_ax(1),'LooseInset',get(subfig_ax(1),'TightInset'))
         end
         hold on
         xlabel(plotX_title, 'Interpreter', 'none'), ylabel(plotY_title, 'Interpreter', 'none'),
-        set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
+        set(subfig_ax(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
         xlim auto, ylim auto, zlim auto
         if UI.checkbox.logx.Value==1
             set(subfig_ax(1), 'XScale', 'log')
@@ -603,11 +615,10 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
             axis tight
         else
             view([az,el]);
-            %             view([40 20]);
             if UI.settings.plotZLog == 1
-                set(gca, 'ZScale', 'log')
+                set(subfig_ax(1), 'ZScale', 'log')
             else
-                set(gca, 'ZScale', 'linear')
+                set(subfig_ax(1), 'ZScale', 'linear')
             end
             
             legendScatter = [];
@@ -723,9 +734,7 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
             legendScatter = legendScatter(end-length(nanUnique(plotClas(subset)))+1:end);
             legend(legendScatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northeast','Box','off','AutoUpdate','off');
         end
-        
     end
-    
     
     % % % % % % % % % % % % % % % % % % % % % %
     % Subfig 2
@@ -736,6 +745,8 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
         subfig_ax(2) = axes('Parent',UI.panel.subfig_ax2);
         set(subfig_ax(2),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
         
+        set(subfig_ax(2), 'YScale', 'log');
+        xlim(fig2_axislimit_x), ylim(fig2_axislimit_y)
         if ~isempty(clr)
             legendScatter = gscatter(cell_metrics.troughToPeak(subset) * 1000, cell_metrics.burstIndex_Royer2012(subset), plotClas(subset), clr,'',25,'off');
             set(legendScatter,'HitTest','off')
@@ -748,7 +759,7 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
         end
         
         ylabel('Burst Index (Royer 2012)'); xlabel('Trough-to-Peak (µs)'),
-        set(gca, 'YScale', 'log'); axis tight
+        
         
         % cell to check
         plot(cell_metrics.troughToPeak(ii) * 1000, cell_metrics.burstIndex_Royer2012(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'Parent', subfig_ax(2),'HitTest','off');
@@ -763,7 +774,7 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
             end
         end
         if ~isempty(subset) && UI.settings.layout >2 && UI.settings.dispLegend == 1
-            legend111 = legend(legendScatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northwest','Box','off','AutoUpdate','off');
+            legend(legendScatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northwest','Box','off','AutoUpdate','off');
         end
     end
     
@@ -787,7 +798,8 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
             plot(tSNE_metrics.plot(cellsInhibitory_subset,1), tSNE_metrics.plot(cellsInhibitory_subset,2),'ok', 'HitTest','off')
         end
         
-        plot(tSNE_metrics.plot(ii,1), tSNE_metrics.plot(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off'); axis tight
+        plot(tSNE_metrics.plot(ii,1), tSNE_metrics.plot(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off'); 
+        xlim(fig3_axislimit_x), ylim(fig3_axislimit_y) %axis tight
         
         if ~isempty(putativeSubset) && UI.checkbox.synMono3.Value == 1
             plotX1 = tSNE_metrics.plot(:,1)';
@@ -809,6 +821,7 @@ while ii <= size(cell_metrics.troughToPeak,2) & exit == 0
         if ~isempty(subset) && UI.settings.layout == 2  && UI.settings.dispLegend == 1
             legend(legendScatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northeast','Box','off','AutoUpdate','off');
         end
+        
     end
     
     
@@ -892,15 +905,16 @@ end
 if ishandle(UI.fig)
     close(UI.fig);
 end
-numeric_fields = fieldnames(cell_metrics);
-cell_metrics = rmfield(cell_metrics,{numeric_fields{find(contains(numeric_fields,'_num'))}});
-[C, ~, ic] = unique(clusClas,'sorted');
-for i = 1:length(C)
-    cell_metrics.putativeCellType(find(ic==i)) = repmat({UI.settings.cellTypes{C(i)}},sum(ic==i),1);
-end
-cell_metrics.general.SWR_batch = SWR_batch;
-cell_metrics.general.tSNE_metrics = tSNE_metrics;
-cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
+saveCellMetricsStruct
+% numeric_fields = fieldnames(cell_metrics);
+% cell_metrics = rmfield(cell_metrics,{numeric_fields{find(contains(numeric_fields,'_num'))}});
+% [C, ~, ic] = unique(clusClas,'sorted');
+% for i = 1:length(C)
+%     cell_metrics.putativeCellType(find(ic==i)) = repmat({UI.settings.cellTypes{C(i)}},sum(ic==i),1);
+% end
+% cell_metrics.general.SWR_batch = SWR_batch;
+% cell_metrics.general.tSNE_metrics = tSNE_metrics;
+% cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
 
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -917,12 +931,11 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
             if isfield(cell_metrics,'filtWaveform_std')
                 patch([cell_metrics.timeWaveform{ii},flip(cell_metrics.timeWaveform{ii})]', [cell_metrics.filtWaveform{ii}+cell_metrics.filtWaveform_std{ii},flip(cell_metrics.filtWaveform{ii}-cell_metrics.filtWaveform_std{ii})],'black','EdgeColor','none','FaceAlpha',.2)
                 plot(cell_metrics.timeWaveform{ii}, cell_metrics.filtWaveform{ii}, 'color', col,'linewidth',2), grid on
-                hLeg = legend({'Std','Wavefom'},'Location','southwest','Box','off'); set(hLeg,'visible','on');
             else
                 plot(cell_metrics.timeWaveform{ii}, cell_metrics.filtWaveform{ii}, 'color', col,'linewidth',2), grid on
             end
-            xlabel('Time (ms)'), title('Waveform (µV)'), axis tight, 
-
+            xlabel('Time (ms)'), ylabel('Voltage (µV)'), title('Waveform'), axis tight,
+            
         elseif strcmp(customPlotSelection,'All waveforms')
             
             for jj = 1:length(classes2plotSubset)
@@ -930,13 +943,13 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                 plot(time_waveforms_zscored, cell_metrics.filtWaveform_zscored(:,set1), 'color', [clr(jj,:),0.2],'HitTest','off')
             end
             plot(time_waveforms_zscored, cell_metrics.filtWaveform_zscored(:,ii), 'color', 'k','linewidth',2,'HitTest','off'), grid on
-            xlabel('Time (ms)'),title('Waveform zscored'), axis tight, hLeg = legend('p'); set(hLeg,'visible','off');
+            xlabel('Time (ms)'), title('Waveform zscored'), axis tight, 
             
         elseif strcmp(customPlotSelection,'tSNE of waveforms')
             
             legendScatter4 = gscatter(tSNE_metrics.filtWaveform(subset,1), tSNE_metrics.filtWaveform(subset,2), plotClas(subset), clr,'',20,'off');
             set(legendScatter4,'HitTest','off')
-            title('Waveforms - tSNE visualization'), axis tight, xlabel(''),ylabel(''), hold on
+            title('Waveforms - tSNE visualization'), axis tight, xlabel(''), ylabel(''), hold on
             plot(tSNE_metrics.filtWaveform(ii,1), tSNE_metrics.filtWaveform(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
             
             
@@ -1063,7 +1076,7 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                 else
                     x_bins = [1:length(firingRateMap)];
                 end
-                plot(x_bins,firingRateMap,'-','color', 'k','linewidth',2, 'HitTest','off'), xlabel('Position (cm)'),ylabel('Rate (Hz)')
+                plot(x_bins,firingRateMap,'-','color', 'k','linewidth',2, 'HitTest','off'), xlabel('Position (cm)'), ylabel('Rate (Hz)')
                 
                 switch monoSynDisp
                     case {'Selected','All'}
@@ -1121,7 +1134,7 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
             end
             title(customPlotSelection, 'Interpreter', 'none')
             
-        elseif contains(customPlotSelection,{'psth'})
+        elseif contains(customPlotSelection,{'psth_'}) & ~contains(customPlotSelection,{'spikes_'})
             
             if isfield(cell_metrics,customPlotSelection) && ~isempty(cell_metrics.(customPlotSelection){ii})
                 psth_response = cell_metrics.(customPlotSelection){ii};
@@ -1279,7 +1292,35 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
             
             out = CheckSpikes(batchIDs);
             if out && isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).x) && isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).y)
-                if ~isempty(spikesPlots.(customPlotSelection).state) & isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).state) & ~isempty(nanUnique(spikes{batchIDs}.(spikesPlots.(customPlotSelection).state){cell_metrics.UID(ii)}))
+                out = CheckEvents(batchIDs,spikesPlots.(customPlotSelection).event);
+                if out && ~isempty(spikesPlots.(customPlotSelection).event) && isfield(spikes{batchIDs},'times')% && ~isempty(nanUnique(spikes{batchIDs}.(spikesPlots.(customPlotSelection).event){cell_metrics.UID(ii)}))
+                    secbefore = spikesPlots.(customPlotSelection).eventSecBefore;
+                    secafter = spikesPlots.(customPlotSelection).eventSecAfter;
+                    ts_onset = events.(spikesPlots.(customPlotSelection).event){batchIDs};
+                    ep = [ts_onset-secbefore ts_onset+secafter];
+                    spks = spikes{batchIDs}.times{cell_metrics.UID(ii)};
+                    adjustedSpikes = cellfun(@(x,y) spks(spks>x(1) & spks<x(2))-y,num2cell(ep,2),num2cell(ts_onset), 'uni',0);
+                    if spikesPlots.(customPlotSelection).plotRaster
+                        spikeEvent = cellfun(@(x,y) ones(length(x),1).*y, adjustedSpikes, num2cell(1:length(adjustedSpikes))', 'uni',0);
+                        plot(vertcat(adjustedSpikes{:}),vertcat(spikeEvent{:}),'.','color', col)
+                    end
+                    if spikesPlots.(customPlotSelection).plotAverage
+                        bin_duration = (secbefore + secafter)/plotAverage_nbins;
+                        bin_times = -secbefore:bin_duration:secafter;
+                        spkhist = histcounts(vertcat(adjustedSpikes{:}),bin_times);
+                        plotData = spkhist/(bin_duration*length(ts_onset));
+                        if spikesPlots.(customPlotSelection).plotRaster
+                            scalingFactor = (0.2*length(ts_onset)/max(plotData));
+                            plot([-secbefore,secafter],[0,0],'-k'), text(secafter,0,[num2str(max(plotData),3),'Hz'],'HorizontalAlignment','right','VerticalAlignment','top')
+                            plot(bin_times(1:end-1),plotData*scalingFactor-(max(plotData)*scalingFactor),'color', col,'linewidth',2);
+                        else
+                            plot(bin_times(1:end-1),plotData,'color', col,'linewidth',2);
+                        end
+%                         spkhist = cell2mat(cellfun(@(a) reshape(histc(a,bin_times),1,[]),adjustedSpikes, 'UniformOutput', false));
+%                         spkhist = spkhist(:,1:end-1)./bin_duration; % turn into rate
+                    end
+                    
+                elseif ~isempty(spikesPlots.(customPlotSelection).state) && isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).state) && ~isempty(nanUnique(spikes{batchIDs}.(spikesPlots.(customPlotSelection).state){cell_metrics.UID(ii)}))
                     if isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).state)
                         plot(spikes{batchIDs}.(spikesPlots.(customPlotSelection).x){cell_metrics.UID(ii)},spikes{batchIDs}.(spikesPlots.(customPlotSelection).y){cell_metrics.UID(ii)},'.k'), hold on
                         if strcmp(spikesPlots.(customPlotSelection).y,'theta_phase')
@@ -1290,7 +1331,7 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                         if strcmp(spikesPlots.(customPlotSelection).y,'theta_phase')
                             gscatter(spikes{batchIDs}.(spikesPlots.(customPlotSelection).x){cell_metrics.UID(ii)},spikes{batchIDs}.(spikesPlots.(customPlotSelection).y){cell_metrics.UID(ii)}+2*pi, spikes{batchIDs}.(spikesPlots.(customPlotSelection).state){cell_metrics.UID(ii)},[],'',8,'off'); %,
                             yticks([-pi,0,pi,2*pi,3*pi]),yticklabels({'-\pi','0','\pi','2\pi','3\pi'}),ylim([-pi,3*pi])
-                        
+                            
                         end
                         if ~isempty(subset) && UI.settings.dispLegend == 1
                             legend(legendScatter, {},'Location','northeast','Box','off','AutoUpdate','off');
@@ -1311,7 +1352,7 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                 text(0.5,0.5,'No data for this cell','FontWeight','bold','HorizontalAlignment','center')
             end
             xlabel(spikesPlots.(customPlotSelection).x_label), ylabel(spikesPlots.(customPlotSelection).y_label), title(customPlotSelection,'Interpreter', 'none')
-
+            
         else
             
             customCellPlotNum = find(strcmp(customPlotSelection, customPlotOptions));
@@ -1387,6 +1428,8 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
             end
             MsgLog('tSNE space calculations complete.');
         end
+        fig3_axislimit_x = [min(tSNE_metrics.plot(:,1)), max(tSNE_metrics.plot(:,1))];
+        fig3_axislimit_y = [min(tSNE_metrics.plot(:,2)), max(tSNE_metrics.plot(:,2))];
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1813,13 +1856,14 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                     HighlightFromPlot(u,v);
                 end
             case 'extend'
-                if ~isempty(subset)
-                    axnum = find(ismember(subfig_ax, gca));
-                    um_axes = get(gca,'CurrentPoint');
-                    u = um_axes(1,1);
-                    v = um_axes(1,2);
-                    ccgFromPlot(u,v);
-                end
+                ccgFromPlot
+%                 if ~isempty(subset)
+%                     axnum = find(ismember(subfig_ax, gca));
+%                     um_axes = get(gca,'CurrentPoint');
+%                     u = um_axes(1,1);
+%                     v = um_axes(1,2);
+%                     ccgFromPlot(u,v);
+%                 end
         end
     end
 
@@ -2014,10 +2058,17 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function ccgFromPlot(u,v)
-        iii = FromPlot(u,v,1);
-        if iii > 0
-            ClickedCells = [ClickedCells,iii];
+    function ccgFromPlot
+        if isempty(ClickedCells)
+            answer = inputdlg({'Cells to process. E.g. 1:32 or 7,8,9,10'},'Select cells',[1 40],{''});
+            if ~isempty(answer)
+                try
+                    ClickedCells = eval(['[',answer{1},']']);
+                    ClickedCells = ClickedCells(ismember(ClickedCells,1:size(cell_metrics.troughToPeak,2)));
+                catch
+                    MsgLog(['List of cell not formatted correctly'],2)
+                end
+            end
         end
         if ~isempty(ClickedCells)
             GroupAction(ClickedCells)
@@ -2228,9 +2279,9 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
             plotClas = clusClas;
         else
             if UI.checkbox.groups.Value == 0
-                plotClas = cell_metrics.(colorStr{Colorval});
-                if iscell(plotClas)
-                    plotClas = findgroups(plotClas);
+                plotClas11 = cell_metrics.(colorStr{Colorval});
+                if iscell(plotClas11)
+                    plotClas11 = findgroups(plotClas11);
                 end
             else
                 plotClas = clusClas;
@@ -2245,24 +2296,24 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         colorStr = UI.popupmenu.groups.String;
         if Colorval == 1
             clasLegend = 0;
-            UI.listbox.groups.Visible='Off';
-            UI.checkbox.groups.Visible='Off';
+            UI.listbox.groups.Visible = 'Off';
+            UI.checkbox.groups.Visible = 'Off';
             plotClas = clusClas;
             UI.checkbox.groups.Value = 0;
             plotClasGroups = UI.settings.cellTypes;
         else
             clasLegend = 1;
-            UI.listbox.groups.Visible='On';
-            UI.checkbox.groups.Visible='On';
+            UI.listbox.groups.Visible = 'On';
+            UI.checkbox.groups.Visible = 'On';
             if UI.checkbox.groups.Value == 0
-                plotClas = cell_metrics.(colorStr{Colorval});
+                plotClas11 = cell_metrics.(colorStr{Colorval});
                 plotClasGroups = groups_ids.([colorStr{Colorval} '_num']);
-                if iscell(plotClas) && ~strcmp(colorStr{Colorval},'deepSuperficial')
-                    plotClas = findgroups(plotClas);
+                if iscell(plotClas11) && ~strcmp(colorStr{Colorval},'deepSuperficial')
+                    plotClas11 = findgroups(plotClas11);
                 elseif strcmp(colorStr{Colorval},'deepSuperficial')
-                    [~,plotClas] = ismember(plotClas,plotClasGroups);
+                    [~,plotClas11] = ismember(plotClas11,plotClasGroups);
                 end
-                color_class_count = histc(plotClas,[1:length(plotClasGroups)]);
+                color_class_count = histc(plotClas11,[1:length(plotClasGroups)]);
                 color_class_count = cellstr(num2str(color_class_count'))';
                 
                 UI.listbox.groups.String = strcat(plotClasGroups,' (',color_class_count,')'); %  plotClasGroups;
@@ -2509,7 +2560,7 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         choice = '';
         GoTo_dialog = dialog('Position', [0, 0, 300, 350],'Name','Select action'); movegui(GoTo_dialog,'center')
         
-        actionList = strcat([{'Assign existing cell-type','Assign new cell-type','Assign label','Assign deep/superficial','Plot CCGs','Multiple plot actions'},customPlotOptions']);
+        actionList = strcat([{'Assign existing cell-type','Assign new cell-type','Assign label','Assign deep/superficial','CCGs','Multiple plot actions'},customPlotOptions']);
         brainRegionsList = uicontrol('Parent',GoTo_dialog,'Style', 'ListBox', 'String', actionList, 'Position', [10, 50, 280, 270],'Value',1,'Callback',@(src,evnt)CloseGoTo_dialog(cellIDs));
         uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[10, 10, 135, 30],'String','OK','Callback',@(src,evnt)CloseGoTo_dialog(cellIDs));
         uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[155, 10, 135, 30],'String','Cancel','Callback',@(src,evnt)CancelGoTo_dialog);
@@ -2627,7 +2678,7 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                 end
                 
             elseif choice == 6
-                [selectedActions,tf] = listdlg('PromptString',['Plot actions to perform on ' num2str(length(cellIDs)) ' cells'],'ListString',customPlotOptions','SelectionMode','Multiple','ListSize',[200,250]);
+                [selectedActions,tf] = listdlg('PromptString',['Plot actions to perform on ' num2str(length(cellIDs)) ' cells'],'ListString',customPlotOptions','SelectionMode','Multiple','ListSize',[300,350]);
                 if ~isempty(selectedActions)
                     plot_columns = min([length(cellIDs),5]);
                     for j = 1:length(cellIDs)
@@ -2646,7 +2697,7 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                         end
                         for jj = 1:length(selectedActions)
                             subplot_advanced(plot_columns,length(selectedActions),j,jj,mod(j ,5),['Cell Explorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells']), hold on
-                            customPlot(customPlotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1); 
+                            customPlot(customPlotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1);
                             if jj == 1
                                 ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
                             end
@@ -2671,7 +2722,8 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                         inbound = find(a2 == cellIDs(j));
                         outbound = find(a1 == cellIDs(j));
                     end
-                    subplot(min(2,length(cellIDs)),ceil(length(cellIDs)/2),j), hold on
+                    [plotRows,~]= numSubplots(length(cellIDs));
+                    subplot(plotRows(1),plotRows(2),j), hold on
                     customPlot(actionList{choice},cellIDs(j),general1,batchIDs1); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
                 end
                 
@@ -2782,14 +2834,14 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
     function updateCount
         if Colorval > 1
             if UI.checkbox.groups.Value == 0
-                plotClas = cell_metrics.(colorStr{Colorval});
+                plotClas11 = cell_metrics.(colorStr{Colorval});
                 plotClasGroups = groups_ids.([colorStr{Colorval} '_num']);
-                if iscell(plotClas) && ~strcmp(colorStr{Colorval},'deepSuperficial')
-                    plotClas = findgroups(plotClas);
+                if iscell(plotClas11) && ~strcmp(colorStr{Colorval},'deepSuperficial')
+                    plotClas11 = findgroups(plotClas11);
                 elseif strcmp(colorStr{Colorval},'deepSuperficial')
-                    [~,plotClas] = ismember(plotClas,plotClasGroups);
+                    [~,plotClas11] = ismember(plotClas11,plotClasGroups);
                 end
-                color_class_count = histc(plotClas,[1:length(plotClasGroups)]);
+                color_class_count = histc(plotClas11,[1:length(plotClasGroups)]);
                 color_class_count = cellstr(num2str(color_class_count'))';
                 UI.listbox.groups.String = strcat(plotClasGroups,' (',color_class_count,')'); %  plotClasGroups;
                 %                 groups2plot = 1:length(plotClasGroups);
@@ -2816,11 +2868,16 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
 % % % % % % % % % % % % % % % % % % % % % %
 
     function buttonSave
-        answer = questdlg('How would you like to save the classification?', 'Save classification','Update existing metrics','Create new file', 'Cancel','Cancel');
+        answer = questdlg('How would you like to save the classification?', 'Save classification','Update workspace metrics','Update existing metrics','Create new file','Update workspace metrics');
         % Handle response
         switch answer
+            case 'Update workspace metrics'
+                saveCellMetricsStruct
+                assignin('base','cell_metrics',cell_metrics)
+                MsgLog(['Saved metrics to workspace (variable: cell\_metrics)'],2);
             case 'Update existing metrics'
                 try
+                    assignin('base','cell_metrics',cell_metrics)
                     saveMetrics(cell_metrics);
                 catch
                     exception
@@ -2844,14 +2901,11 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                 end
             case 'Cancel'
         end
-        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function saveMetrics(cell_metrics,file)
-        MsgLog(['Saving metrics']);
-        drawnow
+    function saveCellMetricsStruct
         numeric_fields = fieldnames(cell_metrics);
         cell_metrics = rmfield(cell_metrics,{numeric_fields{find(contains(numeric_fields,'_num'))}});
         [C, ~, ic] = unique(clusClas,'sorted');
@@ -2860,6 +2914,23 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         end
         cell_metrics.general.SWR_batch = SWR_batch;
         cell_metrics.general.tSNE_metrics = tSNE_metrics;
+        cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function saveMetrics(cell_metrics,file)
+        MsgLog(['Saving metrics']);
+        drawnow
+        saveCellMetricsStruct
+%         numeric_fields = fieldnames(cell_metrics);
+%         cell_metrics = rmfield(cell_metrics,{numeric_fields{find(contains(numeric_fields,'_num'))}});
+%         [C, ~, ic] = unique(clusClas,'sorted');
+%         for i = 1:length(C)
+%             cell_metrics.putativeCellType(find(ic==i)) = repmat({UI.settings.cellTypes{C(i)}},sum(ic==i),1);
+%         end
+%         cell_metrics.general.SWR_batch = SWR_batch;
+%         cell_metrics.general.tSNE_metrics = tSNE_metrics;
         
         if nargin > 1
             save(file,'cell_metrics');
@@ -3031,7 +3102,6 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         % SRW Profile initialization
         if isempty(SWR_in)
             if isfield(cell_metrics.general,'SWR_batch') && ~isempty(cell_metrics.general.SWR_batch)
-                disp('Loading existing SWR profiles from cell_metrics structure')
                 SWR_batch = cell_metrics.general.SWR_batch;
             elseif ~BatchMode
                 if isfield(cell_metrics.general,'SWR')
@@ -3105,7 +3175,6 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         
         % filtWaveform, acg2, acg1, plot
         if isfield(cell_metrics.general,'tSNE_metrics')
-            disp('Loading existing tSNE spaces from cell_metrics structure')
             tSNE_metrics = cell_metrics.general.tSNE_metrics;
             tSNE_fieldnames = fieldnames(cell_metrics.general.tSNE_metrics);
             for i = 1:length(tSNE_fieldnames)
@@ -3138,7 +3207,7 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         end
         
         % Setting initial settings for plots, popups and listboxes
-        disp('Initializing and applying preferences')
+%         disp('Initializing and applying preferences')
         UI.popupmenu.xData.String = fieldsMenu;
         UI.popupmenu.yData.String = fieldsMenu;
         UI.popupmenu.zData.String = fieldsMenu;
@@ -3290,13 +3359,19 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         UI.listbox.groups.Visible='Off';
         customCellPlot2 = UI.settings.customCellPlotIn2;
         UI.checkbox.groups.Value = 0;
-        
         if isfield(cell_metrics,'synapticEffect')
             cellsExcitatory = find(strcmp(cell_metrics.synapticEffect,'Excitatory'));
             cellsInhibitory = find(strcmp(cell_metrics.synapticEffect,'Inhibitory'));
         end
         
-        spikes = []; 
+        spikes = [];
+        events = [];
+        
+        % Axes limits to increase performance
+        fig2_axislimit_x = [min(cell_metrics.troughToPeak * 1000),max(cell_metrics.troughToPeak * 1000)];
+        fig2_axislimit_y = [min(cell_metrics.burstIndex_Royer2012),max(cell_metrics.burstIndex_Royer2012)];
+        fig3_axislimit_x = [min(tSNE_metrics.plot(:,1)), max(tSNE_metrics.plot(:,1))];
+        fig3_axislimit_y = [min(tSNE_metrics.plot(:,2)), max(tSNE_metrics.plot(:,2))];
     end
 
 
@@ -3335,14 +3410,14 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                             MsgLog(['Failed to load dataset from database: ', db_menu_items{indx}],3);
                         end
                     else
-%                         try
-                            drawnow
-                            cell_metrics = LoadCellMetricBatch('sessionIDs', str2double(db_menu_ids(indx)));
-                            SWR_in = {};
-                            
-                            disp(['Initializing session(s)']);
-                            initializeSession
-                            disp('Session(s) loaded succesfully');
+                        %                         try
+                        drawnow
+                        cell_metrics = LoadCellMetricBatch('sessionIDs', str2double(db_menu_ids(indx)));
+                        SWR_in = {};
+                        
+                        disp(['Initializing session(s)']);
+                        initializeSession
+                        disp('Session(s) loaded succesfully');
                         try
                         catch
                             disp(['Failed to load dataset from database: ',strjoin(db_menu_items(indx))]);
@@ -3419,10 +3494,10 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
             else
                 clusteringpath1 = clusteringpath;
             end
-
+            
             if exist(fullfile(clusteringpath1,[general.basename,'.spikes.cellinfo.mat']),'file')
                 spikesfilesize=dir(fullfile(clusteringpath1,[general.basename,'.spikes.cellinfo.mat']));
-                waitbar_spikes = waitbar(0,['Loading spikes from ', general.basename , ' (', num2str(ceil(spikesfilesize.bytes/1000000)), 'MB)'],'Name','Loading spikes','WindowStyle','modal');
+                waitbar_spikes = waitbar(0,['Loading ', general.basename , ' (', num2str(ceil(spikesfilesize.bytes/1000000)), 'MB)'],'Name','Loading spikes','WindowStyle','modal');
                 temp = load(fullfile(clusteringpath1,[general.basename,'.spikes.cellinfo.mat']));
                 spikes{batchIDs} = temp.spikes;
                 out = true;
@@ -3431,6 +3506,39 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
                     close(waitbar_spikes)
                 end
                 MsgLog(['Spikes loaded succesfully for ' general.basename]);
+            else
+                out = false;
+            end
+        else
+            out = true;
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function out = CheckEvents(batchIDs,eventType)
+        if isempty(events) || ~isfield(events,eventType) || length(events.(eventType)) < batchIDs || isempty(events.(eventType){batchIDs})
+            if BatchMode
+                basepath1 = cell_metrics.general.basepaths{batchIDs};
+            else
+                basepath1 = basepath;
+            end
+            
+            if exist(fullfile(basepath1,[general.basename,'.' (eventType) '.events.mat']),'file')
+                eventsfilesize=dir(fullfile(basepath1,[general.basename,'.' (eventType) '.events.mat']));
+                waitbar_events = waitbar(0,['Loading events from ', general.basename , ' (', num2str(ceil(eventsfilesize.bytes/1000000)), 'MB)'],'Name','Loading events','WindowStyle','modal');
+                temp = load(fullfile(basepath1,[general.basename,'.' (eventType) '.events.mat']));
+                if strcmp(eventType,'ripples')
+                    events.(eventType){batchIDs} = temp.(eventType).peaks;
+                else
+                    events.(eventType){batchIDs} = temp.(eventType).timestamps;
+                end
+                out = true;
+                if ishandle(waitbar_events)
+                    waitbar(1,waitbar_events,'Complete');
+                    close(waitbar_events)
+                end
+                MsgLog([eventType ' events loaded succesfully for ' general.basename]);
             else
                 out = false;
             end
@@ -3457,15 +3565,22 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         
         tableData = updateTableData(spikesPlots);
         spikePlot = uitable(spikePlotList_dialog,'Data',tableData,'Position',[10, 50, 650, 340],'ColumnWidth',{20 125 90 90 90 90 70 70},'columnname',{'','Plot name','X data','Y data','X label','Y label','State','Event'},'RowName',[],'ColumnEditable',[true false false false false false false false]);
-        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[10, 10, 120, 30],'String','Add plot','Callback',@(src,evnt)addPlotToTable);
-        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[140, 10, 120, 30],'String','Edit plot','Callback',@(src,evnt)editPlotToTable);
-        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[270, 10, 120, 30],'String','Delete plot','Callback',@(src,evnt)DeletePlot);
-        OK_button = uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[410, 10, 120, 30],'String','OK','Callback',@(src,evnt)CloseSpikePlotList_dialog);
-        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[540, 10, 120, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikePlotList_dialog);
+        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add plot','Callback',@(src,evnt)addPlotToTable);
+        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[110, 10, 100, 30],'String','Edit plot','Callback',@(src,evnt)editPlotToTable);
+        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[210, 10, 100, 30],'String','Delete plot','Callback',@(src,evnt)DeletePlot);
+        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[310, 10, 100, 30],'String','Reset spike data','Callback',@(src,evnt)ResetSpikeData);
+        OK_button = uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[460, 10, 100, 30],'String','OK','Callback',@(src,evnt)CloseSpikePlotList_dialog);
+        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[560, 10, 100, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikePlotList_dialog);
         
         uicontrol(OK_button)
         uiwait(spikePlotList_dialog);
         
+        function  ResetSpikeData
+             spikes = [];
+             events = [];
+             delete(spikePlotList_dialog);
+             MsgLog('Spike and event data have been reset',2)
+        end
         function tableData = updateTableData(spikesPlots)
             tableData = {};
             spikesPlotFieldnames = fieldnames(spikesPlots);
@@ -3510,7 +3625,7 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         
         function addPlotToTable
             spikesPlotsOut = spikePlotsDlg([]);
-            if ~isempty(spikesPlotsOut) 
+            if ~isempty(spikesPlotsOut)
                 for fn = fieldnames(spikesPlotsOut)'
                     spikesPlots.(fn{1}) = spikesPlotsOut.(fn{1});
                 end
@@ -3522,8 +3637,6 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
         function editPlotToTable
             if ~isempty(find([spikePlot.Data{:,1}])) && sum([spikePlot.Data{:,1}]) == 1
                 spikesPlotFieldnames = fieldnames(spikesPlots);
-%                 fieldtoedit = convertStringsToChars(tableData{find([spikePlot.Data{:,1}]),2});
-%                 fieldtoedit = ['spikes_',fieldtoedit];
                 fieldtoedit = spikesPlotFieldnames{find([spikePlot.Data{:,1}])};
                 spikesPlotsOut = spikePlotsDlg(fieldtoedit);
                 if ~isempty(spikesPlotsOut)
@@ -3539,49 +3652,68 @@ cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-function spikesPlotsOut = spikePlotsDlg(fieldtoedit)
-    
+    function spikesPlotsOut = spikePlotsDlg(fieldtoedit)
+        
         spikesPlotsOut = '';
-        spikePlots_dialog = dialog('Position', [300, 300, 600, 400],'Name','Add new plot type','WindowStyle','modal'); movegui(spikePlots_dialog,'center')
+        spikePlots_dialog = dialog('Position', [300, 300, 670, 400],'Name','Add new plot type','WindowStyle','modal'); movegui(spikePlots_dialog,'center')
         
         spikesField = cellfun(@fieldnames,{spikes{find(~cellfun(@isempty,spikes))}},'UniformOutput',false);
-        spikesField = spikesField{:};
-        temp1 = struct2cell(structfun(@class,spikes{batchIDs},'UniformOutput',false));
-        spikesField = sort(spikesField(find(strcmp(temp1,'cell'))));
+        spikesField = sort(unique(vertcat(spikesField{:})));
+        %         temp1 = struct2cell(structfun(@class,spikes{batchIDs},'UniformOutput',false));
+        %         spikesField = sort(spikesField(find(strcmp(temp1,'cell'))));
         
         if BatchMode
             basepath1 = cell_metrics.general.basepaths{batchIDs};
         else
             basepath1 = basepath;
         end
-        eventField = dir(fullfile(basepath1,[general.basename, '.*.events.mat']));
-        eventField = {eventField.name};
-        eventField = ['Select event file below';eventField];
+        %         eventField = dir(fullfile(basepath1,[general.basename, '.*.events.mat']));
+        %         eventField = {eventField.name};
+        %         eventField = ['Select event file below';eventField];
         
-        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Plot name', 'Position', [10, 375, 580, 20],'HorizontalAlignment','left');
-        spikePlotName = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 350, 580, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Plot name', 'Position', [10, 371, 650, 20],'HorizontalAlignment','left');
+        spikePlotName = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 350, 650, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'X data', 'Position', [10, 325, 280, 20],'HorizontalAlignment','left');
-        spikePlotXData = uicontrol('Parent',spikePlots_dialog,'Style', 'ListBox', 'String', spikesField, 'Position', [10, 130, 280, 195],'HorizontalAlignment','left');
-        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'X label', 'Position', [10, 105, 280, 20],'HorizontalAlignment','left');
-        spikePlotXLabel = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 80, 280, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'X data', 'Position', [10, 321, 210, 20],'HorizontalAlignment','left');
+        spikePlotXData = uicontrol('Parent',spikePlots_dialog,'Style', 'ListBox', 'String', spikesField, 'Position', [10, 150, 210, 175],'HorizontalAlignment','left');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'X label', 'Position', [10, 121, 210, 20],'HorizontalAlignment','left');
+        spikePlotXLabel = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 100, 210, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Y data', 'Position', [310, 325, 280, 20],'HorizontalAlignment','left');
-        spikePlotYData = uicontrol('Parent',spikePlots_dialog,'Style', 'ListBox', 'String', spikesField, 'Position', [310, 130, 280, 195],'HorizontalAlignment','left');
-        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Y label', 'Position', [310, 105, 280, 20],'HorizontalAlignment','left');
-        spikePlotYLabel = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [310, 80, 280, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Y data', 'Position', [230, 321, 210, 20],'HorizontalAlignment','left');
+        spikePlotYData = uicontrol('Parent',spikePlots_dialog,'Style', 'ListBox', 'String', spikesField, 'Position', [230, 150, 210, 175],'HorizontalAlignment','left');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Y label', 'Position', [230, 121, 210, 20],'HorizontalAlignment','left');
+        spikePlotYLabel = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [230, 100, 210, 25],'HorizontalAlignment','left');
         
-        spikePlotState = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', ['Select state field below';spikesField], 'Position', [10, 60, 280, 10],'HorizontalAlignment','left');
-        spikePlotEvent = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', eventField, 'Position', [310, 60, 280, 10],'HorizontalAlignment','left');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'State', 'Position', [450, 321, 210, 20],'HorizontalAlignment','left');
+        spikePlotState = uicontrol('Parent',spikePlots_dialog,'Style', 'ListBox', 'String', ['Select state field below';spikesField], 'Position', [450, 150, 210, 175],'HorizontalAlignment','left');
         
-        uicontrol('Parent',spikePlots_dialog,'Style','pushbutton','Position',[10, 10, 280, 30],'String','OK','Callback',@(src,evnt)CloseSpikePlots_dialog);
-        uicontrol('Parent',spikePlots_dialog,'Style','pushbutton','Position',[300, 10, 290, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikePlots_dialog);
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Event', 'Position', [10, 71, 210, 20],'HorizontalAlignment','left');
+        spikePlotEvent = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 50, 210, 25],'HorizontalAlignment','left');
+        
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'sec before', 'Position', [230, 71, 70, 20],'HorizontalAlignment','left');
+        spikePlotEventSecBefore = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [230, 50, 60, 25],'HorizontalAlignment','center');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'sec after', 'Position', [300, 71, 70, 20],'HorizontalAlignment','left');
+        spikePlotEventSecAfter = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [300, 50, 60, 25],'HorizontalAlignment','center');
+        
+        spikePlotEventPlotRaster = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[370 50 70 25],'Units','normalized','String','Raster','HorizontalAlignment','left');
+        spikePlotEventPlotAverage = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[450 50 70 25],'Units','normalized','String','Histogram','HorizontalAlignment','left');
+        
+        uicontrol('Parent',spikePlots_dialog,'Style','pushbutton','Position',[10, 10, 320, 30],'String','OK','Callback',@(src,evnt)CloseSpikePlots_dialog);
+        uicontrol('Parent',spikePlots_dialog,'Style','pushbutton','Position',[340, 10, 320, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikePlots_dialog);
         
         if ~isempty(fieldtoedit)
             spikePlotName.String = fieldtoedit(8:end);
             spikePlotXLabel.String = spikesPlots.(fieldtoedit).x_label;
             spikePlotYLabel.String = spikesPlots.(fieldtoedit).y_label;
-            
+            spikePlotEvent.String = spikesPlots.(fieldtoedit).event;
+            spikePlotEventSecBefore.String = spikesPlots.(fieldtoedit).eventSecBefore;
+            spikePlotEventSecAfter.String = spikesPlots.(fieldtoedit).eventSecAfter;
+            if isfield(spikesPlots.(fieldtoedit),'plotAverage')
+                spikePlotEventPlotRaster.Value = spikesPlots.(fieldtoedit).plotRaster;
+            end
+            if isfield(spikesPlots.(fieldtoedit),'plotAverage')
+                spikePlotEventPlotAverage.Value = spikesPlots.(fieldtoedit).plotAverage;
+            end
             if find(strcmp(spikesPlots.(fieldtoedit).x,spikePlotXData.String))
                 spikePlotXData.Value = find(strcmp(spikesPlots.(fieldtoedit).x,spikePlotXData.String));
             end
@@ -3598,33 +3730,63 @@ function spikesPlotsOut = spikePlotsDlg(fieldtoedit)
         
         uicontrol(spikePlotName);
         uiwait(spikePlots_dialog);
-
+        
         function CloseSpikePlots_dialog
-            if ~isempty(spikePlotName.String)
-                spikePlotName2 = ['spikes_',spikePlotName.String];
+            if ~myFieldCheck(spikePlotName,'varname')
+            elseif ~isempty(spikePlotEvent.String) && ~myFieldCheck(spikePlotEvent,'varname')
+            elseif ~isempty(spikePlotEvent.String) && ~myFieldCheck(spikePlotEventSecBefore,'numeric')
+            elseif ~isempty(spikePlotEvent.String) && ~myFieldCheck(spikePlotEventSecAfter,'numeric')
+            else
+                spikePlotName2 = ['spikes_',regexprep(spikePlotName.String,{'/.*',' ','-'},'')];
                 spikesPlotsOut.(spikePlotName2).x = spikesField{spikePlotXData.Value};
                 spikesPlotsOut.(spikePlotName2).y = spikesField{spikePlotYData.Value};
                 spikesPlotsOut.(spikePlotName2).x_label = spikePlotXLabel.String;
                 spikesPlotsOut.(spikePlotName2).y_label = spikePlotYLabel.String;
+                spikesPlotsOut.(spikePlotName2).event = spikePlotEvent.String;
+                spikesPlotsOut.(spikePlotName2).eventSecBefore = str2num(spikePlotEventSecBefore.String);
+                spikesPlotsOut.(spikePlotName2).eventSecAfter = str2num(spikePlotEventSecAfter.String);
+                spikesPlotsOut.(spikePlotName2).plotRaster = spikePlotEventPlotRaster.Value;
+                spikesPlotsOut.(spikePlotName2).plotAverage = spikePlotEventPlotAverage.Value;
                 if spikePlotState.Value > 1
                     spikesPlotsOut.(spikePlotName2).state = spikesField{spikePlotState.Value-1};
                 else
                     spikesPlotsOut.(spikePlotName2).state = '';
                 end
-                if spikePlotEvent > 1
-                    spikesPlotsOut.(spikePlotName2).event = eventField{spikePlotEvent.Value-1};
-                else
-                    spikesPlotsOut.(spikePlotName2).event = '';
-                end
                 delete(spikePlots_dialog);
-            else
-                uicontrol(spikePlotName);
-                message = sprintf('Warning: Plot name must be filled out!');
-                uiwait(warndlg(message));
+            end
+            
+            function out = myFieldCheck(fieldString,type)
+                out = 1;
+                switch type
+                    case 'numeric'
+                        if isempty(fieldString.String) | ~all(ismember(fieldString.String, '.1234567890'))
+                            uiwait(warndlg('Field must be numeric'))
+                            uicontrol(fieldString);
+                            out = 0;
+                        end
+                    case 'alphanumeric'
+                        if isempty(fieldString.String) | ~regexp(fieldString.String, '^[A-Za-z0-9_]+$') | ~regexp(fieldString.String(1), '^[A-Z]+$') 
+                            uiwait(warndlg('Field must be alpha numeric'))
+                            uicontrol(fieldString);
+                            out = 0;
+                        end
+                    case 'required'
+                        if isempty(fieldString.String)
+                            uiwait(warndlg(['Required field missing']))
+                            uicontrol(fieldString);
+                            out = 0;
+                        end
+                   case 'varname'
+                       if ~isvarname(fieldString.String)
+                            uiwait(warndlg(['Field must be a valid variable name']))
+                            uicontrol(fieldString);
+                            out = 0;
+                        end
+                end
             end
         end
         
-    function  CancelSpikePlots_dialog
+        function  CancelSpikePlots_dialog
             spikesPlotsOut = '';
             delete(spikePlots_dialog);
         end
@@ -3644,16 +3806,16 @@ function spikesPlotsOut = spikePlotsDlg(fieldtoedit)
         UI.popupmenu.log.Value = length(UI.popupmenu.log.String);
         % priority==1
         if exist('priority')
-            if any(priority == 1) 
+            if any(priority == 1)
                 disp(message)
             end
-            if any(priority == 2) 
+            if any(priority == 2)
                 msgbox(message,createStruct);
             end
-            if any(priority == 3) 
+            if any(priority == 3)
                 warning(message)
             end
-            if any(priority == 4) 
+            if any(priority == 4)
                 warndlg(message)
             end
         end
@@ -3858,20 +4020,21 @@ function spikesPlotsOut = spikePlotsDlg(fieldtoedit)
             case 'z'
                 undoClassification;
             case 'space'
-                if isempty(ClickedCells)
-                    answer = inputdlg({'Cells to process. E.g. 1:32 or 7,8,9,10'},'Select cells',[1 40],{''});
-                    if ~isempty(answer)
-                        try
-                            ClickedCells = eval(['[',answer{1},']']);
-                            ClickedCells = ClickedCells(ismember(ClickedCells,1:size(cell_metrics.troughToPeak,2)));
-                        catch
-                            MsgLog(['List of cell not formatted correctly'],2)
-                        end
-                    end
-                end
-                if ~isempty(ClickedCells)
-                    GroupAction(ClickedCells)
-                end
+                ccgFromPlot
+%                 if isempty(ClickedCells)
+%                     answer = inputdlg({'Cells to process. E.g. 1:32 or 7,8,9,10'},'Select cells',[1 40],{''});
+%                     if ~isempty(answer)
+%                         try
+%                             ClickedCells = eval(['[',answer{1},']']);
+%                             ClickedCells = ClickedCells(ismember(ClickedCells,1:size(cell_metrics.troughToPeak,2)));
+%                         catch
+%                             MsgLog(['List of cell not formatted correctly'],2)
+%                         end
+%                     end
+%                 end
+%                 if ~isempty(ClickedCells)
+%                     GroupAction(ClickedCells)
+%                 end
             case 'backspace'
                 ii_history_reverse;
             case {'hyphen','add'}
@@ -3996,32 +4159,69 @@ function h = overobj2(varargin)
 % Ensure root units are pixels
 oldUnits = get(0,'units');
 set(0,'units','pixels');
- 
+
 % Get the figure beneath the mouse pointer & mouse pointer pos
 try
-   fig = get(0,'PointerWindow');  % HG1: R2014a or older
+    fig = get(0,'PointerWindow');  % HG1: R2014a or older
 catch
-   fig = matlab.ui.internal.getPointerWindow;  % HG2: R2014b or newer
+    fig = matlab.ui.internal.getPointerWindow;  % HG2: R2014b or newer
 end
 p = get(0,'PointerLocation');
 set(0,'units',oldUnits);
- 
+
 % Look for quick exit (if mouse pointer is not over any figure)
 if fig==0,  h=[]; return;  end
- 
+
 % Compute figure offset of mouse pointer in pixels
 figPos = getpixelposition(fig);
 x = (p(1)-figPos(1));
 y = (p(2)-figPos(2));
- 
+
 % Loop over all figure descendants
 c = findobj(get(fig,'Children'),varargin{:});
 for h = c'
-   % If descendant contains the mouse pointer position, exit
-   r = getpixelposition(h);  % Note: cache this for improved performance
-   if (x>r(1)) && (x<r(1)+r(3)) && (y>r(2)) && (y<r(2)+r(4))
-      return
-   end
+    % If descendant contains the mouse pointer position, exit
+    r = getpixelposition(h);  % Note: cache this for improved performance
+    if (x>r(1)) && (x<r(1)+r(3)) && (y>r(2)) && (y<r(2)+r(4))
+        return
+    end
 end
 h = [];
+end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+function [p,n]=numSubplots(n)
+% Purpose
+% Calculate how many rows and columns of sub-plots are needed to
+% neatly display n subplots.
+%
+% Rob Campbell - January 2010
+
+while isprime(n) && n>4
+    n=n+1;
+end
+p=factor(n);
+if length(p)==1
+    p=[1,p];
+    return
+end
+while length(p)>2
+    if length(p)>=4
+        p(1)=p(1)*p(end-1);
+        p(2)=p(2)*p(end);
+        p(end-1:end)=[];
+    else
+        p(1)=p(1)*p(2);
+        p(2)=[];
+    end
+    p=sort(p);
+end
+
+%Reformat if the column/row ratio is too large: we want a roughly
+%square design
+while p(2)/p(1)>2.5
+    N=n+1;
+    [p,n]=numSubplots(N); %Recursive!
+end
 end
