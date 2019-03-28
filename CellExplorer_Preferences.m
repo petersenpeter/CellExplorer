@@ -29,8 +29,8 @@ UI.settings.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
 UI.settings.cellTypeColors = [[.5,.5,.5];[.2,.2,.8];[.2,.8,.2];[0.2,0.8,0.8];[.8,.2,.2];[0.8,0.2,0.8]];
 
 % Fields used to define the tSNE represetation
-UI.settings.tSNE_calcWideAcg = false;
-UI.settings.tSNE_calcNarrowAcg = false;
+UI.settings.tSNE_calcWideAcg = true;
+UI.settings.tSNE_calcNarrowAcg = true;
 UI.settings.tSNE_calcFiltWaveform = false;
 
 % List of fields to use in the general tSNE representation
@@ -39,7 +39,6 @@ UI.settings.tSNE_metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizu
 % Highlight excitatory / inhibitory cells
 UI.settings.displayInhibitory = false; % boolean
 UI.settings.displayExcitatory = false; % boolean
-
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Spikes plot definitions 

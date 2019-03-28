@@ -33,6 +33,10 @@ function cell_metrics = calc_CellMetrics(varargin)
 % By Peter Petersen
 % petersen.peter@gmail.com
 
+% TODO 
+% Support amplipex amplifier ranges (different range than Intan recordings)
+% Faster way to get waveforms for phy data
+
 p = inputParser;
 addParameter(p,'id',[],@isnumeric);
 addParameter(p,'session',[],@isstr);

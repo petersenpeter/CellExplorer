@@ -1,35 +1,72 @@
 function classification_deepSuperficial(session)
-% Ripples classification of Deep-superficial channels
+% SWR ripples classification of Deep-superficial channels
+% Defines the deep superficial boundary by the sharp wave reversal.
+%
+% The algorith assigned both distance to the reversal point and labels.
+% The assigned label are (ordered by depth):
+% 'Cortical' : Assigned to channels belonging to a spikegroup with the channelTag Cortical 
+% 'Deep' : Assigned to channels above the reversal
+% 'Superficial' : Assigned to channels below the reversal
+% '' : Assigned to channels belonging to a spikegroup with the channelTag Bad
+%
+% Distance to the boundary in µm for spike groups where the reversal is detected.
+%
+% INPUT
+% session struct
+
+% By Peter Petersen
+% petersen.peter@gmail.com
+
+% Gets basepath and basename from session struct
 basepath = session.general.basePath;
 basename = session.general.baseName;
 
+% Loading detected ripples
 load(fullfile(basepath,[basename,'.ripples.events.mat']));
 ripple_channel_detector = ripples.detectorinfo.detectionparms.channel;
 
+% Determines which spike groups that should be excluded from the analysis
+% by two channelTags: Cortical and Bad
+
+% Use Cortical channelTag to spike groups not belonging to the hippocampus
 spikeGroupsToExclude = [];
 if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Cortical.spikeGroups)
     spikeGroupsToExclude = [spikeGroupsToExclude,session.channelTags.Cortical.spikeGroups];
 end
 
+% Use Bad channelTag for spike groups, that are not working properly (i.e. broken shanks)
 if isfield(session.channelTags,'Bad') && ~isempty(session.channelTags.Bad.spikeGroups)
     spikeGroupsToExclude = [spikeGroupsToExclude,session.channelTags.Bad.spikeGroups];
 end
 
+% John's swr detector
 % if ~exist(fullfile(basepath, [basename, '.SWR.events.mat']))
 %     SWR = detect_swr(basename, ripple_channels);
 % else
 %     load(fullfile(basepath, [basename, '.SWR.events.mat']))
 % end
 
-if isfield(session.extracellular,'probesVerticalSpacing')
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% Determines the VerticalSpacing and probe-layout
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+
+if isfield(session.extracellular,'probesVerticalSpacing') & isfield(session.extracellular,'probesLayout')
+    % Loads probesVerticalSpacing and probesLayout from session struct
     VerticalSpacing = session.extracellular.probesVerticalSpacing;
     Layout = session.extracellular.probesLayout;
 else
+    % If no probesVerticalSpacing or probesLayout is given, it will try to load the information from the database
+
+    % Loads the list of silicon probes from the database
     siliconprobes = struct2cell(db_load_table('siliconprobes'));
+    
     if isempty(session.extracellular.probes)
+        % if no probe information is given in the session struct, it tries
+        % to get the probe type from probe implants in the database
         probeimplants = struct2cell(db_load_table('probeimplants',session.general.animal));
         SiliconProbes = cellstr(string(probeimplants{1}.DynamicProbeLayout));
     else
+        % Get the probe type from the session struct
         SiliconProbes = session.extracellular.siliconProbes;
     end
     probeids = [];
@@ -37,6 +74,7 @@ else
     VerticalSpacingBetweenSites_corrected = [];
     Layout = [];
     
+    % Determines the best estimate of the vertical spacing across channels for different probe designs.
     for i =1:length(SiliconProbes)
         probeids(i) = find(arrayfun(@(n) strcmp(siliconprobes{n}.DescriptiveName, SiliconProbes{1}), 1:numel(siliconprobes)));
         VerticalSpacingBetweenSites(i) = str2num(siliconprobes{probeids(i)}.VerticalSpacingBetweenSites);
@@ -54,6 +92,7 @@ else
             conv_length = 5;
             VerticalSpacingBetweenSites_corrected(i) = VerticalSpacingBetweenSites(i)/5;
         else
+            % If no probe design is provided, it assumes a staggered/poly2 layout (most common)
             conv_length = 2;
             error('No probe layout defined');
         end
@@ -63,7 +102,7 @@ else
     else
         VerticalSpacing = VerticalSpacingBetweenSites_corrected;
     end
-    disp(['Vertical spacing applied: ', num2str(VerticalSpacing),' um'])
+    disp(['Vertical spacing applied: ', num2str(VerticalSpacing),' µm'])
 end
 
 ripple_average = [];
@@ -78,18 +117,29 @@ deepSuperficial_ChClass = repmat({''},1,nChannels);
 deepSuperficial_ChDistance3 = nan(1,nChannels);
 deepSuperficial_ChDistance = nan(1,nChannels);
 
+% excluding channels that has the channelTags Bad as the algorithm is sensitive to artifacts
 channels_to_exclude = [];
 if isfield(session.channelTags,'Bad') && ~isempty(session.channelTags.Bad.channels)
     channels_to_exclude = session.channelTags.Bad.channels;
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% Main algorithm  (two versions below)
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+
 SWR_slope = [];
 for jj = 1:session.extracellular.nSpikeGroups
+    % Analysing the spike groups separately
     fprintf(['Analysing spike group ', num2str(jj),', ']);
     
+    % Get list of channels belong to spike group (1-indexed)
     ripple_channels{jj} = session.extracellular.spikeGroups.channels{jj}+1;
+    
+    % Loading .lfp file
     signal = 0.000195 * double(LoadBinary([basename '.lfp'],'nChannels',nChannels,'channels',ripple_channels{jj},'precision','int16','frequency',srLfp));
     ripple_ave2 = [];
+    
+    % Only include ripples outside 151 samples from the start/end of the lfp file
     ripples.peaks = ripples.peaks(find(ripples.peaks*srLfp>151 & ripples.peaks*srLfp<size(signal,1)-151));
     for i = 1:size(ripples.peaks,1)
         ripple_ave2(:,:,i) = signal(round(ripples.peaks(i)*srLfp)-150:round(ripples.peaks(i)*srLfp)+150,:);
@@ -99,31 +149,50 @@ for jj = 1:session.extracellular.nSpikeGroups
     ripple_power{jj} = sum(ripple_average{jj}.^2)./max(sum(ripple_average{jj}.^2));
     ripple_amplitude{jj} = mean(ripple_average{jj})/max(abs(mean(ripple_average{jj})));
     
+    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+    % First algorithm (check new algorithm below)
+    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+    
+    % Assigns Superficial label to all channels if all channels have negative ripple amplitude
     deepSuperficial_ChClass3(ripple_channels{jj}(find(ripple_amplitude{jj}<=0))) = repmat({'Superficial'},sum(ripple_amplitude{jj}<=0),1);
+    % Assigns Deep label to all channels if all channels have positive ripple amplitude
     deepSuperficial_ChClass3(ripple_channels{jj}(find(ripple_amplitude{jj}>0))) = repmat({'Deep'},sum(ripple_amplitude{jj}>0),1);
+    
+    % assigning distance to reversal
     if sum(ripple_amplitude{jj}>0)==0
-        % Superficial
+        % Superficial 
+        % Positive distance to reversal assigned to channels in spike group
+        % if all channels are below reversal
         deepSuperficial_ChDistance3(ripple_channels{jj}) = 1:size(ripple_average{jj},2);
     elseif sum(ripple_amplitude{jj}>0) == size(ripple_average{jj},2)
         % Deep
+        % Negative distance to reversal assigned to channels in spike group
+        % if all channels are above reversal
         deepSuperficial_ChDistance3(ripple_channels{jj}) = -(size(ripple_average{jj},2):-1:1);
     end
+    % Deals with the spike groups where a reversal is detected
     if any(ripple_amplitude{jj}<0) && any(ripple_amplitude{jj}>0)
+        % Performs a linear interpolation to determine the reversal point.
+        % This limits the variance that can exist because of variance in
+        % the ripple amplitude and due to sub-optimal probe layouts 
         threshold = interp1(ripple_amplitude{jj},[1:size(ripple_average{jj},2)],0);
         deepSuperficial_ChClass3(ripple_channels{jj}([1:threshold])) = repmat({'Deep'},length([1:threshold]),1);
         deepSuperficial_ChClass3(ripple_channels{jj}([ceil(threshold):size(ripple_average{jj},2)])) = repmat({'Superficial'},length([ceil(threshold):size(ripple_average{jj},2)]),1);
         deepSuperficial_ChDistance3(ripple_channels{jj}) = (1:size(ripple_average{jj},2))-threshold;
     end
     
-    % New method
+    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+    % Second algorithm (newest)
+    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+    % Seems to do much better across mouse and rat recordings where the
+    % sharp wave can have very different shape and amplitude.
+    
     [~,ia,~] = intersect(ripple_channels{jj}, channels_to_exclude);
     [ripple_channels2,ia2] = setdiff(ripple_channels{jj}, channels_to_exclude,'legacy');
     ia2 = sort(ia2);
     SWR_average = nanconv(ripple_average{jj},ones(40,1)/40,'edge');
     SWR_average = SWR_average-SWR_average(100,:);
     SWR_diff{jj} = sum(SWR_average(100:135,:));
-    %     SWR_diff{jj} = -SWR_average(100,:)+SWR_average(140,:);
-    %     SWR_diff{jj}(ia) = nan;
     SWR_diff2 = SWR_diff{jj};
     SWR_diff2(ia) = [];
     SWR_diff2 = nanconv(SWR_diff2,[ones(1,conv_length)]/conv_length,'edge');
@@ -139,7 +208,7 @@ for jj = 1:session.extracellular.nSpikeGroups
     SWR_diff{jj} = SWR_diff{jj}./max(abs(SWR_diff{jj}));
     SWR_amplitude{jj} = (SWR_amplitude{jj}-min(SWR_amplitude{jj}))./max(abs(SWR_amplitude{jj}-min(SWR_amplitude{jj})));
     
-    if any(diff(SWR_diff2<0)==1) && ~any(jj == spikeGroupsToExclude) % && ~any(find(diff(SWR_diff{jj}<0)) > length(SWR_diff{jj}))
+    if any(diff(SWR_diff2<0)==1) && ~any(jj == spikeGroupsToExclude)
         indx = find(diff(SWR_diff2<0)==1);indx = indx(end);
         threshold = interp1(SWR_diff2([indx,indx+1]),[ia2(indx),ia2(indx+1)],0);
         deepSuperficial_ChClass(ripple_channels{jj}([1:threshold])) = repmat({'Deep'},length([1:threshold]),1);
@@ -161,6 +230,7 @@ for jj = 1:session.extracellular.nSpikeGroups
 end
 
 clear signal
+% Labels channels Cortical if spike group has channelTags
 if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Cortical.spikeGroups)
     for jj = session.channelTags.Cortical.spikeGroups
         deepSuperficial_ChClass3(ripple_channels{jj}) = repmat({'Cortical'},length(ripple_channels{jj}),1);
@@ -168,6 +238,7 @@ if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Corti
     end
 end
 
+% Removes channels labels if spike group has Bad
 if isfield(session.channelTags,'Bad') && ~isempty(session.channelTags.Bad.spikeGroups)
     for jj = session.channelTags.Bad.spikeGroups
         deepSuperficial_ChClass3(ripple_channels{jj}) = repmat({''},length(ripple_channels{jj}),1);
@@ -177,6 +248,10 @@ end
 
 deepSuperficial_ChDistance3 = deepSuperficial_ChDistance3 * VerticalSpacing;
 deepSuperficial_ChDistance = deepSuperficial_ChDistance * VerticalSpacing;
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Saving the result to basename.deepSuperficialfromRipple.channelinfo.mat  
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 deepSuperficialfromRipple.channels = 0:length(deepSuperficial_ChDistance)-1; % index 0
 deepSuperficialfromRipple.channelClass = deepSuperficial_ChClass;
@@ -193,21 +268,27 @@ deepSuperficialfromRipple.processinginfo.function = 'classification_deepSuperfic
 deepSuperficialfromRipple.processinginfo.date = now;
 deepSuperficialfromRipple.processinginfo.params.verticalSpacing = VerticalSpacing;
 deepSuperficialfromRipple.processinginfo.params.spikeGroupsToExclude = spikeGroupsToExclude;
-
 save(fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']),'deepSuperficialfromRipple')
 
-figure,
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Plotting the average ripple with sharp wave across all spike groups
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+
+figure
 for jj = 1:session.extracellular.nSpikeGroups
     subplot(2,ceil(session.extracellular.nSpikeGroups/2),jj)
-    
     plot((SWR_diff{jj}*50)+ripple_time_axis(1)-50,-[0:size(SWR_diff{jj},2)-1]*0.04,'-k','linewidth',2), hold on, grid on
     plot((SWR_amplitude{jj}*50)+ripple_time_axis(1)-50,-[0:size(SWR_amplitude{jj},2)-1]*0.04,'k','linewidth',1)
+    % Plotting ripple amplitude along vertical axis
     plot((ripple_amplitude{jj}*50)+ripple_time_axis(1)-50,-[0:size(ripple_amplitude{jj},2)-1]*0.04,'m','linewidth',1)
     
     for jjj = 1:size(ripple_average{jj},2)
+        % Plotting depth (µm)
         text(ripple_time_axis(end)+5,ripple_average{jj}(1,jjj)-(jjj-1)*0.04,[num2str(round(deepSuperficial_ChDistance(ripple_channels{jj}(jjj))))])
+        % Plotting channel number (0 indexes)
         text((SWR_diff{jj}(jjj)*50)+ripple_time_axis(1)-50-10,-(jjj-1)*0.04,num2str(ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
         plot(ripple_time_axis,ripple_average{jj}(:,jjj)-(jjj-1)*0.04)
+        % Plotting assigned channel labels
         if strcmp(deepSuperficial_ChClass(ripple_channels{jj}(jjj)),'Superficial')
             plot((SWR_diff{jj}(jjj)*50)+ripple_time_axis(1)-50,-(jjj-1)*0.04,'or','linewidth',2)
         elseif strcmp(deepSuperficial_ChClass(ripple_channels{jj}(jjj)),'Deep')
@@ -217,10 +298,12 @@ for jj = 1:session.extracellular.nSpikeGroups
         else
             plot((SWR_diff{jj}(jjj)*50)+ripple_time_axis(1)-50,-(jjj-1)*0.04,'ok')
         end
+        % Plotting the channel used for the ripple detection if it is part of current spike group
         if ripple_channel_detector==ripple_channels{jj}(jjj)
             plot(ripple_time_axis,ripple_average{jj}(:,jjj)-(jjj-1)*0.04,'k','linewidth',2)
         end
     end
+    
     title(['Spike group ' num2str(jj)]),xlabel('Time (ms)'),if jj ==1; ylabel(session.general.name, 'Interpreter', 'none'); end
     axis tight, ax6 = axis; grid on
     plot([-120, -120;-170,-170;120,120], [ax6(3) ax6(4)],'color','k');

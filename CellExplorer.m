@@ -84,7 +84,7 @@ subsetPlots1 = []; subsetPlots2 = []; subsetPlots3 = []; subsetPlots4 = []; subs
 tSNE_metrics = []; BatchMode = false; ClickedCells = []; classificationTrackChanges = []; time_waveforms_zscored = []; spikes = [];
 spikesPlots = []; globalZoom = cell(1,9); createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal'; events = [];
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = []; 
-CellExplorerVersion = '1.0';
+CellExplorerVersion = '1.01';
 
 UI.fig = figure('KeyPressFcn', {@keyPress},'Name',['Cell Explorer v' CellExplorerVersion],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot);
 hManager = uigetmodemanager(UI.fig);
@@ -235,8 +235,9 @@ else
         if enableDatabase
             LoadDatabaseSession;
             if ~exist('cell_metrics')
-                warning('No dataset selected')
+                disp('No dataset selected - closing the Cell Explorer')
                 close(UI.fig)
+                cell_metrics = [];
                 return
             end
             
@@ -339,37 +340,37 @@ UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.displaySettings,'Style','po
 % #1 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 86 20 10],'Units','normalized','String','1. View','HorizontalAlignment','left');
 UI.popupmenu.customplot1 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[14 87 38 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleWaveformsPlot,'KeyPressFcn', {@keyPress});
-if any(strcmp(UI.settings.customCellPlotIn1,UI.popupmenu.customplot1.String)); UI.popupmenu.customplot1.Value = find(strcmp(UI.settings.customCellPlotIn1,UI.popupmenu.customplot1.String)); else; UI.popupmenu.customplot1.Value = 1; disp(['The specified customCellPlotIn (', UI.settings.customCellPlotIn1 ,') in preferences could not be recogniced as an existing field name']); end
+if any(strcmp(UI.settings.customCellPlotIn1,UI.popupmenu.customplot1.String)); UI.popupmenu.customplot1.Value = find(strcmp(UI.settings.customCellPlotIn1,UI.popupmenu.customplot1.String)); else; UI.popupmenu.customplot1.Value = 1; disp(['customCellPlotIn1 (', UI.settings.customCellPlotIn1 ,') in preferences is not an existing field name']); end
 customCellPlot1 = customPlotOptions{UI.popupmenu.customplot1.Value};
 
 % #2 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 76 25 10],'Units','normalized','String','2. View','HorizontalAlignment','left');
 UI.popupmenu.customplot2 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[14 77 38 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleACGplot,'KeyPressFcn', {@keyPress});
-if find(strcmp(UI.settings.customCellPlotIn2,UI.popupmenu.customplot2.String)); UI.popupmenu.customplot2.Value = find(strcmp(UI.settings.customCellPlotIn2,UI.popupmenu.customplot2.String)); else; UI.popupmenu.customplot2.Value = 4; disp(['The specified customCellPlotIn (', UI.settings.customCellPlotIn2 ,') in preferences could not be recogniced as an existing field name']); end
+if find(strcmp(UI.settings.customCellPlotIn2,UI.popupmenu.customplot2.String)); UI.popupmenu.customplot2.Value = find(strcmp(UI.settings.customCellPlotIn2,UI.popupmenu.customplot2.String)); else; UI.popupmenu.customplot2.Value = 4; disp(['customCellPlotIn2 (', UI.settings.customCellPlotIn2 ,') in preferences is not an existing field name']); end
 customCellPlot2 = customPlotOptions{UI.popupmenu.customplot2.Value};
 
 % #3 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 66 35 10],'Units','normalized','String','3. View','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
 UI.popupmenu.customplot3 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[14 67 38 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc,'KeyPressFcn', {@keyPress});
-if find(strcmp(UI.settings.customCellPlotIn3,UI.popupmenu.customplot3.String)); UI.popupmenu.customplot3.Value = find(strcmp(UI.settings.customCellPlotIn3,UI.popupmenu.customplot3.String)); else; UI.popupmenu.customplot3.Value = 7; disp(['The specified UI.settings.customCellPlotIn3 (', UI.settings.customCellPlotIn3 ,') in preferences could not be recogniced as an existing field name']); end
+if find(strcmp(UI.settings.customCellPlotIn3,UI.popupmenu.customplot3.String)); UI.popupmenu.customplot3.Value = find(strcmp(UI.settings.customCellPlotIn3,UI.popupmenu.customplot3.String)); else; UI.popupmenu.customplot3.Value = 7; disp(['customCellPlotIn3 (', UI.settings.customCellPlotIn3 ,') in preferences is not an existing field name']); end
 customCellPlot3 = customPlotOptions{UI.popupmenu.customplot3.Value};
 
 % #4 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 56 35 10],'Units','normalized','String','4. View','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
 UI.popupmenu.customplot4 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[14 57 38 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc2,'KeyPressFcn', {@keyPress});
-if find(strcmp(UI.settings.customCellPlotIn4,UI.popupmenu.customplot4.String)); UI.popupmenu.customplot4.Value = find(strcmp(UI.settings.customCellPlotIn4,UI.popupmenu.customplot4.String)); else; UI.popupmenu.customplot4.Value = 7; disp(['The specified customCellPlotIn (', UI.settings.customCellPlotIn4 ,') in preferences could not be recogniced as an existing field name']); end
+if find(strcmp(UI.settings.customCellPlotIn4,UI.popupmenu.customplot4.String)); UI.popupmenu.customplot4.Value = find(strcmp(UI.settings.customCellPlotIn4,UI.popupmenu.customplot4.String)); else; UI.popupmenu.customplot4.Value = 7; disp(['customCellPlotIn4 (', UI.settings.customCellPlotIn4 ,') in preferences is not an existing field name']); end
 customCellPlot4 = customPlotOptions{UI.popupmenu.customplot4.Value};
 
 % #5 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 46 35 10],'Units','normalized','String','5. View','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
 UI.popupmenu.customplot5 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[14 47 38 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc3,'KeyPressFcn', {@keyPress});
-if find(strcmp(UI.settings.customCellPlotIn5,UI.popupmenu.customplot5.String)); UI.popupmenu.customplot5.Value = find(strcmp(UI.settings.customCellPlotIn5,UI.popupmenu.customplot5.String)); else; UI.popupmenu.customplot5.Value = 7; disp(['The specified customCellPlotIn (', UI.settings.customCellPlotIn5 ,') in preferences could not be recogniced as an existing field name']); end
+if find(strcmp(UI.settings.customCellPlotIn5,UI.popupmenu.customplot5.String)); UI.popupmenu.customplot5.Value = find(strcmp(UI.settings.customCellPlotIn5,UI.popupmenu.customplot5.String)); else; UI.popupmenu.customplot5.Value = 7; disp(['customCellPlotIn5 (', UI.settings.customCellPlotIn5 ,') in preferences is not an existing field name']); end
 customCellPlot5 = customPlotOptions{UI.popupmenu.customplot5.Value};
 
 % #6 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 36 35 10],'Units','normalized','String','6. View','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
 UI.popupmenu.customplot6 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[14 37 38 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc4,'KeyPressFcn', {@keyPress});
-if find(strcmp(UI.settings.customCellPlotIn6,UI.popupmenu.customplot6.String)); UI.popupmenu.customplot6.Value = find(strcmp(UI.settings.customCellPlotIn6,UI.popupmenu.customplot6.String)); else; UI.popupmenu.customplot5.Value = 7; disp(['The specified customCellPlotIn (', UI.settings.customCellPlotIn6 ,') in preferences could not be recogniced as an existing field name']); end
+if find(strcmp(UI.settings.customCellPlotIn6,UI.popupmenu.customplot6.String)); UI.popupmenu.customplot6.Value = find(strcmp(UI.settings.customCellPlotIn6,UI.popupmenu.customplot6.String)); else; UI.popupmenu.customplot5.Value = 7; disp(['The customCellPlotIn6 (', UI.settings.customCellPlotIn6 ,') in preferences is not an existing field name']); end
 customCellPlot6 = customPlotOptions{UI.popupmenu.customplot6.Value};
 
 if find(strcmp(UI.settings.plotCountIn,UI.popupmenu.plotCount.String)); UI.popupmenu.plotCount.Value = find(strcmp(UI.settings.plotCountIn,UI.popupmenu.plotCount.String)); else; UI.popupmenu.plotCount.Value = 3; end; AdjustGUIbutton
@@ -385,9 +386,9 @@ UI.popupmenu.ACG = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmen
 if strcmp(UI.settings.acgType,'Normal'); UI.popupmenu.ACG.Value = 2; elseif strcmp(UI.settings.acgType,'Narrow'); UI.popupmenu.ACG.Value = 1; else; UI.popupmenu.ACG.Value = 3; end
 
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[2 8 50 10],'Units','normalized','String','Synaptic connections','HorizontalAlignment','center');
-UI.checkbox.synMono1 = uicontrol('Parent',UI.panel.displaySettings,'Style','checkbox','Position',[3 2 20 10],'Units','normalized','String','Custom','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(UI.fig));
-UI.checkbox.synMono2 = uicontrol('Parent',UI.panel.displaySettings,'Style','checkbox','Position',[21 2 20 10],'Units','normalized','String','Classic','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(UI.fig));
-UI.checkbox.synMono3 = uicontrol('Parent',UI.panel.displaySettings,'Style','checkbox','Position',[38 2 18 10],'Units','normalized','String','tSNE','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(UI.fig));
+UI.checkbox.synMono1 = uicontrol('Parent',UI.panel.displaySettings,'Style','checkbox','Position',[3 2 20 10],'Units','normalized','String','Custom','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(UI.fig),'KeyPressFcn', {@keyPress});
+UI.checkbox.synMono2 = uicontrol('Parent',UI.panel.displaySettings,'Style','checkbox','Position',[21 2 20 10],'Units','normalized','String','Classic','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(UI.fig),'KeyPressFcn', {@keyPress});
+UI.checkbox.synMono3 = uicontrol('Parent',UI.panel.displaySettings,'Style','checkbox','Position',[38 2 18 10],'Units','normalized','String','tSNE','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(UI.fig),'KeyPressFcn', {@keyPress});
 
 
 % % % % % % % % % % % % % % % % % % % %
@@ -688,8 +689,8 @@ while ii <= size(cell_metrics.troughToPeak,2)
                         end
                 end
             end
-            plot3(plotX(ii), plotY(ii), plotZ(ii),'xw', 'LineWidth', 3, 'MarkerSize',22)
-            plot3(plotX(ii), plotY(ii), plotZ(ii),'xk', 'LineWidth', 2, 'MarkerSize',20)
+            plot3(plotX(ii), plotY(ii), plotZ(ii),'xw', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off')
+            plot3(plotX(ii), plotY(ii), plotZ(ii),'xk', 'LineWidth', 2, 'MarkerSize',20, 'HitTest','off')
             
             zlabel(plotZ_title, 'Interpreter', 'none')
             if contains(plotZ_title,'_num')
@@ -717,7 +718,8 @@ while ii <= size(cell_metrics.troughToPeak,2)
         hold off
         if ~isempty(clr)
             h_scatter = scatterhist(plotX(subset),plotY(subset),'Group',plotClas(subset),'Kernel','on','Marker','.','MarkerSize',[12],'LineStyle',{'-'},'Parent',UI.panel.subfig_ax1,'Legend','off','Color',clr); hold on % ,'Style','stairs'
-            plot(plotX(ii), plotY(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'Parent',h_scatter(1))
+            plot(plotX(ii), plotY(ii),'xw', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off')
+            plot(plotX(ii), plotY(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'Parent',h_scatter(1), 'HitTest','off')
             axis(h_scatter(1),'tight');
             % Setting linear/log scale
             if UI.checkbox.logx.Value==1
@@ -745,7 +747,8 @@ while ii <= size(cell_metrics.troughToPeak,2)
         hold off
         if ~isempty(clr)
             h_scatter = scatterhist(plotX(subset),plotY(subset),'Group',plotClas(subset),'Style','stairs','Marker','.','MarkerSize',[12],'LineStyle',{'-'},'Parent',UI.panel.subfig_ax1,'Legend','off','Color',clr); hold on % ,
-            plot(plotX(ii), plotY(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'Parent',h_scatter(1))
+            plot(plotX(ii), plotY(ii),'xw', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off')
+            plot(plotX(ii), plotY(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'Parent',h_scatter(1), 'HitTest','off')
             if length(unique(plotClas(subset)))==2
                 G1 = plotX(subset);
                 G = findgroups(plotClas(subset));
@@ -1024,6 +1027,7 @@ saveCellMetricsStruct
             set(legendScatter4,'HitTest','off')
             title('Waveforms - tSNE visualization'), axis tight, xlabel(''), ylabel('')
             % selected cell highlighted with black cross
+            plot(tSNE_metrics.filtWaveform(ii,1), tSNE_metrics.filtWaveform(ii,2),'xw', 'LineWidth', 3, 'MarkerSize',22,'HitTest','off');
             plot(tSNE_metrics.filtWaveform(ii,1), tSNE_metrics.filtWaveform(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
             
         elseif strcmp(customPlotSelection,'CCGs (image)')
@@ -1144,25 +1148,30 @@ saveCellMetricsStruct
             set(legendScatter5,'HitTest','off')
             title('Autocorrelogram - tSNE visualization'), axis tight, xlabel(''),ylabel('')
             % selected cell highlighted with black cross
+            plot(tSNE_metrics.acg2(ii,1), tSNE_metrics.acg2(ii,2),'xw', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
             plot(tSNE_metrics.acg2(ii,1), tSNE_metrics.acg2(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
             
         elseif strcmp(customPlotSelection,'tSNE of wide ACGs')
             
+            % t-SNE scatter-plot with all ACGs. Calculated from the wide
+            % ACG (-500ms:1ms:500ms). Colored by cell-type.
             if ~isempty(clr)
                 legendScatter5 = gscatter(tSNE_metrics.acg1(subset,1), tSNE_metrics.acg1(subset,2), plotClas(subset), clr,'',20,'off');
                 set(legendScatter5,'HitTest','off')
             end
             title('Autocorrelogram - tSNE visualization'), axis tight, xlabel(''),ylabel('')
+            plot(tSNE_metrics.acg1(ii,1), tSNE_metrics.acg1(ii,2),'xw', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
             plot(tSNE_metrics.acg1(ii,1), tSNE_metrics.acg1(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
             
         elseif strcmp(customPlotSelection,'Sharp wave-ripple')
             
+            % Displays the average sharp wave-ripple for the spike group of the
+            % selected cell. The peak channel of the cell is highlighted
             if BatchMode
                 SWR = SWR_batch{cell_metrics.batchIDs(ii)};
             else
                 SWR = SWR_batch;
             end
-            
             spikeGroup = cell_metrics.spikeGroup(ii);
             if ~isempty(SWR) & isfield(SWR,'SWR_diff') & spikeGroup <= length(SWR.ripple_power)
                 ripple_power_temp = SWR.ripple_power{spikeGroup}/max(SWR.ripple_power{spikeGroup}); grid on
@@ -1204,6 +1213,7 @@ saveCellMetricsStruct
             
         elseif strcmp(customPlotSelection,'firingRateMap')
             
+            % Precalculated firing rate map for the cell
             if isfield(cell_metrics,'firingRateMap') && ~isempty(cell_metrics.firingRateMap{ii})
                 firingRateMap = cell_metrics.firingRateMap{ii};
                 if isfield(general,customPlotSelection) & isfield(general.(customPlotSelection),'x_bins')
@@ -1213,6 +1223,7 @@ saveCellMetricsStruct
                 end
                 plot(x_bins,firingRateMap,'-','color', 'k','linewidth',2, 'HitTest','off'), xlabel('Position (cm)'), ylabel('Rate (Hz)')
                 
+                % Synaptic partners are also displayed
                 switch monoSynDisp
                     case {'Selected','All'}
                         subsetPlots.xaxis = x_bins;
@@ -1238,6 +1249,7 @@ saveCellMetricsStruct
             
         elseif contains(customPlotSelection,{'firingRateMap','FiringRateMap'})
             
+            % A state dependent firing rate map
             if isfield(cell_metrics,customPlotSelection) && ~isempty(cell_metrics.(customPlotSelection){batchIDs})
                 firingRateMap = permute(cell_metrics.(customPlotSelection){batchIDs},[1,3,2]);
                 
@@ -1889,7 +1901,7 @@ saveCellMetricsStruct
         % Checks first, if a plot is underneath the curser
         h2 = overobj2('flat','visible','on');
         
-        if ~isempty(h2) && strcmp(h2.Type,'uipanel') && strcmp(h2.Title,'') && ~isempty(h2.Children) && any(find(ismember(subfig_ax, h2.Children)) == [1:9])
+        if ~isempty(h2) && strcmp(h2.Type,'uipanel') && strcmp(h2.Title,'') && ~isempty(h2.Children) && any(ismember(subfig_ax, h2.Children))>0 && any(find(ismember(subfig_ax, h2.Children)) == [1:9])
             axnum = find(ismember(subfig_ax, h2.Children));
             um_axes = get(h2.Children(end),'CurrentPoint');
             u = um_axes(1,1);
@@ -1913,20 +1925,28 @@ saveCellMetricsStruct
                     % Vertical scrolling
                     y1 = max(globalZoom{axnum}(2,1),v-diff(c)/2*zoomInFactor);
                     y2 = min(globalZoom{axnum}(2,2),v+diff(c)/2*zoomInFactor);
-                    ylim([y1,y2]);
+                    if y2>y1
+                        ylim([y1,y2]);
+                    end
                 elseif v < c(1) || v > c(2)
                     % Horizontal scrolling
                     x1 = max(globalZoom{axnum}(1,1),u-diff(b)/2*zoomInFactor);
                     x2 = min(globalZoom{axnum}(1,2),u+diff(b)/2*zoomInFactor);
-                    xlim([x1,x2]);
+                    if x2>x1
+                        xlim([x1,x2]);
+                    end
                 else
                     % Global scrolling
                     x1 = max(globalZoom{axnum}(1,1),u-diff(b)/2*zoomInFactor);
                     x2 = min(globalZoom{axnum}(1,2),u+diff(b)/2*zoomInFactor);
-                    xlim([x1,x2]);
+                    if x2>x1
+                        xlim([x1,x2]);
+                    end
                     y1 = max(globalZoom{axnum}(2,1),v-diff(c)/2*zoomInFactor);
                     y2 = min(globalZoom{axnum}(2,2),v+diff(c)/2*zoomInFactor);
-                    ylim([y1,y2]);
+                    if y2>y1
+                        ylim([y1,y2]);
+                    end
                 end
             else
                 % Positive scrolling direction (zoom out)
@@ -1940,7 +1960,9 @@ saveCellMetricsStruct
                     if y2 == globalZoom{axnum}(2,2)
                         y1 = max([globalZoom{axnum}(2,1),y2 - diff(c)*2]);
                     end
-                    ylim([y1,y2]);
+                    if y2>y1
+                        ylim([y1,y2]);
+                    end
                 elseif v < c(1) || v > c(2)
                     % Horizontal scrolling
                     x1 = max(globalZoom{axnum}(1,1),u-diff(b)/2*zoomOutFactor);
@@ -1951,7 +1973,9 @@ saveCellMetricsStruct
                     if x2 == globalZoom{axnum}(1,2)
                         x1 = max([globalZoom{axnum}(1,1),x2 - diff(b)*2]);
                     end
-                    xlim([x1,x2]);
+                    if x2>x1
+                        xlim([x1,x2]);
+                    end
                 else
                     % Global scrolling
                     x1 = max(globalZoom{axnum}(1,1),u-diff(b)/2*zoomOutFactor);
@@ -1970,8 +1994,12 @@ saveCellMetricsStruct
                     if y2 == globalZoom{axnum}(2,2)
                         y1 = max([globalZoom{axnum}(2,1),y2 - diff(c)*2]);
                     end
-                    xlim([x1,x2]);
-                    ylim([y1,y2]);
+                    if x2>x1
+                        xlim([x1,x2]);
+                    end
+                    if y2>y1
+                        ylim([y1,y2]);
+                    end
                 end
             end
         end
@@ -2843,9 +2871,9 @@ saveCellMetricsStruct
                 
             elseif choice == 5
                 
+                % CCGs for selected cell with highlighted cells
                 ClickedCells = cellIDs(:)';
                 if isfield(general,'ccg') && ~isempty(ClickedCells)
-                    %                     ClickedCells = unique(ClickedCells);
                     if BatchMode
                         ClickedCells_inBatch = find(cell_metrics.batchIDs(ii) == cell_metrics.batchIDs(ClickedCells));
                         if length(ClickedCells_inBatch) < length(ClickedCells)
@@ -2856,30 +2884,33 @@ saveCellMetricsStruct
                         plot_cells = [ii,ClickedCells];
                     end
                     plot_cells = unique(plot_cells,'stable');
-                    figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off')
+                    figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',[200 200 1200 800])
                     
-                    %                     plot_cells = [ii,ClickedCells];
                     plot_cells2 = cell_metrics.UID(plot_cells);
                     k = 1;
+                    ha = tight_subplot(length(plot_cells),length(plot_cells),[.03 .03],[.12 .05],[.06 .05]);
                     for j = 1:length(plot_cells)
                         for jj = 1:length(plot_cells)
-                            subplot(length(plot_cells),length(plot_cells),k)
+                            axes(ha(k));
                             if jj == j
                                 col1 = UI.settings.cellTypeColors(clusClas(plot_cells(j)),:);
                                 bar(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),1,'FaceColor',col1,'EdgeColor',col1),
-                                title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.spikeGroup(plot_cells(j)))]),
-                                grid on, ylabel(cell_metrics.putativeCellType{plot_cells(j)})
+                                title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.spikeGroup(plot_cells(j))) ]),
+                                xlabel(cell_metrics.putativeCellType{plot_cells(j)}), grid on
                             else
                                 bar(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),1,'FaceColor',[0.5,0.5,0.5],'EdgeColor',[0.5,0.5,0.5]),
                                 grid on
                             end
-                            if j == length(plot_cells); xlabel('Time (ms)'); end
-                            if jj == 1 && j > 1; ylabel('Rate (Hz)'); end
-                            xticks([-50:10:50]),xlim([-50,50])
-                            if length(plot_cells) > 2 & j < length(plot_cells)
-                                set(gca,'XTickLabel',[]);
+                            if j == length(plot_cells) & mod(jj,2) == 1 & j~=jj; xlabel('Time (ms)'); end
+                            if jj == 1 && mod(j,2) == 0; ylabel('Rate (Hz)'); end
+                            if length(plot_cells)<7
+                                xticks([-50:10:50])
                             end
-                            ax = gca; ax.TickLength = [0.03, 0.02];
+                            xlim([-50,50])
+                            if length(plot_cells) > 2 & j < length(plot_cells)
+                                set(ha(k),'XTickLabel',[]);
+                            end
+                            set(ha(k),'TickLength',[0.03, 0.02]);axis tight
                             k = k+1;
                         end
                     end
@@ -4363,12 +4394,12 @@ if isempty('new')
 end
 if y == 1
     if mod(z,x) == 1 & new
-        figure('Name',titleIn,'pos',[100 100 900 800])
+        figure('Name',titleIn,'pos',[100 100 1200 800])
     end
     subplot(x,y,mod(z-1,x)+1)
 else
     if (mod(z,x) == 1 || (z==x & z==1)) & w == 1
-        figure('Name',titleIn,'pos',[100 100 900 800])
+        figure('Name',titleIn,'pos',[100 100 1200 800])
     end
     subplot(x,y,y*mod(z-1,x)+w)
 end
@@ -4377,21 +4408,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
 function h = overobj2(varargin)
-%OVEROBJ2 Get handle of object that the pointer is over.
-%   H = OVEROBJ2 searches all objects in the PointerWindow
-%   looking for one that is under the pointer. Returns first
-%   object handle it finds under the pointer, or empty matrix.
-%
-%   H = OVEROBJ2(FINDOBJ_PROPS) searches all objects which are
-%   descendants of the figure beneath the pointer and that are
-%   returned by FINDOBJ with the specified arguments.
-%
-%   Example:
-%       h = overobj2('type','axes');
-%       h = overobj2('flat','visible','on');
-%
-%   See also OVEROBJ, FINDOBJ
-
+% OVEROBJ2 Get handle of object that the pointer is over.
 % By Yair Altman
 % https://undocumentedmatlab.com/blog/undocumented-mouse-pointer-functions
 
@@ -4431,10 +4448,8 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
 function [p,n]=numSubplots(n)
-% Purpose
 % Calculate how many rows and columns of sub-plots are needed to
 % neatly display n subplots.
-%
 % Rob Campbell - January 2010
 
 while isprime(n) && n>4
@@ -4463,4 +4478,42 @@ while p(2)/p(1)>2.5
     N=n+1;
     [p,n]=numSubplots(N); %Recursive!
 end
+end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+function ha = tight_subplot(Nh, Nw, gap, marg_h, marg_w)
+% tight_subplot creates "subplot" axes with adjustable gaps and margins
+% Pekka Kumpulainen 21.5.2012
+% https://www.mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
+if nargin<3; gap = .02; end
+if nargin<4 || isempty(marg_h); marg_h = .05; end
+if nargin<5; marg_w = .05; end
+if numel(gap)==1
+    gap = [gap gap];
+end
+if numel(marg_w)==1
+    marg_w = [marg_w marg_w];
+end
+if numel(marg_h)==1
+    marg_h = [marg_h marg_h];
+end
+axh = (1-sum(marg_h)-(Nh-1)*gap(1))/Nh; 
+axw = (1-sum(marg_w)-(Nw-1)*gap(2))/Nw;
+py = 1-marg_h(2)-axh; 
+
+ii = 0;
+for ih = 1:Nh
+    px = marg_w(1);
+    for ix = 1:Nw
+        ii = ii+1;
+        ha(ii) = axes('Units','normalized', ...
+            'Position',[px py axw axh], ...
+            'XTickLabel','', ...
+            'YTickLabel','');
+        px = px+axw+gap(2);
+    end
+    py = py-axh-gap(1);
+end
+ha = ha(:);
 end
