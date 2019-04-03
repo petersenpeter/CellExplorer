@@ -25,7 +25,10 @@ function cell_metrics = CellExplorer(varargin)
 % TODO
 % Adjust deepSuperficial channel/spike groups in the GUI
 % Adjust synaptic connections in the GUI or be able to rerun the detection
-% Ground truth cell type classifiations
+% Ground truth cell-type classifiations
+% Delete cell-type and reassign affected cell
+% Alter the color of a cell-type
+% Generalize the deep-superficial listbox to handle other user defined list types
 
 p = inputParser;
 
@@ -84,9 +87,9 @@ subsetPlots1 = []; subsetPlots2 = []; subsetPlots3 = []; subsetPlots4 = []; subs
 tSNE_metrics = []; BatchMode = false; ClickedCells = []; classificationTrackChanges = []; time_waveforms_zscored = []; spikes = [];
 spikesPlots = []; globalZoom = cell(1,9); createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal'; events = [];
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = []; 
-CellExplorerVersion = '1.01';
+CellExplorerVersion = '1.02';
 
-UI.fig = figure('KeyPressFcn', {@keyPress},'Name',['Cell Explorer v' CellExplorerVersion],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot);
+UI.fig = figure('Name',['Cell Explorer v' CellExplorerVersion],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress});
 hManager = uigetmodemanager(UI.fig);
 
 
@@ -970,7 +973,7 @@ if ishandle(UI.fig)
     % Closing cell explorer figure if still open
     close(UI.fig);
 end
-saveCellMetricsStruct
+cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1499,7 +1502,7 @@ saveCellMetricsStruct
                 text(0.5,0.5,'No data for this cell','FontWeight','bold','HorizontalAlignment','center')
             end
             xlabel(spikesPlots.(customPlotSelection).x_label), ylabel(spikesPlots.(customPlotSelection).y_label), title(customPlotSelection,'Interpreter', 'none')
-            
+
         else
             
             customCellPlotNum = find(strcmp(customPlotSelection, customPlotOptions));
@@ -1616,6 +1619,17 @@ saveCellMetricsStruct
         history_classification(hist_idx).brainRegion = cell_metrics.brainRegion{cellIDs};
         history_classification(hist_idx).deepSuperficial_num = cell_metrics.deepSuperficial_num(cellIDs);
         classificationTrackChanges = [classificationTrackChanges,cellIDs];
+        if rem(hist_idx,UI.settings.autoSaveFrequency) == 0
+            autoSave_Cell_metrics(cell_metrics)
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function autoSave_Cell_metrics(cell_metrics)
+        cell_metrics = saveCellMetricsStruct(cell_metrics);
+        assignin('base',UI.settings.autoSaveVarName,cell_metrics);
+        MsgLog(['Autosaved classification changes to workspace (variable: ' UI.settings.autoSaveVarName ')']);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1626,7 +1640,6 @@ saveCellMetricsStruct
         MsgLog(['Cell ', num2str(ii), ' classified as ', UI.settings.cellTypes{clusClas(ii)}]);
         updateCellCount
         updatePlotClas
-        
         uiresume(UI.fig);
     end
 
@@ -1750,7 +1763,7 @@ saveCellMetricsStruct
         end
     end
 
-% % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % 
 
     function choice = brainRegionDlg(brainRegions,InitBrainRegion)
         choice = '';
@@ -1906,9 +1919,11 @@ saveCellMetricsStruct
             um_axes = get(h2.Children(end),'CurrentPoint');
             u = um_axes(1,1);
             v = um_axes(1,2);
+            
             axes(h2.Children(end));
             b = get(gca,'Xlim');
             c = get(gca,'Ylim');
+            
             % Saves the initial x/y limits
             if isempty(globalZoom{axnum})
                 globalZoom{axnum} = [b;c];
@@ -2746,6 +2761,9 @@ saveCellMetricsStruct
             sessionList = strcat(sessionEnumerator,{'.  '},cell_metrics.general.basenames,' (',sessionCount,')');
             
             brainRegionsList = uicontrol('Parent',GoTo_dialog,'Style', 'ListBox', 'String', sessionList, 'Position', [10, 50, 280, 220],'Value',1,'Callback',@(src,evnt)CloseGoTo_dialog);
+            if cell_metrics.batchIDs(ii)>0 & cell_metrics.batchIDs(ii)<=length(sessionList)
+                brainRegionsList.Value = cell_metrics.batchIDs(ii);
+            end
             brainRegionsTextfield = uicontrol('Parent',GoTo_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 300, 280, 25],'Callback',@(src,evnt)UpdateBrainRegionsList,'HorizontalAlignment','left');
             %             uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Go to session','Callback',@(src,evnt)CloseGoTo_dialog);
             uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Cancel','Callback',@(src,evnt)CancelGoTo_dialog);
@@ -3066,7 +3084,7 @@ saveCellMetricsStruct
             groups_ids.brainRegion_num = ID;
             
         else
-            MsgLog(['No further history track available']);
+            MsgLog(['All steps has been undone. No further history track available'],2);
         end
         uiresume(UI.fig);
     end
@@ -3122,13 +3140,11 @@ saveCellMetricsStruct
         % 2. Updates existing metrics
         % 3. Create new .mat-file
         
-        answer = questdlg('How would you like to save the classification?', 'Save classification','Update workspace metrics','Update existing metrics','Create new file','Update workspace metrics');
+        answer = questdlg('How would you like to save the classification?', 'Save classification','Update existing metrics','Create new file','Update existing metrics'); % 'Update workspace metrics',
         % Handle response
         switch answer
-            case 'Update workspace metrics'
-                saveCellMetricsStruct
-                assignin('base','cell_metrics',cell_metrics)
-                MsgLog(['Saved metrics to workspace (variable: cell\_metrics)'],2);
+%             case 'Update workspace metrics'
+%                 autoSave_Cell_metrics(cell_metrics);
             case 'Update existing metrics'
                 try
                     assignin('base','cell_metrics',cell_metrics)
@@ -3159,7 +3175,7 @@ saveCellMetricsStruct
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function saveCellMetricsStruct
+    function cell_metrics = saveCellMetricsStruct(cell_metrics)
         % Prepares the cell_metrics structure for saving generated info,
         % including putative cell-type, tSNE and classificationTrackChanges
         numeric_fields = fieldnames(cell_metrics);
@@ -3181,7 +3197,7 @@ saveCellMetricsStruct
         % with registered changes
         MsgLog(['Saving metrics']);
         drawnow
-        saveCellMetricsStruct
+        cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         if nargin > 1
             save(file,'cell_metrics');
@@ -3611,7 +3627,7 @@ saveCellMetricsStruct
         
         % fixed axes limits for subfig2 and subfig3 to increase performance
         fig2_axislimit_x = [min(cell_metrics.troughToPeak * 1000),max(cell_metrics.troughToPeak * 1000)];
-        fig2_axislimit_y = [min(cell_metrics.burstIndex_Royer2012),max(cell_metrics.burstIndex_Royer2012)];
+        fig2_axislimit_y = [min(cell_metrics.burstIndex_Royer2012(cell_metrics.burstIndex_Royer2012>0)),max(cell_metrics.burstIndex_Royer2012(cell_metrics.burstIndex_Royer2012<Inf))];
         fig3_axislimit_x = [min(tSNE_metrics.plot(:,1)), max(tSNE_metrics.plot(:,1))];
         fig3_axislimit_y = [min(tSNE_metrics.plot(:,2)), max(tSNE_metrics.plot(:,2))];
     end

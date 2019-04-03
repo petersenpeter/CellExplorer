@@ -16,6 +16,10 @@ UI.settings.displayMetricsTable = true; % boolean
 UI.settings.plotCountIn = 'GUI 3+3'; % ['GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6']
 UI.settings.dispLegend = 0; % [0,1] Display legend for scatter plots?
 
+% Autosave settings
+UI.settings.autoSaveFrequency = 6; % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
+UI.settings.autoSaveVarName = 'cell_metrics'; % Variable name used in autosave
+
 % Initial data displayed in the customPlot
 UI.settings.plotXdata = 'firingRate';
 UI.settings.plotYdata = 'peakVoltage';
@@ -29,9 +33,9 @@ UI.settings.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
 UI.settings.cellTypeColors = [[.5,.5,.5];[.2,.2,.8];[.2,.8,.2];[0.2,0.8,0.8];[.8,.2,.2];[0.8,0.2,0.8]];
 
 % Fields used to define the tSNE represetation
-UI.settings.tSNE_calcWideAcg = true;
-UI.settings.tSNE_calcNarrowAcg = true;
-UI.settings.tSNE_calcFiltWaveform = false;
+UI.settings.tSNE_calcWideAcg = false; % boolean
+UI.settings.tSNE_calcNarrowAcg = false;     % boolean
+UI.settings.tSNE_calcFiltWaveform = false;  % boolean
 
 % List of fields to use in the general tSNE representation
 UI.settings.tSNE_metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','thetaPhaseTrough','thetaEntrainment','derivative_TroughtoPeak','filtWaveform_zscored','acg2_zscored'}; % derivative_TroughtoPeak
@@ -44,8 +48,7 @@ UI.settings.displayExcitatory = false; % boolean
 % Spikes plot definitions 
 % % % % % % % % % % % % % % % % % % % % % %
 
-% Spike plots can be loaded by pressing s in the Cell Explorer
-
+% Spike plots can be loaded by pressing S in the Cell Explorer
 spikesPlots.spikes_pos_vs_phase.x = 'pos_linearized';
 spikesPlots.spikes_pos_vs_phase.y = 'theta_phase';
 spikesPlots.spikes_pos_vs_phase.x_label = 'Position (cm)';
