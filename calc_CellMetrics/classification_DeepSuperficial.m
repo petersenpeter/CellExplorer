@@ -238,7 +238,7 @@ if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Corti
     end
 end
 
-% Removes channels labels if spike group has Bad
+% Removes channel-labels if spike group has channelTags Bad
 if isfield(session.channelTags,'Bad') && ~isempty(session.channelTags.Bad.spikeGroups)
     for jj = session.channelTags.Bad.spikeGroups
         deepSuperficial_ChClass3(ripple_channels{jj}) = repmat({''},length(ripple_channels{jj}),1);
@@ -268,7 +268,7 @@ deepSuperficialfromRipple.processinginfo.function = 'classification_deepSuperfic
 deepSuperficialfromRipple.processinginfo.date = now;
 deepSuperficialfromRipple.processinginfo.params.verticalSpacing = VerticalSpacing;
 deepSuperficialfromRipple.processinginfo.params.spikeGroupsToExclude = spikeGroupsToExclude;
-save(fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']),'deepSuperficialfromRipple')
+save(fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']),'deepSuperficialfromRipple');
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Plotting the average ripple with sharp wave across all spike groups

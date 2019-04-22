@@ -1,16 +1,16 @@
 function waveforms_out = LoadNeurosuiteWaveforms(spikes,session,timeRestriction)
 disp('   Loading Neurosuite waveforms')
 
-% clustering_path = 'Z:\Buzsakilabspace\PeterPetersen\IntanData\MS21\Peter_MS21_180718_103455_concat\Kilosort_2018-08-29_165108';
+% clusteringpath = 'Z:\Buzsakilabspace\PeterPetersen\IntanData\MS21\Peter_MS21_180718_103455_concat\Kilosort_2018-08-29_165108';
 % basename = 'Peter_MS21_180718_103455_concat';
-% spike_cluster_index = double(readNPY(fullfile(clustering_path, 'spike_clusters.npy')));
+% spike_cluster_index = double(readNPY(fullfile(clusteringpath, 'spike_clusters.npy')));
 % spike_clusters = unique(spike_cluster_index);
-% if exist(fullfile(clustering_path, 'cluster_ids.npy'))
-%     cluster_ids = readNPY(fullfile(clustering_path, 'cluster_ids.npy'));
-%     unit_shanks = readNPY(fullfile(clustering_path, 'shanks.npy'));
+% if exist(fullfile(clusteringpath, 'cluster_ids.npy'))
+%     cluster_ids = readNPY(fullfile(clusteringpath, 'cluster_ids.npy'));
+%     unit_shanks = readNPY(fullfile(clusteringpath, 'shanks.npy'));
 % end
 % kcoords2 = unique(unit_shanks);
-% fileID = fopen(fullfile(clustering_path, 'cluster_group.tsv'));
+% fileID = fopen(fullfile(clusteringpath, 'cluster_group.tsv'));
 % good_units = textscan(fileID,'%d %s','Delimiter','\t','HeaderLines',1);
 % fclose(fileID);
 % accepted_units = good_units{1}(find(strcmp({good_units{2}{:}},'good')));
@@ -34,13 +34,13 @@ for i = 1:length(spikeGroups)
     accepted_units = spikes.cluID(spikes.shankID ==spikeGroup);
     accepted_units2 = spikes.UID(spikes.shankID ==spikeGroup);
     
-    cluster_index = load(fullfile(clustering_path, [basename '.clu.' num2str(spikeGroup)]));
+    cluster_index = load(fullfile(clusteringpath, [basename '.clu.' num2str(spikeGroup)]));
     cluster_index = cluster_index(2:end);
-    time_stamps = load(fullfile(clustering_path,[basename '.res.' num2str(spikeGroup)]));
-    fname = fullfile(clustering_path,[basename '.spk.' num2str(spikeGroup)]);
+    time_stamps = load(fullfile(clusteringpath,[basename '.res.' num2str(spikeGroup)]));
+    fname = fullfile(clusteringpath,[basename '.spk.' num2str(spikeGroup)]);
     f = fopen(fname,'r');
     waveforms =  0.195 * double(fread(f,'int16'));
-    xml = LoadXml(fullfile(clustering_path,[basename, '.xml']));
+    xml = LoadXml(fullfile(clusteringpath,[basename, '.xml']));
     samples = size(waveforms,1)/size(time_stamps,1);
     electrodes = size(xml.ElecGp{spikeGroup},2);
     waveforms = reshape(waveforms, [electrodes,samples/electrodes,length(waveforms)/samples]);

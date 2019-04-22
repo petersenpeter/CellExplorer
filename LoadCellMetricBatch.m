@@ -1,13 +1,21 @@
 function cell_metrics_batch = LoadCellMetricBatch(varargin)
 % Load metrics across sessions
-%   saveAs               - name of .mat file
+%
+% INPUTS:
+% varargin: Described below
+% 
+% OUTPUT:
+% cell_metrics_batch. Combibed batch file with metrics from selected sessions
+
+% By Peter Petersen
+% petersen.peter@gmail.com
 
 p = inputParser;
 addParameter(p,'sessionIDs',{},@isnumeric);
 addParameter(p,'sessions',{},@iscell);
-addParameter(p,'basepaths',{},@iscell);
-addParameter(p,'clusteringpaths',{},@iscell);
-addParameter(p,'saveAs','cell_metrics',@isstr);
+addParameter(p,'basepaths',{},@iscell);         % 
+addParameter(p,'clusteringpaths',{},@iscell);   % Path to the cell_metrics .mat files
+addParameter(p,'saveAs','cell_metrics',@isstr); % saveAs - name of .mat file
 
 parse(p,varargin{:})
 sessionNames = p.Results.sessions;
@@ -22,6 +30,7 @@ subfields2 = [];
 subfieldstypes = [];
 subfieldssizes = [];
 
+disp('Cell-metrics: loading batch')
 if ~isempty(sessionNames)
     for iii = 1:length(sessionNames)
         disp(['Loading session info for ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}])

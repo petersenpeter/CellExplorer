@@ -24,7 +24,7 @@ session.brainRegions.CA1.channels = 1:128; % Brain region assignment (Allan inst
 
 session.channelTags.Theta.channels = 64; % Theta channel
 session.channelTags.Ripple.channels = 64; % Ripple channel
-session.channelTags.Ripple.spikeGroups = 3; % Ripple spike group
+session.channelTags.Ripple.spikeGroups = 3; % Ripple spike group 
 session.channelTags.RippleNoise.channels = 1; % Ripple Noise reference channel
 session.channelTags.Cortical.spikeGroups = 3; % Cortical spike groups
 session.channelTags.Bad.channels = 3; % Bad channels

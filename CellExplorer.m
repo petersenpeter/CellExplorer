@@ -23,9 +23,9 @@ function cell_metrics = CellExplorer(varargin)
 % petersen.peter@gmail.com
 
 % TODO
+% Ground truth cell-type classifiations
 % Adjust deepSuperficial channel/spike groups in the GUI
 % Adjust synaptic connections in the GUI or be able to rerun the detection
-% Ground truth cell-type classifiations
 % Delete cell-type and reassign affected cell
 % Alter the color of a cell-type
 % Generalize the deep-superficial listbox to handle other user defined list types
@@ -76,6 +76,7 @@ UI.settings.customCellPlotIn5 = 'firingRateMap'; UI.settings.customCellPlotIn6 =
 UI.settings.tSNE_calcNarrowAcg = true; UI.settings.tSNE_calcFiltWaveform = true; UI.settings.tSNE_metrics = '';
 UI.settings.tSNE_calcWideAcg = true; UI.settings.dispLegend = 1;
 
+
 db_menu_values = []; db_menu_items = []; clusClas = []; plotX = []; plotY = []; plotZ = []; timerVal = tic;
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
 brainRegions_list = []; brainRegions_acronym = []; cell_class_count = [];  customCellPlot3 = 1; customCellPlot4 = 1; customPlotOptions = '';
@@ -86,9 +87,11 @@ cellsExcitatory = []; cellsInhibitory = []; cellsInhibitory_subset = []; cellsEx
 subsetPlots1 = []; subsetPlots2 = []; subsetPlots3 = []; subsetPlots4 = []; subsetPlots5 = []; subsetPlots6 = [];
 tSNE_metrics = []; BatchMode = false; ClickedCells = []; classificationTrackChanges = []; time_waveforms_zscored = []; spikes = [];
 spikesPlots = []; globalZoom = cell(1,9); createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal'; events = [];
-fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = []; 
-CellExplorerVersion = '1.02';
+fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];
+plotOptionsToExlude = {'putativeConnections','acg','acg2','filtWaveform','timeWaveform','rawWaveform_std','rawWaveform'};
+fieldsMenuMetricsToExlude  = {'thetaPhaseResponse','rippleCorrelogram','firingRateMap','FiringRateMap','firing_rate_map','spatialCoherence','firingRateAcrossTime','FiringRateAcrossTime','filtWaveform','timeWaveform','psth','rawWaveform','rawWaveform_std'};
 
+CellExplorerVersion = '1.02';
 UI.fig = figure('Name',['Cell Explorer v' CellExplorerVersion],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress});
 hManager = uigetmodemanager(UI.fig);
 
@@ -990,12 +993,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             % Single waveform with std
             if isfield(cell_metrics,'filtWaveform_std')
-                patch([cell_metrics.timeWaveform{ii},flip(cell_metrics.timeWaveform{ii})]', [cell_metrics.filtWaveform{ii}+cell_metrics.filtWaveform_std{ii},flip(cell_metrics.filtWaveform{ii}-cell_metrics.filtWaveform_std{ii})],'black','EdgeColor','none','FaceAlpha',.2)
+                patch([cell_metrics.timeWaveform{ii},flip(cell_metrics.timeWaveform{ii})], [cell_metrics.filtWaveform{ii}+cell_metrics.filtWaveform_std{ii},flip(cell_metrics.filtWaveform{ii}-cell_metrics.filtWaveform_std{ii})],'black','EdgeColor','none','FaceAlpha',.2)
                 plot(cell_metrics.timeWaveform{ii}, cell_metrics.filtWaveform{ii}, 'color', col,'linewidth',2), grid on
             else
                 plot(cell_metrics.timeWaveform{ii}, cell_metrics.filtWaveform{ii}, 'color', col,'linewidth',2), grid on
             end
-            xlabel('Time (ms)'), ylabel('Voltage (µV)'), title('Waveform'), axis tight,
+            xlabel('Time (ms)'), ylabel('Voltage (µV)'), title('Filtered waveform'), axis tight,
             
         elseif strcmp(customPlotSelection,'All waveforms')
             % All waveforms (z-scored) colored according to cell type
@@ -1022,6 +1025,28 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 plot([time_waveforms_zscored(1),time_waveforms_zscored(end)],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
             end
             
+        elseif strcmp(customPlotSelection,'Single raw waveform')
+            % Single waveform with std
+            if isfield(cell_metrics,'rawWaveform_std')
+                patch([cell_metrics.timeWaveform{ii},flip(cell_metrics.timeWaveform{ii})], [cell_metrics.rawWaveform{ii}+cell_metrics.rawWaveform_std{ii},flip(cell_metrics.rawWaveform{ii}-cell_metrics.rawWaveform_std{ii})],'black','EdgeColor','none','FaceAlpha',.2)
+                plot(cell_metrics.timeWaveform{ii}, cell_metrics.rawWaveform{ii}, 'color', col,'linewidth',2), grid on
+            else
+                plot(cell_metrics.timeWaveform{ii}, cell_metrics.rawWaveform{ii}, 'color', col,'linewidth',2), grid on
+            end
+            xlabel('Time (ms)'), ylabel('Voltage (µV)'), title('Raw waveform'), axis tight,
+            
+        elseif strcmp(customPlotSelection,'All raw waveforms')
+            % All raw waveforms (z-scored) colored according to cell type
+            for jj = 1:length(classes2plotSubset)
+                set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
+                xdata = repmat([time_waveforms_zscored,nan(1,1)],length(set1),1)';
+                ydata = [cell_metrics.rawWaveform_zscored(:,set1);nan(1,length(set1))];
+                plot(xdata(:),ydata(:), 'color', [clr(jj,:),0.2],'HitTest','off')
+            end
+            % selected cell in black
+            plot(time_waveforms_zscored, cell_metrics.rawWaveform_zscored(:,ii), 'color', 'k','linewidth',2,'HitTest','off'), grid on
+            xlabel('Time (ms)'), title('Raw waveforms zscored'), axis tight,
+            
         elseif strcmp(customPlotSelection,'tSNE of waveforms')
             
             % t-SNE scatter-plot with all waveforms calculated from the z-scored
@@ -1032,13 +1057,28 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             % selected cell highlighted with black cross
             plot(tSNE_metrics.filtWaveform(ii,1), tSNE_metrics.filtWaveform(ii,2),'xw', 'LineWidth', 3, 'MarkerSize',22,'HitTest','off');
             plot(tSNE_metrics.filtWaveform(ii,1), tSNE_metrics.filtWaveform(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
+        
+        elseif strcmp(customPlotSelection,'tSNE of raw waveforms')
+            
+            % t-SNE scatter-plot with all raw waveforms calculated from the z-scored
+            % waveforms
+            legendScatter4 = gscatter(tSNE_metrics.rawWaveform(subset,1), tSNE_metrics.rawWaveform(subset,2), plotClas(subset), clr,'',20,'off');
+            set(legendScatter4,'HitTest','off')
+            title('Raw waveforms - tSNE visualization'), axis tight, xlabel(''), ylabel('')
+            % selected cell highlighted with black cross
+            plot(tSNE_metrics.rawWaveform(ii,1), tSNE_metrics.rawWaveform(ii,2),'xw', 'LineWidth', 3, 'MarkerSize',22,'HitTest','off');
+            plot(tSNE_metrics.rawWaveform(ii,1), tSNE_metrics.rawWaveform(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
             
         elseif strcmp(customPlotSelection,'CCGs (image)')
             
             % CCGs for selected cell with other cell pairs from the same
             % session. The ACG for the selected cell is shown first
             if isfield(general,'ccg') & ~isempty(subset)
+                if BatchMode
                 subset1 = find(cell_metrics.batchIDs(subset)==cell_metrics.batchIDs(ii));
+                else
+                    subset1 = 1:general.cellCount;
+                end
                 subset1 = cell_metrics.UID(subset(subset1));
                 subset1 = [cell_metrics.UID(ii),subset1(subset1~=cell_metrics.UID(ii))];
                 Ydata = [1:length(subset1)];
@@ -1440,41 +1480,108 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
         elseif contains(customPlotSelection,{'spikes_'})
             
+            % Spike raster plots from the raw spike data
             out = CheckSpikes(batchIDs);
+            
             if out && isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).x) && isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).y)
                 out = CheckEvents(batchIDs,spikesPlots.(customPlotSelection).event);
+                
                 if out && ~isempty(spikesPlots.(customPlotSelection).event) && isfield(spikes{batchIDs},'times')% && ~isempty(nanUnique(spikes{batchIDs}.(spikesPlots.(customPlotSelection).event){cell_metrics.UID(ii)}))
+                    % Event data
                     secbefore = spikesPlots.(customPlotSelection).eventSecBefore;
                     secafter = spikesPlots.(customPlotSelection).eventSecAfter;
-                    ts_onset = events.(spikesPlots.(customPlotSelection).event){batchIDs};
-                    ep = [ts_onset-secbefore ts_onset+secafter];
+                    switch spikesPlots.(customPlotSelection).eventAlignment
+                        case 'onset'
+                            ts_onset = events.(spikesPlots.(customPlotSelection).event){batchIDs}.timestamps(:,1);
+                        case 'offset'
+                            ts_onset = events.(spikesPlots.(customPlotSelection).event){batchIDs}.timestamps(:,2);
+                        case 'center'
+                            ts_onset = mean(events.(spikesPlots.(customPlotSelection).event){batchIDs}.timestamps,2);
+                        case 'peak'
+                            ts_onset = events.(spikesPlots.(customPlotSelection).event){batchIDs}.peaks;
+                    end
+                    switch spikesPlots.(customPlotSelection).eventSorting
+                        case 'none'
+                            idxOrder = 1:length(ts_onset);
+                        case 'time'
+                            [ts_onset,idxOrder] = sort(ts_onset);
+                        case 'amplitude'
+                            if isfield(events.(spikesPlots.(customPlotSelection).event){batchIDs},'amplitude')
+                                [~,idxOrder] = sort(events.(spikesPlots.(customPlotSelection).event){batchIDs}.amplitude);
+                                ts_onset = ts_onset(idxOrder);
+                            end
+                        case 'duration'
+                            if isfield(events.(spikesPlots.(customPlotSelection).event){batchIDs},'duration')
+                                [~,idxOrder] = sort(events.(spikesPlots.(customPlotSelection).event){batchIDs}.duration);
+                                ts_onset = ts_onset(idxOrder);
+                            elseif isfield(events.(spikesPlots.(customPlotSelection).event){batchIDs},'timestamps')
+                                events.(spikesPlots.(customPlotSelection).event){batchIDs}.duration = diff(events.(spikesPlots.(customPlotSelection).event){batchIDs}.timestamps')';
+                                [~,idxOrder] = sort(events.(spikesPlots.(customPlotSelection).event){batchIDs}.duration);
+                                ts_onset = ts_onset(idxOrder);
+                            end
+                    end
+                    ep = [ts_onset-secbefore, ts_onset+secafter];
                     spks = spikes{batchIDs}.times{cell_metrics.UID(ii)};
                     adjustedSpikes = cellfun(@(x,y) spks(spks>x(1) & spks<x(2))-y,num2cell(ep,2),num2cell(ts_onset), 'uni',0);
-                    if spikesPlots.(customPlotSelection).plotRaster
-                        spikeEvent = cellfun(@(x,y) ones(length(x),1).*y, adjustedSpikes, num2cell(1:length(adjustedSpikes))', 'uni',0);
-                        plot(vertcat(adjustedSpikes{:}),vertcat(spikeEvent{:}),'.','color', col)
+                    if ~isempty(spikesPlots.(customPlotSelection).state) && isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).state)
+                        spksStates = spikes{batchIDs}.(spikesPlots.(customPlotSelection).state){cell_metrics.UID(ii)};
+                        adjustedSpikesStates = cellfun(@(x) spksStates(spks>x(1) & spks<x(2)),num2cell(ep,2), 'uni',0);
                     end
+                    if spikesPlots.(customPlotSelection).plotRaster
+                        % Raster plot with events on y-axis
+                        spikeEvent = cellfun(@(x,y) ones(length(x),1).*y, adjustedSpikes, num2cell(1:length(adjustedSpikes))', 'uni',0);
+                        if ~isempty(spikesPlots.(customPlotSelection).state)
+                            plot(vertcat(adjustedSpikes{:}),vertcat(spikeEvent{:}),'.','color', [0.5 0.5 0.5])
+                            if isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).state)
+                                data_x = vertcat(adjustedSpikes{:});
+                                data_y = vertcat(spikeEvent{:});
+                                data_g = vertcat(adjustedSpikesStates{:});
+                                gscatter(data_x(~isnan(data_g)),data_y(~isnan(data_g)), data_g(~isnan(data_g)),[],'',8,'off');
+                            end
+                        else
+                            plot(vertcat(adjustedSpikes{:}),vertcat(spikeEvent{:}),'.','color', col)
+                        end
+                    end
+                    grid on, plot([0, 0], [0 length(ts_onset)],'color','k', 'HitTest','off');
                     if spikesPlots.(customPlotSelection).plotAverage
+                        % Average plot (histogram) for events
                         bin_duration = (secbefore + secafter)/plotAverage_nbins;
                         bin_times = -secbefore:bin_duration:secafter;
+                        bin_times2 = bin_times(1:end-1) + mean(diff(bin_times))/2;
                         spkhist = histcounts(vertcat(adjustedSpikes{:}),bin_times);
                         plotData = spkhist/(bin_duration*length(ts_onset));
                         if spikesPlots.(customPlotSelection).plotRaster
                             scalingFactor = (0.2*length(ts_onset)/max(plotData));
                             plot([-secbefore,secafter],[0,0],'-k'), text(secafter,0,[num2str(max(plotData),3),'Hz'],'HorizontalAlignment','right','VerticalAlignment','top')
-                            plot(bin_times(1:end-1),plotData*scalingFactor-(max(plotData)*scalingFactor),'color', col,'linewidth',2);
+                            plot(bin_times2,plotData*scalingFactor-(max(plotData)*scalingFactor),'color', col,'linewidth',2);
                         else
-                            plot(bin_times(1:end-1),plotData,'color', col,'linewidth',2);
+                            plot(bin_times2,plotData,'color', col,'linewidth',2);
                         end
-%                         spkhist = cell2mat(cellfun(@(a) reshape(histc(a,bin_times),1,[]),adjustedSpikes, 'UniformOutput', false));
-%                         spkhist = spkhist(:,1:end-1)./bin_duration; % turn into rate
+                        if spikesPlots.(customPlotSelection).plotAmplitude & isfield(events.(spikesPlots.(customPlotSelection).event){batchIDs},'amplitude')
+                            temp = events.(spikesPlots.(customPlotSelection).event){batchIDs}.amplitude(idxOrder);
+                            temp2 = find(temp>0);
+                            plot(secafter+temp(temp2)/max(temp(temp2))*(secbefore+secafter)/6,temp2,'.k')
+                            text(secafter+(secbefore+secafter)/6,0,'Amplitude','color','k','HorizontalAlignment','left','VerticalAlignment','bottom','rotation',90)
+                        end
+                        if spikesPlots.(customPlotSelection).plotDuration & isfield(events.(spikesPlots.(customPlotSelection).event){batchIDs},'duration')
+                            temp = events.(spikesPlots.(customPlotSelection).event){batchIDs}.duration(idxOrder);
+                            temp2 = find(temp>0);
+                            plot(secafter+temp(temp2)/max(temp(temp2))*(secbefore+secafter)/6,temp2,'.r')
+                            duration = events.(spikesPlots.(customPlotSelection).event){batchIDs}.duration;
+                            text(secafter+(secbefore+secafter)/6,0,['Duration (' num2str(min(duration)),' => ',num2str(max(duration)),' sec)'],'color','r','HorizontalAlignment','left','VerticalAlignment','top','rotation',90)
+                        end
+                        plot([secafter, secafter], [0 length(ts_onset)],'color','k', 'HitTest','off');
+                        plot([0, secafter+(secbefore+secafter)/6], [0 0],'color','k', 'HitTest','off');
+                        plot([0, 0], [0 -0.2*length(ts_onset)],'color','k', 'HitTest','off');
                     end
-                    
+
                 elseif ~isempty(spikesPlots.(customPlotSelection).state) && isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).state) && ~isempty(nanUnique(spikes{batchIDs}.(spikesPlots.(customPlotSelection).state){cell_metrics.UID(ii)}))
+                    
+                    % State dependent raster
                     if isfield(spikes{batchIDs},spikesPlots.(customPlotSelection).state)
-                        plot(spikes{batchIDs}.(spikesPlots.(customPlotSelection).x){cell_metrics.UID(ii)},spikes{batchIDs}.(spikesPlots.(customPlotSelection).y){cell_metrics.UID(ii)},'.k'),
+                        plot(spikes{batchIDs}.(spikesPlots.(customPlotSelection).x){cell_metrics.UID(ii)},spikes{batchIDs}.(spikesPlots.(customPlotSelection).y){cell_metrics.UID(ii)},'.','color', [0.5 0.5 0.5]),
                         if strcmp(spikesPlots.(customPlotSelection).y,'theta_phase')
-                            plot(spikes{batchIDs}.(spikesPlots.(customPlotSelection).x){cell_metrics.UID(ii)},spikes{batchIDs}.(spikesPlots.(customPlotSelection).y){cell_metrics.UID(ii)}+2*pi,'.k')
+                            plot(spikes{batchIDs}.(spikesPlots.(customPlotSelection).x){cell_metrics.UID(ii)},spikes{batchIDs}.(spikesPlots.(customPlotSelection).y){cell_metrics.UID(ii)}+2*pi,'.','color', [0.5 0.5 0.5])
                         end
                         legendScatter = gscatter(spikes{batchIDs}.(spikesPlots.(customPlotSelection).x){cell_metrics.UID(ii)},spikes{batchIDs}.(spikesPlots.(customPlotSelection).y){cell_metrics.UID(ii)}, spikes{batchIDs}.(spikesPlots.(customPlotSelection).state){cell_metrics.UID(ii)},[],'',8,'off'); %,
                         
@@ -1502,33 +1609,41 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 text(0.5,0.5,'No data for this cell','FontWeight','bold','HorizontalAlignment','center')
             end
             xlabel(spikesPlots.(customPlotSelection).x_label), ylabel(spikesPlots.(customPlotSelection).y_label), title(customPlotSelection,'Interpreter', 'none')
-
+                        
         else
             
             customCellPlotNum = find(strcmp(customPlotSelection, customPlotOptions));
+            plotData = cell_metrics.(customPlotOptions{customCellPlotNum});
+            if isnumeric(plotData)
+                plotData = plotData(:,ii);
+            else
+                plotData = plotData{ii};
+            end
             if isfield(general,customPlotSelection) & isfield(general.(customPlotSelection),'x_bins')
                 x_bins = general.(customPlotSelection).x_bins;
             else
-                x_bins = [1:length(cell_metrics.(customPlotOptions{customCellPlotNum})(:,ii))];
+                x_bins = [1:length(plotData)];
             end
-            plot(x_bins,cell_metrics.(customPlotOptions{customCellPlotNum})(:,ii),'color', 'k','linewidth',2, 'HitTest','off')
+            plot(x_bins,plotData,'color', 'k','linewidth',2, 'HitTest','off')
             
-            switch monoSynDisp
-                case {'All'}
-                    subsetPlots.xaxis = x_bins;
-                    subsetPlots.yaxis = cell_metrics.(customPlotOptions{customCellPlotNum})(:,a2(outbound));
-                    subsetPlots.subset = a2(outbound);
-                    plot(x_bins,cell_metrics.(customPlotOptions{customCellPlotNum})(:,a2(outbound)),'color', [0,0,0,.5])
-                case 'Selected'
-                    subsetPlots.xaxis = x_bins;
-                    subsetPlots.yaxis = cell_metrics.(customPlotOptions{customCellPlotNum})(:,[a2(outbound);a1(inbound)]);
-                    subsetPlots.subset = [a2(outbound);a1(inbound)];
-                    if ~isempty(outbound)
-                        plot(x_bins,cell_metrics.(customPlotOptions{customCellPlotNum})(:,a2(outbound)),'color', 'm', 'HitTest','off')
-                    end
-                    if ~isempty(inbound)
-                        plot(x_bins,cell_metrics.(customPlotOptions{customCellPlotNum})(:,a1(inbound)),'color', 'k', 'HitTest','off')
-                    end
+            if isnumeric(cell_metrics.(customPlotOptions{customCellPlotNum}))
+                switch monoSynDisp
+                    case {'All'}
+                        subsetPlots.xaxis = x_bins;
+                        subsetPlots.yaxis = cell_metrics.(customPlotOptions{customCellPlotNum})(:,a2(outbound));
+                        subsetPlots.subset = a2(outbound);
+                        plot(x_bins,cell_metrics.(customPlotOptions{customCellPlotNum})(:,a2(outbound)),'color', [0,0,0,.5])
+                    case 'Selected'
+                        subsetPlots.xaxis = x_bins;
+                        subsetPlots.yaxis = cell_metrics.(customPlotOptions{customCellPlotNum})(:,[a2(outbound);a1(inbound)]);
+                        subsetPlots.subset = [a2(outbound);a1(inbound)];
+                        if ~isempty(outbound)
+                            plot(x_bins,cell_metrics.(customPlotOptions{customCellPlotNum})(:,a2(outbound)),'color', 'm', 'HitTest','off')
+                        end
+                        if ~isempty(inbound)
+                            plot(x_bins,cell_metrics.(customPlotOptions{customCellPlotNum})(:,a1(inbound)),'color', 'k', 'HitTest','off')
+                        end
+                end
             end
             title(customPlotOptions{customCellPlotNum}, 'Interpreter', 'none'), xlabel(''),ylabel('')
             axis tight, ax6 = axis; grid on
@@ -1678,6 +1793,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function colored_string = DefineCellTypeList
         if size(UI.settings.cellTypeColors,1) < length(UI.settings.cellTypes)
             UI.settings.cellTypeColors = [UI.settings.cellTypeColors;rand(length(UI.settings.cellTypes)-size(UI.settings.cellTypeColors,1),3)];
+        elseif size(UI.settings.cellTypeColors,1) > length(UI.settings.cellTypes)
+            UI.settings.cellTypeColors = UI.settings.cellTypeColors(1:length(UI.settings.cellTypes),:);
         end
         classColorsHex = rgb2hex(UI.settings.cellTypeColors*0.7);
         classColorsHex = cellstr(classColorsHex(:,2:end));
@@ -2151,6 +2268,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
                     end
                     
+                case 'tSNE of raw waveforms'
+                    
+                    [~,idx] = min(hypot(tSNE_metrics.rawWaveform(subset,1)-u,tSNE_metrics.rawWaveform(subset,2)-v));
+                    iii = subset(idx);
+                    if highlight
+                        text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                    end
+                    
                 case 'All waveforms'
                     
                     x1 = time_waveforms_zscored'*ones(1,length(subset));
@@ -2163,12 +2288,28 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         plot(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off')
                         text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
                     end
+                    
+                case 'All raw waveforms'
+                    
+                    x1 = time_waveforms_zscored'*ones(1,length(subset));
+                    y1 = cell_metrics.rawWaveform_zscored(:,subset);
+                    [~,In] = min(hypot(x1(:)-u,y1(:)-v));
+                    In = unique(floor(In/length(time_waveforms_zscored)))+1;
+                    iii = subset(In);
+                    [~,time_index] = min(abs(time_waveforms_zscored-u));
+                    if highlight
+                        plot(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off')
+                        text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                    end
+                    
                 case 'All waveforms (image)'
                         [~,troughToPeakSorted] = sort(cell_metrics.troughToPeak(subset));
+                        if round(v) > 0 && round(v) <= length(subset)
                         iii = subset(troughToPeakSorted(round(v)));
                         if highlight
                             plot([time_waveforms_zscored(1),time_waveforms_zscored(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
                             text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
+                        end
                         end
                 case 'tSNE of narrow ACGs'
                     
@@ -2189,10 +2330,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 case 'CCGs (image)'
                     
                     if isfield(general,'ccg')
-                        subset2 = subset(find(cell_metrics.batchIDs(subset)==cell_metrics.batchIDs(ii)));
+                        if BatchMode
+                            subset2 = subset(find(cell_metrics.batchIDs(subset)==cell_metrics.batchIDs(ii)));
+                        else
+                            subset2 = 1:general.cellCount;
+                        end
                         subset1 = cell_metrics.UID(subset2);
                         subset1 = [cell_metrics.UID(ii),subset1(subset1~=cell_metrics.UID(ii))];
                         subset2 = [ii,subset2(subset2~=ii)];
+                        if round(v) > 0 && round(v) <= max(subset2)
                         iii = subset2(round(v));
                         if highlight
                             if strcmp(UI.settings.acgType,'Narrow')
@@ -2203,11 +2349,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             plot(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
                             text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
                         end
+                        end
                     end
                     
                 case 'All ACGs (image)'
                     
                     [~,burstIndexSorted] = sort(cell_metrics.burstIndex_Royer2012(subset));
+                    if round(v) > 0 && round(v) <= length(subset)
                     iii = subset(burstIndexSorted(round(v)));
                     if highlight
                         if strcmp(UI.settings.acgType,'Normal')
@@ -2219,6 +2367,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         end
                         plot(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
                         text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
+                    end
                     end
 
                 case 'All ACGs'
@@ -3241,7 +3390,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if ishandle(f_waitbar)
                 close(f_waitbar)
                 classificationTrackChanges = [];
-                MsgLog(['Classifications succesfully saved to existing cell_metrics files'],[1,2]);
+                MsgLog(['Classifications succesfully saved to existing cell-metrics files'],[1,2]);
             else
                 MsgLog('Metrics were not succesfully saved for all session in batch',4);
             end
@@ -3358,6 +3507,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Batch initialization
         if isfield(cell_metrics.general,'batch')
             BatchMode = true;
+        else
+            BatchMode = false;
         end
         
         % Fieldnames
@@ -3400,7 +3551,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Plotting menues initialization
         fieldsMenu = sort(metrics_fieldsNames);
         groups_ids = [];
-        fieldsMenu(find(contains(fieldsMenu,{'thetaPhaseResponse','rippleCorrelogram','firingRateMap','FiringRateMap','firing_rate_map','spatialCoherence','firingRateAcrossTime','FiringRateAcrossTime','filtWaveform','timeWaveform','psth'})))=[];
+        fieldsMenu(find(contains(fieldsMenu,fieldsMenuMetricsToExlude)))=[];
         
         for i = 1:length(fieldsMenu)
             if strcmp(fieldsMenu{i},'deepSuperficial')
@@ -3441,8 +3592,20 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         for i = 1:length(cell_metrics.filtWaveform)
             filtWaveform(:,i) = interp1(cell_metrics.timeWaveform{i},cell_metrics.filtWaveform{i},time_waveforms_zscored,'spline');
         end
-        
         cell_metrics.filtWaveform_zscored = zscore(filtWaveform);
+        
+        % 'All raw waveforms'
+        if isfield(cell_metrics,'rawWaveform')
+            rawWaveform = [];
+            for i = 1:length(cell_metrics.rawWaveform)
+                if isempty(cell_metrics.rawWaveform{i})
+                    rawWaveform(:,i) = zeros(size(time_waveforms_zscored));
+                else
+                    rawWaveform(:,i) = interp1(cell_metrics.timeWaveform{i},cell_metrics.rawWaveform{i},time_waveforms_zscored,'spline');
+                end
+            end
+            cell_metrics.rawWaveform_zscored = zscore(rawWaveform); clear rawWaveform
+        end
         cell_metrics.acg_zscored = zscore(cell_metrics.acg); cell_metrics.acg_zscored = cell_metrics.acg_zscored - min(cell_metrics.acg_zscored(490:510,:));
         cell_metrics.acg2_zscored = zscore(cell_metrics.acg2); cell_metrics.acg2_zscored = cell_metrics.acg2_zscored - min(cell_metrics.acg2_zscored(90:110,:));
         
@@ -3470,6 +3633,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if UI.settings.tSNE_calcFiltWaveform && ~isfield(tSNE_metrics,'filtWaveform')
             disp('Calculating tSNE space for waveforms')
             tSNE_metrics.filtWaveform = tsne(cell_metrics.filtWaveform_zscored','Standardize',true);
+        end
+        if UI.settings.tSNE_calcRawWaveform && ~isfield(tSNE_metrics,'rawWaveform') && isfield(cell_metrics,'rawWaveform')
+            disp('Calculating tSNE space for raw waveforms')
+            tSNE_metrics.rawWaveform = tsne(cell_metrics.rawWaveform_zscored','Standardize',true);
         end
         if ~isfield(tSNE_metrics,'plot')
             disp('Calculating tSNE space for combined metrics')
@@ -3551,6 +3718,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if isfield(tSNE_metrics,'filtWaveform')
             waveformOptions = [waveformOptions;'tSNE of waveforms'];
         end
+        if isfield(cell_metrics,'rawWaveform')
+            waveformOptions2 = {'Single raw waveform';'All raw waveforms'};
+            if isfield(tSNE_metrics,'rawWaveform')
+                waveformOptions2 = [waveformOptions2;'tSNE of raw waveforms'];
+            end
+        else
+            waveformOptions2 = {};
+        end
         acgOptions = {'Single ACG';'All ACGs';'All ACGs (image)';'CCGs (image)'};
         if isfield(tSNE_metrics,'acg2')
             acgOptions = [acgOptions;'tSNE of narrow ACGs'];
@@ -3565,8 +3740,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         customPlotOptions = customPlotOptions(  find( (strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.spikeCount,2) ) )  );
         customPlotOptions = [customPlotOptions;customPlotOptions2];
-        customPlotOptions(find(contains(customPlotOptions,{'putativeConnections','acg','acg2','filtWaveform','timeWaveform'})))=[];
-        customPlotOptions = unique([waveformOptions; acgOptions; otherOptions; customPlotOptions],'stable');
+        customPlotOptions(find(contains(customPlotOptions,plotOptionsToExlude)))=[]; % 
+        customPlotOptions = unique([waveformOptions; waveformOptions2; acgOptions; otherOptions; customPlotOptions],'stable');
         
         % Initilizing view #1
         UI.popupmenu.customplot1.String = customPlotOptions;
@@ -3651,6 +3826,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 sessions = loadjson(bz_db.renderedHtml);
                 [db_menu_items,index] = sort(cellfun(@(x) x.name,sessions,'UniformOutput',false));
                 db_menu_ids = cellfun(@(x) x.id,sessions,'UniformOutput',false);
+                db_menu_ids = db_menu_ids(index);
                 db_menu_animals = cellfun(@(x) x.animal,sessions,'UniformOutput',false);
                 db_menu_investigator = cellfun(@(x) x.investigator,sessions,'UniformOutput',false);
                 db_menu_values = cellfun(@(x) x.id,sessions,'UniformOutput',false);
@@ -3679,8 +3855,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         
                         disp(['Initializing session(s)']);
                         initializeSession
-                        disp('Session(s) loaded succesfully');
-                        
+                        if isfield(UI,'panel')
+                            MsgLog([num2str(length(indx)),' session(s) loaded succesfully'],2);
+                        else
+                            disp([num2str(length(indx)),' session(s) loaded succesfully']);
+                        end
                         catch
                             disp(['Failed to load dataset from database: ',strjoin(db_menu_items(indx))]);
                         end
@@ -3796,10 +3975,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 eventsfilesize=dir(fullfile(basepath1,[general.basename,'.' (eventType) '.events.mat']));
                 waitbar_events = waitbar(0,['Loading events from ', general.basename , ' (', num2str(ceil(eventsfilesize.bytes/1000000)), 'MB)'],'Name','Loading events','WindowStyle','modal');
                 temp = load(fullfile(basepath1,[general.basename,'.' (eventType) '.events.mat']));
-                if strcmp(eventType,'ripples')
-                    events.(eventType){batchIDs} = temp.(eventType).peaks;
-                else
-                    events.(eventType){batchIDs} = temp.(eventType).timestamps;
+                events.(eventType){batchIDs} = temp.(eventType);
+                if isfield(temp.(eventType),'peakNormedPower') & ~isfield(temp.(eventType),'amplitude')
+                    events.(eventType){batchIDs}.amplitude = temp.(eventType).peakNormedPower;
+                end
+                if isfield(temp.(eventType),'timestamps') & ~isfield(temp.(eventType),'duration')
+                    events.(eventType){batchIDs}.duration = diff(temp.(eventType).timestamps')';
                 end
                 out = true;
                 if ishandle(waitbar_events)
@@ -3974,9 +4155,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         spikePlotEventSecBefore = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [230, 50, 60, 25],'HorizontalAlignment','center');
         uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'sec after', 'Position', [300, 71, 70, 20],'HorizontalAlignment','left');
         spikePlotEventSecAfter = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [300, 50, 60, 25],'HorizontalAlignment','center');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Alignment', 'Position', [370, 71, 70, 20],'HorizontalAlignment','left');
+        spikePlotEventAlignment = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', {'onset', 'offset', 'center', 'peak'}, 'Value',1,'Position', [370, 50, 70, 25],'HorizontalAlignment','center');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Sorting', 'Position', [450, 71, 70, 20],'HorizontalAlignment','left');
+        spikePlotEventSorting = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', {'none','time', 'amplitude', 'duration'}, 'Value',1,'Position', [450, 50, 90, 25],'HorizontalAlignment','center');
         
-        spikePlotEventPlotRaster = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[370 50 70 25],'Units','normalized','String','Raster','HorizontalAlignment','left');
-        spikePlotEventPlotAverage = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[450 50 70 25],'Units','normalized','String','Histogram','HorizontalAlignment','left');
+        
+        spikePlotEventPlotRaster = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[580 110 70 25],'Units','normalized','String','Raster','HorizontalAlignment','left');
+        spikePlotEventPlotAverage = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[580 90 70 25],'Units','normalized','String','Histogram','HorizontalAlignment','left');
+        spikePlotEventPlotAmplitude = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[580 70 70 25],'Units','normalized','String','Amplitude','HorizontalAlignment','left');
+        spikePlotEventPlotDuration = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[580 50 70 25],'Units','normalized','String','Duration','HorizontalAlignment','left');
         
         uicontrol('Parent',spikePlots_dialog,'Style','pushbutton','Position',[10, 10, 320, 30],'String','OK','Callback',@(src,evnt)CloseSpikePlots_dialog);
         uicontrol('Parent',spikePlots_dialog,'Style','pushbutton','Position',[340, 10, 320, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikePlots_dialog);
@@ -3988,11 +4176,17 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             spikePlotEvent.String = spikesPlots.(fieldtoedit).event;
             spikePlotEventSecBefore.String = spikesPlots.(fieldtoedit).eventSecBefore;
             spikePlotEventSecAfter.String = spikesPlots.(fieldtoedit).eventSecAfter;
-            if isfield(spikesPlots.(fieldtoedit),'plotAverage')
+            if isfield(spikesPlots.(fieldtoedit),'plotRaster')
                 spikePlotEventPlotRaster.Value = spikesPlots.(fieldtoedit).plotRaster;
             end
             if isfield(spikesPlots.(fieldtoedit),'plotAverage')
                 spikePlotEventPlotAverage.Value = spikesPlots.(fieldtoedit).plotAverage;
+            end
+            if isfield(spikesPlots.(fieldtoedit),'plotAmplitude')
+                spikePlotEventPlotAmplitude.Value = spikesPlots.(fieldtoedit).plotAmplitude;
+            end
+            if isfield(spikesPlots.(fieldtoedit),'plotDuration')
+                spikePlotEventPlotDuration.Value = spikesPlots.(fieldtoedit).plotDuration;
             end
             if find(strcmp(spikesPlots.(fieldtoedit).x,spikePlotXData.String))
                 spikePlotXData.Value = find(strcmp(spikesPlots.(fieldtoedit).x,spikePlotXData.String));
@@ -4006,6 +4200,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if find(strcmp(spikesPlots.(fieldtoedit).event,spikePlotEvent.String))
                 spikePlotEvent.Value = find(strcmp(spikesPlots.(fieldtoedit).event,spikePlotEvent.String));
             end
+            if find(strcmp(spikesPlots.(fieldtoedit).eventAlignment,spikePlotEventAlignment.String))
+                spikePlotEventAlignment.Value = find(strcmp(spikesPlots.(fieldtoedit).eventAlignment,spikePlotEventAlignment.String));
+            end
+            if find(strcmp(spikesPlots.(fieldtoedit).eventSorting,spikePlotEventSorting.String))
+                spikePlotEventSorting.Value = find(strcmp(spikesPlots.(fieldtoedit).eventSorting,spikePlotEventSorting.String));
+            end
         end
         
         uicontrol(spikePlotName);
@@ -4013,10 +4213,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         function CloseSpikePlots_dialog
             % Checks the inputs for correct format then closes the dialog and parses the inputs to spikesPlotsOut structure
-            if ~myFieldCheck(spikePlotName,'varname')
-            elseif ~isempty(spikePlotEvent.String) && ~myFieldCheck(spikePlotEvent,'varname')
-            elseif ~isempty(spikePlotEvent.String) && ~myFieldCheck(spikePlotEventSecBefore,'numeric')
-            elseif ~isempty(spikePlotEvent.String) && ~myFieldCheck(spikePlotEventSecAfter,'numeric')
+            if ~myFieldCheck(spikePlotName,'varname') || ...
+            ( ~isempty(spikePlotEvent.String) && ~myFieldCheck(spikePlotEvent,'varname')) || ...
+            ( ~isempty(spikePlotEvent.String) && ~myFieldCheck(spikePlotEventSecBefore,'numeric')) || ...
+            ( ~isempty(spikePlotEvent.String) && ~myFieldCheck(spikePlotEventSecAfter,'numeric'))
             else
                 spikePlotName2 = ['spikes_',regexprep(spikePlotName.String,{'/.*',' ','-'},'')];
                 spikesPlotsOut.(spikePlotName2).x = spikesField{spikePlotXData.Value};
@@ -4028,6 +4228,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 spikesPlotsOut.(spikePlotName2).eventSecAfter = str2num(spikePlotEventSecAfter.String);
                 spikesPlotsOut.(spikePlotName2).plotRaster = spikePlotEventPlotRaster.Value;
                 spikesPlotsOut.(spikePlotName2).plotAverage = spikePlotEventPlotAverage.Value;
+                spikesPlotsOut.(spikePlotName2).plotAmplitude = spikePlotEventPlotAmplitude.Value;
+                spikesPlotsOut.(spikePlotName2).plotDuration = spikePlotEventPlotDuration.Value;
+                
+                spikesPlotsOut.(spikePlotName2).eventAlignment = spikePlotEventAlignment.String{spikePlotEventAlignment.Value};
+                spikesPlotsOut.(spikePlotName2).eventSorting = spikePlotEventSorting.String{spikePlotEventSorting.Value};
+                
                 if spikePlotState.Value > 1
                     spikesPlotsOut.(spikePlotName2).state = spikesField{spikePlotState.Value-1};
                 else

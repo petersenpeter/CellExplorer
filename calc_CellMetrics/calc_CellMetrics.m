@@ -33,9 +33,9 @@ function cell_metrics = calc_CellMetrics(varargin)
 % By Peter Petersen
 % petersen.peter@gmail.com
 
-% TODO 
+% TODO
 % Support amplipex amplifier ranges (different range than Intan recordings)
-% Faster way to get waveforms for phy data
+% General way to get waveforms across data formats
 
 p = inputParser;
 addParameter(p,'id',[],@isnumeric);
@@ -150,32 +150,52 @@ cell_metrics.general.cellCount = length(spikes.total);
 if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
     if ~all(isfield(cell_metrics,{'filtWaveform','timeWaveform','filtWaveform_std','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || forceReload == true
         disp('* Getting waveforms');
-        if all(isfield(spikes,{'filtWaveform','filtWaveform_std','peakVoltage','cluID'}))
+        if all(isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % 'filtWaveform_std'
             waveforms.filtWaveform = spikes.filtWaveform;
-            waveforms.timeWaveform = ([1:length(waveforms.filtWaveform{1})]/sr)*1000-0.8;
-            waveforms.filtWaveform_std = spikes.filtWaveform_std; % waveforms.filtWaveform; % TODO
+            if isfield(spikes,'timeWaveform')
+                waveforms.timeWaveform = spikes.timeWaveform;
+            else
+                waveforms.timeWaveform = repmat({(([1:length(waveforms.filtWaveform{1})]-floor(length(waveforms.filtWaveform{1})/2))/sr)*1000},1,cell_metrics.general.cellCount);
+            end
+            if isfield(spikes,'filtWaveform_std')
+                waveforms.filtWaveform_std = spikes.filtWaveform_std;
+            end
             waveforms.peakVoltage = spikes.peakVoltage;
             waveforms.UID = spikes.UID;
         elseif useNeurosuiteWaveforms
             waveforms = LoadNeurosuiteWaveforms(spikes,session,timeRestriction);
-        elseif any(~isfield(spikes,{'filtWaveform','filtWaveform_std','peakVoltage','cluID'}))
+        elseif any(~isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % ,'filtWaveform_std'
             spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'forceReload',true);
             %             spikes = GetWaveformsFromDat(spikes,sessionInfo);
             waveforms.filtWaveform = spikes.filtWaveform;
-            waveforms.timeWaveform = ([1:length(waveforms.filtWaveform{1})]/sr)*1000-0.8;
-            waveforms.filtWaveform_std = spikes.filtWaveform_std; % waveforms.filtWaveform; % TODO
+            if ~isfield(spikes,'timeWaveform')
+                waveforms.timeWaveform = spikes.timeWaveform;
+            else
+                waveforms.timeWaveform = repmat({(([1:length(waveforms.filtWaveform{1})]-floor(length(waveforms.filtWaveform{1})/2))/sr)*1000},1,cell_metrics.general.cellCount);
+            end
+            if isfield(spikes,'filtWaveform_std')
+                waveforms.filtWaveform_std = spikes.filtWaveform_std;
+            end
             waveforms.peakVoltage = spikes.peakVoltage;
             waveforms.UID = spikes.UID;
         end
         disp('* Calculating waveform classifications: Trough-to-peak latency, Peak voltage');
-        waveform_metrics = calc_waveform_metrics(waveforms.filtWaveform,sr);
+        waveform_metrics = calc_waveform_metrics(waveforms,sr);
         field2remove = {'derivative_TroughtoPeak','filtWaveform','filtWaveform_std'};
         test = isfield(cell_metrics,field2remove);
         cell_metrics = rmfield(cell_metrics,field2remove(test));
         for j = 1:cell_metrics.general.cellCount
             cell_metrics.filtWaveform{j} = waveforms.filtWaveform{j};
-            cell_metrics.timeWaveform{j} = waveforms.timeWaveform;
-            cell_metrics.filtWaveform_std{j} =  waveforms.filtWaveform_std{j};
+            if isfield(waveforms,'filtWaveform_std')
+                cell_metrics.filtWaveform_std{j} =  waveforms.filtWaveform_std{j};
+            end
+            cell_metrics.timeWaveform{j} = waveforms.timeWaveform{j};
+            if isfield(spikes,'rawWaveform')
+                cell_metrics.rawWaveform{j} =  spikes.rawWaveform{j};
+            end
+            if isfield(spikes,'rawWaveform_std')
+                cell_metrics.rawWaveform_std{j} =  spikes.rawWaveform_std{j};
+            end
             cell_metrics.peakVoltage(j) = waveforms.peakVoltage(j);
             cell_metrics.troughToPeak(j) = waveform_metrics.troughtoPeak(j);
             cell_metrics.troughtoPeakDerivative(j) = waveform_metrics.derivative_TroughtoPeak(j);
@@ -205,7 +225,7 @@ end
 if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,{'acg_metrics'}))
     if ~all(isfield(cell_metrics,{'acg','acg2','thetaModulationIndex','burstIndex_Royer2012','burstIndex_Doublets','acg_tau_decay','acg_tau_rise'})) || forceReload == true
         disp('* Calculating CCG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets')
-        acg_metrics = calc_ACG_metrics(spikes)%(clusteringpath,sr,timeRestriction);
+        acg_metrics = calc_ACG_metrics(spikes);%(clusteringpath,sr,timeRestriction);
         
         disp('* Fitting double exponential to ACG')
         fit_params = fit_ACG(acg_metrics.acg2);
@@ -235,15 +255,13 @@ end
 % Deep-Superficial by ripple polarity reversal
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
     disp('* Deep-Superficial by ripple polarity reversal')
-    if ~exist(fullfile(basepath, [basename, '.lfp']),'file')
-        disp('Creating lfp file')
-        bz_LFPfromDat(pwd,'noPrompts',true)
-    end
+%     lfpExtension = exist_LFP(basepath,basename);
     
     if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') || forceReload == true)
+        lfpExtension = exist_LFP(basepath,basename);
         if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple')
             disp('  Using RippleNoise reference channel')
-            RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
+            RippleNoiseChannel = double(LoadBinary([basename, lfpExtension],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
             ripples = bz_FindRipples('basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
         elseif isfield(session.channelTags,'Ripple')
             ripples = bz_FindRipples('basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
@@ -254,6 +272,7 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
     
     deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') & (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || forceReload == true)
+        lfpExtension = exist_LFP(basepath,basename);
         if ~exist(deepSuperficial_file,'file')
             classification_DeepSuperficial(session)
         end
@@ -276,6 +295,7 @@ end
 if any(contains(metrics,{'ripple_metrics','all'})) && ~any(contains(excludeMetrics,{'ripple_metrics'}))
     disp('* Calculating ripple metrics')
     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
+        lfpExtension = exist_LFP(basepath,basename);
         load(fullfile(basepath,[basename,'.ripples.events.mat']));
         [PSTH,PSTH_time] = calc_PSTH(ripples.peaks,spikes);
         [rippleModulationIndex,ripplePeakDelay,rippleCorrelogram] = calc_RippleModulationIndex(PSTH,PSTH_time);
@@ -324,6 +344,7 @@ end
 if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetrics,{'theta_metrics'}))
     disp('* Calculating theta metrics');
     if exist(fullfile(basepath,'animal.mat'),'file')
+        lfpExtension = exist_LFP(basepath,basename);
         InstantaneousTheta = calcInstantaneousTheta2(session);
         load(fullfile(basepath,'animal.mat'));
         theta_bins =[-1:0.05:1]*pi;
@@ -607,13 +628,14 @@ if ~isfield(cell_metrics,'putativeCellType') || ~keepCellClassification
     % Interneuron classification
     cell_metrics.putativeCellType(cell_metrics.acg_tau_decay>30) = repmat({'Interneuron'},sum(cell_metrics.acg_tau_decay>30),1);
     cell_metrics.putativeCellType(cell_metrics.acg_tau_rise>3) = repmat({'Interneuron'},sum(cell_metrics.acg_tau_rise>3),1);
+    cell_metrics.putativeCellType(cell_metrics.troughToPeak<=0.425) = repmat({'Interneuron'},sum(cell_metrics.troughToPeak<=0.425),1);
     cell_metrics.putativeCellType(cell_metrics.troughToPeak<=0.425  & ismember(cell_metrics.putativeCellType, 'Interneuron')) = repmat({'Narrow Interneuron'},sum(cell_metrics.troughToPeak<=0.425  & (ismember(cell_metrics.putativeCellType, 'Interneuron'))),1);
     cell_metrics.putativeCellType(cell_metrics.troughToPeak>0.425  & ismember(cell_metrics.putativeCellType, 'Interneuron')) = repmat({'Wide Interneuron'},sum(cell_metrics.troughToPeak>0.425  & (ismember(cell_metrics.putativeCellType, 'Interneuron'))),1);
     
     % Pyramidal cell classification
-    cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative<0.17 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.troughtoPeakDerivative<0.17 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
-    cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.troughtoPeakDerivative>0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
-    cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
+%     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative<0.17 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.troughtoPeakDerivative<0.17 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
+%     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.troughtoPeakDerivative>0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
+%     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
 end
 
 
@@ -634,8 +656,10 @@ end
 % Submitting to database
 if submitToDatabase
     disp('* Submitting cells to database');
+    session = db_update_session(session,'forceReload',true);
+    cell_metrics = db_submit_cells(cell_metrics,session);
     try
-        cell_metrics = db_submit_cells(cell_metrics,session);
+        
     catch
         disp('* Failed to submit to database');
     end
