@@ -18,6 +18,11 @@ addParameter(p,'raw_clusters',false,@islogical); % raw_clusters: Load only a sub
 addParameter(p,'forceReload',false,@islogical); % Reload spikes from original format and resave the .spikes.mat file?
 addParameter(p,'saveMat',true,@islogical); % Save spikes to mat file?
 addParameter(p,'getWaveforms',true,@islogical); % Get average waveforms? Only in effect for neurosuite/klustakwik format
+addParameter(p,'useNeurosuiteWaveforms',false,@islogical); % Use Waveform features from spk files or load waveforms from dat file
+addParameter(p,'spikes',[],@isstruct); % Load existing spikes structure to append new spike info
+addParameter(p,'basepath',pwd,@ischar); % path to dat file, used to extract the waveforms from the dat file
+addParameter(p,'LSB',0.195,@isnumeric); % Least significant bit (LSB in uV) Intan = 0.195, Amplipex = 0.3815
+
 parse(p,varargin{:})
 
 shanks = p.Results.shanks;
@@ -25,6 +30,10 @@ raw_clusters = p.Results.raw_clusters;
 forceReload = p.Results.forceReload;
 saveMat = p.Results.saveMat;
 getWaveforms = p.Results.getWaveforms;
+spikes = p.Results.spikes;
+basepath = p.Results.basepath;
+useNeurosuiteWaveforms = p.Results.useNeurosuiteWaveforms;
+LSB = p.Results.LSB;
 
 if exist(fullfile(clusteringPath,[baseName,'.spikes.cellinfo.mat'])) & ~forceReload
     load(fullfile(clusteringPath,[baseName,'.spikes.cellinfo.mat']))
@@ -54,16 +63,16 @@ if forceReload
                 end
                 shanks = sort(shanks_new);
             end
+            xml = LoadXml(fullfile(clusteringPath,[baseName, '.xml']));
             for shank = shanks
                 disp(['Loading shank #' num2str(shank) '/' num2str(length(shanks)) ])
                 if ~raw_clusters
-                    xml = LoadXml(fullfile(clusteringPath,[baseName, '.xml']));
                     cluster_index = load(fullfile(clusteringPath, [baseName '.clu.' num2str(shank)]));
                     time_stamps = load(fullfile(clusteringPath,[baseName '.res.' num2str(shank)]));
                     if getWaveforms
                         fname = fullfile(clusteringPath,[baseName '.spk.' num2str(shank)]);
                         f = fopen(fname,'r');
-                        waveforms = 0.000195 * double(fread(f,'int16'));
+                        waveforms = LSB * double(fread(f,'int16'));
                         samples = size(waveforms,1)/size(time_stamps,1);
                         electrodes = size(xml.ElecGp{shank},2);
                         waveforms = reshape(waveforms, [electrodes,samples/electrodes,length(waveforms)/samples]);
@@ -84,7 +93,7 @@ if forceReload
                     spikes.cluID(unit_nb) = nb_clusters2(i);
                     spikes.cluster_index(unit_nb) = nb_clusters2(i);
                     spikes.total(unit_nb) = length(spikes.ts{unit_nb});
-                    if getWaveforms
+                    if getWaveforms & useNeurosuiteWaveforms
                         spikes.filtWaveform_all{unit_nb} = mean(waveforms(:,:,cluster_index == nb_clusters2(i)),3);
                         spikes.filtWaveform_all_std{unit_nb} = permute(std(permute(waveforms(:,:,cluster_index == nb_clusters2(i)),[3,1,2])),[2,3,1]);
                         [~,index1] = max(max(spikes.filtWaveform_all{unit_nb}') - min(spikes.filtWaveform_all{unit_nb}'));
@@ -95,8 +104,13 @@ if forceReload
                         spikes.peakVoltage(unit_nb) = max(spikes.filtWaveform{unit_nb}) - min(spikes.filtWaveform{unit_nb});
                     end
                 end
+                if getWaveforms
+                    spikes.processinginfo.params.WaveformsSource = 'spk files';
+                end
             end
-            
+            if getWaveforms & ~useNeurosuiteWaveforms
+                spikes = GetWaveformsFromDat(spikes,xml,basepath,baseName,LSB);
+            end
             clear cluster_index time_stamps
             
         case 'phy'
@@ -133,7 +147,6 @@ if forceReload
             fileID = fopen(filename,'r');
             dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
             fclose(fileID);
-            spikes = [];
             j = 1;
             for i = 1:length(dataArray{1})
                 if raw_clusters == 0
@@ -166,70 +179,7 @@ if forceReload
             end
             
             if getWaveforms % get waveforms
-                timerVal = tic;
-                nPull = 1000; % number of spikes to pull out
-                wfWin = 0.006; % Larger size of waveform windows for filterning
-                wfWinKeep = 0.001;
-                filtFreq = 500;
-                hpFilt = designfilt('highpassiir','FilterOrder',3, 'PassbandFrequency',filtFreq,'PassbandRipple',0.1, 'SampleRate',xml.SampleRate);
-                [b1, a1] = butter(3, filtFreq/xml.SampleRate*2, 'high');
-                
-                f = waitbar(0,'Getting waveforms...');
-                wfWin = round((wfWin * xml.SampleRate)/2);
-                
-                for ii = 1 : size(spikes.times,2)
-                    waitbar(ii/size(spikes.times,2),f,['Pulling out waveforms (',num2str(ii),'/',num2str(size(spikes.times,2)),')']);
-                    spkTmp = spikes.ts{ii};
-                    if length(spkTmp) > nPull
-                        spkTmp = spkTmp(randperm(length(spkTmp)));
-                        spkTmp = sort(spkTmp(1:nPull));
-                    end
-                    
-                    
-                    % Determines the maximum waveform channel
-                    wf = zeros((wfWin * 2)+1,xml.nChannels,100);
-                    wfF = zeros((wfWin * 2)+1,xml.nChannels);
-                    for jj = 1 : 100
-                        wf(:,:,jj) = double(LoadBinary([baseName '.dat'],'offset',spkTmp(jj) - wfWin,'nChannels',xml.nChannels,'precision','int16','frequency',xml.SampleRate,'samples',(wfWin * 2)+1));
-                        %                             wf(:,:,jj) = double(bz_LoadBinary([baseName '.dat'],'offset',spkTmp(jj) - (wfWin), 'samples',(wfWin * 2)+1,'frequency',xml.SampleRate,'nChannels',xml.nChannels));
-                    end
-                    wf =  0.195 * mean(wf,3);
-                    
-                    for jj = 1 : size(wf,2)
-                        wfF(:,jj) = filtfilt(b1, a1, wf(:,jj));
-                    end
-                    [~, spikes.maxWaveformCh1(ii)] = max(abs(wfF(wfWin,:)));
-                    spikes.maxWaveformCh(ii) = spikes.maxWaveformCh1(ii)-1;
-                    
-                    % Assigning shankID to the unit
-                    for jj = 1:size(xml.AnatGrps,2)
-                        if xml.AnatGrps(jj).Channels == spikes.maxWaveformCh(ii)
-                            spikes.shankID(ii) = jj;
-                        end
-                    end
-                    
-                    % Pulls the waveforms from the dat
-                    wf = zeros((wfWin * 2)+1,length(spkTmp));
-                    wfF = zeros((wfWin * 2)+1,length(spkTmp));
-                    for jj = 1 : length(spkTmp)
-                        wf(:,jj) = double(LoadBinary([baseName '.dat'],'offset',spkTmp(jj) - wfWin,'nChannels',xml.nChannels,'channels',spikes.maxWaveformCh1(ii),'precision','int16','frequency',xml.SampleRate,'samples',(wfWin * 2)+1));
-                        wfF(:,jj) = filtfilt(b1, a1, wf(:,jj));
-                    end
-                    wf2 = mean(0.195 * wf,2);
-                    rawWaveform{ii} = detrend(wf2 - mean(wf2))';
-                    rawWaveform_std{ii} = std(0.195 * (wf-mean(wf))');
-                    filtWaveform{ii} = mean(0.195 * wfF,2)';
-                    filtWaveform_std{ii} = std(0.195 * wfF');
-                    
-                    spikes.rawWaveform{ii} = rawWaveform{ii}(wfWin-(wfWinKeep*xml.SampleRate):wfWin+(wfWinKeep*xml.SampleRate)); % keep only +- 1ms of waveform
-                    spikes.rawWaveform_std{ii} = rawWaveform_std{ii}(wfWin-(wfWinKeep*xml.SampleRate):wfWin+(wfWinKeep*xml.SampleRate));
-                    spikes.filtWaveform{ii} = filtWaveform{ii}(wfWin-(wfWinKeep*xml.SampleRate):wfWin+(wfWinKeep*xml.SampleRate));
-                    spikes.filtWaveform_std{ii} = filtWaveform_std{ii}(wfWin-(wfWinKeep*xml.SampleRate):wfWin+(wfWinKeep*xml.SampleRate));
-                    spikes.timeWaveform{ii} = (-wfWinKeep:1/xml.SampleRate:wfWinKeep)*1000;
-                    spikes.peakVoltage(ii) = max(spikes.filtWaveform{ii})-min(spikes.filtWaveform{ii});
-                end
-                close(f)
-                toc(timerVal)
+                spikes = GetWaveformsFromDat(spikes,xml,basepath,baseName,LSB);
             end
             
         case 'klustaViewa'
@@ -247,8 +197,8 @@ if forceReload
     end
     
     if spikes.numcells>0
-        alltimes = cat(1,spikes.times{:}); groups = cat(1,groups{:}); %from cell to array
-        [alltimes,sortidx] = sort(alltimes); groups = groups(sortidx); %sort both
+        alltimes = cat(1,spikes.times{:}); groups = cat(1,groups{:});  % from cell to array
+        [alltimes,sortidx] = sort(alltimes); groups = groups(sortidx); % sort both
         spikes.spindices = [alltimes groups];
     end
     
@@ -260,9 +210,84 @@ if forceReload
     spikes.processinginfo.params.shanks = shanks;
     spikes.processinginfo.params.raw_clusters = raw_clusters;
     spikes.processinginfo.params.getWaveforms = getWaveforms;
+    spikes.processinginfo.params.baseName = baseName;
+    spikes.processinginfo.params.clusteringMethod = clusteringMethod;
+    spikes.processinginfo.params.clusteringPath = clusteringPath;
+    spikes.processinginfo.params.basepath = basepath;
+    spikes.processinginfo.params.useNeurosuiteWaveforms = useNeurosuiteWaveforms;
     
     % Saving output to a buzcode compatible spikes file.
     if saveMat
         save(fullfile(clusteringPath,[baseName,'.spikes.cellinfo.mat']),'spikes')
     end
+end
+end
+
+function spikes = GetWaveformsFromDat(spikes,xml,basepath,baseName,LSB)
+
+timerVal = tic;
+nPull = 800; % number of spikes to pull out
+wfWin = 0.006; % Larger size of waveform windows for filterning
+wfWinKeep = 0.0008;
+filtFreq = 500;
+hpFilt = designfilt('highpassiir','FilterOrder',3, 'PassbandFrequency',filtFreq,'PassbandRipple',0.1, 'SampleRate',xml.SampleRate);
+[b1, a1] = butter(3, filtFreq/xml.SampleRate*2, 'high');
+
+f = waitbar(0,'Getting waveforms...');
+wfWin = round((wfWin * xml.SampleRate)/2);
+
+for ii = 1 : size(spikes.times,2)
+    waitbar(ii/size(spikes.times,2),f,['Pulling out waveforms (',num2str(ii),'/',num2str(size(spikes.times,2)),')']);
+    spkTmp = spikes.ts{ii};
+    if length(spkTmp) > nPull
+        spkTmp = spkTmp(randperm(length(spkTmp)));
+        spkTmp = sort(spkTmp(1:nPull));
+    end
+    
+    % Determines the maximum waveform channel
+    wf = zeros((wfWin * 2)+1,xml.nChannels,100);
+    wfF = zeros((wfWin * 2)+1,xml.nChannels);
+    for jj = 1 : 100
+        wf(:,:,jj) = double(LoadBinary(fullfile(basepath,[baseName '.dat']),'offset',spkTmp(jj) - wfWin,'nChannels',xml.nChannels,'precision','int16','frequency',xml.SampleRate,'samples',(wfWin * 2)+1));
+        %                             wf(:,:,jj) = double(bz_LoadBinary([baseName '.dat'],'offset',spkTmp(jj) - (wfWin), 'samples',(wfWin * 2)+1,'frequency',xml.SampleRate,'nChannels',xml.nChannels));
+    end
+    wf = LSB * mean(wf,3);
+    
+    for jj = 1 : size(wf,2)
+        wfF(:,jj) = filtfilt(b1, a1, wf(:,jj));
+    end
+    [~, spikes.maxWaveformCh1(ii)] = max(abs(wfF(wfWin,:)));
+    spikes.maxWaveformCh(ii) = spikes.maxWaveformCh1(ii)-1;
+    
+    % Assigning shankID to the unit
+    for jj = 1:size(xml.AnatGrps,2)
+        if xml.AnatGrps(jj).Channels == spikes.maxWaveformCh(ii)
+            spikes.shankID(ii) = jj;
+        end
+    end
+    
+    % Pulls the waveforms from the dat
+    wf = zeros((wfWin * 2)+1,length(spkTmp));
+    wfF = zeros((wfWin * 2)+1,length(spkTmp));
+    for jj = 1 : length(spkTmp)
+        wf(:,jj) = double(LoadBinary(fullfile(basepath,[baseName '.dat']),'offset',spkTmp(jj) - wfWin,'nChannels',xml.nChannels,'channels',spikes.maxWaveformCh1(ii),'precision','int16','frequency',xml.SampleRate,'samples',(wfWin * 2)+1));
+        wfF(:,jj) = filtfilt(b1, a1, wf(:,jj));
+    end
+    
+    wf2 = mean(LSB * wf,2);
+    rawWaveform{ii} = detrend(wf2 - mean(wf2))';
+    rawWaveform_std{ii} = std(LSB * (wf-mean(wf))');
+    filtWaveform{ii} = mean(LSB * wfF,2)';
+    filtWaveform_std{ii} = std(LSB * wfF');
+    
+    spikes.rawWaveform{ii} = rawWaveform{ii}(wfWin-(wfWinKeep*xml.SampleRate):wfWin+(wfWinKeep*xml.SampleRate)); % keep only +- 1ms of waveform
+    spikes.rawWaveform_std{ii} = rawWaveform_std{ii}(wfWin-(wfWinKeep*xml.SampleRate):wfWin+(wfWinKeep*xml.SampleRate));
+    spikes.filtWaveform{ii} = filtWaveform{ii}(wfWin-(wfWinKeep*xml.SampleRate):wfWin+(wfWinKeep*xml.SampleRate));
+    spikes.filtWaveform_std{ii} = filtWaveform_std{ii}(wfWin-(wfWinKeep*xml.SampleRate):wfWin+(wfWinKeep*xml.SampleRate));
+    spikes.timeWaveform{ii} = (-wfWinKeep:1/xml.SampleRate:wfWinKeep)*1000;
+    spikes.peakVoltage(ii) = max(spikes.filtWaveform{ii})-min(spikes.filtWaveform{ii});
+    spikes.processinginfo.params.WaveformsSource = 'dat file';
+end
+close(f)
+toc(timerVal)
 end

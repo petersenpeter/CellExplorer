@@ -10,12 +10,14 @@ session.general.name = pathPieces{end}; % Session name
 session.general.animal = pathPieces{end-1}; % Name of animal
 
 session.general.sex = 'Male'; % Male, Female, Unknown
-session.general.species = 'Rat'; % Mouse, Rats, ... (http://buzsakilab.com/wp/species/)
+session.general.species = 'Rat'; % Mouse, Rat, ... (http://buzsakilab.com/wp/species/)
 session.general.strain = 'Long Evans'; % (http://buzsakilab.com/wp/strains/)
 session.general.geneticLine = 'Wild type';
 
 session.extracellular.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
 session.extracellular.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites
+session.extracellular.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites
+session.extracellular.leastSignificantBit = 0.195; % (in uV) Intan = 0.195, Amplipex = 0.3815
 
 session.spikeSorting.format{1} = 'Phy'; % Sorting data-format: Phy,Kilosort, Klustakwik, KlustaViewer, SpikingCircus, Neurosuite
 session.spikeSorting.method{1} = 'KiloSort'; % Sorting algorith: KiloSort, Klustakwik, MaskedKlustakwik, SpikingCircus

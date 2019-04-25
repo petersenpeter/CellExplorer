@@ -102,7 +102,14 @@ save('session.mat','session','-v7.3','-nocompression')
 sr = session.extracellular.sr;
 srLfp = session.extracellular.srLfp;
 
-spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath);
+spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'basepath',basepath);
+
+if ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file')
+    if session.extracellular.leastSignificantBit==0
+        session.extracellular.leastSignificantBit = 0.195;
+    end
+    spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'forceReload',true,'spikes',spikes,'basepath',basepath,'LSB',session.extracellular.leastSignificantBit);
+end
 
 if ~isempty(timeRestriction)
     if size(timeRestriction,2) ~= 2
@@ -165,7 +172,7 @@ if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMet
         elseif useNeurosuiteWaveforms
             waveforms = LoadNeurosuiteWaveforms(spikes,session,timeRestriction);
         elseif any(~isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % ,'filtWaveform_std'
-            spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'forceReload',true);
+            spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'forceReload',true,'spikes',spikes,'basepath',basepath);
             %             spikes = GetWaveformsFromDat(spikes,sessionInfo);
             waveforms.filtWaveform = spikes.filtWaveform;
             if ~isfield(spikes,'timeWaveform')
@@ -179,7 +186,7 @@ if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMet
             waveforms.peakVoltage = spikes.peakVoltage;
             waveforms.UID = spikes.UID;
         end
-        disp('* Calculating waveform classifications: Trough-to-peak latency, Peak voltage');
+        disp('* Calculating waveform classifications: Trough-to-peak latency');
         waveform_metrics = calc_waveform_metrics(waveforms,sr);
         field2remove = {'derivative_TroughtoPeak','filtWaveform','filtWaveform_std'};
         test = isfield(cell_metrics,field2remove);
@@ -493,7 +500,7 @@ end
 if any(contains(metrics,{'perturbation_metrics','all'})) && ~any(contains(excludeMetrics,{'perturbation_metrics'}))
     if exist(fullfile(basepath,'optogenetics.mat'),'file')
         disp('* Calculating perturbation metrics');
-        spikes2 = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,1);
+        spikes2 = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,1,'basepath',basepath);
         if isfield(cell_metrics,'optoPSTH')
             cell_metrics = rmfield(cell_metrics,'optoPSTH');
         end

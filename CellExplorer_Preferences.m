@@ -15,6 +15,7 @@ UI.settings.monoSynDispIn = 'Selected'; % All, Selected, None
 UI.settings.displayMetricsTable = true; % boolean
 UI.settings.plotCountIn = 'GUI 3+3'; % ['GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6']
 UI.settings.dispLegend = 0; % [0,1] Display legend for scatter plots?
+UI.settings.dispFullWaveform = 0; % [0,1] Display legend for scatter plots?
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 6; % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
@@ -37,8 +38,9 @@ UI.settings.tSNE_calcWideAcg = false; % boolean
 UI.settings.tSNE_calcNarrowAcg = false; % boolean
 UI.settings.tSNE_calcFiltWaveform = true; % boolean
 UI.settings.tSNE_calcRawWaveform = true; % boolean
+
 % List of fields to use in the general tSNE representation
-UI.settings.tSNE_metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','thetaPhaseTrough','thetaEntrainment','derivative_TroughtoPeak','filtWaveform_zscored','acg2_zscored'}; % derivative_TroughtoPeak
+UI.settings.tSNE_metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','thetaPhaseTrough','thetaEntrainment','derivative_TroughtoPeak','filtWaveform_zscored','acg2_zscored'};
 
 % Highlight excitatory / inhibitory cells
 UI.settings.displayInhibitory = false; % boolean

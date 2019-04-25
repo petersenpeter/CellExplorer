@@ -1027,12 +1027,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
         elseif strcmp(customPlotSelection,'Single raw waveform')
             % Single waveform with std
-            if isfield(cell_metrics,'rawWaveform_std')
+            
+            if isfield(cell_metrics,'rawWaveform_std') & ~isempty(cell_metrics.rawWaveform{ii})
                 patch([cell_metrics.timeWaveform{ii},flip(cell_metrics.timeWaveform{ii})], [cell_metrics.rawWaveform{ii}+cell_metrics.rawWaveform_std{ii},flip(cell_metrics.rawWaveform{ii}-cell_metrics.rawWaveform_std{ii})],'black','EdgeColor','none','FaceAlpha',.2)
                 plot(cell_metrics.timeWaveform{ii}, cell_metrics.rawWaveform{ii}, 'color', col,'linewidth',2), grid on
-            else
+            elseif ~isempty(cell_metrics.rawWaveform{ii})
                 plot(cell_metrics.timeWaveform{ii}, cell_metrics.rawWaveform{ii}, 'color', col,'linewidth',2), grid on
+            else
+                text(0.5,0.5,'No raw waveform for this cell','FontWeight','bold','HorizontalAlignment','center')
             end
+            
             xlabel('Time (ms)'), ylabel('Voltage (µV)'), title('Raw waveform'), axis tight,
             
         elseif strcmp(customPlotSelection,'All raw waveforms')
@@ -3590,9 +3594,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         step_size = [cellfun(@diff,cell_metrics.timeWaveform,'UniformOutput',false)];
         time_waveforms_zscored = [min([cell_metrics.timeWaveform{:}]):min([step_size{:}]):max([cell_metrics.timeWaveform{:}])];
         for i = 1:length(cell_metrics.filtWaveform)
-            filtWaveform(:,i) = interp1(cell_metrics.timeWaveform{i},cell_metrics.filtWaveform{i},time_waveforms_zscored,'spline');
+            filtWaveform(:,i) = interp1(cell_metrics.timeWaveform{i},cell_metrics.filtWaveform{i},time_waveforms_zscored,'spline',nan);
         end
-        cell_metrics.filtWaveform_zscored = zscore(filtWaveform);
+        cell_metrics.filtWaveform_zscored = (filtWaveform-nanmean(filtWaveform))./nanstd(filtWaveform);
+%         cell_metrics.filtWaveform_zscored = zscore(filtWaveform);
         
         % 'All raw waveforms'
         if isfield(cell_metrics,'rawWaveform')
@@ -3601,10 +3606,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 if isempty(cell_metrics.rawWaveform{i})
                     rawWaveform(:,i) = zeros(size(time_waveforms_zscored));
                 else
-                    rawWaveform(:,i) = interp1(cell_metrics.timeWaveform{i},cell_metrics.rawWaveform{i},time_waveforms_zscored,'spline');
+                    rawWaveform(:,i) = interp1(cell_metrics.timeWaveform{i},cell_metrics.rawWaveform{i},time_waveforms_zscored,'spline',nan);
                 end
             end
-            cell_metrics.rawWaveform_zscored = zscore(rawWaveform); clear rawWaveform
+            cell_metrics.rawWaveform_zscored = (rawWaveform-nanmean(rawWaveform))./nanstd(rawWaveform);
+%             cell_metrics.rawWaveform_zscored = zscore(rawWaveform); 
+            clear rawWaveform
         end
         cell_metrics.acg_zscored = zscore(cell_metrics.acg); cell_metrics.acg_zscored = cell_metrics.acg_zscored - min(cell_metrics.acg_zscored(490:510,:));
         cell_metrics.acg2_zscored = zscore(cell_metrics.acg2); cell_metrics.acg2_zscored = cell_metrics.acg2_zscored - min(cell_metrics.acg2_zscored(90:110,:));
@@ -3632,18 +3639,22 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         if UI.settings.tSNE_calcFiltWaveform && ~isfield(tSNE_metrics,'filtWaveform')
             disp('Calculating tSNE space for waveforms')
-            tSNE_metrics.filtWaveform = tsne(cell_metrics.filtWaveform_zscored','Standardize',true);
+            X = cell_metrics.filtWaveform_zscored';
+            tSNE_metrics.filtWaveform = tsne(X(:,find(~any(isnan(X)))),'Standardize',true);
         end
         if UI.settings.tSNE_calcRawWaveform && ~isfield(tSNE_metrics,'rawWaveform') && isfield(cell_metrics,'rawWaveform')
             disp('Calculating tSNE space for raw waveforms')
-            tSNE_metrics.rawWaveform = tsne(cell_metrics.rawWaveform_zscored','Standardize',true);
+            X = cell_metrics.rawWaveform_zscored';
+            if ~isempty(find(~any(isnan(X))))
+                tSNE_metrics.rawWaveform = tsne(X(:,find(~any(isnan(X)))),'Standardize',true,'Standardize',true);
+            end
         end
         if ~isfield(tSNE_metrics,'plot')
             disp('Calculating tSNE space for combined metrics')
             UI.settings.tSNE_metrics = intersect(UI.settings.tSNE_metrics,fieldnames(cell_metrics));
             X = cell2mat(cellfun(@(X) cell_metrics.(X),UI.settings.tSNE_metrics,'UniformOutput',false));
             X(isnan(X) | isinf(X)) = 0;
-            tSNE_metrics.plot = tsne((X'),'Standardize',true);
+            tSNE_metrics.plot = tsne(X','Standardize',true);
         end
         
         % Setting initial settings for plots, popups and listboxes
@@ -3738,7 +3749,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             otherOptions = [otherOptions;'Sharp wave-ripple'];
         end
         
-        customPlotOptions = customPlotOptions(  find( (strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.spikeCount,2) ) )  );
+        customPlotOptions = customPlotOptions(   (strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.spikeCount,2) )   );
         customPlotOptions = [customPlotOptions;customPlotOptions2];
         customPlotOptions(find(contains(customPlotOptions,plotOptionsToExlude)))=[]; % 
         customPlotOptions = unique([waveformOptions; waveformOptions2; acgOptions; otherOptions; customPlotOptions],'stable');
