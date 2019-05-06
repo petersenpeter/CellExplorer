@@ -19,7 +19,10 @@ sr = session.extracellular.sr;
 basename = session.general.baseName;
 clusteringpath = session.general.clusteringPath;
 spikeGroups = unique(spikes.shankID);
-
+if session.extracellular.leastSignificantBit==0
+    session.extracellular.leastSignificantBit = 0.195;
+end
+    
 SpikeWaveforms = [];
 SpikeWaveforms_std = [];
 PeakVoltage = [];
@@ -39,7 +42,7 @@ for i = 1:length(spikeGroups)
     time_stamps = load(fullfile(clusteringpath,[basename '.res.' num2str(spikeGroup)]));
     fname = fullfile(clusteringpath,[basename '.spk.' num2str(spikeGroup)]);
     f = fopen(fname,'r');
-    waveforms =  0.195 * double(fread(f,'int16'));
+    waveforms =  session.extracellular.leastSignificantBit * double(fread(f,'int16'));
     xml = LoadXml(fullfile(clusteringpath,[basename, '.xml']));
     samples = size(waveforms,1)/size(time_stamps,1);
     electrodes = size(xml.ElecGp{spikeGroup},2);

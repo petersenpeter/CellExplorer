@@ -1,18 +1,38 @@
 function cell_metrics = db_submit_cells(cell_metrics,session)
+% Submit cell metrics to the Buzsaki lab database
+% 
+% INPUTS
+% cell_metrics: 
+% session: 
+%
+% OUTPUT
+% cell_metrics: entryID for each cell is saved to the cell_metrics struct
+
+% By Peter Petersen
+% petersen.peter@gmail.com
+
+% TODO
+% Check for existing cells for a given spike session in case the local cell metrics
+% has been deleted to avoid resubmission of the same cells.
+
 f_submit_cells = waitbar(0,'DB: Submitting cells to database');
 % Database options
 bz_database = db_credentials;
 options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password); % 'ContentType','json','MediaType','application/json'
-% options.CertificateFilename=('');
 
 % Updating Session WithToggle
 if isempty(session.analysisStats.cellMetrics) || ~strcmp(session.analysisStats.cellMetrics, '1')
     waitbar(0,f_submit_cells,['DB: Adjusting session toggle: ',session.general.name]);
     options2 = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
     web_address2 = [bz_database.rest_api.address, 'entries/' session.general.entryID];
-    webwrite(web_address2,options2,'form_id','143','session_cellmetrics',1);
-    waitbar(0,f_submit_cells,'DB: Session updated succesfully.');
+    webwrite(web_address2,options2,'form_id','143','session_cellmetrics',1,'',length(cell_metrics.entryID));
 end
+
+% Updating spike count for the selected sorting session
+web_address1 = [bz_database.rest_api.address,'entries/', num2str(cell_metrics.spikeSortingID(1))];
+options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
+webwrite(web_address1,options,'session_cell_count',cell_metrics.general.cellCount);
+waitbar(0,f_submit_cells,'DB: Session updated succesfully.');
 
 waitbar(0,f_submit_cells,'DB: Submitting cells to database');
 db_cells = db_load_table('cells',cell_metrics.general.basename);
@@ -34,37 +54,6 @@ for j = 1:size(cell_metrics.sessionID,2)
     
     jsonStructure = [];
     jsonStructure.form_id = 192; % Form id of sessions
-%     jsonStructure.ca5yu.form = 191; % Form id of spikeGroups repeatable section
-%     jsonStructure.fiElD_2463 = length(sessionInfo.spikeGroups.groups); % nSpikeGroups
-%     jsonStructure.user_id = 3;
-%     jsonStructure.cell_sessionid2 = cell_metrics.sessionID(j);
-%     jsonStructure.cell_spikesortingid2 = cell_metrics.spikeSortingID(j);
-%     jsonStructure.cell_sortingid = cell_metrics.cellID(j);
-%     jsonStructure.cell_cluid = cell_metrics.cluID(j);
-%     jsonStructure.cell_uid = cell_metrics.UID(j);
-%     jsonStructure.cell_spikecount = cell_metrics.spikeCount(j);
-%     jsonStructure.cell_firingrate = cell_metrics.firingRate(j);
-%     jsonStructure.cell_maxchannel = cell_metrics.maxWaveformCh(j);
-%     jsonStructure.cell_spikegroup = cell_metrics.spikeGroup(j);
-%     jsonStructure.cell_brainregion = cell_metrics.brainRegion{j};
-%     jsonStructure.cell_refractoryperiodviolation = cell_metrics.refractoryPeriodViolation(j);
-%     jsonStructure.cell_cv2 = cell_metrics.cv2(j);
-%     jsonStructure.cell_tmi = cell_metrics.thetaModulationIndex(j);
-%     jsonStructure.cell_burst_royer2012 = cell_metrics.burstIndex_Royer2012(j);
-%     jsonStructure.cell_burst_mizuseki2012 = cell_metrics.burstIndex_Mizuseki2012(j);
-%     jsonStructure.cell_peakvoltage = cell_metrics.peakVoltage(j);
-%     jsonStructure.cell_troughtopeaklatency = cell_metrics.troughToPeak(j);
-%     jsonStructure.cell_isolationdistance = cell_metrics.isolationDistance(j);
-%     jsonStructure.cell_lratio = cell_metrics.lRatio(j);
-%     jsonStructure.cell_putativecelltype = cell_metrics.putativeCellType{j};
-%     jsonStructure.cell_ccg_tau_rise = cell_metrics.acg_tau_rise(j);
-%     jsonStructure.cell_ccg_tau_decay = cell_metrics.acg_tau_decay(j);
-%     jsonStructure.cell_deep_superficial = cell_metrics.deepSuperficial{j};
-%     jsonStructure.cell_abratio = cell_metrics.ab_ratio(j);
-%     jsonStructure.cell_ripple_peak_delay = cell_metrics.ripplePeakDelay(j);
-%     jsonStructure.cell_synapticinputs = cell_metrics.synapticConnectionsIn(j);
-%     jsonStructure.cell_synapticoutputs = cell_metrics.synapticConnectionsOut(j);
-%     jsonStructure.cell_ripple_modulation = cell_metrics.rippleModulationIndex(j);
     jsonStructure.user_id = 3;
     jsonStructure.fiElD_2714 = cell_metrics.sessionID(j);
     jsonStructure.fiElD_2721 = cell_metrics.spikeSortingID(j);
@@ -83,36 +72,32 @@ for j = 1:size(cell_metrics.sessionID,2)
     jsonStructure.fiElD_2691 = cell_metrics.burstIndex_Mizuseki2012(j);
     jsonStructure.fiElD_2479 = cell_metrics.peakVoltage(j);
     jsonStructure.fiElD_2480 = cell_metrics.troughToPeak(j);
-    jsonStructure.fiElD_2484 = cell_metrics.isolationDistance(j);
-    jsonStructure.fiElD_2485 = cell_metrics.lRatio(j);
+    if isfield(cell_metrics,'isolationDistance')
+        jsonStructure.fiElD_2484 = cell_metrics.isolationDistance(j);
+        jsonStructure.fiElD_2485 = cell_metrics.lRatio(j);
+    end
     jsonStructure.fiElD_2671 = cell_metrics.putativeCellType{j};
     jsonStructure.fiElD_2695 = cell_metrics.acg_tau_rise(j);
     jsonStructure.fiElD_2696 = cell_metrics.acg_tau_decay(j);
     jsonStructure.fiElD_2694 = cell_metrics.deepSuperficial{j};
     jsonStructure.fiElD_2698 = cell_metrics.ab_ratio(j);
-    jsonStructure.fiElD_2699 = cell_metrics.ripplePeakDelay(j);
+    if isfield(cell_metrics,'ripplePeakDelay')
+        jsonStructure.fiElD_2699 = cell_metrics.ripplePeakDelay(j);
+        jsonStructure.fiElD_2692 = cell_metrics.rippleModulationIndex(j);
+    end
     jsonStructure.fiElD_2719 = cell_metrics.synapticConnectionsIn(j);
     jsonStructure.fiElD_2720 = cell_metrics.synapticConnectionsOut(j);
-    jsonStructure.fiElD_2692 = cell_metrics.rippleModulationIndex(j);
     temp = fieldnames(jsonStructure);
     
     jsonStructure = rmfield(jsonStructure,temp(find(struct2array(structfun(@(x) any(isnan(x) | isinf(x)), jsonStructure,'UniformOutput', false)))));
     jsonStructure = jsonencode(jsonStructure);
     jsonStructure = strrep(jsonStructure,'fiElD_','');
     options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
-%     options.CertificateFilename=('');
     temp2 = webwrite(web_address1,jsonStructure,options);
     
     if isfield(temp2,'id')
-        cell_metrics.entryID(j) = str2num(temp2.id);
+        cell_metrics.entryID(j) = str2double(temp2.id);
     end
-%     if isnan(cell_metrics.rippleModulationIndex(j)) || isinf(cell_metrics.rippleModulationIndex(j))
-%         %             sutmitString = {'form_id',192,'user_id',3,'cell_sessionid2',cell_metrics.SessionID(j),'cell_spikesortingid2',cell_metrics.SpikeSortingID(j),'cell_sortingid',cell_metrics.CellID(j),'cell_spikecount',cell_metrics.SpikeCount(j),'cell_firingrate',cell_metrics.FiringRate(j),'cell_maxchannel',cell_metrics.MaxChannel(j),'cell_spikegroup',cell_metrics.SpikeGroup(j),'cell_brainregion',cell_metrics.BrainRegion{j},'cell_refractoryperiodviolation',cell_metrics.RefractoryPeriodViolation(j),'cell_cv2',cell_metrics.CV2(j),'cell_tmi',cell_metrics.ThetaModulationIndex(j),'cell_burst_royer2012',cell_metrics.BurstIndex_Royer2012(j),'cell_burst_mizuseki2012',cell_metrics.BurstIndex_Mizuseki2012(j),'cell_peakvoltage',cell_metrics.PeakVoltage(j),'cell_troughtopeaklatency',cell_metrics.TroughToPeak(j),'cell_isolationdistance',cell_metrics.IsolationDistance(j),'cell_lratio',cell_metrics.LRatio(j),'cell_putativecelltype',cell_metrics.PutativeCellType{j},'cell_ccg_tau_rise',cell_metrics.ACG_tau_rise(j),'cell_ccg_tau_decay',cell_metrics.ACG_tau_decay(j),'cell_deep_superficial',cell_metrics.DeepSuperficial{j},'cell_abratio',cell_metrics.AB_ratio(j),'cell_ripple_peak_delay',cell_metrics.RipplePeakDelay(j),'cell_synapticinputs', cell_metrics.PutativeConnectionsIn(j), 'cell_synapticoutputs', cell_metrics.PutativeConnectionsOut(j)};
-%         temp = webwrite(web_address1,options,'form_id','192','user_id',3,'cell_sessionid2',cell_metrics.sessionID(j),'cell_spikesortingid2',cell_metrics.spikeSortingID(j),'cell_sortingid',cell_metrics.cellID(j),'cell_spikecount',cell_metrics.spikeCount(j),'cell_firingrate',cell_metrics.firingRate(j),'cell_maxchannel',cell_metrics.maxWaveformCh(j),'cell_spikegroup',cell_metrics.spikeGroup(j),'cell_brainregion',cell_metrics.brainRegion{j},'cell_refractoryperiodviolation',cell_metrics.refractoryPeriodViolation(j),'cell_cv2',cell_metrics.cv2(j),'cell_tmi',cell_metrics.thetaModulationIndex(j),'cell_burst_royer2012',cell_metrics.burstIndex_Royer2012(j),'cell_burst_mizuseki2012',cell_metrics.burstIndex_Mizuseki2012(j),'cell_peakvoltage',cell_metrics.peakVoltage(j),'cell_troughtopeaklatency',cell_metrics.troughToPeak(j),'cell_isolationdistance',cell_metrics.isolationDistance(j),'cell_lratio',cell_metrics.lRatio(j),'cell_putativecelltype',cell_metrics.putativeCellType{j},'cell_ccg_tau_rise',cell_metrics.acg_tau_rise(j),'cell_ccg_tau_decay',cell_metrics.acg_tau_decay(j),'cell_deep_superficial',cell_metrics.deepSuperficial{j},'cell_abratio',cell_metrics.ab_ratio(j),'cell_ripple_peak_delay',cell_metrics.ripplePeakDelay(j),'cell_synapticinputs', cell_metrics.synapticConnectionsIn(j), 'cell_synapticoutputs', cell_metrics.synapticConnectionsOut(j));
-%     else
-%         %             sutmitString = {'form_id',192,'cell_sessionid2',cell_metrics.SessionID(j),'cell_spikesortingid2', cell_metrics.SpikeSortingID(j),'cell_sortingid',cell_metrics.CellID(j),'cell_spikecount',cell_metrics.SpikeCount(j),'cell_firingrate',cell_metrics.FiringRate(j),'cell_maxchannel',cell_metrics.MaxChannel(j),'cell_spikegroup',cell_metrics.SpikeGroup(j),'cell_brainregion',cell_metrics.BrainRegion{j},'cell_refractoryperiodviolation',cell_metrics.RefractoryPeriodViolation(j),'cell_cv2',cell_metrics.CV2(j),'cell_tmi',cell_metrics.ThetaModulationIndex(j),'cell_burst_royer2012',cell_metrics.BurstIndex_Royer2012(j),'cell_burst_mizuseki2012',cell_metrics.BurstIndex_Mizuseki2012(j),'cell_peakvoltage',cell_metrics.PeakVoltage(j),'cell_troughtopeaklatency',cell_metrics.TroughToPeak(j),'cell_isolationdistance',cell_metrics.IsolationDistance(j),'cell_lratio',cell_metrics.LRatio(j),'cell_putativecelltype',cell_metrics.PutativeCellType{j},'cell_ccg_tau_rise',cell_metrics.ACG_tau_rise(j),'cell_ccg_tau_decay',cell_metrics.ACG_tau_decay(j),'cell_deep_superficial',cell_metrics.DeepSuperficial{j},'cell_abratio',cell_metrics.AB_ratio(j),'cell_ripple_peak_delay',cell_metrics.RipplePeakDelay(j), 'cell_synapticinputs', cell_metrics.PutativeConnectionsIn(j), 'cell_synapticoutputs', cell_metrics.PutativeConnectionsOut(j),'cell_ripple_modulation',cell_metrics.RippleModulationIndex(j)};
-%         temp = webwrite(web_address1,options,'form_id',192,'cell_sessionid2',cell_metrics.sessionID(j),'cell_spikesortingid2', cell_metrics.spikeSortingID(j),'cell_sortingid',cell_metrics.cellID(j),'cell_spikecount',cell_metrics.spikeCount(j),'cell_firingrate',cell_metrics.firingRate(j),'cell_maxchannel',cell_metrics.maxWaveformCh(j),'cell_spikegroup',cell_metrics.spikeGroup(j),'cell_brainregion',cell_metrics.brainRegion{j},'cell_refractoryperiodviolation',cell_metrics.refractoryPeriodViolation(j),'cell_cv2',cell_metrics.cv2(j),'cell_tmi',cell_metrics.thetaModulationIndex(j),'cell_burst_royer2012',cell_metrics.burstIndex_Royer2012(j),'cell_burst_mizuseki2012',cell_metrics.burstIndex_Mizuseki2012(j),'cell_peakvoltage',cell_metrics.peakVoltage(j),'cell_troughtopeaklatency',cell_metrics.troughToPeak(j),'cell_isolationdistance',cell_metrics.isolationDistance(j),'cell_lratio',cell_metrics.lRatio(j),'cell_putativecelltype',cell_metrics.putativeCellType{j},'cell_ccg_tau_rise',cell_metrics.acg_tau_rise(j),'cell_ccg_tau_decay',cell_metrics.acg_tau_decay(j),'cell_deep_superficial',cell_metrics.deepSuperficial{j},'cell_abratio',cell_metrics.ab_ratio(j),'cell_ripple_peak_delay',cell_metrics.ripplePeakDelay(j), 'cell_synapticinputs', cell_metrics.synapticConnectionsIn(j), 'cell_synapticoutputs', cell_metrics.synapticConnectionsOut(j),'cell_ripple_modulation',cell_metrics.rippleModulationIndex(j));
-%     end
 end
 
 if ishandle(f_submit_cells)

@@ -36,8 +36,8 @@ UI.settings.cellTypeColors = [[.5,.5,.5];[.2,.8,.2];[.8,.2,.2];[0.8,0.2,0.8];[.2
 % Fields used to define the tSNE represetation
 UI.settings.tSNE_calcWideAcg = false; % boolean
 UI.settings.tSNE_calcNarrowAcg = false; % boolean
-UI.settings.tSNE_calcFiltWaveform = true; % boolean
-UI.settings.tSNE_calcRawWaveform = true; % boolean
+UI.settings.tSNE_calcFiltWaveform = false; % boolean
+UI.settings.tSNE_calcRawWaveform = false; % boolean
 
 % List of fields to use in the general tSNE representation
 UI.settings.tSNE_metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','thetaPhaseTrough','thetaEntrainment','derivative_TroughtoPeak','filtWaveform_zscored','acg2_zscored'};
@@ -89,7 +89,7 @@ spikesPlots.spikes_time_vs_amplitude.eventSecAfter = []; % in seconds
 
 spikesPlots.spikes_ripples_raster.x = 'times';
 spikesPlots.spikes_ripples_raster.y = 'amplitudes';
-spikesPlots.spikes_ripples_raster.x_label = 'Time (s)';
+spikesPlots.spikes_ripples_raster.x_label = 'Time';
 spikesPlots.spikes_ripples_raster.y_label = 'Event';
 spikesPlots.spikes_ripples_raster.state = '';
 spikesPlots.spikes_ripples_raster.event = 'ripples';
@@ -97,14 +97,15 @@ spikesPlots.spikes_ripples_raster.eventAlignment = 'peak'; % [onset, offset, cen
 spikesPlots.spikes_ripples_raster.eventSorting = 'amplitude'; % [none, time, amplitude, duration]
 spikesPlots.spikes_ripples_raster.eventSecBefore = 0.2; % in seconds
 spikesPlots.spikes_ripples_raster.eventSecAfter = 0.2; % in seconds
-spikesPlots.spikes_ripples_raster.plotRaster = 1;
+spikesPlots.spikes_ripples_raster.plotRaster = 1; 
 spikesPlots.spikes_ripples_raster.plotAverage = 1;
 spikesPlots.spikes_ripples_raster.plotAmplitude = 1;
 spikesPlots.spikes_ripples_raster.plotDuration = 1;
+spikesPlots.spikes_ripples_raster.plotCount = 0;
 
 spikesPlots.spikes_pvLightStimulation.x = 'times';
 spikesPlots.spikes_pvLightStimulation.y = 'times';
-spikesPlots.spikes_pvLightStimulation.x_label = 'Time (s)';
+spikesPlots.spikes_pvLightStimulation.x_label = 'Time';
 spikesPlots.spikes_pvLightStimulation.y_label = 'Event';
 spikesPlots.spikes_pvLightStimulation.state = '';
 spikesPlots.spikes_pvLightStimulation.event = 'pvLightStimulation';
@@ -116,3 +117,21 @@ spikesPlots.spikes_pvLightStimulation.plotRaster = 1;
 spikesPlots.spikes_pvLightStimulation.plotAverage = 1;
 spikesPlots.spikes_pvLightStimulation.plotAmplitude = 1;
 spikesPlots.spikes_pvLightStimulation.plotDuration = 1;
+spikesPlots.spikes_pvLightStimulation.plotCount = 1;
+
+spikesPlots.spikes_misiStimulation.x = 'times';
+spikesPlots.spikes_misiStimulation.y = 'times';
+spikesPlots.spikes_misiStimulation.x_label = 'Time';
+spikesPlots.spikes_misiStimulation.y_label = 'Event';
+spikesPlots.spikes_misiStimulation.state = '';
+spikesPlots.spikes_misiStimulation.event = 'stimulation';
+spikesPlots.spikes_misiStimulation.eventAlignment = 'onset'; % [onset, offset, center, peak]
+spikesPlots.spikes_misiStimulation.eventSorting = 'amplitude'; % [none, time, amplitude, duration]
+spikesPlots.spikes_misiStimulation.eventSecBefore = 2; % in seconds
+spikesPlots.spikes_misiStimulation.eventSecAfter = 2; % in seconds
+spikesPlots.spikes_misiStimulation.plotRaster = 1;
+spikesPlots.spikes_misiStimulation.plotAverage = 1;
+spikesPlots.spikes_misiStimulation.plotAmplitude = 1;
+spikesPlots.spikes_misiStimulation.plotDuration = 0;
+spikesPlots.spikes_misiStimulation.plotCount = 0;
+

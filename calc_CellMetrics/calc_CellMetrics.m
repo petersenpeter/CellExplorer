@@ -33,10 +33,10 @@ function cell_metrics = calc_CellMetrics(varargin)
 % By Peter Petersen
 % petersen.peter@gmail.com
 
-% TODO
-% Support amplipex amplifier ranges (different range than Intan recordings)
-% General way to get waveforms across data formats
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Parsing parameters
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 p = inputParser;
 addParameter(p,'id',[],@isnumeric);
 addParameter(p,'session',[],@isstr);
@@ -91,7 +91,9 @@ if ~isempty(id) || ~isempty(sessionin) || ~isempty(sessionStruct)
     end
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Loading parameters from sessionInfo (Buzcode)
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
 session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
 session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
@@ -102,12 +104,15 @@ save('session.mat','session','-v7.3','-nocompression')
 sr = session.extracellular.sr;
 srLfp = session.extracellular.srLfp;
 
-spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'basepath',basepath);
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Getting spikes
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+if session.extracellular.leastSignificantBit==0
+    session.extracellular.leastSignificantBit = 0.195;
+end
+spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'basepath',basepath,'LSB',session.extracellular.leastSignificantBit);
 
-if ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file')
-    if session.extracellular.leastSignificantBit==0
-        session.extracellular.leastSignificantBit = 0.195;
-    end
+if ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.4
     spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'forceReload',true,'spikes',spikes,'basepath',basepath,'LSB',session.extracellular.leastSignificantBit);
 end
 
@@ -152,8 +157,9 @@ cell_metrics.general.basename = basename;
 cell_metrics.general.clusteringpath = clusteringpath;
 cell_metrics.general.cellCount = length(spikes.total);
 
-
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Waveform based calculations
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
     if ~all(isfield(cell_metrics,{'filtWaveform','timeWaveform','filtWaveform_std','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || forceReload == true
         disp('* Getting waveforms');
@@ -207,11 +213,14 @@ if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMet
             cell_metrics.troughToPeak(j) = waveform_metrics.troughtoPeak(j);
             cell_metrics.troughtoPeakDerivative(j) = waveform_metrics.derivative_TroughtoPeak(j);
             cell_metrics.ab_ratio(j) = waveform_metrics.ab_ratio(j);
+            cell_metrics.polarity(j) = waveform_metrics.polarity(j);
         end
     end
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % PCA features based calculations
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'PCA_features','all'})) && ~any(contains(excludeMetrics,{'PCA_features'}))
     disp('* Calculating PCA classifications: Isolation distance, L-Ratio')
     if ~all(isfield(cell_metrics,{'isolationDistance','lRatio'})) || forceReload == true
@@ -227,8 +236,9 @@ if any(contains(metrics,{'PCA_features','all'})) && ~any(contains(excludeMetrics
     end
 end
 
-
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % ACG & CCG based classification
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,{'acg_metrics'}))
     if ~all(isfield(cell_metrics,{'acg','acg2','thetaModulationIndex','burstIndex_Royer2012','burstIndex_Doublets','acg_tau_decay','acg_tau_rise'})) || forceReload == true
         disp('* Calculating CCG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets')
@@ -258,8 +268,9 @@ if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,
     end
 end
 
-
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Deep-Superficial by ripple polarity reversal
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
     disp('* Deep-Superficial by ripple polarity reversal')
 %     lfpExtension = exist_LFP(basepath,basename);
@@ -297,8 +308,9 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
     
 end
 
-
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Ripple modulation
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'ripple_metrics','all'})) && ~any(contains(excludeMetrics,{'ripple_metrics'}))
     disp('* Calculating ripple metrics')
     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
@@ -315,8 +327,9 @@ if any(contains(metrics,{'ripple_metrics','all'})) && ~any(contains(excludeMetri
     end
 end
 
-
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Pytative MonoSynaptic connections
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(excludeMetrics,{'monoSynaptic_connections'}))
     disp('* Calculating MonoSynaptic connections')
     if ~exist(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'file') || forceReload == true
@@ -347,7 +360,9 @@ if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(ex
     end
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Theta related activity
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetrics,{'theta_metrics'}))
     disp('* Calculating theta metrics');
     if exist(fullfile(basepath,'animal.mat'),'file')
@@ -400,7 +415,9 @@ if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetric
     end
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Spatial related metrics
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetrics,{'spatial_metrics'}))
     disp('* Calculating spatial metrics');
     field2remove = {'firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate','FiringRateMap','FiringRateMap_CoolingStates','FiringRateMap_StimStates','FiringRateMap_LeftRight'};
@@ -496,7 +513,9 @@ if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetr
     end
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Perturbation metrics
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'perturbation_metrics','all'})) && ~any(contains(excludeMetrics,{'perturbation_metrics'}))
     if exist(fullfile(basepath,'optogenetics.mat'),'file')
         disp('* Calculating perturbation metrics');
@@ -523,7 +542,9 @@ if any(contains(metrics,{'perturbation_metrics','all'})) && ~any(contains(exclud
     end
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % PSTH metrics
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'psth_metrics','all'})) && ~any(contains(excludeMetrics,{'psth_metrics'}))
     disp('* Calculating perturbation metrics');
     
@@ -556,7 +577,9 @@ if any(contains(metrics,{'psth_metrics','all'})) && ~any(contains(excludeMetrics
     end
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Other metrics
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 session.general.sessionName = session.general.name;
 listMetrics = {'animal','sex','species','strain','geneticLine','sessionName'};
 for i = find(isfield(session.general,listMetrics))
@@ -627,7 +650,9 @@ if ~isfield(cell_metrics,'labels')
     cell_metrics.labels = repmat({''},1,cell_metrics.general.cellCount);
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % cell_classification_putativeCellType
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if ~isfield(cell_metrics,'putativeCellType') || ~keepCellClassification
     disp('* Performing Cell-type classification');
     cell_metrics.putativeCellType = repmat({'Pyramidal Cell'},1,cell_metrics.general.cellCount);
@@ -645,7 +670,9 @@ if ~isfield(cell_metrics,'putativeCellType') || ~keepCellClassification
 %     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(removeMetrics,{'deepSuperficial'}))
     disp('* Removing deepSuperficial metrics')
     field2remove = {'deepSuperficial','deepSuperficialDistance'};
@@ -660,19 +687,22 @@ if ~isfield(cell_metrics,'deepSuperficial')
     cell_metrics.deepSuperficialDistance = nan(1,cell_metrics.general.cellCount);
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Submitting to database
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if submitToDatabase
     disp('* Submitting cells to database');
-    session = db_update_session(session,'forceReload',true);
-    cell_metrics = db_submit_cells(cell_metrics,session);
     try
-        
+        session = db_update_session(session,'forceReload',true);
+        cell_metrics = db_submit_cells(cell_metrics,session);
     catch
         disp('* Failed to submit to database');
     end
 end
 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Saving cells
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if saveMat
     disp(['* Saving cells to ''', saveAs,'''.mat']);
     dirname = 'revisions_cell_metrics';
@@ -685,7 +715,9 @@ if saveMat
     save(fullfile(clusteringpath,[saveAs,'.mat']),'cell_metrics','-v7.3','-nocompression')
 end
 
-% Plots
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Summary plots
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if plots
     X = [cell_metrics.firingRateISI; cell_metrics.thetaModulationIndex; cell_metrics.burstIndex_Mizuseki2012;  cell_metrics.troughToPeak; cell_metrics.troughtoPeakDerivative; cell_metrics.ab_ratio; cell_metrics.burstIndex_Royer2012; cell_metrics.acg_tau_rise; cell_metrics.acg_tau_decay; cell_metrics.cv2]';
     Y = tsne(X);

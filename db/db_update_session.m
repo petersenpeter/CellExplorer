@@ -1,4 +1,6 @@
 function session = db_update_session(session,varargin)
+% Peter Petersen
+% petersen.peter@gmail.com
 
 p = inputParser;
 addParameter(p,'forceReload',false,@islogical);
@@ -9,7 +11,7 @@ forceReload = p.Results.forceReload;
 
 bz_database = db_credentials;
 web_address = [bz_database.rest_api.address, 'entries/' session.general.entryID];
-cd(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.general.name))
+cd(session.general.basePath)
 sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
 
 % % % % % % % % % % % % % % % % % % % % 
@@ -17,10 +19,17 @@ sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
 % % % % % % % % % % % % % % % % % % % % 
 if session.general.duration == 0 | forceReload
     sr = sessionInfo.rates.wideband;
-    Intan_rec_info = read_Intan_RHD2000_file_Peter(pwd);
+    if exist(fullfile(session.general.basePath,'info.rhd'))
+        Intan_rec_info = read_Intan_RHD2000_file_Peter(pwd);
+        nChannels = size(Intan_rec_info.amplifier_channels,2);
+        sr = Intan_rec_info.frequency_parameters.amplifier_sample_rate;
+    elseif exist(fullfile(session.general.clusteringPath,[session.general.baseName, '.xml']))
+        xml = LoadXml(fullfile(session.general.clusteringPath,[session.general.baseName, '.xml']));
+        nChannels = xml.nChannels;
+        sr = xml.SampleRate;
+    end
     fname = [session.general.name '.dat'];
-    nChannels = size(Intan_rec_info.amplifier_channels,2);
-    sr = Intan_rec_info.frequency_parameters.amplifier_sample_rate;
+    
     temp_ = dir(fname);
 
     session.extracellular.nChannels = nChannels;
