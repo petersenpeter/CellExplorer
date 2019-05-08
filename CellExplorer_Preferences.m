@@ -29,6 +29,7 @@ UI.settings.plotZdata = 'troughToPeak';
 % Cell type classification definitions
 UI.settings.cellTypes = {'Unknown','Pyramidal Cell','Narrow Interneuron','Wide Interneuron','Inverse spike'};
 UI.settings.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
+UI.settings.tags = {'Good','Bad','Mua','Noise','InverseSpike','Other'};
 
 % Cell type classification colors
 UI.settings.cellTypeColors = [[.5,.5,.5];[.2,.8,.2];[.8,.2,.2];[0.8,0.2,0.8];[.2,.2,.8];[0.2,0.8,0.8]];
@@ -47,7 +48,7 @@ UI.settings.displayInhibitory = false; % boolean
 UI.settings.displayExcitatory = false; % boolean
 
 % % % % % % % % % % % % % % % % % % % % % %
-% Spikes plot definitions 
+% Spikes plot definitions
 % % % % % % % % % % % % % % % % % % % % % %
 
 % Spike plots can be loaded by pressing S in the Cell Explorer
@@ -119,19 +120,19 @@ spikesPlots.spikes_pvLightStimulation.plotAmplitude = 1;
 spikesPlots.spikes_pvLightStimulation.plotDuration = 1;
 spikesPlots.spikes_pvLightStimulation.plotCount = 1;
 
-spikesPlots.spikes_misiStimulation.x = 'times';
-spikesPlots.spikes_misiStimulation.y = 'times';
-spikesPlots.spikes_misiStimulation.x_label = 'Time';
-spikesPlots.spikes_misiStimulation.y_label = 'Event';
-spikesPlots.spikes_misiStimulation.state = '';
-spikesPlots.spikes_misiStimulation.event = 'stimulation';
-spikesPlots.spikes_misiStimulation.eventAlignment = 'onset'; % [onset, offset, center, peak]
-spikesPlots.spikes_misiStimulation.eventSorting = 'amplitude'; % [none, time, amplitude, duration]
-spikesPlots.spikes_misiStimulation.eventSecBefore = 2; % in seconds
-spikesPlots.spikes_misiStimulation.eventSecAfter = 2; % in seconds
-spikesPlots.spikes_misiStimulation.plotRaster = 1;
-spikesPlots.spikes_misiStimulation.plotAverage = 1;
-spikesPlots.spikes_misiStimulation.plotAmplitude = 1;
-spikesPlots.spikes_misiStimulation.plotDuration = 0;
-spikesPlots.spikes_misiStimulation.plotCount = 0;
+spikesPlots.spikes_tesStimulation.x = 'times';
+spikesPlots.spikes_tesStimulation.y = 'times';
+spikesPlots.spikes_tesStimulation.x_label = 'Time';
+spikesPlots.spikes_tesStimulation.y_label = 'Event';
+spikesPlots.spikes_tesStimulation.state = '';
+spikesPlots.spikes_tesStimulation.event = 'stimulation';
+spikesPlots.spikes_tesStimulation.eventAlignment = 'onset'; % [onset, offset, center, peak]
+spikesPlots.spikes_tesStimulation.eventSorting = 'amplitude'; % [none, time, amplitude, duration]
+spikesPlots.spikes_tesStimulation.eventSecBefore = 2; % in seconds
+spikesPlots.spikes_tesStimulation.eventSecAfter = 2; % in seconds
+spikesPlots.spikes_tesStimulation.plotRaster = 1;
+spikesPlots.spikes_tesStimulation.plotAverage = 1;
+spikesPlots.spikes_tesStimulation.plotAmplitude = 1;
+spikesPlots.spikes_tesStimulation.plotDuration = 0;
+spikesPlots.spikes_tesStimulation.plotCount = 0;
 

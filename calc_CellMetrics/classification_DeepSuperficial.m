@@ -60,14 +60,14 @@ else
     % Loads the list of silicon probes from the database
     siliconprobes = struct2cell(db_load_table('siliconprobes'));
     
-    if isempty(session.extracellular.probes)
+    if ~isempty(session.extracellular.electrodes.siliconProbes)
+        % Get the probe type from the session struct
+        SiliconProbes = session.extracellular.electrodes.siliconProbes;
+    else
         % if no probe information is given in the session struct, it tries
         % to get the probe type from probe implants in the database
         probeimplants = struct2cell(db_load_table('probeimplants',session.general.animal));
         SiliconProbes = cellstr(string(probeimplants{1}.DynamicProbeLayout));
-    else
-        % Get the probe type from the session struct
-        SiliconProbes = session.extracellular.siliconProbes;
     end
     probeids = [];
     VerticalSpacingBetweenSites = [];

@@ -47,7 +47,7 @@ addParameter(p,'metrics','all',@iscellstr);
 addParameter(p,'excludeMetrics','none',@iscellstr);
 addParameter(p,'removeMetrics','none',@isstr);
 addParameter(p,'timeRestriction',[],@isnumeric);
-addParameter(p,'useNeurosuiteWaveforms',true,@islogical);
+addParameter(p,'useNeurosuiteWaveforms',false,@islogical);
 addParameter(p,'keepCellClassification',true,@islogical);
 
 addParameter(p,'forceReload',false,@islogical);
@@ -696,7 +696,7 @@ if submitToDatabase
         session = db_update_session(session,'forceReload',true);
         cell_metrics = db_submit_cells(cell_metrics,session);
     catch
-        disp('* Failed to submit to database');
+        warning('Failed to submit to database');
     end
 end
 
