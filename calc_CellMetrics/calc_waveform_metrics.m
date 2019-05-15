@@ -14,7 +14,7 @@ function waveform_metrics = calc_waveform_metrics(waveforms,sr_in)
 
 filtWaveform = waveforms.filtWaveform;
 timeWaveform = waveforms.timeWaveform{1};
-timeWaveform_span = timeWaveform(end) - timeWaveform(1);
+timeWaveform_span = length(timeWaveform) * mean(diff(timeWaveform));
 % sr = 1/mean(diff(timeWaveform))*1000;
 oversampling = ceil(100000/sr_in);
 sr = oversampling * sr_in;
@@ -55,6 +55,10 @@ subplot(2,2,[1,3]), hold on
 
 for m = 1:length(filtWaveform)
     wave = interp1(waveforms.timeWaveform{1},zscore(filtWaveform{m}),timeWaveform(1):mean(diff(timeWaveform)):timeWaveform(end),'spline');
+    waveform_metrics.polarity(m) = mean(wave(trough_interval(1):trough_interval(2))) - mean(wave([1:trough_interval(1),trough_interval(2):end]));
+    if waveform_metrics.polarity(m) > 0
+        wave = -wave;
+    end
     wave_diff{m} = diff(wave);
     wave_diff2{m} = diff(wave,2);
     [MIN2,I2] = min(wave(trough_interval(1):trough_interval(2))); % trough_interval % 22:42
@@ -88,28 +92,27 @@ for m = 1:length(filtWaveform)
     plot([-(I2_diff2+idx_6)+1:1:0,1:1:(length(wave_diff2{m})-(I2_diff2+idx_6))]/sr*1000,wave_diff2{m},'Color',[0,0,0,0.05],'linewidth',2), axis tight
     title('Waveforms (2nd derivative'),xlabel('Time (ms)'),ylabel('Z-scored')
     
-    if timeWaveform_span==1.6
+    if timeWaveform_span>1.599 && timeWaveform_span<1.601 % 1.6 ms
             n = n+1;
             wave_cut(n,:) = wave(idx_3:idx_end2);
             wave_diff_cut(n,:) = wave_diff{m}(idx_3:idx_end2);
-            if I2+idx_45-length(wave)>=0
-                temp = I2+idx_45-length(wave)
-                wave_align(n,:) = wave(I2-temp:I2+idx_45-temp);
+            if I2+idx_45-length(wave)>0
+                temp = I2+idx_45-length(wave);
+                wave_align(n,:) = wave(I2+idx_3-temp:I2+idx_45-temp);
                 
             else
                 wave_align(n,:) = wave(I2+idx_3:I2+idx_45);
             end
-    elseif timeWaveform_span>1.6   %case 72
+    elseif timeWaveform_span>1.601 % 1.6 ms
             n = n+1;
             wave_cut(n,:) = wave(idx_9:idx_end4);
             wave_diff_cut(n,:) = wave_diff{m}(idx_9:idx_end4);
             wave_align(n,:) = wave(I2+idx_9:I2+idx_49);
-    else % case 60
+    else
             n = n+1;
             wave_cut(n,:) = wave;
             wave_diff_cut(n,:) = wave_diff{m};
-            wave_align(n,:) = wave(I2+idx_9:I2+idx_49);
-            % disp('Lenght of waveform is too short (60)')
+            wave_align(n,:) = wave(I2+idx_9:I2+idx_49-1);
     end
 end
 waveform_metrics.peaktoTrough = t_before/sr*1000;

@@ -12,7 +12,21 @@ function classification_deepSuperficial(session)
 % Distance to the boundary in µm for spike groups where the reversal is detected.
 %
 % INPUT
-% session struct
+% session struct with required fields:
+%
+% session.general.basePath: basePath e.g. 'Z:\peterp03\IntanData\MS22\Peter_MS22_180629_110319_concat'
+% session.general.baseName: baseName of the recording, e.g. 'Peter_MS22_180629_110319_concat'
+% session.channelTags.(Bad or Cortical) specifying spikeGroups (1-indexed), channels (1-indexed)
+%   e.g. session.channelTags.Bad.channels = [1,25,128]; session.channelTags.Bad.spikeGroups = [1]
+% session.extracellular.probesVerticalSpacing:  in um. e.g. 20
+% session.extracellular.probesLayout: ['staggered','linear','poly2','poly3','poly5']
+% session.extracellular.srLfp: e.g. 1250
+% session.extracellular.nChannels: e.g. 128
+% session.extracellular.nSpikeGroups: e.g. 8
+% session.extracellular.spikeGroups struct following the xml anatomical format
+% 
+% Requirements
+% downsampled (and lowpass filtered) baseName.eeg file in the basePath folder
 
 % By Peter Petersen
 % petersen.peter@gmail.com

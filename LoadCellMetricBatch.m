@@ -1,9 +1,10 @@
 function cell_metrics_batch = LoadCellMetricBatch(varargin)
-% Load metrics across sessions
+% Load metrics across sessions and concats the metrics into a single struct
+% with the appropriate format for each field.
 %
 % INPUTS:
 % varargin: Described below
-% 
+%
 % OUTPUT:
 % cell_metrics_batch. Combibed batch file with metrics from selected sessions
 
@@ -11,11 +12,12 @@ function cell_metrics_batch = LoadCellMetricBatch(varargin)
 % petersen.peter@gmail.com
 
 p = inputParser;
-addParameter(p,'sessionIDs',{},@isnumeric);
-addParameter(p,'sessions',{},@iscell);
-addParameter(p,'basepaths',{},@iscell);         % 
+addParameter(p,'sessionIDs',{},@isnumeric);     % numeric IDs for the sessions to load
+addParameter(p,'sessions',{},@iscell);          % sessionNames for the sessions to load
+addParameter(p,'basepaths',{},@iscell);         % basepaths for the sessions to load
 addParameter(p,'clusteringpaths',{},@iscell);   % Path to the cell_metrics .mat files
 addParameter(p,'saveAs','cell_metrics',@isstr); % saveAs - name of .mat file
+addParameter(p,'waitbar_handle',[],@ishandle);  % waitbar handle 
 
 parse(p,varargin{:})
 sessionNames = p.Results.sessions;
@@ -23,6 +25,7 @@ sessionIDs = p.Results.sessionIDs;
 basepaths = p.Results.basepaths;
 clusteringpaths = p.Results.clusteringpaths;
 saveAs = p.Results.saveAs;
+waitbar_handle = p.Results.waitbar_handle;
 
 bz_database = db_credentials;
 cell_metrics2 = [];
@@ -30,35 +33,83 @@ subfields2 = [];
 subfieldstypes = [];
 subfieldssizes = [];
 
-disp('Cell-metrics: loading batch')
+if ishandle(waitbar_handle)
+    f_LoadCellMetrics = waitbar_handle;
+else
+    f_LoadCellMetrics = waitbar(0,' ','name','Cell-metrics: loading batch');
+end
+% disp('Cell-metrics: loading batch')
 if ~isempty(sessionNames)
-    for iii = 1:length(sessionNames)
-        disp(['Loading session info for ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}])
-        [session, basename, basepath, clusteringpath] = db_set_path('session',sessionNames{iii},'changeDir',false);
-        basepaths{iii} = basepath;
-        clustering_paths{iii} = clusteringpath;
-    end
-elseif ~isempty(sessionIDs)
-    [sessions, basenames, basepaths, clustering_paths] = db_set_path('id',sessionIDs,'changeDir',false);
+    count_metricsLoad = 1;
+    waitbar(1/(1+count_metricsLoad+length(sessionNames)),f_LoadCellMetrics,['Loading session info from sessionNames']);
+    % % % % % % % % % % % % %
+    options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
+    options.CertificateFilename=('');
+    % Requesting db list
+    bz_db = webread([bz_database.rest_api.address,'views/15356/'],options,'page_size','5000','sorted','1','cellmetrics',1);
+    sessions = loadjson(bz_db.renderedHtml);
     
-%     for iii = 1:length(sessionIDs)
-%         disp(['Loading ', num2str(iii), '/', num2str(length(sessionIDs)),': ', sessionIDs{iii}])
-%         [session, basename, basepath, clusteringpath] = db_set_path('id',sessionIDs{iii},'changeDir',false);
+    % Setting paths from db struct
+    db_basename = {};
+    db_basepath = {};
+    db_clusteringpath = {};
+    db_basename = sort(cellfun(@(x) x.name,sessions,'UniformOutput',false));
+    
+    [~,index,~] = intersect(db_basename,sessionNames);
+    
+    for i_db = 1:length(sessions)
+        if strcmp(sessions{i_db}.repositories{1},'NYUshare_Datasets')
+            Investigator_name = strsplit(sessions{i_db}.investigator,' ');
+            path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
+            db_basepath{i_db} = fullfile(bz_database.repositories.(sessions{i_db}.repositories{1}), path_Investigator,sessions{i_db}.animal, sessions{i_db}.name);
+        else
+            db_basepath{i_db} = fullfile(bz_database.repositories.(sessions{i_db}.repositories{1}), sessions{i_db}.animal, sessions{i_db}.name);
+        end
+        
+        if ~isempty(sessions{i_db}.spikeSorting.relativePath)
+            db_clusteringpath{i_db} = fullfile(db_basepath{i_db}, sessions{i_db}.spikeSorting.relativePath{1});
+        else
+            db_clusteringpath{i_db} = db_basepath{i_db};
+        end
+    end
+    clustering_paths = db_clusteringpath(index);
+    basepaths = db_basepath(index);
+    
+    % % % % % % % % % % % % %
+%     count_metricsLoad = length(sessionNames);
+%     for iii = 1:length(sessionNames)
+%         if ishandle(f_LoadCellMetrics)
+%             waitbar(iii/(1+count_metricsLoad+length(sessionNames)),f_LoadCellMetrics,['Loading session info for ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}]);
+%         else
+%             break
+%         end
+%         [session, basename, basepath, clusteringpath] = db_set_path('session',sessionNames{iii},'changeDir',false);
 %         basepaths{iii} = basepath;
 %         clustering_paths{iii} = clusteringpath;
 %     end
+    
+elseif ~isempty(sessionIDs)
+    count_metricsLoad = 1;
+    waitbar(1/(1+count_metricsLoad+length(sessionIDs)),f_LoadCellMetrics,['Loading session info from sessionIDs']);
+    [sessions, basenames, basepaths, clustering_paths] = db_set_path('id',sessionIDs,'changeDir',false);
 elseif ~isempty(clusteringpaths)
+    count_metricsLoad = 1;
+    waitbar(1/(1+count_metricsLoad+length(clusteringpaths)),f_LoadCellMetrics,['Loading session info from clusteringpaths']);
     clustering_paths = clusteringpaths;
 else
     warning('Input not sufficient')
 end
 
 for iii = 1:length(clustering_paths)
-    if ~isempty(sessionNames)
-    disp(['Loading mat files for ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}])
-elseif ~isempty(sessionIDs)
-    disp(['Loading mat files for ', num2str(iii), '/', num2str(length(clustering_paths))])
-end
+    if ~isempty(sessionNames) && ishandle(f_LoadCellMetrics)
+            waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading mat files for ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}]);
+    elseif ~isempty(sessionIDs) && ishandle(f_LoadCellMetrics)
+            waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading mat files for ', num2str(iii), '/', num2str(length(clustering_paths))]);
+    elseif ~isempty(clustering_paths) && ishandle(f_LoadCellMetrics)
+            waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading mat files for ', num2str(iii), '/', num2str(length(clustering_paths))]);
+    else
+        break
+    end
     if exist(fullfile(clustering_paths{iii},[saveAs,'.mat']))
         cell_metrics2{iii} = load(fullfile(clustering_paths{iii},[saveAs,'.mat']));
     else
@@ -79,11 +130,13 @@ subfieldssizes(contains(cell_metrics_fieldnames,{'truePositive','falsePositive'}
 cell_metrics_fieldnames(contains(cell_metrics_fieldnames,{'truePositive','falsePositive'})) = [];
 h = 0;
 cell_metrics_batch = [];
+
+if ishandle(f_LoadCellMetrics)
+    waitbar((count_metricsLoad+length(cell_metrics2))/(1+count_metricsLoad+length(cell_metrics2)),f_LoadCellMetrics,['Concatenating files']);
+end
 for iii = 1:length(cell_metrics2)
-    if exist('sessionNames') && ~isempty(sessionNames)
-        disp(['Concatenating ', num2str(iii), '/', num2str(length(cell_metrics2)),': ', sessionNames{iii}])
-    else
-        disp(['Concatenating ', num2str(iii), '/', num2str(length(cell_metrics2)),': ', clustering_paths{iii}])
+    if ~ishandle(f_LoadCellMetrics)
+       break 
     end
     cell_metrics = cell_metrics2{iii}.cell_metrics;
     hh = size(cell_metrics.cellID,2);
@@ -107,7 +160,7 @@ for iii = 1:length(cell_metrics2)
         if ~isfield(cell_metrics,cell_metrics_fieldnames{ii}) && ~strcmp(cell_metrics_fieldnames{ii},'putativeConnections')
             if strcmp(subfieldstypes{ii},'double')
                 if length(subfieldssizes{ii})==3
-
+                    
                 elseif length(subfieldssizes{ii})==2 && subfieldssizes{ii}(1) > 0
                     cell_metrics_batch.(cell_metrics_fieldnames{ii})(:,h+1:hh+h) = nan(subfieldssizes{ii}(1:end-1),hh);
                 else
@@ -115,7 +168,7 @@ for iii = 1:length(cell_metrics2)
                 end
             elseif strcmp(subfieldstypes{ii},'cell') && length(subfieldssizes{ii}) < 3
                 cell_metrics_batch.(cell_metrics_fieldnames{ii})(h+1:hh+h) = repmat({''},1,size(cell_metrics.cellID,2));
-            
+                
             elseif strcmp(subfieldstypes{ii},'cell') && length(subfieldssizes{ii}) == 3
                 cell_metrics_batch.(cell_metrics_fieldnames{ii}){iii} = {};
             end
@@ -133,7 +186,7 @@ for iii = 1:length(cell_metrics2)
                 else
                     if length(subfieldssizes{ii})==3
                         for iiii=1:size(cell_metrics.(cell_metrics_fieldnames{ii}),3)
-%                             cell_metrics_batch.(cell_metrics_fieldnames{ii}){h+iiii} = cell_metrics.(cell_metrics_fieldnames{ii})(:,:,iiii);
+                            %                             cell_metrics_batch.(cell_metrics_fieldnames{ii}){h+iiii} = cell_metrics.(cell_metrics_fieldnames{ii})(:,:,iiii);
                         end
                     elseif subfieldssizes{ii}(1)>1 %&& ~any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
                         cell_metrics_batch.(cell_metrics_fieldnames{ii})(:,h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii});
@@ -151,9 +204,6 @@ for iii = 1:length(cell_metrics2)
                     end
                 end
             elseif strcmp(subfieldstypes{ii},'cell')
-%                 if strcmp(cell_metrics_fieldnames{ii},'FiringRateAcrossTime')
-%                    1 
-%                 end
                 if ~isempty(cell_metrics.(cell_metrics_fieldnames{ii})) & length(size(cell_metrics.(cell_metrics_fieldnames{ii})))<3 & size(cell_metrics.(cell_metrics_fieldnames{ii}),1)==1 & size(cell_metrics.(cell_metrics_fieldnames{ii}),2)== hh
                     cell_metrics_batch.(cell_metrics_fieldnames{ii})(h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii});
                 else
@@ -163,4 +213,10 @@ for iii = 1:length(cell_metrics2)
         end
     end
     h=h+size(cell_metrics.cellID,2);
+end
+if ishandle(f_LoadCellMetrics)
+    waitbar(1,f_LoadCellMetrics,'Loading complete');
+    if isempty(waitbar_handle)
+        close(f_LoadCellMetrics)
+    end
 end

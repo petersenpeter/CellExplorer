@@ -11,7 +11,7 @@ UI.settings.customCellPlotIn5 = 'firingRateMap';
 UI.settings.customCellPlotIn6 = 'firingRateMap';
 
 UI.settings.acgType = 'Normal'; % Normal (100ms), Wide (1s), Narrow (30ms)
-UI.settings.monoSynDispIn = 'Selected'; % All, Selected, None
+UI.settings.monoSynDispIn = 'Selected'; % 'All', 'Upstream', 'Downstream', 'Up & downstream', 'Selected', 'None'
 UI.settings.displayMetricsTable = true; % boolean
 UI.settings.plotCountIn = 'GUI 3+3'; % ['GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6']
 UI.settings.dispLegend = 0; % [0,1] Display legend for scatter plots?
@@ -27,9 +27,11 @@ UI.settings.plotYdata = 'peakVoltage';
 UI.settings.plotZdata = 'troughToPeak';
 
 % Cell type classification definitions
-UI.settings.cellTypes = {'Unknown','Pyramidal Cell','Narrow Interneuron','Wide Interneuron','Inverse spike'};
+UI.settings.cellTypes = {'Unknown','Pyramidal Cell','Narrow Interneuron','Wide Interneuron'};
 UI.settings.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
 UI.settings.tags = {'Good','Bad','Mua','Noise','InverseSpike','Other'};
+UI.settings.groundTruth = {'PV+','NOS1+','GAT1+'}; 
+UI.settings.groundTruthMarkers = {'ok','db','sm','*k','+d','p'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
 
 % Cell type classification colors
 UI.settings.cellTypeColors = [[.5,.5,.5];[.2,.8,.2];[.8,.2,.2];[0.8,0.2,0.8];[.2,.2,.8];[0.2,0.8,0.8]];
@@ -41,7 +43,7 @@ UI.settings.tSNE_calcFiltWaveform = false; % boolean
 UI.settings.tSNE_calcRawWaveform = false; % boolean
 
 % List of fields to use in the general tSNE representation
-UI.settings.tSNE_metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','thetaPhaseTrough','thetaEntrainment','derivative_TroughtoPeak','filtWaveform_zscored','acg2_zscored'};
+UI.settings.tSNE_metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','derivative_TroughtoPeak','filtWaveform_zscored','acg2_zscored'}; % 'thetaPhaseTrough','thetaEntrainment'
 
 % Highlight excitatory / inhibitory cells
 UI.settings.displayInhibitory = false; % boolean
@@ -116,9 +118,9 @@ spikesPlots.spikes_pvLightStimulation.eventSecBefore = 0.1; % in seconds
 spikesPlots.spikes_pvLightStimulation.eventSecAfter = 0.2; % in seconds
 spikesPlots.spikes_pvLightStimulation.plotRaster = 1;
 spikesPlots.spikes_pvLightStimulation.plotAverage = 1;
-spikesPlots.spikes_pvLightStimulation.plotAmplitude = 1;
-spikesPlots.spikes_pvLightStimulation.plotDuration = 1;
-spikesPlots.spikes_pvLightStimulation.plotCount = 1;
+spikesPlots.spikes_pvLightStimulation.plotAmplitude = 0;
+spikesPlots.spikes_pvLightStimulation.plotDuration = 0;
+spikesPlots.spikes_pvLightStimulation.plotCount = 0;
 
 spikesPlots.spikes_tesStimulation.x = 'times';
 spikesPlots.spikes_tesStimulation.y = 'times';
@@ -135,4 +137,3 @@ spikesPlots.spikes_tesStimulation.plotAverage = 1;
 spikesPlots.spikes_tesStimulation.plotAmplitude = 1;
 spikesPlots.spikes_tesStimulation.plotDuration = 0;
 spikesPlots.spikes_tesStimulation.plotCount = 0;
-

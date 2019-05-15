@@ -105,15 +105,15 @@ sr = session.extracellular.sr;
 srLfp = session.extracellular.srLfp;
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Getting spikes
+% Getting spikes 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if session.extracellular.leastSignificantBit==0
     session.extracellular.leastSignificantBit = 0.195;
 end
-spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'basepath',basepath,'LSB',session.extracellular.leastSignificantBit);
+spikes = loadClusteringData(clusteringpath,session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
 
-if ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.4
-    spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'forceReload',true,'spikes',spikes,'basepath',basepath,'LSB',session.extracellular.leastSignificantBit);
+if ~isfield(spikes,'processinginfo') || ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.4
+    spikes = loadClusteringData(clusteringpath,session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'forceReload',true,'spikes',spikes,'LSB',session.extracellular.leastSignificantBit);
 end
 
 if ~isempty(timeRestriction)
@@ -695,10 +695,16 @@ if submitToDatabase
     try
         session = db_update_session(session,'forceReload',true);
         cell_metrics = db_submit_cells(cell_metrics,session);
-    catch
+    catch exception
+        disp(exception.identifier)
         warning('Failed to submit to database');
     end
 end
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Adding processing info
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+cell_metrics.processinginfo
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Saving cells

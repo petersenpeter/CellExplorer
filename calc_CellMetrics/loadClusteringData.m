@@ -1,9 +1,9 @@
-function spikes = loadClusteringData(baseName,clusteringMethod,clusteringPath,varargin)
+function spikes = loadClusteringData(clusteringPath,clusteringMethod,varargin)
 % Load clustered data from multiple pipelines [Current options: Phy, Klustakwik/Neurosuite]
 % Buzcode compatible output. Saves output to a basename.spikes.cellinfo.mat file
-% baseName: basename of the recording
-% clusteringMethod: clustering method to handle different pipelines: ['phy','klustakwik'/'neurosuite']
 % clusteringPath: path to the clustered data
+% clusteringMethod: clustering method to handle different pipelines: ['phy','klustakwik'/'neurosuite']
+
 % See description of varargin below
 
 % by Peter Petersen
@@ -25,6 +25,8 @@ addParameter(p,'spikes',[],@isstruct); % Load existing spikes structure to appen
 addParameter(p,'basepath',pwd,@ischar); % path to dat file, used to extract the waveforms from the dat file
 addParameter(p,'LSB',0.195,@isnumeric); % Least significant bit (LSB in uV) Intan = 0.195, Amplipex = 0.3815
 addParameter(p,'session',[],@isstruct); % A Buzsaki db session struct
+addParameter(p,'basename','',@ischar); % The baseName file naming convention
+
 parse(p,varargin{:})
 
 shanks = p.Results.shanks;
@@ -37,6 +39,12 @@ basepath = p.Results.basepath;
 useNeurosuiteWaveforms = p.Results.useNeurosuiteWaveforms;
 LSB = p.Results.LSB;
 session = p.Results.session;
+baseName = p.Results.basename;
+
+if isempty(baseName) & ~isempty(basepath)
+    [~,baseName,~] = fileparts(basepath);
+    disp(['Using basepath to determine the basename: ' baseName])
+end
 
 if exist(fullfile(clusteringPath,[baseName,'.spikes.cellinfo.mat'])) & ~forceReload
     load(fullfile(clusteringPath,[baseName,'.spikes.cellinfo.mat']))
@@ -337,12 +345,16 @@ for ii = 1 : size(spikes.times,2)
         figure(fig1)
         subplot(2,2,1), hold off
         plot(wfF2), hold on, plot(wfF2(:,idx),'k','linewidth',2), title('Filt waveform across channels'), xlabel('Samples'), hold off
+        
         subplot(2,2,2), hold off,
         plot(wfF), title('Peak channel waveforms'), xlabel('Samples')
+        
         subplot(2,2,3), hold on,
         plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii}), title('Raw waveform'), xlabel('Time (ms)')
+        xlim([-0.8,0.8])
         subplot(2,2,4), hold on,
         plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii}), title('Filtered waveform'), xlabel('Time (ms)')
+        xlim([-0.8,0.8])
     end
     clear wf wfF wf2 wfF2
 end
