@@ -28,7 +28,8 @@ function [cell_metrics_idxs, cell_metrics] = get_CellMetrics(varargin)
 %   plots                  - logical. Plot summary figures
 %
 %   OUTPUT
-%   Cell_metrics matlab structure
+%   cell_metrics_idxs       - indexes of cells fulfilling filters*
+%   cell_metrics            - Cell_metrics matlab structure
 
 % By Peter Petersen
 % petersen.peter@gmail.com

@@ -53,7 +53,7 @@ if ~isempty(sessionNames)
     db_basename = {};
     db_basepath = {};
     db_clusteringpath = {};
-    db_basename = sort(cellfun(@(x) x.name,sessions,'UniformOutput',false));
+    db_basename = cellfun(@(x) x.name,sessions,'UniformOutput',false);
     
     [~,index,~] = intersect(db_basename,sessionNames);
     
@@ -102,11 +102,11 @@ end
 
 for iii = 1:length(clustering_paths)
     if ~isempty(sessionNames) && ishandle(f_LoadCellMetrics)
-            waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading mat files for ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}]);
+            waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}]);
     elseif ~isempty(sessionIDs) && ishandle(f_LoadCellMetrics)
-            waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading mat files for ', num2str(iii), '/', num2str(length(clustering_paths))]);
+            waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading ', num2str(iii), '/', num2str(length(clustering_paths))]);
     elseif ~isempty(clustering_paths) && ishandle(f_LoadCellMetrics)
-            waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading mat files for ', num2str(iii), '/', num2str(length(clustering_paths))]);
+            waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading ', num2str(iii), '/', num2str(length(clustering_paths))]);
     else
         break
     end

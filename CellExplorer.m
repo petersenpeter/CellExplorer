@@ -23,11 +23,9 @@ function cell_metrics = CellExplorer(varargin)
 % petersen.peter@gmail.com
 
 % TODO
-% Ground truth cell-type classifiations
 % Adjust deepSuperficial channel/spike groups in the GUI
 % Adjust synaptic connections in the GUI or be able to rerun the detection
 % Delete cell-type and reassign affected cell
-% Alter the color of a cell-type
 
 p = inputParser;
 
@@ -86,13 +84,15 @@ cellsExcitatory = []; cellsInhibitory = []; cellsInhibitory_subset = []; cellsEx
 subsetPlots1 = []; subsetPlots2 = []; subsetPlots3 = []; subsetPlots4 = []; subsetPlots5 = []; subsetPlots6 = [];
 tSNE_metrics = []; BatchMode = false; ClickedCells = []; classificationTrackChanges = []; time_waveforms_zscored = []; spikes = [];
 spikesPlots = []; globalZoom = cell(1,9); createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal'; events = [];
-fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];
-plotOptionsToExlude = {'putativeConnections','acg','acg2','filtWaveform','timeWaveform','rawWaveform_std','rawWaveform','tags','groundTruthClassification'};
-fieldsMenuMetricsToExlude  = {'thetaPhaseResponse','rippleCorrelogram','firingRateMap','FiringRateMap','firing_rate_map','spatialCoherence','firingRateAcrossTime','FiringRateAcrossTime','filtWaveform','timeWaveform','psth','rawWaveform','rawWaveform_std','tags','groundTruthClassification'};
+fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = []; groundTruthSelection = []; subsetGroundTruth = [];
 positionsTogglebutton = [[1 29 27 13];[29 29 27 13];[1 15 27 13];[29 15 27 13];[1 1 27 13];[29 1 27 13]]; dispTags = []; dispTags2 = [];
-groundTruthSelection = []; subsetGroundTruth = [];
+plotOptionsToExlude = {'putativeConnections','acg','acg2','filtWaveform','timeWaveform','rawWaveform_std','rawWaveform','tags','groundTruthClassification'};
+menuOptionsToExlude = {'putativeCellType','firingRateMap','firingRateAcrossTime','FiringRateMap','FiringRateAcrossTime','psth','tags','groundTruthClassification'}
+fieldsMenuMetricsToExlude  = {'thetaPhaseResponse','rippleCorrelogram','firingRateMap','FiringRateMap','firing_rate_map','spatialCoherence','firingRateAcrossTime','FiringRateAcrossTime','filtWaveform','timeWaveform','psth','rawWaveform','rawWaveform_std','tags','groundTruthClassification'};
 
-CellExplorerVersion = '1.3';
+
+CellExplorerVersion = '1.31';
+
 UI.fig = figure('Name',['Cell Explorer v' CellExplorerVersion],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress});
 hManager = uigetmodemanager(UI.fig);
 
@@ -496,7 +496,7 @@ UI.checkbox.legend.Value = UI.settings.dispLegend;
 
 % % % % % % % % % % % % % % % % % % % %
 % Metrics table and title
-% % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % %
 
 % Table with metrics for selected cell
 UI.table = uitable(UI.fig,'Data',[fieldsMenu,num2cell(table_metrics(1,:)')],'Units','normalized','Position',[0.005 0.028 0.09 0.51],'ColumnWidth',{85, 46},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable); % [10 10 150 575] {85, 46} %
@@ -504,7 +504,7 @@ UI.checkbox.showtable = uicontrol('Style','checkbox','Position',[5 2 50 10],'Uni
 if ~UI.settings.displayMetricsTable; UI.table.Visible='Off'; UI.checkbox.showtable.Value = 0; end
 
 % Title with details about the selected cell and current session
-UI.title = uicontrol('Style','text','Position',[185 410 250 10],'Units','normalized','String',{'Cell details'},'HorizontalAlignment','center','FontSize',13);
+UI.title = uicontrol('Style','text','Position',[100 410 350 10],'Units','normalized','String',{'Cell details'},'HorizontalAlignment','center','FontSize',13);
 
 % Benchmark with display time in seconds for most recent plot call
 UI.benchmark = uicontrol('Style','text','Position',[3 410 100 10],'Units','normalized','String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3]);
@@ -3731,7 +3731,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     return
             end
             cell_metricsTemp = cell_metrics; clear cell_metrics
-            f_waitbar = waitbar(0,'Saving cell metrics from batch (',num2str(sessionWithChanges),' sessions with changes)','WindowStyle','modal');
+            f_waitbar = waitbar(0,[num2str(sessionWithChanges),' sessions with changes'],'name','Saving cell metrics from batch','WindowStyle','modal');
             
             for j = 1:length(sessionWithChanges)
                 if ~ishandle(f_waitbar)
@@ -3739,7 +3739,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     break
                 end
                 sessionID = sessionWithChanges(j);
-                waitbar(j/length(sessionWithChanges),f_waitbar,['Saving cell metrics from batch. Session ' num2str(j),'/',num2str(length(sessionWithChanges))])
+                waitbar(j/length(sessionWithChanges),f_waitbar,['Session ' num2str(j),'/',num2str(length(sessionWithChanges)),': ', cell_metricsTemp.general.basenames{sessionID}])
                 cellSubset = find(cell_metricsTemp.batchIDs==sessionID);
                 matpath = fullfile(cell_metricsTemp.general.paths{sessionID},'cell_metrics.mat');
                 matFileCell_metrics = matfile(matpath,'Writable',true);
@@ -4172,7 +4172,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         colorMenu = colorMenu(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'cell'));
         fields2keep = [];
         for i = 1:length(colorMenu)
-            if ~any(cell2mat(cellfun(@isnumeric,cell_metrics.(colorMenu{i}),'UniformOutput',false))) && ~contains(colorMenu{i},{'putativeCellType','firingRateMap','firingRateAcrossTime','FiringRateMap','FiringRateAcrossTime','psth'} )
+            if ~any(cell2mat(cellfun(@isnumeric,cell_metrics.(colorMenu{i}),'UniformOutput',false))) && ~contains(colorMenu{i},menuOptionsToExlude )
                 fields2keep = [fields2keep,i];
             end
         end
@@ -4226,15 +4226,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 db_menu_ids = cellfun(@(x) x.id,sessions,'UniformOutput',false);
                 db_menu_ids = db_menu_ids(index);
                 db_menu_animals = cellfun(@(x) x.animal,sessions,'UniformOutput',false);
-                db_menu_investigator = cellfun(@(x) x.investigator,sessions,'UniformOutput',false);
+               db_menu_investigator = cellfun(@(x) x.investigator,sessions,'UniformOutput',false);
+                db_menu_repository = cellfun(@(x) x.repositories{1},sessions,'UniformOutput',false);
                 db_menu_values = cellfun(@(x) x.id,sessions,'UniformOutput',false);
                 db_menu_values = db_menu_values(index);
                 db_menu_items2 = strcat(db_menu_items);
                 sessionEnumerator = cellstr(num2str([1:length(db_menu_items2)]'))';
-                sessionList = strcat(sessionEnumerator,{'.  '},db_menu_items2,{' ('},db_menu_animals(index),',  ', db_menu_investigator(index),')');
+                sessionList = strcat(sessionEnumerator,{'.  '},db_menu_items2,{'  ('},db_menu_animals(index),',   ', db_menu_investigator(index),'  -  ',db_menu_repository(index),')');
                 drawnow
                 % Prompt with session list
-                [indx,tf] = listdlg('PromptString',['Select dataset to load'],'ListString',sessionList,'SelectionMode','multiple','ListSize',[400,350]);
+                [indx,tf] = listdlg('PromptString',['Select dataset to load'],'ListString',sessionList,'SelectionMode','multiple','ListSize',[550,350]);
                 if ~isempty(indx)
                     if length(indx)==1
                         try

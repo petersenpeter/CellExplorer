@@ -704,7 +704,23 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Adding processing info
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-cell_metrics.processinginfo
+cell_metrics.general.processinginfo.params.metrics = metrics;
+cell_metrics.general.processinginfo.params.excludeMetrics = excludeMetrics;
+cell_metrics.general.processinginfo.params.removeMetrics = removeMetrics;
+cell_metrics.general.processinginfo.params.timeRestriction = timeRestriction;
+cell_metrics.general.processinginfo.params.keepCellClassification = keepCellClassification;
+cell_metrics.general.processinginfo.params.useNeurosuiteWaveforms = useNeurosuiteWaveforms;
+cell_metrics.general.processinginfo.params.forceReload = forceReload;
+cell_metrics.general.processinginfo.params.submitToDatabase = submitToDatabase;
+cell_metrics.general.processinginfo.function = 'calc_CellMetrics';
+cell_metrics.general.processinginfo.date = now;
+cell_metrics.general.processinginfo.version = 1.0;
+if isfield(spikes,'processinginfo')
+    cell_metrics.general.processinginfo.spikes = spikes.processinginfo;
+end
+if isfield(deepSuperficialfromRipple,'processinginfo')
+    cell_metrics.general.processinginfo.deepSuperficialfromRipple = deepSuperficialfromRipple.processinginfo;
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Saving cells
