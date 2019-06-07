@@ -18,14 +18,9 @@ function [cell_metrics_idxs, cell_metrics] = get_CellMetrics(varargin)
 %                            'perturbation_metrics','theta_metrics','psth_metrics'
 %   excludeMetrics         - Any metrics to exclude
 %   removeMetrics          - Any metrics to remove (supports only deepSuperficial at this point)
-%   keepCellClassification - Keep existing cell type classifications
-%   timeRestriction        - Any time intervals to exclude
 %   useNeurosuiteWaveforms - Use Neurosuite files to get waveforms and PCAs
 %   forceReload            - logical. Recalculate existing metrics
-%   submitToDatabase       - logical. Submit cell metrics to database
 %   saveMat                - save metrics to cell_metrics.mat
-%   saveAs                 - name of .mat file
-%   plots                  - logical. Plot summary figures
 %
 %   OUTPUT
 %   cell_metrics_idxs       - indexes of cells fulfilling filters*
@@ -33,6 +28,7 @@ function [cell_metrics_idxs, cell_metrics] = get_CellMetrics(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
+% 24-05-2019
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %

@@ -105,7 +105,7 @@ sr = session.extracellular.sr;
 srLfp = session.extracellular.srLfp;
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Getting spikes 
+% Getting spikes
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if session.extracellular.leastSignificantBit==0
     session.extracellular.leastSignificantBit = 0.195;
@@ -246,7 +246,7 @@ if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,
         
         disp('* Fitting double exponential to ACG')
         fit_params = fit_ACG(acg_metrics.acg2);
-
+        
         cell_metrics.acg = acg_metrics.acg; % Wide: 1000ms wide CCG with 1ms bins
         cell_metrics.acg2 = acg_metrics.acg2; % Narrow: 100ms wide CCG with 0.5ms bins
         cell_metrics.thetaModulationIndex = acg_metrics.thetaModulationIndex; % cell_tmi
@@ -273,7 +273,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
     disp('* Deep-Superficial by ripple polarity reversal')
-%     lfpExtension = exist_LFP(basepath,basename);
+    %     lfpExtension = exist_LFP(basepath,basename);
     
     if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') || forceReload == true)
         lfpExtension = exist_LFP(basepath,basename);
@@ -351,8 +351,8 @@ if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(ex
         cell_metrics.synapticConnectionsOut(b) = a; cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);
         [a,b]=hist(cell_metrics.putativeConnections(:,2),unique(cell_metrics.putativeConnections(:,2)));
         cell_metrics.synapticConnectionsIn(b) = a; cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
-%         cell_metrics.truePositive = mono_res.truePositive; % Matrix
-%         cell_metrics.falsePositive = mono_res.falsePositive; % Matrix
+        %         cell_metrics.truePositive = mono_res.truePositive; % Matrix
+        %         cell_metrics.falsePositive = mono_res.falsePositive; % Matrix
     else
         cell_metrics.putativeConnections = [];
         cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
@@ -372,7 +372,7 @@ if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetric
         theta_bins =[-1:0.05:1]*pi;
         cell_metrics.thetaPhasePeak = nan(1,cell_metrics.general.cellCount);
         cell_metrics.thetaPhaseTrough = nan(1,cell_metrics.general.cellCount);
-%         cell_metrics.thetaPhaseResponse = nan(length(theta_bins)-1,cell_metrics.general.cellCount);
+        %         cell_metrics.thetaPhaseResponse = nan(length(theta_bins)-1,cell_metrics.general.cellCount);
         cell_metrics.thetaEntrainment = nan(1,cell_metrics.general.cellCount);
         
         spikes2 = spikes;
@@ -416,7 +416,7 @@ if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetric
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Spatial related metrics
+% Spatial related metrics 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetrics,{'spatial_metrics'}))
     disp('* Calculating spatial metrics');
@@ -472,7 +472,7 @@ if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetr
     
     % State dependent firing rate maps
     firingRateMap_filelist = dir(fullfile(basepath,'firingRateMap_*.mat')); firingRateMap_filelist = {firingRateMap_filelist.name};
-
+    
     for i = 1:length(firingRateMap_filelist)
         temp2 = load(fullfile(basepath,firingRateMap_filelist{i}));
         firingRateMapName = firingRateMap_filelist{i}(1:end-4);
@@ -594,8 +594,8 @@ if max(cellfun(@max,spikes.times))/firingRateAcrossTime_binsize<40
 end
 cell_metrics.general.firingRateAcrossTime.x_edges = [0:firingRateAcrossTime_binsize:max(cellfun(@max,spikes.times))];
 cell_metrics.general.firingRateAcrossTime.x_bins = cell_metrics.general.firingRateAcrossTime.x_edges(1:end-1)+firingRateAcrossTime_binsize/2;
-cell_metrics.general.firingRateAcrossTime.boundaries = cumsum(session.subSessions.duration);
-cell_metrics.general.firingRateAcrossTime.boundaries_labels = session.subSessions.behavioralParadigm;
+cell_metrics.general.firingRateAcrossTime.boundaries = cumsum(session.epochs.duration);
+cell_metrics.general.firingRateAcrossTime.boundaries_labels = session.epochs.behavioralParadigm;
 % cell_metrics.firingRateAcrossTime = mat2cell(zeros(length(cell_metrics.general.firingRateAcrossTime.x_bins),cell_metrics.general.cellCount));
 
 chListBrainRegions = findBrainRegion(session);
@@ -665,9 +665,9 @@ if ~isfield(cell_metrics,'putativeCellType') || ~keepCellClassification
     cell_metrics.putativeCellType(cell_metrics.troughToPeak>0.425  & ismember(cell_metrics.putativeCellType, 'Interneuron')) = repmat({'Wide Interneuron'},sum(cell_metrics.troughToPeak>0.425  & (ismember(cell_metrics.putativeCellType, 'Interneuron'))),1);
     
     % Pyramidal cell classification
-%     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative<0.17 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.troughtoPeakDerivative<0.17 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
-%     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.troughtoPeakDerivative>0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
-%     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
+    %     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative<0.17 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 2'},sum(cell_metrics.troughtoPeakDerivative<0.17 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
+    %     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 3'},sum(cell_metrics.troughtoPeakDerivative>0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
+    %     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -718,7 +718,7 @@ cell_metrics.general.processinginfo.version = 1.0;
 if isfield(spikes,'processinginfo')
     cell_metrics.general.processinginfo.spikes = spikes.processinginfo;
 end
-if isfield(deepSuperficialfromRipple,'processinginfo')
+if exist('deepSuperficialfromRipple') && isfield(deepSuperficialfromRipple,'processinginfo')
     cell_metrics.general.processinginfo.deepSuperficialfromRipple = deepSuperficialfromRipple.processinginfo;
 end
 
@@ -741,6 +741,7 @@ end
 % Summary plots
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if plots
+    
     X = [cell_metrics.firingRateISI; cell_metrics.thetaModulationIndex; cell_metrics.burstIndex_Mizuseki2012;  cell_metrics.troughToPeak; cell_metrics.troughtoPeakDerivative; cell_metrics.ab_ratio; cell_metrics.burstIndex_Royer2012; cell_metrics.acg_tau_rise; cell_metrics.acg_tau_decay; cell_metrics.cv2]';
     Y = tsne(X);
     goodrows = not(any(isnan(X),2));
@@ -769,7 +770,7 @@ if plots
     subplot(2,2,2)
     histogram(CV2_temp(CV2_temp<1.9),40),xlabel('CV2_temp'), ylabel('Count')
     
-    % ACG metrics
+    % Plotting ACG metrics
     figure
     window_limits = [-50:50];
     order_acgmetrics = {'burstIndex_Royer2012','acg_tau_rise','acg_tau_decay','burstIndex_Mizuseki2012'};
@@ -786,11 +787,11 @@ if plots
             plot(window_limits,temp(:,j),'color',[mpdc10(:,j);0.5]), axis tight, hold on
         end
     end
-    
     figure,
     plot3(cell_metrics.acg_tau_rise,cell_metrics.acg_tau_decay,cell_metrics.troughtoPeakDerivative,'.')
     xlabel('Tau decay'), ylabel('Tau rise'), zlabel('Derivative Trough-to-Peak')
     
+    % Plotting summary figure with acg-taus and deepSuperficialDistance
     if isfield(cell_metrics,'deepSuperficial')
         figure, hold on
         CellTypeGroups = unique(cell_metrics.putativeCellType);
@@ -809,6 +810,49 @@ if plots
         end
         xlabel('Tau decay'), ylabel('Tau rise'), zlabel('deepSuperficialDistance')
     end
+    
+    % Plotting the average ripple with sharp wave across all spike groups
+    figure
+    for jj = 1:session.extracellular.nSpikeGroups
+        subplot(2,ceil(session.extracellular.nSpikeGroups/2),jj)
+        plot((deepSuperficialfromRipple.SWR_diff{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_diff{jj},2)-1]*0.04,'-k','linewidth',2), hold on, grid on
+        plot((deepSuperficialfromRipple.SWR_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_amplitude{jj},2)-1]*0.04,'k','linewidth',1)
+        % Plotting ripple amplitude along vertical axis
+        plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*0.04,'m','linewidth',1)
+        
+        for jjj = 1:size(ripple_average{jj},2)
+            % Plotting depth (µm)
+            text(deepSuperficialfromRipple.ripple_time_axis(end)+5,ripple_average{jj}(1,jjj)-(jjj-1)*0.04,[num2str(round(deepSuperficial_ChDistance(ripple_channels{jj}(jjj))))])
+            % Plotting channel number (0 indexes)
+            text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,-(jjj-1)*0.04,num2str(ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
+            plot(deepSuperficialfromRipple.ripple_time_axis,ripple_average{jj}(:,jjj)-(jjj-1)*0.04)
+            % Plotting assigned channel labels
+            if strcmp(deepSuperficial_ChClass(ripple_channels{jj}(jjj)),'Superficial')
+                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'or','linewidth',2)
+            elseif strcmp(deepSuperficial_ChClass(ripple_channels{jj}(jjj)),'Deep')
+                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'ob','linewidth',2)
+            elseif strcmp(deepSuperficial_ChClass(ripple_channels{jj}(jjj)),'Cortical')
+                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'og','linewidth',2)
+            else
+                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'ok')
+            end
+            % Plotting the channel used for the ripple detection if it is part of current spike group
+            if ripple_channel_detector==ripple_channels{jj}(jjj)
+                plot(deepSuperficialfromRipple.ripple_time_axis,ripple_average{jj}(:,jjj)-(jjj-1)*0.04,'k','linewidth',2)
+            end
+        end
+        
+        title(['Spike group ' num2str(jj)]),xlabel('Time (ms)'),if jj ==1; ylabel(session.general.name, 'Interpreter', 'none'); end
+        axis tight, ax6 = axis; grid on
+        plot([-120, -120;-170,-170;120,120], [ax6(3) ax6(4)],'color','k');
+        xlim([-220,deepSuperficialfromRipple.ripple_time_axis(end)+45]), xticks([-120:40:120])
+        ht1 = text(0.02,0.03,'Superficial','Units','normalized','FontWeight','Bold','Color','r');
+        ht2 = text(0.02,0.97,'Deep','Units','normalized','FontWeight','Bold','Color','b');
+        if ceil(session.extracellular.nSpikeGroups/2) == jj || session.extracellular.nSpikeGroups == jj
+            ht3 = text(1.05,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
+        end
+    end
 end
+
 toc(timerCalcMetrics)
 disp(['* Cell metrics calculations complete.'])

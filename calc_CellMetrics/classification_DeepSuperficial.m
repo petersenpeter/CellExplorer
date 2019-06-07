@@ -328,3 +328,4 @@ for jj = 1:session.extracellular.nSpikeGroups
         ht3 = text(1.05,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
     end
 end
+save(gcf,'deepSuperficial_classification_fromRipples.png');
