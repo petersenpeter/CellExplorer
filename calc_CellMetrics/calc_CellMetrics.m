@@ -155,10 +155,10 @@ end
 sr = session.extracellular.sr;
 srLfp = session.extracellular.srLfp;
 
-spikes = loadClusteringData(clusteringpath,session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
+spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
 
-if ~isfield(spikes,'processinginfo') || ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.4
-    spikes = loadClusteringData(clusteringpath,session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'forceReload',true,'spikes',spikes,'LSB',session.extracellular.leastSignificantBit);
+if ~isfield(spikes,'processinginfo') || ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.5
+    spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'forceReload',true,'spikes',spikes,'LSB',session.extracellular.leastSignificantBit);
 end
 
 if ~isempty(timeRestriction)
@@ -226,7 +226,7 @@ if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMet
         elseif useNeurosuiteWaveforms
             waveforms = LoadNeurosuiteWaveforms(spikes,session,timeRestriction);
         elseif any(~isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % ,'filtWaveform_std'
-            spikes = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,'forceReload',true,'spikes',spikes,'basepath',basepath);
+            spikes = loadSpikes('basename',basename,'clusteringformat',session.spikeSorting.format{1},'clusteringpath',clusteringpath,'forceReload',true,'spikes',spikes,'basepath',basepath);
             %             spikes = GetWaveformsFromDat(spikes,sessionInfo);
             waveforms.filtWaveform = spikes.filtWaveform;
             if ~isfield(spikes,'timeWaveform')
@@ -570,7 +570,7 @@ end
 if any(contains(metrics,{'perturbation_metrics','all'})) && ~any(contains(excludeMetrics,{'perturbation_metrics'}))
     if exist(fullfile(basepath,'optogenetics.mat'),'file')
         disp('* Calculating perturbation metrics');
-        spikes2 = loadClusteringData(basename,session.spikeSorting.format{1},clusteringpath,1,'basepath',basepath);
+        spikes2 = loadSpikes('basename',basename,'clusteringformat',session.spikeSorting.format{1},'clusteringpath',clusteringpath,'basepath',basepath);
         if isfield(cell_metrics,'optoPSTH')
             cell_metrics = rmfield(cell_metrics,'optoPSTH');
         end
@@ -645,6 +645,7 @@ if max(cellfun(@max,spikes.times))/firingRateAcrossTime_binsize<40
 end
 cell_metrics.general.firingRateAcrossTime.x_edges = [0:firingRateAcrossTime_binsize:max(cellfun(@max,spikes.times))];
 cell_metrics.general.firingRateAcrossTime.x_bins = cell_metrics.general.firingRateAcrossTime.x_edges(1:end-1)+firingRateAcrossTime_binsize/2;
+
 cell_metrics.general.firingRateAcrossTime.boundaries = cumsum(session.epochs.duration);
 cell_metrics.general.firingRateAcrossTime.boundaries_labels = session.epochs.behavioralParadigm;
 % cell_metrics.firingRateAcrossTime = mat2cell(zeros(length(cell_metrics.general.firingRateAcrossTime.x_bins),cell_metrics.general.cellCount));
