@@ -21,6 +21,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   excludeMetrics         - Metrics to exclude
 %   removeMetrics          - Metrics to remove (supports only deepSuperficial at this point)
 %   keepCellClassification - Keep existing cell type classifications
+%   manuelAdjustMonoSyn    - Manually adjust monosynaptic connections in the pipeline (requires user input)
 %   timeRestriction        - Any time intervals to exclude
 %   useNeurosuiteWaveforms - Use Neurosuite files to get waveforms and PCAs
 %   showGUI                - Show a GUI that allows you to adjust the input parameters/settings
@@ -57,6 +58,7 @@ addParameter(p,'removeMetrics',{'none'},@isstr);
 addParameter(p,'timeRestriction',[],@isnumeric);
 addParameter(p,'useNeurosuiteWaveforms',false,@islogical);
 addParameter(p,'keepCellClassification',true,@islogical);
+addParameter(p,'manuelAdjustMonoSyn',true,@islogical);
 addParameter(p,'showGUI',true,@islogical);
 
 addParameter(p,'forceReload',false,@islogical);
@@ -78,6 +80,7 @@ removeMetrics = p.Results.removeMetrics;
 timeRestriction = p.Results.timeRestriction;
 useNeurosuiteWaveforms = p.Results.useNeurosuiteWaveforms;
 keepCellClassification = p.Results.keepCellClassification;
+manuelAdjustMonoSyn = p.Results.manuelAdjustMonoSyn;
 showGUI = p.Results.showGUI;
 
 forceReload = p.Results.forceReload;
@@ -382,7 +385,7 @@ if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(ex
     disp('* Calculating MonoSynaptic connections')
     if ~exist(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'file') || forceReload == true
         spikeIDs = [spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)];
-        mono_res = bz_MonoSynConvClick(spikeIDs,spikes.spindices(:,1),'plot',true);
+        mono_res = bz_MonoSynConvClick(spikeIDs,spikes.spindices(:,1),'plot',manuelAdjustMonoSyn);
         save(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
     else
         disp('  Loading previous detected MonoSynaptic connections')
