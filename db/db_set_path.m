@@ -1,11 +1,28 @@
 function [session,basename, basepath,clusteringpath] = db_set_path(varargin)
+% Loads a session from the database
+% INPUTS
+% varargin described below
+%
+% OUTPUTS
+% session :         session struct containing the db session info
+% basename :        basename of the session
+% basepath :        basepath of the session
+% clusteringpath :  the path to the clustered data.
+
+% By Peter Petersen
+% petersen.peter@gmail.com
+% Last edited: 15-06-2019
 
 p = inputParser;
-addParameter(p,'id',[],@isnumeric);
-addParameter(p,'session',[],@isstr);
-addParameter(p,'sessionstruct',[],@isstruct);
-addParameter(p,'saveMat',true,@islogical);
-addParameter(p,'changeDir',true,@islogical);
+% Inputs
+addParameter(p,'id',[],@isnumeric);             % DB numeric ID
+addParameter(p,'session',[],@isstr);            % DB session name
+addParameter(p,'sessionstruct',[],@isstruct);   % session struct (can be used to generate the paths)
+
+% Parameters
+addParameter(p,'saveMat',true,@islogical);      % Saves the session struct to a mat file
+addParameter(p,'changeDir',true,@islogical);    % change directory to basepath?
+addParameter(p,'loadBuzcode',true,@islogical);  % Loads and saves select info from buzcode sessionInfo 
 
 parse(p,varargin{:})
 
@@ -14,19 +31,18 @@ sessionin = p.Results.session;
 sessionstruct = p.Results.sessionstruct;
 saveMat = p.Results.saveMat;
 changeDir = p.Results.changeDir;
+loadBuzcode = p.Results.loadBuzcode;
 
 if ~isempty(id)
     sessions = db_load_sessions('id',id);
     if isempty(sessions)
         return
     end
-%     session = sessions{1};
 elseif ~isempty(sessionin)
     sessions = db_load_sessions('session',sessionin);
     if isempty(sessions)
         return
     end
-%     session = sessions{1};
 else
     sessions{1} = sessionstruct;
 end
@@ -59,21 +75,40 @@ for i = 1:length(sessions)
     session.general.baseName = basename;
     session.general.basePath =  basepath;
     session.general.clusteringPath = clusteringpath;
+    if session.extracellular.leastSignificantBit==0
+    	session.extracellular.leastSignificantBit = 0.195; % Intan system = 0.195 µV/bit
+    end
     
     if changeDir
-        cd(basepath)
+        try 
+            cd(basepath)
+        catch
+            error('db_set_path: Unable to change to basepath directory')
+        end
+    end
+    
+    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+    % Loading parameters from sessionInfo (Buzcode)
+    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+    if loadBuzcode & exist('bz_getSessionInfo.m','file')
+        sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
+        session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
+        session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
+        session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
+        session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
+        session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
     end
     
     if saveMat
         [stat,mess]=fileattrib(fullfile(basepath, 'session.mat'));
         if stat==0
             try
-                save(fullfile(basepath, 'session.mat'),'session');
+                save(fullfile(basepath, 'session.mat'),'session','-v7.3','-nocompression');
             catch
                 warning('Failed to save session.mat. Location not available');
             end
         elseif mess.UserWrite
-            save(fullfile(basepath, 'session.mat'),'session');
+            save(fullfile(basepath, 'session.mat'),'session','-v7.3','-nocompression');
         else
             warning('Unable to write to session.mat. No writing permissions.');
         end

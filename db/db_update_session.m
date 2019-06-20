@@ -1,6 +1,7 @@
 function session = db_update_session(session,varargin)
 % Peter Petersen
 % petersen.peter@gmail.com
+% Last edited: 17-06-2019
 
 p = inputParser;
 addParameter(p,'forceReload',false,@islogical);
@@ -14,9 +15,9 @@ web_address = [bz_database.rest_api.address, 'entries/' session.general.entryID]
 cd(session.general.basePath)
 sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
 
-% % % % % % % % % % % % % % % % % % % % 
+%% % % % % % % % % % % % % % % % % % % %
 % Extracellular
-% % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % %
 if session.general.duration == 0 | forceReload
     sr = sessionInfo.rates.wideband;
     if exist(fullfile(session.general.basePath,'info.rhd'))
@@ -31,7 +32,7 @@ if session.general.duration == 0 | forceReload
     fname = [session.general.name '.dat'];
     
     temp_ = dir(fname);
-
+    
     session.extracellular.nChannels = nChannels;
     session.extracellular.fileFormat = 'dat';
     session.extracellular.precision = 'int16';
@@ -48,30 +49,30 @@ if session.general.duration == 0 | forceReload
     webwrite(web_address,options,'form_id','143','h1nhs',session.extracellular.nChannels,'wnvla',session.extracellular.sr,'ngvax',session.general.duration,'s2l9r',session.extracellular.nSamples,'jr29w',session.extracellular.precision);
 end
 
-% % % % % % % % % % % % % % % % % % % % 
-% Subsessions
-% % % % % % % % % % % % % % % % % % % % 
-if any(session.subSessions.duration == 0) | forceReload
+%% % % % % % % % % % % % % % % % % % % %
+% Epochs
+% % % % % % % % % % % % % % % % % % % %
+if any(session.epochs.duration == 0) | forceReload
     duration = [];
-    for i = 1:size(session.subSessions.name,2)
+    for i = 1:size(session.epochs.name,2)
         fname = 'amplifier.dat';
-        if exist(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.subSessions.name{i}, fname))
-            temp_ = dir(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.subSessions.name{i}, fname));
-        elseif exist(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.subSessions.name{i}, [session.subSessions.name{i},'.dat']))
-            temp_ = dir(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.subSessions.name{i}, [session.subSessions.name{i},'.dat']));
+        if exist(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.epochs.name{i}, fname))
+            temp_ = dir(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.epochs.name{i}, fname));
+        elseif exist(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.epochs.name{i}, [session.epochs.name{i},'.dat']))
+            temp_ = dir(fullfile(bz_database.repositories.(session.general.repositories{1}), session.general.animal, session.epochs.name{i}, [session.epochs.name{i},'.dat']));
         end
         duration(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
-        web_address1 = [bz_database.rest_api.address,'entries/', num2str(session.subSessions.entryIDs(i))];
+        web_address1 = [bz_database.rest_api.address,'entries/', num2str(session.epochs.entryIDs(i))];
         options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
         webwrite(web_address1,options,'5ssi4',duration(i));
     end
     
-    session.subSessions.duration = duration;
+    session.epochs.duration = duration;
 end
 
-% % % % % % % % % % % % % % % % % % % % 
+%% % % % % % % % % % % % % % % % % % % %
 % SpikeGroups
-% % % % % % % % % % % % % % % % % % % %  
+% % % % % % % % % % % % % % % % % % % %
 jsonStructure = [];
 jsonStructure.form_id = 143; % Form id of sessions
 jsonStructure.ca5yu.form = 191; % Form id of spikeGroups repeatable section
@@ -79,7 +80,7 @@ jsonStructure.fiElD_2463 = length(sessionInfo.spikeGroups.groups); % nSpikeGroup
 
 for i = 1:length(sessionInfo.spikeGroups.groups)
     shank_label = ['shank' num2str(i)];
-    channels = sprintf('%.0f,' , sessionInfo.spikeGroups.groups{i}); channels = channels(1:end-1);
+    channels = sprintf('%.0f, ' , sessionInfo.spikeGroups.groups{i}); channels = channels(1:end-2);
     jsonStructure.ca5yu.(shank_label).fiElD_2460 = i; % Group
     jsonStructure.ca5yu.(shank_label).fiElD_2461 = channels; % Channels
     jsonStructure.ca5yu.(shank_label).fiElD_2562 = ''; % Label
@@ -88,19 +89,119 @@ end
 jsonStructure = jsonencode(jsonStructure);
 jsonStructure = strrep(jsonStructure,'fiElD_','');
 options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
-% options.CertificateFilename=('');
-webwrite(web_address,jsonStructure,options);
+RESPONSE = webwrite(web_address,jsonStructure,options);
+if RESPONSE.success==1
+    disp('Spike groups successfully submitted to db')
+end
 
+% % % % % % % % % % % % % % % % % % % %
+% Channel tags
+% % % % % % % % % % % % % % % % % % % %
+if isfield(sessionInfo,'badchannels')
+    if isfield(session.channelTags,'Bad')
+        session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,sessionInfo.badchannels+1]);
+    else
+        session.channelTags.Bad.channels = sessionInfo.badchannels+1;
+    end
+end
+if isfield(sessionInfo,'channelTags')
+    tagNames = fieldnames(sessionInfo.channelTags);
+    for iTag = 1:length(tagNames)
+        if isfield(session.channelTags,tagNames{iTag})
+            session.channelTags.(tagNames{iTag}).channels = unique([session.channelTags.(tagNames{iTag}).channels,sessionInfo.channelTags.(tagNames{iTag})+1]);
+        else
+            session.channelTags.(tagNames{iTag}).channels = sessionInfo.channelTags.(tagNames{iTag})+1;
+        end
+    end
+end
+db_update_channelTags(session,bz_database)
 
-% SpikeGroups with form-type submission
-% for i = 1:length(sessionInfo.spikeGroups.groups)
-%     i
-%     if i <= length(session.extracellular.spikeGroups.entryIDs)
-%         options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
-%         web_address1 = [bz_database.rest_api.address,'entries/', num2str(session.extracellular.spikeGroups.entryIDs(i))];
-%         Channels = sprintf('%.0f,' , sessionInfo.spikeGroups.groups{i}); channels = channels(1:end-1);
-%         webwrite(web_address1,options,'i08ch',num2str(i),'ji7jw',channels,'wv8l3','1');
-%     else
-%         warning(['SpikeGroup ' num2str(i), ' has not been updated.'])
-%     end
-% end
+%% % % % % % % % % % % % % % % % % % % %
+% Brain regions
+% % % % % % % % % % % % % % % % % % % %
+if isfield(sessionInfo,'region')
+    load BrainRegions.mat
+    regionNames = unique(cellfun(@num2str,sessionInfo.region,'uni',0));
+    regionNames(cellfun('isempty',regionNames)) = [];
+    for iRegion = 1:length(regionNames)
+        if any(strcmp(regionNames(iRegion),BrainRegions(:,2)))
+            session.brainRegions.(regionNames{iRegion}).channels = find(strcmp(regionNames(iRegion),sessionInfo.region));
+        elseif strcmp(regionNames(iRegion),'HPC')
+            session.brainRegions.HIP.channels = find(strcmp(regionNames(iRegion),sessionInfo.region));
+        else
+            warning(['Select brain region does not exist in the Allen Brain Atlas: ' regionNames{iRegion}])
+        end
+    end
+end
+db_update_brainRegions(session,bz_database)
+
+%% % % % % % % % % % % % % % % % % % % %
+% Builtin functions
+% % % % % % % % % % % % % % % % % % % %
+    function db_update_channelTags(session,bz_database)
+        jsonStructure = [];
+        jsonStructure.form_id = 143; % Form id of sessions
+        jsonStructure.uflqe.form = 149; % Form id of channelTags repeatable section
+        
+        namesChannelTags = fieldnames(session.channelTags);
+        for iTag = 1:length(namesChannelTags)
+            shank_label = ['shank' num2str(iTag)];
+            jsonStructure.uflqe.(shank_label).fiElD_1949 = namesChannelTags{iTag};
+            
+            if isfield(session.channelTags.(namesChannelTags{iTag}),'channels') & ~isempty(session.channelTags.(namesChannelTags{iTag}).channels)
+                channels = sprintf('%.0f, ' , session.channelTags.(namesChannelTags{iTag}).channels); channels = channels(1:end-2);
+                jsonStructure.uflqe.(shank_label).fiElD_1950 = channels;
+            end
+            if isfield(session.channelTags.(namesChannelTags{iTag}),'spikeGroups') & ~isempty(session.channelTags.(namesChannelTags{iTag}).spikeGroups)
+                spikeGroups = sprintf('%.0f, ' , session.channelTags.(namesChannelTags{iTag}).spikeGroups); spikeGroups = spikeGroups(1:end-2);
+                jsonStructure.uflqe.(shank_label).fiElD_2360 = spikeGroups;
+            end
+        end
+        jsonStructure = jsonencode(jsonStructure);
+        jsonStructure = strrep(jsonStructure,'fiElD_','');
+        options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+        RESPONSE = webwrite(web_address,jsonStructure,options);
+        if RESPONSE.success==1
+            disp('Channel tags successfully submitted to db')
+        end
+    end
+
+    function db_update_brainRegions(session,bz_database)
+        jsonStructure = [];
+        jsonStructure.form_id = 143; % Form id of sessions
+        jsonStructure.sessionbrainregions.form = 148; % Form id of brainRegions repeatable section
+        load BrainRegions.mat
+        
+        brainRegionAcronyms = fieldnames(session.brainRegions);
+        for iTag = 1:length(brainRegionAcronyms)
+            shank_label = ['shank' num2str(iTag)];
+            
+            idx = find(strcmp(brainRegionAcronyms{iTag},BrainRegions(:,2)));
+            if ~isempty(idx)
+                jsonStructure.sessionbrainregions.(shank_label).fiElD_1943 = BrainRegions(idx,6); 
+                jsonStructure.sessionbrainregions.(shank_label).fiElD_2518 = brainRegionAcronyms{iTag};
+                
+                if isfield(session.brainRegions.(brainRegionAcronyms{iTag}),'channels') & ~isempty(session.brainRegions.(brainRegionAcronyms{iTag}).channels)
+                    channels = sprintf('%.0f, ' , session.brainRegions.(brainRegionAcronyms{iTag}).channels); channels = channels(1:end-2);
+                    jsonStructure.sessionbrainregions.(shank_label).fiElD_1944 = channels;
+                end
+                if isfield(session.brainRegions.(brainRegionAcronyms{iTag}),'spikeGroups') & ~isempty(session.brainRegions.(brainRegionAcronyms{iTag}).spikeGroups)
+                    spikeGroups = sprintf('%.0f, ' , session.brainRegions.(brainRegionAcronyms{iTag}).spikeGroups); spikeGroups = spikeGroups(1:end-2);
+                    jsonStructure.sessionbrainregions.(shank_label).fiElD_1945 = spikeGroups;
+                end
+                if isfield(session.brainRegions.(brainRegionAcronyms{iTag}),'notes') & ~isempty(session.brainRegions.(brainRegionAcronyms{iTag}).notes)
+                    notes = session.brainRegions.(brainRegionAcronyms{iTag}).notes;
+                    jsonStructure.sessionbrainregions.(shank_label).fiElD_2746 = notes;
+                end
+            end
+        end
+        jsonStructure = jsonencode(jsonStructure);
+        jsonStructure = strrep(jsonStructure,'fiElD_','');
+        options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+        RESPONSE = webwrite(web_address,jsonStructure,options);
+        if RESPONSE.success==1
+            disp('Brain regions successfully submitted to db')
+        end
+    end
+
+end

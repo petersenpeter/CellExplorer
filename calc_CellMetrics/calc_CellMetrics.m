@@ -8,22 +8,25 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   Check the wiki of the Cell Explorer for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
 %
 %   INPUTS
-%   id                     - takes a database id as input
-%   session                - takes a database sessionName as input
-%   basepath               - path to session (base directory)
-%   clusteringpath         - path to cluster data if different from basepath
-%   metrics                - which metrics should be calculated. A cell with strings
-%   Examples:                'waveform_metrics','PCA_features','acg_metrics','deepSuperficial',
+%   id                     - Takes a database id as input
+%   session                - Takes a database sessionName as input
+%   sessionStruct          - Takes a sessio struct as input
+%   basepath               - Path to session (base directory)
+%   clusteringpath         - Path to cluster data if different from basepath
+%   showGUI                - Show GUI dialog to adjust settings/parameters
+%   metrics                - Metrics that will be calculated. A cell with strings
+%   Examples:                'waveform_metrics','PCA_features','acg_metrics','c',
 %                            'ripple_metrics','monoSynaptic_connections','spatial_metrics'
 %                            'perturbation_metrics','theta_metrics','psth_metrics'
-%   excludeMetrics         - Any metrics to exclude
-%   removeMetrics          - Any metrics to remove (supports only deepSuperficial at this point)
+%   excludeMetrics         - Metrics to exclude
+%   removeMetrics          - Metrics to remove (supports only deepSuperficial at this point)
 %   keepCellClassification - Keep existing cell type classifications
 %   timeRestriction        - Any time intervals to exclude
 %   useNeurosuiteWaveforms - Use Neurosuite files to get waveforms and PCAs
+%   showGUI                - Show a GUI that allows you to adjust the input parameters/settings
 %   forceReload            - logical. Recalculate existing metrics
 %   submitToDatabase       - logical. Submit cell metrics to database
-%   saveMat                - save metrics to cell_metrics.mat
+%   saveMat                - Save metrics to cell_metrics.mat
 %   saveAs                 - name of .mat file
 %   plots                  - logical. Plot summary figures
 %
@@ -32,9 +35,14 @@ function cell_metrics = calc_CellMetrics(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
+% Last edited: 14-06-2019
+
+% TODO
+% Standardize tracking data
+% Standardize stimulation/event data
 
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Parsing parameters
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 p = inputParser;
@@ -44,11 +52,12 @@ addParameter(p,'sessionStruct',[],@isstruct);
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'clusteringpath',pwd,@isstr);
 addParameter(p,'metrics','all',@iscellstr);
-addParameter(p,'excludeMetrics','none',@iscellstr);
-addParameter(p,'removeMetrics','none',@isstr);
+addParameter(p,'excludeMetrics',{'none'},@iscellstr);
+addParameter(p,'removeMetrics',{'none'},@isstr);
 addParameter(p,'timeRestriction',[],@isnumeric);
 addParameter(p,'useNeurosuiteWaveforms',false,@islogical);
 addParameter(p,'keepCellClassification',true,@islogical);
+addParameter(p,'showGUI',true,@islogical);
 
 addParameter(p,'forceReload',false,@islogical);
 addParameter(p,'submitToDatabase',true,@islogical);
@@ -69,47 +78,80 @@ removeMetrics = p.Results.removeMetrics;
 timeRestriction = p.Results.timeRestriction;
 useNeurosuiteWaveforms = p.Results.useNeurosuiteWaveforms;
 keepCellClassification = p.Results.keepCellClassification;
+showGUI = p.Results.showGUI;
 
 forceReload = p.Results.forceReload;
 submitToDatabase = p.Results.submitToDatabase;
 saveMat = p.Results.saveMat;
 saveAs = p.Results.saveAs;
 plots = p.Results.plots;
-
 timerCalcMetrics = tic;
 
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Loading session metadata from DB or sessionStruct
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if ~isempty(id) || ~isempty(sessionin) || ~isempty(sessionStruct)
     bz_database = db_credentials;
     if ~isempty(id)
         [session, basename, basepath, clusteringpath] = db_set_path('id',id);
-    elseif ~isempty(sessionStruct)
-        [session, basename, basepath, clusteringpath] = db_set_path('session',sessionStruct);
-        session.general.entryID = ''; % DB id
-        session.spikeSorting.entryIDs{1} = ''; % DB id
-    else
+    elseif ~isempty(sessionin)
         [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin);
+    elseif ~isempty(sessionStruct)
+        showGUI = true;
+        if isfield(sessionStruct.general,'basePath') && isfield(sessionStruct.general,'clusteringPath')
+            session = sessionStruct;
+            basename = session.general.name;
+            basepath = session.general.basePath;
+            clusteringpath = session.general.clusteringPath;
+        else
+            [session, basename, basepath, clusteringpath] = db_set_path('sessionstruct',sessionStruct);
+            if isempty(session.general.entryID)
+                session.general.entryID = ''; % DB id
+            end
+            if isempty(session.spikeSorting.entryIDs)
+                session.spikeSorting.entryIDs(1) = ''; % DB id
+            end
+        end
+    else
+        warning('Please provide a session struct or a session name/id to load a session from the DB')
     end
 end
+% If no session struct is provided the template is loaded and the GUI is displayed
+if ~exist('session','var')
+    session = sessionTemplate;
+    showGUI = true;
+end
 
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% showGUI
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Loading parameters from sessionInfo (Buzcode)
+if showGUI
+    parameters = p.Results;
+    parameters.basepath = basepath;
+    parameters.clusteringpath = clusteringpath;
+    
+    % Non-standard parameters: probeSpacing and probeLayout
+    if ~isfield(session.extracellular,'probesVerticalSpacing') & ~isfield(session.extracellular,'probesLayout')
+        session = determineProbeSpacing(session);
+    end
+    [session,parameters,status] = calc_CellMetrics_GUI(session,parameters);
+    if status==0
+        disp('Metrics calculations canceled by user')
+        return
+    end
+    basename = session.general.name;
+    basepath = session.general.basePath;
+    clusteringpath = session.general.clusteringPath;
+    cd(basepath)
+end
+
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Getting spikes
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
-session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
-session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
-session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
-session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
-session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
-save('session.mat','session','-v7.3','-nocompression')
+
 sr = session.extracellular.sr;
 srLfp = session.extracellular.srLfp;
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Getting spikes
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-if session.extracellular.leastSignificantBit==0
-    session.extracellular.leastSignificantBit = 0.195;
-end
 spikes = loadClusteringData(clusteringpath,session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
 
 if ~isfield(spikes,'processinginfo') || ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.4
@@ -134,12 +176,20 @@ if ~isempty(timeRestriction)
     end
 end
 
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Initializing cell_metrics struct
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if exist(fullfile(clusteringpath,[saveAs,'.mat']),'file')
     disp(['Loading existing metrics: ' saveAs])
     load(fullfile(clusteringpath,[saveAs,'.mat']))
 else
     cell_metrics = [];
 end
+
+cell_metrics.general.basepath = basepath;
+cell_metrics.general.basename = basename;
+cell_metrics.general.clusteringpath = clusteringpath;
+cell_metrics.general.cellCount = length(spikes.total);
 
 % if isfield(cell_metrics,'PutativeCellType')
 %     cell_metrics.putativeCellType = cell_metrics.PutativeCellType;
@@ -152,12 +202,7 @@ end
 %     end
 % end
 
-cell_metrics.general.basepath = basepath;
-cell_metrics.general.basename = basename;
-cell_metrics.general.clusteringpath = clusteringpath;
-cell_metrics.general.cellCount = length(spikes.total);
-
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Waveform based calculations
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
@@ -218,7 +263,7 @@ if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMet
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % PCA features based calculations
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'PCA_features','all'})) && ~any(contains(excludeMetrics,{'PCA_features'}))
@@ -236,7 +281,7 @@ if any(contains(metrics,{'PCA_features','all'})) && ~any(contains(excludeMetrics
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % ACG & CCG based classification
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,{'acg_metrics'}))
@@ -268,7 +313,7 @@ if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Deep-Superficial by ripple polarity reversal
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
@@ -292,6 +337,9 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') & (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || forceReload == true)
         lfpExtension = exist_LFP(basepath,basename);
         if ~exist(deepSuperficial_file,'file')
+            if ~isfield(session.extracellular,'probesVerticalSpacing') & ~isfield(session.extracellular,'probesLayout')
+                session = determineProbeSpacing(session);
+            end
             classification_DeepSuperficial(session)
         end
         load(deepSuperficial_file)
@@ -308,7 +356,7 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
     
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Ripple modulation
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'ripple_metrics','all'})) && ~any(contains(excludeMetrics,{'ripple_metrics'}))
@@ -327,7 +375,7 @@ if any(contains(metrics,{'ripple_metrics','all'})) && ~any(contains(excludeMetri
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Pytative MonoSynaptic connections
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(excludeMetrics,{'monoSynaptic_connections'}))
@@ -360,7 +408,7 @@ if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(ex
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Theta related activity
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetrics,{'theta_metrics'}))
@@ -415,8 +463,8 @@ if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetric
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Spatial related metrics 
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Spatial related metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetrics,{'spatial_metrics'}))
     disp('* Calculating spatial metrics');
@@ -513,7 +561,7 @@ if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetr
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Perturbation metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'perturbation_metrics','all'})) && ~any(contains(excludeMetrics,{'perturbation_metrics'}))
@@ -542,7 +590,7 @@ if any(contains(metrics,{'perturbation_metrics','all'})) && ~any(contains(exclud
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % PSTH metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(metrics,{'psth_metrics','all'})) && ~any(contains(excludeMetrics,{'psth_metrics'}))
@@ -577,7 +625,7 @@ if any(contains(metrics,{'psth_metrics','all'})) && ~any(contains(excludeMetrics
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Other metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 session.general.sessionName = session.general.name;
@@ -650,7 +698,7 @@ if ~isfield(cell_metrics,'labels')
     cell_metrics.labels = repmat({''},1,cell_metrics.general.cellCount);
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % cell_classification_putativeCellType
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if ~isfield(cell_metrics,'putativeCellType') || ~keepCellClassification
@@ -670,8 +718,8 @@ if ~isfield(cell_metrics,'putativeCellType') || ~keepCellClassification
     %     cell_metrics.putativeCellType(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & ismember(cell_metrics.putativeCellType, 'Pyramidal Cell')) = repmat({'Pyramidal Cell 1'},sum(cell_metrics.troughtoPeakDerivative>=0.17 & cell_metrics.troughtoPeakDerivative<=0.3 & (ismember(cell_metrics.putativeCellType, 'Pyramidal Cell'))),1);
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Cleaning metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if any(contains(removeMetrics,{'deepSuperficial'}))
     disp('* Removing deepSuperficial metrics')
@@ -687,7 +735,7 @@ if ~isfield(cell_metrics,'deepSuperficial')
     cell_metrics.deepSuperficialDistance = nan(1,cell_metrics.general.cellCount);
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Submitting to database
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if submitToDatabase
@@ -701,7 +749,7 @@ if submitToDatabase
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Adding processing info
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 cell_metrics.general.processinginfo.params.metrics = metrics;
@@ -712,6 +760,7 @@ cell_metrics.general.processinginfo.params.keepCellClassification = keepCellClas
 cell_metrics.general.processinginfo.params.useNeurosuiteWaveforms = useNeurosuiteWaveforms;
 cell_metrics.general.processinginfo.params.forceReload = forceReload;
 cell_metrics.general.processinginfo.params.submitToDatabase = submitToDatabase;
+cell_metrics.general.processinginfo.params.saveAs = saveAs;
 cell_metrics.general.processinginfo.function = 'calc_CellMetrics';
 cell_metrics.general.processinginfo.date = now;
 cell_metrics.general.processinginfo.version = 1.0;
@@ -722,7 +771,7 @@ if exist('deepSuperficialfromRipple') && isfield(deepSuperficialfromRipple,'proc
     cell_metrics.general.processinginfo.deepSuperficialfromRipple = deepSuperficialfromRipple.processinginfo;
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Saving cells
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if saveMat
@@ -737,7 +786,7 @@ if saveMat
     save(fullfile(clusteringpath,[saveAs,'.mat']),'cell_metrics','-v7.3','-nocompression')
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Summary plots
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if plots
@@ -812,6 +861,9 @@ if plots
     end
     
     % Plotting the average ripple with sharp wave across all spike groups
+    deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
+    if exist(deepSuperficial_file,'file')
+        load(deepSuperficial_file)
     figure
     for jj = 1:session.extracellular.nSpikeGroups
         subplot(2,ceil(session.extracellular.nSpikeGroups/2),jj)
@@ -820,26 +872,26 @@ if plots
         % Plotting ripple amplitude along vertical axis
         plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*0.04,'m','linewidth',1)
         
-        for jjj = 1:size(ripple_average{jj},2)
+        for jjj = 1:size(deepSuperficialfromRipple.ripple_average{jj},2)
             % Plotting depth (µm)
-            text(deepSuperficialfromRipple.ripple_time_axis(end)+5,ripple_average{jj}(1,jjj)-(jjj-1)*0.04,[num2str(round(deepSuperficial_ChDistance(ripple_channels{jj}(jjj))))])
+            text(deepSuperficialfromRipple.ripple_time_axis(end)+5,deepSuperficialfromRipple.ripple_average{jj}(1,jjj)-(jjj-1)*0.04,[num2str(round(deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{jj}(jjj))))])
             % Plotting channel number (0 indexes)
-            text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,-(jjj-1)*0.04,num2str(ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
-            plot(deepSuperficialfromRipple.ripple_time_axis,ripple_average{jj}(:,jjj)-(jjj-1)*0.04)
+            text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,-(jjj-1)*0.04,num2str(deepSuperficialfromRipple.ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
+            plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*0.04)
             % Plotting assigned channel labels
-            if strcmp(deepSuperficial_ChClass(ripple_channels{jj}(jjj)),'Superficial')
+            if strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Superficial')
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'or','linewidth',2)
-            elseif strcmp(deepSuperficial_ChClass(ripple_channels{jj}(jjj)),'Deep')
+            elseif strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Deep')
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'ob','linewidth',2)
-            elseif strcmp(deepSuperficial_ChClass(ripple_channels{jj}(jjj)),'Cortical')
+            elseif strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Cortical')
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'og','linewidth',2)
             else
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'ok')
             end
             % Plotting the channel used for the ripple detection if it is part of current spike group
-            if ripple_channel_detector==ripple_channels{jj}(jjj)
-                plot(deepSuperficialfromRipple.ripple_time_axis,ripple_average{jj}(:,jjj)-(jjj-1)*0.04,'k','linewidth',2)
-            end
+%             if ripple_channel_detector==deepSuperficialfromRipple.ripple_channels{jj}(jjj)
+%                 plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*0.04,'k','linewidth',2)
+%             end
         end
         
         title(['Spike group ' num2str(jj)]),xlabel('Time (ms)'),if jj ==1; ylabel(session.general.name, 'Interpreter', 'none'); end
@@ -851,6 +903,7 @@ if plots
         if ceil(session.extracellular.nSpikeGroups/2) == jj || session.extracellular.nSpikeGroups == jj
             ht3 = text(1.05,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
         end
+    end
     end
 end
 

@@ -149,7 +149,7 @@ for iii = 1:length(cell_metrics2)
     cell_metrics_batch.general.batch{iii} = cell_metrics.general;
     cell_metrics_batch.general.paths{iii} = clustering_paths{iii};
     cell_metrics_batch.general.basenames{iii} = cell_metrics.general.basename;
-    
+    cell_metrics_batch.general.saveAs{iii} = saveAs;
     if ~isempty(basepaths{iii})
         cell_metrics_batch.general.basepaths{iii} = basepaths{iii};
     else

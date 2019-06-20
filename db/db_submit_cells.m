@@ -25,7 +25,7 @@ if isempty(session.analysisStats.cellMetrics) || ~strcmp(session.analysisStats.c
     waitbar(0,f_submit_cells,['DB: Adjusting session toggle: ',session.general.name]);
     options2 = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
     web_address2 = [bz_database.rest_api.address, 'entries/' session.general.entryID];
-    webwrite(web_address2,options2,'form_id','143','session_cellmetrics',1,'',length(cell_metrics.entryID));
+    webwrite(web_address2,options2,'form_id','143','session_cellmetrics',1,'',length(cell_metrics.general.cellCount));
 end
 
 % Updating spike count for the selected sorting session
@@ -36,32 +36,44 @@ waitbar(0,f_submit_cells,'DB: Session updated succesfully.');
 
 waitbar(0,f_submit_cells,'DB: Submitting cells to database');
 db_cells = db_load_table('cells',cell_metrics.general.basename);
-
+if ~isempty(db_cells) & length(fieldnames(db_cells))>0
+    cluIDs2  = structfun(@(X) str2num(X.CluID), db_cells,'UniformOutput', true);
+    entryIDs2  = fieldnames(db_cells);
+else
+    cluIDs2 = [];
+end
 for j = 1:size(cell_metrics.sessionID,2)
     if ~ishandle(f_submit_cells)
         break
     end
-
+    
     if isfield(cell_metrics, 'entryID') && length(cell_metrics.entryID) >= j && cell_metrics.entryID(j) > 0 && isfield(db_cells,['id_',num2str(cell_metrics.entryID(j))])
         dialog_text = ['DB: Submitting cells: Cell ' num2str(j),' (Updated)'];
         web_address1 = [bz_database.rest_api.address, 'entries/', num2str(cell_metrics.entryID(j))];
+    elseif any( cluIDs2 == cell_metrics.cluID(j))
+        temp_entryID = entryIDs2{find(cluIDs2 == cell_metrics.cluID(j))};
+        dialog_text = ['DB: Submitting cells: Cell ' num2str(j),' (Updated)'];
+        cell_metrics.entryID(j) = str2num(temp_entryID(4:end));
+        web_address1 = [bz_database.rest_api.address, 'entries/', temp_entryID(4:end)];
+        
     else
         dialog_text = ['DB: Submitting cells: Cell ' num2str(j),'/',num2str(size(cell_metrics.sessionID,2)),' (New)'];
         web_address1 = [bz_database.rest_api.address, 'entries'];
+        
     end
     
     waitbar(j/size(cell_metrics.sessionID,2),f_submit_cells,dialog_text);
     
     jsonStructure = [];
-    jsonStructure.form_id = 192; % Form id of sessions
+    jsonStructure.form_id = 192;
     jsonStructure.user_id = 3;
     jsonStructure.fiElD_2714 = cell_metrics.sessionID(j);
     jsonStructure.fiElD_2721 = cell_metrics.spikeSortingID(j);
     jsonStructure.fiElD_2472 = cell_metrics.cellID(j);
     jsonStructure.fiElD_2747 = cell_metrics.cluID(j);
     jsonStructure.fiElD_1000 = cell_metrics.UID(j);
-    jsonStructure.fiElD_2748 = cell_metrics.spikeCount(j);
-    jsonStructure.fiElD_2447 = cell_metrics.firingRate(j);
+    jsonStructure.fiElD_2475 = cell_metrics.spikeCount(j);
+    jsonStructure.fiElD_2476 = cell_metrics.firingRate(j);
     jsonStructure.fiElD_2478 = cell_metrics.maxWaveformCh(j);
     jsonStructure.fiElD_2477 = cell_metrics.spikeGroup(j);
     jsonStructure.fiElD_2672 = cell_metrics.brainRegion{j};
@@ -87,16 +99,16 @@ for j = 1:size(cell_metrics.sessionID,2)
     end
     jsonStructure.fiElD_2719 = cell_metrics.synapticConnectionsIn(j);
     jsonStructure.fiElD_2720 = cell_metrics.synapticConnectionsOut(j);
-    temp = fieldnames(jsonStructure);
+    cluIDs = fieldnames(jsonStructure);
     
-    jsonStructure = rmfield(jsonStructure,temp(find(struct2array(structfun(@(x) any(isnan(x) | isinf(x)), jsonStructure,'UniformOutput', false)))));
+    jsonStructure = rmfield(jsonStructure,cluIDs(find(struct2array(structfun(@(x) any(isnan(x) | isinf(x)), jsonStructure,'UniformOutput', false)))));
     jsonStructure = jsonencode(jsonStructure);
     jsonStructure = strrep(jsonStructure,'fiElD_','');
     options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
-    temp2 = webwrite(web_address1,jsonStructure,options);
+    entryIDs = webwrite(web_address1,jsonStructure,options);
     
-    if isfield(temp2,'id')
-        cell_metrics.entryID(j) = str2double(temp2.id);
+    if isfield(entryIDs,'id')
+        cell_metrics.entryID(j) = str2double(entryIDs.id);
     end
 end
 

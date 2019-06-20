@@ -1,6 +1,7 @@
 function db_out = db_load_table(table,search_term)
 % By Peter Petersen
 % petersen.peter@gmail.com
+% Last edited: 17-06-2019
 
 switch lower(table)
     % Project info
@@ -13,7 +14,7 @@ switch lower(table)
     % Cell info
     case 'cells';                  formidable_id = 192;
         
-    % Animal info    
+    % Animal info
     case 'animals';                 formidable_id = 129;
     case 'surgeries';               formidable_id = 175;
     case 'probeimplants';           formidable_id = 152;

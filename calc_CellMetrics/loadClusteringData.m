@@ -1,13 +1,22 @@
 function spikes = loadClusteringData(clusteringPath,clusteringMethod,varargin)
 % Load clustered data from multiple pipelines [Current options: Phy, Klustakwik/Neurosuite]
 % Buzcode compatible output. Saves output to a basename.spikes.cellinfo.mat file
-% clusteringPath: path to the clustered data
-% clusteringMethod: clustering method to handle different pipelines: ['phy','klustakwik'/'neurosuite']
-
+%
+% INPUTS
+% clusteringPath:       path to the clustered data
+% clusteringMethod:     clustering method to handle different pipelines: ['phy','klustakwik'/'neurosuite']
+%
+% Other requirements: basename must be supplied either from basepath or
+% directly
+%
 % See description of varargin below
+%
+% OUTPUT
+% spikes:               matlab struct following the buzcode standard
 
 % by Peter Petersen
 % petersen.peter@gmail.com
+% Last edited: 19-06-2019
 
 % Version history
 % 3.2 waveforms for phy data extracted from the raw dat
@@ -133,7 +142,7 @@ if forceReload
             spike_clusters = unique(spike_cluster_index);
             filename1 = fullfile(clusteringPath,'cluster_group.tsv');
             filename2 = fullfile(clusteringPath,'cluster_groups.csv');
-            if exist(fullfile(clusteringPath, 'cluster_ids.npy'))
+            if exist(fullfile(clusteringPath, 'cluster_ids.npy')) && exist(fullfile(clusteringPath, 'shanks.npy')) && exist(fullfile(clusteringPath, 'peak_channel.npy'))
                 cluster_ids = readNPY(fullfile(clusteringPath, 'cluster_ids.npy'));
                 unit_shanks = readNPY(fullfile(clusteringPath, 'shanks.npy'));
                 peak_channel = readNPY(fullfile(clusteringPath, 'peak_channel.npy'))+1;

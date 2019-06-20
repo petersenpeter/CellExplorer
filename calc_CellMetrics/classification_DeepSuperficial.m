@@ -18,18 +18,19 @@ function classification_deepSuperficial(session)
 % session.general.baseName: baseName of the recording, e.g. 'Peter_MS22_180629_110319_concat'
 % session.channelTags.(Bad or Cortical) specifying spikeGroups (1-indexed), channels (1-indexed)
 %   e.g. session.channelTags.Bad.channels = [1,25,128]; session.channelTags.Bad.spikeGroups = [1]
-% session.extracellular.probesVerticalSpacing:  in um. e.g. 20
+% session.extracellular.probesVerticalSpacing: in µm, e.g. 20
 % session.extracellular.probesLayout: ['staggered','linear','poly2','poly3','poly5']
-% session.extracellular.srLfp: e.g. 1250
-% session.extracellular.nChannels: e.g. 128
-% session.extracellular.nSpikeGroups: e.g. 8
+% session.extracellular.srLfp: in Hz, e.g. 1250
+% session.extracellular.nChannels: integer, e.g. 128
+% session.extracellular.nSpikeGroups: integer, e.g. 8
 % session.extracellular.spikeGroups struct following the xml anatomical format
 % 
 % Requirements
-% downsampled (and lowpass filtered) baseName.eeg file in the basePath folder
+% downsampled (and lowpass filtered) baseName.lfp file in the basePath folder
 
 % By Peter Petersen
 % petersen.peter@gmail.com
+% Last edited: 18-06-2019
 
 % Gets basepath and basename from session struct
 basepath = session.general.basePath;
@@ -37,7 +38,11 @@ basename = session.general.baseName;
 
 % Loading detected ripples
 load(fullfile(basepath,[basename,'.ripples.events.mat']));
-ripple_channel_detector = ripples.detectorinfo.detectionparms.channel;
+if isfield(ripples,'detectorinfo') & isfield(ripples.detectorinfo,'detectionparms') & isfield(ripples.detectorinfo.detectionparms,'channel')
+    ripple_channel_detector = ripples.detectorinfo.detectionparms.channel;
+else
+    ripple_channel_detector = 0;
+end
 
 % Determines which spike groups that should be excluded from the analysis
 % by two channelTags: Cortical and Bad
@@ -49,7 +54,7 @@ if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Corti
 end
 
 % Use Bad channelTag for spike groups, that are not working properly (i.e. broken shanks)
-if isfield(session.channelTags,'Bad') && ~isempty(session.channelTags.Bad.spikeGroups)
+if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'spikeGroups') &&~isempty(session.channelTags.Bad.spikeGroups)
     spikeGroupsToExclude = [spikeGroupsToExclude,session.channelTags.Bad.spikeGroups];
 end
 
@@ -60,63 +65,24 @@ end
 %     load(fullfile(basepath, [basename, '.SWR.events.mat']))
 % end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
-% Determines the VerticalSpacing and probe-layout
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
-
-if isfield(session.extracellular,'probesVerticalSpacing') & isfield(session.extracellular,'probesLayout')
-    % Loads probesVerticalSpacing and probesLayout from session struct
-    VerticalSpacing = session.extracellular.probesVerticalSpacing;
+VerticalSpacing = session.extracellular.probesVerticalSpacing;
+if ischar(session.extracellular.probesLayout)
     Layout = session.extracellular.probesLayout;
 else
-    % If no probesVerticalSpacing or probesLayout is given, it will try to load the information from the database
-
-    % Loads the list of silicon probes from the database
-    siliconprobes = struct2cell(db_load_table('siliconprobes'));
-    
-    if ~isempty(session.extracellular.electrodes.siliconProbes)
-        % Get the probe type from the session struct
-        SiliconProbes = session.extracellular.electrodes.siliconProbes;
-    else
-        % if no probe information is given in the session struct, it tries
-        % to get the probe type from probe implants in the database
-        probeimplants = struct2cell(db_load_table('probeimplants',session.general.animal));
-        SiliconProbes = cellstr(string(probeimplants{1}.DynamicProbeLayout));
-    end
-    probeids = [];
-    VerticalSpacingBetweenSites = [];
-    VerticalSpacingBetweenSites_corrected = [];
-    Layout = [];
-    
-    % Determines the best estimate of the vertical spacing across channels for different probe designs.
-    for i =1:length(SiliconProbes)
-        probeids(i) = find(arrayfun(@(n) strcmp(siliconprobes{n}.DescriptiveName, SiliconProbes{1}), 1:numel(siliconprobes)));
-        VerticalSpacingBetweenSites(i) = str2num(siliconprobes{probeids(i)}.VerticalSpacingBetweenSites);
-        Layout{i} = siliconprobes{probeids(i)}.Layout;
-        if any(strcmp(Layout{i},{'staggered','poly2','poly 2','edge'}))
-            VerticalSpacingBetweenSites_corrected(i) = VerticalSpacingBetweenSites(i)/2;
-            conv_length = 3;
-        elseif strcmp(Layout{i},{'linear'})
-            conv_length = 2;
-            VerticalSpacingBetweenSites_corrected(i) = VerticalSpacingBetweenSites(i);
-        elseif any(strcmp(Layout{i},{'poly3','poly 3'}))
-            conv_length = 3;
-            VerticalSpacingBetweenSites_corrected(i) = VerticalSpacingBetweenSites(i)/3;
-        elseif any(strcmp(Layout{i},{'poly5','poly 5'}))
-            conv_length = 5;
-            VerticalSpacingBetweenSites_corrected(i) = VerticalSpacingBetweenSites(i)/5;
-        else
-            % If no probe design is provided, it assumes a staggered/poly2 layout (most common)
-            conv_length = 2;
-            error('No probe layout defined');
-        end
-    end
-    if length(unique(VerticalSpacingBetweenSites_corrected))==1
-        VerticalSpacing = VerticalSpacingBetweenSites_corrected(1);
-    else
-        VerticalSpacing = VerticalSpacingBetweenSites_corrected;
-    end
-    disp(['Vertical spacing applied: ', num2str(VerticalSpacing),' µm'])
+    Layout = session.extracellular.probesLayout{1};
+end
+if any(strcmp(Layout,{'staggered','poly2','poly 2','edge'}))
+    conv_length = 3;
+elseif strcmp(Layout,{'linear'})
+    conv_length = 2;
+elseif any(strcmp(Layout,{'poly3','poly 3'}))
+    conv_length = 3;
+elseif any(strcmp(Layout,{'poly5','poly 5'}))
+    conv_length = 5;
+else
+    % If no probe design is provided, it assumes a staggered/poly2 layout (most common)
+    conv_length = 2;
+    error('No probe layout defined');
 end
 
 ripple_average = [];
@@ -130,7 +96,7 @@ deepSuperficial_ChClass3 = repmat({''},1,nChannels);
 deepSuperficial_ChClass = repmat({''},1,nChannels);
 deepSuperficial_ChDistance3 = nan(1,nChannels);
 deepSuperficial_ChDistance = nan(1,nChannels);
-
+        
 % excluding channels that has the channelTags Bad as the algorithm is sensitive to artifacts
 channels_to_exclude = [];
 if isfield(session.channelTags,'Bad') && ~isempty(session.channelTags.Bad.channels)
@@ -253,7 +219,7 @@ if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Corti
 end
 
 % Removes channel-labels if spike group has channelTags Bad
-if isfield(session.channelTags,'Bad') && ~isempty(session.channelTags.Bad.spikeGroups)
+if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'spikeGroups') && ~isempty(session.channelTags.Bad.spikeGroups)
     for jj = session.channelTags.Bad.spikeGroups
         deepSuperficial_ChClass3(ripple_channels{jj}) = repmat({''},length(ripple_channels{jj}),1);
         deepSuperficial_ChClass(ripple_channels{jj}) = repmat({''},length(ripple_channels{jj}),1);
@@ -277,7 +243,9 @@ deepSuperficialfromRipple.ripple_time_axis = ripple_time_axis;
 deepSuperficialfromRipple.ripple_channels = ripple_channels; %  index 1 for channels
 deepSuperficialfromRipple.SWR_diff = SWR_diff;
 deepSuperficialfromRipple.SWR_amplitude = SWR_amplitude;
-deepSuperficialfromRipple.detectorinfo = ripples.detectorinfo;
+if isfield(ripples,'detectorinfo')
+    deepSuperficialfromRipple.detectorinfo = ripples.detectorinfo;
+end
 deepSuperficialfromRipple.processinginfo.function = 'classification_deepSuperficial';
 deepSuperficialfromRipple.processinginfo.date = now;
 deepSuperficialfromRipple.processinginfo.params.verticalSpacing = VerticalSpacing;
@@ -328,4 +296,4 @@ for jj = 1:session.extracellular.nSpikeGroups
         ht3 = text(1.05,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
     end
 end
-save(gcf,'deepSuperficial_classification_fromRipples.png');
+saveas(gcf,'deepSuperficial_classification_fromRipples.png');

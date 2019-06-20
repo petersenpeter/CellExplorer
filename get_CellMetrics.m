@@ -28,7 +28,7 @@ function [cell_metrics_idxs, cell_metrics] = get_CellMetrics(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% 24-05-2019
+% Last edited: 24-05-2019
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
