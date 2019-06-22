@@ -546,7 +546,7 @@ end
 UI.title = uicontrol('Style','text','Position',[100 410 350 10],'Units','normalized','String',{'Cell details'},'HorizontalAlignment','center','FontSize',13);
 
 % Benchmark with display time in seconds for most recent plot call
-UI.benchmark = uicontrol('Style','text','Position',[3 410 100 10],'Units','normalized','String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3]);
+UI.benchmark = uicontrol('Style','text','Position',[3 410 150 10],'Units','normalized','String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3]);
 
 % Maximazing figure to full screen
 if ~verLessThan('matlab', '9.4')
@@ -2650,8 +2650,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         else
             ClickedCells = [ClickedCells,subset(event.Indices(1))];
         end
-        UI.benchmark.String = [num2str(length(ClickedCells)), ' cells selected'];
+        if length(ClickedCells)<11
+            UI.benchmark.String = [num2str(length(ClickedCells)), ' cells selected: ' num2str(regexprep(num2str(ClickedCells),'\s+',', ')) ''];
+        else
+            UI.benchmark.String = [num2str(length(ClickedCells)), ' cells selected: ', num2str(regexprep(num2str(ClickedCells(1:10)),'\s+',', ')), ' ...'];
+        end
     end
+        % 
 
 % % % % % % % % % % % % % % % % % % % % % %
 
@@ -2661,7 +2666,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             [~,ia,~] = intersect(subset,ClickedCells);
             UI.table.Data(ia,1) = {true};
         end
-        UI.benchmark.String = [num2str(length(ClickedCells)), ' cells selected'];
+        if length(ClickedCells)<11
+            UI.benchmark.String = [num2str(length(ClickedCells)), ' cells selected: ' num2str(regexprep(num2str(ClickedCells),'\s+',', ')) ''];
+        else
+            UI.benchmark.String = [num2str(length(ClickedCells)), ' cells selected: ', num2str(regexprep(num2str(ClickedCells(1:10)),'\s+',', ')), ' ...'];
+        end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -3668,9 +3677,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         if mod(j,plotRows(1)); ylabel('Rate (Hz)'); end
                         xticks([-50:10:50])
                         xlim([-50,50])
-                        %                             if length(plot_cells) > 2 & j < length(plot_cells)
-                        %                                 set(ha(k),'XTickLabel',[]);
-                        %                             end
+                        if length(plot_cells) > 2 & j <= plotRows(2)
+                            set(ha(k),'XTickLabel',[]);
+                        end
                         axis tight, grid on
                         set(ha(k), 'Layer', 'top')
                         k = k+1;
