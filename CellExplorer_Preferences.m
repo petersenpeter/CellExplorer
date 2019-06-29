@@ -44,7 +44,7 @@ UI.settings.groundTruth = {'PV+','NOS1+','GAT1+','SST+'};
 UI.settings.groundTruthMarkers = {'ok','db','sm','*k','+d','p'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
 
 % Cell type classification colors
-UI.settings.cellTypeColors = [[.5,.5,.5];[.2,.8,.2];[.8,.2,.2];[0.8,0.2,0.8];[.2,.2,.8];[0.2,0.8,0.8]];
+UI.settings.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
 
 % Fields used to define the tSNE represetation
 UI.settings.tSNE_calcWideAcg = false; % boolean

@@ -108,7 +108,6 @@ elseif ~isempty(id) || ~isempty(sessionin)
         [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin);
     end
     if exist(fullfile(clusteringpath,[saveAs,'.mat']),'file')
-        disp(['Loading existing metrics: ' saveAs])
         load(fullfile(clusteringpath,[saveAs,'.mat']))
     else
         warning(['Error loading metrics: ' fullfile(clusteringpath,[saveAs,'.mat'])])

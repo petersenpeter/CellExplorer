@@ -27,7 +27,7 @@ function cell_metrics = CellExplorer(varargin)
 % Adjust deepSuperficial channel/spike groups in the GUI
 
 % Shortcuts to built-in functions
-% initializeSession, LoadDatabaseSession, buttonSave, keyPress, defineSpikesPlots, customPlot, GroupAction
+% initializeSession, LoadDatabaseSession, buttonSave, keyPress, defineSpikesPlots, customPlot, GroupAction, brainRegionDlg
 
 p = inputParser;
 
@@ -234,7 +234,7 @@ else
         return
     end
     if exist(fullfile(pwd,'session.mat'))
-        disp('Loading local session.mat')
+        disp('Cell-Explorer: Loading local session.mat')
         load('session.mat')
         if isempty(session.spikeSorting.relativePath)
             clusteringpath = '';
@@ -247,7 +247,7 @@ else
             initializeSession;
         else
             cell_metrics = [];
-            warning('No cell_metrics.mat exist in base folder. Trying to load from the database')
+            warning('Cell-Explorer: No cell_metrics.mat exist in base folder. Trying to load from the database')
             if enableDatabase
                 LoadDatabaseSession;
                 if ~exist('cell_metrics')
@@ -364,7 +364,7 @@ uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[37 2 15 
 colored_string = DefineCellTypeList;
 UI.listbox.cellClassification = uicontrol('Parent',UI.panel.cellAssignment,'Style','listbox','Position',[2 54 50 45],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyPressFcn', {@keyPress});
 
-% Poly select and adding new cell type
+% Poly-select and adding new cell type
 uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 36 24 15],'Units','normalized','String','O Polygon','Callback',@(src,evnt)GroupSelectFromPlot,'KeyPressFcn', {@keyPress});
 uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[27 36 25 15],'Units','normalized','String','+ Cell-type','Callback',@(src,evnt)AddNewCellType,'KeyPressFcn', {@keyPress});
 
@@ -541,12 +541,11 @@ else
     UI.popupmenu.tableType.Value=3; UI.table.Visible='Off';
 end
 
-  
-% Title with details about the selected cell and current session
-UI.title = uicontrol('Style','text','Position',[100 410 350 10],'Units','normalized','String',{'Cell details'},'HorizontalAlignment','center','FontSize',13);
-
 % Benchmark with display time in seconds for most recent plot call
 UI.benchmark = uicontrol('Style','text','Position',[3 410 150 10],'Units','normalized','String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3]);
+
+% Title with details about the selected cell and current session
+UI.title = uicontrol('Style','text','Position',[130 410 350 10],'Units','normalized','String',{'Cell details'},'HorizontalAlignment','center','FontSize',13);
 
 % Maximazing figure to full screen
 if ~verLessThan('matlab', '9.4')
@@ -598,13 +597,15 @@ while ii <= size(cell_metrics.troughToPeak,2)
     end
     if any(groundTruthSelection)
         tagFilter2 = find(cellfun(@(X) ~isempty(X), cell_metrics.groundTruthClassification));
-        filter = [];
-        for i = 1:length(tagFilter2)
-            filter(i,:) = strcmp(cell_metrics.groundTruthClassification{tagFilter2(i)},{UI.settings.groundTruth{groundTruthSelection}});
-        end
-        subsetGroundTruth = [];
-        for j = 1:length({UI.settings.groundTruth{groundTruthSelection}})
-            subsetGroundTruth{j} = tagFilter2(find(filter(:,j)));
+        if ~isempty(tagFilter2)
+            filter = [];
+            for i = 1:length(tagFilter2)
+                filter(i,:) = strcmp(cell_metrics.groundTruthClassification{tagFilter2(i)},{UI.settings.groundTruth{groundTruthSelection}});
+            end
+            subsetGroundTruth = [];
+            for j = 1:length({UI.settings.groundTruth{groundTruthSelection}})
+                subsetGroundTruth{j} = tagFilter2(find(filter(:,j)));
+            end
         end
     end
     
@@ -1190,6 +1191,9 @@ while ii <= size(cell_metrics.troughToPeak,2)
     % Waiting for uiresume call
     uiwait(UI.fig);
     timerVal = tic;
+    if ishandle(UI.fig)
+        UI.benchmark.String = '';
+    end
 end
 
 
@@ -1889,6 +1893,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     if ~isempty(subset) && UI.settings.dispLegend == 1
                         legend(legendScatter, {},'Location','northeast','Box','off','AutoUpdate','off');
                     end
+                    axis tight
                 else
                     text(0.5,0.5,'No state data for this cell','FontWeight','bold','HorizontalAlignment','center')
                 end
@@ -1919,7 +1924,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 
                 if strcmp(spikesPlots.(customPlotSelection).y,'theta_phase')
                     plot(spikes{batchIDs}.(spikesPlots.(customPlotSelection).x){cell_metrics.UID(ii)}(idx_filter),spikes{batchIDs}.(spikesPlots.(customPlotSelection).y){cell_metrics.UID(ii)}(idx_filter)+2*pi,'.','color', col)
-                    yticks([-pi,0,pi,2*pi,3*pi]),yticklabels({'-\pi','0','\pi','2\pi','3\pi'}),ylim([-pi,3*pi])
+                    yticks([-pi,0,pi,2*pi,3*pi]),yticklabels({'-\pi','0','\pi','2\pi','3\pi'}),ylim([-pi,3*pi]), grid on
                 end
                 axis tight
             else
@@ -1998,10 +2003,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             f_waitbar = waitbar(0,'Preparing metrics for tSNE space...','WindowStyle','modal');
             X = cell2mat(cellfun(@(X) cell_metrics.(X),list_tSNE_metrics(indx),'UniformOutput',false));
             UI.settings.tSNE_metrics = list_tSNE_metrics(indx);
+            
             X(isnan(X) | isinf(X)) = 0;
             waitbar(0.1,f_waitbar,'Calculating tSNE space...')
             
             tSNE_metrics.plot = tsne(X','Standardize',true);
+            if size(tSNE_metrics.plot,2)==1
+                tSNE_metrics.plot = [tSNE_metrics.plot,tSNE_metrics.plot];
+            end
             waitbar(1,f_waitbar,'tSNE space calculations complete.')
             uiresume(UI.fig);
             if ishandle(f_waitbar)
@@ -2614,7 +2623,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     HighlightFromPlot(u,v);
                 end
             case 'extend'
-                ccgFromPlot
+                selectCellsForGroupAction
         end
     end
 
@@ -2690,6 +2699,20 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
+    function highlightSelectedCells
+%         axes(UI.panel.subfig_ax1);
+%         UI.panel.subfig_ax1
+        axes(subfig_ax(1))
+        plot(plotX(ClickedCells),plotY(ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+        
+        axes(subfig_ax(2))
+        plot(cell_metrics.troughToPeak(ClickedCells)*1000,cell_metrics.burstIndex_Royer2012(ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+        
+        axes(subfig_ax(3))
+        plot(tSNE_metrics.plot(ClickedCells,1),tSNE_metrics.plot(ClickedCells,2),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9)
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
     function iii = FromPlot(u,v,highlight)
         iii = 0;
         if ~exist('highlight')
@@ -2932,25 +2955,152 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function ccgFromPlot
+    function selectCellsForGroupAction
         % Checkes if any cells have been highlighted, if not asks the user
         % to provide list of cell.
         if isempty(ClickedCells)
-            answer = inputdlg({'Cells to process. E.g. 1:32 or 7,8,9,10'},'Select cells',[1 40],{''});
-            if ~isempty(answer)
-                try
-                    ClickedCells = eval(['[',answer{1},']']);
-                    ClickedCells = ClickedCells(ismember(ClickedCells,1:size(cell_metrics.troughToPeak,2)));
-                catch
-                    MsgLog(['List of cell not formatted correctly'],2)
-                end
+        filterCells.dialog = dialog('Position',[300 300 600 495],'Name','Select & filter cells'); movegui(filterCells.dialog,'center')
+        
+        % Text field
+        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell IDs to process. E.g. 1:32 or 7,8,9,10 (leave empty to select all cells)', 'Position', [10, 470, 580, 15],'HorizontalAlignment','left');
+        filterCells.cellIDs = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [10, 445, 570, 25],'KeyReleaseFcn',@cellSelection1,'HorizontalAlignment','left');
+        
+        % Text field
+        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Metric to filter', 'Position', [10, 420, 180, 15],'HorizontalAlignment','left');
+        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Logic filter', 'Position', [300, 420, 100, 15],'HorizontalAlignment','left');
+        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Value', 'Position', [410, 420, 170, 15],'HorizontalAlignment','left');
+        filterCells.filterDropdown = uicontrol('Parent',filterCells.dialog,'Style','popupmenu','Position',[10, 395, 280, 25],'Units','normalized','String',['Select';fieldsMenu],'Value',1,'HorizontalAlignment','left');
+        filterCells.filterType = uicontrol('Parent',filterCells.dialog,'Style', 'popupmenu', 'String', {'>','<','==','~='}, 'Value',1,'Position', [300, 395, 100, 25],'HorizontalAlignment','left');
+        filterCells.filterInput = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [410, 395, 170, 25],'HorizontalAlignment','left','KeyReleaseFcn',@cellSelection1);
+        
+        % Cell type
+        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell types', 'Position', [10, 375, 280, 15],'HorizontalAlignment','left');
+        cell_class_count = getCellcount(cell_metrics.putativeCellType,UI.settings.cellTypes);
+        filterCells.cellTypes = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 255 280 120],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+        
+        % Brain region
+        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Brain regions', 'Position', [300, 375, 280, 15],'HorizontalAlignment','left');
+        cell_class_count = getCellcount(cell_metrics.brainRegion,groups_ids.brainRegion_num);
+        filterCells.brainRegions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 255 280 120],'Units','normalized','String',strcat(groups_ids.brainRegion_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+        
+        % Session
+        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Sessions', 'Position', [10, 230, 280, 15],'HorizontalAlignment','left');
+        cell_class_count = getCellcount(cell_metrics.sessionName,groups_ids.sessionName_num);
+        filterCells.sessions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 110 280 120],'Units','normalized','String',strcat(groups_ids.sessionName_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+        
+        % Animal
+        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Animals', 'Position', [300, 230, 280, 15],'HorizontalAlignment','left');
+        cell_class_count = getCellcount(cell_metrics.animal,groups_ids.animal_num);
+        filterCells.animals = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 110 280 120],'Units','normalized','String',strcat(groups_ids.animal_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+        
+        % Synaptic effect
+        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Synaptic effect', 'Position', [10, 90, 280, 15],'HorizontalAlignment','left');
+        cell_class_count = getCellcount(cell_metrics.synapticEffect,groups_ids.synapticEffect_num);
+        filterCells.synEffect = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position',  [10 50 280 40],'Units','normalized','String',strcat(groups_ids.synapticEffect_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+        uicontrol('Parent',filterCells.dialog,'Style','pushbutton','Position',[10, 10, 280, 30],'String','OK','Callback',@(src,evnt)cellSelection);
+        uicontrol('Parent',filterCells.dialog,'Style','pushbutton','Position',[300, 10, 280, 30],'String','Cancel','Callback',@(src,evnt)cancelCellSelection);
+%         uicontrol('Parent',filterCells.dialog,'Style','pushbutton','Position',[200, 10, 90, 30],'String','Reset filter','Callback',@(src,evnt)cancelCellSelection);
+        
+        uicontrol(filterCells.cellIDs)
+        uiwait(filterCells.dialog);
+        
+%             answer = inputdlg({'Cells to process. E.g. 1:32 or 7,8,9,10'},'Select cells',[1 40],{''});
+%             if ~isempty(answer)
+%                 try
+%                     ClickedCells = eval(['[',answer{1},']']);
+%                     ClickedCells = ClickedCells(ismember(ClickedCells,1:size(cell_metrics.troughToPeak,2)));
+%                 catch
+%                     MsgLog(['List of cells not formatted correctly'],2)
+%                 end
+%             end
+        else
+            % Calls the group action for highlighted cells
+            if ~isempty(ClickedCells)
+                GroupAction(ClickedCells)
             end
         end
-        updateTableClickedCells
         
-        % Calls the group action for highlighted cells
-        if ~isempty(ClickedCells)
-            GroupAction(ClickedCells)
+        function cell_class_count = getCellcount(plotClas11,plotClasGroups)
+            [~,plotClas11] = ismember(plotClas11,plotClasGroups);
+            cell_class_count = histc(plotClas11,[1:length(plotClasGroups)]);
+            cell_class_count = cellstr(num2str(cell_class_count'))';
+        end
+        
+        function cellSelection1(src,evnt)
+            if strcmpi(evnt.Key,'return')
+                cellSelection
+            end
+            
+        end
+        function cellSelection
+            % Filters the selected cells based on user input
+            ClickedCells0 = ones(1,size(cell_metrics.troughToPeak,2));
+            ClickedCells1 = ones(1,size(cell_metrics.troughToPeak,2));
+            ClickedCells2 = ones(1,size(cell_metrics.troughToPeak,2));
+            ClickedCells3 = ones(1,size(cell_metrics.troughToPeak,2));
+            ClickedCells4 = ones(1,size(cell_metrics.troughToPeak,2));
+            ClickedCells5 = ones(1,size(cell_metrics.troughToPeak,2));
+            % Input field
+            answer = filterCells.cellIDs.String;
+            if ~isempty(answer)
+                try
+                    ClickedCells = eval(['[',answer,']']);
+                    ClickedCells = ClickedCells(ismember(ClickedCells,1:size(cell_metrics.troughToPeak,2)));
+                catch
+                    MsgLog(['List of cells not formatted correctly'],2)
+                end
+            else
+                ClickedCells = 1:size(cell_metrics.troughToPeak,2);
+            end
+            
+            % Filter field % {'Select','>','<','==','~='}
+            if filterCells.filterDropdown.Value > 1 && ~isempty(filterCells.filterInput.String) && isnumeric(str2double(filterCells.filterInput.String))
+                if filterCells.filterType.Value==1 % greater than
+                    ClickedCells0 = cell_metrics.(filterCells.filterDropdown.String{filterCells.filterDropdown.Value}) > str2double(filterCells.filterInput.String);
+                elseif filterCells.filterType.Value==2 % less than
+                    ClickedCells0 = cell_metrics.(filterCells.filterDropdown.String{filterCells.filterDropdown.Value}) < str2double(filterCells.filterInput.String);
+                elseif filterCells.filterType.Value==3 % equal to
+                    ClickedCells0 = cell_metrics.(filterCells.filterDropdown.String{filterCells.filterDropdown.Value}) == str2double(filterCells.filterInput.String);
+                elseif filterCells.filterType.Value==4 % different from
+                    ClickedCells0 = cell_metrics.(filterCells.filterDropdown.String{filterCells.filterDropdown.Value}) ~= str2double(filterCells.filterInput.String);
+                end
+            end
+            
+            % Cell type
+            if ~isempty(filterCells.cellTypes.Value)
+                ClickedCells1 = ismember(cell_metrics.putativeCellType, UI.settings.cellTypes(filterCells.cellTypes.Value));
+            end
+            % Session name
+            if ~isempty(filterCells.sessions.Value)
+                ClickedCells2 = ismember(cell_metrics.sessionName, groups_ids.sessionName_num(filterCells.sessions.Value));
+            end
+            % Brain region
+            if ~isempty(filterCells.brainRegions.Value)
+                ClickedCells3 = ismember(cell_metrics.brainRegion, groups_ids.brainRegion_num(filterCells.brainRegions.Value));
+            end
+            % Synaptic effect
+            if ~isempty(filterCells.synEffect.Value)
+                ClickedCells4 = ismember(cell_metrics.synapticEffect, groups_ids.synapticEffect_num(filterCells.synEffect.Value));
+            end
+            % Animals
+            if ~isempty(filterCells.animals.Value)
+                ClickedCells5 = ismember(cell_metrics.animal, groups_ids.animal_num(filterCells.animals.Value));
+            end
+            
+            % Finding cells fullfilling all criteria
+            ClickedCells = intersect(ClickedCells,find(all([ClickedCells0;ClickedCells1;ClickedCells2;ClickedCells3;ClickedCells4;ClickedCells5])));
+            
+            close(filterCells.dialog)
+            updateTableClickedCells
+            % Calls the group action for highlighted cells
+            if ~isempty(ClickedCells)
+                highlightSelectedCells
+                GroupAction(ClickedCells)
+            end
+        end
+        
+        function cancelCellSelection
+            close(filterCells.dialog)
         end
     end
 
@@ -3506,7 +3656,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         choice = '';
         GoTo_dialog = dialog('Position', [0, 0, 300, 350],'Name','Select action'); movegui(GoTo_dialog,'center')
         
-        actionList = strcat([{'Assign existing cell-type','Assign new cell-type','Assign label','Assign deep/superficial','Assign tag','CCGs ','CCGs (only with selected cell)','Multiple plot actions'},customPlotOptions']);
+        actionList = strcat([{'Assign existing cell-type','Assign new cell-type','Assign label','Assign deep/superficial','Assign tag','CCGs ','CCGs (only with selected cell)','Multiple plot actions','Multiple plot actions (overlapping cells)'},customPlotOptions']);
         brainRegionsList = uicontrol('Parent',GoTo_dialog,'Style', 'ListBox', 'String', actionList, 'Position', [10, 50, 280, 270],'Value',1,'Callback',@(src,evnt)CloseGoTo_dialog(cellIDs));
         uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[10, 10, 135, 30],'String','OK','Callback',@(src,evnt)CloseGoTo_dialog(cellIDs));
         uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[155, 10, 135, 30],'String','Cancel','Callback',@(src,evnt)CancelGoTo_dialog);
@@ -3715,11 +3865,43 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                                 ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
                             end
                         end
-                        
                     end
                 end
                 
-            elseif choice > 8
+            elseif choice == 9
+                % Displayes a new dialog where a number of plot can be
+                % combined and plotted for the highlighted cells. Similar
+                % to choice 8 but the cells are plotted on the same
+                % subplots
+                [selectedActions,tf] = listdlg('PromptString',['Plot actions to perform on ' num2str(length(cellIDs)) ' cells'],'ListString',customPlotOptions','SelectionMode','Multiple','ListSize',[300,350]);
+                if ~isempty(selectedActions)
+                    plot_columns = min([length(cellIDs),5]);
+                    figure('name',['Cell Explorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'])
+                    [plotRows,~]= numSubplots(length(selectedActions));
+                    for j = 1:length(cellIDs)
+                        if BatchMode
+                            batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
+                            general1 = cell_metrics.general.batch{batchIDs1};
+                        else
+                            general1 = cell_metrics.general;
+                            batchIDs1 = 1;
+                        end
+                        if ~isempty(putativeSubset)
+                            a1 = cell_metrics.putativeConnections(putativeSubset,1);
+                            a2 = cell_metrics.putativeConnections(putativeSubset,2);
+                            inbound = find(a2 == cellIDs(j));
+                            outbound = find(a1 == cellIDs(j));
+                        end
+                        for jjj = 1:length(selectedActions)
+                            subplot(plotRows(1),plotRows(2),jjj), hold on
+%                             subplot(plot_columns,length(selectedActions),j,jj,mod(j ,5),['Cell Explorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'])
+                            customPlot(customPlotOptions{selectedActions(jjj)},cellIDs(j),general1,batchIDs1);
+                            title(customPlotOptions{selectedActions(jjj)})
+                        end 
+                    end
+                end
+                
+            elseif choice > 9
                 % Plots any custom plot for selected cells in a single new figure with subplots
                 figure('Name',['Cell Explorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off')
                 for j = 1:length(cellIDs)
@@ -4467,8 +4649,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     
     function LoadDatabaseSession
         % Load sessions from the database.
-        % First, a dialog is shown with sessions from the database with
-        % calculated cell metrics.
+        % Dialog is shown with sessions from the database with calculated cell metrics.
         % Then selected sessions are loaded from the database
         if exist('db_credentials') == 2
             bz_database = db_credentials;
@@ -4478,6 +4659,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 % DB settings
                 options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
                 options.CertificateFilename=('');
+                
+                % Show waitbar while loading DB
+                if isfield(UI,'panel')
+                    loadBD_waitbar = waitbar(0,'Downloading session list. Hold on for a few seconds...','name','Loading metadata from DB','WindowStyle', 'modal');
+                end
                 % Requesting db list
                 bz_db = webread([bz_database.rest_api.address,'views/15356/'],options,'page_size','5000','sorted','1','cellmetrics',1);
                 sessions = loadjson(bz_db.renderedHtml);
@@ -4495,113 +4681,182 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 db_menu_values = db_menu_values(index);
                 db_menu_items2 = strcat(db_menu_items);
                 sessionEnumerator = cellstr(num2str([1:length(db_menu_items2)]'))';
-                sessionList = strcat(sessionEnumerator,{'.  '},db_menu_items2,{'  ('},db_menu_cells(index),{' cells,  '},db_menu_animals(index),{',  '}, db_menu_investigator(index),{',  '},db_menu_repository(index),')');
-                drawnow
-                % Prompt with session list
-                [indx,tf] = listdlg('PromptString',['Select dataset to load'],'ListString',sessionList,'SelectionMode','multiple','ListSize',[550,350]);
-                if ~isempty(indx)
-                    
-                    if length(indx)==1 % Loading single session
-                        try
-                            session = sessions{index(indx)};
-                            basename = session.name;
-                            
-                            if ~any(strcmp(session.repositories{1},fieldnames(bz_database.repositories)))
-                                MsgLog(['The respository ', session.repositories{1} ,' has not been defined on this computer. Please edit db_credentials and provide the path'],4)
-                                edit db_credentials
-                                return
-                            end
-                            if strcmp(session.repositories{1},'NYUshare_Datasets')
-                                Investigator_name = strsplit(session.investigator,' ');
-                                path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
-                                basepath = fullfile(bz_database.repositories.(session.repositories{1}), path_Investigator,session.animal, session.name);
-                            else
-                                basepath = fullfile(bz_database.repositories.(session.repositories{1}), session.animal, session.name);
-                            end
-                            
-                            if ~isempty(session.spikeSorting.relativePath)
-                                clusteringpath = fullfile(basepath, session.spikeSorting.relativePath{1});
-                            else
-                                clusteringpath = basepath;
-                            end
-%                             [session, basename, basepath, clusteringpath] = db_set_path('id',str2double(db_menu_ids(indx)),'saveMat',false);
-                            SWR_in = {};
-                            successMessage = LoadSession;
-                        end
-                        
-                    else % Loading multiple sessions
-                        
-                        % Setting paths from db struct
-                        db_basename = {};
-                        db_basepath = {};
-                        db_clusteringpath = {};
-                        db_basename = sort(cellfun(@(x) x.name,sessions,'UniformOutput',false));
-                        i_db_subset_all = index(indx);
-                        for i_db = 1:length(i_db_subset_all)
-                            i_db_subset = i_db_subset_all(i_db);
-                            if ~any(strcmp(sessions{i_db_subset}.repositories{1},fieldnames(bz_database.repositories)))
-                                MsgLog(['The respository ', sessions{i_db_subset}.repositories{1} ,' has not been defined on this computer. Please edit db_credentials and provide the path'],4)
-                                edit db_credentials
-                                return
-                            end
-                            if strcmp(sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
-                                Investigator_name = strsplit(sessions{i_db_subset}.investigator,' ');
-                                path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
-                                db_basepath{i_db} = fullfile(bz_database.repositories.(sessions{i_db_subset}.repositories{1}), path_Investigator,sessions{i_db_subset}.animal, sessions{i_db_subset}.name);
-                            else
-                                db_basepath{i_db} = fullfile(bz_database.repositories.(sessions{i_db_subset}.repositories{1}), sessions{i_db_subset}.animal, sessions{i_db_subset}.name);
-                            end
-                            
-                            if ~isempty(sessions{i_db_subset}.spikeSorting.relativePath)
-                                db_clusteringpath{i_db} = fullfile(db_basepath{i_db}, sessions{i_db_subset}.spikeSorting.relativePath{1});
-                            else
-                                db_clusteringpath{i_db} = db_basepath{i_db};
-                            end
-                            
-                        end
-                        
-                        try
-                            f_LoadCellMetrics = waitbar(0,' ','name','Cell-metrics: loading batch');
-                            cell_metrics = LoadCellMetricBatch('clusteringpaths', db_clusteringpath,'basepaths',db_basepath,'waitbar_handle',f_LoadCellMetrics);
-%                             cell_metrics = LoadCellMetricBatch('sessionIDs', str2double(db_menu_ids(indx)));
-                            SWR_in = {};
-                            
-                            
-                            if ishandle(f_LoadCellMetrics)
-                                waitbar(1,f_LoadCellMetrics,'Initializing session(s)');
-                            else
-                                disp(['Initializing session(s)']);
-                            end
-                            
-                            initializeSession
-                            if ishandle(f_LoadCellMetrics)
-                                close(f_LoadCellMetrics)
-                            end
-                            if isfield(UI,'panel')
-                                MsgLog([num2str(length(indx)),' session(s) loaded succesfully'],2);
-                            else
-                                disp([num2str(length(indx)),' session(s) loaded succesfully']);
-                            end
-                        catch
-                            disp(['Failed to load dataset from database: ',strjoin(db_menu_items(indx))]);
-                        end
-                        drawnow
-                    end
-                end
+                sessionList = strcat(sessionEnumerator,{' '},db_menu_items2,{' '},db_menu_cells(index),{' '},db_menu_animals(index),{' '}, db_menu_investigator(index),{' '},db_menu_repository(index));
                 
-                if ishandle(UI.fig)
-                    uiresume(UI.fig);
+                % Promt user with a tabel with sessions
+                if ishandle(loadBD_waitbar)
+                    close(loadBD_waitbar)
                 end
+                dataTable = {};
+                dataTable(:,2:7) = [sessionEnumerator;db_menu_items2;db_menu_cells(index);db_menu_animals(index);db_menu_investigator(index);db_menu_repository(index)]';
+                dataTable(:,1) = {false};
+                loadDB.dialog = dialog('Position', [300, 300, 700, 508],'Name','Load sessions from DB','WindowStyle','modal'); movegui(loadDB.dialog,'center')
+                loadDB.sessionList = uitable(loadDB.dialog,'Data',dataTable,'Position',[10, 50, 680, 447],'ColumnWidth',{20 30 210 50 130 110 110},'columnname',{'','#','Session name','Cells','Animal','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false]); % ,'CellSelectionCallback',@ClicktoSelectFromTable
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll);
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll);
+                loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[210, 15, 140, 20],'Units','normalized','String',{'Sort by','Session','Cell count','Animal','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)button_DB_filterList);
+                loadDB.popupmenu.filter = uicontrol('Parent',loadDB.dialog,'Style', 'Edit', 'String', 'Filter', 'Position', [360, 12, 130, 25],'Callback',@(src,evnt)button_DB_filterList,'HorizontalAlignment','left');
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[500, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog);
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[600, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog);
+                uiwait(loadDB.dialog)
             else
                 MsgLog(['Please provide your database credentials in ''db\_credentials.m'' '],2);
                 edit db_credentials
-                
             end
         else
             MsgLog('Database tools not installed');
             msgbox({'Database tools not installed. To install, follow the steps below: ','1. Go to the Cell Explorer Github webpage','2. Download the database tools', '3. Add the db directory to your Matlab path', '4. Provide your credentials in db\_credentials.m and try again.'},createStruct);
         end
         
+        function button_DB_filterList
+            dataTable1 = dataTable;
+            if ~isempty(loadDB.popupmenu.filter.String) && ~strcmp(loadDB.popupmenu.filter.String,'Filter')
+                idx1 = find(contains(sessionList,loadDB.popupmenu.filter.String,'IgnoreCase',true));
+%                 loadDB.sessionList.Data = dataTable(idx,:);
+            else
+                idx1 = 1:size(dataTable,1);
+%                 loadDB.sessionList.Data = dataTable;
+            end
+            
+            if loadDB.popupmenu.sorting.Value == 3 % Cell count
+                temp = cell2mat( cellfun(@(x) x.spikeSorting.cellCount,sessions,'UniformOutput',false));
+                [~,idx2] = sort(temp(index),'descend');
+            elseif loadDB.popupmenu.sorting.Value == 4 % Animal
+                [~,idx2] = sort(db_menu_animals(index));
+            elseif loadDB.popupmenu.sorting.Value == 5 % Investigator
+                [~,idx2] = sort(db_menu_investigator(index));
+            elseif loadDB.popupmenu.sorting.Value == 6 % Data repository
+                [~,idx2] = sort(db_menu_repository(index));
+            else
+                idx2 = 1:size(dataTable,1);
+            end
+            idx2 = intersect(idx2,idx1,'stable');
+            loadDB.sessionList.Data = dataTable(idx2,:);
+
+        end
+        function ClicktoSelectFromTable(src, event)
+            % Called when a table-cell is clicked in the table. Changes to
+            % custom display according what metric is clicked. First column
+            % updates x-axis and second column updates the y-axis
+            
+            if ~isempty(event.Indices) & all(event.Indices(:,2) > 1)
+                loadDB.sessionList.Data(event.Indices(:,1),1) = {true};
+            end
+        end
+        
+        function button_DB_selectAll
+            loadDB.sessionList.Data(:,1) = {true};
+        end
+        
+        function button_DB_deselectAll
+            loadDB.sessionList.Data(:,1) = {false};
+        end
+        function CloseDB_dialog
+            indx = cell2mat(cellfun(@str2double,loadDB.sessionList.Data(find([loadDB.sessionList.Data{:,1}])',2),'un',0));
+            delete(loadDB.dialog);
+            if ~isempty(indx)
+                
+                if length(indx)==1 % Loading single session
+                    try
+                        session = sessions{index(indx)};
+                        basename = session.name;
+                        
+                        if ~any(strcmp(session.repositories{1},fieldnames(bz_database.repositories)))
+                            MsgLog(['The respository ', session.repositories{1} ,' has not been defined on this computer. Please edit db_credentials and provide the path'],4)
+                            edit db_credentials
+                            return
+                        end
+                        if strcmp(session.repositories{1},'NYUshare_Datasets')
+                            Investigator_name = strsplit(session.investigator,' ');
+                            path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
+                            basepath = fullfile(bz_database.repositories.(session.repositories{1}), path_Investigator,session.animal, session.name);
+                        else
+                            basepath = fullfile(bz_database.repositories.(session.repositories{1}), session.animal, session.name);
+                        end
+                        
+                        if ~isempty(session.spikeSorting.relativePath)
+                            clusteringpath = fullfile(basepath, session.spikeSorting.relativePath{1});
+                        else
+                            clusteringpath = basepath;
+                        end
+                        %                             [session, basename, basepath, clusteringpath] = db_set_path('id',str2double(db_menu_ids(indx)),'saveMat',false);
+                        SWR_in = {};
+                        successMessage = LoadSession;
+                    end
+                    
+                else % Loading multiple sessions
+                    
+                    % Setting paths from db struct
+                    db_basename = {};
+                    db_basepath = {};
+                    db_clusteringpath = {};
+                    db_basename = sort(cellfun(@(x) x.name,sessions,'UniformOutput',false));
+                    i_db_subset_all = index(indx);
+                    for i_db = 1:length(i_db_subset_all)
+                        i_db_subset = i_db_subset_all(i_db);
+                        if ~any(strcmp(sessions{i_db_subset}.repositories{1},fieldnames(bz_database.repositories)))
+                            MsgLog(['The respository ', sessions{i_db_subset}.repositories{1} ,' has not been defined on this computer. Please edit db_credentials and provide the path'],4)
+                            edit db_credentials
+                            return
+                        end
+                        if strcmp(sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
+                            Investigator_name = strsplit(sessions{i_db_subset}.investigator,' ');
+                            path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
+                            db_basepath{i_db} = fullfile(bz_database.repositories.(sessions{i_db_subset}.repositories{1}), path_Investigator,sessions{i_db_subset}.animal, sessions{i_db_subset}.name);
+                        else
+                            db_basepath{i_db} = fullfile(bz_database.repositories.(sessions{i_db_subset}.repositories{1}), sessions{i_db_subset}.animal, sessions{i_db_subset}.name);
+                        end
+                        
+                        if ~isempty(sessions{i_db_subset}.spikeSorting.relativePath)
+                            db_clusteringpath{i_db} = fullfile(db_basepath{i_db}, sessions{i_db_subset}.spikeSorting.relativePath{1});
+                        else
+                            db_clusteringpath{i_db} = db_basepath{i_db};
+                        end
+                        
+                    end
+                    
+                    try
+                        f_LoadCellMetrics = waitbar(0,' ','name','Cell-metrics: loading batch');
+                        cell_metrics1 = LoadCellMetricBatch('clusteringpaths', db_clusteringpath,'basepaths',db_basepath,'waitbar_handle',f_LoadCellMetrics);
+                        if ~isempty(cell_metrics1)
+                            cell_metrics = cell_metrics1;
+                        else
+                            return
+                        end
+                        %                             cell_metrics = LoadCellMetricBatch('sessionIDs', str2double(db_menu_ids(indx)));
+                        SWR_in = {};
+                        
+                        if ishandle(f_LoadCellMetrics)
+                            waitbar(1,f_LoadCellMetrics,'Initializing session(s)');
+                        else
+                            disp(['Initializing session(s)']);
+                        end
+                        
+                        initializeSession
+                        if ishandle(f_LoadCellMetrics)
+                            close(f_LoadCellMetrics)
+                        end
+                        if isfield(UI,'panel')
+                            MsgLog([num2str(length(indx)),' session(s) loaded succesfully'],2);
+                        else
+                            disp([num2str(length(indx)),' session(s) loaded succesfully']);
+                        end
+                    catch
+                        disp(['Failed to load dataset from database: ',strjoin(db_menu_items(indx))]);
+                    end
+                end
+            end
+            
+            if ishandle(UI.fig)
+                uiresume(UI.fig);
+            end
+            
+        end
+        
+        function  CancelDB_dialog
+            % Closes the dialog
+            delete(loadDB.dialog);
+        end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -5305,15 +5560,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.panel.subfig_ax7.Visible = 'on';
             UI.panel.subfig_ax8.Visible = 'on';
             UI.panel.subfig_ax9.Visible = 'on';
-            UI.panel.subfig_ax1.Position = [0.09 0.5 0.28 0.5];
-            UI.panel.subfig_ax2.Position = [0.09+0.28 0.5 0.28 0.5];
-            UI.panel.subfig_ax3.Position = [0.09+0.54 0.5 0.28 0.5];
-            UI.panel.subfig_ax4.Position = [0.09 0.25 0.28 0.25];
-            UI.panel.subfig_ax5.Position = [0.09+0.28 0.25 0.28 0.25];
-            UI.panel.subfig_ax6.Position = [0.09+0.54 0.25 0.28 0.251];
-            UI.panel.subfig_ax7.Position = [0.09 0.03 0.28 0.25-0.03];
-            UI.panel.subfig_ax8.Position = [0.09+0.28 0.03 0.28 0.250-0.03];
-            UI.panel.subfig_ax9.Position = [0.09+0.54 0.03 0.28 0.250-0.03];
+            UI.panel.subfig_ax1.Position = [0.09 0.66 0.28 0.33];
+            UI.panel.subfig_ax2.Position = [0.09+0.28 0.66 0.28 0.33];
+            UI.panel.subfig_ax3.Position = [0.09+0.54 0.66 0.28 0.33];
+            UI.panel.subfig_ax4.Position = [0.09 0.33 0.28 0.33];
+            UI.panel.subfig_ax5.Position = [0.09+0.28 0.33 0.28 0.33];
+            UI.panel.subfig_ax6.Position = [0.09+0.54 0.33 0.28 0.331];
+            UI.panel.subfig_ax7.Position = [0.09 0.03 0.28 0.33-0.03];
+            UI.panel.subfig_ax8.Position = [0.09+0.28 0.03 0.28 0.33-0.03];
+            UI.panel.subfig_ax9.Position = [0.09+0.54 0.03 0.28 0.33-0.03];
             UI.popupmenu.plotCount.Value = 6;
             UI.settings.layout = 6;
         elseif UI.settings.layout == 6
@@ -5401,7 +5656,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.panel.subfig_ax8.Visible = 'off';
             UI.panel.subfig_ax9.Visible = 'off';
             UI.panel.subfig_ax1.Position = [0.10 0.024 0.53 0.945];
-            UI.panel.subfig_ax4.Position = [0.09+0.54 0.66 0.28 0.33];
+            UI.panel.subfig_ax4.Position = [0.09+0.54 0.66 0.28 0.315];
             UI.panel.subfig_ax5.Position = [0.09+0.54 0.33 0.28 0.33];
             UI.panel.subfig_ax6.Position = [0.09+0.54 0.0 0.28 0.33];
             UI.popupmenu.plotCount.Value = 1;
@@ -5512,7 +5767,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             case 'z'
                 undoClassification;
             case 'space'
-                ccgFromPlot
+                selectCellsForGroupAction
             case 'backspace'
                 ii_history_reverse;
             case {'add','hyphen'}
