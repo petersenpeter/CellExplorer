@@ -4379,11 +4379,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 cell_metrics = {};
                 cell_metrics_temp = matFileCell_metrics.cell_metrics;
                 cell_metrics.labels = cell_metrics_temp.labels;
-                cell_metrics.tags = cell_metrics_temp.tags;
+                if isfield(cell_metrics_temp,'tags')
+                    cell_metrics.tags = cell_metrics_temp.tags;
+                end
                 cell_metrics.deepSuperficial = cell_metrics_temp.deepSuperficial;
                 cell_metrics.brainRegion = cell_metrics_temp.brainRegion;
                 cell_metrics.putativeCellType = cell_metrics_temp.putativeCellType;
+                if isfield(cell_metrics_temp,'groundTruthClassification')
                 cell_metrics.groundTruthClassification = cell_metrics_temp.groundTruthClassification;
+                end
                 save(fullfile(cell_metricsTemp.general.paths{sessionID}, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'cell_metrics','-v7.3','-nocompression')
                 
                 % Saving new metrics to file
