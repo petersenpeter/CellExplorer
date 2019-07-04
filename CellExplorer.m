@@ -21,7 +21,7 @@ function cell_metrics = CellExplorer(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 07-06-2019
+% Last edited: 04-07-2019
 
 % TODO
 % Adjust deepSuperficial channel/spike groups in the GUI
@@ -68,14 +68,14 @@ SWR_in = p.Results.SWR;
 UI = []; UI.settings.plotZLog = 0; UI.settings.plot3axis = 0; UI.settings.plotXdata = 'firingRate'; UI.settings.plotYdata = 'peakVoltage';
 UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.metricsTableType = 'Metrics'; colorStr = [];
 UI.settings.customCellPlotIn1 = 'Single waveform'; UI.settings.customCellPlotIn2 = 'Single ACG'; UI.settings.deepSuperficial = '';
-UI.settings.acgType = 'Normal'; UI.settings.cellTypeColors = []; UI.settings.monoSynDispIn = ''; UI.settings.layout = 3;
+UI.settings.acgType = 'Normal'; UI.settings.cellTypeColors = []; UI.settings.monoSynDispIn = 'None'; UI.settings.layout = 3;
 UI.settings.displayMenu = 0; UI.settings.displayInhibitory = false; UI.settings.displayExcitatory = false;
 UI.settings.customCellPlotIn3 = 'thetaPhaseResponse'; UI.settings.customCellPlotIn4 = 'firingRateMap';
 UI.settings.customCellPlotIn5 = 'firingRateMap'; UI.settings.customCellPlotIn6 = 'firingRateMap'; UI.settings.plotCountIn = 'GUI 3+3';
 UI.settings.tSNE_calcNarrowAcg = true; UI.settings.tSNE_calcFiltWaveform = true; UI.settings.tSNE_metrics = '';
 UI.settings.tSNE_calcWideAcg = true; UI.settings.dispLegend = 1; UI.settings.tags = {'good','bad','mua','noise','inverseSpike','Other'};
 UI.settings.groundTruthMarkers = {'d','o','s','*','+','p'}; UI.settings.groundTruth = {'PV+','NOS1+','GAT1+'};
-UI.settings.plotWaveformMetrics = 1;
+UI.settings.plotWaveformMetrics = 1; UI.settings.metricsTable = 1;
 
 db_menu_values = []; db_menu_items = []; clusClas = []; plotX = []; plotY = []; plotZ = []; timerVal = tic;
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
@@ -92,15 +92,14 @@ positionsTogglebutton = [[1 29 27 13];[29 29 27 13];[1 15 27 13];[29 15 27 13];[
 plotOptionsToExlude = {'putativeConnections','acg','acg2','filtWaveform','timeWaveform','rawWaveform_std','rawWaveform','tags','groundTruthClassification'};
 menuOptionsToExlude = {'putativeCellType','firingRateMap','firingRateAcrossTime','FiringRateMap','FiringRateAcrossTime','psth','tags','groundTruthClassification'};
 fieldsMenuMetricsToExlude  = {'thetaPhaseResponse','rippleCorrelogram','firingRateMap','FiringRateMap','firing_rate_map','spatialCoherence','firingRateAcrossTime','FiringRateAcrossTime','filtWaveform','timeWaveform','psth','rawWaveform','rawWaveform_std','tags','groundTruthClassification'};
-incoming = []; outgoing = []; connections = []; plotName = '';
+incoming = []; outgoing = []; connections = []; plotName = ''; db = {}; plotConnections = [1 1 1];
 
 
-CellExplorerVersion = 1.34;
+CellExplorerVersion = 1.35;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress});
 hManager = uigetmodemanager(UI.fig);
 
-% UI.bar = uibar('Units','normalized','Position',[0.000 0.975 0.1 0.01],'Min',0,'Max',1,'BackgroundColor',[0.95 0.95 0.95],'BorderColor',[0.95 0.95 0.95],'ForegroundColor','g','value',1);
 
 % % % % % % % % % % % % % % % % % % % % % %
 % User preferences for the Cell Explorer
@@ -110,7 +109,7 @@ CellExplorer_Preferences
 
 
 % % % % % % % % % % % % % % % % % % % % % %
-% Checking for Matlab version requirements (Matlab R2017a)
+% Checking for Matlab version requirement (Matlab R2017a)
 % % % % % % % % % % % % % % % % % % % % % %
 
 if verLessThan('matlab', '9.2')
@@ -137,7 +136,6 @@ if exist('db_credentials') == 2
         enableDatabase = 1;
     else
         enableDatabase = 0;
-        %         disp('Please provide your database credentials in ''db_credentials.m'' ')
     end
 else
     enableDatabase = 0;
@@ -250,7 +248,7 @@ else
             warning('Cell-Explorer: No cell_metrics.mat exist in base folder. Trying to load from the database')
             if enableDatabase
                 LoadDatabaseSession;
-                if ~exist('cell_metrics')
+                if ~exist('cell_metrics') || isempty(cell_metrics)
                     disp('No dataset selected - closing the Cell Explorer')
                     if ishandle(UI.fig)
                         close(UI.fig)
@@ -275,7 +273,7 @@ else
     else
         if enableDatabase
             LoadDatabaseSession;
-            if ~exist('cell_metrics')
+            if ~exist('cell_metrics') || isempty(cell_metrics)
                 disp('No dataset selected - closing the Cell Explorer')
                 if ishandle(UI.fig)
                     close(UI.fig)
@@ -290,6 +288,96 @@ else
         end
     end
     
+end
+
+% % % % % % % % % % % % % % % % % % % % % %
+% Menu
+% % % % % % % % % % % % % % % % % % % % % %
+
+if ~verLessThan('matlab', '9.3')
+    menuLabel = 'Text';
+    menuSelectedFcn = 'MenuSelectedFcn';
+else
+    menuLabel = 'Label';
+    menuSelectedFcn = 'Callback';
+end
+
+UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
+uimenu(UI.menu.file.topMenu,menuLabel,'Load metrics from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
+uimenu(UI.menu.file.topMenu,menuLabel,'Load metrics from database',menuSelectedFcn,@LoadDatabaseSession,'Accelerator','D');
+UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save classification',menuSelectedFcn,@buttonSave,'Separator','on','Accelerator','S');
+uimenu(UI.menu.file.topMenu,menuLabel,'Quit',menuSelectedFcn,@exitCellExplorer,'Separator','on','Accelerator','W');
+
+UI.menu.navigation.topMenu = uimenu(UI.fig,menuLabel,'Navigation');
+UI.menu.navigation.goToCell = uimenu(UI.menu.navigation.topMenu,menuLabel,'Go to cell',menuSelectedFcn,@goToCell,'Accelerator','G');
+UI.menu.navigation.previousSelectedCell = uimenu(UI.menu.navigation.topMenu,menuLabel,'Go to previous select cell',menuSelectedFcn,@ii_history_reverse);
+
+
+UI.menu.edit.topMenu = uimenu(UI.fig,menuLabel,'Classification');
+UI.menu.waveform.undoClassification = uimenu(UI.menu.edit.topMenu,menuLabel,'Undo classification',menuSelectedFcn,@undoClassification,'Accelerator','Z');
+UI.menu.waveform.reclassify_celltypes = uimenu(UI.menu.edit.topMenu,menuLabel,'Auto classification of celltypes',menuSelectedFcn,@reclassify_celltypes,'Accelerator','R');
+UI.menu.waveform.buttonBrainRegion = uimenu(UI.menu.edit.topMenu,menuLabel,'Assign brain region',menuSelectedFcn,@buttonBrainRegion,'Accelerator','B');
+UI.menu.waveform.buttonLabel = uimenu(UI.menu.edit.topMenu,menuLabel,'Assign label',menuSelectedFcn,@buttonLabel,'Accelerator','L');
+
+
+UI.menu.waveform.topMenu = uimenu(UI.fig,menuLabel,'Waveform');
+UI.menu.waveform.showMetrics = uimenu(UI.menu.waveform.topMenu,menuLabel,'Show waveform metrics',menuSelectedFcn,@showWaveformMetrics);
+
+UI.menu.ACG.topMenu = uimenu(UI.fig,menuLabel,'ACG');
+UI.menu.ACG.window.ops(1) = uimenu(UI.menu.ACG.topMenu,menuLabel,'30 msec',menuSelectedFcn,@buttonACG);
+UI.menu.ACG.window.ops(2) = uimenu(UI.menu.ACG.topMenu,menuLabel,'100 msec',menuSelectedFcn,@buttonACG);
+UI.menu.ACG.window.ops(3) = uimenu(UI.menu.ACG.topMenu,menuLabel,'1 sec',menuSelectedFcn,@buttonACG);
+UI.menu.ACG.showFit = uimenu(UI.menu.ACG.topMenu,menuLabel,'Show fit',menuSelectedFcn,@toggleACGfit,'Separator','on','Accelerator','F');
+
+UI.menu.MonoSyn.topMenu = uimenu(UI.fig,menuLabel,'MonoSyn');
+UI.menu.MonoSyn.plotConns.ops(1) = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'Custom','Checked','on',menuSelectedFcn,@updatePlotConnections);
+UI.menu.MonoSyn.plotConns.ops(2) = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'Classic','Checked','on',menuSelectedFcn,@updatePlotConnections);
+UI.menu.MonoSyn.plotConns.ops(3) = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'tSNE','Checked','on',menuSelectedFcn,@updatePlotConnections);
+UI.menu.MonoSyn.showConn.ops(1) = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'None',menuSelectedFcn,@buttonMonoSyn,'Separator','on');
+UI.menu.MonoSyn.showConn.ops(2) = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'Selected',menuSelectedFcn,@buttonMonoSyn);
+UI.menu.MonoSyn.showConn.ops(3) = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'Upstream',menuSelectedFcn,@buttonMonoSyn);
+UI.menu.MonoSyn.showConn.ops(4) = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'Downstream',menuSelectedFcn,@buttonMonoSyn);
+UI.menu.MonoSyn.showConn.ops(5) = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'Up & downstream',menuSelectedFcn,@buttonMonoSyn);
+UI.menu.MonoSyn.showConn.ops(6) = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'All',menuSelectedFcn,@buttonMonoSyn);
+UI.menu.MonoSyn.showConn.ops(find(strcmp({'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'},UI.settings.monoSynDispIn))).Checked = 'on';
+
+UI.menu.MonoSyn.highlightExcitatory = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'Highlight excitatory cells','Separator','on',menuSelectedFcn,@highlightExcitatoryCells,'Accelerator','E');
+UI.menu.MonoSyn.highlightInhibitory = uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'Highlight inhibitory cells',menuSelectedFcn,@highlightInhibitoryCells,'Accelerator','I');
+uimenu(UI.menu.MonoSyn.topMenu,menuLabel,'Adjust monosynaptic connections',menuSelectedFcn,@adjustMonoSyn,'Separator','on','Accelerator','J');
+
+UI.menu.groundTruth.topMenu = uimenu(UI.fig,menuLabel,'Ground truth');
+uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Perform ground truth cell type classification',menuSelectedFcn,@performGroundTruthClassification,'Accelerator','Y');
+uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Load ground truth cell types',menuSelectedFcn,@loadGroundTruth,'Accelerator','U');
+
+UI.menu.tableData.topMenu = uimenu(UI.fig,menuLabel,'Table data');
+UI.menu.tableData.ops(1) = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell metrics',menuSelectedFcn,@buttonShowMetrics);
+UI.menu.tableData.ops(2) = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell types',menuSelectedFcn,@buttonShowMetrics);
+UI.menu.tableData.ops(3) = uimenu(UI.menu.tableData.topMenu,menuLabel,'None',menuSelectedFcn,@buttonShowMetrics);
+
+UI.menu.tSNE.topMenu = uimenu(UI.fig,menuLabel,'tSNE');
+UI.menu.tableData.redefineMetrics = uimenu(UI.menu.tSNE.topMenu,menuLabel,'Define metrics used in t-SNE',menuSelectedFcn,@tSNE_redefineMetrics,'Accelerator','T');
+
+UI.menu.spikeData.topMenu = uimenu(UI.fig,menuLabel,'Spikes');
+uimenu(UI.menu.spikeData.topMenu,menuLabel,'Load spike data',menuSelectedFcn,@defineSpikesPlots,'Accelerator','A');
+
+UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
+uimenu(UI.menu.session.topMenu,menuLabel,'Open directory of current session',menuSelectedFcn,@openSessionDirectory,'Accelerator','C');
+uimenu(UI.menu.session.topMenu,menuLabel,'Open current session in the Buzsaki lab web DB',menuSelectedFcn,@openSessionInWebDB);
+
+UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
+uimenu(UI.menu.help.topMenu,menuLabel,'About the Cell Explorer',menuSelectedFcn,@aboutDialog);
+uimenu(UI.menu.help.topMenu,menuLabel,'Show keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Separator','on');
+uimenu(UI.menu.help.topMenu,menuLabel,'Open preferences',menuSelectedFcn,@LoadPreferences,'Accelerator','P');
+uimenu(UI.menu.help.topMenu,menuLabel,'Open the Cell Explorer''s wiki page on Github',menuSelectedFcn,@openWiki,'Separator','on','Accelerator','V');
+
+if UI.settings.plotWaveformMetrics; UI.menu.waveform.showMetrics.Checked = 'on'; end
+
+if strcmp(UI.settings.acgType,'Normal')
+    UI.menu.ACG.window.ops(2).Checked = 'On';
+elseif strcmp(UI.settings.acgType,'Wide')
+    UI.menu.ACG.window.ops(1).Checked = 'On';
+else
+    UI.menu.ACG.window.ops(3).Checked = 'On';
 end
 
 
@@ -321,21 +409,19 @@ subfig_ax(9) = axes('Parent',UI.panel.subfig_ax9);
 % UI menu panels
 UI.panel.navigation = uipanel('Title','Navigation','TitlePosition','centertop','Position',[0.895 0.927 0.1 0.065],'Units','normalized');
 UI.panel.cellAssignment = uipanel('Title','Cell assignments','TitlePosition','centertop','Position',[0.895 0.643 0.1 0.275],'Units','normalized');
-UI.panel.displaySettings = uipanel('Title','Display Settings','TitlePosition','centertop','Position',[0.895 0.21 0.1 0.323],'Units','normalized');
-UI.panel.loadSave = uipanel('Title','File handling','TitlePosition','centertop','Position',[0.895 0.01 0.1 0.095],'Units','normalized');
+UI.panel.displaySettings = uipanel('Title','Display Settings','TitlePosition','centertop','Position',[0.895 0.165 0.1 0.323],'Units','normalized');
 UI.panel.custom = uipanel('Title','Plot selection','TitlePosition','centertop','Position',[0.005 0.54 0.09 0.435],'Units','normalized');
+% UI.panel.loadSave = uipanel('Title','File handling','TitlePosition','centertop','Position',[0.895 0.01 0.1 0.095],'Units','normalized');
 
 % UI cell assignment tabs
-UI.panel.tabgroup1 = uitabgroup('Position',[0.895 0.530 0.1 0.11],'Units','normalized');
+UI.panel.tabgroup1 = uitabgroup('Position',[0.895 0.493 0.1 0.142],'Units','normalized');
 UI.tabs.tags = uitab(UI.panel.tabgroup1,'Title','Tags');
 UI.tabs.deepsuperficial = uitab(UI.panel.tabgroup1,'Title','D/S');
 
 % UI display settings tabs
-UI.panel.tabgroup2 = uitabgroup('Position',[0.895 0.105 0.1 0.105],'Units','normalized');
+UI.panel.tabgroup2 = uitabgroup('Position',[0.895 0.005 0.1 0.16],'Units','normalized');
 UI.tabs.dispTags = uitab(UI.panel.tabgroup2,'Title','-Tags');
 UI.tabs.dispTags2 = uitab(UI.panel.tabgroup2,'Title','+Tags');
-UI.tabs.synapticConnections = uitab(UI.panel.tabgroup2,'Title','MonoSyn');
-UI.tabs.acg = uitab(UI.panel.tabgroup2,'Title','ACG');
 
 
 % % % % % % % % % % % % % % % % % % % %
@@ -343,7 +429,7 @@ UI.tabs.acg = uitab(UI.panel.tabgroup2,'Title','ACG');
 % % % % % % % % % % % % % % % % % % % %
 
 UI.popupmenu.log = uicontrol('Style','popupmenu','Position',[60 2 300 10],'Units','normalized','String',{},'HorizontalAlignment','left','FontSize',10);
-MsgLog('Welcome to the Cell Explorer. Press H to learn keyboard shortcuts, P to open preferences, or V to visit the wiki')
+MsgLog('Welcome to the Cell Explorer. Press H to learn keyboard shortcuts, +P to open preferences, or +V to visit the wiki')
 
 
 % % % % % % % % % % % % % % % % % % % %
@@ -353,7 +439,7 @@ MsgLog('Welcome to the Cell Explorer. Press H to learn keyboard shortcuts, P to 
 % Navigation buttons
 uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[2 2 15 12],'Units','normalized','String','<','Callback',@(src,evnt)back,'KeyPressFcn', {@keyPress});
 uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[18 2 18 12],'Units','normalized','String','GoTo','Callback',@(src,evnt)goToCell,'KeyPressFcn', {@keyPress});
-uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[37 2 15 12],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
+UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[37 2 15 12],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
 
 
 % % % % % % % % % % % % % % % % % % % %
@@ -374,30 +460,24 @@ UI.pushbutton.brainRegion = uicontrol('Parent',UI.panel.cellAssignment,'Style','
 % Custom labels
 UI.pushbutton.labels = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 3 50 15],'Units','normalized','String',['Label: ', cell_metrics.labels{ii}],'Callback',@(src,evnt)buttonLabel,'KeyPressFcn', {@keyPress});
 
-% uicontrol('Parent',UI.panel.cellAssignment,'Style','text','Position',[2 65 50 10],'Units','normalized','String','Deep-Superficial','HorizontalAlignment','center');
-% UI.listbox.deepSuperficial = uicontrol('Parent',UI.panel.cellAssignment,'Style','listbox','Position',[2 38 50 30],'Units','normalized','String',UI.settings.deepSuperficial,'max',1,'min',1,'Value',cell_metrics.deepSuperficial_num(ii),'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
-
 
 % % % % % % % % % % % % % % % % % % % %
 % Tab panel 1 (right side)
 % % % % % % % % % % % % % % % % % % % %
 
 % Deep/Superficial
-UI.listbox.deepSuperficial = uicontrol('Parent',UI.tabs.deepsuperficial,'Style','listbox','Position',[1 1 56 45],'Units','normalized','String',UI.settings.deepSuperficial,'max',1,'min',1,'Value',cell_metrics.deepSuperficial_num(ii),'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
+UI.listbox.deepSuperficial = uicontrol('Parent',UI.tabs.deepsuperficial,'Style','listbox','Position',[1 1 56 55],'Units','normalized','String',UI.settings.deepSuperficial,'max',1,'min',1,'Value',cell_metrics.deepSuperficial_num(ii),'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
 
-% Tags
-for i = 1:min(length(UI.settings.tags),6)
-    UI.togglebutton.tag(i) = uicontrol('Parent',UI.tabs.tags,'Style','togglebutton','String',UI.settings.tags{i},'Position',positionsTogglebutton(i,:),'Units','normalized','Callback',@(src,evnt)buttonTags(i),'KeyPressFcn', {@keyPress});
+% Tags    
+buttonPosition = getButtonLayout(UI.tabs.tags,UI.settings.tags);
+for i = 1:min(length(UI.settings.tags),10)
+    UI.togglebutton.tag(i) = uicontrol('Parent',UI.tabs.tags,'Style','togglebutton','String',UI.settings.tags{i},'Position',buttonPosition{i},'Units','normalized','Callback',@(src,evnt)buttonTags(i),'KeyPressFcn', {@keyPress});
 end
-
-% % Ground Truth
-% UI.listbox.groundTruth = uicontrol('Parent',UI.tabs.groundTruth,'Style','listbox','Position',[1 1 55 40],'Units','normalized','String',UI.settings.groundTruth,'max',20,'min',0,'Value',1,'KeyPressFcn', {@keyPress}); % 'Callback',@(src,evnt)buttonDeepSuperficial,
 
 
 % % % % % % % % % % % % % % % % % % % %
 % Display settings panel (right side)
 % % % % % % % % % % % % % % % % % % % %
-
 % Select subset of cell type
 updateCellCount
 
@@ -449,44 +529,25 @@ if find(strcmp(UI.settings.plotCountIn,UI.popupmenu.plotCount.String)); UI.popup
 % Tab panel 2 (right side)
 % % % % % % % % % % % % % % % % % % % %
 
-% ACG window size
-uicontrol('Parent',UI.tabs.acg,'Style','text','Position',[5 6 25 10],'Units','normalized','String','Window','HorizontalAlignment','left');
-UI.popupmenu.ACG = uicontrol('Parent',UI.tabs.acg,'Style','popupmenu','Position',[25 7 31 10],'Units','normalized','String',{'30ms','100ms','1s'},'max',1,'min',1,'Value',1,'Callback',@(src,evnt)buttonACG,'KeyPressFcn', {@keyPress});
-if strcmp(UI.settings.acgType,'Normal'); UI.popupmenu.ACG.Value = 2; elseif strcmp(UI.settings.acgType,'Narrow'); UI.popupmenu.ACG.Value = 1; else; UI.popupmenu.ACG.Value = 3; end
-
-UI.checkbox.ACGfit = uicontrol('Parent',UI.tabs.acg,'Style','checkbox','Position',[5 26 40 10],'Units','normalized','String','Show fit','Value',0,'HorizontalAlignment','left','Callback',@(src,evnt)toggleACGfit,'KeyPressFcn', {@keyPress});
-
-% Show mono synaptic connections
-uicontrol('Parent',UI.tabs.synapticConnections,'Style','text','Position',[2 30 25 10],'Units','normalized','String','Connections','HorizontalAlignment','left');
-UI.popupmenu.synMono = uicontrol('Parent',UI.tabs.synapticConnections,'Style','popupmenu','Position',[24 32 34 10],'Units','normalized','String',{'None','Selected','Upstream','Downstream','Up & downstream','All'},'max',1,'min',1,'Value',1,'Callback',@(src,evnt)buttonMonoSyn,'KeyPressFcn', {@keyPress});
-if find(strcmp(UI.settings.monoSynDispIn,UI.popupmenu.synMono.String)); UI.popupmenu.synMono.Value = find(strcmp(UI.settings.monoSynDispIn,UI.popupmenu.synMono.String)); else; UI.popupmenu.synMono.Value = 1; end
-
-% uicontrol('Parent',UI.tabs.synapticConnections,'Style','text','Position',[2 19 50 10],'Units','normalized','String','Synaptic connections','HorizontalAlignment','center');
-UI.checkbox.synMono1 = uicontrol('Parent',UI.tabs.synapticConnections,'Style','checkbox','Position',[3 4 20 10],'Units','normalized','String','Custom','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(UI.fig),'KeyPressFcn', {@keyPress});
-UI.checkbox.synMono2 = uicontrol('Parent',UI.tabs.synapticConnections,'Style','checkbox','Position',[21 4 20 10],'Units','normalized','String','Classic','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(UI.fig),'KeyPressFcn', {@keyPress});
-UI.checkbox.synMono3 = uicontrol('Parent',UI.tabs.synapticConnections,'Style','checkbox','Position',[38 4 18 10],'Units','normalized','String','tSNE','Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)uiresume(UI.fig),'KeyPressFcn', {@keyPress});
-
 % Display settings for tags1
+buttonPosition = getButtonLayout(UI.tabs.dispTags,UI.settings.tags);
 for i = 1:min(length(UI.settings.tags),6)
-    UI.togglebutton.dispTags(i) = uicontrol('Parent',UI.tabs.dispTags,'Style','togglebutton','String',UI.settings.tags{i},'Position',positionsTogglebutton(i,:),'Value',1,'Units','normalized','Callback',@(src,evnt)buttonTags2(i),'KeyPressFcn', {@keyPress});
+    UI.togglebutton.dispTags(i) = uicontrol('Parent',UI.tabs.dispTags,'Style','togglebutton','String',UI.settings.tags{i},'Position',buttonPosition{i},'Value',1,'Units','normalized','Callback',@(src,evnt)buttonTags2(i),'KeyPressFcn', {@keyPress});
 end
 
 % Display settings for tags2
 for i = 1:min(length(UI.settings.tags),6)
-    UI.togglebutton.dispTags2(i) = uicontrol('Parent',UI.tabs.dispTags2,'Style','togglebutton','String',UI.settings.tags{i},'Position',positionsTogglebutton(i,:),'Value',0,'Units','normalized','Callback',@(src,evnt)buttonTags3(i),'KeyPressFcn', {@keyPress});
+    UI.togglebutton.dispTags2(i) = uicontrol('Parent',UI.tabs.dispTags2,'Style','togglebutton','String',UI.settings.tags{i},'Position',buttonPosition{i},'Value',0,'Units','normalized','Callback',@(src,evnt)buttonTags3(i),'KeyPressFcn', {@keyPress});
 end
 
 % % % % % % % % % % % % % % % % % % % %
 % File handling panel (right side)
 % % % % % % % % % % % % % % % % % % % %
 
-% Load database session button
-UI.pushbutton.db = uicontrol('Parent',UI.panel.loadSave,'Style','pushbutton','Position',[2 15 50 12],'Units','normalized','String','Load dataset from database','Callback',@(src,evnt)LoadDatabaseSession,'Visible','on','KeyPressFcn', {@keyPress});
-
 % Save classification
-UI.pushbutton.save = uicontrol('Parent',UI.panel.loadSave,'Style','pushbutton','Position',[2 2 50 12],'Units','normalized','String','Save classification','Callback',@(src,evnt)buttonSave,'KeyPressFcn', {@keyPress});
+% UI.pushbutton.save = uicontrol('Parent',UI.panel.loadSave,'Style','pushbutton','Position',[2 2 50 12],'Units','normalized','String','Save classification','Callback',@(src,evnt)buttonSave,'KeyPressFcn', {@keyPress});
 if ~isempty(classificationTrackChanges)
-    set(UI.pushbutton.save,'ForegroundColor',[0.6350, 0.0780, 0.1840],'fontweight', 'bold')
+    UI.menu.file.save.ForegroundColor = [0.6350 0.0780 0.1840];
 end
 
 % % % % % % % % % % % % % % % % % % % %
@@ -526,19 +587,22 @@ UI.checkbox.legend.Value = UI.settings.dispLegend;
 % % % % % % % % % % % % % % % % % % %
 
 % Table with metrics for selected cell
-UI.table = uitable(UI.fig,'Data',[fieldsMenu,num2cell(table_metrics(1,:)')],'Units','normalized','Position',[0.005 0.028 0.09 0.51],'ColumnWidth',{85, 46},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn', {@keyPress}); % [10 10 150 575] {85, 46} %
-UI.popupmenu.tableType = uicontrol('Style','popupmenu','Position',[3 2 50 10],'Units','normalized','String',{'Table: Cell metrics','Table: Cell types','Table: None'},'max',1,'min',1,'Value',1,'Callback',@(src,evnt)buttonShowMetrics(),'KeyPressFcn', {@keyPress});
-% UI.table.UIContextMenu = uicontextmenu;
+UI.table = uitable(UI.fig,'Data',[fieldsMenu,num2cell(table_metrics(1,:)')],'Units','normalized','Position',[0.005 0.008 0.09 0.53],'ColumnWidth',{85, 46},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn', {@keyPress}); % [10 10 150 575] {85, 46} %
+% UI.popupmenu.tableType = uicontrol('Style','popupmenu','Position',[3 2 50 10],'Units','normalized','String',{'Table: Cell metrics','Table: Cell types','Table: None'},'max',1,'min',1,'Value',1,'Callback',@(src,evnt)buttonShowMetrics(),'KeyPressFcn', {@keyPress});
+
 if strcmp(UI.settings.metricsTableType,'Metrics')
-    UI.popupmenu.tableType.Value=1;
+    UI.settings.metricsTable=1;
+    UI.menu.tableData.ops(1).Checked = 'On';
 elseif strcmp(UI.settings.metricsTableType,'Cells')
-    UI.popupmenu.tableType.Value=2; UI.table.ColumnName = {'','#','Type','Region'}; 
+    UI.settings.metricsTable=2; UI.table.ColumnName = {'','#','Type','Region'};
     UI.table.ColumnEditable = [true false false false];
-%     UI.uicontextmenu.tableMenu1 = uimenu(UI.table.UIContextMenu,'Label','Sort by #','Callback',@sortTable);
-%     UI.uicontextmenu.tableMenu2 = uimenu(UI.table.UIContextMenu,'Label','Sort by Cell type','Callback',@sortTable);
-%     UI.uicontextmenu.tableMenu3 = uimenu(UI.table.UIContextMenu,'Label','Sort by Brain region','Callback',@sortTable);
+    UI.menu.tableData.ops(2).Checked = 'On';
+    %     UI.uicontextmenu.tableMenu1 = uimenu(UI.table.UIContextMenu,'Label','Sort by #','Callback',@sortTable);
+    %     UI.uicontextmenu.tableMenu2 = uimenu(UI.table.UIContextMenu,'Label','Sort by Cell type','Callback',@sortTable);
+    %     UI.uicontextmenu.tableMenu3 = uimenu(UI.table.UIContextMenu,'Label','Sort by Brain region','Callback',@sortTable);
 else
-    UI.popupmenu.tableType.Value=3; UI.table.Visible='Off';
+    UI.settings.metricsTable=3; UI.table.Visible='Off';
+    UI.menu.tableData.ops(3).Checked = 'On';
 end
 
 % Benchmark with display time in seconds for most recent plot call
@@ -717,19 +781,19 @@ while ii <= size(cell_metrics.troughToPeak,2)
     
     % Updating table for selected cell
     updateTableColumnWidth
-    if UI.popupmenu.tableType.Value==1
+    if UI.settings.metricsTable==1
         UI.table.Data = [fieldsMenu,num2cell(table_metrics(ii,:)')];
-    elseif UI.popupmenu.tableType.Value==2
-         dataTable = {};
-         dataTable(:,2:4) = [cellstr(num2str(subset')),cell_metrics.putativeCellType(subset)',cell_metrics.brainRegion(subset)'];
-         dataTable(:,1) = {false};
-         if find(subset==ii)
-             idx = find(subset==ii);
+    elseif UI.settings.metricsTable==2
+        dataTable = {};
+        dataTable(:,2:4) = [cellstr(num2str(subset')),cell_metrics.putativeCellType(subset)',cell_metrics.brainRegion(subset)'];
+        dataTable(:,1) = {false};
+        if find(subset==ii)
+            idx = find(subset==ii);
             dataTable{idx,2} = ['<html><b>&nbsp;',dataTable{idx,2},'</b></html>'];
             dataTable{idx,3} = ['<html><b>',dataTable{idx,3},'</b></html>'];
             dataTable{idx,4} = ['<html><b>',dataTable{idx,4},'</b></html>'];
-         end
-         UI.table.Data = dataTable;
+        end
+        UI.table.Data = dataTable;
     end
     
     % Updating title
@@ -799,7 +863,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
                 plot(plotX(cellsInhibitory_subset), plotY(cellsInhibitory_subset),'ok', 'HitTest','off')
             end
             
-            if  UI.checkbox.synMono1.Value == 1 & ~isempty(putativeSubset)
+            if  plotConnections(1) == 1 & ~isempty(putativeSubset)
                 switch monoSynDisp
                     case 'All'
                         xdata = [plotX(a1);plotX(a2);nan(1,length(a2))];
@@ -852,7 +916,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
             end
             
             % Plotting synaptic projections
-            if  UI.checkbox.synMono1.Value == 1 & ~isempty(putativeSubset)
+            if  plotConnections(1) == 1 & ~isempty(putativeSubset)
                 switch monoSynDisp
                     case 'All'
                         xdata = [plotX(a1);plotX(a2);nan(1,length(a2))];
@@ -1026,7 +1090,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
         end
         
         % Plotting synaptic connections
-        if ~isempty(putativeSubset) && UI.checkbox.synMono2.Value == 1
+        if ~isempty(putativeSubset) && plotConnections(2) == 1
             switch monoSynDisp
                 case 'All'
                     xdata = [cell_metrics.troughToPeak(a1) * 1000;cell_metrics.troughToPeak(a2) * 1000;nan(1,length(a2))];
@@ -1085,7 +1149,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
         
         xlim(fig3_axislimit_x), ylim(fig3_axislimit_y), xlabel('t-SNE')
         
-        if ~isempty(putativeSubset) && UI.checkbox.synMono3.Value == 1
+        if ~isempty(putativeSubset) && plotConnections(3) == 1
             plotX1 = tSNE_metrics.plot(:,1)';
             plotY1 = tSNE_metrics.plot(:,2)';
             
@@ -1376,15 +1440,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             % selected option
             if strcmp(UI.settings.acgType,'Normal')
                 bar_from_patch([-100:100]'/2, cell_metrics.acg2(:,ii),col)
-%                 bar([-100:100]/2,cell_metrics.acg2(:,ii),1,'FaceColor',col,'EdgeColor',col)
+                %                 bar([-100:100]/2,cell_metrics.acg2(:,ii),1,'FaceColor',col,'EdgeColor',col)
                 xticks([-50:10:50]),xlim([-50,50])
             elseif strcmp(UI.settings.acgType,'Narrow')
                 bar_from_patch([-30:30]'/2, cell_metrics.acg2(41+30:end-40-30,ii),col)
-%                 bar([-30:30]/2,cell_metrics.acg2(41+30:end-40-30,ii),1,'FaceColor',col,'EdgeColor',col)
+                %                 bar([-30:30]/2,cell_metrics.acg2(41+30:end-40-30,ii),1,'FaceColor',col,'EdgeColor',col)
                 xticks([-15:5:15]),xlim([-15,15])
             else
                 bar_from_patch([-500:500]', cell_metrics.acg(:,ii),col)
-%                 bar([-500:500],cell_metrics.acg(:,ii),1,'FaceColor',col,'EdgeColor',col)
+                %                 bar([-500:500],cell_metrics.acg(:,ii),1,'FaceColor',col,'EdgeColor',col)
                 xticks([-500:100:500]),xlim([-500,500])
             end
             % ACG fit with a triple-exponential
@@ -1987,7 +2051,129 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function tSNE_redefineMetrics
+    function loadFromFile(~,~)
+        [file,path] = uigetfile('*.mat','Please select a cell_metrics.mat file','cell_metrics.mat');
+        if ~isequal(file,0)
+            cd(path)
+            load(file);
+            initializeSession;
+            try
+                
+            catch
+                MsgLog(['Error loading cell metrics:' path, file],2)
+                return
+            end
+            uiresume(UI.fig);
+            cell_metrics.general.saveAs = file(1:end-4);
+            MsgLog('Session loaded succesful',2)
+            
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function highlightExcitatoryCells(~,~)
+        % Highlight excitatory cells
+        UI.settings.displayExcitatory = ~UI.settings.displayExcitatory;
+        MsgLog(['Toggle highlighting excitatory cells (triangles). Count: ', num2str(length(cellsExcitatory))])
+        if UI.settings.displayExcitatory
+            UI.menu.MonoSyn.highlightExcitatory.Checked = 'on';
+        else
+            UI.menu.MonoSyn.highlightExcitatory.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function highlightInhibitoryCells(~,~)
+        % Highlight inhibitory cells
+        UI.settings.displayInhibitory = ~UI.settings.displayInhibitory;
+        MsgLog(['Toggle highlighting inhibitory cells (circles), Count: ', num2str(length(cellsInhibitory))])
+        if UI.settings.displayInhibitory
+            UI.menu.MonoSyn.highlightInhibitory.Checked = 'on';
+        else
+            UI.menu.MonoSyn.highlightInhibitory.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function adjustMonoSyn(~,~)
+        adjustMonoSyn_UpdateMetrics(cell_metrics)
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function updatePlotConnections(src,event)
+        if strcmp(src.Checked,'on')
+            plotConnections(src.Position) = 0;
+            UI.menu.MonoSyn.plotConns.ops(src.Position).Checked = 'off';
+        else
+            plotConnections(src.Position) = 1;
+            UI.menu.MonoSyn.plotConns.ops(src.Position).Checked = 'on';
+        end
+        uiresume(UI.fig);
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function showWaveformMetrics(~,~)
+        if UI.settings.plotWaveformMetrics==0
+            UI.menu.waveform.showMetrics.Checked = 'on';
+            UI.settings.plotWaveformMetrics = 1;
+        else
+            UI.menu.waveform.showMetrics.Checked = 'off';
+            UI.settings.plotWaveformMetrics = 0;
+        end
+        uiresume(UI.fig);
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function openWiki(~,~)
+        % Opens the Cell Explorer wiki in your browser
+        web('https://github.com/petersenpeter/Cell-Explorer/wiki','-new','-browser')
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function openSessionDirectory(~,~)
+        % Opens the file directory for the selected cell
+        if BatchMode
+            if exist(cell_metrics.general.paths{cell_metrics.batchIDs(ii)})==7
+                cd(cell_metrics.general.paths{cell_metrics.batchIDs(ii)});
+                if ispc
+                    winopen(cell_metrics.general.paths{cell_metrics.batchIDs(ii)});
+                elseif ismac
+                    syscmd = ['open ', cell_metrics.general.paths{cell_metrics.batchIDs(ii)}, ' &'];
+                    system(syscmd);
+                else
+                    filebrowser;
+                end
+            else
+                MsgLog(['File path not available:' general.basepath],2)
+            end
+        else
+            if ispc
+                winopen(pwd);
+            else
+                filebrowser;
+            end
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function openSessionInWebDB(~,~)
+        % Opens the current session in the Buzsaki lab web database
+        web(['https://buzsakilab.com/wp/sessions/?frm_search=', general.basename],'-new','-browser')
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function tSNE_redefineMetrics(~,~)
         subfieldsnames =  fieldnames(cell_metrics);
         subfieldstypes = struct2cell(structfun(@class,cell_metrics,'UniformOutput',false));
         subfieldssizes = struct2cell(structfun(@size,cell_metrics,'UniformOutput',false));
@@ -2024,7 +2210,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function ii_history_reverse
+    function ii_history_reverse(~,~)
         if length(ii_history)>1
             ii_history(end) = [];
             ii = ii_history(end);
@@ -2052,8 +2238,19 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
+    function buttonPosition = getButtonLayout(parentPanelName,buttonLabels)
+        rows = max(ceil(length(buttonLabels)/2),3);
+        positionToogleButtons = getpixelposition(parentPanelName);
+        positionToogleButtons = [positionToogleButtons(3)/2,positionToogleButtons(4)/rows];
+        for i = 1:min(length(buttonLabels),6)
+            buttonPosition{i} = [(1-mod(i,2))*positionToogleButtons(1),(rows-ceil(i/2))*positionToogleButtons(2),positionToogleButtons(1)*0.99,positionToogleButtons(2)*0.99];
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function saveStateToHistory(cellIDs)
-        set(UI.pushbutton.save,'ForegroundColor',[0.6350, 0.0780, 0.1840],'fontweight', 'bold')
+        UI.menu.file.save.ForegroundColor = [0.6350 0.0780 0.1840];
         hist_idx = size(history_classification,2)+1;
         history_classification(hist_idx).cellIDs = cellIDs;
         history_classification(hist_idx).cellTypes = clusClas(cellIDs);
@@ -2086,6 +2283,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         updateCellCount
         updatePlotClas
         updatePutativeCellType
+        uicontrol(UI.pushbutton.next)
         uiresume(UI.fig);
     end
 
@@ -2154,8 +2352,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         updatePlotClas
         updateCount
         uiresume(UI.fig);
-        
-        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -2203,17 +2399,17 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
         end
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function updatePutativeCellType
-    % Updating putativeCellType field
+        % Updating putativeCellType field
         [C, ~, ic] = unique(clusClas,'sorted');
         for i = 1:length(C)
             cell_metrics.putativeCellType(find(ic==i)) = repmat({UI.settings.cellTypes{C(i)}},sum(ic==i),1);
         end
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function updateGroundTruth
@@ -2230,7 +2426,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function buttonLabel
+    function buttonLabel(~,~)
         Label = inputdlg({'Assign label to cell'},'Custom label',[1 40],{cell_metrics.labels{ii}});
         if ~isempty(Label)
             saveStateToHistory(ii);
@@ -2239,7 +2435,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             MsgLog(['Cell ', num2str(ii), ' labeled as ', Label{1}]);
             [~,ID] = findgroups(cell_metrics.labels);
             groups_ids.labels_num = ID;
-            %             classificationTrackChanges = [classificationTrackChanges,ii];
             updatePlotClas
             updateCount
             buttonGroups(1);
@@ -2248,11 +2443,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function buttonBrainRegion
+    function buttonBrainRegion(~,~)
         saveStateToHistory(ii)
         
         if isempty(brainRegions_list)
-            brainRegions = load('brainRegions.mat'); brainRegions = brainRegions.BrainRegions;
+            brainRegions = load('BrainRegions.mat'); brainRegions = brainRegions.BrainRegions;
             brainRegions_list = strcat(brainRegions(:,1),' (',brainRegions(:,2),')');
             brainRegions_acronym = brainRegions(:,2);
             clear brainRegions;
@@ -2399,36 +2594,49 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function buttonACG
-        if UI.popupmenu.ACG.Value == 1
+    function buttonACG(src,event)
+        if src.Position == 1
             UI.settings.acgType = 'Narrow';
-            button_ACG.String = 'ACG: 30ms';
-        elseif UI.popupmenu.ACG.Value == 2
+            UI.menu.ACG.window.ops(1).Checked = 'on';
+            UI.menu.ACG.window.ops(2).Checked = 'off';
+            UI.menu.ACG.window.ops(3).Checked = 'off';
+        elseif src.Position == 2
             UI.settings.acgType = 'Normal';
-            button_ACG.String = 'ACG: 100ms';
-        elseif UI.popupmenu.ACG.Value == 3
+            UI.menu.ACG.window.ops(1).Checked = 'off';
+            UI.menu.ACG.window.ops(2).Checked = 'on';
+            UI.menu.ACG.window.ops(3).Checked = 'off';
+        elseif src.Position == 3
             UI.settings.acgType = 'Wide';
-            button_ACG.String = 'ACG: 1s';
+            UI.menu.ACG.window.ops(2).Checked = 'off';
+            UI.menu.ACG.window.ops(1).Checked = 'off';
+            UI.menu.ACG.window.ops(3).Checked = 'on';
         end
         uiresume(UI.fig);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function buttonMonoSyn
-        if UI.popupmenu.synMono.Value == 1
+    function buttonMonoSyn(src,event)
+        UI.menu.MonoSyn.showConn.ops(1).Checked = 'off';
+        UI.menu.MonoSyn.showConn.ops(2).Checked = 'off';
+        UI.menu.MonoSyn.showConn.ops(3).Checked = 'off';
+        UI.menu.MonoSyn.showConn.ops(4).Checked = 'off';
+        UI.menu.MonoSyn.showConn.ops(5).Checked = 'off';
+        UI.menu.MonoSyn.showConn.ops(6).Checked = 'off';
+        if src.Position == 4
             monoSynDisp = 'None';
-        elseif UI.popupmenu.synMono.Value == 2
+        elseif src.Position == 5
             monoSynDisp = 'Selected';
-        elseif UI.popupmenu.synMono.Value == 3
+        elseif src.Position == 6
             monoSynDisp = 'Upstream';
-        elseif UI.popupmenu.synMono.Value == 4
+        elseif src.Position == 7
             monoSynDisp = 'Downstream';
-        elseif UI.popupmenu.synMono.Value == 5
+        elseif src.Position == 8
             monoSynDisp = 'Up & downstream';
-        elseif UI.popupmenu.synMono.Value == 6
+        elseif src.Position == 9
             monoSynDisp = 'All';
         end
+        UI.menu.MonoSyn.showConn.ops(src.Position-3).Checked = 'on';
         uiresume(UI.fig);
     end
 
@@ -2480,10 +2688,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     direction = -1;
                 end
             else
-%                 [x,y]=gpos(h2.Children(end));
-            end 
-%             if event.VerticalScrollCount<0
-              if direction == 1
+                %                 [x,y]=gpos(h2.Children(end));
+            end
+            %             if event.VerticalScrollCount<0
+            if direction == 1
                 % Negative scroll direction (zoom in)
                 if u < b(1) || u > b(2)
                     % Vertical scrolling
@@ -2517,7 +2725,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         zlim([z1,z2]);
                     end
                 end
-              elseif direction == -1
+            elseif direction == -1
                 % Positive scrolling direction (zoom out)
                 if u < b(1) || u > b(2)
                     % Vertical scrolling
@@ -2584,16 +2792,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         zlim([z1,z2]);
                     end
                 end
-              else
+            else
                 % Reset zoom
                 xlim(globalZoom{axnum}(1,:));
                 ylim(globalZoom{axnum}(2,:));
                 zlim(globalZoom{axnum}(3,:));
-              end
+            end
         end
         
-        function hoverCallback(src, evt)
-
+        function hoverCallback(src,evt)
+            
         end
     end
 
@@ -2635,7 +2843,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % custom display according what metric is clicked. First column
         % updates x-axis and second column updates the y-axis
         
-        if UI.popupmenu.tableType.Value==1 & ~isempty(event.Indices) & size(event.Indices,1) == 1
+        if UI.settings.metricsTable==1 & ~isempty(event.Indices) & size(event.Indices,1) == 1
             if event.Indices(2) == 1
                 UI.popupmenu.xData.Value = event.Indices(1);
                 uicontrol(UI.popupmenu.xData);
@@ -2647,7 +2855,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             
             % Goes to selected cell
-        elseif UI.popupmenu.tableType.Value==2 & ~isempty(event.Indices) & event.Indices(2) > 1 & size(event.Indices,1) == 1
+        elseif UI.settings.metricsTable==2 & ~isempty(event.Indices) & event.Indices(2) > 1 & size(event.Indices,1) == 1
             ii = subset(event.Indices(1));
             uiresume(UI.fig);
         end
@@ -2665,13 +2873,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.benchmark.String = [num2str(length(ClickedCells)), ' cells selected: ', num2str(regexprep(num2str(ClickedCells(1:10)),'\s+',', ')), ' ...'];
         end
     end
-        % 
+%
 
 % % % % % % % % % % % % % % % % % % % % % %
 
     function updateTableClickedCells
-        if UI.popupmenu.tableType.Value==2
-%             UI.table.Data(:,1) = {false};
+        if UI.settings.metricsTable==2
+            %             UI.table.Data(:,1) = {false};
             [~,ia,~] = intersect(subset,ClickedCells);
             UI.table.Data(ia,1) = {true};
         end
@@ -2682,26 +2890,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end
 
-% % % % % % % % % % % % % % % % % % % % % %
-
-    function buttonSelectFromPlot
-        if ~isempty(subset)
-            MsgLog(['Select a cell by clicking a scatter point or line']);
-            if UI.settings.plot3axis
-                rotate3d(subfig_ax(1),'off')
-            end
-            [u,v] = ginput(1);
-            SelectFromPlot(u,v);
-        else
-            MsgLog(['No cells with selected classification']);
-        end
-    end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
     function highlightSelectedCells
-%         axes(UI.panel.subfig_ax1);
-%         UI.panel.subfig_ax1
+        %         axes(UI.panel.subfig_ax1);
+        %         UI.panel.subfig_ax1
         axes(subfig_ax(1))
         plot(plotX(ClickedCells),plotY(ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
         
@@ -2929,6 +3123,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end
 
+    % % % % % % % % % % % % % % % % % % % % % %
+    
+    function exitCellExplorer(~,~)
+        close(UI.fig);
+    end
+    
 % % % % % % % % % % % % % % % % % % % % % %
 
     function bar_from_patch(x_data, y_data,col)
@@ -2959,60 +3159,51 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Checkes if any cells have been highlighted, if not asks the user
         % to provide list of cell.
         if isempty(ClickedCells)
-        filterCells.dialog = dialog('Position',[300 300 600 495],'Name','Select & filter cells'); movegui(filterCells.dialog,'center')
-        
-        % Text field
-        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell IDs to process. E.g. 1:32 or 7,8,9,10 (leave empty to select all cells)', 'Position', [10, 470, 580, 15],'HorizontalAlignment','left');
-        filterCells.cellIDs = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [10, 445, 570, 25],'KeyReleaseFcn',@cellSelection1,'HorizontalAlignment','left');
-        
-        % Text field
-        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Metric to filter', 'Position', [10, 420, 180, 15],'HorizontalAlignment','left');
-        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Logic filter', 'Position', [300, 420, 100, 15],'HorizontalAlignment','left');
-        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Value', 'Position', [410, 420, 170, 15],'HorizontalAlignment','left');
-        filterCells.filterDropdown = uicontrol('Parent',filterCells.dialog,'Style','popupmenu','Position',[10, 395, 280, 25],'Units','normalized','String',['Select';fieldsMenu],'Value',1,'HorizontalAlignment','left');
-        filterCells.filterType = uicontrol('Parent',filterCells.dialog,'Style', 'popupmenu', 'String', {'>','<','==','~='}, 'Value',1,'Position', [300, 395, 100, 25],'HorizontalAlignment','left');
-        filterCells.filterInput = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [410, 395, 170, 25],'HorizontalAlignment','left','KeyReleaseFcn',@cellSelection1);
-        
-        % Cell type
-        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell types', 'Position', [10, 375, 280, 15],'HorizontalAlignment','left');
-        cell_class_count = getCellcount(cell_metrics.putativeCellType,UI.settings.cellTypes);
-        filterCells.cellTypes = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 255 280 120],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
-        
-        % Brain region
-        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Brain regions', 'Position', [300, 375, 280, 15],'HorizontalAlignment','left');
-        cell_class_count = getCellcount(cell_metrics.brainRegion,groups_ids.brainRegion_num);
-        filterCells.brainRegions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 255 280 120],'Units','normalized','String',strcat(groups_ids.brainRegion_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
-        
-        % Session
-        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Sessions', 'Position', [10, 230, 280, 15],'HorizontalAlignment','left');
-        cell_class_count = getCellcount(cell_metrics.sessionName,groups_ids.sessionName_num);
-        filterCells.sessions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 110 280 120],'Units','normalized','String',strcat(groups_ids.sessionName_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
-        
-        % Animal
-        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Animals', 'Position', [300, 230, 280, 15],'HorizontalAlignment','left');
-        cell_class_count = getCellcount(cell_metrics.animal,groups_ids.animal_num);
-        filterCells.animals = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 110 280 120],'Units','normalized','String',strcat(groups_ids.animal_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
-        
-        % Synaptic effect
-        uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Synaptic effect', 'Position', [10, 90, 280, 15],'HorizontalAlignment','left');
-        cell_class_count = getCellcount(cell_metrics.synapticEffect,groups_ids.synapticEffect_num);
-        filterCells.synEffect = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position',  [10 50 280 40],'Units','normalized','String',strcat(groups_ids.synapticEffect_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
-        uicontrol('Parent',filterCells.dialog,'Style','pushbutton','Position',[10, 10, 280, 30],'String','OK','Callback',@(src,evnt)cellSelection);
-        uicontrol('Parent',filterCells.dialog,'Style','pushbutton','Position',[300, 10, 280, 30],'String','Cancel','Callback',@(src,evnt)cancelCellSelection);
-%         uicontrol('Parent',filterCells.dialog,'Style','pushbutton','Position',[200, 10, 90, 30],'String','Reset filter','Callback',@(src,evnt)cancelCellSelection);
-        
-        uicontrol(filterCells.cellIDs)
-        uiwait(filterCells.dialog);
-        
-%             answer = inputdlg({'Cells to process. E.g. 1:32 or 7,8,9,10'},'Select cells',[1 40],{''});
-%             if ~isempty(answer)
-%                 try
-%                     ClickedCells = eval(['[',answer{1},']']);
-%                     ClickedCells = ClickedCells(ismember(ClickedCells,1:size(cell_metrics.troughToPeak,2)));
-%                 catch
-%                     MsgLog(['List of cells not formatted correctly'],2)
-%                 end
-%             end
+            filterCells.dialog = dialog('Position',[300 300 600 495],'Name','Select & filter cells'); movegui(filterCells.dialog,'center')
+            
+            % Text field
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell IDs to process. E.g. 1:32 or 7,8,9,10 (leave empty to select all cells)', 'Position', [10, 470, 580, 15],'HorizontalAlignment','left');
+            filterCells.cellIDs = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [10, 445, 570, 25],'KeyReleaseFcn',@cellSelection1,'HorizontalAlignment','left');
+            
+            % Text field
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Metric to filter', 'Position', [10, 420, 180, 15],'HorizontalAlignment','left');
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Logic filter', 'Position', [300, 420, 100, 15],'HorizontalAlignment','left');
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Value', 'Position', [410, 420, 170, 15],'HorizontalAlignment','left');
+            filterCells.filterDropdown = uicontrol('Parent',filterCells.dialog,'Style','popupmenu','Position',[10, 395, 280, 25],'Units','normalized','String',['Select';fieldsMenu],'Value',1,'HorizontalAlignment','left');
+            filterCells.filterType = uicontrol('Parent',filterCells.dialog,'Style', 'popupmenu', 'String', {'>','<','==','~='}, 'Value',1,'Position', [300, 395, 100, 25],'HorizontalAlignment','left');
+            filterCells.filterInput = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [410, 395, 170, 25],'HorizontalAlignment','left','KeyReleaseFcn',@cellSelection1);
+            
+            % Cell type
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell types', 'Position', [10, 375, 280, 15],'HorizontalAlignment','left');
+            cell_class_count = getCellcount(cell_metrics.putativeCellType,UI.settings.cellTypes);
+            filterCells.cellTypes = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 255 280 120],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            
+            % Brain region
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Brain regions', 'Position', [300, 375, 280, 15],'HorizontalAlignment','left');
+            cell_class_count = getCellcount(cell_metrics.brainRegion,groups_ids.brainRegion_num);
+            filterCells.brainRegions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 255 280 120],'Units','normalized','String',strcat(groups_ids.brainRegion_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            
+            % Session
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Sessions', 'Position', [10, 230, 280, 15],'HorizontalAlignment','left');
+            cell_class_count = getCellcount(cell_metrics.sessionName,groups_ids.sessionName_num);
+            filterCells.sessions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 110 280 120],'Units','normalized','String',strcat(groups_ids.sessionName_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            
+            % Animal
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Animals', 'Position', [300, 230, 280, 15],'HorizontalAlignment','left');
+            cell_class_count = getCellcount(cell_metrics.animal,groups_ids.animal_num);
+            filterCells.animals = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 110 280 120],'Units','normalized','String',strcat(groups_ids.animal_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            
+            % Synaptic effect
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Synaptic effect', 'Position', [10, 90, 280, 15],'HorizontalAlignment','left');
+            cell_class_count = getCellcount(cell_metrics.synapticEffect,groups_ids.synapticEffect_num);
+            filterCells.synEffect = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position',  [10 50 280 40],'Units','normalized','String',strcat(groups_ids.synapticEffect_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            uicontrol('Parent',filterCells.dialog,'Style','pushbutton','Position',[10, 10, 280, 30],'String','OK','Callback',@(src,evnt)cellSelection);
+            uicontrol('Parent',filterCells.dialog,'Style','pushbutton','Position',[300, 10, 280, 30],'String','Cancel','Callback',@(src,evnt)cancelCellSelection);
+            %         uicontrol('Parent',filterCells.dialog,'Style','pushbutton','Position',[200, 10, 90, 30],'String','Reset filter','Callback',@(src,evnt)cancelCellSelection);
+            
+            uicontrol(filterCells.cellIDs)
+            uiwait(filterCells.dialog);
+            
         else
             % Calls the group action for highlighted cells
             if ~isempty(ClickedCells)
@@ -3342,23 +3533,23 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
         end
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function updateTableColumnWidth
         % Updating table column width
-        if UI.popupmenu.tableType.Value==1
+        if UI.settings.metricsTable==1
             pos1 = getpixelposition(UI.table,true);
             pos1 = max(pos1(3),150);
             UI.table.ColumnWidth = {pos1*2/3-10, pos1*1/3-10};
-        elseif UI.popupmenu.tableType.Value==2
+        elseif UI.settings.metricsTable==2
             pos1 = getpixelposition(UI.table,true);
             pos1 = max(pos1(3),150);
             UI.table.ColumnWidth = {18,pos1*2/10, pos1*6/10-38, pos1*2/10};
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
+
+% % % % % % % % % % % % % % % % % % % % % %
 
     function buttonGroups(inpt)
         Colorval = UI.popupmenu.groups.Value;
@@ -3484,17 +3675,33 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         uiresume(UI.fig);
     end
 
-
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function buttonShowMetrics
-        if UI.popupmenu.tableType.Value == 1
+    function buttonShowMetrics(src,event)
+        if exist('src')
+            switch src.Text
+                case 'Cell metrics'
+                    UI.settings.metricsTable = 1;
+                case 'Cell types'
+                    UI.settings.metricsTable = 2;
+                case 'None'
+                    UI.settings.metricsTable = 3;
+            end
+        end
+        if UI.settings.metricsTable==1
+            UI.menu.tableData.ops(1).Checked = 'on';
+            UI.menu.tableData.ops(2).Checked = 'off';
+            UI.menu.tableData.ops(3).Checked = 'off';
             updateTableColumnWidth
             UI.table.ColumnName = {'Metrics',''};
             UI.table.Data = [fieldsMenu,num2cell(table_metrics(ii,:)')];
             UI.table.Visible = 'on';
             UI.table.ColumnEditable = [false false];
-        elseif UI.popupmenu.tableType.Value == 2
+            
+        elseif UI.settings.metricsTable==2
+            UI.menu.tableData.ops(1).Checked = 'off';
+            UI.menu.tableData.ops(2).Checked = 'on';
+            UI.menu.tableData.ops(3).Checked = 'off';
             updateTableColumnWidth
             UI.table.ColumnName = {'','#','Cell type','Region'};
             UI.table.ColumnEditable = [true false false false];
@@ -3510,8 +3717,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.table.Data = dataTable;
             UI.table.Visible = 'on';
             updateTableClickedCells
-        elseif UI.popupmenu.tableType.Value == 3
+        elseif UI.settings.metricsTable==3
             UI.table.Visible = 'off';
+            UI.menu.tableData.ops(1).Checked = 'off';
+            UI.menu.tableData.ops(2).Checked = 'off';
+            UI.menu.tableData.ops(3).Checked = 'on';
         end
     end
 
@@ -3573,24 +3783,25 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function toggleACGfit
+    function toggleACGfit(~,~)
         % Enable/Disable the ACG fit
         if plotAcgFit == 0
             plotAcgFit = 1;
+            UI.menu.ACG.showFit.Checked = 'on';
             UI.checkbox.ACGfit.Value = 1;
             MsgLog('Plotting ACG fit');
         elseif plotAcgFit == 1
             plotAcgFit = 0;
             UI.checkbox.ACGfit.Value = 0;
+            UI.menu.ACG.showFit.Checked = 'off';
             MsgLog('Hiding ACG fit');
-            
         end
         uiresume(UI.fig);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function goToCell
+    function goToCell(~,~)
         if BatchMode
             choice = '';
             GoTo_dialog = dialog('Position', [300, 300, 300, 350],'Name','Go to cell'); movegui(GoTo_dialog,'center')
@@ -3619,7 +3830,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             uicontrol('Parent',GoTo_dialog,'Style', 'text', 'String', 'Provide the cell id to go to and press enter', 'Position', [10, 75, 280, 20],'HorizontalAlignment','center');
             uicontrol(brainRegionsTextfield)
             uiwait(GoTo_dialog);
-            
         end
         
         function UpdateBrainRegionsList
@@ -3745,6 +3955,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     updateTags
                     MsgLog([num2str(length(cellIDs)), ' cells assigned tag: ', UI.settings.tags{selectedTag}]);
                 end
+                
             elseif choice == 6
                 % All CCGs for all combinations of selected cell with highlighted cells
                 ClickedCells = cellIDs(:)';
@@ -3771,12 +3982,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             if jj == j
                                 col1 = UI.settings.cellTypeColors(clusClas(plot_cells(j)),:);
                                 bar_from_patch(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),col1)
-%                                 bar(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),1,'FaceColor',col1,'EdgeColor',col1),
+                                %                                 bar(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),1,'FaceColor',col1,'EdgeColor',col1),
                                 title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.spikeGroup(plot_cells(j))) ]),
                                 xlabel(cell_metrics.putativeCellType{plot_cells(j)})
                             else
                                 bar_from_patch(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),[0.5,0.5,0.5])
-%                                 bar(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),1,'FaceColor',[0.5,0.5,0.5],'EdgeColor',[0.5,0.5,0.5]),
+                                %                                 bar(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),1,'FaceColor',[0.5,0.5,0.5],'EdgeColor',[0.5,0.5,0.5]),
                             end
                             if j == length(plot_cells) & mod(jj,2) == 1 & j~=jj; xlabel('Time (ms)'); end
                             if jj == 1 && mod(j,2) == 0; ylabel('Rate (Hz)'); end
@@ -3894,10 +4105,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         end
                         for jjj = 1:length(selectedActions)
                             subplot(plotRows(1),plotRows(2),jjj), hold on
-%                             subplot(plot_columns,length(selectedActions),j,jj,mod(j ,5),['Cell Explorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'])
+                            %                             subplot(plot_columns,length(selectedActions),j,jj,mod(j ,5),['Cell Explorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'])
                             customPlot(customPlotOptions{selectedActions(jjj)},cellIDs(j),general1,batchIDs1);
                             title(customPlotOptions{selectedActions(jjj)})
-                        end 
+                        end
                     end
                 end
                 
@@ -3922,11 +4133,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     subplot(plotRows(1),plotRows(2),j), hold on
                     customPlot(actionList{choice},cellIDs(j),general1,batchIDs1); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
                 end
-                
             else
                 uiresume(UI.fig);
             end
-            
         end
         
         function  CancelGoTo_dialog
@@ -3934,24 +4143,22 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             choice = '';
             delete(GoTo_dialog);
         end
-        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function LoadPreferences
+    function LoadPreferences(~,~)
         % Opens the preference .m file in matlab.
         answer = questdlg('Settings are stored in CellExplorer_Settings.m. Click Yes to load settings.', 'Settings', 'Yes','Cancel','Yes');
-        switch answer
-            case 'Yes'
-                MsgLog(['Opening settings file']);
-                edit CellExplorer_Preferences.m
+        if strcmp(answer,'Yes')
+            MsgLog(['Opening settings file']);
+            edit CellExplorer_Preferences.m
         end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function reclassify_celltypes
+    function reclassify_celltypes(~,~)
         % Reclassify all cells according to the initial algorithm
         answer = questdlg('Are you sure you want to reclassify all your cells?', 'Reclassification', 'Yes','Cancel','Cancel');
         switch answer
@@ -3987,7 +4194,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function undoClassification
+    function undoClassification(~,~)
         % Undoes the most recent classification within 3 categories: cell-type
         % deep/superficial and brain region. Labels are left untouched.
         % Updates GUI to reflect the changes
@@ -4072,7 +4279,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function buttonSave
+    function buttonSave(~,~)
         % Called with the save button.
         % Two options are available
         % 1. Updates existing metrics
@@ -4083,7 +4290,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         switch answer
             case 'Update existing metrics'
                 assignin('base','cell_metrics',cell_metrics)
-                    saveMetrics(cell_metrics);
+                saveMetrics(cell_metrics);
                 try
                     
                 catch exception
@@ -4194,7 +4401,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if ishandle(f_waitbar)
                 close(f_waitbar)
                 classificationTrackChanges = [];
-                set(UI.pushbutton.save,'ForegroundColor','k','fontweight', 'normal')
+                UI.menu.file.save.ForegroundColor = 'k';
                 MsgLog(['Classifications succesfully saved to existing cell-metrics files'],[1,2]);
             else
                 MsgLog('Metrics were not succesfully saved for all session in batch',4);
@@ -4202,14 +4409,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         else
             if isfield(cell_metrics.general,'saveAs')
                 saveAs = cell_metrics.general.saveAs;
-%             elseif isfield(cell_metrics.general.processingInfo,'saveAs')
+                %             elseif isfield(cell_metrics.general.processingInfo,'saveAs')
             else
                 saveAs = 'cell_metrics';
             end
             file = fullfile(clusteringpath,[saveAs,'.mat']);
             save(file,'cell_metrics');
             classificationTrackChanges = [];
-            set(UI.pushbutton.save,'ForegroundColor','k','fontweight', 'normal')
+            UI.menu.file.save.ForegroundColor = 'k';
             MsgLog(['Classification saved to ', file],[1,2]);
         end
         
@@ -4281,10 +4488,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         rotate3d(subfig_ax(1),'on');
         h = rotate3d(subfig_ax(1));
         h.Enable = 'on';
-        
         setAllowAxesRotate(h,subfig_ax(2),false);
         set(h,'ButtonDownFilter',@myRotateFilter);
-        
         try
             % this works in R2014b, and maybe beyond:
             [hManager.WindowListenerHandles.Enabled] = deal(false);  % HG2
@@ -4310,12 +4515,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         ii = 1;
         ii_history = 1;
-        
         % Initialize labels
         if ~isfield(cell_metrics, 'labels')
             cell_metrics.labels = repmat({''},1,size(cell_metrics.UID,2));
         end
-        
         % Initialize tags
         if ~isfield(cell_metrics, 'tags')
             cell_metrics.tags = repmat({''},1,size(cell_metrics.UID,2));
@@ -4375,7 +4578,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         fieldsMenu = sort(metrics_fieldsNames);
         groups_ids = [];
         fieldsMenu(find(contains(fieldsMenu,fieldsMenuMetricsToExlude)))=[];
-        
         for i = 1:length(fieldsMenu)
             if strcmp(fieldsMenu{i},'deepSuperficial')
                 cell_metrics.deepSuperficial_num = ones(1,length(cell_metrics.deepSuperficial));
@@ -4450,15 +4652,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         
         if UI.settings.tSNE_calcWideAcg && ~isfield(tSNE_metrics,'acg1')
-            disp('Calculating tSNE space for wide ACGs')            
+            disp('Calculating tSNE space for wide ACGs')
             tSNE_metrics.acg1 = tsne([cell_metrics.acg_zscored(ceil(size(cell_metrics.acg_zscored,1)/2):end,:)]');
         end
         if UI.settings.tSNE_calcNarrowAcg && ~isfield(tSNE_metrics,'acg2')
-            disp('Calculating tSNE space for narrow ACGs')            
+            disp('Calculating tSNE space for narrow ACGs')
             tSNE_metrics.acg2 = tsne([cell_metrics.acg2_zscored(ceil(size(cell_metrics.acg2_zscored,1)/2):end,:)]');
         end
         if UI.settings.tSNE_calcFiltWaveform && ~isfield(tSNE_metrics,'filtWaveform')
-            disp('Calculating tSNE space for waveforms')            
+            disp('Calculating tSNE space for waveforms')
             X = cell_metrics.filtWaveform_zscored';
             tSNE_metrics.filtWaveform = tsne(X(:,find(~any(isnan(X)))),'Standardize',true);
         end
@@ -4470,7 +4672,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
         end
         if ~isfield(tSNE_metrics,'plot')
-%             disp('Calculating tSNE space for combined metrics')
+            %             disp('Calculating tSNE space for combined metrics')
             UI.settings.tSNE_metrics = intersect(UI.settings.tSNE_metrics,fieldnames(cell_metrics));
             X = cell2mat(cellfun(@(X) cell_metrics.(X),UI.settings.tSNE_metrics,'UniformOutput',false));
             X(isnan(X) | isinf(X)) = 0;
@@ -4505,12 +4707,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if isfield(cell_metrics.general,'classificationTrackChanges') & ~isempty(cell_metrics.general.classificationTrackChanges)
             classificationTrackChanges = cell_metrics.general.classificationTrackChanges;
             if isfield(UI,'pushbutton')
-                set(UI.pushbutton.save,'ForegroundColor',[0.6350, 0.0780, 0.1840],'fontweight', 'bold')
+                UI.menu.file.save.ForegroundColor = [0.6350 0.0780 0.1840];
             end
         else
             classificationTrackChanges = [];
             if isfield(UI,'pushbutton')
-                set(UI.pushbutton.save,'ForegroundColor','k','fontweight', 'normal')
+                UI.menu.file.save.ForegroundColor = 'k';
             end
         end
         history_classification = [];
@@ -4642,12 +4844,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         fig2_axislimit_y = [min(cell_metrics.burstIndex_Royer2012(cell_metrics.burstIndex_Royer2012>0)),max(cell_metrics.burstIndex_Royer2012(cell_metrics.burstIndex_Royer2012<Inf))];
         fig3_axislimit_x = [min(tSNE_metrics.plot(:,1)), max(tSNE_metrics.plot(:,1))];
         fig3_axislimit_y = [min(tSNE_metrics.plot(:,2)), max(tSNE_metrics.plot(:,2))];
+        
+        subsetGroundTruth = [];
     end
-    
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    
-    function LoadDatabaseSession
+
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function LoadDatabaseSession(~,~)
         % Load sessions from the database.
         % Dialog is shown with sessions from the database with calculated cell metrics.
         % Then selected sessions are loaded from the database
@@ -4656,48 +4860,22 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if ~strcmp(bz_database.rest_api.username,'user')
                 %                 disp(['Loading datasets from database']);
                 drawnow
-                % DB settings
-                options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
-                options.CertificateFilename=('');
-                
-                % Show waitbar while loading DB
-                if isfield(UI,'panel')
-                    loadBD_waitbar = waitbar(0,'Downloading session list. Hold on for a few seconds...','name','Loading metadata from DB','WindowStyle', 'modal');
+                if isempty(db)
+                    loadDB_sessionlist
                 end
-                % Requesting db list
-                bz_db = webread([bz_database.rest_api.address,'views/15356/'],options,'page_size','5000','sorted','1','cellmetrics',1);
-                sessions = loadjson(bz_db.renderedHtml);
                 
-                % Generating list of sessions
-                [db_menu_items,index] = sort(cellfun(@(x) x.name,sessions,'UniformOutput',false));
-                db_menu_ids = cellfun(@(x) x.id,sessions,'UniformOutput',false);
-                db_menu_ids = db_menu_ids(index);
-                db_menu_animals = cellfun(@(x) x.animal,sessions,'UniformOutput',false);
-                db_menu_investigator = cellfun(@(x) x.investigator,sessions,'UniformOutput',false);
-                db_menu_repository = cellfun(@(x) x.repositories{1},sessions,'UniformOutput',false);
-                db_menu_cells = cellfun(@(x) num2str(x.spikeSorting.cellCount),sessions,'UniformOutput',false);
+                loadDB.dialog = dialog('Position', [300, 300, 700, 518],'Name','Load sessions from DB','WindowStyle','modal'); movegui(loadDB.dialog,'center')
+                loadDB.sessionList = uitable(loadDB.dialog,'Data',db.dataTable,'Position',[10, 60, 680, 447],'ColumnWidth',{20 30 210 50 130 110 110},'columnname',{'','#','Session name','Cells','Animal','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false]); % ,'CellSelectionCallback',@ClicktoSelectFromTable
+                loadDB.summaryText = uicontrol('Parent',loadDB.dialog,'Style','text','Position',[10, 45, 680, 15],'Units','normalized','String','','HorizontalAlignment','center');
                 
-                db_menu_values = cellfun(@(x) x.id,sessions,'UniformOutput',false);
-                db_menu_values = db_menu_values(index);
-                db_menu_items2 = strcat(db_menu_items);
-                sessionEnumerator = cellstr(num2str([1:length(db_menu_items2)]'))';
-                sessionList = strcat(sessionEnumerator,{' '},db_menu_items2,{' '},db_menu_cells(index),{' '},db_menu_animals(index),{' '}, db_menu_investigator(index),{' '},db_menu_repository(index));
-                
-                % Promt user with a tabel with sessions
-                if ishandle(loadBD_waitbar)
-                    close(loadBD_waitbar)
-                end
-                dataTable = {};
-                dataTable(:,2:7) = [sessionEnumerator;db_menu_items2;db_menu_cells(index);db_menu_animals(index);db_menu_investigator(index);db_menu_repository(index)]';
-                dataTable(:,1) = {false};
-                loadDB.dialog = dialog('Position', [300, 300, 700, 508],'Name','Load sessions from DB','WindowStyle','modal'); movegui(loadDB.dialog,'center')
-                loadDB.sessionList = uitable(loadDB.dialog,'Data',dataTable,'Position',[10, 50, 680, 447],'ColumnWidth',{20 30 210 50 130 110 110},'columnname',{'','#','Session name','Cells','Animal','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false]); % ,'CellSelectionCallback',@ClicktoSelectFromTable
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll);
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll);
-                loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[210, 15, 140, 20],'Units','normalized','String',{'Sort by','Session','Cell count','Animal','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)button_DB_filterList);
-                loadDB.popupmenu.filter = uicontrol('Parent',loadDB.dialog,'Style', 'Edit', 'String', 'Filter', 'Position', [360, 12, 130, 25],'Callback',@(src,evnt)button_DB_filterList,'HorizontalAlignment','left');
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[500, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog);
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[600, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog);
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 80, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll);
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[100, 10, 80, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll);
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[190, 10, 80, 30],'String','Refresh list','Callback',@(src,evnt)reloadSessionlist);
+                loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[280, 15, 110, 20],'Units','normalized','String',{'Sort by','Session','Cell count','Animal','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)button_DB_filterList);
+                loadDB.popupmenu.filter = uicontrol('Parent',loadDB.dialog,'Style', 'Edit', 'String', 'Filter', 'Position', [400, 12, 110, 25],'Callback',@(src,evnt)button_DB_filterList,'HorizontalAlignment','left');
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[520, 10, 80, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog);
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[610, 10, 80, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog);
+                updateSummaryText
                 uiwait(loadDB.dialog)
             else
                 MsgLog(['Please provide your database credentials in ''db\_credentials.m'' '],2);
@@ -4707,33 +4885,84 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             MsgLog('Database tools not installed');
             msgbox({'Database tools not installed. To install, follow the steps below: ','1. Go to the Cell Explorer Github webpage','2. Download the database tools', '3. Add the db directory to your Matlab path', '4. Provide your credentials in db\_credentials.m and try again.'},createStruct);
         end
+        function reloadSessionlist
+            loadDB_sessionlist
+            button_DB_filterList
+        end
+        
+        function loadDB_sessionlist
+            db = {};
+            % DB settings
+            options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
+            options.CertificateFilename=('');
+            
+            % Show waitbar while loading DB
+            if isfield(UI,'panel')
+                loadBD_waitbar = waitbar(0,'Downloading session list. Hold on for a few seconds...','name','Loading metadata from DB','WindowStyle', 'modal');
+            else
+                loadBD_waitbar = [];
+            end
+            
+            % Requesting db list
+            bz_db = webread([bz_database.rest_api.address,'views/15356/'],options,'page_size','5000','sorted','1','cellmetrics',1);
+            db.sessions = loadjson(bz_db.renderedHtml);
+            db.refreshTime = datetime('now','Format','HH:mm:ss, d MMMM, yyyy');
+            
+            % Generating list of sessions
+            
+            [db.menu_items,db.index] = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
+            db.menu_ids = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
+            db.menu_ids = db.menu_ids(db.index);
+            db.menu_animals = cellfun(@(x) x.animal,db.sessions,'UniformOutput',false);
+            db.menu_investigator = cellfun(@(x) x.investigator,db.sessions,'UniformOutput',false);
+            db.menu_repository = cellfun(@(x) x.repositories{1},db.sessions,'UniformOutput',false);
+            db.menu_cells = cellfun(@(x) num2str(x.spikeSorting.cellCount),db.sessions,'UniformOutput',false);
+            
+            db.menu_values = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
+            db.menu_values = db.menu_values(db.index);
+            db.menu_items2 = strcat(db.menu_items);
+            sessionEnumerator = cellstr(num2str([1:length(db.menu_items2)]'))';
+            db.sessionList = strcat(sessionEnumerator,{' '},db.menu_items2,{' '},db.menu_cells(db.index),{' '},db.menu_animals(db.index),{' '}, db.menu_investigator(db.index),{' '},db.menu_repository(db.index));
+            
+            % Promt user with a tabel with sessions
+            if ishandle(loadBD_waitbar)
+                close(loadBD_waitbar)
+            end
+            db.dataTable = {};
+            db.dataTable(:,2:7) = [sessionEnumerator;db.menu_items2;db.menu_cells(db.index);db.menu_animals(db.index);db.menu_investigator(db.index);db.menu_repository(db.index)]';
+            db.dataTable(:,1) = {false};
+        end
+        
+        function updateSummaryText
+            cellCount = sum(cell2mat( cellfun(@(x) str2double(x),loadDB.sessionList.Data(:,4),'UniformOutput',false)));
+            loadDB.summaryText.String = [num2str(size(loadDB.sessionList.Data,1)),' session(s) with ', num2str(cellCount),' cells from ',num2str(length(unique(loadDB.sessionList.Data(:,5)))),' animal(s). Refreshed at: ', datestr(db.refreshTime)];
+        end
         
         function button_DB_filterList
-            dataTable1 = dataTable;
+            dataTable1 = db.dataTable;
             if ~isempty(loadDB.popupmenu.filter.String) && ~strcmp(loadDB.popupmenu.filter.String,'Filter')
-                idx1 = find(contains(sessionList,loadDB.popupmenu.filter.String,'IgnoreCase',true));
-%                 loadDB.sessionList.Data = dataTable(idx,:);
+                idx1 = find(contains(db.sessionList,loadDB.popupmenu.filter.String,'IgnoreCase',true));
             else
-                idx1 = 1:size(dataTable,1);
-%                 loadDB.sessionList.Data = dataTable;
+                idx1 = 1:size(db.dataTable,1);
             end
             
             if loadDB.popupmenu.sorting.Value == 3 % Cell count
-                temp = cell2mat( cellfun(@(x) x.spikeSorting.cellCount,sessions,'UniformOutput',false));
-                [~,idx2] = sort(temp(index),'descend');
+                cellCount = cell2mat( cellfun(@(x) x.spikeSorting.cellCount,db.sessions,'UniformOutput',false));
+                [~,idx2] = sort(cellCount(db.index),'descend');
             elseif loadDB.popupmenu.sorting.Value == 4 % Animal
-                [~,idx2] = sort(db_menu_animals(index));
+                [~,idx2] = sort(db.menu_animals(db.index));
             elseif loadDB.popupmenu.sorting.Value == 5 % Investigator
-                [~,idx2] = sort(db_menu_investigator(index));
+                [~,idx2] = sort(db.menu_investigator(db.index));
             elseif loadDB.popupmenu.sorting.Value == 6 % Data repository
-                [~,idx2] = sort(db_menu_repository(index));
+                [~,idx2] = sort(db.menu_repository(db.index));
             else
-                idx2 = 1:size(dataTable,1);
+                idx2 = 1:size(db.dataTable,1);
             end
             idx2 = intersect(idx2,idx1,'stable');
-            loadDB.sessionList.Data = dataTable(idx2,:);
-
+            loadDB.sessionList.Data = db.dataTable(idx2,:);
+            updateSummaryText
         end
+        
         function ClicktoSelectFromTable(src, event)
             % Called when a table-cell is clicked in the table. Changes to
             % custom display according what metric is clicked. First column
@@ -4751,6 +4980,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         function button_DB_deselectAll
             loadDB.sessionList.Data(:,1) = {false};
         end
+        
         function CloseDB_dialog
             indx = cell2mat(cellfun(@str2double,loadDB.sessionList.Data(find([loadDB.sessionList.Data{:,1}])',2),'un',0));
             delete(loadDB.dialog);
@@ -4758,7 +4988,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 
                 if length(indx)==1 % Loading single session
                     try
-                        session = sessions{index(indx)};
+                        session = db.sessions{db.index(indx)};
                         basename = session.name;
                         
                         if ~any(strcmp(session.repositories{1},fieldnames(bz_database.repositories)))
@@ -4790,25 +5020,25 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     db_basename = {};
                     db_basepath = {};
                     db_clusteringpath = {};
-                    db_basename = sort(cellfun(@(x) x.name,sessions,'UniformOutput',false));
-                    i_db_subset_all = index(indx);
+                    db_basename = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
+                    i_db_subset_all = db.index(indx);
                     for i_db = 1:length(i_db_subset_all)
                         i_db_subset = i_db_subset_all(i_db);
-                        if ~any(strcmp(sessions{i_db_subset}.repositories{1},fieldnames(bz_database.repositories)))
-                            MsgLog(['The respository ', sessions{i_db_subset}.repositories{1} ,' has not been defined on this computer. Please edit db_credentials and provide the path'],4)
-                            edit db_credentials
+                        if ~any(strcmp(db.sessions{i_db_subset}.repositories{1},fieldnames(bz_database.repositories)))
+                            MsgLog(['The respository ', db.sessions{i_db_subset}.repositories{1} ,' has not been defined on this computer. Please edit db_credentials and provide the path'],4)
+                            edit db_credentials.m
                             return
                         end
-                        if strcmp(sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
-                            Investigator_name = strsplit(sessions{i_db_subset}.investigator,' ');
+                        if strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
+                            Investigator_name = strsplit(db.sessions{i_db_subset}.investigator,' ');
                             path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
-                            db_basepath{i_db} = fullfile(bz_database.repositories.(sessions{i_db_subset}.repositories{1}), path_Investigator,sessions{i_db_subset}.animal, sessions{i_db_subset}.name);
+                            db_basepath{i_db} = fullfile(bz_database.repositories.(db.sessions{i_db_subset}.repositories{1}), path_Investigator,db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
                         else
-                            db_basepath{i_db} = fullfile(bz_database.repositories.(sessions{i_db_subset}.repositories{1}), sessions{i_db_subset}.animal, sessions{i_db_subset}.name);
+                            db_basepath{i_db} = fullfile(bz_database.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
                         end
                         
-                        if ~isempty(sessions{i_db_subset}.spikeSorting.relativePath)
-                            db_clusteringpath{i_db} = fullfile(db_basepath{i_db}, sessions{i_db_subset}.spikeSorting.relativePath{1});
+                        if ~isempty(db.sessions{i_db_subset}.spikeSorting.relativePath)
+                            db_clusteringpath{i_db} = fullfile(db_basepath{i_db}, db.sessions{i_db_subset}.spikeSorting.relativePath{1});
                         else
                             db_clusteringpath{i_db} = db_basepath{i_db};
                         end
@@ -4890,8 +5120,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             disp(successMessage);
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
+
+% % % % % % % % % % % % % % % % % % % % % %
 
     function AdjustGUIbutton
         % Shuffles through the layout options and calls AdjustGUI
@@ -4912,8 +5142,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         AdjustGUI
     end
 
-    % % % % % % % % % % % % % % % % % % % % % %
-    
+% % % % % % % % % % % % % % % % % % % % % %
+
     function out = CheckSpikes(batchIDsIn)
         % Checks if spikes data is available for the selected session (batchIDs)
         % If it is, the file is loaded into memory (spikes structure)
@@ -4963,8 +5193,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
+
+% % % % % % % % % % % % % % % % % % % % % %
 
     function out = CheckEvents(batchIDs,eventType)
         % Checks if the event type is available for the selected session (batchIDs)
@@ -5011,7 +5241,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function defineSpikesPlots
+    function defineSpikesPlots(~,~)
         % check for local spikes structure before the spikePlotListDlg dialog is called
         out = CheckSpikes(batchIDs);
         if out
@@ -5144,9 +5374,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % spikes-structures in memory and sorts them  alphabetically and adds any preselected field names
         spikesField = cellfun(@fieldnames,{spikes{find(~cellfun(@isempty,spikes))}},'UniformOutput',false);
         spikesField = sort(unique(vertcat(spikesField{:})));
-%         if ~isempty(fieldtoedit)
-%             spikesField = unique([spikesField;spikesPlots.(fieldtoedit).x;spikesPlots.(fieldtoedit).y;spikesPlots.(fieldtoedit).state;spikesPlots.(fieldtoedit).filter]);
-%         end
+        %         if ~isempty(fieldtoedit)
+        %             spikesField = unique([spikesField;spikesPlots.(fieldtoedit).x;spikesPlots.(fieldtoedit).y;spikesPlots.(fieldtoedit).state;spikesPlots.(fieldtoedit).filter]);
+        %         end
         
         spikes_fieldnames = fieldnames(spikesPlots);
         data_types = {'x','y','state','filter'};
@@ -5156,10 +5386,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         spikesField = unique(spikesField);
         
-%         fields_x = cellfun(@(x1) spikesPlots.(x1).x,spikes_fieldnames,'UniformOutput',false);
-%         fields_y = cellfun(@(x1) spikesPlots.(x1).y,spikes_fieldnames,'UniformOutput',false);
-%         fields_state = cellfun(@(x1) spikesPlots.(x1).y,spikes_fieldnames,'UniformOutput',false);
-%         fields_filter = cellfun(@(x1) spikesPlots.(x1).y,spikes_fieldnames,'UniformOutput',false);
+        %         fields_x = cellfun(@(x1) spikesPlots.(x1).x,spikes_fieldnames,'UniformOutput',false);
+        %         fields_y = cellfun(@(x1) spikesPlots.(x1).y,spikes_fieldnames,'UniformOutput',false);
+        %         fields_state = cellfun(@(x1) spikesPlots.(x1).y,spikes_fieldnames,'UniformOutput',false);
+        %         fields_filter = cellfun(@(x1) spikesPlots.(x1).y,spikes_fieldnames,'UniformOutput',false);
         
         
         if BatchMode
@@ -5259,7 +5489,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if find(strcmp(spikesPlots.(fieldtoedit).filterType,spikePlotFilterType.String))
                 spikePlotFilterType.Value = find(strcmp(spikesPlots.(fieldtoedit).filterType,spikePlotFilterType.String));
             end
-            spikePlotFilterValue.String = spikesPlots.(fieldtoedit).filterValue;            
+            spikePlotFilterValue.String = spikesPlots.(fieldtoedit).filterValue;
             % Event
             if find(strcmp(spikesPlots.(fieldtoedit).event,spikePlotEvent.String))
                 spikePlotEvent.Value = find(strcmp(spikesPlots.(fieldtoedit).event,spikePlotEvent.String));
@@ -5359,7 +5589,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function loadGroundTruth
+    function loadGroundTruth(~,~)
         [choice,dialog_canceled] = groundTruthDlg(UI.settings.groundTruth,groundTruthSelection);
         if ~isempty(choice) & ~dialog_canceled
             [~,groundTruthSelection] = ismember(choice',UI.settings.groundTruth);
@@ -5371,9 +5601,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             uiresume(UI.fig);
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function adjustMonoSyn_UpdateMetrics(cell_metricsIn,cell_metrics)
         answer = questdlg('Are you sure you want to adjust monosyn connections for this session?', 'Adjust monosynaptic connections', 'Yes','Cancel','Cancel');
         switch answer
@@ -5434,21 +5664,38 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function performGroundTruthClassification
+    function performGroundTruthClassification(~,~)
         if ~isfield(UI.tabs,'groundTruthClassification')
-            UI.tabs.groundTruthClassification =uitab(UI.panel.tabgroup1,'Title','G/T');
-            positionGroundTruthToogleButtons = getpixelposition(UI.panel.tabgroup1);
-            positionGroundTruthToogleButtons = [positionGroundTruthToogleButtons(3)/2,positionGroundTruthToogleButtons(4)/3];
+            % UI.settings.groundTruth
+            createToggleMenu('groundTruthClassification',UI.panel.tabgroup1,UI.settings.groundTruth,'G/T')
+        end
+        
+        function createToggleMenu(childName,parentPanelName,buttonLabels,panelTitle)
+            % INPUTS
+            % parentPanelName: UI.panel.tabgroup1
+            % childName:
+            % buttonLabels:    UI.settings.groundTruth
+            % panelTitle:      'G/T'
+            
+            UI.tabs.(childName) =uitab(parentPanelName,'Title',panelTitle);
+            buttonPosition = getButtonLayout(parentPanelName,buttonLabels);
+            
+%             rows = max(ceil(length(buttonLabels)/2),3);
+%             positionToogleButtons = getpixelposition(parentPanelName);
+%             positionToogleButtons = [positionToogleButtons(3)/2,positionToogleButtons(4)/rows];
+            
             % Display settings for tags1
-            for i = 1:min(length(UI.settings.groundTruth),6)
-                innerPosition = [(1-mod(i,2))*positionGroundTruthToogleButtons(1),(3-ceil(i/2))*positionGroundTruthToogleButtons(2),positionGroundTruthToogleButtons(1)*0.95,positionGroundTruthToogleButtons(2)*0.95];
-                UI.togglebutton.groundTruthClassification(i) = uicontrol('Parent',UI.tabs.groundTruthClassification,'Style','togglebutton','String',UI.settings.groundTruth{i},'Position',innerPosition,'Value',0,'Units','normalized','Callback',@(src,evnt)buttonGroundTruthClassification(i),'KeyPressFcn', {@keyPress});
+            for i = 1:min(length(buttonLabels),10)
+%                 innerPosition = [(1-mod(i,2))*positionToogleButtons(1),(rows-ceil(i/2))*positionToogleButtons(2),positionToogleButtons(1)*0.95,positionToogleButtons(2)*0.95];
+                UI.togglebutton.(childName)(i) = uicontrol('Parent',UI.tabs.(childName),'Style','togglebutton','String',buttonLabels{i},'Position',buttonPosition{i},'Value',0,'Units','normalized','Callback',@(src,evnt)buttonGroundTruthClassification(i),'KeyPressFcn', {@keyPress});
             end
-            UI.panel.tabgroup1.SelectedTab = UI.tabs.groundTruthClassification;
+            parentPanelName.SelectedTab = UI.tabs.(childName);
             updateGroundTruth
         end
     end
 
+
+    
     function buttonGroundTruthClassification(input)
         saveStateToHistory(ii)
         if UI.togglebutton.groundTruthClassification(input).Value == 1
@@ -5486,7 +5733,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         uiwait(groundTruth_dialog);
         function UpdateGroundTruthList
             temp = contains(groundTruthCelltypes,groundTruthTextfield.String,'IgnoreCase',true);
-            if ~any(temp == groundTruthList.Value)
+            if ~isempty(groundTruthList.Value) && ~any(temp == groundTruthList.Value)
                 groundTruthList.Value = 1;
             end
             if ~isempty(temp)
@@ -5670,41 +5917,35 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function keyPress(src, event)
         % Keyboard shortcuts. Sorted alphabetically
         switch event.Key
+            case 'a'
+                % Load spike plot options
+%                 defineSpikesPlots;
             case 'b'
-                buttonBrainRegion;
+%                 buttonBrainRegion;
             case 'c'
-                % Classify selected cell as cortical
-                UI.listbox.deepSuperficial.Value = find(strcmp(UI.settings.deepSuperficial,'Cortical'));
-                buttonDeepSuperficial;
+                % Opens the file directory for the selected cell
+%                 openSessionDirectory
             case 'd'
-                % Classify selected cell as deep
-%                 UI.listbox.deepSuperficial.Value = find(strcmp(UI.settings.deepSuperficial,'Deep'));
-%                 buttonDeepSuperficial;
-
                 % Opens the current session in the Buzsaki lab web database
-                web(['https://buzsakilab.com/wp/sessions/?frm_search=', general.basename],'-new','-browser')
+%                 openSessionInWebDB
             case 'e'
                 % Highlight excitatory cells
-                UI.settings.displayExcitatory = ~UI.settings.displayExcitatory;
-                MsgLog(['Toggle highlighting excitatory cells (triangles). Count: ', num2str(length(cellsExcitatory))])
-                uiresume(UI.fig);
+%                 highlightExcitatoryCells
             case 'f'
-                toggleACGfit;
+%                 toggleACGfit;
             case 'g'
-                goToCell;
+%                 goToCell;
             case 'h'
                 HelpDialog;
             case 'i'
                 % Highlight inhibitory cells
-                UI.settings.displayInhibitory = ~UI.settings.displayInhibitory;
-                MsgLog(['Toggle highlighting inhibitory cells (circles), Count: ', num2str(length(cellsInhibitory))])
-                uiresume(UI.fig);
+%                 highlightInhibitoryCells
             case 'j'
-                adjustMonoSyn_UpdateMetrics(cell_metrics);
+%                 adjustMonoSyn_UpdateMetrics(cell_metrics);
             case 'k'
                 SignificanceMetricsMatrix;
             case 'l'
-                buttonLabel;
+%                 buttonLabel;
             case 'm'
                 % Hide/show menubar
                 if UI.settings.displayMenu == 0
@@ -5718,60 +5959,35 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 % Adjusts the number of subplots in the GUI
                 AdjustGUI;
             case 'o'
-                % Opens the file directory for the selected cell
-                if BatchMode
-                    if exist(cell_metrics.general.paths{cell_metrics.batchIDs(ii)})==7
-                        cd(cell_metrics.general.paths{cell_metrics.batchIDs(ii)});
-                        if ispc
-                            winopen(cell_metrics.general.paths{cell_metrics.batchIDs(ii)});
-                        elseif ismac
-                            syscmd = ['open ', cell_metrics.general.paths{cell_metrics.batchIDs(ii)}, ' &'];
-                            system(syscmd);
-                        else
-                            filebrowser;
-                        end
-                    else
-                        MsgLog(['File path not available:' general.basepath],2)
-                    end
-                else
-                    if ispc
-                        winopen(pwd);
-                    else
-                        filebrowser;
-                    end
-                end
+                % Loads list of sessions from database 
+%                 LoadDatabaseSession
             case 'p'
-                LoadPreferences;
+%                 LoadPreferences;
             case 'r'
-                reclassify_celltypes;
-            case 's'
-                % Load spike plot options
-                defineSpikesPlots;
+%                 reclassify_celltypes;
             case 't'
                 % Redefine the space of the t-SNE representation
-                tSNE_redefineMetrics;
+%                 tSNE_redefineMetrics;
             case 'u'
                 % Load ground truth datasets
-                loadGroundTruth
+%                 loadGroundTruth
             case 'v'
                 % Opens the Cell Explorer wiki in your browser
-                web('https://github.com/petersenpeter/Cell-Explorer/wiki','-new','-browser')
+%                 openWiki
             case 'w'
-                UI.settings.plotWaveformMetrics = 1-UI.settings.plotWaveformMetrics;
-                uiresume(UI.fig);
+                showWaveformMetrics
             case 'x'
-                buttonSelectFromPlot;
+
             case 'y'
                 % Load ground truth datasets
-                performGroundTruthClassification
+%                 performGroundTruthClassification
             case 'z'
-                undoClassification;
+%                 undoClassification;
             case 'space'
                 selectCellsForGroupAction
             case 'backspace'
                 ii_history_reverse;
             case {'add','hyphen'}
-%                 AddNewCellType;
                 ScrolltoZoomInPlot([],[],1)
             case {'slash','subtract'}
                 ScrolltoZoomInPlot([],[],-1)
@@ -5817,6 +6033,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end
 
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function aboutDialog(~,~)
+        opts.Interpreter = 'tex';
+        opts.WindowStyle = 'normal';
+        msgbox({['\bfCell Explorer\rm v', num2str(CellExplorerVersion)],'Developed by Peter Petersen in the Buzsaki lab at NYU.'},'About the Cell Explorer','help',opts);
+    end
 end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -5851,14 +6074,14 @@ end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-function HelpDialog
+function HelpDialog(~,~)
 opts.Interpreter = 'tex';
 opts.WindowStyle = 'normal';
-msgbox({'\bfNavigation\rm','<    : Next cell', '>    : Previous cell','.     : Next cell with same class',',     : Previous cell with same class','G   : Go to a specific cell','X    : Select cell from plot','Page Up      : Next session in batch (only in batch mode)','Page Down  : Previous session in batch (only in batch mode)','Numpad0     : First cell', 'Numpad1-9 : Next cell with that numeric class','Backspace   : Previously selected cell','+ / - / *          : Zoom in / out / reset plots','   ',...
-    '\bfCell assigments\rm','1-9 : Cell-types','C   : Cortical','U   : Unknown','B    : Brain region','L    : Label','+    : Add Cell-type','Z    : Undo assignment', 'R    : Reclassify cell types','   ',...
-    '\bfDisplay shortcuts\rm','M    : Show/Hide menubar','N    : Change layout [6, 5 or 4 subplots]','E     : Highlight excitatory cells (triangles)','I      : Highlight inhibitory cells (circles)','F     : Display ACG fit', 'K    : Calculate and display significance matrix for all metrics (KS-test)','T     : Calculate tSNE space from a selection of metrics','W    : Display waveform metrics','Y    : Perform ground truth cell type classification','U    : Load ground truth cell types','Space  : Show action dialog for selected cells','     ',...
-    '\bfOther shortcuts\rm', 'P    : Open preferences for the Cell Explorer','O    : Open the file directory of the selected cell','D    : Opens the current session in the Buzsaki lab web database','S    : Load spike data','J     : Adjust monosynaptic connections','V    : Visit the Github wiki in your browser','',...
-    '\bfVisit the Cell Explorer''s wiki for further help\rm',''},'Keyboard shortcuts','help',opts);
+msgbox({'\bfNavigation\rm','<    : Next cell', '>    : Previous cell','.     : Next cell with same class',',     : Previous cell with same class','+G   : Go to a specific cell','Page Up      : Next session in batch (only in batch mode)','Page Down  : Previous session in batch (only in batch mode)','Numpad0     : First cell', 'Numpad1-9 : Next cell with that numeric class','Backspace   : Previously selected cell','Numeric + / - / *          : Zoom in / out / reset plots','   ',...
+    '\bfCell assigments\rm','1-9 : Cell-types','+B    : Brain region','+L    : Label','Plus   : Add Cell-type','+Z    : Undo assignment', '+R    : Reclassify cell types','   ',...
+    '\bfDisplay shortcuts\rm','M    : Show/Hide menubar','N    : Change layout [6, 5 or 4 subplots]','+E     : Highlight excitatory cells (triangles)','+I      : Highlight inhibitory cells (circles)','+F     : Display ACG fit', 'K    : Calculate and display significance matrix for all metrics (KS-test)','+T     : Calculate tSNE space from a selection of metrics','W    : Display waveform metrics','+Y    : Perform ground truth cell type classification','+U    : Load ground truth cell types','Space  : Show action dialog for selected cells','     ',...
+    '\bfOther shortcuts\rm', '+P    : Open preferences for the Cell Explorer','+C    : Open the file directory of the selected cell','+D    : Opens sessions from the Buzsaki lab database','+A    : Load spike data','+J     : Adjust monosynaptic connections','+V    : Visit the Github wiki in your browser','',...
+    '+ sign indicatea that the key must be combined with command/control (Mac/Windows)','','\bfVisit the Cell Explorer''s wiki for further help\rm',''},'Keyboard shortcuts','help',opts);
 end
 
 % % % % % % % % % % % % % % % % % % % % % %
