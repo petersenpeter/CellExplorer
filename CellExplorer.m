@@ -5157,10 +5157,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Load sessions from the database.
         % Dialog is shown with sessions from the database with calculated cell metrics.
         % Then selected sessions are loaded from the database
-        if exist('db_credentials') == 2
-            bz_database = db_credentials;
-            if ~strcmp(bz_database.rest_api.username,'user')
-                %                 disp(['Loading datasets from database']);
                 drawnow nocallbacks;
                 if isempty(db) && exist('db_cell_metrics_session_list.mat')
                     load('db_cell_metrics_session_list.mat')
@@ -5182,74 +5178,79 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog);
                 updateSummaryText
                 uiwait(loadDB.dialog)
-            else
-                MsgLog(['Please provide your database credentials in ''db\_credentials.m'' '],2);
-                edit db_credentials
-            end
-        else
-            MsgLog('Database tools not installed');
-            msgbox({'Database tools not installed. To install, follow the steps below: ','1. Go to the Cell Explorer Github webpage','2. Download the database tools', '3. Add the db directory to your Matlab path', '4. Provide your credentials in db\_credentials.m and try again.'},createStruct);
-        end
+            
         function reloadSessionlist
             loadDB_sessionlist
             button_DB_filterList
         end
         
         function loadDB_sessionlist
-            db = {};
-            % DB settings
-            options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
-            options.CertificateFilename=('');
-            
-            % Show waitbar while loading DB
-            if isfield(UI,'panel')
-                loadBD_waitbar = waitbar(0,'Downloading session list. Hold on for a few seconds...','name','Loading metadata from DB','WindowStyle', 'modal');
-            else
-                loadBD_waitbar = [];
-            end
-            
-            % Requesting db list
-            bz_db = webread([bz_database.rest_api.address,'views/15356/'],options,'page_size','5000','sorted','1','cellmetrics',1);
-            db.sessions = loadjson(bz_db.renderedHtml);
-            db.refreshTime = datetime('now','Format','HH:mm:ss, d MMMM, yyyy');
-            
-            % Generating list of sessions
-            [db.menu_items,db.index] = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
-            db.menu_ids = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
-            db.menu_ids = db.menu_ids(db.index);
-            db.menu_animals = cellfun(@(x) x.animal,db.sessions,'UniformOutput',false);
-            db.menu_species = cellfun(@(x) x.species,db.sessions,'UniformOutput',false);
-            for i = 1:size(db.sessions,2)
-                if ~isempty(db.sessions{i}.behavioralParadigm)
-                    db.menu_behavioralParadigm{i} = strjoin(db.sessions{i}.behavioralParadigm,', ');
+            if exist('db_credentials') == 2
+                bz_database = db_credentials;
+                if ~strcmp(bz_database.rest_api.username,'user')
+                    %                 disp(['Loading datasets from database']);
+                    db = {};
+                    % DB settings
+                    options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
+                    options.CertificateFilename=('');
+                    
+                    % Show waitbar while loading DB
+                    if isfield(UI,'panel')
+                        loadBD_waitbar = waitbar(0,'Downloading session list. Hold on for a few seconds...','name','Loading metadata from DB','WindowStyle', 'modal');
+                    else
+                        loadBD_waitbar = [];
+                    end
+                    
+                    % Requesting db list
+                    bz_db = webread([bz_database.rest_api.address,'views/15356/'],options,'page_size','5000','sorted','1','cellmetrics',1);
+                    db.sessions = loadjson(bz_db.renderedHtml);
+                    db.refreshTime = datetime('now','Format','HH:mm:ss, d MMMM, yyyy');
+                    
+                    % Generating list of sessions
+                    [db.menu_items,db.index] = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
+                    db.menu_ids = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
+                    db.menu_ids = db.menu_ids(db.index);
+                    db.menu_animals = cellfun(@(x) x.animal,db.sessions,'UniformOutput',false);
+                    db.menu_species = cellfun(@(x) x.species,db.sessions,'UniformOutput',false);
+                    for i = 1:size(db.sessions,2)
+                        if ~isempty(db.sessions{i}.behavioralParadigm)
+                            db.menu_behavioralParadigm{i} = strjoin(db.sessions{i}.behavioralParadigm,', ');
+                        else
+                            db.menu_behavioralParadigm{i} = '';
+                        end
+                    end
+                    %             db.menu_behavioralParadigm = cellfun(@(x) x.behavioralParadigm{1},db.sessions,'UniformOutput',false);
+                    %             db.menu_behavioralParadigm = cellfun(@(x) strjoin(x{:}),db.menu_behavioralParadigm,'UniformOutput',false);
+                    db.menu_investigator = cellfun(@(x) x.investigator,db.sessions,'UniformOutput',false);
+                    db.menu_repository = cellfun(@(x) x.repositories{1},db.sessions,'UniformOutput',false);
+                    db.menu_cells = cellfun(@(x) num2str(x.spikeSorting.cellCount),db.sessions,'UniformOutput',false);
+                    
+                    db.menu_values = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
+                    db.menu_values = db.menu_values(db.index);
+                    db.menu_items2 = strcat(db.menu_items);
+                    sessionEnumerator = cellstr(num2str([1:length(db.menu_items2)]'))';
+                    db.sessionList = strcat(sessionEnumerator,{' '},db.menu_items2,{' '},db.menu_cells(db.index),{' '},db.menu_animals(db.index),{' '},db.menu_behavioralParadigm(db.index),{' '},db.menu_species(db.index),{' '},db.menu_investigator(db.index),{' '},db.menu_repository(db.index));
+                    
+                    % Promt user with a tabel with sessions
+                    if ishandle(loadBD_waitbar)
+                        close(loadBD_waitbar)
+                    end
+                    db.dataTable = {};
+                    db.dataTable(:,2:9) = [sessionEnumerator;db.menu_items2;db.menu_cells(db.index);db.menu_animals(db.index);db.menu_species(db.index);db.menu_behavioralParadigm(db.index);db.menu_investigator(db.index);db.menu_repository(db.index)]';
+                    db.dataTable(:,1) = {false};
+                    [db_path,~,~] = fileparts(which('db_load_sessions.m'));
+                    try
+                        save(fullfile(db_path,'db_cell_metrics_session_list.mat'),'db');
+                    catch
+                        warning('failed to save session list with metrics');
+                    end
                 else
-                    db.menu_behavioralParadigm{i} = '';
+                    MsgLog(['Please provide your database credentials in ''db\_credentials.m'' '],2);
+                    edit db_credentials
                 end
-            end
-%             db.menu_behavioralParadigm = cellfun(@(x) x.behavioralParadigm{1},db.sessions,'UniformOutput',false);
-%             db.menu_behavioralParadigm = cellfun(@(x) strjoin(x{:}),db.menu_behavioralParadigm,'UniformOutput',false);
-            db.menu_investigator = cellfun(@(x) x.investigator,db.sessions,'UniformOutput',false);
-            db.menu_repository = cellfun(@(x) x.repositories{1},db.sessions,'UniformOutput',false);
-            db.menu_cells = cellfun(@(x) num2str(x.spikeSorting.cellCount),db.sessions,'UniformOutput',false);
-            
-            db.menu_values = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
-            db.menu_values = db.menu_values(db.index);
-            db.menu_items2 = strcat(db.menu_items);
-            sessionEnumerator = cellstr(num2str([1:length(db.menu_items2)]'))';
-            db.sessionList = strcat(sessionEnumerator,{' '},db.menu_items2,{' '},db.menu_cells(db.index),{' '},db.menu_animals(db.index),{' '},db.menu_behavioralParadigm(db.index),{' '},db.menu_species(db.index),{' '},db.menu_investigator(db.index),{' '},db.menu_repository(db.index));
-            
-            % Promt user with a tabel with sessions
-            if ishandle(loadBD_waitbar)
-                close(loadBD_waitbar)
-            end
-            db.dataTable = {};
-            db.dataTable(:,2:9) = [sessionEnumerator;db.menu_items2;db.menu_cells(db.index);db.menu_animals(db.index);db.menu_species(db.index);db.menu_behavioralParadigm(db.index);db.menu_investigator(db.index);db.menu_repository(db.index)]';
-            db.dataTable(:,1) = {false};
-            [db_path,~,~] = fileparts(which('db_load_sessions.m'));
-            try 
-                save(fullfile(db_path,'db_cell_metrics_session_list.mat'),'db');
-            catch
-                warning('failed to save session list with metrics');
+            else
+                MsgLog('Database tools not installed');
+                msgbox({'Database tools not installed. To install, follow the steps below: ','1. Go to the Cell Explorer Github webpage','2. Download the database tools', '3. Add the db directory to your Matlab path', '4. Provide your credentials in db\_credentials.m and try again.'},createStruct);
             end
         end
         

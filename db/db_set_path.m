@@ -75,7 +75,7 @@ for i = 1:length(sessions)
     session.general.baseName = basename;
     session.general.basePath =  basepath;
     session.general.clusteringPath = clusteringpath;
-    if session.extracellular.leastSignificantBit==0
+    if ~isfield(session.extracellular,'leastSignificantBit') || session.extracellular.leastSignificantBit==0
     	session.extracellular.leastSignificantBit = 0.195; % Intan system = 0.195 µV/bit
     end
     
@@ -83,7 +83,7 @@ for i = 1:length(sessions)
         try 
             cd(basepath)
         catch
-            error('db_set_path: Unable to change to basepath directory')
+            error(['db_set_path: Unable to change to basepath directory: ', basepath])
         end
     end
     

@@ -20,17 +20,17 @@ f_submit_cells = waitbar(0,'DB: Submitting cells to database');
 bz_database = db_credentials;
 options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password); % 'ContentType','json','MediaType','application/json'
 
-% Updating Session WithToggle
-if isempty(session.analysisStats.cellMetrics) || ~strcmp(session.analysisStats.cellMetrics, '1')
-    waitbar(0,f_submit_cells,['DB: Adjusting session toggle: ',session.general.name]);
-    options2 = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
-    web_address2 = [bz_database.rest_api.address, 'entries/' session.general.entryID];
-    webwrite(web_address2,options2,'form_id','143','session_cellmetrics',1,'',length(cell_metrics.general.cellCount));
+% Updating Session with toggle
+
+if isempty(session.spikeSorting.cellMetrics) || ~strcmp(session.spikeSorting.cellMetrics, '1')
+    waitbar(0,f_submit_cells,['DB: Adjusting cell metrics toggle: ',session.general.name]);
+    web_address1 = [bz_database.rest_api.address,'entries/', num2str(cell_metrics.spikeSortingID(1))];
+    webwrite(web_address1,options,'session_cellmetrics',1);
 end
 
 % Updating spike count for the selected sorting session
 web_address1 = [bz_database.rest_api.address,'entries/', num2str(cell_metrics.spikeSortingID(1))];
-options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
+
 webwrite(web_address1,options,'session_cell_count',cell_metrics.general.cellCount);
 waitbar(0,f_submit_cells,'DB: Session updated succesfully.');
 

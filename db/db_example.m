@@ -1,6 +1,6 @@
 % Load meta data for single session
 
-sessionName = 'Peter_MS21_180718_103455_concat';
+sessionName = 'Peter_MS21_180629_110332_concat';
 sessions = db_load_sessions('session',sessionName);
 session = sessions{1};
 
