@@ -101,6 +101,7 @@ spikesPlots = []; globalZoom = cell(1,9); createStruct.Interpreter = 'tex'; crea
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = []; groundTruthSelection = []; subsetGroundTruth = [];
 positionsTogglebutton = [[1 29 27 13];[29 29 27 13];[1 15 27 13];[29 15 27 13];[1 1 27 13];[29 1 27 13]]; dispTags = []; dispTags2 = [];
 incoming = []; outgoing = []; connections = []; plotName = ''; db = {}; plotConnections = [1 1 1]; tableDataOrder = []; 
+set(groot, 'DefaultFigureVisible', 'on')
 
 if isempty(basename)
     s = regexp(basepath, filesep, 'split');
@@ -337,10 +338,10 @@ UI.menu.display.adjustGUI = uimenu(UI.menu.display.topMenu,menuLabel,'Adjust num
 UI.menu.display.showHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Toggle remainig menubar',menuSelectedFcn,@showHideMenu,'Accelerator','M');
 UI.menu.display.significanceMetricsMatrix = uimenu(UI.menu.display.topMenu,menuLabel,'Calculate significance metrics matrix',menuSelectedFcn,@SignificanceMetricsMatrix,'Accelerator','K');
 UI.menu.display.redefineMetrics = uimenu(UI.menu.display.topMenu,menuLabel,'Define metrics used in t-SNE',menuSelectedFcn,@tSNE_redefineMetrics,'Accelerator','T');
-UI.menu.display.showHeatmap = uimenu(UI.menu.display.topMenu,menuLabel,'show heatmap in firing rate maps',menuSelectedFcn,@toggleHeatmapFiringRateMaps);
-if UI.settings.firingRateMap.showHeatmap; UI.menu.display.showHeatmap.Checked = 'on'; end
 UI.menu.display.firingRateMapShowLegend = uimenu(UI.menu.display.topMenu,menuLabel,'show legend in firing rate maps',menuSelectedFcn,@toggleFiringRateMapShowLegend);
 if UI.settings.firingRateMap.showLegend; UI.menu.display.firingRateMapShowLegend.Checked = 'on'; end
+UI.menu.display.showHeatmap = uimenu(UI.menu.display.topMenu,menuLabel,'show heatmap in firing rate maps',menuSelectedFcn,@toggleHeatmapFiringRateMaps);
+if UI.settings.firingRateMap.showHeatmap; UI.menu.display.showHeatmap.Checked = 'on'; end
 UI.menu.display.firingRateMapShowHeatmapColorbar = uimenu(UI.menu.display.topMenu,menuLabel,'show colorbar in heatmaps in firing rate maps',menuSelectedFcn,@toggleFiringRateMapShowHeatmapColorbar);
 if UI.settings.firingRateMap.showHeatmapColorbar; UI.menu.display.firingRateMapShowHeatmapColorbar.Checked = 'on'; end
 
