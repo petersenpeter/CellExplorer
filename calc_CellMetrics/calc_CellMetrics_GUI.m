@@ -18,11 +18,15 @@ session = sessionIn;
 statusExit = 0;
 
 % Creating figure
-UI.fig = dialog('position',[50,50,520,550],'Name','calc cell_metrics','WindowStyle','modal'); movegui(UI.fig,'center')
+UI.fig = dialog('position',[50,50,520,560],'Name','Cell metrics','WindowStyle','modal'); movegui(UI.fig,'center')
 
 % Tabs
-UI.uitabgroup = uitabgroup('Units','pixels','Position',[0 50 520 500],'Parent',UI.fig);
-UI.tabs.cellMetrics = uitab(UI.uitabgroup,'Title','Parameters');
+UI.uitabgroup = uitabgroup('Units','pixels','Position',[0 40 520 510],'Parent',UI.fig);
+if exist('parameters','var')
+    UI.tabs.cellMetrics = uitab(UI.uitabgroup,'Title','Parameters');
+else
+    UI.tabs.cellMetrics = uitab(UI.uitabgroup,'Title','General');
+end
 UI.tabs.general = uitab(UI.uitabgroup,'Title','Animal');
 % UI.tabs.epochs = uitab(UI.uitabgroup,'Title','Epochs');
 UI.tabs.extracellular = uitab(UI.uitabgroup,'Title','Extracellular');
@@ -35,39 +39,52 @@ UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[26
 
 % Tab: cell metrics
 % % % % % % % % % % % % % % % % % % % %
-uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Session name (basename)', 'Position', [10, 440, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.session = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 415, 480, 25],'HorizontalAlignment','left');
 
-uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'base path', 'Position', [10, 390, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.basepath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', parameters.basepath, 'Position', [10, 365, 480, 25],'HorizontalAlignment','left');
-
-uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'clustering path', 'Position', [10, 340, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', parameters.clusteringpath, 'Position', [10, 315, 480, 25],'HorizontalAlignment','left');
-
-% Include metrics
-UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','ripple_metrics','monoSynaptic_connections','spatial_metrics','perturbation_metrics','theta_metrics','psth_metrics'};
-uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Include metrics (default: all)', 'Position', [10, 290, 235, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.listbox.includeMetrics = uicontrol('Parent',UI.tabs.cellMetrics,'Style','listbox','Position',[10 140 235 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metrics));
-
-% Exclude metrics
-uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Exclude metrics (default: none)', 'Position', [250, 290, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.listbox.excludeMetrics = uicontrol('Parent',UI.tabs.cellMetrics,'Style','listbox','Position',[250 140 240 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.excludeMetrics));
-
-% Parameters
-UI.list.params = {'forceReload','submitToDatabase','saveMat','plots','keepCellClassification','useNeurosuiteWaveforms'};
-uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Parameters', 'Position', [10, 100, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-for iParams = 1:length(UI.list.params)
-    UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.cellMetrics,'Style','checkbox','Position',[10 110-iParams*15 300 15],'Units','normalized','String',UI.list.params{iParams});
-    UI.checkbox.params(iParams).Value = parameters.(UI.list.params{iParams});
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Session name (basename)', 'Position', [10, 440, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.session = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 415, 480, 25],'HorizontalAlignment','left');
+    
+if exist('parameters','var')
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'base path', 'Position', [10, 390, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.basepath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', parameters.basepath, 'Position', [10, 365, 480, 25],'HorizontalAlignment','left');
+    
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'clustering path', 'Position', [10, 340, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', parameters.clusteringpath, 'Position', [10, 315, 480, 25],'HorizontalAlignment','left');
+    
+    % Include metrics
+    UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','ripple_metrics','monoSynaptic_connections','spatial_metrics','perturbation_metrics','theta_metrics','psth_metrics'};
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Include metrics (default: all)', 'Position', [10, 290, 235, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.listbox.includeMetrics = uicontrol('Parent',UI.tabs.cellMetrics,'Style','listbox','Position',[10 140 235 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metrics));
+    
+    % Exclude metrics
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Exclude metrics (default: none)', 'Position', [250, 290, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.listbox.excludeMetrics = uicontrol('Parent',UI.tabs.cellMetrics,'Style','listbox','Position',[250 140 240 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.excludeMetrics));
+    
+    % Parameters
+    UI.list.params = {'forceReload','submitToDatabase','saveMat','plots','keepCellClassification','useNeurosuiteWaveforms','excludeManipulations'};
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Parameters', 'Position', [10, 100, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    for iParams = 1:length(UI.list.params)
+        UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.cellMetrics,'Style','checkbox','Position',[10 110-iParams*15 300 15],'Units','normalized','String',UI.list.params{iParams});
+        UI.checkbox.params(iParams).Value = parameters.(UI.list.params{iParams});
+    end
+    
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe layout', 'Position', [250, 100, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.probesLayout = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'popup', 'String', {'unknown','linear', 'staggered', 'poly2', 'poly3','poly5'} , 'Position', [250, 75, 240, 25],'HorizontalAlignment','left');
+    if iscell(session.extracellular.probesLayout) && size(session.extracellular.probesLayout,2)>1
+        probesLayout = session.extracellular.probesLayout{1};
+    else
+        probesLayout = session.extracellular.probesLayout;
+    end
+    UIsetValue(UI.edit.probesLayout,probesLayout)
+    
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe vertical spacing (µm)', 'Position', [250, 50, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.probesVerticalSpacing = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.extracellular.probesVerticalSpacing, 'Position', [250, 25, 240, 25],'HorizontalAlignment','left');
+else
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'base path', 'Position', [10, 390, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.basepath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.general.basePath, 'Position', [10, 365, 480, 25],'HorizontalAlignment','left');
+    
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'clustering path', 'Position', [10, 340, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.general.clusteringPath, 'Position', [10, 315, 480, 25],'HorizontalAlignment','left');
 end
-
-uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe layout', 'Position', [250, 100, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.probesLayout = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'popup', 'String', {'unknown','linear', 'staggered', 'poly2', 'poly3','poly5'} , 'Position', [250, 75, 240, 25],'HorizontalAlignment','left');
-UIsetValue(UI.edit.probesLayout,session.extracellular.probesLayout)
-
-uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe vertical spacing (µm)', 'Position', [250, 50, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.probesVerticalSpacing = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.extracellular.probesVerticalSpacing, 'Position', [250, 25, 240, 25],'HorizontalAlignment','left');
-
 
 % Tab: session - general
 % % % % % % % % % % % % % % % % % % % % %
@@ -152,15 +169,19 @@ uiwait(UI.fig)
 
     function CloseMetricsWindow
         % Saving parameters
-        for iParams = 1:length(UI.list.params)
-            UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.cellMetrics,'Style','checkbox','Position',[10 110-iParams*15 300 15],'Units','normalized','String',UI.list.params{iParams});
-            parameters.(UI.list.params{iParams}) = UI.checkbox.params(iParams).Value;
-        end
-        if ~isempty(UI.listbox.includeMetrics.Value)
-            parameters.metrics = UI.listbox.includeMetrics.String(UI.listbox.includeMetrics.Value);
-        end
-        if ~isempty(UI.listbox.excludeMetrics.Value)
-            parameters.excludeMetrics = UI.listbox.excludeMetrics.String(UI.listbox.excludeMetrics.Value);
+        if exist('parameters','var')
+            for iParams = 1:length(UI.list.params)
+                UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.cellMetrics,'Style','checkbox','Position',[10 110-iParams*15 300 15],'Units','normalized','String',UI.list.params{iParams});
+                parameters.(UI.list.params{iParams}) = UI.checkbox.params(iParams).Value;
+            end
+            if ~isempty(UI.listbox.includeMetrics.Value)
+                parameters.metrics = UI.listbox.includeMetrics.String(UI.listbox.includeMetrics.Value);
+            end
+            if ~isempty(UI.listbox.excludeMetrics.Value)
+                parameters.excludeMetrics = UI.listbox.excludeMetrics.String(UI.listbox.excludeMetrics.Value);
+            end
+            session.extracellular.probesLayout = UI.edit.probesLayout.String{UI.edit.probesLayout.Value};
+            session.extracellular.probesVerticalSpacing = str2double(UI.edit.probesVerticalSpacing.String);
         end
         session.general.sex = UI.edit.sex.String{UI.edit.sex.Value};
         session.general.species = UI.edit.species.String;
@@ -168,8 +189,7 @@ uiwait(UI.fig)
         session.general.geneticLine = UI.edit.geneticLine.String;
         
         session.extracellular.leastSignificantBit = str2double(UI.edit.leastSignificantBit.String);
-        session.extracellular.probesLayout = UI.edit.probesLayout.String{UI.edit.probesLayout.Value};
-        session.extracellular.probesVerticalSpacing = str2double(UI.edit.probesVerticalSpacing.String);
+        
         session.extracellular.sr = str2double(UI.edit.sr.String);
         session.extracellular.srLfp = str2double(UI.edit.srLfp.String);
         session.extracellular.nChannels = str2double(UI.edit.nChannels.String);

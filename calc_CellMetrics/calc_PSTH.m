@@ -5,6 +5,7 @@ function [PSTH_out,time] = calc_PSTH(events,spikes,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
+% Last edited 08-07-2019
 
 p = inputParser;
 addParameter(p,'binSize',0.001,@isnumeric);
@@ -27,5 +28,5 @@ spike_cluster_index = spike_cluster_index(index);
 [ccg,time] = CCG(spike_times,spike_cluster_index,'binSize',binSize,'duration',duration,'norm','rate');
 PSTH_out = ccg(:,2:end,1);
 if smoothing>0
-    PSTH_out = nanconv(PSTH,ones(1,PSTH_out)/PSTH_out,'edge');
+    PSTH_out = nanconv(PSTH_out,ones(1,smoothing)/smoothing,'edge');
 end

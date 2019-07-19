@@ -37,7 +37,20 @@ basepath = session.general.basePath;
 basename = session.general.baseName;
 
 % Loading detected ripples
-load(fullfile(basepath,[basename,'.ripples.events.mat']));
+if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
+    load(fullfile(basepath,[basename,'.ripples.events.mat']));
+else
+    if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple')
+        disp('  Using RippleNoise reference channel')
+        RippleNoiseChannel = double(LoadBinary([basename, lfpExtension],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
+        ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
+    elseif isfield(session.channelTags,'Ripple')
+        ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
+    else
+        error('Ripple channel not defined!')
+    end
+    
+end
 if isfield(ripples,'detectorinfo') & isfield(ripples.detectorinfo,'detectionparms') & isfield(ripples.detectorinfo.detectionparms,'channel')
     ripple_channel_detector = ripples.detectorinfo.detectionparms.channel;
 else

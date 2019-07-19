@@ -9,20 +9,19 @@
 % Cell Explorer Preferences  
 % % % % % % % % % % % % % % % % % % % % % %
 
-% Display settings - A incomplete list:
-%    'Single waveform','All waveforms','All waveforms (image)','Single raw waveform','All raw waveforms','Single ACG',
-%    'All ACGs','All ACGs (image)','CCGs (image)','Sharp wave-ripple','firingRateAcrossTime','firingRateMap',
-%    'firingRateMap_CoolingStates','firingRateMap_LeftRight','rippleCorrelogram','thetaPhaseResponse'
-UI.settings.customCellPlotIn1 = 'Single waveform';
+% Display settings - An incomplete list:
+% 'Single waveform','All waveforms','All waveforms (image)','Single raw waveform','All raw waveforms','Single ACG',
+% 'All ACGs','All ACGs (image)','CCGs (image)','Sharp wave-ripple'
+UI.settings.customCellPlotIn1 = 'All waveforms';
 UI.settings.customCellPlotIn2 = 'Single ACG'; 
-UI.settings.customCellPlotIn3 = 'firingRateAcrossTime';
+UI.settings.customCellPlotIn3 = 'responseCurves_firingRateAcrossTime';
 UI.settings.customCellPlotIn4 = 'All waveforms';
 UI.settings.customCellPlotIn5 = 'CCGs (image)';
 UI.settings.customCellPlotIn6 = 'firingRateMap';
 
 UI.settings.acgType = 'Normal';                 % Normal (100ms), Wide (1s), Narrow (30ms)
 UI.settings.monoSynDispIn = 'Selected';         % 'All', 'Upstream', 'Downstream', 'Up & downstream', 'Selected', 'None'
-UI.settings.metricsTableType = 'Cells';         % ['Metrics','Cells','None']
+UI.settings.metricsTableType = 'Metrics';         % ['Metrics','Cells','None']
 UI.settings.plotCountIn = 'GUI 3+3';            % ['GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6']
 UI.settings.dispLegend = 0;                     % [0,1] Display legend for scatter plots?
 UI.settings.plotWaveformMetrics = 0;            % show waveform metrics on the single waveform
@@ -53,11 +52,17 @@ UI.settings.tSNE_calcFiltWaveform = false;      % boolean
 UI.settings.tSNE_calcRawWaveform = false;       % boolean
 
 % List of fields to use in the general tSNE representation
-UI.settings.tSNE_metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','derivative_TroughtoPeak','filtWaveform_zscored','acg2_zscored'}; % 'thetaPhaseTrough','thetaEntrainment'
+UI.settings.tSNE_metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','troughtoPeakDerivative'};
+UI.settings.tSNE_dDistanceMetric = 'seuclidean'; % default: 'euclidean'
 
 % Highlight excitatory / inhibitory cells
 UI.settings.displayInhibitory = false;          % boolean
 UI.settings.displayExcitatory = false;          % boolean
+
+% Firing rate map setting
+UI.settings.firingRateMap.showHeatmap = false;          % boolean
+UI.settings.firingRateMap.showLegend = false;           % boolean
+UI.settings.firingRateMap.showHeatmapColorbar = false;  % boolean
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Spikes plot definitions

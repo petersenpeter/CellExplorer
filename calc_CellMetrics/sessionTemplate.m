@@ -24,13 +24,13 @@ session.extracellular.leastSignificantBit = 0.195; % (in uV) Intan = 0.195, Ampl
 session.spikeSorting.format{1} = 'Phy'; % Sorting data-format: Phy,Kilosort, Klustakwik, KlustaViewer, SpikingCircus, Neurosuite
 session.spikeSorting.method{1} = 'KiloSort'; % Sorting algorith: KiloSort, Klustakwik, MaskedKlustakwik, SpikingCircus
 
-session.brainRegions.CA1.channels = 1:128; % Brain region assignment (Allan institute Acronyms: http://atlas.brain-map.org/atlas?atlas=1)
+% session.brainRegions.CA1.channels = 1:128; % Brain region assignment (Allan institute Acronyms: http://atlas.brain-map.org/atlas?atlas=1)
 
-session.channelTags.Theta.channels = 64; % Theta channel
-session.channelTags.Ripple.channels = 64; % Ripple channel
-session.channelTags.Ripple.spikeGroups = 3; % Ripple spike group
-session.channelTags.RippleNoise.channels = 1; % Ripple Noise reference channel
-session.channelTags.Cortical.spikeGroups = 3; % Cortical spike groups
+% session.channelTags.Theta.channels = 64; % Theta channel
+% session.channelTags.Ripple.channels = 64; % Ripple channel
+% session.channelTags.Ripple.spikeGroups = 3; % Ripple spike group
+% session.channelTags.RippleNoise.channels = 1; % Ripple Noise reference channel
+% session.channelTags.Cortical.spikeGroups = 3; % Cortical spike groups
 % session.channelTags.Bad.channels = 1; % Bad channels
 % session.channelTags.Bad.spikeGroups = 1; % Bad spike groups (broken shanks)
 

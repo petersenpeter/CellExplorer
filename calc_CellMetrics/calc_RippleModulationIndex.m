@@ -1,5 +1,10 @@
 function [RippleModulationIndex,RipplePeakDelay,RippleCorrelogram] = calc_RippleModulationIndex(PSTH,time)
 %% Ripple modulation index
+
+% By Peter Petersen
+% petersen.peter@gmail.com
+% 08-07-2019
+
 RippleModulationIndex = [];
 RippleCorrelogram = [];
 

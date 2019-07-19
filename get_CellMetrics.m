@@ -43,6 +43,7 @@ addParameter(p,'cell_metrics',{},@isstruct);
 addParameter(p,'id',[],@isnumeric);
 addParameter(p,'session',[],@isstr);
 addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'basename','',@isstr);
 addParameter(p,'clusteringpath',pwd,@isstr);
 
 % Batch input
@@ -75,6 +76,7 @@ cell_metrics = p.Results.cell_metrics;
 id = p.Results.id;
 sessionin = p.Results.session;
 basepath = p.Results.basepath;
+basename = p.Results.basename;
 clusteringpath = p.Results.clusteringpath;
 
 % Extra inputs
@@ -98,6 +100,11 @@ deepSuperficial = p.Results.deepSuperficial;
 animal = p.Results.animal;
 tags = p.Results.tags;
 
+if isempty(basename)
+    s = regexp(basepath, filesep, 'split');
+    basename = s{end};
+end
+
 if ~isempty(cell_metrics)
     disp('')
 elseif ~isempty(id) || ~isempty(sessionin)
@@ -107,10 +114,10 @@ elseif ~isempty(id) || ~isempty(sessionin)
     else
         [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin);
     end
-    if exist(fullfile(clusteringpath,[saveAs,'.mat']),'file')
-        load(fullfile(clusteringpath,[saveAs,'.mat']))
+    if exist(fullfile(clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
+        load(fullfile(clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']))
     else
-        warning(['Error loading metrics: ' fullfile(clusteringpath,[saveAs,'.mat'])])
+        warning(['Error loading metrics: ' fullfile(clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
     end
 elseif ~isempty(sessions)
     cell_metrics = LoadCellMetricBatch('sessions',sessions);
