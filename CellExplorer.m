@@ -23,9 +23,6 @@ function cell_metrics = CellExplorer(varargin)
 % petersen.peter@gmail.com
 % Last edited: 24-07-2019
 
-% TODO
-% Adjust deepSuperficial channel/spike groups in the GUI
-
 % Shortcuts to built-in functions
 % initializeSession, LoadDatabaseSession, buttonSave, keyPress, defineSpikesPlots, customPlot, GroupAction, brainRegionDlg
 
