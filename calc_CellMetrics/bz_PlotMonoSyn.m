@@ -3,7 +3,6 @@ function keep_con = bz_PlotMonoSyn(ccgR,sig_con,Pred,Bounds,completeIndex,binSiz
 % click to deselect the ccg (turns pink)
 
 % Edited by Peter Petersen
-% petersen.peter@gmail.com
 % Last edited: 12-07-2019
 
 keep_con = sig_con;
@@ -222,8 +221,8 @@ while length(p)>2
     p=sort(p);
 end
 
-%Reformat if the column/row ratio is too large: we want a roughly
-%square design
+% Reformat if the column/row ratio is too large: we want a roughly
+% square design
 while p(2)/p(1)>2.5
     N=n+1;
     [p,n]=numSubplots(N); %Recursive!

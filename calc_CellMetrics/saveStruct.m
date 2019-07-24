@@ -1,4 +1,4 @@
-function success = saveStruct(data,varargin)
+function success = saveStruct(data,datatype,varargin)
 % Saves event, manipulation, behavior data to appropiate .mat files
 % Performs validation of the content before saving (not yet implemented)
 
@@ -11,14 +11,14 @@ addParameter(p,'data',[],@isstruct); % struct with data to save
 addParameter(p,'basepath',pwd,@isstr); 
 addParameter(p,'clusteringpath',pwd,@isstr);
 addParameter(p,'basename','',@isstr);
-addParameter(p,'datatype','events',@isstr); % 
+% addParameter(p,'datatype','events',@isstr); % 
 addParameter(p,'session',{},@isstruct);
 parse(p,varargin{:})
 
 basepath = p.Results.basepath;
 basename = p.Results.basename;
 clusteringpath = p.Results.clusteringpath;
-datatype = p.Results.datatype;
+% datatype = p.Results.datatype;
 session = p.Results.session;
 
 success = false;
@@ -55,5 +55,5 @@ if any(strcmp(datatype,supportedDataTypes))
     disp(['Successfully saved ', filename])
     success = true;
 else
-    error(['Datatype not formatted correctly saved ', filename])
+    error(['Not a valid datatype: ', datatype,', filename: ' filename])
 end

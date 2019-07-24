@@ -17,11 +17,11 @@ function cell_metrics = CellExplorer(varargin)
 % CellExplorer('basepaths',{'path1','[path1'}) % Load batch from a list with paths
 %
 % OUTPUT
-% cell_metrics: structure
+% cell_metrics: struct
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 04-07-2019
+% Last edited: 24-07-2019
 
 % TODO
 % Adjust deepSuperficial channel/spike groups in the GUI
@@ -101,14 +101,14 @@ spikesPlots = []; globalZoom = cell(1,9); createStruct.Interpreter = 'tex'; crea
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = []; groundTruthSelection = []; subsetGroundTruth = [];
 positionsTogglebutton = [[1 29 27 13];[29 29 27 13];[1 15 27 13];[29 15 27 13];[1 1 27 13];[29 1 27 13]]; dispTags = []; dispTags2 = [];
 incoming = []; outgoing = []; connections = []; plotName = ''; db = {}; plotConnections = [1 1 1]; tableDataOrder = []; 
-set(groot, 'DefaultFigureVisible', 'on')
+set(groot, 'DefaultFigureVisible', 'on'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1200,maxFigureSize(3)-50), min(800,maxFigureSize(4)-50)];
 
 if isempty(basename)
     s = regexp(basepath, filesep, 'split');
     basename = s{end};
 end
 
-CellExplorerVersion = 1.38;
+CellExplorerVersion = 1.39;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress});
 hManager = uigetmodemanager(UI.fig);
@@ -329,9 +329,11 @@ UI.menu.navigation.previousSelectedCell = uimenu(UI.menu.navigation.topMenu,menu
 
 UI.menu.edit.topMenu = uimenu(UI.fig,menuLabel,'Classification');
 UI.menu.edit.undoClassification = uimenu(UI.menu.edit.topMenu,menuLabel,'Undo classification',menuSelectedFcn,@undoClassification,'Accelerator','Z');
-UI.menu.edit.reclassify_celltypes = uimenu(UI.menu.edit.topMenu,menuLabel,'Auto classify celltypes',menuSelectedFcn,@reclassify_celltypes,'Accelerator','R');
 UI.menu.edit.buttonBrainRegion = uimenu(UI.menu.edit.topMenu,menuLabel,'Assign brain region',menuSelectedFcn,@buttonBrainRegion,'Accelerator','B');
 UI.menu.edit.buttonLabel = uimenu(UI.menu.edit.topMenu,menuLabel,'Assign label',menuSelectedFcn,@buttonLabel,'Accelerator','L');
+UI.menu.edit.performClassification = uimenu(UI.menu.edit.topMenu,menuLabel,'Agglomerative hierarchical cluster tree classification',menuSelectedFcn,@performClassification);
+UI.menu.edit.reclassify_celltypes = uimenu(UI.menu.edit.topMenu,menuLabel,'Reclassify cells',menuSelectedFcn,@reclassify_celltypes,'Accelerator','R');
+UI.menu.edit.adjustDeepSuperficial = uimenu(UI.menu.edit.topMenu,menuLabel,'adjust Deep-Superficial for session',menuSelectedFcn,@adjustDeepSuperficial1);
 
 UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Display');
 UI.menu.display.adjustGUI = uimenu(UI.menu.display.topMenu,menuLabel,'Adjust number of subplots in GUI',menuSelectedFcn,@AdjustGUI,'Accelerator','N');
@@ -2274,7 +2276,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             waitbar(0.1,f_waitbar,'Calculating tSNE space...')
             
             tSNE_metrics.plot = tsne(X','Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',10);            
-%             tSNE_metrics.plot = run_umap(X');
             
             if size(tSNE_metrics.plot,2)==1
                 tSNE_metrics.plot = [tSNE_metrics.plot,tSNE_metrics.plot];
@@ -2288,6 +2289,94 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         fig3_axislimit_x = [min(tSNE_metrics.plot(:,1)), max(tSNE_metrics.plot(:,1))];
         fig3_axislimit_y = [min(tSNE_metrics.plot(:,2)), max(tSNE_metrics.plot(:,2))];
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function adjustDeepSuperficial1(~,~)
+        % Adjust Deep-Superfical assignment for session and update cell_metrics
+        deepSuperficialfromRipple = adjustDeepSuperficial(cell_metrics.general.basepaths{batchIDs},general.basename);
+        if ~isempty(deepSuperficialfromRipple)
+            subset = find(cell_metrics.batchIDs == batchIDs);
+            saveStateToHistory(subset)
+            for j = subset
+                cell_metrics.deepSuperficial(j) = deepSuperficialfromRipple.channelClass(cell_metrics.maxWaveformCh1(j));
+                cell_metrics.deepSuperficialDistance(j) = deepSuperficialfromRipple.channelDistance(cell_metrics.maxWaveformCh1(j));
+            end
+            for j = 1:length(UI.settings.deepSuperficial)
+                cell_metrics.deepSuperficial_num(strcmp(cell_metrics.deepSuperficial,UI.settings.deepSuperficial{j}))=j;
+            end
+            
+            if BatchMode
+                SWR_batch{cell_metrics.batchIDs(ii)} = deepSuperficialfromRipple;
+            else
+                SWR_batch = deepSuperficialfromRipple;
+            end
+            if BatchMode && isfield(cell_metrics.general,'saveAs')
+                saveAs = cell_metrics.general.saveAs{batchIDs};
+            else
+                saveAs = 'cell_metrics';
+            end
+            matpath = fullfile(cell_metrics.general.paths{batchIDs},[cell_metrics.general.basenames{batchIDs}, '.',saveAs,'.cellinfo.mat'])
+            matFileCell_metrics = matfile(matpath,'Writable',true);
+            temp = matFileCell_metrics.cell_metrics;
+            temp.general.SWR = deepSuperficialfromRipple;
+            matFileCell_metrics.cell_metrics = temp;
+            MsgLog('Deep-Superficial succesfully updated',2);
+            uiresume(UI.fig);
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function performClassification(~,~)
+        subfieldsnames =  fieldnames(cell_metrics);
+        subfieldstypes = struct2cell(structfun(@class,cell_metrics,'UniformOutput',false));
+        subfieldssizes = struct2cell(structfun(@size,cell_metrics,'UniformOutput',false));
+        subfieldssizes = cell2mat(subfieldssizes);
+        temp = find(strcmp(subfieldstypes,'double') & subfieldssizes(:,2) == length(cell_metrics.cellID) & ~contains(subfieldsnames,'_num'));
+        list_tSNE_metrics = sort(subfieldsnames(temp));
+        subfieldsExclude = {'UID','batchIDs','cellID','cluID','maxWaveformCh1','maxWaveformCh','sessionID','SpikeGroup','SpikeSortingID'};
+        list_tSNE_metrics = setdiff(list_tSNE_metrics,subfieldsExclude);
+        if isfield(UI.settings,'classification_metrics')
+            [~,ia,~] = intersect(list_tSNE_metrics,UI.settings.classification_metrics);
+        else
+            [~,ia,~] = intersect(list_tSNE_metrics,UI.settings.tSNE_metrics);
+        end
+        list_tSNE_metrics = [list_tSNE_metrics(ia);list_tSNE_metrics(setdiff(1:length(list_tSNE_metrics),ia))];
+        [indx,tf] = listdlg('PromptString',['Select the metrics to use for the classification'],'ListString',list_tSNE_metrics,'SelectionMode','multiple','ListSize',[350,400],'InitialValue',1:length(ia));
+        if ~isempty(indx)
+            f_waitbar = waitbar(0,'Preparing metrics for classification...','WindowStyle','modal');
+            X = cell2mat(cellfun(@(X) cell_metrics.(X),list_tSNE_metrics(indx),'UniformOutput',false));
+            UI.settings.classification_metrics = list_tSNE_metrics(indx);
+            
+            X(isnan(X) | isinf(X)) = 0;
+            waitbar(0.1,f_waitbar,'Calculating tSNE space...')
+            
+            % Hierarchical Clustering
+            eucD = pdist(X','euclidean');
+            clustTreeEuc = linkage(X','average');
+            cophenet(clustTreeEuc,eucD);
+                        
+            % K nearest neighbor clustering
+            % Mdl = fitcknn(X',cell_metrics.putativeCellType,'NumNeighbors',5,'Standardize',1);
+
+            % UMAP visualization
+            % tSNE_metrics.plot = run_umap(X');
+            
+            waitbar(1,f_waitbar,'Classification calculations complete.')
+            if ishandle(f_waitbar)
+                close(f_waitbar)
+            end
+            figure,
+            [h,nodes] = dendrogram(clustTreeEuc,0); title('Hierarchical Clustering')
+            h_gca = gca;
+            h_gca.TickDir = 'out';
+            h_gca.TickLength = [.002 0];
+            h_gca.XTickLabel = [];
+            
+            MsgLog('Classification space calculations complete.');
+        end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -2341,6 +2430,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         history_classification(hist_idx).labels = cell_metrics.labels{cellIDs};
         history_classification(hist_idx).tags = cell_metrics.tags{cellIDs};
         history_classification(hist_idx).deepSuperficial_num = cell_metrics.deepSuperficial_num(cellIDs);
+        history_classification(hist_idx).deepSuperficialDistance = cell_metrics.deepSuperficialDistance(cellIDs);
         history_classification(hist_idx).groundTruthClassification = cell_metrics.groundTruthClassification{cellIDs};
         classificationTrackChanges = [classificationTrackChanges,cellIDs];
         if rem(hist_idx,UI.settings.autoSaveFrequency) == 0
@@ -4214,7 +4304,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         plot_cells = [ii,ClickedCells];
                     end
                     plot_cells = unique(plot_cells,'stable');
-                    figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',[100 100 1200 800])
+                    figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize)
                     
                     plot_cells2 = cell_metrics.UID(plot_cells);
                     k = 1;
@@ -4265,7 +4355,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         plot_cells = [ii,ClickedCells];
                     end
                     plot_cells = unique(plot_cells,'stable');
-                    figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',[100 100 1200 800])
+                    figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize)
                     
                     plot_cells2 = cell_metrics.UID(plot_cells);
                     k = 1;
@@ -4330,7 +4420,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 [selectedActions,tf] = listdlg('PromptString',['Plot actions to perform on ' num2str(length(cellIDs)) ' cells'],'ListString',customPlotOptions','SelectionMode','Multiple','ListSize',[300,350]);
                 if ~isempty(selectedActions)
                     plot_columns = min([length(cellIDs),5]);
-                    figure('name',['Cell Explorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'])
+                    figure('name',['Cell Explorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.settings.figureSize)
                     [plotRows,~]= numSubplots(length(selectedActions));
                     for j = 1:length(cellIDs)
                         if BatchMode
@@ -4357,7 +4447,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 
             elseif choice > 9
                 % Plots any custom plot for selected cells in a single new figure with subplots
-                figure('Name',['Cell Explorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off')
+                figure('Name',['Cell Explorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off','pos',UI.settings.figureSize)
                 for j = 1:length(cellIDs)
                     if BatchMode
                         batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
@@ -4448,6 +4538,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             cell_metrics.tags{history_classification(end).cellIDs} = cellstr(history_classification(end).tags);
             cell_metrics.brainRegion(history_classification(end).cellIDs) = cellstr(history_classification(end).brainRegion);
             cell_metrics.deepSuperficial_num(history_classification(end).cellIDs) = history_classification(end).deepSuperficial_num;
+            cell_metrics.deepSuperficialDistance(history_classification(end).cellIDs) = history_classification(end).deepSuperficialDistance;
             cell_metrics.groundTruthClassification{history_classification(end).cellIDs} = cellstr(history_classification(end).groundTruthClassification);
             classificationTrackChanges = [classificationTrackChanges,history_classification(end).cellIDs];
             
@@ -4639,6 +4730,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     cell_metrics.labels = cell_metricsTemp.labels(cellSubset);
                     cell_metrics.tags = cell_metricsTemp.tags(cellSubset);
                     cell_metrics.deepSuperficial = cell_metricsTemp.deepSuperficial(cellSubset);
+                    cell_metrics.deepSuperficialDistance = cell_metricsTemp.deepSuperficialDistance(cellSubset);
                     cell_metrics.brainRegion = cell_metricsTemp.brainRegion(cellSubset);
                     cell_metrics.putativeCellType = cell_metricsTemp.putativeCellType(cellSubset);
                     cell_metrics.groundTruthClassification = cell_metricsTemp.groundTruthClassification(cellSubset);
@@ -4837,6 +4929,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 end
                 groups_ids.deepSuperficial_num = UI.settings.deepSuperficial;
             elseif iscell(cell_metrics.(fieldsMenuCells{i})) && size(cell_metrics.(fieldsMenuCells{i}),1) == 1 && size(cell_metrics.(fieldsMenuCells{i}),2) == size(cell_metrics.UID,2)
+                cell_metrics.(fieldsMenuCells{i})(find(cell2mat(cellfun(@(X) isempty(X), cell_metrics.animal,'uni',0)))) = {''};
                 [cell_metrics.([fieldsMenuCells{i},'_num']),ID] = findgroups(cell_metrics.(fieldsMenuCells{i}));
                 groups_ids.([fieldsMenuCells{i},'_num']) = ID;
             end
@@ -5167,7 +5260,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 
                 loadDB.dialog = dialog('Position', [300, 300, 900, 518],'Name','Load sessions from DB','WindowStyle','modal'); movegui(loadDB.dialog,'center')
                 loadDB.sessionList = uitable(loadDB.dialog,'Data',db.dataTable,'Position',[10, 60, 880, 447],'ColumnWidth',{20 30 210 50 120 70 140 110 110},'columnname',{'','#','Session name','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false]); % ,'CellSelectionCallback',@ClicktoSelectFromTable
-                loadDB.summaryText = uicontrol('Parent',loadDB.dialog,'Style','text','Position',[10, 44, 680, 15],'Units','normalized','String','','HorizontalAlignment','center');
+                loadDB.summaryText = uicontrol('Parent',loadDB.dialog,'Style','text','Position',[10, 44, 880, 15],'Units','normalized','String','','HorizontalAlignment','center');
                 
                 uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll);
                 uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll);
@@ -6284,6 +6377,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
     function keyPress(src, event)
         % Keyboard shortcuts. Sorted alphabetically
+        event.Key
         switch event.Key
             case 'a'
                 % Load spike plot options
@@ -6368,7 +6462,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         uiresume(UI.fig);
                     end
                 end
-            case 'pageup'
+            case {'pageup','backquote'}
                 % Goes to the first cell from the next session in a batch
                 if BatchMode
                     temp = find(cell_metrics.batchIDs(subset)==cell_metrics.batchIDs(ii)+1,1);
@@ -6467,12 +6561,12 @@ if isempty('new')
 end
 if y == 1
     if mod(z,x) == 1 & new
-        figure('Name',titleIn,'pos',[100 100 1200 800])
+        figure('Name',titleIn,'pos',UI.settings.figureSize)
     end
     subplot(x,y,mod(z-1,x)+1)
 else
     if (mod(z,x) == 1 || (z==x & z==1)) & w == 1
-        figure('Name',titleIn,'pos',[100 100 1200 800])
+        figure('Name',titleIn,'pos',UI.settings.figureSize)
     end
     subplot(x,y,y*mod(z-1,x)+w)
 end

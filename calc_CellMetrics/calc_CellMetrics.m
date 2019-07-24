@@ -262,6 +262,9 @@ if saveBackup && ~isempty(cell_metrics)
     if isfield(cell_metrics,'deepSuperficial')
         temp.cell_metrics.deepSuperficial = cell_metrics.deepSuperficial;
     end
+    if isfield(cell_metrics,'deepSuperficialDistance')
+        temp.cell_metrics.deepSuperficialDistance = cell_metrics.deepSuperficialDistance;
+    end
     if isfield(cell_metrics,'brainRegion')
         temp.cell_metrics.brainRegion = cell_metrics.brainRegion;
     end
@@ -442,7 +445,7 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
         
         for j = 1:cell_metrics.general.cellCount
             cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes.maxWaveformCh1(j)); % cell_deep_superficial OK
-            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes.maxWaveformCh(j)+1); % cell_deep_superficial_distance
+            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes.maxWaveformCh(j)); % cell_deep_superficial_distance
         end
     end
 end
@@ -1121,5 +1124,5 @@ if plots
     end
 end
 
-toc(timerCalcMetrics)
 disp(['* Cell metrics calculations complete.']), disp([' '])
+toc(timerCalcMetrics)
