@@ -21,10 +21,15 @@ function cell_metrics = CellExplorer(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 24-07-2019
+% Last edited: 26-07-2019
 
 % Shortcuts to built-in functions
 % initializeSession, LoadDatabaseSession, buttonSave, keyPress, defineSpikesPlots, customPlot, GroupAction, brainRegionDlg
+
+% TODO
+% Gui to Reverse changes from backup files
+% Separate loading of ground truth features
+% Submit ground truth cells from new session
 
 p = inputParser;
 
@@ -6374,7 +6379,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
     function keyPress(src, event)
         % Keyboard shortcuts. Sorted alphabetically
-        event.Key
         switch event.Key
             case 'a'
                 % Load spike plot options
