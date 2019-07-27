@@ -26,7 +26,7 @@ spike_cluster_index = spike_cluster_index(index);
 [~, ~, spike_cluster_index] = unique(spike_cluster_index);
 
 [ccg,time] = CCG(spike_times,spike_cluster_index,'binSize',binSize,'duration',duration,'norm','rate');
-PSTH_out = ccg(:,2:end,1);
+PSTH_out = flip(ccg(:,2:end,1),1);
 if smoothing>0
-    PSTH_out = nanconv(PSTH_out,ones(1,smoothing)/smoothing,'edge');
+    PSTH_out = nanconv(PSTH_out,gausswin(smoothing)/sum(gausswin(smoothing)),'edge');
 end

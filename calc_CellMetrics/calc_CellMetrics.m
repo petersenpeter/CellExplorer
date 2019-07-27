@@ -15,7 +15,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   clusteringpath         - Path to cluster data if different from basepath
 %   showGUI                - Show GUI dialog to adjust settings/parameters
 %   metrics                - Metrics that will be calculated. A cell with strings
-%   Examples:                'waveform_metrics','PCA_features','acg_metrics','c',
+%   Examples:                'waveform_metrics','PCA_features','acg_metrics','deepSuperficial',
 %                            'ripple_metrics','monoSynaptic_connections','spatial_metrics'
 %                            'perturbation_metrics','theta_metrics','psth_metrics',
 %                            'manipulation_metrics', 'event_metrics'.
@@ -34,6 +34,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   saveAs                 - name of .mat file
 %   saveBackup             - logical. Whether a backup file should be created
 %   plots                  - logical. Plot summary figures
+%   debugMode              - logical. Activate a debug mode avoiding try/catch 
 %
 %   OUTPUT
 %   Cell_metrics matlab structure
@@ -73,6 +74,7 @@ addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 addParameter(p,'saveBackup',true,@islogical);
 addParameter(p,'plots',true,@islogical);
+addParameter(p,'debugMode',false,@islogical);
 
 parse(p,varargin{:})
 
@@ -97,6 +99,7 @@ saveMat = p.Results.saveMat;
 saveAs = p.Results.saveAs;
 saveBackup = p.Results.saveBackup;
 plots = p.Results.plots;
+debugMode = p.Results.debugMode;
 timerCalcMetrics = tic;
 
 
@@ -414,7 +417,6 @@ end
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
     disp('* Deep-Superficial by ripple polarity reversal')
     %     lfpExtension = exist_LFP(basepath,basename);
-    
     if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) % ~isempty(excludeManipulationIntervals)
         lfpExtension = exist_LFP(basepath,basename);
         if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple') & isnumeric(session.channelTags.Ripple)
@@ -424,7 +426,7 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
         elseif isfield(session.channelTags,'Ripple') & isnumeric(session.channelTags.Ripple)
             ripples = bz_FindRipples('basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
         else
-            warning('Ripple')
+            warning('Ripple channel not defined')
         end
     end
     
@@ -435,17 +437,16 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
             if ~isfield(session.extracellular,'probesVerticalSpacing') & ~isfield(session.extracellular,'probesLayout')
                 session = determineProbeSpacing(session);
             end
-            classification_DeepSuperficial(session);
+%             classification_DeepSuperficial(session);
         end
         load(deepSuperficial_file)
         cell_metrics.general.SWR = deepSuperficialfromRipple;
         deepSuperficial_ChDistance = deepSuperficialfromRipple.channelDistance; %
         deepSuperficial_ChClass = deepSuperficialfromRipple.channelClass;% cell_deep_superficial
         cell_metrics.general.deepSuperficial_file = deepSuperficial_file;
-        
         for j = 1:cell_metrics.general.cellCount
             cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes.maxWaveformCh1(j)); % cell_deep_superficial OK
-            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes.maxWaveformCh(j)); % cell_deep_superficial_distance
+            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes.maxWaveformCh1(j)); % cell_deep_superficial_distance
         end
     end
 end
@@ -673,6 +674,7 @@ if any(contains(metrics,{'event_metrics','all'})) && ~any(contains(excludeMetric
             eventName = strsplit(eventFiles{i},'.');
             eventName = eventName{end-2};
             eventOut = load(eventFiles{i});
+            disp(['  Importing ' eventName]);
             if strcmp(fieldnames(eventOut),eventName)
                 if strcmp(eventName,'ripples')
                     [PSTH,PSTH_time] = calc_PSTH(eventOut.ripples.peaks,spikes);
@@ -721,52 +723,22 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'manipulation_metrics','all'})) && ~any(contains(excludeMetrics,{'manipulation_metrics'}))
+    disp('* Calculating manipulaiton metrics');
     eventFiles = dir(fullfile(basepath,[basename,'.*.manipulation.mat']));
     eventFiles = {eventFiles.name};
     if ~isempty(eventFiles)
         for iEvents = 1:length(eventFiles)
             eventName = strsplit(eventFiles{iEvents},'.'); eventName = eventName{end-2};
             eventOut = load(eventFiles{iEvents});
-            [PSTH,PSTH_time] = calc_PSTH(eventOut.(eventName).timestamps(:,1),spikes);
+            disp(['  Importing ' eventName]);
+            window_smoothing = 10;
+            [PSTH,PSTH_time] = calc_PSTH(eventOut.(eventName).timestamps(:,1),spikes,'smoothing',window_smoothing);
             eventFieldName = ['manipulation_',eventName];
             cell_metrics.manipulations.(eventName) = num2cell(PSTH,1);
             cell_metrics.general.manipulations.(eventName).event_file = eventFiles{iEvents};
             cell_metrics.general.manipulations.(eventName).x_bins = PSTH_time*1000;
             cell_metrics.general.manipulations.(eventName).x_label = 'Time (ms)';
         end
-    end
-end
-
-
-%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Perturbation metrics
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
-if any(contains(metrics,{'perturbation_metrics','all'})) && ~any(contains(excludeMetrics,{'perturbation_metrics'}))
-    if exist(fullfile(basepath,'optogenetics.mat'),'file')
-        disp('* Calculating perturbation metrics');
-        spikes2 = loadSpikes('basename',basename,'clusteringformat',session.spikeSorting.format{1},'clusteringpath',clusteringpath,'basepath',basepath);
-        
-        field2remove = {'optoPSTH','psth_optostim'};
-        test = isfield(cell_metrics,field2remove);
-        cell_metrics = rmfield(cell_metrics,field2remove(test));
-        
-        cell_metrics.psth.optostim = [];
-        temp = load('optogenetics.mat');
-        trigger = temp.optogenetics.peak;
-        edges = [-1:0.1:1];
-        for j = 1:cell_metrics.general.cellCount
-            psth = zeros(size(edges));
-            for jj = 1:length(trigger)
-                psth = psth + histc(spikes2.times{j}'-trigger(jj),edges);
-            end
-            cell_metrics.psth.optostim{j} = (psth(1:end-1)/length(trigger))/0.1;
-            cell_metrics.psth.optostim{j} = cell_metrics.psth.optostim{j}(:);
-        end
-        
-        cell_metrics.general.psth.optostim.x_label = 'Time (s)';
-        cell_metrics.general.psth.optostim.x_bins = edges(1:end-1)+(edges(2)-edges(1))/2;
-        figure, plot(cell_metrics.general.psth.optostim.x_bins, horzcat(cell_metrics.psth.optostim{:}))
     end
 end
 
@@ -958,12 +930,17 @@ cell_metrics.general = rmfield(cell_metrics.general,field2remove(test));
 
 if submitToDatabase
     disp('* Submitting cells to database');
-    try
+    if debugMode
         session = db_update_session(session,'forceReload',true);
         cell_metrics = db_submit_cells(cell_metrics,session);
-    catch exception
-        disp(exception.identifier)
-        warning('Failed to submit to database');
+    else
+        try
+            session = db_update_session(session,'forceReload',true);
+            cell_metrics = db_submit_cells(cell_metrics,session);
+        catch exception
+            disp(exception.identifier)
+            warning('Failed to submit to database');
+        end
     end
 end
 

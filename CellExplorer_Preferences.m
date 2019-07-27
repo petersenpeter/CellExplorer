@@ -39,8 +39,8 @@ UI.settings.plotZdata = 'troughToPeak';
 UI.settings.cellTypes = {'Unknown','Pyramidal Cell','Narrow Interneuron','Wide Interneuron'};
 UI.settings.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
 UI.settings.tags = {'Good','Bad','Mua','Noise','InverseSpike','Other'};
-UI.settings.groundTruth = {'PV+','NOS1+','GAT1+','SST+'}; 
-UI.settings.groundTruthMarkers = {'ok','db','sm','*k','+d','p'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
+UI.settings.groundTruth = {'PV+','NOS1+','GAT1+','SST+','Axoaxonic','5HT3a'}; 
+UI.settings.groundTruthMarkers = {'ok','db','sm','*k','+k','+p'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
 
 % Cell type classification colors
 UI.settings.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
@@ -170,7 +170,7 @@ spikesPlots.(plotName).plotAmplitude = 1;
 spikesPlots.(plotName).plotDuration = 1;
 spikesPlots.(plotName).plotCount = 0;
 
-plotName = 'spikes_pvLightStimulation';
+plotName = 'spikes_optoStim';
 spikesPlots.(plotName).x = 'times';
 spikesPlots.(plotName).y = 'times';
 spikesPlots.(plotName).x_label = 'Time';
@@ -179,7 +179,7 @@ spikesPlots.(plotName).state = '';
 spikesPlots.(plotName).filter = '';
 spikesPlots.(plotName).filterType = '';                 % [none, equal to, less than, greater than]
 spikesPlots.(plotName).filterValue = 0;
-spikesPlots.(plotName).event = 'pvLightStimulation';
+spikesPlots.(plotName).event = 'optoStim';
 spikesPlots.(plotName).eventAlignment = 'onset';        % [onset, offset, center, peak]
 spikesPlots.(plotName).eventSorting = 'time';           % [none, time, amplitude, duration]
 spikesPlots.(plotName).eventSecBefore = 0.1;            % in seconds

@@ -27,7 +27,7 @@ function cell_metrics = CellExplorer(varargin)
 % initializeSession, LoadDatabaseSession, buttonSave, keyPress, defineSpikesPlots, customPlot, GroupAction, brainRegionDlg
 
 % TODO
-% Gui to Reverse changes from backup files
+% GUI to reverse changes from backup files
 % Separate loading of ground truth features
 % Submit ground truth cells from new session
 
@@ -110,7 +110,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.39;
+CellExplorerVersion = 1.40;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress});
 hManager = uigetmodemanager(UI.fig);
@@ -926,8 +926,9 @@ while ii <= size(cell_metrics.troughToPeak,2)
             
             % Ground truth cell types
             if groundTruthSelection
-                for jj = 1:length(subsetGroundTruth)
-                    plot(plotX(subsetGroundTruth{jj}), plotY(subsetGroundTruth{jj}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
+                idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
+                for jj = 1:length(idGroundTruth)
+                    plot(plotX(subsetGroundTruth{idGroundTruth(jj)}), plotY(subsetGroundTruth{idGroundTruth(jj)}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                 end
             end
             
@@ -1152,8 +1153,9 @@ while ii <= size(cell_metrics.troughToPeak,2)
         
         % Ground truth cell types
         if groundTruthSelection
-            for jj = 1:length(subsetGroundTruth)
-                plot(cell_metrics.troughToPeak(subsetGroundTruth{jj}) * 1000, cell_metrics.burstIndex_Royer2012(subsetGroundTruth{jj}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
+            idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
+            for jj = 1:length(idGroundTruth)
+                plot(cell_metrics.troughToPeak(subsetGroundTruth{idGroundTruth(jj)}) * 1000, cell_metrics.burstIndex_Royer2012(subsetGroundTruth{idGroundTruth(jj)}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
             end
         end
         % Setting legend
@@ -1214,8 +1216,9 @@ while ii <= size(cell_metrics.troughToPeak,2)
         
         % Ground truth cell types
         if groundTruthSelection
-            for jj = 1:length(subsetGroundTruth)
-                plot(tSNE_metrics.plot(subsetGroundTruth{jj},1), tSNE_metrics.plot(subsetGroundTruth{jj},2),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
+            idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
+            for jj = 1:length(idGroundTruth)
+                plot(tSNE_metrics.plot(subsetGroundTruth{idGroundTruth(jj)},1), tSNE_metrics.plot(subsetGroundTruth{idGroundTruth(jj)},2),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
             end
         end
         
@@ -2415,7 +2418,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         rows = max(ceil(length(buttonLabels)/2),3);
         positionToogleButtons = getpixelposition(parentPanelName);
         positionToogleButtons = [positionToogleButtons(3)/2,(positionToogleButtons(4)-0.03)/rows];
-        for i = 1:min(length(buttonLabels),6)
+        for i = 1:max(length(buttonLabels),6)
             buttonPosition{i} = [(1.04-mod(i,2))*positionToogleButtons(1),0.05+(rows-ceil(i/2))*positionToogleButtons(2),positionToogleButtons(1),positionToogleButtons(2)];
         end
     end
