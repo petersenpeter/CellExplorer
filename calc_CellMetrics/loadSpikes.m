@@ -31,7 +31,7 @@ function spikes = loadSpikes(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 20-06-2019
+% Last edited: 31-07-2019
 
 % Version history
 % 3.2 waveforms for phy data extracted from the raw dat
@@ -89,6 +89,7 @@ if exist(fullfile(clusteringPath,[baseName,'.spikes.cellinfo.mat'])) & ~forceRel
     end
 else
     forceReload = true;
+    spikes = [];
 end
 
 % Loading spikes
@@ -106,7 +107,6 @@ if forceReload
         case {'klustakwik', 'neurosuite'}
             disp('loadSpikes: Loading Klustakwik data')
             unit_nb = 0;
-            spikes = [];
             shanks_new = [];
             if isnan(shanks)
                 fileList = dir(fullfile(clusteringPath,[baseName,'.res.*']));
@@ -122,7 +122,7 @@ if forceReload
                 if ~raw_clusters
                     cluster_index = load(fullfile(clusteringPath, [baseName '.clu.' num2str(shank)]));
                     time_stamps = load(fullfile(clusteringPath,[baseName '.res.' num2str(shank)]));
-                    if getWaveforms
+                    if getWaveforms & useNeurosuiteWaveforms
                         fname = fullfile(clusteringPath,[baseName '.spk.' num2str(shank)]);
                         f = fopen(fname,'r');
                         waveforms = LSB * double(fread(f,'int16'));
@@ -242,7 +242,7 @@ if forceReload
             if getWaveforms % gets waveforms from dat file
                 spikes = GetWaveformsFromDat(spikes,xml,basepath,baseName,LSB,session);
             end
-      
+
         % Loading klustaViewa - Kwik format (Klustasuite 0.3.0.beta4)
         case 'klustaViewa'
             disp('loadSpikes: Loading KlustaViewa data')
