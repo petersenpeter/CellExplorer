@@ -40,7 +40,7 @@ UI.settings.cellTypes = {'Unknown','Pyramidal Cell','Narrow Interneuron','Wide I
 UI.settings.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
 UI.settings.tags = {'Good','Bad','Mua','Noise','InverseSpike','Other'};
 UI.settings.groundTruth = {'PV+','NOS1+','GAT1+','SST+','Axoaxonic','5HT3a'}; 
-UI.settings.groundTruthMarkers = {'ok','db','sm','*k','+k','+p'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
+UI.settings.groundTruthMarkers = {'om','dg','sm','*k','+k','+p'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
 
 % Cell type classification colors
 UI.settings.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];

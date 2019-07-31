@@ -1,7 +1,7 @@
 function session = db_update_session(session,varargin)
 % Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 17-06-2019
+% Last edited: 27-06-2019
 
 p = inputParser;
 addParameter(p,'forceReload',false,@islogical);
@@ -18,7 +18,7 @@ sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
 %% % % % % % % % % % % % % % % % % % % %
 % Extracellular
 % % % % % % % % % % % % % % % % % % % %
-if session.general.duration == 0 | forceReload
+if ~isfield(session.general,'duration') | session.general.duration == 0 | forceReload
     sr = sessionInfo.rates.wideband;
     if exist(fullfile(session.general.basePath,'info.rhd'))
         Intan_rec_info = read_Intan_RHD2000_file_Peter(pwd);
@@ -52,7 +52,7 @@ end
 %% % % % % % % % % % % % % % % % % % % %
 % Epochs
 % % % % % % % % % % % % % % % % % % % %
-if any(session.epochs.duration == 0) | forceReload
+if isempty(session.epochs.duration) | any(session.epochs.duration == 0) | forceReload
     duration = [];
     for i = 1:size(session.epochs.name,2)
         fname = 'amplifier.dat';

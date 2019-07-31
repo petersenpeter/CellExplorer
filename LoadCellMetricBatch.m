@@ -115,9 +115,11 @@ for iii = 1:length(clustering_paths)
     end
     if exist(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']))
         cell_metrics2{iii} = load(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']));
-    else
+    elseif fullfile(clustering_paths{iii},[saveAs,'.mat'])
         warning('Loading legacy format')
         disp([fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']), ' does not exist'])
+    else 
+        warning('session not found')
     end
     subfields2 = [subfields2(:);fieldnames(cell_metrics2{iii}.cell_metrics)];
     temp = struct2cell(structfun(@class,cell_metrics2{iii}.cell_metrics,'UniformOutput',false));

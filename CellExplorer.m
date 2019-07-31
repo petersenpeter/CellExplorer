@@ -103,6 +103,7 @@ spikesPlots = []; globalZoom = cell(1,9); createStruct.Interpreter = 'tex'; crea
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = []; groundTruthSelection = []; subsetGroundTruth = [];
 positionsTogglebutton = [[1 29 27 13];[29 29 27 13];[1 15 27 13];[29 15 27 13];[1 1 27 13];[29 1 27 13]]; dispTags = []; dispTags2 = [];
 incoming = []; outgoing = []; connections = []; plotName = ''; db = {}; plotConnections = [1 1 1]; tableDataOrder = []; 
+groundTruthCelltypesList = {''};
 set(groot, 'DefaultFigureVisible', 'on'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1200,maxFigureSize(3)-50), min(800,maxFigureSize(4)-50)];
 
 if isempty(basename)
@@ -1784,7 +1785,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             end
                     end
                 end
-                plot(x_bins,rippleCorrelogram,'color', col,'linewidth',2, 'HitTest','off'), xlabel('time'),ylabel('Voltage')
+                plot(x_bins,rippleCorrelogram,'color', col,'linewidth',2, 'HitTest','off'), xlabel('time'),ylabel('')
                 axis tight, ax6 = axis; grid on
                 plot([0, 0], [ax6(3) ax6(4)],'color','k', 'HitTest','off');
                 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
@@ -1817,7 +1818,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             end
                     end
                 end
-                plot(x_bins,rippleCorrelogram,'color', col,'linewidth',2, 'HitTest','off'), xlabel('time'),ylabel('Voltage')
+                plot(x_bins,rippleCorrelogram,'color', col,'linewidth',2, 'HitTest','off'), xlabel('time'),ylabel('')
                 axis tight, ax6 = axis; grid on
                 plot([0, 0], [ax6(3) ax6(4)],'color','k', 'HitTest','off');
                 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
@@ -2280,7 +2281,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             X(isnan(X) | isinf(X)) = 0;
             waitbar(0.1,f_waitbar,'Calculating tSNE space...')
             
-            tSNE_metrics.plot = tsne(X','Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',10);            
+            tSNE_metrics.plot = tsne(X','Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',15);            
             
             if size(tSNE_metrics.plot,2)==1
                 tSNE_metrics.plot = [tSNE_metrics.plot,tSNE_metrics.plot];
@@ -4679,7 +4680,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         if nargin > 1
-            save(file,'cell_metrics');
+            save(file,'cell_metrics','-v7.3','-nocompression');
             MsgLog(['Classification saved to ', file],[1,2]);
         elseif length(unique(cell_metrics.spikeSortingID)) > 1
             MsgLog('Saving cell metrics from batch',1);
@@ -4757,8 +4758,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             else
                 saveAs = 'cell_metrics';
             end
-            file = fullfile(clusteringpath,[saveAs,'.mat']);
-            save(file,'cell_metrics');
+            file = fullfile(cell_metrics.general.clusteringpath,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
+            save(file,'cell_metrics','-v7.3','-nocompression');
             classificationTrackChanges = [];
             UI.menu.file.save.ForegroundColor = 'k';
             MsgLog(['Classification saved to ', file],[1,2]);
@@ -5006,22 +5007,22 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         if UI.settings.tSNE_calcWideAcg && ~isfield(tSNE_metrics,'acg1')
             disp('Calculating tSNE space for wide ACGs')
-            tSNE_metrics.acg_wide = tsne([cell_metrics.acg.wide_zscored(ceil(size(cell_metrics.acg.wide_zscored,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric);
+            tSNE_metrics.acg_wide = tsne([cell_metrics.acg.wide_zscored(ceil(size(cell_metrics.acg.wide_zscored,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',15);
         end
         if UI.settings.tSNE_calcNarrowAcg && ~isfield(tSNE_metrics,'acg2')
             disp('Calculating tSNE space for narrow ACGs')
-            tSNE_metrics.acg_narrow = tsne([cell_metrics.acg.narrow_zscored(ceil(size(cell_metrics.acg.narrow_zscored,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric);
+            tSNE_metrics.acg_narrow = tsne([cell_metrics.acg.narrow_zscored(ceil(size(cell_metrics.acg.narrow_zscored,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',15);
         end
         if UI.settings.tSNE_calcFiltWaveform && ~isfield(tSNE_metrics,'filtWaveform')
             disp('Calculating tSNE space for filtered waveforms')
             X = cell_metrics.waveforms.filt_zscored';
-            tSNE_metrics.filtWaveform = tsne(X(:,find(~any(isnan(X)))),'Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric);
+            tSNE_metrics.filtWaveform = tsne(X(:,find(~any(isnan(X)))),'Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',15);
         end
         if UI.settings.tSNE_calcRawWaveform && ~isfield(tSNE_metrics,'rawWaveform') && isfield(cell_metrics.waveforms,'raw')
             disp('Calculating tSNE space for raw waveforms')
             X = cell_metrics.waveforms.raw_zscored';
             if ~isempty(find(~any(isnan(X))))
-                tSNE_metrics.rawWaveform = tsne(X(:,find(~any(isnan(X)))),'Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric);
+                tSNE_metrics.rawWaveform = tsne(X(:,find(~any(isnan(X)))),'Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',15);
             end
         end
         if ~isfield(tSNE_metrics,'plot')
@@ -5029,7 +5030,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.settings.tSNE_metrics = intersect(UI.settings.tSNE_metrics,fieldnames(cell_metrics));
             X = cell2mat(cellfun(@(X) cell_metrics.(X),UI.settings.tSNE_metrics,'UniformOutput',false));
             X(isnan(X) | isinf(X)) = 0;
-            tSNE_metrics.plot = tsne(X','Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric);
+            tSNE_metrics.plot = tsne(X','Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',15);
         end
         
         % Setting initial settings for plots, popups and listboxes
@@ -5276,7 +5277,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[700, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog);
                 uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog);
                 updateSummaryText
-                uiwait(loadDB.dialog)
+                uiwait(loadDB.popupmenu.filter)
             
         function reloadSessionlist
             loadDB_sessionlist
@@ -5339,7 +5340,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     db.dataTable(:,1) = {false};
                     [db_path,~,~] = fileparts(which('db_load_sessions.m'));
                     try
-                        save(fullfile(db_path,'db_cell_metrics_session_list.mat'),'db');
+                        save(fullfile(db_path,'db_cell_metrics_session_list.mat'),'db','-v7.3','-nocompression');
                     catch
                         warning('failed to save session list with metrics');
                     end
@@ -5602,7 +5603,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     clusteringpath1 = cell_metrics.general.paths{batchIDsPrivate};
                     basename1 = cell_metrics.general.basenames{batchIDsPrivate};
                 else
-                    clusteringpath1 = clusteringpath;
+                    clusteringpath1 = cell_metrics.general.clusteringpath;
                     basename1 = cell_metrics.general.basename;
                 end
                 
@@ -6187,8 +6188,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function [choice,dialog_canceled] = groundTruthDlg(groundTruthCelltypes,groundTruthSelectionIn)
         choice = '';
         dialog_canceled = 1;
+        updateGroundTruthCount;
+        
         groundTruth_dialog = dialog('Position', [300, 300, 600, 350],'Name','Ground truth cell types'); movegui(groundTruth_dialog,'center')
-        groundTruthList = uicontrol('Parent',groundTruth_dialog,'Style', 'ListBox', 'String', groundTruthCelltypes, 'Position', [10, 50, 580, 220],'Min', 0, 'Max', 100,'Value',groundTruthSelectionIn);
+        groundTruthList = uicontrol('Parent',groundTruth_dialog,'Style', 'ListBox', 'String', groundTruthCelltypesList, 'Position', [10, 50, 580, 220],'Min', 0, 'Max', 100,'Value',groundTruthSelectionIn);
         groundTruthTextfield = uicontrol('Parent',groundTruth_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 300, 580, 25],'Callback',@(src,evnt)UpdateGroundTruthList,'HorizontalAlignment','left');
         uicontrol('Parent',groundTruth_dialog,'Style','pushbutton','Position',[10, 10, 180, 30],'String','OK','Callback',@(src,evnt)CloseGroundTruth_dialog);
         uicontrol('Parent',groundTruth_dialog,'Style','pushbutton','Position',[200, 10, 190, 30],'String','Cancel','Callback',@(src,evnt)CancelGroundTruth_dialog);
@@ -6197,20 +6200,39 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         uicontrol('Parent',groundTruth_dialog,'Style', 'text', 'String', 'Selct the cell types below', 'Position', [10, 270, 580, 20],'HorizontalAlignment','left');
         uicontrol(groundTruthTextfield)
         uiwait(groundTruth_dialog);
+        
+        function updateGroundTruthCount
+            tagFilter2 = find(cellfun(@(X) ~isempty(X), cell_metrics.groundTruthClassification));
+            cellCount = zeros(1,length(groundTruthCelltypes));
+            if ~isempty(tagFilter2)
+                filter = [];
+                for i = 1:length(tagFilter2)
+                    filter(i,:) = strcmp(cell_metrics.groundTruthClassification{tagFilter2(i)},groundTruthCelltypes);
+                end
+                
+                for j = 1:length({groundTruthCelltypes})
+                    cellCount = sum(filter);
+                end
+            end
+            cellCount = cellstr(num2str(cellCount'))';
+            groundTruthCelltypesList = strcat(groundTruthCelltypes,' (',cellCount,')');
+        end
+        
         function UpdateGroundTruthList
-            temp = contains(groundTruthCelltypes,groundTruthTextfield.String,'IgnoreCase',true);
+            temp = find(contains(groundTruthCelltypes,groundTruthTextfield.String,'IgnoreCase',true));
+                
             if ~isempty(groundTruthList.Value) && ~any(temp == groundTruthList.Value)
                 groundTruthList.Value = 1;
             end
             if ~isempty(temp)
-                groundTruthList.String = groundTruthCelltypes(temp);
+                groundTruthList.String = groundTruthCelltypesList(temp);
             else
                 groundTruthList.String = {''};
             end
         end
         function  CloseGroundTruth_dialog
             if length(groundTruthList.String)>=groundTruthList.Value
-                choice = groundTruthList.String(groundTruthList.Value);
+                choice = groundTruthCelltypes(groundTruthList.Value);
             end
             dialog_canceled = 0;
             delete(groundTruth_dialog);

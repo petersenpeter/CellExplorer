@@ -724,6 +724,9 @@ end
 
 if any(contains(metrics,{'manipulation_metrics','all'})) && ~any(contains(excludeMetrics,{'manipulation_metrics'}))
     disp('* Calculating manipulaiton metrics');
+    field2remove = {'manipulations'};
+    test = isfield(cell_metrics,field2remove);
+    cell_metrics = rmfield(cell_metrics,field2remove(test));
     eventFiles = dir(fullfile(basepath,[basename,'.*.manipulation.mat']));
     eventFiles = {eventFiles.name};
     if ~isempty(eventFiles)

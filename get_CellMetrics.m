@@ -66,6 +66,7 @@ addParameter(p,'labels',[],@iscell);
 addParameter(p,'deepSuperficial',[],@iscell);
 addParameter(p,'animal',[],@iscell);
 addParameter(p,'tags',[],@iscell);
+addParameter(p,'groundTruthClassification',[],@iscell);
 
 parse(p,varargin{:})
 
@@ -99,6 +100,7 @@ labels = p.Results.labels;
 deepSuperficial = p.Results.deepSuperficial;
 animal = p.Results.animal;
 tags = p.Results.tags;
+groundTruthClassification = p.Results.groundTruthClassification;
 
 if isempty(basename)
     s = regexp(basepath, filesep, 'split');
@@ -123,7 +125,7 @@ elseif ~isempty(sessions)
     cell_metrics = LoadCellMetricBatch('sessions',sessions);
 end
 
-filterIndx = ones(length(cell_metrics.UID),6);
+filterIndx = ones(length(cell_metrics.UID),7);
 if ~isempty(brainRegion)
     filterIndx(:,1) = strcmp(cell_metrics.brainRegion,brainRegion);
 end
@@ -148,6 +150,14 @@ if ~isempty(tags)
         end
     end
 end
-
-cell_metrics_idxs = find(sum(filterIndx')==6);
+if ~isempty(groundTruthClassification)
+    for i = 1:length(cell_metrics.UID)
+        if ~isempty(cell_metrics.groundTruthClassification{i})
+            filterIndx(i,7) = any(strcmp(cell_metrics.groundTruthClassification{i},groundTruthClassification));
+        else
+            filterIndx(i,7) = 0;
+        end
+    end
+end
+cell_metrics_idxs = find(sum(filterIndx')==7);
 
