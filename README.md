@@ -4,6 +4,6 @@ The Cell Explorer is a Matlab GUI and standardized pipeline for exploring and cl
 ![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/07/Cell-Explorer.png)
 
 ### How to cite
-Please use this DOI for citing the Cell Explorer
+Please use below DOI for citing the Cell Explorer
 
 <a href="https://zenodo.org/badge/latestdoi/152647739"><img src="https://zenodo.org/badge/152647739.svg" alt="DOI"></a>
