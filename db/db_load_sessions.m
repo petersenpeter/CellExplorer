@@ -5,7 +5,7 @@ addParameter(p,'session','',@isstr);
 addParameter(p,'sessions','',@iscell);
 addParameter(p,'animal','',@isstr);
 addParameter(p,'details','1',@isstr);
-addParameter(p,'bz_database',db_credentials,@isstr);
+addParameter(p,'db_settings',db_load_settings,@isstr);
 parse(p,varargin{:})
 
 id = p.Results.id;
@@ -13,24 +13,24 @@ session = p.Results.session;
 sessions = p.Results.sessions;
 animal = p.Results.animal;
 details = p.Results.details;
-bz_database = p.Results.bz_database;
-
+db_settings = p.Results.db_settings;
+% db_settings = db_load_settings
 sessions_out = [];
 
-options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','get','Timeout',50);
+options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','get','Timeout',50);
 options.CertificateFilename=('');
 
 
 if ~isempty(animal)
-    bz_db = webread([bz_database.rest_api.address,'views/15274/'],options,'animal',animal,'details',details);
+    bz_db = webread([db_settings.address,'views/15274/'],options,'animal',animal,'details',details);
 elseif ~isempty(session)
-    bz_db = webread([bz_database.rest_api.address,'views/15274/'],options,'session',session,'details',details);
+    bz_db = webread([db_settings.address,'views/15274/'],options,'session',session,'details',details);
 elseif ~isempty(sessions)
-    bz_db = webread([bz_database.rest_api.address,'views/15274/'],options,'session',sessions,'details',details);
+    bz_db = webread([db_settings.address,'views/15274/'],options,'session',sessions,'details',details);
 elseif ~isempty(id)
-    bz_db = webread([bz_database.rest_api.address,'views/15274/'],options,'entryid',id,'details',details);
+    bz_db = webread([db_settings.address,'views/15274/'],options,'entryid',id,'details',details);
 else
-    bz_db = webread([bz_database.rest_api.address,'views/15274/'],options,'details',details);
+    bz_db = webread([db_settings.address,'views/15274/'],options,'details',details);
 end
 
 test = bz_db.renderedHtml;

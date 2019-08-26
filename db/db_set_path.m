@@ -46,15 +46,14 @@ elseif ~isempty(sessionin)
 else
     sessions{1} = sessionstruct;
 end
-
-db_database = db_credentials;
-defined_repositories = fieldnames(db_database.repositories);
+db_settings = db_load_settings;
+defined_repositories = fieldnames(db_settings.repositories);
 
 for i = 1:length(sessions)
     session = sessions{i};
     if ~contains(defined_repositories,{session.general.repositories{1}})
-        warning(['The repository has not been defined. Please specify the path for ' session.general.repositories{1},' in db_credentials.m']);
-        edit db_credentials
+        warning(['The repository has not been defined. Please specify the path for ' session.general.repositories{1},' in db_local_repositories.m']);
+        edit db_local_repositories.m
         return
     end
     
@@ -62,9 +61,9 @@ for i = 1:length(sessions)
     if strcmp(session.general.repositories{1},'NYUshare_Datasets')
         Investigator_name = strsplit(session.general.investigator,' ');
         path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
-        basepath = fullfile(db_database.repositories.(session.general.repositories{1}), path_Investigator,session.general.animal, session.general.name);
+        basepath = fullfile(db_settings.repositories.(session.general.repositories{1}), path_Investigator,session.general.animal, session.general.name);
     else
-        basepath = fullfile(db_database.repositories.(session.general.repositories{1}), session.general.animal, session.general.name);
+        basepath = fullfile(db_settings.repositories.(session.general.repositories{1}), session.general.animal, session.general.name);
     end
     
     if ~isempty(session.spikeSorting.relativePath)

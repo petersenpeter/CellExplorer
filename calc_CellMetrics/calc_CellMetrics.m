@@ -41,11 +41,11 @@ function cell_metrics = calc_CellMetrics(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 14-06-2019
+% Last edited: 16-08-2019
 
 % TODO
+% Exclude spikes during manipulations
 % Standardize tracking data
-% Standardize stimulation/event data
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -63,6 +63,7 @@ addParameter(p,'excludeMetrics',{'none'},@iscellstr);
 addParameter(p,'removeMetrics',{'none'},@isstr);
 addParameter(p,'excludeIntervals',[],@isnumeric);
 addParameter(p,'excludeManipulations',true,@islogical);
+addParameter(p,'excludeManipulationTypes',{'optoStim',''},@optoStim);
 addParameter(p,'useNeurosuiteWaveforms',false,@islogical);
 addParameter(p,'keepCellClassification',true,@islogical);
 addParameter(p,'manuelAdjustMonoSyn',true,@islogical);
@@ -108,7 +109,6 @@ timerCalcMetrics = tic;
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if ~isempty(id) || ~isempty(sessionin) || ~isempty(sessionStruct)
-    bz_database = db_credentials;
     if ~isempty(id)
         [session, basename, basepath, clusteringpath] = db_set_path('id',id);
     elseif ~isempty(sessionin)
@@ -247,12 +247,12 @@ else
 end
 
 if saveBackup && ~isempty(cell_metrics)
-    % Creating backup of existing metrics (only user adjustable fields)
-    dirname = 'revisions_cell_metrics';
-    disp(['* Saving cells to backup directory ''',dirname,'''']);
+    % Creating backup of existing user adjustable metrics
+    backupDirectory = 'revisions_cell_metrics';
+    disp(['* Creating backup of existing user adjustable metrics ''',backupDirectory,'''']);
     
-    if ~(exist(fullfile(clusteringpath,dirname),'dir'))
-        mkdir(fullfile(clusteringpath,dirname));
+    if ~(exist(fullfile(clusteringpath,backupDirectory),'dir'))
+        mkdir(fullfile(clusteringpath,backupDirectory));
     end
     
     temp = {};
@@ -277,7 +277,7 @@ if saveBackup && ~isempty(cell_metrics)
     if isfield(cell_metrics,'groundTruthClassification')
         temp.cell_metrics.groundTruthClassification = cell_metrics.groundTruthClassification;
     end
-    save(fullfile(clusteringpath, dirname, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat',]),'cell_metrics','-v7.3','-nocompression', '-struct', 'temp')
+    save(fullfile(clusteringpath, backupDirectory, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat',]),'cell_metrics','-v7.3','-nocompression', '-struct', 'temp')
 end
 
 cell_metrics.general.basepath = basepath;
@@ -406,6 +406,18 @@ if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,
         
         cell_metrics.general.ccg = acg_metrics.ccg;
         cell_metrics.general.ccg_time = acg_metrics.ccg_time;
+    end
+    if ~all(isfield(cell_metrics,{'acg'}))  || ~isfield(cell_metrics.acg,{'log10'})  || forceReload == true
+        disp('* Calculating log10 ACGs')
+         acg = calc_logACGs(spikes);
+         cell_metrics.acg.log10 = acg.log10;
+         cell_metrics.general.acgs.log10 = acg.log10_bins;
+    end
+    if ~all(isfield(cell_metrics,{'isi'}))  || ~isfield(cell_metrics.isi,{'log10'})  || forceReload == true
+        disp('* Calculating log10 ISIs')
+        isi = calc_logISIs(spikes);
+        cell_metrics.isi.log10 = isi.log10;
+        cell_metrics.general.isis.log10 = isi.log10_bins;
     end
 end
 
@@ -663,7 +675,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'event_metrics','all'})) && ~any(contains(excludeMetrics,{'event_metrics'}))
-    field2remove = {'rippleCorrelogram','events'};
+    field2remove = {'rippleCorrelogram','events','rippleModulationIndex','ripplePeakDelay'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
     disp('* Calculating event metrics')
@@ -677,21 +689,45 @@ if any(contains(metrics,{'event_metrics','all'})) && ~any(contains(excludeMetric
             disp(['  Importing ' eventName]);
             if strcmp(fieldnames(eventOut),eventName)
                 if strcmp(eventName,'ripples')
-                    [PSTH,PSTH_time] = calc_PSTH(eventOut.ripples.peaks,spikes);
-                    [rippleModulationIndex,ripplePeakDelay,rippleCorrelogram] = calc_RippleModulationIndex(PSTH,PSTH_time);
-                    cell_metrics.rippleModulationIndex = rippleModulationIndex; % cell_ripple_modulation
-                    cell_metrics.ripplePeakDelay = ripplePeakDelay; % cell_ripple_peak_delay
-                    cell_metrics.events.ripples = num2cell(rippleCorrelogram,1);
+                    % New PSTH convention
+                    PSTH = calc_PSTH(eventOut.ripples,spikes,'alignment','peaks','duration',0.150,'binCount',150,'smoothing',5,'eventName',eventName);
+                    cell_metrics.events.ripples = num2cell(PSTH.responsecurve,1);
                     cell_metrics.general.events.(eventName).event_file = eventFiles{i};
-                    cell_metrics.general.events.(eventName).x_bins = PSTH_time*1000;
+                    cell_metrics.general.events.(eventName).x_bins = PSTH.time*1000;
                     cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
+                    cell_metrics.general.events.(eventName).alignment = PSTH.alignment;
+                    
+                    cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
+                    cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
+                    cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
+                    
+%                     % Old
+%                     [PSTH,PSTH_time] = calc_PSTH(eventOut.ripples.peaks,spikes);
+%                     [rippleModulationIndex,ripplePeakDelay,rippleCorrelogram] = calc_RippleModulationIndex(PSTH,PSTH_time);
+%                     cell_metrics.rippleModulationIndex = rippleModulationIndex; % cell_ripple_modulation
+%                     cell_metrics.ripplePeakDelay = ripplePeakDelay; % cell_ripple_peak_delay
+%                     cell_metrics.events.ripples = num2cell(rippleCorrelogram,1);
+%                     cell_metrics.general.events.(eventName).event_file = eventFiles{i};
+%                     cell_metrics.general.events.(eventName).x_bins = PSTH_time*1000;
+%                     cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
                 elseif isfield(eventOut.(eventName),'timestamps') && isnumeric(eventOut.(eventName).timestamps)
-                    [PSTH,PSTH_time] = calc_PSTH(eventOut.(eventName).timestamps(:,1),spikes,'smoothing',5);
-                    eventFieldName = ['event_',eventName];
-                    cell_metrics.events.(eventName) = num2cell(PSTH,1);
+                    PSTH = calc_PSTH(eventOut.(eventName),spikes,'alignment','onset','smoothing',5,'eventName',eventName);
+                    cell_metrics.events.(eventName) = num2cell(PSTH.responsecurve,1);
                     cell_metrics.general.events.(eventName).event_file = eventFiles{i};
-                    cell_metrics.general.events.(eventName).x_bins = PSTH_time*1000;
+                    cell_metrics.general.events.(eventName).x_bins = PSTH.time*1000;
                     cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
+                    cell_metrics.general.events.(eventName).alignment = PSTH.alignment;
+                    
+                    cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
+                    cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
+                    cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
+                    
+%                     [PSTH,PSTH_time] = calc_PSTH(eventOut.(eventName).timestamps(:,1),spikes,'smoothing',5);
+%                     eventFieldName = ['event_',eventName];
+%                     cell_metrics.events.(eventName) = num2cell(PSTH,1);
+%                     cell_metrics.general.events.(eventName).event_file = eventFiles{i};
+%                     cell_metrics.general.events.(eventName).x_bins = PSTH_time*1000;
+%                     cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
                 end
             end
         end
@@ -723,7 +759,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'manipulation_metrics','all'})) && ~any(contains(excludeMetrics,{'manipulation_metrics'}))
-    disp('* Calculating manipulaiton metrics');
+    disp('* Calculating manipulation metrics');
     field2remove = {'manipulations'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
@@ -734,13 +770,23 @@ if any(contains(metrics,{'manipulation_metrics','all'})) && ~any(contains(exclud
             eventName = strsplit(eventFiles{iEvents},'.'); eventName = eventName{end-2};
             eventOut = load(eventFiles{iEvents});
             disp(['  Importing ' eventName]);
-            window_smoothing = 10;
-            [PSTH,PSTH_time] = calc_PSTH(eventOut.(eventName).timestamps(:,1),spikes,'smoothing',window_smoothing);
-            eventFieldName = ['manipulation_',eventName];
-            cell_metrics.manipulations.(eventName) = num2cell(PSTH,1);
+            PSTH = calc_PSTH(eventOut.(eventName),spikes,'alignment','onset','smoothing',5,'eventName',eventName);
+            cell_metrics.manipulations.(eventName) = num2cell(PSTH.responsecurve,1);
             cell_metrics.general.manipulations.(eventName).event_file = eventFiles{iEvents};
-            cell_metrics.general.manipulations.(eventName).x_bins = PSTH_time*1000;
+            cell_metrics.general.manipulations.(eventName).x_bins = PSTH.time*1000;
             cell_metrics.general.manipulations.(eventName).x_label = 'Time (ms)';
+            cell_metrics.general.manipulations.(eventName).alignment = PSTH.alignment;
+            
+            cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
+            cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
+            cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
+
+%             [PSTH,PSTH_time] = calc_PSTH(eventOut.(eventName),spikes,'smoothing',10);
+%             eventFieldName = ['manipulation_',eventName];
+%             cell_metrics.manipulations.(eventName) = num2cell(PSTH,1);
+%             cell_metrics.general.manipulations.(eventName).event_file = eventFiles{iEvents};
+%             cell_metrics.general.manipulations.(eventName).x_bins = PSTH_time*1000;
+%             cell_metrics.general.manipulations.(eventName).x_label = 'Time (ms)';
         end
     end
 end
@@ -813,7 +859,18 @@ end
 
 % cell_metrics.firingRateAcrossTime = mat2cell(zeros(length(cell_metrics.general.firingRateAcrossTime.x_bins),cell_metrics.general.cellCount));
 
-chListBrainRegions = findBrainRegion(session);
+if ~isempty(session.brainRegions)
+    chListBrainRegions = findBrainRegion(session);
+end
+
+% Spikes metrics
+cell_metrics.cellID =  spikes.UID;
+cell_metrics.UID =  spikes.UID;
+cell_metrics.cluID =  spikes.cluID;
+cell_metrics.spikeGroup = spikes.shankID; % cell_spikegroup OK
+cell_metrics.maxWaveformCh = spikes.maxWaveformCh1-1; % cell_maxchannel OK
+cell_metrics.maxWaveformCh1 = spikes.maxWaveformCh1; % cell_maxchannel OK
+cell_metrics.spikeCount = spikes.total; % cell_spikecount OK
 
 for j = 1:cell_metrics.general.cellCount
     % Session metrics
@@ -821,16 +878,11 @@ for j = 1:cell_metrics.general.cellCount
     cell_metrics.spikeSortingID(j) = session.spikeSorting.entryIDs(1); % cell_spikesortingid OK
     
     % Spikes metrics
-    cell_metrics.cellID(j) =  spikes.UID(j); % cell_id OK
-    cell_metrics.UID(j) =  spikes.UID(j); % cell_id OK
-    cell_metrics.cluID(j) =  spikes.cluID(j); % cell_sortingid OK
-    cell_metrics.brainRegion{j} = chListBrainRegions{spikes.maxWaveformCh1(j)}; % cell_brainregion OK
-    cell_metrics.spikeGroup(j) = spikes.shankID(j); % cell_spikegroup OK
-    cell_metrics.maxWaveformCh(j) = spikes.maxWaveformCh1(j)-1; % cell_maxchannel OK
-    cell_metrics.maxWaveformCh1(j) = spikes.maxWaveformCh1(j); % cell_maxchannel OK
+    if ~isempty(session.brainRegions)
+        cell_metrics.brainRegion{j} = chListBrainRegions{spikes.maxWaveformCh1(j)}; % cell_brainregion OK
+    end
     cell_metrics.maxWaveformChannelOrder(j) = find([session.extracellular.spikeGroups.channels{:}] == spikes.maxWaveformCh(j)); %
-    cell_metrics.spikeCount(j) = spikes.total(j); % cell_spikecount OK
-    
+
     % Spike times based metrics
     if ~isempty(excludeIntervals)
         excludeIntervals_start = max(find( excludeIntervals(:,1) < spikes.times{j}(1)));
@@ -852,7 +904,7 @@ for j = 1:cell_metrics.general.cellCount
     tau = diff(spikes.times{j});
     cell_metrics.firingRateISI(j) = 1/median(tau);
     CV2_temp = 2*abs(tau(1:end-1) - tau(2:end)) ./ (tau(1:end-1) + tau(2:end));
-    cell_metrics.cv2(j) = mean(CV2_temp(CV2_temp<1.9));
+    cell_metrics.cv2(j) = mean(CV2_temp(CV2_temp<1.95));
     
     % Burstiness_Mizuseki2011
     bursty = [];
@@ -964,7 +1016,7 @@ cell_metrics.general.processinginfo.params.submitToDatabase = submitToDatabase;
 cell_metrics.general.processinginfo.params.saveAs = saveAs;
 cell_metrics.general.processinginfo.function = 'calc_CellMetrics';
 cell_metrics.general.processinginfo.date = now;
-cell_metrics.general.processinginfo.version = 2.0;
+cell_metrics.general.processinginfo.version = 2.1;
 if isfield(spikes,'processinginfo')
     cell_metrics.general.processinginfo.spikes = spikes.processinginfo;
 end
@@ -1104,5 +1156,4 @@ if plots
     end
 end
 
-disp(['* Cell metrics calculations complete.']), disp([' '])
-toc(timerCalcMetrics)
+disp(['* Cell metrics calculations complete. Elapsed time is ', num2str(toc(timerCalcMetrics),5),' seconds.'])

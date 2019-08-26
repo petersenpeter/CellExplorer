@@ -53,18 +53,17 @@ switch lower(table)
 end
 
 db_out = [];
-
-bz_database = db_credentials;
-options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'RequestMethod','Get','Timeout',20);
+db_settings = db_load_settings;
+options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','Get','Timeout',20);
 options.CertificateFilename=('');
 
 if nargin==1
-    bz_db = webread([bz_database.rest_api.address, 'forms/', num2str(formidable_id), '/entries'],options,'page_size','5000');
+    bz_db = webread([db_settings.address, 'forms/', num2str(formidable_id), '/entries'],options,'page_size','5000');
 else
-    bz_db = webread([bz_database.rest_api.address,'forms/', num2str(formidable_id), '/entries'],options,'page_size','5000','search',search_term);
+    bz_db = webread([db_settings.address,'forms/', num2str(formidable_id), '/entries'],options,'page_size','5000','search',search_term);
 end
 
-bz_db_names = webread([bz_database.rest_api.address,'forms/', num2str(formidable_id), '/fields'],options);
+bz_db_names = webread([db_settings.address,'forms/', num2str(formidable_id), '/fields'],options);
 
 if ~isempty(bz_db)
     entrylist = fields(bz_db);
@@ -85,17 +84,20 @@ if ~isempty(bz_db)
             bz_db.(entrylist{j}).meta = rmfield(bz_db.(entrylist{j}).meta,oldField);
             
         end
-        if strcmp(lower(table),'animals')
-            db_out.(bz_db.(entrylist{j}).meta.Name).General = bz_db.(entrylist{j}).meta;
-            db_out.(bz_db.(entrylist{j}).meta.Name).General.Id = bz_db.(entrylist{j}).id;
-            db_out.(bz_db.(entrylist{j}).meta.Name).General.EntryKey = entrylist{j};
+        if isvarname(bz_db.(entrylist{j}).meta.Name)
+            if strcmp(lower(table),'animals')
+                db_out.(bz_db.(entrylist{j}).meta.Name).General = bz_db.(entrylist{j}).meta;
+                db_out.(bz_db.(entrylist{j}).meta.Name).General.Id = bz_db.(entrylist{j}).id;
+                db_out.(bz_db.(entrylist{j}).meta.Name).General.EntryKey = entrylist{j};
+            else
+                label = ['id_', bz_db.(entrylist{j}).id];
+                db_out.(label) = bz_db.(entrylist{j}).meta;
+                db_out.(label).Id = bz_db.(entrylist{j}).id;
+                db_out.(label).EntryKey = entrylist{j};
+            end
         else
-            label = ['id_', bz_db.(entrylist{j}).id];
-            db_out.(label) = bz_db.(entrylist{j}).meta;
-            db_out.(label).Id = bz_db.(entrylist{j}).id;
-            db_out.(label).EntryKey = entrylist{j};
+            warning(['Failed to entry as name is not a valid varname: ', bz_db.(entrylist{j}).meta.Name])
         end
-        
         
     end
     disp([num2str(size(entrylist,1)),' entries in ', table])

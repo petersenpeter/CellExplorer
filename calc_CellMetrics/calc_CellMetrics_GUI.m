@@ -289,7 +289,7 @@ uiwait(UI.fig)
 
     function addRegion(regionIn)
         % Add new brain region to session struct
-        brainRegions = load('brainRegions.mat'); brainRegions = brainRegions.BrainRegions;
+        brainRegions = load('BrainRegions.mat'); brainRegions = brainRegions.BrainRegions;
         brainRegions_list = strcat(brainRegions(:,1),' (',brainRegions(:,2),')');
         brainRegions_acronym = brainRegions(:,2);
         if exist('regionIn')

@@ -7,7 +7,6 @@ function success = saveStruct(data,datatype,varargin)
 % Last updated: 12-07-2019
 
 p = inputParser;
-addParameter(p,'data',[],@isstruct); % struct with data to save
 addParameter(p,'basepath',pwd,@isstr); 
 addParameter(p,'clusteringpath',pwd,@isstr);
 addParameter(p,'basename','',@isstr);
@@ -41,17 +40,19 @@ end
 
 
 % Saving data to basepath/clusteringpath
-supportedDataTypes = {'timeseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap'};
+supportedDataTypes = {'timeseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap','lfp','session'};
 if any(strcmp(datatype,supportedDataTypes))
     dataName = inputname(1);
     S.(dataName) = data;
     switch datatype
+        case {'sessionInfo','session'}
+            filename = fullfile(basepath,[basename,'.',datatype,'.mat']);
         case {'cellinfo','firingRateMap'}
             filename = fullfile(clusteringpath,[basename,'.',dataName,'.',datatype,'.mat']);
         otherwise
             filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.mat']);
     end
-    save(filename, '-struct', 'S')
+    save(filename, '-struct', 'S','-v7.3','-nocompression')
     disp(['Successfully saved ', filename])
     success = true;
 else
