@@ -1,6 +1,5 @@
-function success = saveStruct(data,datatype,varargin)
-% Saves event, manipulation, behavior data to appropiate .mat files
-% Performs validation of the content before saving (not yet implemented)
+function output = loadStruct(dataName,datatype,varargin)
+% Load event, manipulation, behavior data to appropiate .mat files
 
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -11,16 +10,16 @@ addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'clusteringpath',pwd,@isstr);
 addParameter(p,'basename','',@isstr);
 addParameter(p,'session',{},@isstruct);
+addParameter(p,'recording',{},@isstruct);
 parse(p,varargin{:})
 
 basepath = p.Results.basepath;
 basename = p.Results.basename;
 clusteringpath = p.Results.clusteringpath;
 session = p.Results.session;
+recording = p.Results.recording;
 
-success = false;
-
-% Importing parameters from session struct
+% Importing parameters from session or recording struct
 if ~isempty(session)
     basename = session.general.name;
     basepath = session.general.basePath;
@@ -29,19 +28,25 @@ if ~isempty(session)
     else
         clusteringpath = basepath;
     end
+    
+elseif ~isempty(recording)
+    basename = recording.name;
+    basepath = pwd;
+    clusteringpath = recording.SpikeSorting.path;
+    
 elseif isempty(basename)
     s = regexp(basepath, filesep, 'split');
     basename = s{end};
+    
 end
 
 % Validation
 
 
-% Saving data to basepath/clusteringpath
+% Loading data to basepath/clusteringpath
 supportedDataTypes = {'timeseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap','lfp','session'};
+
 if any(strcmp(datatype,supportedDataTypes))
-    dataName = inputname(1);
-    S.(dataName) = data;
     switch datatype
         case {'sessionInfo','session'}
             filename = fullfile(basepath,[basename,'.',datatype,'.mat']);
@@ -50,9 +55,9 @@ if any(strcmp(datatype,supportedDataTypes))
         otherwise
             filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.mat']);
     end
-    save(filename, '-struct', 'S','-v7.3','-nocompression')
-    disp(['Successfully saved ', filename])
-    success = true;
+    temp = load(filename);
+    output = temp.(dataName);
+    disp(['Successfully loaded ', filename])
 else
     error(['Not a valid datatype: ', datatype,', filename: ' filename])
 end

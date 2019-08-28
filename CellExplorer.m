@@ -362,7 +362,7 @@ if UI.settings.firingRateMap.showHeatmap; UI.menu.display.showHeatmap.Checked = 
 UI.menu.display.firingRateMapShowHeatmapColorbar = uimenu(UI.menu.display.topMenu,menuLabel,'Show colorbar in heatmaps in firing rate maps',menuSelectedFcn,@ToggleFiringRateMapShowHeatmapColorbar);
 if UI.settings.firingRateMap.showHeatmapColorbar; UI.menu.display.firingRateMapShowHeatmapColorbar.Checked = 'on'; end
 UI.menu.display.normalization.ops(1) = uimenu(UI.menu.display.topMenu,menuLabel,'Normalize ISIs by rate',menuSelectedFcn,@buttonACG_normalize,'Separator','on','Checked','on');
-UI.menu.display.normalization.ops(2) = uimenu(UI.menu.display.topMenu,menuLabel,'Normalize ISIs by occurance',menuSelectedFcn,@buttonACG_normalize);
+UI.menu.display.normalization.ops(2) = uimenu(UI.menu.display.topMenu,menuLabel,'Normalize ISIs by occurence',menuSelectedFcn,@buttonACG_normalize);
 
 UI.menu.ACG.topMenu = uimenu(UI.fig,menuLabel,'ACG');
 UI.menu.ACG.window.ops(1) = uimenu(UI.menu.ACG.topMenu,menuLabel,'30 msec',menuSelectedFcn,@buttonACG);
@@ -677,7 +677,7 @@ UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0.002 
 UI.benchmark = uicontrol('Style','text','Units','normalized','Position',[0.633 0.003 0.25 0.022],'String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3]);
 
 % Title with details about the selected cell and current session
-UI.title = uicontrol('Style','text','Units','normalized','Position',[0.1 0.97 0.78 0.03],'String',{'Cell details'},'HorizontalAlignment','center','FontSize',13);
+UI.title = uicontrol('Style','text','Units','normalized','Position',[0.1 0.975 0.78 0.025],'String',{'Cell details'},'HorizontalAlignment','center','FontSize',13);
 
 % % % % % % % % % % % % % % % % % % %
 % Maximazing figure to full screen
@@ -693,7 +693,8 @@ end
 %% % % % % % % % % % % % % % % % % % % % % %
 % Main loop of UI
 % % % % % % % % % % % % % % % % % % % % % %
-pause(0.01)
+
+pause(0.001)
 while ii <= size(cell_metrics.troughToPeak,2)
     
     % breaking if figure has been closed
@@ -1627,11 +1628,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 
                 [~,burstIndexSorted] = sort(cell_metrics.burstIndex_Royer2012(subset));
                 [~,idx] = find(subset(burstIndexSorted) == ii);
-                imagesc(general.isis.log10', [1:length(subset)], cell_metrics.isi.log10_zscored(:,subset(burstIndexSorted))','HitTest','off')
+                
+                if strcmp(UI.settings.isiNormalization,'Rate')
+                    imagesc(general.isis.log10', [1:length(subset)], cell_metrics.isi.log10_rate(:,subset(burstIndexSorted))','HitTest','off')
+                else
+                    imagesc(general.isis.log10', [1:length(subset)], cell_metrics.isi.log10_occurence(:,subset(burstIndexSorted))','HitTest','off')
+                end
                 if ~isempty(idx)
                     plot(general.isis.log10([1,end]),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
                 end
-                colormap hot(512), xlabel('Time'), title(['All ACGs (image)']), axis tight
+                colormap hot(512), xlabel('Time'), title(['All ISIs (image)']), axis tight
                 
         elseif strcmp(customPlotSelection,'All ACGs (image)')
             
@@ -1639,25 +1645,27 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             [~,burstIndexSorted] = sort(cell_metrics.burstIndex_Royer2012(subset));
             [~,idx] = find(subset(burstIndexSorted) == ii);
             if strcmp(UI.settings.acgType,'Normal')
-                imagesc([-100:100]/2, [1:length(subset)], cell_metrics.acg.narrow_zscored(:,subset(burstIndexSorted))','HitTest','off')
+                imagesc([-100:100]/2, [1:length(subset)], cell_metrics.acg.narrow_normalized(:,subset(burstIndexSorted))','HitTest','off')
                 if ~isempty(idx)
                     plot([-50,50],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
                 end
                 plot([0,0],[0.5,length(subset)+0.5],'w','HitTest','off')
+                
             elseif strcmp(UI.settings.acgType,'Narrow')
-                imagesc([-30:30]/2, [1:length(subset)], cell_metrics.acg.narrow_zscored(41+30:end-40-30,subset(burstIndexSorted))','HitTest','off')
+                imagesc([-30:30]/2, [1:length(subset)], cell_metrics.acg.narrow_normalized(41+30:end-40-30,subset(burstIndexSorted))','HitTest','off')
                 if ~isempty(idx)
                     plot([-15,15],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
                 end
                 plot([0,0],[0.5,length(subset)+0.5],'w','HitTest','off')
+                
             elseif strcmp(UI.settings.acgType,'Log10')
-                imagesc(general.acgs.log10', [1:length(subset)], cell_metrics.acg.log10_zscored(:,subset(burstIndexSorted))','HitTest','off')
+                imagesc(general.acgs.log10', [1:length(subset)], cell_metrics.acg.log10_rate(:,subset(burstIndexSorted))','HitTest','off')
                 if ~isempty(idx)
                     plot(general.acgs.log10([1,end]),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
                 end
                 %xlim([0,10]), xticks([1]),xticklabels({'0.001','0.01','0.1','1','10'})
             else
-                imagesc([-500:500], [1:length(subset)], cell_metrics.acg.wide_zscored(:,subset(burstIndexSorted))','HitTest','off')
+                imagesc([-500:500], [1:length(subset)], cell_metrics.acg.wide_normalized(:,subset(burstIndexSorted))','HitTest','off')
                 if ~isempty(idx)
                     plot([-500,500],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
                 end
@@ -2621,7 +2629,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             switch UI.settings.tSNE_algorithm
                 case 'tSNE'
                     waitbar(0.1,f_waitbar,'Calculating tSNE space...')
-                    tSNE_metrics.plot = tsne(X','Standardize',true,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
+                    tSNE_metrics.plot = tsne(X','Standardize',UI.settings.tSNE_standardize,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
                 case 'UMAP'
                     waitbar(0.1,f_waitbar,'Calculating UMAP space...')
                     tSNE_metrics.plot = run_umap(X','verbose','none'); % ,'metric',UI.settings.tSNE_dDistanceMetric
@@ -3163,7 +3171,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.menu.display.normalization.ops(1).Checked = 'on';
             UI.menu.display.normalization.ops(2).Checked = 'off';
         elseif src.Position == 10
-            UI.settings.isiNormalization = 'Occurance';
+            UI.settings.isiNormalization = 'occurence';
             UI.menu.display.normalization.ops(1).Checked = 'off';
             UI.menu.display.normalization.ops(2).Checked = 'on';
         end
@@ -5456,19 +5464,23 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             clear rawWaveform
         end
-        if ~isfield(cell_metrics.acg,'wide_zscored')
-        cell_metrics.acg.wide_zscored = zscore(cell_metrics.acg.wide); cell_metrics.acg.wide_zscored = cell_metrics.acg.wide_zscored - min(cell_metrics.acg.wide_zscored(490:510,:));
+        if ~isfield(cell_metrics.acg,'wide_normalized')
+            cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide); 
         end
-        if ~isfield(cell_metrics.acg,'narrow_zscored')
-            cell_metrics.acg.narrow_zscored = zscore(cell_metrics.acg.narrow); cell_metrics.acg.narrow_zscored = cell_metrics.acg.narrow_zscored - min(cell_metrics.acg.narrow_zscored(90:110,:));
-        end
-        if isfield(cell_metrics.acg,'log10') && (~isfield(cell_metrics.acg,'log10_zscored') || size(cell_metrics.acg.log10_zscored,2) ~= size(cell_metrics.acg.log10,2))
-            cell_metrics.acg.log10_zscored = zscore(cell_metrics.acg.log10); cell_metrics.acg.log10_zscored = cell_metrics.acg.log10_zscored - min(cell_metrics.acg.log10_zscored);
-        end
-        if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')  && (~isfield(cell_metrics.isi,'log10_zscored') || size(cell_metrics.isi.log10_zscored,2) ~= size(cell_metrics.isi.log10,2))
-            cell_metrics.isi.log10_zscored = zscore(cell_metrics.isi.log10); cell_metrics.isi.log10_zscored = cell_metrics.isi.log10_zscored - min(cell_metrics.isi.log10_zscored);
+        if ~isfield(cell_metrics.acg,'narrow_normalized')
+            cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow); 
         end
         
+        if isfield(cell_metrics.acg,'log10') && (~isfield(cell_metrics.acg,'log10_rate') || size(cell_metrics.acg.log10_rate,2) ~= size(cell_metrics.acg.log10,2))
+            cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10); 
+            cell_metrics.acg.log10_occurence = normalize_range(cell_metrics.acg.log10.*diff(10.^ACGLogIntervals)');
+        end
+
+        if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')  && (~isfield(cell_metrics.isi,'log10_rate') || size(cell_metrics.isi.log10_rate,2) ~= size(cell_metrics.isi.log10,2))
+            cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10); 
+            cell_metrics.isi.log10_occurence = normalize_range(cell_metrics.isi.log10.*diff(10.^ACGLogIntervals)'); 
+        end
+
         % filtWaveform, acg2, acg1, plot
         if isfield(cell_metrics.general,'tSNE_metrics')
             tSNE_metrics = cell_metrics.general.tSNE_metrics;
@@ -5484,19 +5496,19 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         if UI.settings.tSNE_calcWideAcg && ~isfield(tSNE_metrics,'acg_wide')
             disp('Calculating tSNE space for wide ACGs')
-            tSNE_metrics.acg_wide = tsne([cell_metrics.acg.wide_zscored(ceil(size(cell_metrics.acg.wide_zscored,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
+            tSNE_metrics.acg_wide = tsne([cell_metrics.acg.wide_normalized(ceil(size(cell_metrics.acg.wide_normalized,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
         end
         if UI.settings.tSNE_calcNarrowAcg && ~isfield(tSNE_metrics,'acg_narrow')
             disp('Calculating tSNE space for narrow ACGs')
-            tSNE_metrics.acg_narrow = tsne([cell_metrics.acg.narrow_zscored(ceil(size(cell_metrics.acg.narrow_zscored,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
+            tSNE_metrics.acg_narrow = tsne([cell_metrics.acg.narrow_normalized(ceil(size(cell_metrics.acg.narrow_normalized,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
         end
-        if UI.settings.tSNE_calcLogAcg && ~isfield(tSNE_metrics,'acg_log10') && isfield(cell_metrics.acg,'log10_zscored')
+        if UI.settings.tSNE_calcLogAcg && ~isfield(tSNE_metrics,'acg_log10') && isfield(cell_metrics.acg,'log10_normalized')
             disp('Calculating tSNE space for log ACGs')
-            tSNE_metrics.acg_log10 = tsne([cell_metrics.acg.log10(ceil(size(cell_metrics.acg.log10_zscored,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
+            tSNE_metrics.acg_log10 = tsne([cell_metrics.acg.log10(ceil(size(cell_metrics.acg.log10_rate,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
         end
-        if UI.settings.tSNE_calcLogIsi && ~isfield(tSNE_metrics,'isi_log10') && isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10_zscored')
+        if UI.settings.tSNE_calcLogIsi && ~isfield(tSNE_metrics,'isi_log10') && isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10_normalized')
             disp('Calculating tSNE space for log ISIs')
-            tSNE_metrics.isi_log10 = tsne([cell_metrics.isi.log10(ceil(size(cell_metrics.isi.log10_zscored,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
+            tSNE_metrics.isi_log10 = tsne([cell_metrics.isi.log10(ceil(size(cell_metrics.isi.log10_rate,1)/2):end,:)]','Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
         end
         
         if UI.settings.tSNE_calcFiltWaveform && ~isfield(tSNE_metrics,'filtWaveform')
@@ -6661,6 +6673,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         
     end
+    
+% % % % % % % % % % % % % % % % % % % % % %
+    
+    function data = normalize_range(data)
+        % Normalizes a input matrix or vector to the interval [0,1]
+        data = data./range(data);
+    end
+        
 % % % % % % % % % % % % % % % % % % % % % %
 
     function adjustMonoSyn_UpdateMetrics(cell_metricsIn,cell_metrics)
