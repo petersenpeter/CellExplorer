@@ -22,7 +22,7 @@ addParameter(p,'sessionstruct',[],@isstruct);   % session struct (can be used to
 % Parameters
 addParameter(p,'saveMat',true,@islogical);      % Saves the session struct to a mat file
 addParameter(p,'changeDir',true,@islogical);    % change directory to basepath?
-addParameter(p,'loadBuzcode',true,@islogical);  % Loads and saves select info from buzcode sessionInfo 
+addParameter(p,'loadBuzcode',false,@islogical);  % Loads and saves select info from buzcode sessionInfo 
 
 parse(p,varargin{:})
 

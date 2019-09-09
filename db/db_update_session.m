@@ -159,7 +159,7 @@ db_update_brainRegions(session,db_settings)
         end
         jsonStructure = jsonencode(jsonStructure);
         jsonStructure = strrep(jsonStructure,'fiElD_','');
-        options = weboptions('Username',db_settings.username,'Password',db_settings.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+        options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
         RESPONSE = webwrite(web_address,jsonStructure,options);
         if RESPONSE.success==1
             disp('Channel tags successfully submitted to db')
@@ -197,7 +197,7 @@ db_update_brainRegions(session,db_settings)
         end
         jsonStructure = jsonencode(jsonStructure);
         jsonStructure = strrep(jsonStructure,'fiElD_','');
-        options = weboptions('Username',db_settings.username,'Password',db_settings.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+        options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
         RESPONSE = webwrite(web_address,jsonStructure,options);
         if RESPONSE.success==1
             disp('Brain regions successfully submitted to db')

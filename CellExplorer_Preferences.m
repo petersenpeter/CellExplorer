@@ -26,6 +26,7 @@ UI.settings.metricsTableType = 'Metrics';         % ['Metrics','Cells','None']
 UI.settings.plotCountIn = 'GUI 3+3';            % ['GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6']
 UI.settings.dispLegend = 0;                     % [0,1] Display legend for scatter plots?
 UI.settings.plotWaveformMetrics = 0;            % show waveform metrics on the single waveform
+UI.settings.sortingMetric = 'burstIndex_Royer2012'; % metrics used for sorting image data
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 6;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
@@ -62,6 +63,8 @@ UI.settings.tSNE_calcRawWaveform = false;       % boolean
 % Highlight excitatory / inhibitory cells
 UI.settings.displayInhibitory = false;          % boolean
 UI.settings.displayExcitatory = false;          % boolean
+UI.settings.displayExcitatoryPostsynapticCells = false; % boolean
+UI.settings.displayInhibitoryPostsynapticCells = false; % boolean
 
 % Firing rate map setting
 UI.settings.firingRateMap.showHeatmap = false;          % boolean

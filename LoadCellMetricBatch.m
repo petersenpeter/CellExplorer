@@ -105,20 +105,21 @@ else
 end
 
 for iii = 1:length(clustering_paths)
-    if ~isempty(sessionNames) && ishandle(f_LoadCellMetrics)
-        waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}]);
-    elseif ~isempty(sessionIDs) && ishandle(f_LoadCellMetrics)
-        waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading ', num2str(iii), '/', num2str(length(clustering_paths))]);
-    elseif ~isempty(clustering_paths) && ishandle(f_LoadCellMetrics)
-        waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,['Loading ', num2str(iii), '/', num2str(length(clustering_paths))]);
+    if exist(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']))
+        filesize = ByteSize(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']),'file');
+    else
+        filesize = 'unknown file size';
+    end
+    if ~isempty(basenames) && ishandle(f_LoadCellMetrics)
+        waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,[num2str(iii), '/', num2str(length(basenames)),': ', basenames{iii}, ' (', filesize,')']);
     else
         break
     end
     if exist(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']))
         cell_metrics2{iii} = load(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']));
-    elseif fullfile(clustering_paths{iii},[saveAs,'.mat'])
-        warning('Loading legacy format')
-        disp([fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']), ' does not exist'])
+%     elseif fullfile(clustering_paths{iii},[saveAs,'.mat'])
+%         warning('Loading legacy format')
+%         disp([fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']), ' does not exist'])
     else 
         warning('session not found')
     end

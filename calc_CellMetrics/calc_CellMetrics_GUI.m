@@ -14,6 +14,10 @@ function [session,parameters,statusExit] = calc_CellMetrics_GUI(sessionIn,parame
 % petersen.peter@gmail.com
 % Last edited: 17-06-2019
 
+% TODO
+% Toggle button for saving sessionInfo on exit
+
+
 session = sessionIn;
 statusExit = 0;
 

@@ -18,7 +18,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   Examples:                'waveform_metrics','PCA_features','acg_metrics','deepSuperficial',
 %                            'ripple_metrics','monoSynaptic_connections','spatial_metrics'
 %                            'perturbation_metrics','theta_metrics','psth_metrics',
-%                            'manipulation_metrics', 'event_metrics'.
+%                            'manipulation_metrics', 'event_metrics', 'importCellTypeClassification'.
 %                            Default: 'all'
 %   excludeMetrics         - Metrics to exclude. Default: 'none' 
 %   removeMetrics          - Metrics to remove (supports only deepSuperficial at this point)
@@ -41,11 +41,13 @@ function cell_metrics = calc_CellMetrics(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 16-08-2019
+% Last edited: 29-08-2019
 
 % TODO
 % Exclude spikes during manipulations
+% Determine and implement optimal length of unfiltered waveforms
 % Standardize tracking data
+% Import cell types classified in Buzcode
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -829,6 +831,23 @@ if any(contains(metrics,{'psth_metrics','all'})) && ~any(contains(excludeMetrics
     end
 end
 
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Import pE and pI classifications from Buzcode (basename.CellClass.cellinfo.mat)
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+
+if any(contains(metrics,{'importCellTypeClassification','all'})) && ~any(contains(excludeMetrics,{'importCellTypeClassification'}))
+    disp('* Importing classified cell types from buzcode');
+    
+    filename = fullfile(basepath,[basename,'.CellClass.cellinfo.mat']);
+    if exist(filename,'file')
+        temp = load(filename);
+        disp(['  Loaded ' filename ' succesfully']);
+        if isfield(temp.CellClass,'label') & size(emp.CellClass.label,2) == cell_metrics.general.cellCount
+            cell_metrics.CellClassBuzcode = temp.CellClass.label;
+        end
+    end
+    
+end    
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Other metrics
