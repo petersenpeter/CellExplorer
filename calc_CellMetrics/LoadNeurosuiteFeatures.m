@@ -1,29 +1,29 @@
 function PCA_features = LoadNeurosuiteFeatures(spikes,session,timeRestriction)%(,basename,sr,timeRestriction)
+% Calculates isolation distance and L-ratio from clu and fet files (has to be calculated beforehand)
+%
+% INPUTS
+% spikes
+% session
+% timeRestriction
+%
+% OUTPUT
+% PCA_features
+
+% By Peter Petersen
+% petersen.peter@gmail.com
+% Last edited: 12-09-2019
+
+% TODO
+% Determine both metrics from a subset of dimensions
+
 disp('Loading Neurosuite waveforms')
-% clusteringpath = 'Z:\Buzsakilabspace\PeterPetersen\IntanData\MS21\Peter_MS21_180718_103455_concat\Kilosort_2018-08-29_165108';
-% basename = 'Peter_MS21_180718_103455_concat';
 
+% Extracts parameters from the session struct
+sr = session.extracellular.sr;                   % Sample rate (Hz)
+basename = session.general.baseName;             % basename of the session
+clusteringpath = session.general.clusteringPath; % path to clustering data (basename.spikes.cellinfo.mat and basename.clu.* and basename.fet.* files)
 
-% spike_cluster_index = double(readNPY(fullfile(clusteringpath, 'spike_clusters.npy')));
-% spike_clusters = unique(spike_cluster_index);
-% if exist(fullfile(clusteringpath, 'cluster_ids.npy'))
-%     cluster_ids = readNPY(fullfile(clusteringpath, 'cluster_ids.npy'));
-%     unit_shanks = readNPY(fullfile(clusteringpath, 'shanks.npy'));
-% end
-% spikeGroups = unique(unit_shanks);
-
-% fileID = fopen(fullfile(clusteringpath, 'cluster_group.tsv'));
-% good_units = textscan(fileID,'%d %s','Delimiter','\t','HeaderLines',1);
-% fclose(fileID);
-% accepted_units = good_units{1}(find(strcmp({good_units{2}{:}},'good')));
-% 
-
-sr = session.extracellular.sr;
-basename = session.general.baseName;
-clusteringpath = session.general.clusteringPath;
 spikeGroups = unique(spikes.shankID);
-
-
 SpikeFeatures = [];
 isolationDistance = [];
 lRatio = [];
@@ -54,7 +54,6 @@ for i = 1:length(spikeGroups)
     if ~isempty(timeRestriction)
         time_stamps = load(fullfile(clusteringpath,[basename '.res.' num2str(spikeGroup)]));
         indeces2keep = find(any(time_stamps./sr >= timeRestriction(:,1)' & time_stamps./sr <= timeRestriction(:,2)', 2));
-%         time_stamps = time_stamps(indeces2keep);
         cluster_index = cluster_index(indeces2keep);
         fet = fet(indeces2keep,:);
     end
@@ -63,7 +62,7 @@ for i = 1:length(spikeGroups)
     clusters = accepted_units(find(ismember(accepted_units,clusters)));
     clusters2 = accepted_units2(find(ismember(accepted_units,clusters)));
     indexes = find(ismember(cluster_index, clusters));
-    SpikeFeatures = fet(indexes,1:end-1);
+    SpikeFeatures = fet(indexes,1:end-1); 
     cluster_index = cluster_index(indexes);
     
     [isolation_distance1,isolation_distance_accepted] = calc_IsolationDistance(SpikeFeatures,cluster_index,-1);
@@ -74,12 +73,15 @@ for i = 1:length(spikeGroups)
     cluID = [cluID,clusters];
     UID = [UID,clusters2];
 end
+
 PCA_features = [];
 PCA_features.isolationDistance = isolationDistance;
 PCA_features.lRatio = lRatio;
+PCA_features.isolationDistanceSubspace = isolationDistanceSubspace;
+PCA_features.lRatioSubspace = lRatioSubspace;
 PCA_features.cluID = cluID;
 PCA_features.UID = UID;
-            
+
 figure, subplot(2,1,1)
 histogram(isolationDistance,[2:2:100]),xlabel('Isolation distance'), ylabel('Count'), hold on, gridxy(25)
 subplot(2,1,2)

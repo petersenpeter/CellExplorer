@@ -51,7 +51,7 @@ if any(strcmp(datatype,supportedDataTypes))
             filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.mat']);
     end
     save(filename, '-struct', 'S','-v7.3','-nocompression')
-    disp(['Successfully saved ', filename])
+    disp(['Saved variable ''',dataName, ''' to ', filename])
     success = true;
 else
     error(['Not a valid datatype: ', datatype,', filename: ' filename])
