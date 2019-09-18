@@ -24,7 +24,8 @@ function cell_metrics = CellExplorer(varargin)
 % Last edited: 05-09-2019
 
 % Shortcuts to built-in functions
-% initializeSession, DatabaseSessionDialog, saveDialog, restoreBackup, keyPress, defineSpikesPlots, customPlot, GroupAction, brainRegionDlg, FromPlot, GroupSelectFromPlot, tSNE_redefineMetrics
+% initializeSession, DatabaseSessionDialog, saveDialog, restoreBackup,keyPress, defineSpikesPlots, customPlot, 
+% GroupAction, brainRegionDlg, FromPlot, GroupSelectFromPlot, tSNE_redefineMetrics, ScrolltoZoomInPlot
  
 % TODO
 % GUI to reverse changes from backup files
@@ -3756,21 +3757,21 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
 
         if axnum == 1
-            if UI.checkbox.logx.Value && UI.checkbox.logy.Value
-                x_scale = range(log10(plotX));
-                y_scale = range(log10(plotY));
+            if UI.checkbox.logx.Value == 1 && UI.checkbox.logy.Value == 1
+                x_scale = range(log10(plotX(find(plotX>0))))
+                y_scale = range(log10(plotY(plotY>0)))
                 [~,idx] = min(hypot((log10(plotX(subset))-log10(u))/x_scale,(log10(plotY(subset))-log10(v))/y_scale));
-            elseif UI.checkbox.logx.Value && UI.checkbox.logy.Value == 0
-                x_scale = range(log10(plotX));
-                y_scale = range(plotY);
+            elseif UI.checkbox.logx.Value == 1 && UI.checkbox.logy.Value == 0
+                x_scale = range(log10(plotX(find(plotX>0))))
+                y_scale = range(plotY)
                 [~,idx] = min(hypot((log10(plotX(subset))-log10(u))/x_scale,(plotY(subset)-v)/y_scale));
-            elseif UI.checkbox.logx.Value == 0 && UI.checkbox.logy.Value
-                x_scale = range(plotX);
-                y_scale = range(log10(plotY));
+            elseif UI.checkbox.logx.Value == 0 && UI.checkbox.logy.Value == 1
+                x_scale = range(plotX)
+                y_scale = range(log10(plotY(find(plotY>0))))
                 [~,idx] = min(hypot((plotX(subset)-u)/x_scale,(log10(plotY(subset))-log10(v))/y_scale));
             else
-                x_scale = range(plotX);
-                y_scale = range(plotY);
+                x_scale = range(plotX)
+                y_scale = range(plotY)
                 [~,idx] = min(hypot((plotX(subset)-u)/x_scale,(plotY(subset)-v)/y_scale));
             end
             iii = subset(idx);
