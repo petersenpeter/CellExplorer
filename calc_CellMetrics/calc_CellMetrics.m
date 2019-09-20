@@ -154,7 +154,7 @@ if showGUI
     if ~isfield(session.extracellular,'probesVerticalSpacing') & ~isfield(session.extracellular,'probesLayout')
         session = determineProbeSpacing(session);
     end
-    [session,parameters,status] = calc_CellMetrics_GUI(session,parameters);
+    [session,parameters,status] = gui_session(session,parameters);
     if status==0
         disp('  Metrics calculations canceled by user')
         return

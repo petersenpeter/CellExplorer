@@ -4726,13 +4726,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             sessionMetaFilename = fullfile(cell_metrics.general.basepaths{cell_metrics.batchIDs(ii)},'session.mat');
             if exist(sessionMetaFilename,'file')
                 sessionIn = load(sessionMetaFilename);
-                calc_CellMetrics_GUI(sessionIn.session);
+                gui_session(sessionIn.session);
             else
                 MsgLog(['Session metadat file not available:' sessionMetaFilename],2)
             end
         else
             sessionIn = load('session.mat');
-            calc_CellMetrics_GUI(sessionIn.session);
+            gui_session (sessionIn.session);
         end
     end
 

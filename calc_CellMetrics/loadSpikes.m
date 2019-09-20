@@ -19,6 +19,7 @@ function spikes = loadSpikes(varargin)
 %     .rawWaveform      - Average waveform on maxWaveformCh (from raw .dat)
 %     .filtWaveform     - Average filtered waveform on maxWaveformCh (from raw .dat)
 %     .rawWaveform_std  - Average waveform on maxWaveformCh (from raw .dat)
+
 %     .filtWaveform_std - Average filtered waveform on maxWaveformCh (from raw .dat)
 %     .peakVoltage      - Peak voltage (uV)
 %     .cluID            - Cluster ID
@@ -301,6 +302,12 @@ if forceReload
     spikes.processinginfo.params.clusteringPath = clusteringPath;
     spikes.processinginfo.params.basepath = basepath;
     spikes.processinginfo.params.useNeurosuiteWaveforms = useNeurosuiteWaveforms;
+    try
+        spikes.processinginfo.params.username = char(java.lang.System.getProperty('user.name'));
+        spikes.processinginfo.params.hostname = char(java.net.InetAddress.getLocalHost.getHostName);
+    catch
+        disp('Failed to retrieve system info.')
+    end
     
     % Saving output to a buzcode compatible spikes file.
     if saveMat

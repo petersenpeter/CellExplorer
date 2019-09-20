@@ -2,6 +2,14 @@ function session = sessionTemplate(pathCurrent)
 % Loading parameters if not using DB session struct. 
 % Loading settings available from sessionInfo (Buzcode)
 % This script must be called from the basepath of your dataset
+
+% Import skipped channels from the xml as bad channels
+importSkippedChannels = true;
+
+% Import channel not synchronized between anatomical and spike groups as bad channels
+importSyncedChannels = true;
+
+
 session = [];
 if nargin<1
     pathCurrent = pwd;
@@ -37,12 +45,14 @@ session.spikeSorting.method{1} = 'KiloSort'; % Sorting algorith: KiloSort, Klust
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Loading parameters from sessionInfo (Buzcode)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+
 sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
 session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
 session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
 session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
 session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
 session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
+
 % Channel tags
 if isfield(sessionInfo,'badchannels')
     if isfield(session.channelTags,'Bad')
@@ -62,6 +72,7 @@ if isfield(sessionInfo,'channelTags')
     end
 end
 
+
 % Brain regions
 if isfield(sessionInfo,'region')
     load BrainRegions.mat
@@ -75,5 +86,31 @@ if isfield(sessionInfo,'region')
         else
             warning(['Brain region does not exist in the Allen Brain Atlas: ' regionNames{iRegion}])
         end
+    end
+end
+
+if importSkippedChannels || importSyncedChannels
+    sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
+    
+    % Removing dead channels by the skip parameter in the xml
+    if importSkippedChannels
+        order = [sessionInfo.AnatGrps.Channels];
+        skip = find([sessionInfo.AnatGrps.Skip]);
+        badChannels_skipped = order(skip)+1;
+    else
+        badChannels_skipped = [];
+    end
+    % Removing dead channels by comparing AnatGrps to SpkGrps in the xml
+    if importSyncedChannels & isfield(sessionInfo,'SpkGrps')
+        skip2 = find(~ismember([sessionInfo.AnatGrps.Channels], [sessionInfo.SpkGrps.Channels])); % finds the indices of the channels that are not part of SpkGrps
+        badChannels_synced = order(skip2)+1;
+    else
+        badChannels_synced = [];
+    end
+    
+    if isfield(session,'channelTags') & isfield(session.channelTags,'Bad')
+        session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,badChannels_skipped,badChannels_synced]);
+    else
+        session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);
     end
 end

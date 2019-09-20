@@ -1,24 +1,40 @@
-function [session,parameters,statusExit] = calc_CellMetrics_GUI(sessionIn,parameters)
-% Shows a GUI allowing you to edit parameters and meta data for the input session
+function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
+% Shows a GUI allowing you to edit parameters for the Cell Explorer and metadata for a session
 %
 % INPUTS
 % sessionIn
 % parameters
 %
 % OUTPUTS
-% session 
+% session
 % parameters
 % statusExit
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 17-06-2019
+% Last edited: 18-09-2019
 
-% TODO
-% Toggle button for saving sessionInfo on exit
+if exist('sessionIn')
+    session = sessionIn;
+    basepath = session.general.basePath;
+elseif ~exist('sessionIn') & exist(fullfile('session.mat'),'file')
+    disp('Loading local session.mat');
+    load('session.mat');
+    sessionIn = session;
+    basepath = pwd;
+else
+    [file,basepath] = uigetfile('*.mat','Please select a session.mat file','session.mat');
+    if ~isequal(file,0)
+        cd(basepath)
+        temp = load(file);
+        sessionIn = temp.session;
+        session = sessionIn;
+    else
+        warning('Please provide a session struct')
+        return
+    end
+end
 
-
-session = sessionIn;
 statusExit = 0;
 
 % Creating figure
@@ -38,40 +54,44 @@ UI.tabs.brainRegions = uitab(UI.uitabgroup,'Title','Brain regions');
 UI.tabs.channelTags = uitab(UI.uitabgroup,'Title','Tags');
 
 % Buttons
-UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 10, 240, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow);
-UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[260, 10, 250, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow);
+UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 10, 150, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow);
+UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[170, 10, 160, 30],'String','Save','Callback',@(src,evnt)saveSessionFile);
+UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[340, 10, 160, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow);
 
-% Tab: cell metrics
+% % % % % % % % % % % % % % % % % % % %
+% Tab: Cell metrics
 % % % % % % % % % % % % % % % % % % % %
 
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Session name (basename)', 'Position', [10, 440, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-    UI.edit.session = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 415, 480, 25],'HorizontalAlignment','left');
-    
+uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Session name (basename)', 'Position', [10, 440, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+UI.edit.session = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 415, 480, 25],'HorizontalAlignment','left');
+
 if exist('parameters','var')
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'base path', 'Position', [10, 390, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-    UI.edit.basepath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', parameters.basepath, 'Position', [10, 365, 480, 25],'HorizontalAlignment','left');
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'base path', 'Position', [10, 388, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.basepath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', '', 'Position', [10, 365, 480, 25],'HorizontalAlignment','left');
+    UIsetString(parameters,'basepath');
     
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'clustering path', 'Position', [10, 340, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-    UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', parameters.clusteringpath, 'Position', [10, 315, 480, 25],'HorizontalAlignment','left');
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'clustering path', 'Position', [10, 338, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', '', 'Position', [10, 315, 480, 25],'HorizontalAlignment','left');
+    UIsetString(parameters,'clusteringpath');
     
     % Include metrics
     UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','ripple_metrics','monoSynaptic_connections','spatial_metrics','perturbation_metrics','theta_metrics','psth_metrics'};
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Include metrics (default: all)', 'Position', [10, 290, 235, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Include metrics (default: all)', 'Position', [10, 288, 235, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
     UI.listbox.includeMetrics = uicontrol('Parent',UI.tabs.cellMetrics,'Style','listbox','Position',[10 140 235 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metrics));
     
     % Exclude metrics
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Exclude metrics (default: none)', 'Position', [250, 290, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Exclude metrics (default: none)', 'Position', [250, 288, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
     UI.listbox.excludeMetrics = uicontrol('Parent',UI.tabs.cellMetrics,'Style','listbox','Position',[250 140 240 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.excludeMetrics));
     
     % Parameters
     UI.list.params = {'forceReload','submitToDatabase','saveMat','plots','keepCellClassification','useNeurosuiteWaveforms','excludeManipulations'};
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Parameters', 'Position', [10, 100, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Parameters', 'Position', [10, 100, 238, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
     for iParams = 1:length(UI.list.params)
         UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.cellMetrics,'Style','checkbox','Position',[10 110-iParams*15 300 15],'Units','normalized','String',UI.list.params{iParams});
         UI.checkbox.params(iParams).Value = parameters.(UI.list.params{iParams});
     end
     
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe layout', 'Position', [250, 100, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe layout', 'Position', [250, 100, 238, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
     UI.edit.probesLayout = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'popup', 'String', {'unknown','linear', 'staggered', 'poly2', 'poly3','poly5'} , 'Position', [250, 75, 240, 25],'HorizontalAlignment','left');
     if iscell(session.extracellular.probesLayout) && size(session.extracellular.probesLayout,2)>1
         probesLayout = session.extracellular.probesLayout{1};
@@ -80,47 +100,67 @@ if exist('parameters','var')
     end
     UIsetValue(UI.edit.probesLayout,probesLayout)
     
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe vertical spacing (µm)', 'Position', [250, 50, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe vertical spacing (µm)', 'Position', [250, 50, 238, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
     UI.edit.probesVerticalSpacing = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.extracellular.probesVerticalSpacing, 'Position', [250, 25, 240, 25],'HorizontalAlignment','left');
 else
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'base path', 'Position', [10, 390, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-    UI.edit.basepath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.general.basePath, 'Position', [10, 365, 480, 25],'HorizontalAlignment','left');
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Base path', 'Position', [10, 388, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.basepath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', '', 'Position', [10, 365, 480, 25],'HorizontalAlignment','left');
+    UIsetString(session.general,'basepath','basePath');
     
-    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'clustering path', 'Position', [10, 340, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-    UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.general.clusteringPath, 'Position', [10, 315, 480, 25],'HorizontalAlignment','left');
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Clustering path', 'Position', [10, 338, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', '', 'Position', [10, 315, 480, 25],'HorizontalAlignment','left');
+    UIsetString(session.general,'clusteringpath','clusteringPath');
+    
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Date', 'Position', [10, 288, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.date = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', '', 'Position', [10, 265, 230, 25],'HorizontalAlignment','left');
+    UIsetString(session.general,'date');
+    
+    uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Time', 'Position', [250, 288, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+    UI.edit.time = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', '', 'Position', [250, 265, 240, 25],'HorizontalAlignment','left');
+    UIsetString(session.general,'time');
 end
 
+% % % % % % % % % % % % % % % % % % % % %
 % Tab: session - general
 % % % % % % % % % % % % % % % % % % % % %
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Name', 'Position', [10, 440, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.animal, 'Position', [10, 415, 230, 25],'HorizontalAlignment','left');
+UI.edit.animal = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 415, 230, 25],'HorizontalAlignment','left');
+UIsetString(session.general,'animal');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Sex', 'Position', [250, 440, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
 UI.edit.sex = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', {'Unknown','Male','Female'}, 'Position', [250, 415, 240, 25],'HorizontalAlignment','left');
 UIsetValue(UI.edit.sex,session.general.sex)
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Species', 'Position', [10, 390, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.species = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.species, 'Position', [10, 365, 230, 25],'HorizontalAlignment','left');
+UI.edit.species = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 365, 230, 25],'HorizontalAlignment','left');
+UIsetString(session.general,'species');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Strain', 'Position', [250, 390, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.strain = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.strain, 'Position', [250, 365, 240, 25],'HorizontalAlignment','left');
+UI.edit.strain = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [250, 365, 240, 25],'HorizontalAlignment','left');
+UIsetString(session.general,'strain');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Genetic line', 'Position', [10, 340, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.geneticLine = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.geneticLine, 'Position', [10, 315, 230, 25],'HorizontalAlignment','left');
+UI.edit.geneticLine = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 315, 230, 25],'HorizontalAlignment','left');
+UIsetString(session.general,'geneticLine');
 
+% % % % % % % % % % % % % % % % % % % % %
 % Tab: session - extracellular
 % % % % % % % % % % % % % % % % % % % % %
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nChannels', 'Position', [10, 440, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.nChannels = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', session.extracellular.nChannels, 'Position', [10, 415, 230, 25],'HorizontalAlignment','left');
+UI.edit.nChannels = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 415, 230, 25],'HorizontalAlignment','left');
+UIsetString(session.extracellular,'nChannels');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [250, 440, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', session.extracellular.leastSignificantBit, 'Position', [250, 415, 240, 25],'HorizontalAlignment','left');
+UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [250, 415, 240, 25],'HorizontalAlignment','left');
+UIsetString(session.extracellular,'leastSignificantBit');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Sampling rate (Hz)', 'Position', [10, 390, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.sr = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', session.extracellular.sr, 'Position', [10, 365, 230, 25],'HorizontalAlignment','left');
-
+UI.edit.sr = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 365, 230, 25],'HorizontalAlignment','left');
+UIsetString(session.extracellular,'sr');
+    
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'LFP sampling rate (Hz)', 'Position', [250, 390, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', session.extracellular.srLfp, 'Position', [250, 365, 240, 25],'HorizontalAlignment','left');
+UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [250, 365, 240, 25],'HorizontalAlignment','left');
+UIsetString(session.extracellular,'srLfp');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Spike sorting method', 'Position', [10, 340, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
 UI.edit.spikeSortingMethod = uicontrol('Parent',UI.tabs.extracellular,'Style', 'popup', 'String', {'KiloSort', 'Klustakwik','MaskedKlustakwik', 'SpikingCircus'} , 'Position', [10, 315, 230, 25],'HorizontalAlignment','left');
@@ -133,33 +173,61 @@ UIsetValue(UI.edit.spikeSortingFormat,session.spikeSorting.format{1})
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Spike groups', 'Position', [10, 290, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
 UI.list.tableData = {false,'','',''};
 UI.table.spikeGroups = uitable(UI.tabs.extracellular,'Data',UI.list.tableData,'Position',[10, 50, 480, 240],'ColumnWidth',{20 50 270 120},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false]);
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup);
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[100, 10, 90, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup);
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[190, 10, 90, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup);
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[280, 10, 120, 30],'String','Verify spike group(s)','Callback',@(src,evnt)verifySpikeGroup);
-% uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[400, 10, 90, 30],'String','Sync buzcode','Callback',@(src,evnt)syncSpikeGroups);
+uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[10, 10, 80, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup);
+uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[100, 10, 80, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup);
+uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[190, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup);
+uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[300, 10, 100, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup);
+uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[410, 10, 80, 30],'String','Sync buzcode','Callback',@(src,evnt)syncSpikeGroups);
 updateSpikeGroupsList
 
+% % % % % % % % % % % % % % % % % % % % %
 % Tab: session - brain regions
 % % % % % % % % % % % % % % % % % % % % %
 UI.list.tableData = {false,'','','',''};
 UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[10, 50, 480, 410],'ColumnWidth',{20 100 120 120 115},'columnname',{'','Brain region','Channels','Spike groups','Notes'},'RowName',[],'ColumnEditable',[true false false false false]);
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Add region','Callback',@(src,evnt)addRegion);
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[100, 10, 90, 30],'String','Edit region','Callback',@(src,evnt)editRegion);
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[190, 10, 90, 30],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion);
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Edit region','Callback',@(src,evnt)editRegion);
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[210, 10, 110, 30],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion);
 updateBrainRegionList
 
+% % % % % % % % % % % % % % % % % % % % %
 % Tab: session - channel tags
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
 UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[10, 50, 480, 410],'ColumnWidth',{20 110 175 170},'columnname',{'','Tag','Channels','Spike groups'},'RowName',[],'ColumnEditable',[true false false false]);
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Add tag','Callback',@(src,evnt)addTag);
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[100, 10, 90, 30],'String','Edit tag','Callback',@(src,evnt)editTag);
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[190, 10, 90, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag);
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[110, 10, 100, 30],'String','Edit tag','Callback',@(src,evnt)editTag);
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[220, 10, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag);
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[330, 10, 160, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML);
 updateTagList
 
 uiwait(UI.fig)
 
+    function saveSessionFile
+        [stat,mess]=fileattrib(fullfile(basepath, 'session.mat'));
+        if stat==0
+            try
+                save(fullfile(basepath, 'session.mat'),'session','-v7.3','-nocompression');
+                msgbox(['Sucessfully saved session.mat to: ',basepath],'Sucessfully saved');
+            catch
+                msgbox('Failed to save session.mat. Location not available','Error','error');
+            end
+        elseif mess.UserWrite
+            save(fullfile(basepath, 'session.mat'),'session','-v7.3','-nocompression');
+            msgbox(['Sucessfully saved session.mat to: ',basepath],'Sucessfully saved');
+        else
+            msgbox('Unable to write to session.mat. No writing permissions.', 'Error','error');
+        end
+    end
+    
+    function UIsetString(StructName,StringName,StringName2)
+        if isfield(StructName,StringName) & exist('StringName2')
+            UI.edit.(StringName).String = StructName.(StringName2);
+        elseif isfield(StructName,StringName) 
+            UI.edit.(StringName).String = StructName.(StringName);
+        end
+    end
+    
     function X = compareStringArray(A,B)
         if ischar(B)
             B = {B};
@@ -187,6 +255,10 @@ uiwait(UI.fig)
             session.extracellular.probesLayout = UI.edit.probesLayout.String{UI.edit.probesLayout.Value};
             session.extracellular.probesVerticalSpacing = str2double(UI.edit.probesVerticalSpacing.String);
         end
+        session.general.name = UI.edit.session.String;
+        session.general.basepath = UI.edit.basepath.String;
+        session.general.clusteringpath = UI.edit.clusteringpath.String;
+            
         session.general.sex = UI.edit.sex.String{UI.edit.sex.Value};
         session.general.species = UI.edit.species.String;
         session.general.strain = UI.edit.strain.String;
@@ -212,53 +284,58 @@ uiwait(UI.fig)
     function updateBrainRegionList
         % Updates the plot table from the spikesPlots structure
         tableData = {};
-        brainRegionFieldnames = fieldnames(session.brainRegions);
-        for fn = 1:length(brainRegionFieldnames)
-            tableData{fn,1} = false;
-            tableData{fn,2} = brainRegionFieldnames{fn};
-            if isfield(session.brainRegions.(brainRegionFieldnames{fn}),'channels')
-                tableData{fn,3} = num2str(session.brainRegions.(brainRegionFieldnames{fn}).channels);
-            else
-                tableData{fn,3} = '';
+        if isfield(session,'brainRegions') & ~isempty(session.brainRegions)
+            brainRegionFieldnames = fieldnames(session.brainRegions);
+            for fn = 1:length(brainRegionFieldnames)
+                tableData{fn,1} = false;
+                tableData{fn,2} = brainRegionFieldnames{fn};
+                if isfield(session.brainRegions.(brainRegionFieldnames{fn}),'channels')
+                    tableData{fn,3} = num2str(session.brainRegions.(brainRegionFieldnames{fn}).channels);
+                else
+                    tableData{fn,3} = '';
+                end
+                if isfield(session.brainRegions.(brainRegionFieldnames{fn}),'spikeGroups')
+                    tableData{fn,4} = num2str(session.brainRegions.(brainRegionFieldnames{fn}).spikeGroups);
+                else
+                    tableData{fn,4} = '';
+                end
+                if isfield(session.brainRegions.(brainRegionFieldnames{fn}),'notes')
+                    tableData{fn,5} = session.brainRegions.(brainRegionFieldnames{fn}).notes;
+                else
+                    tableData{fn,5} = '';
+                end
             end
-            if isfield(session.brainRegions.(brainRegionFieldnames{fn}),'spikeGroups')
-                tableData{fn,4} = num2str(session.brainRegions.(brainRegionFieldnames{fn}).spikeGroups);
-            else
-                tableData{fn,4} = '';
-            end
-            if isfield(session.brainRegions.(brainRegionFieldnames{fn}),'notes')
-                tableData{fn,5} = session.brainRegions.(brainRegionFieldnames{fn}).notes;
-            else
-                tableData{fn,5} = '';
-            end
+            UI.table.brainRegion.Data = tableData;
+        else
+            UI.table.brainRegion.Data = {};
         end
-        UI.table.brainRegion.Data = tableData;
     end
 
     function updateTagList
         % Updates the plot table from the spikesPlots structure
         tableData = {};
         if isfield(session,'channelTags') & ~isempty(session.channelTags)
-        tagFieldnames = fieldnames(session.channelTags);
-        for fn = 1:length(tagFieldnames)
-            tableData{fn,1} = false;
-            tableData{fn,2} = tagFieldnames{fn};
-            if isfield(session.channelTags.(tagFieldnames{fn}),'channels')
-                tableData{fn,3} = num2str(session.channelTags.(tagFieldnames{fn}).channels);
-            else
-                tableData{fn,3} = '';
+            tagFieldnames = fieldnames(session.channelTags);
+            for fn = 1:length(tagFieldnames)
+                tableData{fn,1} = false;
+                tableData{fn,2} = tagFieldnames{fn};
+                if isfield(session.channelTags.(tagFieldnames{fn}),'channels')
+                    tableData{fn,3} = num2str(session.channelTags.(tagFieldnames{fn}).channels);
+                else
+                    tableData{fn,3} = '';
+                end
+                if isfield(session.channelTags.(tagFieldnames{fn}),'spikeGroups')
+                    tableData{fn,4} = num2str(session.channelTags.(tagFieldnames{fn}).spikeGroups);
+                else
+                    tableData{fn,4} = '';
+                end
             end
-            if isfield(session.channelTags.(tagFieldnames{fn}),'spikeGroups')
-                tableData{fn,4} = num2str(session.channelTags.(tagFieldnames{fn}).spikeGroups);
-            else
-                tableData{fn,4} = '';
-            end
-        end
-        UI.table.tags.Data = tableData;
+            UI.table.tags.Data = tableData;
         else
             UI.table.tags.Data = {};
         end
     end
+    
     function updateSpikeGroupsList
         % Updates the list of spike groups
         tableData = {};
@@ -266,7 +343,11 @@ uiwait(UI.fig)
             for fn = 1:size(session.extracellular.spikeGroups.channels,2)
                 tableData{fn,1} = false;
                 tableData{fn,2} = num2str(fn);
-                tableData{fn,3} = num2str(session.extracellular.spikeGroups.channels{fn});
+                if isnumeric(session.extracellular.spikeGroups.channels)
+                    tableData{fn,3} = num2str(session.extracellular.spikeGroups.channels(:,fn)');
+                else
+                    tableData{fn,3} = num2str(session.extracellular.spikeGroups.channels{fn});
+                end
                 if isfield(session.extracellular.spikeGroups,'label') & size(session.extracellular.spikeGroups.label,2)>=fn
                     tableData{fn,4} = session.extracellular.spikeGroups.label{fn};
                 else
@@ -463,11 +544,11 @@ uiwait(UI.fig)
                         return
                     end
                 end
-                
             end
             delete(UI.dialog.tags);
             updateTagList;
         end
+        
         function CancelTags_dialog
             delete(UI.dialog.tags);
         end
@@ -492,7 +573,7 @@ uiwait(UI.fig)
         end
     end
 
-%% % extracellular spike groups
+%% Extracellular spike groups
 
     function deleteSpikeGroup
         % Deletes any selected tags
@@ -504,12 +585,16 @@ uiwait(UI.fig)
             warndlg(['Please select a spike group to delete'])
         end
     end
-
+    
     function addSpikeGroup(regionIn)
         % Add new tag to session struct
         if exist('regionIn','var')
             initSpikeGroups = num2str(regionIn);
-            initChannels = num2str(session.extracellular.spikeGroups.channels{regionIn});
+            if isnumeric(session.extracellular.spikeGroups.channels)
+                initChannels = num2str(session.extracellular.spikeGroups.channels(:,regionIn)');
+            else
+                initChannels = num2str(session.extracellular.spikeGroups.channels{regionIn});
+            end
             if isfield(session.extracellular.spikeGroups,'label') & size(session.extracellular.spikeGroups.label,2)>=regionIn & ~isempty(session.extracellular.spikeGroups.label{regionIn})
                 initLabel = session.extracellular.spikeGroups.label{regionIn};
             else
@@ -523,7 +608,7 @@ uiwait(UI.fig)
         
         % Opens dialog
         UI.dialog.spikeGroups = dialog('Position', [300, 300, 500, 210],'Name','Add spike group','WindowStyle','modal'); movegui(UI.dialog.spikeGroups,'center')
-
+        
         uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', 'Spike group', 'Position', [10, 175, 480, 20],'HorizontalAlignment','left');
         spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'Edit', 'String', initSpikeGroups, 'Position', [10, 150, 480, 25],'HorizontalAlignment','left','enable', 'off');
         
@@ -584,9 +669,38 @@ uiwait(UI.fig)
             msgbox('Channels verified succesfully!');
         end
     end
-    
+
     function syncSpikeGroups
         msgbox('spike groups syncing with buzcode sessionInfo and .xml file');
+    end
+
+    function importBadChannelsFromXML
+        sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
+        
+        % Removing dead channels by the skip parameter in the xml
+        order = [sessionInfo.AnatGrps.Channels];
+        skip = find([sessionInfo.AnatGrps.Skip]);
+        badChannels_skipped = order(skip)+1;
+        
+        % Removing dead channels by comparing AnatGrps to SpkGrps in the xml
+        if isfield(sessionInfo,'SpkGrps')
+            skip2 = find(~ismember([sessionInfo.AnatGrps.Channels], [sessionInfo.SpkGrps.Channels])); % finds the indices of the channels that are not part of SpkGrps
+            badChannels_synced = order(skip2)+1;
+        else
+            badChannels_synced = [];
+        end
+        
+        if isfield(session,'channelTags') & isfield(session.channelTags,'Bad')
+            session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,badChannels_skipped,badChannels_synced]);
+        else
+            session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);
+        end
+        updateTagList
+        if length(session.channelTags.Bad.channels)>0
+            msgbox([num2str(length(session.channelTags.Bad.channels)),' bad channels detected (' num2str(session.channelTags.Bad.channels),')'])
+        else
+            msgbox('No bad channels detected')
+        end
     end
 
 end
