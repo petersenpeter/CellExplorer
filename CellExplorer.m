@@ -107,6 +107,8 @@ fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axisli
 positionsTogglebutton = [[1 29 27 13];[29 29 27 13];[1 15 27 13];[29 15 27 13];[1 1 27 13];[29 1 27 13]]; dispTags = []; dispTags2 = [];
 incoming = []; outgoing = []; connections = []; plotName = ''; db = {}; plotConnections = [1 1 1]; tableDataOrder = []; 
 groundTruthCelltypesList = {''}; ACGLogIntervals = -3:0.04:1; idx_textFilter = []; clickPlotRegular = true; polygon1.handle = gobjects(0);
+cellsExcitatoryPostsynaptic = []; cellsInhibitoryPostsynaptic = []; 
+
 set(groot, 'DefaultFigureVisible', 'on'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1200,maxFigureSize(3)-50), min(800,maxFigureSize(4)-50)];
 
 if isempty(basename)
@@ -3758,20 +3760,20 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
         if axnum == 1
             if UI.checkbox.logx.Value == 1 && UI.checkbox.logy.Value == 1
-                x_scale = range(log10(plotX(find(plotX>0))))
-                y_scale = range(log10(plotY(plotY>0)))
+                x_scale = range(log10(plotX(find(plotX>0))));
+                y_scale = range(log10(plotY(plotY>0)));
                 [~,idx] = min(hypot((log10(plotX(subset))-log10(u))/x_scale,(log10(plotY(subset))-log10(v))/y_scale));
             elseif UI.checkbox.logx.Value == 1 && UI.checkbox.logy.Value == 0
-                x_scale = range(log10(plotX(find(plotX>0))))
-                y_scale = range(plotY)
+                x_scale = range(log10(plotX(find(plotX>0))));
+                y_scale = range(plotY);
                 [~,idx] = min(hypot((log10(plotX(subset))-log10(u))/x_scale,(plotY(subset)-v)/y_scale));
             elseif UI.checkbox.logx.Value == 0 && UI.checkbox.logy.Value == 1
-                x_scale = range(plotX)
-                y_scale = range(log10(plotY(find(plotY>0))))
+                x_scale = range(plotX);
+                y_scale = range(log10(plotY(find(plotY>0))));
                 [~,idx] = min(hypot((plotX(subset)-u)/x_scale,(log10(plotY(subset))-log10(v))/y_scale));
             else
-                x_scale = range(plotX)
-                y_scale = range(plotY)
+                x_scale = range(plotX);
+                y_scale = range(plotY);
                 [~,idx] = min(hypot((plotX(subset)-u)/x_scale,(plotY(subset)-v)/y_scale));
             end
             iii = subset(idx);

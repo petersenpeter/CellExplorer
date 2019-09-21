@@ -1,5 +1,6 @@
 function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % Shows a GUI allowing you to edit parameters for the Cell Explorer and metadata for a session
+% Can be run from a basepath as well.
 %
 % INPUTS
 % sessionIn
@@ -12,16 +13,18 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 18-09-2019
+% Last edited: 20-09-2019
 
 if exist('sessionIn')
     session = sessionIn;
     basepath = session.general.basePath;
+    clusteringpath = session.general.clusteringPath;
 elseif ~exist('sessionIn') & exist(fullfile('session.mat'),'file')
     disp('Loading local session.mat');
     load('session.mat');
     sessionIn = session;
-    basepath = pwd;
+    basepath = session.general.basePath;
+    clusteringpath = session.general.clusteringPath;
 else
     [file,basepath] = uigetfile('*.mat','Please select a session.mat file','session.mat');
     if ~isequal(file,0)
@@ -29,6 +32,8 @@ else
         temp = load(file);
         sessionIn = temp.session;
         session = sessionIn;
+        basepath = session.general.basePath;
+        clusteringpath = session.general.clusteringPath;
     else
         warning('Please provide a session struct')
         return
@@ -104,12 +109,10 @@ if exist('parameters','var')
     UI.edit.probesVerticalSpacing = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.extracellular.probesVerticalSpacing, 'Position', [250, 25, 240, 25],'HorizontalAlignment','left');
 else
     uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Base path', 'Position', [10, 388, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-    UI.edit.basepath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', '', 'Position', [10, 365, 480, 25],'HorizontalAlignment','left');
-    UIsetString(session.general,'basepath','basePath');
+    UI.edit.basepath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', basepath, 'Position', [10, 365, 480, 25],'HorizontalAlignment','left');
     
     uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Clustering path', 'Position', [10, 338, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-    UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', '', 'Position', [10, 315, 480, 25],'HorizontalAlignment','left');
-    UIsetString(session.general,'clusteringpath','clusteringPath');
+    UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', clusteringpath, 'Position', [10, 315, 480, 25],'HorizontalAlignment','left');
     
     uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Date', 'Position', [10, 288, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
     UI.edit.date = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', '', 'Position', [10, 265, 230, 25],'HorizontalAlignment','left');
@@ -204,17 +207,36 @@ updateTagList
 uiwait(UI.fig)
 
     function saveSessionFile
-        [stat,mess]=fileattrib(fullfile(basepath, 'session.mat'));
+        if ~strcmp(pwd,UI.edit.basepath.String)
+            answer = questdlg('Where would you like to save the session struct to','Location','basepath','current folder','Select','basepath');
+        else
+            answer = 'basepath';
+        end
+        
+        switch answer
+            case 'basepath'
+                filepath1 = UI.edit.basepath.String;
+                filename1 = 'session.mat';
+            case 'current folder'
+                filepath1 = pwd;
+                filename1 = 'session.mat';
+            case 'Select'
+                [filename1,filepath1] = uiputfile('session.mat');
+            otherwise
+                return
+        end
+        
+        [stat,mess]=fileattrib(fullfile(filepath1, filename1));
         if stat==0
             try
-                save(fullfile(basepath, 'session.mat'),'session','-v7.3','-nocompression');
-                msgbox(['Sucessfully saved session.mat to: ',basepath],'Sucessfully saved');
+                save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
+                msgbox(['Sucessfully saved session.mat to: ',filepath1],'Sucessfully saved');
             catch
                 msgbox('Failed to save session.mat. Location not available','Error','error');
             end
         elseif mess.UserWrite
-            save(fullfile(basepath, 'session.mat'),'session','-v7.3','-nocompression');
-            msgbox(['Sucessfully saved session.mat to: ',basepath],'Sucessfully saved');
+            save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
+            msgbox(['Sucessfully saved session.mat to: ',filepath1],'Sucessfully saved');
         else
             msgbox('Unable to write to session.mat. No writing permissions.', 'Error','error');
         end
@@ -254,6 +276,9 @@ uiwait(UI.fig)
             end
             session.extracellular.probesLayout = UI.edit.probesLayout.String{UI.edit.probesLayout.Value};
             session.extracellular.probesVerticalSpacing = str2double(UI.edit.probesVerticalSpacing.String);
+        else
+            session.general.date = UI.edit.date;
+            session.general.time = UI.edit.time;
         end
         session.general.name = UI.edit.session.String;
         session.general.basepath = UI.edit.basepath.String;
@@ -671,35 +696,44 @@ uiwait(UI.fig)
     end
 
     function syncSpikeGroups
-        msgbox('spike groups syncing with buzcode sessionInfo and .xml file');
+        sessionInfo = LoadXml(fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']));
+        updateSpikeGroupsList
+        msgbox('spike groups imported from buzcode sessionInfo and .xml file');
     end
-
+    
     function importBadChannelsFromXML
-        sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
-        
-        % Removing dead channels by the skip parameter in the xml
-        order = [sessionInfo.AnatGrps.Channels];
-        skip = find([sessionInfo.AnatGrps.Skip]);
-        badChannels_skipped = order(skip)+1;
-        
-        % Removing dead channels by comparing AnatGrps to SpkGrps in the xml
-        if isfield(sessionInfo,'SpkGrps')
-            skip2 = find(~ismember([sessionInfo.AnatGrps.Channels], [sessionInfo.SpkGrps.Channels])); % finds the indices of the channels that are not part of SpkGrps
-            badChannels_synced = order(skip2)+1;
+        if exist(fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']),'file')
+            sessionInfo = LoadXml(fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']));
+            
+            % Removing dead channels by the skip parameter in the xml
+            order = [sessionInfo.AnatGrps.Channels];
+            skip = find([sessionInfo.AnatGrps.Skip]);
+            badChannels_skipped = order(skip)+1;
+            
+            % Removing dead channels by comparing AnatGrps to SpkGrps in the xml
+            if isfield(sessionInfo,'SpkGrps')
+                skip2 = find(~ismember([sessionInfo.AnatGrps.Channels], [sessionInfo.SpkGrps.Channels])); % finds the indices of the channels that are not part of SpkGrps
+                badChannels_synced = order(skip2)+1;
+            else
+                badChannels_synced = [];
+            end
+            
+            if isfield(session,'channelTags') & isfield(session.channelTags,'Bad')
+                session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,badChannels_skipped,badChannels_synced]);
+            else
+                session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);
+            end
+            if isempty(session.channelTags.Bad.channels)
+                session.channelTags.Bad = rmfield(session.channelTags.Bad,channels);
+            end
+            updateTagList
+            if length(session.channelTags.Bad.channels)>0
+                msgbox([num2str(length(session.channelTags.Bad.channels)),' bad channels detected (' num2str(session.channelTags.Bad.channels),')'])
+            else
+                msgbox('No bad channels detected')
+            end
         else
-            badChannels_synced = [];
-        end
-        
-        if isfield(session,'channelTags') & isfield(session.channelTags,'Bad')
-            session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,badChannels_skipped,badChannels_synced]);
-        else
-            session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);
-        end
-        updateTagList
-        if length(session.channelTags.Bad.channels)>0
-            msgbox([num2str(length(session.channelTags.Bad.channels)),' bad channels detected (' num2str(session.channelTags.Bad.channels),')'])
-        else
-            msgbox('No bad channels detected')
+            warndlg('xml file not accessible:')
         end
     end
 
