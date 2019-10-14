@@ -1,14 +1,30 @@
-function mono_res = bz_PlotMonoSyn(mono_res)
+function mono_res = gui_MonoSyn(mono_res_in)
 % Manual curating detected CCGs
-% click to deselect the ccg (turns pink)
+% Limitation: can only deselect connections at this point. Click to deselect the ccg (turns pink)
+% 
+% INPUT
+% mono_res_in : full path to monosyn mat file or a matlab struct
+% 
+% Example call
+% mono_res = gui_MonoSyn('Z:\peterp03\IntanData\MS13\Peter_MS13_171130_121758_concat\Kilosort_2017-12-14_170737\Peter_MS13_171130_121758_concat.mono_res.cellinfo.mat')
+% mono_res = gui_MonoSyn(mono_res)
 
-% Original function by: ?
-% Edited by Peter Petersen
+% Original function (bz_PlotMonoSyn) by: Sam, Gabrielle & ?
+% By Peter Petersen
+% petersen.peter@gmail.com
 % Last edited: 13-10-2019
 
+if ischar(mono_res_in) & exist(mono_res_in,'file')
+    disp('gui_MonoSyn: Loading mono_res file')
+    load(mono_res_in);
+elseif isstruct(mono_res_in)
+    mono_res = mono_res_in;
+else
+    warning('gui_MonoSyn: Please provide a valid path or a struct to process')
+    return
+end
 
-
-
+disp('gui_MonoSyn: Loading GUI')
 ccgR = mono_res.ccgR;
 sig_con = mono_res.sig_con;
 Pred = mono_res.Pred;
@@ -116,7 +132,7 @@ while i > 0 && i <= length(allcel)
             plot(-0.058*ones(size(prs2,1),1),[prs2(:,2),prs2(:,1)],'ok', 'HitTest','off')
 %             plot(-0.058*ones(size(prs2,1),1),prs2(:,1),'ok', 'HitTest','off')
             plot([0;0],[0;1]*size(zdata,1),'m', 'HitTest','off')
-            xlabel('CCGs (black marker: selected cell)')
+            xlabel('CCGs (black marker: reference cell)')
         else
             bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k')
             % bar(t,ccgR(:,allcel(i),allcel(i)),1,'FaceColor','k','EdgeColor','k');
@@ -137,6 +153,11 @@ if ishandle(h)
 end
 
 mono_res.sig_con = keep_con;
+
+if ischar(mono_res_in)
+    disp('Saving mono_res file')
+    save(mono_res_in,'mono_res','-v7.3','-nocompression');
+end
 
     function subplotclick(obj,ev) %when an axes is clicked
         figobj = get(obj,'Parent');

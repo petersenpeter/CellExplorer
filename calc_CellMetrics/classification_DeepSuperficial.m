@@ -27,6 +27,11 @@ function classification_deepSuperficial(session)
 % 
 % Requirements
 % downsampled (and lowpass filtered) baseName.lfp file in the basePath folder
+%
+% Dependencies:
+% nanconv (included with the Cell Explorer)
+% LoadBinary (loading lfp)
+% bz_FindRipples (finding ripples)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -299,7 +304,7 @@ for jj = 1:session.extracellular.nSpikeGroups
         end
     end
     
-    title(['Spike group ' num2str(jj)]),xlabel('Time (ms)'),if jj ==1; ylabel(session.general.name, 'Interpreter', 'none'); end
+    title(['Spike group ' num2str(jj)]),xlabel('Time (ms)'),if jj ==1; ylabel(basename, 'Interpreter', 'none'); end
     axis tight, ax6 = axis; grid on
     plot([-120, -120;-170,-170;120,120], [ax6(3) ax6(4)],'color','k');
     xlim([-220,ripple_time_axis(end)+45]), xticks([-120:40:120])

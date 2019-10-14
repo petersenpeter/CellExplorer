@@ -1,19 +1,38 @@
 function cell_metrics = CellExplorer(varargin)
-% Inspect and perform cell classification
-% Check the wiki for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
+% The Cell Explorer is a Matlab GUI and standardized pipeline for exploring and 
+% classifying spike sorted single units acquired using extracellular electrodes. 
+% Check out the wiki for extensive documentation: https://github.com/petersenpeter/Cell-Explorer/wiki
 %
-% INPUT
-% varargin
+% Below follows a detailed description of how to call the Cell Explorer
 %
-% Example calls:
+% INPUTS
+% varargin (Variable-length input argument list)
+%
+% - Single session struct with cell_metrics from one or more sessions
+% metrics                - cell_metrics struct
+%
+% - Single session inputs
+% basepath               - Path to session (base directory)
+% clusteringpath         - Path to cluster data
+% basename               - basename (database session name)
+% id                     - Database numeric id
+% session                - Session struct
+%
+% - Batch session inputs (when loading multiple session)
+% basepaths              - Paths to sessions (base directory)
+% clusteringpaths        - Paths to cluster data
+% sessionIDs             - Database numeric id
+% sessions               - basenames (database session names)
+%
+% - Example calls:
 % CellExplorer                             % Load from current path, assumed to be a basepath
 % CellExplorer('basepath',basepath)        % Load from basepath
 % CellExplorer('metrics',cell_metrics)     % Load from cell_metrics, assumes current path to be a basepath
-% CellExplorer('session','rec1')           % Load session from database
-% CellExplorer('id',10985)                 % Load session from database
+% CellExplorer('session','rec1')           % Load session from database session name
+% CellExplorer('id',10985)                 % Load session from database session id
 % CellExplorer('sessions',{'rec1','rec2'}) % Load batch from database
 % CellExplorer('sessionIDs',[10985,2845])  % Load batch from database
-% CellExplorer('clusteringpaths',{'path1','path1'}) %dr Load batch from a list with paths
+% CellExplorer('clusteringpaths',{'path1','path1'}) % Load batch from a list with paths
 % CellExplorer('basepaths',{'path1','[path1'}) % Load batch from a list with paths
 %
 % OUTPUT
@@ -28,7 +47,7 @@ function cell_metrics = CellExplorer(varargin)
 % GroupAction, brainRegionDlg, FromPlot, GroupSelectFromPlot, tSNE_redefineMetrics, ScrolltoZoomInPlot
  
 % TODO
-% GUI to reverse changes from backup files
+% GUI to reverse changes from backup files. Implemented but needs testing
 % Separate loading of ground truth features
 % Submission system for ground truth cells from new sessions
 % Incorporate ground truth into color group dropdown
@@ -36,11 +55,11 @@ function cell_metrics = CellExplorer(varargin)
 p = inputParser;
 
 addParameter(p,'metrics',[],@isstruct);
+addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'clusteringpath',pwd,@isstr);
+addParameter(p,'basename','',@isstr);
 addParameter(p,'id',[],@isnumeric);
 addParameter(p,'session',[],@isstr);
-addParameter(p,'basepath',pwd,@isstr);
-addParameter(p,'basename','',@isstr);
-addParameter(p,'clusteringpath',pwd,@isstr);
 
 % Batch input
 addParameter(p,'sessionIDs',{},@iscell);
@@ -331,8 +350,8 @@ uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit DB repository paths',menuSel
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Quit',menuSelectedFcn,@exitCellExplorer,'Separator','on','Accelerator','W');
 
 UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
-uimenu(UI.menu.file.topMenu,menuLabel,'Load metrics from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
-uimenu(UI.menu.file.topMenu,menuLabel,'Load metrics from database',menuSelectedFcn,@DatabaseSessionDialog,'Accelerator','D');
+uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
+uimenu(UI.menu.file.topMenu,menuLabel,'Load session(s) from database',menuSelectedFcn,@DatabaseSessionDialog,'Accelerator','D');
 UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save classification',menuSelectedFcn,@saveDialog,'Separator','on','Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Restore classification from backup',menuSelectedFcn,@restoreBackup);
 uimenu(UI.menu.file.topMenu,menuLabel,'Reload cell metrics',menuSelectedFcn,@reloadCellMetrics,'Separator','on');
@@ -1572,7 +1591,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             elseif strcmp(UI.settings.acgType,'Narrow')
                 bar_from_patch([-30:30]'/2, cell_metrics.acg.narrow(41+30:end-40-30,ii),col)
                 xticks([-15:5:15]),xlim([-15,15])
-            elseif strcmp(UI.settings.acgType,'Log10')
+            elseif strcmp(UI.settings.acgType,'Log10') && isfield(general,'acgs') && isfield(general.acgs,'log10')
                 bar_from_patch(general.acgs.log10, cell_metrics.acg.log10(:,ii),col)
                 set(gca,'xscale','log'),xlim([0,10])
             else
@@ -1632,7 +1651,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
         elseif strcmp(customPlotSelection,'All ISIs') % ISIs
             
-            if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')
+            if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10') && length(classes2plotSubset) > 0
                 for jj = 1:length(classes2plotSubset)
                     set1 = intersect(find(plotClas==classes2plotSubset(jj)), subset);
                     xdata = repmat([general.isis.log10',nan(1,1)],length(set1),1)';
@@ -2810,7 +2829,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
     function adjustDeepSuperficial1(~,~)
         % Adjust Deep-Superfical assignment for session and update cell_metrics
-        deepSuperficialfromRipple = adjustDeepSuperficial(cell_metrics.general.basepaths{batchIDs},general.basename);
+        deepSuperficialfromRipple = gui_DeepSuperficial(cell_metrics.general.basepaths{batchIDs},general.basename);
         if ~isempty(deepSuperficialfromRipple)
             subset = find(cell_metrics.batchIDs == batchIDs);
             saveStateToHistory(subset)
@@ -4089,7 +4108,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Checkes if any cells have been highlighted, if not asks the user
         % to provide list of cell.
         if isempty(ClickedCells)
-            filterCells.dialog = dialog('Position',[300 300 600 495],'Name','Select & filter cells'); movegui(filterCells.dialog,'center')
+            filterCells.dialog = dialog('Position',[300 300 600 495],'Name','Select cells'); movegui(filterCells.dialog,'center')
             
             % Text field
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell IDs to process. E.g. 1:32 or 7,8,9,10 (leave empty to select all cells)', 'Position', [10, 470, 580, 15],'HorizontalAlignment','left');
@@ -4730,7 +4749,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 sessionIn = load(sessionMetaFilename);
                 gui_session(sessionIn.session);
             else
-                MsgLog(['Session metadat file not available:' sessionMetaFilename],2)
+                MsgLog(['Session metadata file not available:' sessionMetaFilename],2)
             end
         else
             sessionIn = load('session.mat');
@@ -5066,7 +5085,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         plot_cells = [ii,ClickedCells];
                     end
                     plot_cells = unique(plot_cells,'stable');
-                    ccgFigure = figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize,'visible','off')
+                    ccgFigure = figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize,'visible','off');
                     
                     plot_cells2 = cell_metrics.UID(plot_cells);
                     k = 1;
@@ -6997,13 +7016,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     path1 = cell_metricsIn.general.clusteringpath;
                 end
                 MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
-                if exist('bz_PlotMonoSyn.m','file') && exist(MonoSynFile,'file')
-                    mono_res = adjustMonoSyn(MonoSynFile);
+                if exist(MonoSynFile,'file')
+                    mono_res = gui_MonoSyn(MonoSynFile);
                 elseif ~exist(MonoSynFile,'file')
-                    MsgLog(['Mono syn file does not exist: ' MonoSynFile],4);
-                    return
-                elseif ~exist('bz_PlotMonoSyn.m','file')
-                    MsgLog(['Synaptic connections can only be adjusted with bz_PlotMonoSyn.m in your Matlab path (from buzcode)'],4);
+                    MsgLog(['Mono_syn file does not exist: ' MonoSynFile],4);
                     return
                 end
                 
@@ -7013,9 +7029,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 else
                     saveAs = 'cell_metrics';
                 end
-                disp(['Saving cells to ', saveAs,'.mat']);
                 
                 % Creating backup of existing metrics
+                disp(['Creating backup of cells']);
                 dirname = 'revisions_cell_metrics';
                 if ~(exist(fullfile(path1,dirname),'dir'))
                     mkdir(fullfile(path1,dirname));
@@ -7025,6 +7041,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 end
                 
                 % Saving new metrics
+                disp(['Saving cells to ', saveAs,'.mat']);
                 load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
 %                 load(fullfile(path1,[saveAs,'.mat']));
                 cell_metrics.putativeConnections.excitatory = mono_res.sig_con; % Vectors with cell pairs
@@ -7507,7 +7524,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         msgbox({['\bfCell Explorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\itgithub.com/petersenpeter/Cell-Explorer\rm'},'About the Cell Explorer','help',opts);
     end
     
-% % % % % % % % % % % % % % % % % % % % % %
+    % % % % % % % % % % % % % % % % % % % % % %
     
     function HelpDialog(~,~)
         opts.Interpreter = 'tex';
@@ -7517,6 +7534,23 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             '\bfDisplay shortcuts\rm','M    : Show/Hide menubar','N    : Change layout [6, 5 or 4 subplots]','+E     : Highlight excitatory cells (triangles)','+I      : Highlight inhibitory cells (circles)','+F     : Display ACG fit', 'K    : Calculate and display significance matrix for all metrics (KS-test)','+T     : Calculate tSNE space from a selection of metrics','W    : Display waveform metrics','+Y    : Perform ground truth cell type classification','+U    : Load ground truth cell types','Space  : Show action dialog for selected cells','     ',...
             '\bfOther shortcuts\rm', '+P    : Open preferences for the Cell Explorer','+C    : Open the file directory of the selected cell','+D    : Opens sessions from the Buzsaki lab database','+A    : Load spike data','+J     : Adjust monosynaptic connections','+V    : Visit the Github wiki in your browser','',...
             '+ sign indicatea that the key must be combined with command/control (Mac/Windows)','','\bfVisit the Cell Explorer''s wiki for further help\rm',''},'Keyboard shortcuts','help',opts);
+    end
+    
+    function subplot_advanced(x,y,z,w,new,titleIn)
+        if isempty('new')
+            new = 1;
+        end
+        if y == 1
+            if mod(z,x) == 1 & new
+                figure('Name',titleIn,'pos',UI.settings.figureSize)
+            end
+            subplot(x,y,mod(z-1,x)+1)
+        else
+            if (mod(z,x) == 1 || (z==x & z==1)) & w == 1
+                figure('Name',titleIn,'pos',UI.settings.figureSize)
+            end
+            subplot(x,y,y*mod(z-1,x)+w)
+        end
     end
     
 end

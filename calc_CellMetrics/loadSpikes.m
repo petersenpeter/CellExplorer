@@ -32,7 +32,7 @@ function spikes = loadSpikes(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 31-07-2019
+% Last edited: 11-10-2019
 
 % Version history
 % 3.2 waveforms for phy data extracted from the raw dat
@@ -56,7 +56,6 @@ addParameter(p,'LSB',0.195,@isnumeric); % Least significant bit (LSB in uV) Inta
 addParameter(p,'session',[],@isstruct); % A buzsaki lab db session struct
 addParameter(p,'buzcode',false,@islogical); % If true, uses bz_getSessionInfo. Otherwise uses LoadXml
 
-
 parse(p,varargin{:})
 
 basepath = p.Results.basepath;
@@ -72,10 +71,19 @@ spikes = p.Results.spikes;
 useNeurosuiteWaveforms = p.Results.useNeurosuiteWaveforms;
 LSB = p.Results.LSB;
 session = p.Results.session;
-
 buzcode = p.Results.buzcode;
 
-if isempty(baseName) & ~isempty(basepath)
+% Loads parameters from a session struct
+if ~isempty(session)
+    baseName = session.general.name;
+    basepath = session.general.basePath;
+    if ~isempty(session.spikeSorting.primary)
+        clusteringFormat = session.spikeSorting.format{session.spikeSorting.primary};
+    else
+        clusteringFormat = session.spikeSorting.format{1};
+    end
+    clusteringPath = session.general.clusteringPath;
+elseif isempty(baseName) & ~isempty(basepath)
     [~,baseName,~] = fileparts(basepath);
     disp(['Using basepath to determine the basename: ' baseName])
 end
@@ -100,7 +108,11 @@ if forceReload
         xml = bz_getSessionInfo(basepath, 'noPrompts', true);
         xml.SampleRate = xml.rates.wideband;
     else
-        xml = LoadXml(fullfile(clusteringPath,[baseName, '.xml']));
+        if ~exist('LoadXml.m','file') || ~exist('xmltools.m','file')
+            error('''LoadXml.m'' and ''xmltools.m'' is not in your path and is required to load the xml file. If you have buzcode installed, please set ''buzcode'' to true in the input parameters.')
+        else
+            xml = LoadXml(fullfile(clusteringPath,[baseName, '.xml']));
+        end
     end
     switch lower(clusteringFormat)
         

@@ -1,19 +1,19 @@
 function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
-% Shows a GUI allowing you to edit parameters for the Cell Explorer and metadata for a session
-% Can be run from a basepath as well.
+% Displays a GUI allowing you to edit parameters for the Cell Explorer and metadata for a session
+% Can be run from a basepath as well (if no inputs are provided).
 %
 % INPUTS
-% sessionIn
-% parameters
+% sessionIn  : session struct to load into the GUI
+% parameters : specific to the Cell Explorer. Allows you to adjust its parameters from the GUI
 %
 % OUTPUTS
-% session
-% parameters
-% statusExit
+% session    : session struct
+% parameters : parameters struct
+% statusExit : Whether the GUI was closed via the OK button or canceled
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 20-09-2019
+% Last edited: 08-10-2019
 
 if exist('sessionIn')
     session = sessionIn;
@@ -42,7 +42,7 @@ end
 
 statusExit = 0;
 
-% Creating figure
+% Creating figure for the GUI
 UI.fig = dialog('position',[50,50,520,560],'Name','Cell metrics','WindowStyle','modal'); movegui(UI.fig,'center')
 
 % Tabs
@@ -67,7 +67,7 @@ UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[34
 % Tab: Cell metrics
 % % % % % % % % % % % % % % % % % % % %
 
-uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Session name (basename)', 'Position', [10, 440, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Session name (base name)', 'Position', [10, 440, 480, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
 UI.edit.session = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 415, 480, 25],'HorizontalAlignment','left');
 
 if exist('parameters','var')
@@ -98,11 +98,13 @@ if exist('parameters','var')
     
     uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe layout', 'Position', [250, 100, 238, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
     UI.edit.probesLayout = uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'popup', 'String', {'unknown','linear', 'staggered', 'poly2', 'poly3','poly5'} , 'Position', [250, 75, 240, 25],'HorizontalAlignment','left');
+    
     if iscell(session.extracellular.probesLayout) && size(session.extracellular.probesLayout,2)>1
         probesLayout = session.extracellular.probesLayout{1};
     else
         probesLayout = session.extracellular.probesLayout;
     end
+    
     UIsetValue(UI.edit.probesLayout,probesLayout)
     
     uicontrol('Parent',UI.tabs.cellMetrics,'Style', 'text', 'String', 'Probe vertical spacing (µm)', 'Position', [250, 50, 238, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
@@ -694,16 +696,22 @@ uiwait(UI.fig)
             msgbox('Channels verified succesfully!');
         end
     end
-
+    
     function syncSpikeGroups
-        sessionInfo = LoadXml(fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']));
-        updateSpikeGroupsList
-        msgbox('spike groups imported from buzcode sessionInfo and .xml file');
+        xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
+        if exist(xml_filepath,'file')
+            sessionInfo = LoadXml(xml_filepath);
+            updateSpikeGroupsList
+            msgbox('spike groups imported from buzcode sessionInfo and .xml file');
+        else
+            warndlg(['xml file not accessible: ' xml_filepath])
+        end
     end
     
     function importBadChannelsFromXML
-        if exist(fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']),'file')
-            sessionInfo = LoadXml(fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']));
+        xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
+        if exist(xml_filepath,'file')
+            sessionInfo = LoadXml(xml_filepath);
             
             % Removing dead channels by the skip parameter in the xml
             order = [sessionInfo.AnatGrps.Channels];
@@ -733,7 +741,7 @@ uiwait(UI.fig)
                 msgbox('No bad channels detected')
             end
         else
-            warndlg('xml file not accessible:')
+            warndlg(['xml file not accessible: ' xml_filepath])
         end
     end
 

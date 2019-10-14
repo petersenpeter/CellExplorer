@@ -7,41 +7,52 @@ function cell_metrics = calc_CellMetrics(varargin)
 %
 %   Check the wiki of the Cell Explorer for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
 %
+%   % % % % % % % % % 
 %   INPUTS
-%   id                     - Takes a database id as input
-%   session                - Takes a database sessionName as input
-%   sessionStruct          - Takes a sessio struct as input
-%   basepath               - Path to session (base directory)
-%   clusteringpath         - Path to cluster data if different from basepath
+%   % % % % % % % % %
+%
+%   varargin (Variable-length input argument list; see below)
+%
+%   - Parameters defining the session to process - 
+%   basepath               - 1. Path to session (base directory)
+%   clusteringpath         - 2. Path to cluster data if different from basepath. basepath input required if different
+%   session                - 3. Database sessionName
+%   id                     - 4. Database numeric id
+%   sessionStruct          - 5. Session struct. Must contain a basepath and clusteringpath
+%
+%   - Settings for the processing - 
 %   showGUI                - Show GUI dialog to adjust settings/parameters
 %   metrics                - Metrics that will be calculated. A cell with strings
-%   Examples:                'waveform_metrics','PCA_features','acg_metrics','deepSuperficial',
+%                            Examples: 'waveform_metrics','PCA_features','acg_metrics','deepSuperficial',
 %                            'ripple_metrics','monoSynaptic_connections','spatial_metrics'
 %                            'perturbation_metrics','theta_metrics','psth_metrics',
 %                            'manipulation_metrics', 'event_metrics', 'importCellTypeClassification'.
 %                            Default: 'all'
-%   excludeMetrics         - Metrics to exclude. Default: 'none' 
+%   excludeMetrics         - Metrics to exclude. Default: 'none'
 %   removeMetrics          - Metrics to remove (supports only deepSuperficial at this point)
-%   keepCellClassification - Keep existing cell type classifications
-%   manuelAdjustMonoSyn    - Manually adjust monosynaptic connections in the pipeline (requires user input)
+%   keepCellClassification - logical. Keep existing cell type classifications
+%   manuelAdjustMonoSyn    - logical. Manually verify monosynaptic connections in the pipeline (requires user input)
 %   excludeIntervals       - time intervals to exclude
 %   excludeManipulations   - exclude time intervals around manipulations 
-%   useNeurosuiteWaveforms - Use Neurosuite files to get waveforms and PCAs
-%   showGUI                - Show a GUI that allows you to adjust the input parameters/settings
+%   useNeurosuiteWaveforms - logical. Use neurosuite files to get waveforms and PCAs
+%   showGUI                - logical. Show a GUI that allows you to adjust the input parameters/settings
 %   forceReload            - logical. Recalculate existing metrics
 %   submitToDatabase       - logical. Submit cell metrics to database
-%   saveMat                - Save metrics to cell_metrics.mat
+%   saveMat                - logical. Save metrics to cell_metrics.mat
 %   saveAs                 - name of .mat file
 %   saveBackup             - logical. Whether a backup file should be created
 %   plots                  - logical. Plot summary figures
 %   debugMode              - logical. Activate a debug mode avoiding try/catch 
 %
+%   % % % % % % % % %
 %   OUTPUT
+%   % % % % % % % % %
+%
 %   Cell_metrics matlab structure
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 29-08-2019
+% Last edited: 20-09-2019
 
 % TODO
 % Exclude spikes during manipulations
