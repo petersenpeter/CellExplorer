@@ -43,6 +43,7 @@ addParameter(p,'cell_metrics',{},@isstruct);
 addParameter(p,'id',[],@isnumeric);
 addParameter(p,'session',[],@isstr);
 addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'basename','',@isstr);
 addParameter(p,'clusteringpath',pwd,@isstr);
 
 % Batch input
@@ -65,6 +66,7 @@ addParameter(p,'labels',[],@iscell);
 addParameter(p,'deepSuperficial',[],@iscell);
 addParameter(p,'animal',[],@iscell);
 addParameter(p,'tags',[],@iscell);
+addParameter(p,'groundTruthClassification',[],@iscell);
 
 parse(p,varargin{:})
 
@@ -75,6 +77,7 @@ cell_metrics = p.Results.cell_metrics;
 id = p.Results.id;
 sessionin = p.Results.session;
 basepath = p.Results.basepath;
+basename = p.Results.basename;
 clusteringpath = p.Results.clusteringpath;
 
 % Extra inputs
@@ -97,6 +100,12 @@ labels = p.Results.labels;
 deepSuperficial = p.Results.deepSuperficial;
 animal = p.Results.animal;
 tags = p.Results.tags;
+groundTruthClassification = p.Results.groundTruthClassification;
+
+if isempty(basename)
+    s = regexp(basepath, filesep, 'split');
+    basename = s{end};
+end
 
 if ~isempty(cell_metrics)
     disp('')
@@ -107,16 +116,16 @@ elseif ~isempty(id) || ~isempty(sessionin)
     else
         [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin);
     end
-    if exist(fullfile(clusteringpath,[saveAs,'.mat']),'file')
-        load(fullfile(clusteringpath,[saveAs,'.mat']))
+    if exist(fullfile(clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
+        load(fullfile(clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']))
     else
-        warning(['Error loading metrics: ' fullfile(clusteringpath,[saveAs,'.mat'])])
+        warning(['Error loading metrics: ' fullfile(clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
     end
 elseif ~isempty(sessions)
     cell_metrics = LoadCellMetricBatch('sessions',sessions);
 end
 
-filterIndx = ones(length(cell_metrics.UID),6);
+filterIndx = ones(length(cell_metrics.UID),7);
 if ~isempty(brainRegion)
     filterIndx(:,1) = strcmp(cell_metrics.brainRegion,brainRegion);
 end
@@ -141,6 +150,14 @@ if ~isempty(tags)
         end
     end
 end
-
-cell_metrics_idxs = find(sum(filterIndx')==6);
+if ~isempty(groundTruthClassification)
+    for i = 1:length(cell_metrics.UID)
+        if ~isempty(cell_metrics.groundTruthClassification{i})
+            filterIndx(i,7) = any(strcmp(cell_metrics.groundTruthClassification{i},groundTruthClassification));
+        else
+            filterIndx(i,7) = 0;
+        end
+    end
+end
+cell_metrics_idxs = find(sum(filterIndx')==7);
 
