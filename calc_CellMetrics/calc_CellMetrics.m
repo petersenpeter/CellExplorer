@@ -450,8 +450,7 @@ end
 
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
     disp('* Deep-Superficial by ripple polarity reversal')
-    %     lfpExtension = exist_LFP(basepath,basename);
-    if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) % ~isempty(excludeManipulationIntervals)
+    if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple)
         lfpExtension = exist_LFP(basepath,basename);
         if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple') & isnumeric(session.channelTags.Ripple)
             disp('  Using RippleNoise reference channel')
