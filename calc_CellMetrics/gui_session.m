@@ -52,7 +52,7 @@ if exist('parameters','var')
 else
     UI.tabs.cellMetrics = uitab(UI.uitabgroup,'Title','General');
 end
-UI.tabs.general = uitab(UI.uitabgroup,'Title','Animal');
+UI.tabs.animal = uitab(UI.uitabgroup,'Title','Animal');
 % UI.tabs.epochs = uitab(UI.uitabgroup,'Title','Epochs');
 UI.tabs.extracellular = uitab(UI.uitabgroup,'Title','Extracellular');
 UI.tabs.brainRegions = uitab(UI.uitabgroup,'Title','Brain regions');
@@ -126,27 +126,27 @@ else
 end
 
 % % % % % % % % % % % % % % % % % % % % %
-% Tab: session - general
+% Tab: session - animal
 % % % % % % % % % % % % % % % % % % % % %
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Name', 'Position', [10, 440, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.animal = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 415, 230, 25],'HorizontalAlignment','left');
-UIsetString(session.general,'animal');
+uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Name', 'Position', [10, 440, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+UI.edit.name = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 415, 230, 25],'HorizontalAlignment','left');
+UIsetString(session.animal,'name');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Sex', 'Position', [250, 440, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.sex = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', {'Unknown','Male','Female'}, 'Position', [250, 415, 240, 25],'HorizontalAlignment','left');
-UIsetValue(UI.edit.sex,session.general.sex)
+uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Sex', 'Position', [250, 440, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+UI.edit.sex = uicontrol('Parent',UI.tabs.animal,'Style', 'popup', 'String', {'Unknown','Male','Female'}, 'Position', [250, 415, 240, 25],'HorizontalAlignment','left');
+UIsetValue(UI.edit.sex,session.animal.sex)
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Species', 'Position', [10, 390, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.species = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 365, 230, 25],'HorizontalAlignment','left');
-UIsetString(session.general,'species');
+uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Species', 'Position', [10, 390, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+UI.edit.species = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 365, 230, 25],'HorizontalAlignment','left');
+UIsetString(session.animal,'species');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Strain', 'Position', [250, 390, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.strain = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [250, 365, 240, 25],'HorizontalAlignment','left');
-UIsetString(session.general,'strain');
+uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Strain', 'Position', [250, 390, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+UI.edit.strain = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [250, 365, 240, 25],'HorizontalAlignment','left');
+UIsetString(session.animal,'strain');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Genetic line', 'Position', [10, 340, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
-UI.edit.geneticLine = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 315, 230, 25],'HorizontalAlignment','left');
-UIsetString(session.general,'geneticLine');
+uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Genetic line', 'Position', [10, 340, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold');
+UI.edit.geneticLine = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 315, 230, 25],'HorizontalAlignment','left');
+UIsetString(session.animal,'geneticLine');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Tab: session - extracellular
@@ -283,13 +283,13 @@ uiwait(UI.fig)
             session.general.time = UI.edit.time;
         end
         session.general.name = UI.edit.session.String;
-        session.general.basepath = UI.edit.basepath.String;
-        session.general.clusteringpath = UI.edit.clusteringpath.String;
+        session.general.basePath = UI.edit.basepath.String;
+        session.general.clusteringPath = UI.edit.clusteringpath.String;
             
-        session.general.sex = UI.edit.sex.String{UI.edit.sex.Value};
-        session.general.species = UI.edit.species.String;
-        session.general.strain = UI.edit.strain.String;
-        session.general.geneticLine = UI.edit.geneticLine.String;
+        session.animal.sex = UI.edit.sex.String{UI.edit.sex.Value};
+        session.animal.species = UI.edit.species.String;
+        session.animal.strain = UI.edit.strain.String;
+        session.animal.geneticLine = UI.edit.geneticLine.String;
         
         session.extracellular.leastSignificantBit = str2double(UI.edit.leastSignificantBit.String);
         
