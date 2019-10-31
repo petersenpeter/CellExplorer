@@ -27,6 +27,11 @@ function classification_deepSuperficial(session)
 % 
 % Requirements
 % downsampled (and lowpass filtered) baseName.lfp file in the basePath folder
+%
+% Dependencies:
+% nanconv (included with the Cell Explorer)
+% LoadBinary (loading lfp)
+% bz_FindRipples (finding ripples)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -34,10 +39,23 @@ function classification_deepSuperficial(session)
 
 % Gets basepath and basename from session struct
 basepath = session.general.basePath;
-basename = session.general.baseName;
+basename = session.general.name;
 
 % Loading detected ripples
-load(fullfile(basepath,[basename,'.ripples.events.mat']));
+if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
+    load(fullfile(basepath,[basename,'.ripples.events.mat']));
+else
+    if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple')
+        disp('  Using RippleNoise reference channel')
+        RippleNoiseChannel = double(LoadBinary([basename, lfpExtension],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
+        ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
+    elseif isfield(session.channelTags,'Ripple')
+        ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
+    else
+        error('Ripple channel not defined!')
+    end
+    
+end
 if isfield(ripples,'detectorinfo') & isfield(ripples.detectorinfo,'detectionparms') & isfield(ripples.detectorinfo.detectionparms,'channel')
     ripple_channel_detector = ripples.detectorinfo.detectionparms.channel;
 else
@@ -286,7 +304,7 @@ for jj = 1:session.extracellular.nSpikeGroups
         end
     end
     
-    title(['Spike group ' num2str(jj)]),xlabel('Time (ms)'),if jj ==1; ylabel(session.general.name, 'Interpreter', 'none'); end
+    title(['Spike group ' num2str(jj)]),xlabel('Time (ms)'),if jj ==1; ylabel(basename, 'Interpreter', 'none'); end
     axis tight, ax6 = axis; grid on
     plot([-120, -120;-170,-170;120,120], [ax6(3) ax6(4)],'color','k');
     xlim([-220,ripple_time_axis(end)+45]), xticks([-120:40:120])

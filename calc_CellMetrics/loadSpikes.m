@@ -19,6 +19,7 @@ function spikes = loadSpikes(varargin)
 %     .rawWaveform      - Average waveform on maxWaveformCh (from raw .dat)
 %     .filtWaveform     - Average filtered waveform on maxWaveformCh (from raw .dat)
 %     .rawWaveform_std  - Average waveform on maxWaveformCh (from raw .dat)
+
 %     .filtWaveform_std - Average filtered waveform on maxWaveformCh (from raw .dat)
 %     .peakVoltage      - Peak voltage (uV)
 %     .cluID            - Cluster ID
@@ -31,7 +32,7 @@ function spikes = loadSpikes(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 20-06-2019
+% Last edited: 11-10-2019
 
 % Version history
 % 3.2 waveforms for phy data extracted from the raw dat
@@ -55,7 +56,6 @@ addParameter(p,'LSB',0.195,@isnumeric); % Least significant bit (LSB in uV) Inta
 addParameter(p,'session',[],@isstruct); % A buzsaki lab db session struct
 addParameter(p,'buzcode',false,@islogical); % If true, uses bz_getSessionInfo. Otherwise uses LoadXml
 
-
 parse(p,varargin{:})
 
 basepath = p.Results.basepath;
@@ -71,10 +71,19 @@ spikes = p.Results.spikes;
 useNeurosuiteWaveforms = p.Results.useNeurosuiteWaveforms;
 LSB = p.Results.LSB;
 session = p.Results.session;
-
 buzcode = p.Results.buzcode;
 
-if isempty(baseName) & ~isempty(basepath)
+% Loads parameters from a session struct
+if ~isempty(session)
+    baseName = session.general.name;
+    basepath = session.general.basePath;
+    if ~isempty(session.spikeSorting.primary)
+        clusteringFormat = session.spikeSorting.format{session.spikeSorting.primary};
+    else
+        clusteringFormat = session.spikeSorting.format{1};
+    end
+    clusteringPath = session.general.clusteringPath;
+elseif isempty(baseName) & ~isempty(basepath)
     [~,baseName,~] = fileparts(basepath);
     disp(['Using basepath to determine the basename: ' baseName])
 end
@@ -89,6 +98,7 @@ if exist(fullfile(clusteringPath,[baseName,'.spikes.cellinfo.mat'])) & ~forceRel
     end
 else
     forceReload = true;
+    spikes = [];
 end
 
 % Loading spikes
@@ -98,7 +108,11 @@ if forceReload
         xml = bz_getSessionInfo(basepath, 'noPrompts', true);
         xml.SampleRate = xml.rates.wideband;
     else
-        xml = LoadXml(fullfile(clusteringPath,[baseName, '.xml']));
+        if ~exist('LoadXml.m','file') || ~exist('xmltools.m','file')
+            error('''LoadXml.m'' and ''xmltools.m'' is not in your path and is required to load the xml file. If you have buzcode installed, please set ''buzcode'' to true in the input parameters.')
+        else
+            xml = LoadXml(fullfile(clusteringPath,[baseName, '.xml']));
+        end
     end
     switch lower(clusteringFormat)
         
@@ -106,7 +120,6 @@ if forceReload
         case {'klustakwik', 'neurosuite'}
             disp('loadSpikes: Loading Klustakwik data')
             unit_nb = 0;
-            spikes = [];
             shanks_new = [];
             if isnan(shanks)
                 fileList = dir(fullfile(clusteringPath,[baseName,'.res.*']));
@@ -122,7 +135,7 @@ if forceReload
                 if ~raw_clusters
                     cluster_index = load(fullfile(clusteringPath, [baseName '.clu.' num2str(shank)]));
                     time_stamps = load(fullfile(clusteringPath,[baseName '.res.' num2str(shank)]));
-                    if getWaveforms
+                    if getWaveforms & useNeurosuiteWaveforms
                         fname = fullfile(clusteringPath,[baseName '.spk.' num2str(shank)]);
                         f = fopen(fname,'r');
                         waveforms = LSB * double(fread(f,'int16'));
@@ -242,7 +255,7 @@ if forceReload
             if getWaveforms % gets waveforms from dat file
                 spikes = GetWaveformsFromDat(spikes,xml,basepath,baseName,LSB,session);
             end
-      
+
         % Loading klustaViewa - Kwik format (Klustasuite 0.3.0.beta4)
         case 'klustaViewa'
             disp('loadSpikes: Loading KlustaViewa data')
@@ -301,6 +314,12 @@ if forceReload
     spikes.processinginfo.params.clusteringPath = clusteringPath;
     spikes.processinginfo.params.basepath = basepath;
     spikes.processinginfo.params.useNeurosuiteWaveforms = useNeurosuiteWaveforms;
+    try
+        spikes.processinginfo.params.username = char(java.lang.System.getProperty('user.name'));
+        spikes.processinginfo.params.hostname = char(java.net.InetAddress.getLocalHost.getHostName);
+    catch
+        disp('Failed to retrieve system info.')
+    end
     
     % Saving output to a buzcode compatible spikes file.
     if saveMat

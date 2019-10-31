@@ -22,7 +22,7 @@ addParameter(p,'sessionstruct',[],@isstruct);   % session struct (can be used to
 % Parameters
 addParameter(p,'saveMat',true,@islogical);      % Saves the session struct to a mat file
 addParameter(p,'changeDir',true,@islogical);    % change directory to basepath?
-addParameter(p,'loadBuzcode',true,@islogical);  % Loads and saves select info from buzcode sessionInfo 
+addParameter(p,'loadBuzcode',false,@islogical);  % Loads and saves select info from buzcode sessionInfo 
 
 parse(p,varargin{:})
 
@@ -46,15 +46,14 @@ elseif ~isempty(sessionin)
 else
     sessions{1} = sessionstruct;
 end
-
-db_database = db_credentials;
-defined_repositories = fieldnames(db_database.repositories);
+db_settings = db_load_settings;
+defined_repositories = fieldnames(db_settings.repositories);
 
 for i = 1:length(sessions)
     session = sessions{i};
     if ~contains(defined_repositories,{session.general.repositories{1}})
-        warning(['The repository has not been defined. Please specify the path for ' session.general.repositories{1},' in db_credentials.m']);
-        edit db_credentials
+        warning(['The repository has not been defined. Please specify the path for ' session.general.repositories{1},' in db_local_repositories.m']);
+        edit db_local_repositories.m
         return
     end
     
@@ -62,9 +61,9 @@ for i = 1:length(sessions)
     if strcmp(session.general.repositories{1},'NYUshare_Datasets')
         Investigator_name = strsplit(session.general.investigator,' ');
         path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
-        basepath = fullfile(db_database.repositories.(session.general.repositories{1}), path_Investigator,session.general.animal, session.general.name);
+        basepath = fullfile(db_settings.repositories.(session.general.repositories{1}), path_Investigator,session.animal.name, session.general.name);
     else
-        basepath = fullfile(db_database.repositories.(session.general.repositories{1}), session.general.animal, session.general.name);
+        basepath = fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.general.name);
     end
     
     if ~isempty(session.spikeSorting.relativePath)
@@ -75,15 +74,16 @@ for i = 1:length(sessions)
     session.general.baseName = basename;
     session.general.basePath =  basepath;
     session.general.clusteringPath = clusteringpath;
-    if session.extracellular.leastSignificantBit==0
+    if ~isfield(session.extracellular,'leastSignificantBit') || session.extracellular.leastSignificantBit==0
     	session.extracellular.leastSignificantBit = 0.195; % Intan system = 0.195 µV/bit
     end
     
     if changeDir
         try 
+            disp(['Changing Matlab directory to session basepath: ' basepath])
             cd(basepath)
         catch
-            error('db_set_path: Unable to change to basepath directory')
+            error(['db_set_path: Unable to change directory to basepath: ', basepath])
         end
     end
     

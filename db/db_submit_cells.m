@@ -16,23 +16,22 @@ function cell_metrics = db_submit_cells(cell_metrics,session)
 % has been deleted to avoid resubmission of the same cells.
 
 f_submit_cells = waitbar(0,'DB: Submitting cells to database');
-% Database options
-bz_database = db_credentials;
-options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password); % 'ContentType','json','MediaType','application/json'
 
-% Updating Session WithToggle
-if isempty(session.analysisStats.cellMetrics) || ~strcmp(session.analysisStats.cellMetrics, '1')
-    waitbar(0,f_submit_cells,['DB: Adjusting session toggle: ',session.general.name]);
-    options2 = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
-    web_address2 = [bz_database.rest_api.address, 'entries/' session.general.entryID];
-    webwrite(web_address2,options2,'form_id','143','session_cellmetrics',1,'',length(cell_metrics.general.cellCount));
+% Database options
+db_settings = db_load_settings;
+options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password); % 'ContentType','json','MediaType','application/json'
+
+% Updating Session with toggle
+if isempty(session.spikeSorting.cellMetrics) || ~strcmp(session.spikeSorting.cellMetrics, '1')
+    waitbar(0,f_submit_cells,['DB: Adjusting cell metrics toggle: ',session.general.name]);
+    web_address1 = [db_settings.address,'entries/', num2str(cell_metrics.spikeSortingID(1))];
+    webwrite(web_address1,options,'session_cellmetrics',1);
 end
 
 % Updating spike count for the selected sorting session
-web_address1 = [bz_database.rest_api.address,'entries/', num2str(cell_metrics.spikeSortingID(1))];
-options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password);
+web_address1 = [db_settings.address,'entries/', num2str(cell_metrics.spikeSortingID(1))];
+
 webwrite(web_address1,options,'session_cell_count',cell_metrics.general.cellCount);
-waitbar(0,f_submit_cells,'DB: Session updated succesfully.');
 
 waitbar(0,f_submit_cells,'DB: Submitting cells to database');
 db_cells = db_load_table('cells',cell_metrics.general.basename);
@@ -49,16 +48,16 @@ for j = 1:size(cell_metrics.sessionID,2)
     
     if isfield(cell_metrics, 'entryID') && length(cell_metrics.entryID) >= j && cell_metrics.entryID(j) > 0 && isfield(db_cells,['id_',num2str(cell_metrics.entryID(j))])
         dialog_text = ['DB: Submitting cells: Cell ' num2str(j),' (Updated)'];
-        web_address1 = [bz_database.rest_api.address, 'entries/', num2str(cell_metrics.entryID(j))];
+        web_address1 = [db_settings.address, 'entries/', num2str(cell_metrics.entryID(j))];
     elseif any( cluIDs2 == cell_metrics.cluID(j))
         temp_entryID = entryIDs2{find(cluIDs2 == cell_metrics.cluID(j))};
         dialog_text = ['DB: Submitting cells: Cell ' num2str(j),' (Updated)'];
         cell_metrics.entryID(j) = str2num(temp_entryID(4:end));
-        web_address1 = [bz_database.rest_api.address, 'entries/', temp_entryID(4:end)];
+        web_address1 = [db_settings.address, 'entries/', temp_entryID(4:end)];
         
     else
         dialog_text = ['DB: Submitting cells: Cell ' num2str(j),'/',num2str(size(cell_metrics.sessionID,2)),' (New)'];
-        web_address1 = [bz_database.rest_api.address, 'entries'];
+        web_address1 = [db_settings.address, 'entries'];
         
     end
     
@@ -104,7 +103,7 @@ for j = 1:size(cell_metrics.sessionID,2)
     jsonStructure = rmfield(jsonStructure,cluIDs(find(struct2array(structfun(@(x) any(isnan(x) | isinf(x)), jsonStructure,'UniformOutput', false)))));
     jsonStructure = jsonencode(jsonStructure);
     jsonStructure = strrep(jsonStructure,'fiElD_','');
-    options = weboptions('Username',bz_database.rest_api.username,'Password',bz_database.rest_api.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+    options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
     entryIDs = webwrite(web_address1,jsonStructure,options);
     
     if isfield(entryIDs,'id')
