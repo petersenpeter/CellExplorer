@@ -15,7 +15,7 @@
 UI.settings.customCellPlotIn1 = 'All waveforms';
 UI.settings.customCellPlotIn2 = 'Single ACG'; 
 UI.settings.customCellPlotIn3 = 'responseCurves_firingRateAcrossTime';
-UI.settings.customCellPlotIn4 = 'All waveforms';
+UI.settings.customCellPlotIn4 = 'Single waveform';
 UI.settings.customCellPlotIn5 = 'CCGs (image)';
 UI.settings.customCellPlotIn6 = 'firingRateMap';
 

@@ -84,20 +84,15 @@ PyramidalIndexes = find(contains(cell_metrics.putativeCellType,'Pyramidal'));
 
 %% % Loading the Cell Explorer pipeline from a path
 
-basepath = {'Z:\valerm05\fNkx3\fNkx3_190826_sess36'};
-clusteringpath = {'Z:\valerm05\fNkx3\fNkx3_190826_sess36\Kilosort_2019-08-27_030707'};
-for iii = 1:length(basepath)
-    disp(['*** Calculating cells metrics: ', basepath{iii},'. ', num2str(iii),'/', num2str(length(basepath)),' sessions'])
-    cd(basepath{iii})
-    cell_metrics = calc_CellMetrics('sessionStruct', sessionTemplate,'excludeManipulations',false,'submitToDatabase',false,'plots', false);
-    %     cell_metrics = calc_CellMetrics('sessionStruct',session);
-%     cell_metrics = calc_CellMetrics('basepath',basepath{iii},'clusteringpath',clusteringpath{iii},'excludeManipulations',false,'submitToDatabase',false,'plots', false);
-    % 'metrics',{'deepSuperficial'},
-    % 'submitToDatabase',false,
-    % 'forceReload',true   
-    % 'plots', false
-    % 'removeMetrics',{'deepSuperficial'},
-    % 'excludeMetrics',{'monoSynaptic_connections'}
-    drawnow, disp([' '])
-%     close all
-end
+basepath = '/Volumes/buzsakilab/yaghmo01/Analysed Data/OR22_Urethane_Perriferal effect/AllConcatenated/amplifier/Kilosort_2019-08-23_190048';
+cd(basepath)
+cell_metrics = calc_CellMetrics('sessionStruct', sessionTemplate,'excludeManipulations',false,'submitToDatabase',false,'plots', false);
+cell_metrics = CellExplorer('metrics',cell_metrics);
+
+
+%% % Open several session from paths
+basenames = {'Rat08-20130708','Rat08-20130708'};
+clusteringpaths = {'/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708'};
+cell_metrics = LoadCellMetricBatch('clusteringpaths',clusteringpaths,'basenames',basenames);
+cell_metrics = CellExplorer('metrics',cell_metrics);
+

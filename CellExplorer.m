@@ -133,7 +133,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.45;
+CellExplorerVersion = 1.47;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'visible','off');
 hManager = uigetmodemanager(UI.fig);
@@ -177,7 +177,6 @@ if exist('db_load_settings') == 2
 else
     enableDatabase = 0;
 end
-
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Session initialization
@@ -311,7 +310,10 @@ else
     else
         if enableDatabase
             DatabaseSessionDialog;
-            if ~exist('cell_metrics') || isempty(cell_metrics)
+        else
+            loadFromFile
+        end
+        if ~exist('cell_metrics') || isempty(cell_metrics)
                 disp('No dataset selected - closing the Cell Explorer')
                 if ishandle(UI.fig)
                     close(UI.fig)
@@ -319,11 +321,6 @@ else
                 cell_metrics = [];
                 return
             end
-            
-        else
-            warning('Neither session.mat or cell_metrics.mat exist in base folder')
-            return
-        end
     end
     
 end
@@ -434,11 +431,11 @@ UI.menu.groundTruth.topMenu = uimenu(UI.fig,menuLabel,'Ground truth');
 UI.menu.groundTruth.ops(1) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'No ground truth data',menuSelectedFcn,@showGroundTruthData,'Checked','on');
 UI.menu.groundTruth.ops(2) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Image data',menuSelectedFcn,@showGroundTruthData);
 UI.menu.groundTruth.ops(3) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Scatter data',menuSelectedFcn,@showGroundTruthData);
-uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Define ground truth cell types',menuSelectedFcn,@defineGroundTruthData,'Separator','on');
+uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Define ground truth data',menuSelectedFcn,@defineGroundTruthData,'Separator','on');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Compare cell groups to ground truth cell types',menuSelectedFcn,@compareToReference,'Separator','on');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Perform ground truth cell type classification',menuSelectedFcn,@performGroundTruthClassification,'Accelerator','Y','Separator','on');
-uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Load ground truth cell types from sessions',menuSelectedFcn,@loadGroundTruth,'Accelerator','U');
-uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Save manual claasification to groundTruth folder',menuSelectedFcn,@importGroundTruth);
+uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Load ground truth cell types from session(s)',menuSelectedFcn,@loadGroundTruth,'Accelerator','U');
+uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Save manual classification to groundTruth folder',menuSelectedFcn,@importGroundTruth);
 
 % Table menu
 UI.menu.tableData.topMenu = uimenu(UI.fig,menuLabel,'Table data');
@@ -537,7 +534,6 @@ UI.tabs.deepsuperficial = uitab(UI.panel.tabgroup1,'Title','D/S');
 UI.panel.tabgroup2 = uitabgroup('Position',[0.898 0.002 0.1 0.16],'Units','normalized');
 UI.tabs.dispTags = uitab(UI.panel.tabgroup2,'Title','-Tags');
 UI.tabs.dispTags2 = uitab(UI.panel.tabgroup2,'Title','+Tags');
-
 
 % % % % % % % % % % % % % % % % % % % %
 % Message log
@@ -2557,22 +2553,33 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 % % % % % % % % % % % % % % % % % % % % % %
 
     function loadFromFile(~,~)
-        [file,path] = uigetfile('*.mat','Please select a cell_metrics.mat file','cell_metrics.mat');
+        [file,path] = uigetfile('*.mat','Please select a cell_metrics.mat file','.cell_metrics.cellinfo.mat');
         if ~isequal(file,0)
             cd(path)
             load(file);
             cell_metrics.general.path = path;
-            initializeSession;
+            temp = strsplit(file,'.');
+            if length(temp)==4
+                cell_metrics.general.saveAs = temp{end-2};
+            else
+                cell_metrics.general.filename = file;
+            end
             try
-                
+                initializeSession;
             catch
-                MsgLog(['Error loading cell metrics:' path, file],2)
+                if isfield(UI,'panel')
+                    MsgLog(['Error loading cell metrics:' path, file],2)
+                else
+                    disp(['Error loading cell metrics:' path, file]);
+                end
                 return
             end
             uiresume(UI.fig);
-            cell_metrics.general.saveAs = file(1:end-4);
-            MsgLog('Session loaded succesful',2)
-            
+            if isfield(UI,'panel')
+                MsgLog('Session loaded succesful',2)
+            else
+                disp(['Session loaded succesful']);
+            end
         end
     end
 
@@ -2663,13 +2670,19 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 MsgLog(['Failed to reload dataset from database: ',strjoin(cell_metrics.general.basenames)],4);
             end
         elseif strcmp(answer,'Yes')
-            file = fullfile(clusteringpath,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
+            path1 = cell_metrics.general.path;
+            file = fullfile(cell_metrics.general.path,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
             if exist(file,'file')
                 load(file);
-                cell_metrics.general.path = clusteringpath;
                 initializeSession;
                 uiresume(UI.fig);
-                cell_metrics.general.saveAs = file(1:end-4);
+                cell_metrics.general.path = path1;
+                temp = strsplit(file,'.');
+                if length(temp)==4
+                    cell_metrics.general.saveAs = temp{end-2};
+                else
+                    cell_metrics.general.filename = file;
+                end
                 MsgLog('Session loaded succesful',2)
             else
                 MsgLog('Could not reload cell_metrics. cell_metrics file not found.',2)
@@ -2781,17 +2794,22 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         S.cell_metrics = cell_metrics_backup;
         if BatchMode && isfield(cell_metrics.general,'saveAs')
             saveAs = cell_metrics.general.saveAs{cell_metrics.batchIDs(ii)};
+        elseif isfield(cell_metrics.general,'saveAs')
+            saveAs = cell_metrics.general.saveAs;
         else
             saveAs = 'cell_metrics';
         end
-        if BatchMode
-            save(fullfile(cell_metrics.general.path{batchIDs}, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'-struct', 'S','-v7.3','-nocompression');
-            MsgLog(['Backup succesfully created: ' cell_metrics.general.path{batchIDs}],1)
-        else
-            save(fullfile(cell_metrics.general.path, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'-struct', 'S','-v7.3','-nocompression');
-            MsgLog(['Backup succesfully created' cell_metrics.general.path],1)
-        end
         
+        if BatchMode
+            path1 = cell_metrics.general.path{batchIDs};
+        else
+            path1 = cell_metrics.general.path;
+        end
+        if ~(exist(fullfile(path1,'revisions_cell_metrics'),'dir'))
+            mkdir(fullfile(path1,'revisions_cell_metrics'));
+        end
+        save(fullfile(path1, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'-struct', 'S','-v7.3','-nocompression');
+        MsgLog(['Backup succesfully created: ' path1],1)
     end
     
     % % % % % % % % % % % % % % % % % % % % % %
@@ -2931,30 +2949,36 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.menu.referenceData.ops(1).Checked = 'on';
             UI.menu.referenceData.ops(2).Checked = 'off';
             UI.menu.referenceData.ops(3).Checked = 'off';
+            if isfield(UI.tabs,'referenceData')
+                delete(UI.tabs.referenceData);
+                UI.tabs = rmfield(UI.tabs,'referenceData');
+            end
         elseif src.Position == 2
             UI.settings.referenceData = 'Image';
             UI.menu.referenceData.ops(1).Checked = 'off';
             UI.menu.referenceData.ops(2).Checked = 'on';
             UI.menu.referenceData.ops(3).Checked = 'off';
-            if isempty(reference_cell_metrics)
-                out = loadReferenceData;
-                if ~out
-                    defineReferenceData;
-                end
-            end
         elseif src.Position == 3
             UI.settings.referenceData = 'Points';
             UI.menu.referenceData.ops(1).Checked = 'off';
             UI.menu.referenceData.ops(2).Checked = 'off';
             UI.menu.referenceData.ops(3).Checked = 'on';
+        end
+        if ~isfield(UI.tabs,'referenceData') && src.Position > 1
             if isempty(reference_cell_metrics)
                 out = loadReferenceData;
                 if ~out
                     defineReferenceData;
                 end
             end
+            % UI.settings.referenceData
+            UI.tabs.referenceData = uitab(UI.panel.tabgroup2,'Title','Reference');
+            UI.listbox.referenceData = uicontrol('Parent',UI.tabs.referenceData,'Style','listbox','Position',getpixelposition(UI.tabs.referenceData),'Units','normalized','String',UI.settings.cellTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
+            UI.panel.tabgroup2.SelectedTab = UI.tabs.referenceData;
         end
+        
         uiresume(UI.fig);
+        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -2965,30 +2989,36 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.menu.groundTruth.ops(1).Checked = 'on';
             UI.menu.groundTruth.ops(2).Checked = 'off';
             UI.menu.groundTruth.ops(3).Checked = 'off';
+            if isfield(UI.tabs,'groundTruthData')
+                delete(UI.tabs.groundTruthData);
+                UI.tabs = rmfield(UI.tabs,'groundTruthData');
+            end
         elseif src.Position == 2
             UI.settings.groundTruthData = 'Image';
             UI.menu.groundTruth.ops(1).Checked = 'off';
             UI.menu.groundTruth.ops(2).Checked = 'on';
             UI.menu.groundTruth.ops(3).Checked = 'off';
-            if isempty(groundTruth_cell_metrics)
-                out = loadGroundTruthData;
-                if ~out
-                    defineGroundTruthData;
-                end
-            end
         elseif src.Position == 3
             UI.settings.groundTruthData = 'Points';
             UI.menu.groundTruth.ops(1).Checked = 'off';
             UI.menu.groundTruth.ops(2).Checked = 'off';
             UI.menu.groundTruth.ops(3).Checked = 'on';
+        end
+        
+        if ~isfield(UI.tabs,'groundTruthData') && src.Position > 1
             if isempty(groundTruth_cell_metrics)
                 out = loadGroundTruthData;
                 if ~out
                     defineGroundTruthData;
                 end
             end
+            % UI.settings.groundTruthData
+            UI.tabs.groundTruthData = uitab(UI.panel.tabgroup2,'Title','GroundTruth');
+            UI.listbox.groundTruthData = uicontrol('Parent',UI.tabs.groundTruthData,'Style','listbox','Position',getpixelposition(UI.tabs.groundTruthData),'Units','normalized','String',UI.settings.groundTruth,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
+            UI.panel.tabgroup2.SelectedTab = UI.tabs.groundTruthData;
         end
         uiresume(UI.fig);
+        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -3332,7 +3362,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         indx2 = indx(i_db);
                         if ~any(strcmp(db.sessions{i_db_subset}.repositories{1},fieldnames(db_settings.repositories)))
                             MsgLog(['The respository ', db.sessions{i_db_subset}.repositories{1} ,' has not been defined on this computer. Please edit db_local_repositories and provide the path'],4)
-                            edit db_local_repositories.m.m
+                            edit db_local_repositories.m
                             return
                         end
                         
@@ -3382,7 +3412,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     end
                     save(fullfile(referenceData_path,'reference_cell_metrics.cellinfo.mat'),'reference_cell_metrics','-v7.3','-nocompression');
                     
-                    [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference')
+                    [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
                     
                     if ishandle(f_LoadCellMetrics)
                         close(f_LoadCellMetrics)
@@ -3492,9 +3522,24 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
     function adjustDeepSuperficial1(~,~)
         % Adjust Deep-Superfical assignment for session and update cell_metrics
-        deepSuperficialfromRipple = gui_DeepSuperficial(cell_metrics.general.basepaths{batchIDs},general.basename);
+        if BatchMode
+            deepSuperficialfromRipple = gui_DeepSuperficial(cell_metrics.general.basepaths{batchIDs},general.basename);
+        elseif exist(cell_metrics.general.basepath,'dir')
+            deepSuperficialfromRipple = gui_DeepSuperficial(cell_metrics.general.basepath,general.basename);
+        else
+            uiwait(msgbox('Please select the basepath for this session','Basepath missing','modal'));
+            tempDir = uigetdir(pwd,'Please select the basepath for this session');
+            if ~isnumeric(tempDir)
+                cell_metrics.general.basepath = tempDir;
+                deepSuperficialfromRipple = gui_DeepSuperficial(cell_metrics.general.basepath,general.basename);
+            end
+        end
         if ~isempty(deepSuperficialfromRipple)
-            subset = find(cell_metrics.batchIDs == batchIDs);
+            if BatchMode
+                subset = find(cell_metrics.batchIDs == batchIDs);
+            else
+                subset = 1:cell_metrics.general.cellCount;
+            end
             saveStateToHistory(subset)
             for j = subset
                 cell_metrics.deepSuperficial(j) = deepSuperficialfromRipple.channelClass(cell_metrics.maxWaveformCh1(j));
@@ -3511,10 +3556,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             if BatchMode && isfield(cell_metrics.general,'saveAs')
                 saveAs = cell_metrics.general.saveAs{batchIDs};
+                matpath = fullfile(cell_metrics.general.path{batchIDs},[cell_metrics.general.basenames{batchIDs}, '.',saveAs,'.cellinfo.mat']);
+            elseif isfield(cell_metrics.general,'saveAs')
+                saveAs = cell_metrics.general.saveAs;
+                matpath = fullfile(cell_metrics.general.path,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
             else
                 saveAs = 'cell_metrics';
+                matpath = fullfile(cell_metrics.general.path,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
             end
-            matpath = fullfile(cell_metrics.general.path{batchIDs},[cell_metrics.general.basenames{batchIDs}, '.',saveAs,'.cellinfo.mat'])
             matFileCell_metrics = matfile(matpath,'Writable',true);
             temp = matFileCell_metrics.cell_metrics;
             temp.general.SWR = deepSuperficialfromRipple;
@@ -6119,8 +6168,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         if nargin > 1
-            save(file,'cell_metrics','-v7.3','-nocompression');
-            MsgLog(['Classification saved to ', file],[1,2]);
+            try
+                save(file,'cell_metrics','-v7.3','-nocompression');
+                MsgLog(['Classification saved to ', file],[1,2]);
+            catch
+                MsgLog(['Error saving metrics: ' file],4);
+            end
         elseif BatchMode
             MsgLog('Saving cell metrics from batch',1);
             sessionWithChanges = unique(cell_metrics.batchIDs(classificationTrackChanges));
@@ -6137,7 +6190,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             cell_metricsTemp = cell_metrics; %clear cell_metrics
             f_waitbar = waitbar(0,[num2str(sessionWithChanges),' sessions with changes'],'name','Saving cell metrics from batch','WindowStyle','modal');
-            
+            errorSaving = [];
             for j = 1:length(sessionWithChanges)
                 if ~ishandle(f_waitbar)
                     MsgLog(['Saving canceled']);
@@ -6145,47 +6198,41 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 end
                 sessionID = sessionWithChanges(j);
                 waitbar(j/length(sessionWithChanges),f_waitbar,['Session ' num2str(j),'/',num2str(length(sessionWithChanges)),': ', cell_metricsTemp.general.basenames{sessionID}])
+                
+                
                 cellSubset = find(cell_metricsTemp.batchIDs==sessionID);
-                if BatchMode && isfield(cell_metricsTemp.general,'saveAs')
+                if isfield(cell_metricsTemp.general,'saveAs')
                     saveAs = cell_metricsTemp.general.saveAs{sessionID};
                 else
                     saveAs = 'cell_metrics';
                 end
                 
-                % Creating backup metrics
-                createBackup(cell_metricsTemp,cellSubset)
-                
-%                 cell_metrics = {};
-%                 cell_metrics_temp = matFileCell_metrics.cell_metrics;
-%                 cell_metrics.labels = cell_metrics_temp.labels;
-%                 if isfield(cell_metrics_temp,'tags')
-%                     cell_metrics.tags = cell_metrics_temp.tags;
-%                 end
-%                 cell_metrics.deepSuperficial = cell_metrics_temp.deepSuperficial;
-%                 cell_metrics.brainRegion = cell_metrics_temp.brainRegion;
-%                 cell_metrics.putativeCellType = cell_metrics_temp.putativeCellType;
-%                 if isfield(cell_metrics_temp,'groundTruthClassification')
-%                 cell_metrics.groundTruthClassification = cell_metrics_temp.groundTruthClassification;
-%                 end
-%                 save(fullfile(cell_metricsTemp.general.paths{sessionID}, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'cell_metrics','-v7.3','-nocompression')
-                
-                % Saving new metrics to file
-                matpath = fullfile(cell_metricsTemp.general.path{sessionID},[cell_metricsTemp.general.basenames{sessionID}, '.',saveAs,'.cellinfo.mat']);
-                matFileCell_metrics = matfile(matpath,'Writable',true);
-                
-                cell_metrics = matFileCell_metrics.cell_metrics;
-                if length(cellSubset) == size(cell_metrics.putativeCellType,2)
-                    cell_metrics.labels = cell_metricsTemp.labels(cellSubset);
-                    cell_metrics.tags = cell_metricsTemp.tags(cellSubset);
-                    cell_metrics.deepSuperficial = cell_metricsTemp.deepSuperficial(cellSubset);
-                    cell_metrics.deepSuperficialDistance = cell_metricsTemp.deepSuperficialDistance(cellSubset);
-                    cell_metrics.brainRegion = cell_metricsTemp.brainRegion(cellSubset);
-                    cell_metrics.putativeCellType = cell_metricsTemp.putativeCellType(cellSubset);
-                    cell_metrics.groundTruthClassification = cell_metricsTemp.groundTruthClassification(cellSubset);
-                    matFileCell_metrics.cell_metrics = cell_metrics;
+                try
+                    % Creating backup metrics
+                    createBackup(cell_metricsTemp,cellSubset)
+                    
+                    % Saving new metrics to file
+                    matpath = fullfile(cell_metricsTemp.general.path{sessionID},[cell_metricsTemp.general.basenames{sessionID}, '.',saveAs,'.cellinfo.mat']);
+                    matFileCell_metrics = matfile(matpath,'Writable',true);
+                    
+                    cell_metrics = matFileCell_metrics.cell_metrics;
+                    if length(cellSubset) == size(cell_metrics.putativeCellType,2)
+                        cell_metrics.labels = cell_metricsTemp.labels(cellSubset);
+                        cell_metrics.tags = cell_metricsTemp.tags(cellSubset);
+                        cell_metrics.deepSuperficial = cell_metricsTemp.deepSuperficial(cellSubset);
+                        cell_metrics.deepSuperficialDistance = cell_metricsTemp.deepSuperficialDistance(cellSubset);
+                        cell_metrics.brainRegion = cell_metricsTemp.brainRegion(cellSubset);
+                        cell_metrics.putativeCellType = cell_metricsTemp.putativeCellType(cellSubset);
+                        cell_metrics.groundTruthClassification = cell_metricsTemp.groundTruthClassification(cellSubset);
+                        matFileCell_metrics.cell_metrics = cell_metrics;
+                    end
+                    errorSaving(j) = 0;
+                catch
+                    MsgLog(['Error saving metrics for session: ' cell_metricsTemp.general.basenames{sessionID}],4);
+                    errorSaving(j) = 1;
                 end
             end
-            if ishandle(f_waitbar)
+            if ishandle(f_waitbar) && all(errorSaving==0)
                 close(f_waitbar)
                 classificationTrackChanges = [];
                 UI.menu.file.save.ForegroundColor = 'k';
@@ -6194,23 +6241,29 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 MsgLog('Metrics were not succesfully saved for all sessions in batch',4);
             end
         else
-            if isfield(cell_metrics.general,'saveAs')
-                saveAs = cell_metrics.general.saveAs;
-                %             elseif isfield(cell_metrics.general.processingInfo,'saveAs')
+            if exist(cell_metrics.general.path,'dir')
+                if isfield(cell_metrics.general,'saveAs')
+                    saveAs = cell_metrics.general.saveAs;
+                else
+                    saveAs = 'cell_metrics';
+                end
+                try
+                    createBackup(cell_metrics)
+                    file = fullfile(cell_metrics.general.path,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
+                    save(file,'cell_metrics','-v7.3','-nocompression');
+                    classificationTrackChanges = [];
+                    UI.menu.file.save.ForegroundColor = 'k';
+                    MsgLog(['Classification saved to ', file],[1,2]);
+                catch
+                    MsgLog(['Failed to save the cell metrics. Please choose a different path: ' cell_metrics.general.path],4);
+                end
             else
-                saveAs = 'cell_metrics';
+                MsgLog(['The path does not exist. Please choose another path to save the metrics'],4);
             end
-            createBackup(cell_metrics)
-            file = fullfile(cell_metrics.general.clusteringpath,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
-            save(file,'cell_metrics','-v7.3','-nocompression');
-            classificationTrackChanges = [];
-            UI.menu.file.save.ForegroundColor = 'k';
-            MsgLog(['Classification saved to ', file],[1,2]);
         end
-        
     end
-
-% % % % % % % % % % % % % % % % % % % % % %
+    
+    % % % % % % % % % % % % % % % % % % % % % %
 
     function SignificanceMetricsMatrix(~,~)
         % Performs a KS-test for selected two groups and displays a colored
@@ -7282,7 +7335,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if out
             spikePlotListDlg;
         else
-            MsgLog(['No spike data found or the spike data is not accessible: ',general.basepath],2)
+            MsgLog(['No spike data found or the spike data is not accessible: ',general.basename],2)
         end
     end
 
@@ -7417,12 +7470,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             spikesField = [spikesField;fields_new(~cellfun('isempty',fields_new))];
         end
         spikesField = unique(spikesField);
-        
-        if BatchMode
-            basepath1 = cell_metrics.general.basepaths{batchIDs};
-        else
-            basepath1 = basepath;
-        end
+%         
+%         if BatchMode
+%             basepath1 = cell_metrics.general.basepaths{batchIDs};
+%         else
+%             basepath1 = basepath;
+%         end
         
         % Defines the uicontrols
         % Plot name
@@ -7798,13 +7851,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             case 'Yes'
                 % Manually select connections
                 if BatchMode
-                    basepath1 = cell_metricsIn.general.basepaths{batchIDs};
+%                     basepath1 = cell_metricsIn.general.basepaths{batchIDs};
                     basename1 = cell_metricsIn.general.basenames{batchIDs};
                     path1 = cell_metricsIn.general.path{batchIDs};
                 else
-                    basepath1 = basepath;
+%                     basepath1 = basepath;
                     basename1 = cell_metricsIn.general.basename;
-                    path1 = cell_metricsIn.general.clusteringpath;
+                    path1 = cell_metricsIn.general.path;
                 end
                 MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
                 if exist(MonoSynFile,'file')
@@ -7821,31 +7874,35 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     saveAs = 'cell_metrics';
                 end
                 
-                % Creating backup of existing metrics
-                disp(['Creating backup of cells']);
-                dirname = 'revisions_cell_metrics';
-                if ~(exist(fullfile(path1,dirname),'dir'))
-                    mkdir(fullfile(path1,dirname));
+                try
+                    % Creating backup of existing metrics
+                    disp(['Creating backup of cells']);
+                    dirname = 'revisions_cell_metrics';
+                    if ~(exist(fullfile(path1,dirname),'dir'))
+                        mkdir(fullfile(path1,dirname));
+                    end
+                    if exist(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'file')
+                        copyfile(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), fullfile(path1, dirname, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']));
+                    end
+                    
+                    % Saving new metrics
+                    disp(['Saving cells to ', saveAs,'.mat']);
+                    load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
+                    %                 load(fullfile(path1,[saveAs,'.mat']));
+                    cell_metrics.putativeConnections.excitatory = mono_res.sig_con; % Vectors with cell pairs
+                    cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_metrics.general.cellCount);
+                    cell_metrics.synapticEffect(cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
+                    cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
+                    cell_metrics.synapticConnectionsIn = zeros(1,cell_metrics.general.cellCount);
+                    [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,1),unique(cell_metrics.putativeConnections.excitatory(:,1)));
+                    cell_metrics.synapticConnectionsOut(b) = a; cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);
+                    [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,2),unique(cell_metrics.putativeConnections.excitatory(:,2)));
+                    cell_metrics.synapticConnectionsIn(b) = a; cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
+                    save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'cell_metrics','-v7.3','-nocompression')
+                    MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
+                catch
+                    MsgLog(['Synaptic connections adjustment failed.'],4);
                 end
-                if exist(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'file')
-                    copyfile(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), fullfile(path1, dirname, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']));
-                end
-                
-                % Saving new metrics
-                disp(['Saving cells to ', saveAs,'.mat']);
-                load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
-%                 load(fullfile(path1,[saveAs,'.mat']));
-                cell_metrics.putativeConnections.excitatory = mono_res.sig_con; % Vectors with cell pairs
-                cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_metrics.general.cellCount);
-                cell_metrics.synapticEffect(cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
-                cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
-                cell_metrics.synapticConnectionsIn = zeros(1,cell_metrics.general.cellCount);
-                [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,1),unique(cell_metrics.putativeConnections.excitatory(:,1)));
-                cell_metrics.synapticConnectionsOut(b) = a; cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);
-                [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,2),unique(cell_metrics.putativeConnections.excitatory(:,2)));
-                cell_metrics.synapticConnectionsIn(b) = a; cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
-                save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'cell_metrics','-v7.3','-nocompression')
-                MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
         end
     end
 
@@ -7866,11 +7923,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             UI.tabs.(childName) =uitab(parentPanelName,'Title',panelTitle);
             buttonPosition = getButtonLayout(parentPanelName,buttonLabels);
-            
-%             rows = max(ceil(length(buttonLabels)/2),3);
-%             positionToogleButtons = getpixelposition(parentPanelName);
-%             positionToogleButtons = [positionToogleButtons(3)/2,positionToogleButtons(4)/rows];
-            
+
             % Display settings for tags1
             for i = 1:min(length(buttonLabels),10)
 %                 innerPosition = [(1-mod(i,2))*positionToogleButtons(1),(rows-ceil(i/2))*positionToogleButtons(2),positionToogleButtons(1)*0.95,positionToogleButtons(2)*0.95];
@@ -8316,8 +8369,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         msgbox({['\bfCell Explorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\itgithub.com/petersenpeter/Cell-Explorer\rm'},'About the Cell Explorer','help',opts);
     end
     
-    % % % % % % % % % % % % % % % % % % % % % %
-    
+% % % % % % % % % % %
+        % % % % % % % % % % % 
     function HelpDialog(~,~)
         opts.Interpreter = 'tex';
         opts.WindowStyle = 'normal';

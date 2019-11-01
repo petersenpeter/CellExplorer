@@ -10,6 +10,7 @@ function deepSuperficialfromRipple = gui_DeepSuperficial(basepath,basename)
 spikegroup = 1;
 deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
 gain = 0.1;
+deepSuperficialfromRipple = [];
 if exist(deepSuperficial_file,'file')
     test = load(deepSuperficial_file);
     deepSuperficialfromRipple = test.deepSuperficialfromRipple;
