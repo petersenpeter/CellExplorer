@@ -121,7 +121,7 @@ end
 
 
 % Importing session metadata from DB if metadata is out of data
-if ~isfield(session,'animal') || (isfield(session,'epochs') && ~iscell(session.epochs)) || ~iscell(session.behavioralTracking) || ~isfield(session.general,'version')
+if ~isfield(session,'animal') || (isfield(session,'epochs') && ~iscell(session.epochs)) || (isfield(session,'behavioralTracking') && ~iscell(session.behavioralTracking)) || ~isfield(session.general,'version')
     if isfield(session.general,'entryID')
         disp('Metadata not up to date. Downloading from server')
         success = updateFromDB;
@@ -413,17 +413,17 @@ uiwait(UI.fig)
         UIsetString(session.general,'date');
         UIsetString(session.general,'time');
         UIsetString(session.general,'duration');
-        if ~isempty(session.general.experimenters)
+        if isfield(session.general,'experimenters') && ~isempty(session.general.experimenters)
             UI.edit.experimenters.String = strjoin(session.general.experimenters,', ');
         else
             UI.edit.experimenters.String = '';
         end
-        if ~isempty(session.general.location)
+        if isfield(session.general,'location') && ~isempty(session.general.location)
             UI.edit.location.String = session.general.location;
         else
             UI.edit.location.String = '';
         end
-        if ~isempty(session.general.notes)
+        if isfield(session.general,'notes') && ~isempty(session.general.notes)
             session.general.notes = regexprep(session.general.notes, '<.*?>', '' ) ;
             UI.edit.notes.String = session.general.notes;
         else
@@ -1018,6 +1018,8 @@ uiwait(UI.fig)
                         uicontrol(tagsChannels);
                         return
                     end
+                else
+                    session.channelTags.(SelectedTag).channels = [];
                 end
                 if ~isempty(tagsSpikeGroups.String)
                     try
@@ -1027,6 +1029,8 @@ uiwait(UI.fig)
                         uicontrol(tagsSpikeGroups);
                         return
                     end
+                else
+                    session.channelTags.(SelectedTag).spikeGroups = [];
                 end
             end
             delete(UI.dialog.tags);

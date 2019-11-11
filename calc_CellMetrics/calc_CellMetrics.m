@@ -920,7 +920,9 @@ cell_metrics.general.responseCurves.firingRateAcrossTime.x_bins = cell_metrics.g
 if isfield(session,'epochs')
     for j = 1:length(session.epochs)
         cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries(j) = session.epochs{j}.stopTime;
-        cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries_labels{j} = session.epochs{j}.behavioralParadigm;
+        if isfield(session.epochs{j},'behavioralParadigm')
+            cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries_labels{j} = session.epochs{j}.behavioralParadigm;
+        end
     end
     cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries = cumsum(cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries);
 end

@@ -7,7 +7,7 @@ function chListBrainRegions = findBrainRegion(session)
 chListBrainRegions = repmat({''},1,session.extracellular.nChannels);
 brainRegions = (fieldnames(session.brainRegions));
 
-idx = find(struct2array(structfun(@(x)all(~isempty(x.spikeGroups)), session.brainRegions,'UniformOutput',false)));
+idx = find(struct2array(structfun(@(x)all(isfield(x,'spikeGroups') && ~isempty(x.spikeGroups)), session.brainRegions,'UniformOutput',false)));
 for i = idx
     temp = session.brainRegions.(brainRegions{i}).spikeGroups;
     for ii = 1:length(temp)
@@ -15,7 +15,7 @@ for i = idx
     end
 end
 
-idx = find(struct2array(structfun(@(x)all(~isempty(x.channels)), session.brainRegions,'UniformOutput',false)));
+idx = find(struct2array(structfun(@(x)all(isfield(x,'channels') && ~isempty(x.channels)), session.brainRegions,'UniformOutput',false)));
 for i = idx
     temp = session.brainRegions.(brainRegions{i}).channels;
     chListBrainRegions(temp) = repmat({brainRegions{i}},1,length(temp));
