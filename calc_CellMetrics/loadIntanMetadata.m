@@ -14,7 +14,7 @@ elseif isfield(session.general,'basePath')
 else
     error('loadIntanMetadata: Please provide a basepath either as a secondary input or through the session struct: ''session.general.basePath''')
 end
-if exist('read_Intan_RHD2000_file_from_basepath','file')
+if exist('read_Intan_RHD2000_file_from_basepath','file') && exist(fullfile(basepath,'info.rhd'),'file')
     Intan_rec_info = read_Intan_RHD2000_file_from_basepath(basepath);
     if isfield(Intan_rec_info,'board_adc_channels')
         session.timeSeries.adc.fileName  = 'analogin.dat';
