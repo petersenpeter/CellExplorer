@@ -12,7 +12,7 @@ sessionNames = {'ham12_125-127_amp'};%[datasets_stim,datasets_stim2];  % Error '
 sessionNames = {'R2W3_10A2_20191014','',''}
 for iii = 1:length(sessionNames)
     disp(['*** Calculating cells metrics: ', sessionNames{iii},'. ', num2str(iii),' of ', num2str(length(sessionNames)),' sessions'])
-    [session, basename, basepath, clusteringpath] = db_set_path('session',sessionNames{iii});
+    [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionNames{iii});
     load('optogenetics.mat')
     NostimPeriods = [0,optogenetics.peak+0.5;optogenetics.peak-0.5,24*3600]';
     NostimPeriods(find(diff(NostimPeriods')<=0),:) = [];
@@ -72,8 +72,10 @@ for iii = 1:length(sessionNames)
 end
 
 %% % load a subset of units fullfilling multiple of criterium
+
 % Get cells that are assigned as 'Interneuron'
 cell_metrics_idxs = loadCellMetrics('cell_metrics',cell_metrics,'putativeCellType',{'Interneuron'});
+
 % Get cells that are has groundTruthClassification as 'Axoaxonic'
 cell_metrics_idxs = loadCellMetrics('cell_metrics',cell_metrics,'groundTruthClassification',{'Axoaxonic'});
 
@@ -82,15 +84,24 @@ cell_metrics = LoadCellMetricBatch('sessions',{recording.name});
 PyramidalIndexes = find(contains(cell_metrics.putativeCellType,'Pyramidal'));
 
 
-%% % Loading the Cell Explorer pipeline from a path
+%% % Running the Cell Explorer on your own data from a basepath
 
-basepath = '/Volumes/buzsakilab/yaghmo01/Analysed Data/OR22_Urethane_Perriferal effect/AllConcatenated/amplifier/Kilosort_2019-08-23_190048';
+% 1. Define basepath of your dataset to run. This folder should contain at minimum a basename.dat and a basename.xml.
+basepath = '/Volumes/buzsakilab/peterp03/IntanData/MS10/Peter_MS10_170307_154746_concat';
 cd(basepath)
-cell_metrics = calc_CellMetrics('sessionStruct', sessionTemplate,'excludeManipulations',false,'submitToDatabase',false,'plots', false);
+
+% 2. Generate session metadata struct using the template function
+session = sessionTemplate;
+
+% 3. Run the cell metrics pipeline 'calc_CellMetrics' using the session struct as input
+cell_metrics = calc_CellMetrics('session', session);
+
+% 4. Visualize the cell metrics in the Cell Explorer
 cell_metrics = CellExplorer('metrics',cell_metrics);
 
 
 %% % Open several session from paths
+
 basenames = {'Rat08-20130708','Rat08-20130708'};
 clusteringpaths = {'/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708'};
 cell_metrics = LoadCellMetricBatch('clusteringpaths',clusteringpaths,'basenames',basenames);

@@ -4,10 +4,10 @@ function classification_deepSuperficial(session)
 %
 % The algorith assigned both distance to the reversal point and labels.
 % The assigned label are (ordered by depth):
-% 'Cortical' : Assigned to channels belonging to a spikegroup with the channelTag Cortical 
-% 'Deep' : Assigned to channels above the reversal
-% 'Superficial' : Assigned to channels below the reversal
-% '' : Assigned to channels belonging to a spikegroup with the channelTag Bad
+%   'Cortical'    : Assigned to channels belonging to a spikegroup with the channelTag Cortical 
+%   'Deep'        : Assigned to channels above the reversal
+%   'Superficial' : Assigned to channels below the reversal
+%   ''            : Assigned to channels belonging to a spikegroup with the channelTag Bad
 %
 % Distance to the boundary in µm for spike groups where the reversal is detected.
 %
@@ -18,15 +18,15 @@ function classification_deepSuperficial(session)
 % session.general.baseName: baseName of the recording, e.g. 'Peter_MS22_180629_110319_concat'
 % session.channelTags.(Bad or Cortical) specifying spikeGroups (1-indexed), channels (1-indexed)
 %   e.g. session.channelTags.Bad.channels = [1,25,128]; session.channelTags.Bad.spikeGroups = [1]
-% session.extracellular.probesVerticalSpacing: in µm, e.g. 20
-% session.extracellular.probesLayout: ['staggered','linear','poly2','poly3','poly5']
+% session.analysisTags.probesVerticalSpacing: in µm, e.g. 20
+% session.analysisTags.probesLayout: ['staggered','linear','poly2','poly3','poly5']
 % session.extracellular.srLfp: in Hz, e.g. 1250
 % session.extracellular.nChannels: integer, e.g. 128
 % session.extracellular.nSpikeGroups: integer, e.g. 8
 % session.extracellular.spikeGroups struct following the xml anatomical format
 % 
 % Requirements
-% downsampled (and lowpass filtered) baseName.lfp file in the basePath folder
+% downsampled (and lowpass filtered) basename.lfp file in the basePath folder
 %
 % Dependencies:
 % nanconv (included with the Cell Explorer)
@@ -35,7 +35,7 @@ function classification_deepSuperficial(session)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 18-06-2019
+% Last edited: 08-11-2019
 
 % Gets basepath and basename from session struct
 basepath = session.general.basePath;
@@ -47,7 +47,7 @@ if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
 else
     if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple')
         disp('  Using RippleNoise reference channel')
-        RippleNoiseChannel = double(LoadBinary([basename, lfpExtension],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
+        RippleNoiseChannel = double(LoadBinary(fullfile(basepath,[basename, '.lfp']),'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
         ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
     elseif isfield(session.channelTags,'Ripple')
         ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
@@ -83,11 +83,11 @@ end
 %     load(fullfile(basepath, [basename, '.SWR.events.mat']))
 % end
 
-VerticalSpacing = session.extracellular.probesVerticalSpacing;
-if ischar(session.extracellular.probesLayout)
-    Layout = session.extracellular.probesLayout;
+VerticalSpacing = session.analysisTags.probesVerticalSpacing;
+if ischar(session.analysisTags.probesLayout)
+    Layout = session.analysisTags.probesLayout;
 else
-    Layout = session.extracellular.probesLayout{1};
+    Layout = session.analysisTags.probesLayout{1};
 end
 if any(strcmp(Layout,{'staggered','poly2','poly 2','edge'}))
     conv_length = 3;

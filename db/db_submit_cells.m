@@ -22,7 +22,7 @@ db_settings = db_load_settings;
 options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password); % 'ContentType','json','MediaType','application/json'
 
 % Updating Session with toggle
-if isempty(session.spikeSorting.cellMetrics) || ~strcmp(session.spikeSorting.cellMetrics, '1')
+if isempty(session.spikeSorting{1}.cellMetrics) || ~strcmp(session.spikeSorting{1}.cellMetrics, '1')
     waitbar(0,f_submit_cells,['DB: Adjusting cell metrics toggle: ',session.general.name]);
     web_address1 = [db_settings.address,'entries/', num2str(cell_metrics.spikeSortingID(1))];
     webwrite(web_address1,options,'session_cellmetrics',1);

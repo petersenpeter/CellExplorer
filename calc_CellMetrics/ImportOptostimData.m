@@ -5,7 +5,7 @@ sessionNames = {'20160225','20160309','20160308','20160307','20170301','20170203
 
 disp('Processing opto-tagget datasets')
 for i = 1:length(sessionNames)
-    [session, basename, basepath, clusteringpath] = db_set_path('session',sessionNames{i});
+    [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionNames{i});
     disp([num2str(i),': ', basename])
     extension = '.evt.ait';
     
@@ -76,7 +76,7 @@ end
 psth_optostim = [];
 for i = 2%:length(sessionNames)
     
-    [session, basename, basepath, clusteringpath] = db_set_path('session',sessionNames{i});
+    [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionNames{i});
     disp([num2str(i),': ', basename])
     load(fullfile(basepath,[basename,'.optoStim.manipulation.mat']),'optoStim');
     spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);

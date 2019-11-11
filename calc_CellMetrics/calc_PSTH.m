@@ -12,11 +12,11 @@ function PSTH = calc_PSTH(event,spikes,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited 11-08-2019
+% Last edited 08-11-2019
 
 p = inputParser;
 
-addParameter(p,'binCount',200,@isnumeric);        % how many bins (for half the window)
+addParameter(p,'binCount',100,@isnumeric);        % how many bins (for half the window)
 addParameter(p,'alignment','onset',@ischar);    % alignment of time ['onset','center','peaks','offset']
 addParameter(p,'binDistribution',[0.25,0.5,0.25],@isnumeric);  % How the bins should be distributed around the events, pre, during, post. Must sum to 1
 addParameter(p,'duration',0,@isnumeric);        % duration of PSTH (for half the window - used in CCG) [in seconds]
@@ -40,7 +40,7 @@ plots = p.Results.plots;
 if duration == 0
     durations = diff(event.timestamps');
     stim_duration = prctile(sort(durations),percentile);
-    duration = min(max(round(stim_duration*1000),50)/1000,30);
+    duration = min(max(round(stim_duration*1000),50)/1000,10);
 end
 
 binSize = max(round(duration/binCount*1000),1)/1000; % minimum binsize is 0.5ms.
@@ -49,7 +49,7 @@ binSize = max(round(duration/binCount*1000),1)/1000; % minimum binsize is 0.5ms.
 switch alignment
     case 'onset'
         event_times = event.timestamps(:,1);
-        padding = binDistribution(1)/binDistribution(2)*stim_duration;
+        padding = binDistribution(1)/binDistribution(2)*duration;
         binsToKeep = ceil((padding+duration/2)/binSize):(duration+padding)*2/binSize;
     case 'center'
         event_times = mean(event.timestamps);
@@ -57,7 +57,7 @@ switch alignment
         binsToKeep = 1:duration*2/binSize;
     case 'offset'
         event_times = event.timestamps(:,2);
-        padding = binDistribution(3)/binDistribution(2)*stim_duration;
+        padding = binDistribution(3)/binDistribution(2)*duration;
         binsToKeep = 1:(duration+padding)*2/binSize-ceil((padding+duration/2)/binSize);
     case 'peaks'
         event_times = event.peaks;
@@ -65,7 +65,7 @@ switch alignment
         binsToKeep = 1:duration*2/binSize;
 end
 
-disp(['  ', num2str(length(event_times)), '  events, duration set to: ', num2str(duration), ' sec, aligned to ', alignment])
+disp(['  ', num2str(length(event_times)), '  events, duration set to: ', num2str(duration), ' sec, aligned to ', alignment,', with binsize: ' num2str(binSize)])
 
 % Determining the bins interval for metrics
 binsPre = 1:floor(binDistribution(1)*length(binsToKeep));

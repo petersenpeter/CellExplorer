@@ -31,7 +31,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   excludeMetrics         - Metrics to exclude. Default: 'none'
 %   removeMetrics          - Metrics to remove (supports only deepSuperficial at this point)
 %   keepCellClassification - logical. Keep existing cell type classifications
-%   manuelAdjustMonoSyn    - logical. Manually verify monosynaptic connections in the pipeline (requires user input)
+%   manualAdjustMonoSyn    - logical. Manually verify monosynaptic connections in the pipeline (requires user input)
 %   excludeIntervals       - time intervals to exclude
 %   excludeManipulations   - exclude time intervals around manipulations 
 %   useNeurosuiteWaveforms - logical. Use neurosuite files to get waveforms and PCAs
@@ -48,17 +48,17 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   OUTPUT
 %   % % % % % % % % %
 %
-%   Cell_metrics matlab structure
+%   Cell_metrics : structure described on the wiki https://github.com/petersenpeter/Cell-Explorer/wiki/Cell-metrics
 
-% By Peter Petersen
-% petersen.peter@gmail.com
-% Last edited: 20-09-2019
+%   By Peter Petersen
+%   petersen.peter@gmail.com
+%   Last edited: 08-11-2019
 
-% TODO
-% Exclude spikes during manipulations
-% Determine and implement optimal length of unfiltered waveforms
-% Standardize tracking data
-% Import cell types classified in Buzcode
+%   TODO
+%   Exclude spikes during manipulations
+%   Determine and implement optimal length of unfiltered waveforms
+%   Standardize tracking data
+%   Import cell types classified in Buzcode
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -67,8 +67,8 @@ function cell_metrics = calc_CellMetrics(varargin)
 
 p = inputParser;
 addParameter(p,'id',[],@isnumeric);
-addParameter(p,'session',[],@isstr);
-addParameter(p,'sessionStruct',[],@isstruct);
+addParameter(p,'sessionName',[],@isstr);
+addParameter(p,'session',[],@isstruct);
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'clusteringpath',pwd,@isstr);
 addParameter(p,'metrics','all',@iscellstr);
@@ -76,14 +76,14 @@ addParameter(p,'excludeMetrics',{'none'},@iscellstr);
 addParameter(p,'removeMetrics',{'none'},@isstr);
 addParameter(p,'excludeIntervals',[],@isnumeric);
 addParameter(p,'excludeManipulations',true,@islogical);
-addParameter(p,'excludeManipulationTypes',{'optoStim',''},@optoStim);
+addParameter(p,'excludeManipulationTypes',{'optoStim'},@iscell);
 addParameter(p,'useNeurosuiteWaveforms',false,@islogical);
 addParameter(p,'keepCellClassification',true,@islogical);
-addParameter(p,'manuelAdjustMonoSyn',true,@islogical);
+addParameter(p,'manualAdjustMonoSyn',true,@islogical);
 addParameter(p,'showGUI',false,@islogical);
 
 addParameter(p,'forceReload',false,@islogical);
-addParameter(p,'submitToDatabase',true,@islogical);
+addParameter(p,'submitToDatabase',false,@islogical);
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 addParameter(p,'saveBackup',true,@islogical);
@@ -93,8 +93,8 @@ addParameter(p,'debugMode',false,@islogical);
 parse(p,varargin{:})
 
 id = p.Results.id;
-sessionin = p.Results.session;
-sessionStruct = p.Results.sessionStruct;
+sessionin = p.Results.sessionName;
+sessionStruct = p.Results.session;
 basepath = p.Results.basepath;
 clusteringpath = p.Results.clusteringpath;
 metrics = p.Results.metrics;
@@ -104,7 +104,7 @@ excludeIntervals = p.Results.excludeIntervals;
 excludeManipulations = p.Results.excludeManipulations;
 useNeurosuiteWaveforms = p.Results.useNeurosuiteWaveforms;
 keepCellClassification = p.Results.keepCellClassification;
-manuelAdjustMonoSyn = p.Results.manuelAdjustMonoSyn;
+manualAdjustMonoSyn = p.Results.manualAdjustMonoSyn;
 showGUI = p.Results.showGUI;
 
 forceReload = p.Results.forceReload;
@@ -123,9 +123,9 @@ timerCalcMetrics = tic;
 
 if ~isempty(id) || ~isempty(sessionin) || ~isempty(sessionStruct)
     if ~isempty(id)
-        [session, basename, basepath, clusteringpath] = db_set_path('id',id);
+        [session, basename, basepath, clusteringpath] = db_set_session('sessionId',id);
     elseif ~isempty(sessionin)
-        [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin);
+        [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionin);
     elseif ~isempty(sessionStruct)
         showGUI = true;
         if isfield(sessionStruct.general,'basePath') && isfield(sessionStruct.general,'clusteringPath')
@@ -134,22 +134,37 @@ if ~isempty(id) || ~isempty(sessionin) || ~isempty(sessionStruct)
             basepath = session.general.basePath;
             clusteringpath = session.general.clusteringPath;
         else
-            [session, basename, basepath, clusteringpath] = db_set_path('sessionstruct',sessionStruct);
+            [session, basename, basepath, clusteringpath] = db_set_session('session',sessionStruct);
             if isempty(session.general.entryID)
                 session.general.entryID = ''; % DB id
             end
-            if isempty(session.spikeSorting.entryIDs)
-                session.spikeSorting.entryIDs(1) = ''; % DB id
+            if isempty(session.spikeSorting{1}.entryIDs)
+                session.spikeSorting{1}.entryIDs = ''; % DB id
             end
         end
     else
         warning('Please provide a session struct or a session name/id to load a session from the DB')
     end
 end
-% If no session struct is provided the template is loaded and the GUI is displayed
+
+% If no session struct is provided it will look for a basename.session.mat file in the basepath and otherwise load the template and show the GUI gui_session
 if ~exist('session','var')
-    session = sessionTemplate;
-    showGUI = true;
+    [~,basename,~] = fileparts(basepath);
+    if exist([basename,'.session.mat'],'file')
+        disp(['* Loading ',basename,'.session.mat from current folder']);
+        load([basename,'.session.mat']);
+        session.general.basePath = basepath;
+        clusteringpath = session.general.clusteringPath;
+    elseif exist(['session.mat'],'file')
+        disp(['* Loading session.mat from current folder']);
+        load(['session.mat']);
+        session.general.basePath = basepath;
+        clusteringpath = session.general.clusteringPath;
+    else
+        cd(basepath)
+        session = sessionTemplate;
+        showGUI = true;
+    end
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -157,12 +172,13 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if showGUI
+    disp('* Showing GUI for adjusting parameters and session meta data') 
     parameters = p.Results;
-    parameters.basepath = basepath;
-    parameters.clusteringpath = clusteringpath;
+    session.general.basePath = basepath;
+    session.general.clusteringPath = clusteringpath;
     
     % Non-standard parameters: probeSpacing and probeLayout
-    if ~isfield(session.extracellular,'probesVerticalSpacing') & ~isfield(session.extracellular,'probesLayout')
+    if ~isfield(session.analysisTags,'probesVerticalSpacing') & ~isfield(session.analysisTags,'probesLayout')
         session = determineProbeSpacing(session);
     end
     [session,parameters,status] = gui_session(session,parameters);
@@ -181,7 +197,7 @@ if showGUI
     excludeManipulations = parameters.excludeManipulations;
     useNeurosuiteWaveforms = parameters.useNeurosuiteWaveforms;
     keepCellClassification = parameters.keepCellClassification;
-    manuelAdjustMonoSyn = parameters.manuelAdjustMonoSyn;
+    manualAdjustMonoSyn = parameters.manualAdjustMonoSyn;
     cd(basepath)
 end
 
@@ -190,13 +206,12 @@ end
 % Getting spikes  -  excluding user specified- and manipulation intervals
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
+disp('* Getting spikes')
 sr = session.extracellular.sr;
 srLfp = session.extracellular.srLfp;
-
-spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
-
+spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting{1}.format,'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
 if ~isfield(spikes,'processinginfo') || ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.5
-    spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'forceReload',true,'spikes',spikes,'LSB',session.extracellular.leastSignificantBit);
+    spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting{1}.format,'basepath',basepath,'basename',basename,'forceReload',true,'spikes',spikes,'LSB',session.extracellular.leastSignificantBit);
 end
 
 if ~isempty(excludeIntervals)
@@ -312,6 +327,7 @@ cell_metrics.general.cellCount = length(spikes.total);
 % Waveform based calculations
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
+
 if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
     if ~all(isfield(cell_metrics,{'waveforms23','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || forceReload == true
         disp('* Getting waveforms');
@@ -330,7 +346,7 @@ if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMet
         elseif useNeurosuiteWaveforms
             waveforms = LoadNeurosuiteWaveforms(spikes,session,excludeIntervals);
         elseif any(~isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % ,'filtWaveform_std'
-            spikes = loadSpikes('basename',basename,'clusteringformat',session.spikeSorting.format{1},'clusteringpath',clusteringpath,'forceReload',true,'spikes',spikes,'basepath',basepath);
+            spikes = loadSpikes('basename',basename,'clusteringformat',session.spikeSorting{1}.format,'clusteringpath',clusteringpath,'forceReload',true,'spikes',spikes,'basepath',basepath);
             %             spikes = GetWaveformsFromDat(spikes,sessionInfo);
             waveforms.filtWaveform = spikes.filtWaveform;
             if ~isfield(spikes,'timeWaveform')
@@ -454,7 +470,7 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
         lfpExtension = exist_LFP(basepath,basename);
         if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple') & isnumeric(session.channelTags.Ripple)
             disp('  Using RippleNoise reference channel')
-            RippleNoiseChannel = double(LoadBinary([basename, lfpExtension],'nChannels',session.extracellular.nChannels,'channels',channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
+            RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
             ripples = bz_FindRipples('basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
         elseif isfield(session.channelTags,'Ripple') & isnumeric(session.channelTags.Ripple)
             ripples = bz_FindRipples('basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
@@ -464,10 +480,10 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
     end
     
     deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
-    if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') & (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || forceReload == true)
+    if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') && (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || forceReload == true)
         lfpExtension = exist_LFP(basepath,basename);
         if ~exist(deepSuperficial_file,'file')
-            if ~isfield(session.extracellular,'probesVerticalSpacing') & ~isfield(session.extracellular,'probesLayout')
+            if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout')
                 session = determineProbeSpacing(session);
             end
             classification_DeepSuperficial(session);
@@ -493,7 +509,10 @@ if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(ex
     disp('* Calculating MonoSynaptic connections')
     if ~exist(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'file') || forceReload == true
         spikeIDs = [spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)];
-        mono_res = bz_MonoSynConvClick(spikeIDs,spikes.spindices(:,1),'plot',manuelAdjustMonoSyn);
+        mono_res = bz_MonoSynConvClick(spikeIDs,spikes.spindices(:,1),'plot',false);
+        if manualAdjustMonoSyn
+            mono_res = gui_MonoSyn(mono_res);
+        end
         save(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
     else
         disp('  Loading previous detected MonoSynaptic connections')
@@ -510,9 +529,11 @@ if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(ex
         cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
         cell_metrics.synapticConnectionsIn = zeros(1,cell_metrics.general.cellCount);
         [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,1),unique(cell_metrics.putativeConnections.excitatory(:,1)));
-        cell_metrics.synapticConnectionsOut(b) = a; cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);
+        cell_metrics.synapticConnectionsOut(b) = a; 
+        cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);
         [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,2),unique(cell_metrics.putativeConnections.excitatory(:,2)));
-        cell_metrics.synapticConnectionsIn(b) = a; cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
+        cell_metrics.synapticConnectionsIn(b) = a; 
+        cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
         %         cell_metrics.truePositive = mono_res.truePositive; % Matrix
         %         cell_metrics.falsePositive = mono_res.falsePositive; % Matrix
     else
@@ -860,17 +881,15 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'importCellTypeClassification','all'})) && ~any(contains(excludeMetrics,{'importCellTypeClassification'}))
-    disp('* Importing classified cell types from buzcode');
-    
     filename = fullfile(basepath,[basename,'.CellClass.cellinfo.mat']);
     if exist(filename,'file')
+        disp('* Importing classified cell types from buzcode');
         temp = load(filename);
         disp(['  Loaded ' filename ' succesfully']);
         if isfield(temp.CellClass,'label') & size(emp.CellClass.label,2) == cell_metrics.general.cellCount
             cell_metrics.CellClassBuzcode = temp.CellClass.label;
         end
     end
-    
 end    
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -881,8 +900,8 @@ session.general.sessionName = session.general.name;
 cell_metrics.sessionName = repmat({session.general.name},1,cell_metrics.general.cellCount);
 cell_metrics.animal = repmat({session.animal.name},1,cell_metrics.general.cellCount);
 listMetrics = {'sex','species','strain','geneticLine'};
-for i = find(isfield(session.general,listMetrics))
-    cell_metrics.(listMetrics{i}) = repmat({session.general.(listMetrics{i})},1,cell_metrics.general.cellCount);
+for i = find(isfield(session.animal,listMetrics))
+    cell_metrics.(listMetrics{i}) = repmat({session.animal.(listMetrics{i})},1,cell_metrics.general.cellCount);
 end
 % cell_metrics.promoter = {}; % cell_promoter
 
@@ -898,9 +917,12 @@ cell_metrics = rmfield(cell_metrics,field2remove(test));
 cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges = [0:firingRateAcrossTime_binsize:max(cellfun(@max,spikes.times))];
 cell_metrics.general.responseCurves.firingRateAcrossTime.x_bins = cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges(1:end-1)+firingRateAcrossTime_binsize/2;
 
-if isfield(session,'epochs') & ~isempty(session.epochs.duration)
-    cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries = cumsum(session.epochs.duration);
-    cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries_labels = session.epochs.behavioralParadigm;
+if isfield(session,'epochs')
+    for j = 1:length(session.epochs)
+        cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries(j) = session.epochs{j}.stopTime;
+        cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries_labels{j} = session.epochs{j}.behavioralParadigm;
+    end
+    cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries = cumsum(cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries);
 end
 
 % cell_metrics.firingRateAcrossTime = mat2cell(zeros(length(cell_metrics.general.firingRateAcrossTime.x_bins),cell_metrics.general.cellCount));
@@ -920,11 +942,13 @@ cell_metrics.spikeCount = spikes.total; % cell_spikecount OK
 
 for j = 1:cell_metrics.general.cellCount
     % Session metrics
-    if isfield(session.general,'entryID')
+    if isfield(session.general,'entryID') && isnumeric(session.general.entryID)
+        cell_metrics.sessionID(j) = session.general.entryID; % cell_sessionid OK
+    elseif isfield(session.general,'entryID') && ischar(session.general.entryID)
         cell_metrics.sessionID(j) = str2num(session.general.entryID); % cell_sessionid OK
     end 
-    if isfield(session.spikeSorting,'entryID')
-        cell_metrics.spikeSortingID(j) = session.spikeSorting.entryIDs(1); % cell_spikesortingid OK
+    if isfield(session.spikeSorting{1},'entryID')
+        cell_metrics.spikeSortingID(j) = session.spikeSorting{1}.entryIDs; % cell_spikesortingid OK
     end
     
     % Spikes metrics
@@ -1076,6 +1100,12 @@ cell_metrics.general.processinginfo.params.saveAs = saveAs;
 cell_metrics.general.processinginfo.function = 'calc_CellMetrics';
 cell_metrics.general.processinginfo.date = now;
 cell_metrics.general.processinginfo.version = 2.1;
+try
+    cell_metrics.general.processinginfo.username = char(java.lang.System.getProperty('user.name'));
+    cell_metrics.general.processinginfo.hostname = char(java.net.InetAddress.getLocalHost.getHostName);
+catch
+    disp('Failed to retrieve system info.')
+end
 if isfield(spikes,'processinginfo')
     cell_metrics.general.processinginfo.spikes = spikes.processinginfo;
 end
@@ -1091,6 +1121,8 @@ end
 if saveMat
     disp(['* Saving cells to: ',saveAsFullfile]);
     save(saveAsFullfile,'cell_metrics','-v7.3','-nocompression')
+    disp(['* Saving session struct: ' fullfile(basepath,[basename,'.session.mat'])]);
+    save(fullfile(basepath,[basename,'.session.mat']),'session','-v7.3','-nocompression')
 end
 
 

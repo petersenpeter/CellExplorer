@@ -112,14 +112,14 @@ if ~isempty(cell_metrics)
 elseif ~isempty(id) || ~isempty(sessionin)
     bz_database = db_credentials;
     if ~isempty(id)
-        [session, basename, basepath, clusteringpath] = db_set_path('id',id);
+        [session, basename, basepath, clusteringpath] = db_set_session('sessionId',id);
     else
-        [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin);
+        [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionin);
     end
-    if exist(fullfile(clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
-        load(fullfile(clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']))
+    if exist(fullfile(basepath,clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
+        load(fullfile(basepath,clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']))
     else
-        warning(['Error loading metrics: ' fullfile(clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
+        warning(['Error loading metrics: ' fullfile(basepath,clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
     end
 elseif ~isempty(sessions)
     cell_metrics = LoadCellMetricBatch('sessions',sessions);

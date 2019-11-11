@@ -84,7 +84,7 @@ if ~isempty(bz_db)
             bz_db.(entrylist{j}).meta = rmfield(bz_db.(entrylist{j}).meta,oldField);
             
         end
-        if isvarname(bz_db.(entrylist{j}).meta.Name)
+        if isfield(bz_db.(entrylist{j}).meta,'Name') && isvarname(bz_db.(entrylist{j}).meta.Name)
             if strcmp(lower(table),'animals')
                 db_out.(bz_db.(entrylist{j}).meta.Name).General = bz_db.(entrylist{j}).meta;
                 db_out.(bz_db.(entrylist{j}).meta.Name).General.Id = bz_db.(entrylist{j}).id;

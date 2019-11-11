@@ -1,13 +1,11 @@
 function session = db_update_session(session,varargin)
 % Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 27-06-2019
+% Last edited: 04-11-2019
 
 p = inputParser;
 addParameter(p,'forceReload',false,@islogical);
-
 parse(p,varargin{:})
-
 forceReload = p.Results.forceReload;
 
 db_settings = db_load_settings;
@@ -52,22 +50,26 @@ end
 %% % % % % % % % % % % % % % % % % % % %
 % Epochs
 % % % % % % % % % % % % % % % % % % % %
-if isempty(session.epochs.duration) | any(session.epochs.duration == 0) | forceReload
+
+if isempty(session.epochs) || any(cell2mat(cellfun(@(x) ~isfield(x,'duration'),session.epochs,'uni',0))) || any(cell2mat(cellfun(@(x) x.duration,session.epochs,'uni',0)) == 0) || forceReload
     duration = [];
-    for i = 1:size(session.epochs.name,2)
+    for i = 1:size(session.epochs,2)
         fname = 'amplifier.dat';
-        if exist(fullfile(db_settings.repositories.(session.general.repositories{1}), session.general.animal, session.epochs.name{i}, fname))
-            temp_ = dir(fullfile(db_settings.repositories.(session.general.repositories{1}), session.general.animal, session.epochs.name{i}, fname));
-        elseif exist(fullfile(db_settings.repositories.(session.general.repositories{1}), session.general.animal, session.epochs.name{i}, [session.epochs.name{i},'.dat']))
-            temp_ = dir(fullfile(db_settings.repositories.(session.general.repositories{1}), session.general.animal, session.epochs.name{i}, [session.epochs.name{i},'.dat']));
+        if exist(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, fname))
+            temp_ = dir(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, fname));
+             duration(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
+        elseif exist(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, [session.epochs{i}.name,'.dat']))
+            temp_ = dir(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, [session.epochs{i}.name,'.dat']));
+             duration(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
+        else
+             duration(i) = 0;
         end
-        duration(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
-        web_address1 = [db_settings.address,'entries/', num2str(session.epochs.entryIDs(i))];
+       
+        web_address1 = [db_settings.address,'entries/', num2str(session.epochs{i}.entryIDs)];
         options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password);
         webwrite(web_address1,options,'5ssi4',duration(i));
+        session.epochs{i}.duration = duration(i);
     end
-    
-    session.epochs.duration = duration;
 end
 
 %% % % % % % % % % % % % % % % % % % % %
@@ -86,6 +88,7 @@ for i = 1:length(sessionInfo.spikeGroups.groups)
     jsonStructure.ca5yu.(shank_label).fiElD_2562 = ''; % Label
     jsonStructure.ca5yu.(shank_label).fiElD_2462 = '1'; % Counter
 end
+
 jsonStructure = jsonencode(jsonStructure);
 jsonStructure = strrep(jsonStructure,'fiElD_','');
 options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
@@ -136,8 +139,16 @@ end
 db_update_brainRegions(session,db_settings)
 
 %% % % % % % % % % % % % % % % % % % % %
+% Time series
+% % % % % % % % % % % % % % % % % % % %
+session = loadIntanMetadata(session);
+% Not fully implemented as the data is not transferred to the db
+ 
+ 
+%% % % % % % % % % % % % % % % % % % % %
 % Builtin functions
 % % % % % % % % % % % % % % % % % % % %
+
     function db_update_channelTags(session,db_settings)
         jsonStructure = [];
         jsonStructure.form_id = 143; % Form id of sessions

@@ -10,12 +10,13 @@ function cell_metrics_batch = LoadCellMetricBatch(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
+% Last edited: 10-11-2019
 
 p = inputParser;
 addParameter(p,'sessionIDs',{},@isnumeric);     % numeric IDs for the sessions to load
 addParameter(p,'sessions',{},@iscell);          % sessionNames for the sessions to load
 addParameter(p,'basepaths',{},@iscell);         % basepaths for the sessions to load
-addParameter(p,'basenames',{},@iscell);         % basepaths for the sessions to load
+addParameter(p,'basenames',{},@iscell);         % basenames for the sessions to load
 addParameter(p,'clusteringpaths',{},@iscell);   % Path to the cell_metrics .mat files
 addParameter(p,'saveAs','cell_metrics',@isstr); % saveAs - name of .mat file
 addParameter(p,'waitbar_handle',[],@ishandle);  % waitbar handle
@@ -45,9 +46,12 @@ end
 if ~isempty(sessionNames)
     count_metricsLoad = 1;
     waitbar(1/(1+count_metricsLoad+length(sessionNames)),f_LoadCellMetrics,['Loading session info from sessionNames']);
+   
     % % % % % % % % % % % % %
+    
     options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','get','Timeout',50);
     options.CertificateFilename=('');
+    
     % Requesting db list
     bz_db = webread([db_settings.address,'views/15356/'],options,'page_size','5000','sorted','1','cellmetrics',1);
     sessions = loadjson(bz_db.renderedHtml);
@@ -79,23 +83,10 @@ if ~isempty(sessionNames)
     basepaths = db_basepath(index);
     basenames = db_basename(index);
     
-    % % % % % % % % % % % % %
-    %     count_metricsLoad = length(sessionNames);
-    %     for iii = 1:length(sessionNames)
-    %         if ishandle(f_LoadCellMetrics)
-    %             waitbar(iii/(1+count_metricsLoad+length(sessionNames)),f_LoadCellMetrics,['Loading session info for ', num2str(iii), '/', num2str(length(sessionNames)),': ', sessionNames{iii}]);
-    %         else
-    %             break
-    %         end
-    %         [session, basename, basepath, clusteringpath] = db_set_path('session',sessionNames{iii},'changeDir',false);
-    %         basepaths{iii} = basepath;
-    %         clustering_paths{iii} = clusteringpath;
-    %     end
-    
 elseif ~isempty(sessionIDs)
     count_metricsLoad = 1;
     waitbar(1/(1+count_metricsLoad+length(sessionIDs)),f_LoadCellMetrics,['Loading session info from sessionIDs']);
-    [sessions, basenames, basepaths, clustering_paths] = db_set_path('id',sessionIDs,'changeDir',false);
+    [sessions, basenames, basepaths, clustering_paths] = db_set_session('sessionId',sessionIDs,'changeDir',false);
 elseif ~isempty(clusteringpaths)
     count_metricsLoad = 1;
     waitbar(1/(1+count_metricsLoad+length(clusteringpaths)),f_LoadCellMetrics,['Loading session info from clusteringpaths']);
@@ -105,23 +96,17 @@ else
 end
 
 for iii = 1:length(clustering_paths)
-    if exist(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']))
-        filesize = ByteSize(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']),'file');
-    else
-        filesize = 'unknown file size';
-    end
     if ~isempty(basenames) && ishandle(f_LoadCellMetrics)
-        waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,[num2str(iii), '/', num2str(length(basenames)),': ', basenames{iii}, ' (', filesize,')']);
+        waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,[num2str(iii), '/', num2str(length(basenames)),': ', basenames{iii}]);
     else
         break
     end
     if exist(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']))
         cell_metrics2{iii} = load(fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']));
-%     elseif fullfile(clustering_paths{iii},[saveAs,'.mat'])
-%         warning('Loading legacy format')
-%         disp([fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']), ' does not exist'])
     else 
-        warning('session not found')
+        warning(['session not found: ', fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat'])])
+        cell_metrics_batch = [];
+        return
     end
     subfields2 = [subfields2(:);fieldnames(cell_metrics2{iii}.cell_metrics)];
     temp = struct2cell(structfun(@class,cell_metrics2{iii}.cell_metrics,'UniformOutput',false));
@@ -162,7 +147,7 @@ for iii = 1:length(cell_metrics2)
     cell_metrics_batch.general.path{iii} = clustering_paths{iii};
     cell_metrics_batch.general.basenames{iii} = cell_metrics.general.basename;
     cell_metrics_batch.general.saveAs{iii} = saveAs;
-    if ~isempty(basepaths{iii})
+    if ~isempty(basepaths)
         cell_metrics_batch.general.basepaths{iii} = basepaths{iii};
     else
         cell_metrics_batch.general.basepaths{iii} = clustering_paths{iii};

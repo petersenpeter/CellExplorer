@@ -46,7 +46,7 @@ if any(strcmp(datatype,supportedDataTypes))
         case {'sessionInfo','session'}
             filename = fullfile(basepath,[basename,'.',datatype,'.mat']);
         case {'cellinfo','firingRateMap'}
-            filename = fullfile(clusteringpath,[basename,'.',dataName,'.',datatype,'.mat']);
+            filename = fullfile(basepath,clusteringpath,[basename,'.',dataName,'.',datatype,'.mat']);
         otherwise
             filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.mat']);
     end

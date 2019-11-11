@@ -1,8 +1,8 @@
 function session = determineProbeSpacing(session)
 
 %     % Loads probesVerticalSpacing and probesLayout from session struct
-%     VerticalSpacing = session.extracellular.probesVerticalSpacing;
-%     Layout = session.extracellular.probesLayout;
+%     VerticalSpacing = session.analysisTags.probesVerticalSpacing;
+%     Layout = session.analysisTags.probesLayout;
 % else
 % If no probesVerticalSpacing or probesLayout is given, it will try to load the information from the database
 
@@ -49,6 +49,6 @@ else
     VerticalSpacing = VerticalSpacingBetweenSites_corrected;
 end
 disp(['Vertical spacing applied: ', num2str(VerticalSpacing),' µm'])
-session.extracellular.probesVerticalSpacing = VerticalSpacing;
-session.extracellular.probesLayout = Layout;
+session.analysisTags.probesVerticalSpacing = VerticalSpacing;
+session.analysisTags.probesLayout = Layout;
 

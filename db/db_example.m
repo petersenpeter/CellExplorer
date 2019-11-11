@@ -1,13 +1,13 @@
 % Load meta data for single session
 
-sessionName = 'Peter_MS21_180629_110332_concat';
-sessions = db_load_sessions('session',sessionName);
+sessionName = 'Rat08-20130708';
+sessions = db_load_sessions('sessionName',sessionName);
 session = sessions{1};
 
 %% % % % % % % % % % % % % % % % % % % % % %
 % Load and set session parameters
 
-[session, basename, basepath, clusteringpath] = db_set_path('session',sessionName);
+[session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionName);
 
 %% % % % % % % % % % % % % % % % % % % % % %
 % Inspecting and editing local session metadata
@@ -38,4 +38,15 @@ sessions = db_load_sessions('animal',animalName);
 %% % % % % % % % % % % % % % % % % % % % % %
 % Save meta data from data to database
 
-session = db_update_session(session,'forceReload',true)
+session = db_update_session(session,'forceReload',true);
+
+%% % % % % % % % % % % % % % % % % % % % % %
+% Running the Cell Explorer pipeline via the db
+
+cell_metrics = calc_CellMetrics('sessionName',sessionName);
+cell_metrics = CellExplorer('metrics',cell_metrics);
+
+%% % % % % % % % % % % % % % % % % % % % % %
+% Running the Cell Explorer directly via the db
+
+cell_metrics = CellExplorer('sessionName',sessionName);

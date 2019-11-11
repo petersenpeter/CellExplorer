@@ -28,8 +28,9 @@ function cell_metrics = CellExplorer(varargin)
 % CellExplorer                             % Load from current path, assumed to be a basepath
 % CellExplorer('basepath',basepath)        % Load from basepath
 % CellExplorer('metrics',cell_metrics)     % Load from cell_metrics, assumes current path to be a basepath
-% CellExplorer('session','rec1')           % Load session from database session name
-% CellExplorer('id',10985)                 % Load session from database session id
+% CellExplorer('session',session)          % Load session from session struct
+% CellExplorer('sessionName','rec1')       % Load session from database session name
+% CellExplorer('sessionId',10985)          % Load session from database session id
 % CellExplorer('sessions',{'rec1','rec2'}) % Load batch from database
 % CellExplorer('sessionIDs',[10985,2845])  % Load batch from database
 % CellExplorer('clusteringpaths',{'path1','path1'}) % Load batch from a list with paths
@@ -40,7 +41,7 @@ function cell_metrics = CellExplorer(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 30-10-2019
+% Last edited: 08-11-2019
 
 % Shortcuts to built-in functions
 % initializeSession, DatabaseSessionDialog, saveDialog, restoreBackup,keyPress, defineSpikesPlots, customPlot, importGroundTruth
@@ -55,9 +56,10 @@ p = inputParser;
 addParameter(p,'metrics',[],@isstruct);
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'clusteringpath',pwd,@isstr);
+addParameter(p,'session',[],@isstruct);
 addParameter(p,'basename','',@isstr);
-addParameter(p,'id',[],@isnumeric);
-addParameter(p,'session',[],@isstr);
+addParameter(p,'sessionId',[],@isnumeric);
+addParameter(p,'sessionName',[],@isstr);
 
 % Batch input
 addParameter(p,'sessionIDs',{},@iscell);
@@ -71,16 +73,20 @@ addParameter(p,'SWR',{},@iscell);
 % Parsing inputs
 parse(p,varargin{:})
 metrics = p.Results.metrics;
-id = p.Results.id;
-sessionin = p.Results.session;
+id = p.Results.sessionId;
+sessionName = p.Results.sessionName;
+session = p.Results.session;
 basepath = p.Results.basepath;
 basename = p.Results.basepaths;
 clusteringpath = p.Results.clusteringpath;
 
+% Batch inputs
 sessionIDs = p.Results.sessionIDs;
 sessionsin = p.Results.sessions;
 basepaths = p.Results.basepaths;
 clusteringpaths = p.Results.clusteringpaths;
+
+% Extra inputs
 SWR_in = p.Results.SWR;
 
 
@@ -125,7 +131,7 @@ positionsTogglebutton = [[1 29 27 13];[29 29 27 13];[1 15 27 13];[29 15 27 13];[
 incoming = []; outgoing = []; connections = []; plotName = ''; db = {}; plotConnections = [1 1 1]; tableDataOrder = []; 
 groundTruthCelltypesList = {''}; ACGLogIntervals = -3:0.04:1; idx_textFilter = []; clickPlotRegular = true; polygon1.handle = gobjects(0); referenceData=[];
 cellsExcitatoryPostsynaptic = []; cellsInhibitoryPostsynaptic = []; reference_cell_metrics = []; 
-groundTruth_cell_metrics = []; groundTruthData=[];
+groundTruth_cell_metrics = []; groundTruthData=[]; K = gausswin(5)*gausswin(5)'; K = 0.5*K/sum(K(:));
 set(groot, 'DefaultFigureVisible', 'on'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1200,maxFigureSize(3)-50), min(800,maxFigureSize(4)-50)];
 set(0,'DefaultAxesLooseInset',[.01,.01,.01,.01])
 if isempty(basename)
@@ -133,7 +139,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.47;
+CellExplorerVersion = 1.48;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'visible','off');
 hManager = uigetmodemanager(UI.fig);
@@ -185,21 +191,28 @@ end
 if isstruct(metrics)
     cell_metrics = metrics;
     initializeSession
-elseif ~isempty(id) || ~isempty(sessionin)
+elseif ~isempty(id) || ~isempty(sessionName) || ~isempty(session)
     if enableDatabase
         disp('Loading session from database')
         if ~isempty(id)
             try
-                [session, basename, basepath, clusteringpath] = db_set_path('id',id,'saveMat',false);
+                [session, basename, basepath, clusteringpath] = db_set_session('sessionId',id,'saveMat',false);
+            catch
+                warning('Failed to load dataset');
+                return
+            end
+        elseif ~isempty(sessionName)
+            try
+                [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionName,'saveMat',false);
             catch
                 warning('Failed to load dataset');
                 return
             end
         else
             try
-                [session, basename, basepath, clusteringpath] = db_set_path('session',sessionin,'saveMat',false);
+                [session, basename, basepath, clusteringpath] = db_set_session('session',session,'saveMat',false);
             catch
-                warning('Failed to load dataset');
+                warning('Failed to load session');
                 return
             end
         end
@@ -267,13 +280,14 @@ else
         close(UI.fig)
         return
     end
-    if exist(fullfile(pwd,'session.mat'),'file')
-        disp('Cell-Explorer: Loading local session.mat')
-        load('session.mat')
-        if isempty(session.spikeSorting.relativePath)
+    [~,basename,~] = fileparts(basepath);
+    if exist(fullfile(basepath,[basename,'.session.mat']),'file')
+        disp(['Cell-Explorer: Loading ',basename,'.session.mat'])
+        load(fullfile(basepath,[basename,'.session.mat']))
+        if isempty(session.spikeSorting{1}.relativePath)
             clusteringpath = '';
         else
-            clusteringpath = session.spikeSorting.relativePath{1};
+            clusteringpath = session.spikeSorting{1}.relativePath;
         end
         if exist(fullfile(basepath,clusteringpath,[basename,'.cell_metrics.cellinfo.mat']),'file')
             load(fullfile(basepath,clusteringpath,[basename,'.cell_metrics.cellinfo.mat']));
@@ -294,7 +308,7 @@ else
                     return
                 end
             else
-                warning('Neither session.mat or cell_metrics.mat exist in base folder')
+                warning('Neither basename.session.mat or basename.cell_metrics.mat exist in base folder')
                 if ishandle(UI.fig)
                     close(UI.fig)
                 end
@@ -391,6 +405,7 @@ UI.menu.display.normalization.ops(3) = uimenu(UI.menu.display.topMenu,menuLabel,
 UI.menu.display.significanceMetricsMatrix = uimenu(UI.menu.display.topMenu,menuLabel,'Calculate significance metrics matrix',menuSelectedFcn,@SignificanceMetricsMatrix,'Accelerator','K','Separator','on');
 UI.menu.display.redefineMetrics = uimenu(UI.menu.display.topMenu,menuLabel,'Change metrics used for t-SNE plot',menuSelectedFcn,@tSNE_redefineMetrics,'Accelerator','T');
 UI.menu.display.sortingMetric = uimenu(UI.menu.display.topMenu,menuLabel,'Change metric used for sorting image data',menuSelectedFcn,@editSortingMetric);
+UI.menu.display.markerSizeMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Adjust marker size for group plots',menuSelectedFcn,@defineMarkerSize,'Separator','on');
 
 % ACG 
 UI.menu.ACG.topMenu = uimenu(UI.fig,menuLabel,'ACG');
@@ -433,8 +448,8 @@ UI.menu.groundTruth.ops(2) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Image
 UI.menu.groundTruth.ops(3) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Scatter data',menuSelectedFcn,@showGroundTruthData);
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Define ground truth data',menuSelectedFcn,@defineGroundTruthData,'Separator','on');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Compare cell groups to ground truth cell types',menuSelectedFcn,@compareToReference,'Separator','on');
-uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Perform ground truth cell type classification',menuSelectedFcn,@performGroundTruthClassification,'Accelerator','Y','Separator','on');
-uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Load ground truth cell types from session(s)',menuSelectedFcn,@loadGroundTruth,'Accelerator','U');
+uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Perform ground truth cell type classification in current session(s)',menuSelectedFcn,@performGroundTruthClassification,'Accelerator','Y','Separator','on');
+uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Show ground truth cell types in current session(s)',menuSelectedFcn,@loadGroundTruth,'Accelerator','U');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Save manual classification to groundTruth folder',menuSelectedFcn,@importGroundTruth);
 
 % Table menu
@@ -592,7 +607,7 @@ end
 % % % % % % % % % % % % % % % % % % % %
 % Select subset of cell type
 updateCellCount
-
+ 
 UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[2 73 50 50],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.settings.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress});
 
 % Number of plots
@@ -960,7 +975,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
     % Regular plot without histograms
     if customPlotHistograms == 0
         
-        if ((strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics)) || (strcmp(UI.settings.groundTruthData, 'Image')) && ~isempty(groundTruth_cell_metrics)) && UI.checkbox.logy.Value == 1
+        if ((strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics)) || (strcmp(UI.settings.groundTruthData, 'Image')) && ~isempty(groundTruth_cell_metrics)) && UI.checkbox.logy.Value == 1 && UI.settings.plot3axis == 0
         	yyaxis right, hold on
         end
         hold on
@@ -987,8 +1002,9 @@ while ii <= size(cell_metrics.troughToPeak,2)
 
             % Reference data
             if strcmp(UI.settings.referenceData, 'Points') && ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,plotX_title) && isfield(reference_cell_metrics,plotY_title)
-                clr2 = UI.settings.cellTypeColors(unique(referenceData.clusClas),:);
-                legendScatter2 = gscatter(reference_cell_metrics.(plotX_title), reference_cell_metrics.(plotY_title), referenceData.clusClas, clr2,'x',8,'off');
+                idx = find(ismember(referenceData.clusClas,referenceData.selection));
+                clr2 = UI.settings.cellTypeColors(intersect(referenceData.clusClas,referenceData.selection),:);
+                legendScatter2 = gscatter(reference_cell_metrics.(plotX_title)(idx), reference_cell_metrics.(plotY_title)(idx), referenceData.clusClas(idx), clr2,'x',8,'off');
                 set(legendScatter2,'HitTest','off')
             elseif strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(reference_cell_metrics,plotX_title) && isfield(reference_cell_metrics,plotY_title)
                 if ~exist('referenceData1') || ~strcmp(referenceData1.x_field,plotX_title) || ~strcmp(referenceData1.y_field,plotY_title) || referenceData1.x_log ~= UI.checkbox.logx.Value || referenceData1.y_log ~= UI.checkbox.logy.Value
@@ -1006,21 +1022,19 @@ while ii <= size(cell_metrics.troughToPeak,2)
                         referenceData1.y = linspace(min(reference_cell_metrics.(plotY_title)),max(reference_cell_metrics.(plotY_title)),60);
                         ydata = reference_cell_metrics.(plotY_title);
                     end
-                    referenceData1.z = ones(length(referenceData1.x)-1,length(referenceData1.y)-1,3);
+                    
                     referenceData1.x_field = plotX_title;
                     referenceData1.y_field = plotY_title;
                     referenceData1.x_log = UI.checkbox.logx.Value;
                     referenceData1.y_log = UI.checkbox.logy.Value;
-                    K = gausswin(5)*gausswin(5)';
-                    K = K/sum(K(:));
-                    colors = (1-1.7 * (UI.settings.cellTypeColors-0.2)) * 100;
-                    for i = 2:max(referenceData.clusClas)
+
+                    colors = (1-(UI.settings.cellTypeColors)) * 250;
+                    referenceData1.z = zeros(length(referenceData1.x)-1,length(referenceData1.y)-1,3,size(colors,1));
+                    for i = referenceData.selection
                         idx = find(referenceData.clusClas==i);
                         [z_referenceData_temp,~,~] = histcounts2(xdata(idx), ydata(idx),referenceData1.x,referenceData1.y,'norm','probability');
-                        referenceData1.z = referenceData1.z-bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
+                        referenceData1.z(:,:,:,i) = bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
                     end
-                    referenceData1.z = flip(referenceData1.z,2);
-                    referenceData1.z = imrotate(referenceData1.z,90);
                     referenceData1.x = referenceData1.x(1:end-1)+(referenceData1.x(2)-referenceData1.x(1))/2;
                     referenceData1.y = referenceData1.y(1:end-1)+(referenceData1.y(2)-referenceData1.y(1))/2;
                 end
@@ -1028,8 +1042,11 @@ while ii <= size(cell_metrics.troughToPeak,2)
                     yyaxis left, hold on
                     set(gca,'YTick',[])
                 end
-                % Scatter plot
-                legendScatter2 = image(referenceData1.x,referenceData1.y,referenceData1.z,'HitTest','off', 'PickableParts', 'none'); axis tight
+                % Image plot
+                referenceData1.image = 1-sum(referenceData1.z(:,:,:,referenceData.selection),4);
+                referenceData1.image = flip(referenceData1.image,2);
+                referenceData1.image = imrotate(referenceData1.image,90);
+                legendScatter2 = image(referenceData1.x,referenceData1.y,referenceData1.image,'HitTest','off', 'PickableParts', 'none'); axis tight
                 set(legendScatter2,'HitTest','off')
                 
                 if strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics) && UI.checkbox.logy.Value == 1
@@ -1039,8 +1056,9 @@ while ii <= size(cell_metrics.troughToPeak,2)
             
             % Ground truth data
             if strcmp(UI.settings.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,plotX_title) && isfield(groundTruth_cell_metrics,plotY_title)
-                clr2 = UI.settings.groundTruthColors(unique(groundTruthData.clusClas),:);
-                legendScatter2 = gscatter(groundTruth_cell_metrics.(plotX_title), groundTruth_cell_metrics.(plotY_title), groundTruthData.clusClas, clr2,'x',8,'off');
+                idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
+                clr2 = UI.settings.groundTruthColors(intersect(groundTruthData.clusClas,groundTruthData.selection),:);
+                legendScatter2 = gscatter(groundTruth_cell_metrics.(plotX_title)(idx), groundTruth_cell_metrics.(plotY_title)(idx), groundTruthData.clusClas(idx), clr2,'x',8,'off');
                 set(legendScatter2,'HitTest','off')
             elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(groundTruth_cell_metrics,plotX_title) && isfield(groundTruth_cell_metrics,plotY_title)
                 if ~exist('groundTruthData1') || ~strcmp(groundTruthData1.x_field,plotX_title) || ~strcmp(groundTruthData1.y_field,plotY_title) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
@@ -1058,22 +1076,19 @@ while ii <= size(cell_metrics.troughToPeak,2)
                         groundTruthData1.y = linspace(min(groundTruth_cell_metrics.(plotY_title)),max(groundTruth_cell_metrics.(plotY_title)),60);
                         ydata = groundTruth_cell_metrics.(plotY_title);
                     end
-                    groundTruthData1.z = ones(length(groundTruthData1.x)-1,length(groundTruthData1.y)-1,3);
+                    
                     groundTruthData1.x_field = plotX_title;
                     groundTruthData1.y_field = plotY_title;
                     groundTruthData1.x_log = UI.checkbox.logx.Value;
                     groundTruthData1.y_log = UI.checkbox.logy.Value;
-                    K = gausswin(5)*gausswin(5)';
-                    K = K/sum(K(:));
-                    colors = (1-1.7 * (UI.settings.cellTypeColors-0.2)) * 100;
-                    temp = unique(groundTruthData.clusClas);
-                    for i = 1:length(temp)
-                        idx = find(groundTruthData.clusClas==temp(i));
+                    
+                    colors = (1-(UI.settings.groundTruthColors)) * 250;
+                    groundTruthData1.z = zeros(length(groundTruthData1.x)-1,length(groundTruthData1.y)-1,3,size(colors,1));
+                    for i = unique(groundTruthData.clusClas);
+                        idx = find(groundTruthData.clusClas==i);
                         [z_referenceData_temp,~,~] = histcounts2(xdata(idx), ydata(idx),groundTruthData1.x,groundTruthData1.y,'norm','probability');
-                        groundTruthData1.z = groundTruthData1.z-bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
+                        groundTruthData1.z(:,:,:,i) = bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
                     end
-                    groundTruthData1.z = flip(groundTruthData1.z,2);
-                    groundTruthData1.z = imrotate(groundTruthData1.z,90);
                     groundTruthData1.x = groundTruthData1.x(1:end-1)+(groundTruthData1.x(2)-groundTruthData1.x(1))/2;
                     groundTruthData1.y = groundTruthData1.y(1:end-1)+(groundTruthData1.y(2)-groundTruthData1.y(1))/2;
                 end
@@ -1082,17 +1097,20 @@ while ii <= size(cell_metrics.troughToPeak,2)
                     set(gca,'YTick',[])
                 end
                 
-                % Scatter plot
-                legendScatter2 = image(groundTruthData1.x,groundTruthData1.y,groundTruthData1.z,'HitTest','off', 'PickableParts', 'none'); axis tight
-                set(legendScatter2,'HitTest','off')
-                
+                % Image plot
+                groundTruthData1.image = 1-sum(groundTruthData1.z(:,:,:,groundTruthData.selection),4);
+                groundTruthData1.image = flip(groundTruthData1.image,2);
+                groundTruthData1.image = imrotate(groundTruthData1.image,90);
+                legendScatter2 = image(groundTruthData1.x,groundTruthData1.y,groundTruthData1.image,'HitTest','off', 'PickableParts', 'none'); axis tight
+                set(legendScatter2,'HitTest','off'),legendScatter2.AlphaData = 0.9;
+                alpha(0.3) 
                 if strcmp(UI.settings.referenceData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logy.Value == 1
                     yyaxis right, hold on
                 end
             end
             
             if ~isempty(clr)
-                legendScatter = gscatter(plotX(subset), plotY(subset), plotClas(subset), clr,'',20,'off');
+                legendScatter = gscatter(plotX(subset), plotY(subset), plotClas(subset), clr,'',UI.settings.markerSize,'off');
                 set(legendScatter,'HitTest','off')
             end
             
@@ -1231,7 +1249,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
         % Double kernel-histogram with scatter plot
         hold off
         if ~isempty(clr)
-            h_scatter = scatterhist(plotX(subset),plotY(subset),'Group',plotClas(subset),'Kernel','on','Marker','.','MarkerSize',[12],'LineStyle',{'-'},'Parent',UI.panel.subfig_ax1,'Legend','off','Color',clr); hold on % ,'Style','stairs'
+            h_scatter = scatterhist(plotX(subset),plotY(subset),'Group',plotClas(subset),'Kernel','on','Marker','.','MarkerSize',UI.settings.markerSize,'LineStyle',{'-'},'Parent',UI.panel.subfig_ax1,'Legend','off','Color',clr); hold on % ,'Style','stairs'
             set(h_scatter(1).Children,'HitTest','off')
             set(h_scatter(1),'ButtonDownFcn',@ClicktoSelectFromPlot)
             axis(h_scatter(1),'tight');
@@ -1272,7 +1290,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
         hold off
         
         if ~isempty(clr)
-            h_scatter = scatterhist(plotX(subset),plotY(subset),'Group',plotClas(subset),'Style','stairs','Marker','.','MarkerSize',[12],'LineStyle',{'-'},'Parent',UI.panel.subfig_ax1,'Legend','off','Color',clr); hold on % ,
+            h_scatter = scatterhist(plotX(subset),plotY(subset),'Group',plotClas(subset),'Style','stairs','Marker','.','MarkerSize',UI.settings.markerSize,'LineStyle',{'-'},'Parent',UI.panel.subfig_ax1,'Legend','off','Color',clr); hold on % ,
             set(h_scatter(1).Children,'HitTest','off')
             axis(h_scatter(1),'tight');
             
@@ -1340,12 +1358,16 @@ while ii <= size(cell_metrics.troughToPeak,2)
         
         % Reference data
         if strcmp(UI.settings.referenceData, 'Points') && ~isempty(reference_cell_metrics)
-            clr2 = UI.settings.cellTypeColors(unique(referenceData.clusClas),:);
-            legendScatter2 = gscatter(reference_cell_metrics.troughToPeak * 1000, reference_cell_metrics.burstIndex_Royer2012, referenceData.clusClas, clr2,'x',8,'off');
+            idx = find(ismember(referenceData.clusClas,referenceData.selection));
+            clr2 = UI.settings.cellTypeColors(intersect(referenceData.clusClas,referenceData.selection),:);
+            legendScatter2 = gscatter(reference_cell_metrics.troughToPeak(idx) * 1000, reference_cell_metrics.burstIndex_Royer2012(idx), referenceData.clusClas(idx), clr2,'x',8,'off');
             set(legendScatter2,'HitTest','off')
         elseif strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics)
             yyaxis left
-            legendScatter2 = image(referenceData.x,referenceData.y,referenceData.z,'HitTest','off', 'PickableParts', 'none'); axis tight
+            referenceData.image = 1-sum(referenceData.z(:,:,:,referenceData.selection),4);
+            referenceData.image = flip(referenceData.image,2);
+            referenceData.image = imrotate(referenceData.image,90);
+            legendScatter2 = image(referenceData.x,referenceData.y,referenceData.image,'HitTest','off', 'PickableParts', 'none'); axis tight
             set(gca,'YTick',[])
             set(legendScatter2,'HitTest','off')
             yyaxis right, hold on
@@ -1353,20 +1375,24 @@ while ii <= size(cell_metrics.troughToPeak,2)
         
         % Ground truth data
         if strcmp(UI.settings.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics)
-            clr2 = UI.settings.groundTruthColors(unique(groundTruthData.clusClas),:);
-            legendScatter2 = gscatter(groundTruth_cell_metrics.troughToPeak * 1000, groundTruth_cell_metrics.burstIndex_Royer2012, groundTruthData.clusClas, clr2,'x',8,'off');
-            set(legendScatter2,'HitTest','off')
+            idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
+            clr2 = UI.settings.groundTruthColors(intersect(groundTruthData.clusClas,groundTruthData.selection),:);
+            legendScatter3 = gscatter(groundTruth_cell_metrics.troughToPeak(idx) * 1000, groundTruth_cell_metrics.burstIndex_Royer2012(idx), groundTruthData.clusClas(idx), clr2,'x',8,'off');
+            set(legendScatter3,'HitTest','off')
         elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics)
             yyaxis left
-            legendScatter2 = image(groundTruthData.x,groundTruthData.y,groundTruthData.z,'HitTest','off', 'PickableParts', 'none'); axis tight
+            groundTruthData.image = 1-sum(groundTruthData.z(:,:,:,groundTruthData.selection),4);
+            groundTruthData.image = flip(groundTruthData.image,2);
+            groundTruthData.image = imrotate(groundTruthData.image,90);
+            legendScatter3 = image(groundTruthData.x,groundTruthData.y,groundTruthData.image,'HitTest','off', 'PickableParts', 'none'); axis tight
             set(gca,'YTick',[])
-            set(legendScatter2,'HitTest','off')
+            set(legendScatter3,'HitTest','off')
             yyaxis right, hold on
         end
         
         % Scatter data
         if ~isempty(clr)
-            legendScatter = gscatter(cell_metrics.troughToPeak(subset) * 1000, cell_metrics.burstIndex_Royer2012(subset), plotClas(subset), clr,'',20,'off');
+            legendScatter = gscatter(cell_metrics.troughToPeak(subset) * 1000, cell_metrics.burstIndex_Royer2012(subset), plotClas(subset), clr,'',UI.settings.markerSize,'off');
             set(legendScatter,'HitTest','off')
         end
         if UI.settings.displayExcitatory && ~isempty(cellsExcitatory_subset)
@@ -1435,7 +1461,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
         set(subfig_ax(3),'ButtonDownFcn',@ClicktoSelectFromPlot)
         cla, hold on
         if ~isempty(clr)
-            legendScatter = gscatter(tSNE_metrics.plot(subset,1), tSNE_metrics.plot(subset,2), plotClas(subset), clr,'',20,'off');
+            legendScatter = gscatter(tSNE_metrics.plot(subset,1), tSNE_metrics.plot(subset,2), plotClas(subset), clr,'',UI.settings.markerSize,'off');
             set(legendScatter,'HitTest','off')
         end
         if UI.settings.displayExcitatory && ~isempty(cellsExcitatory_subset)
@@ -2918,7 +2944,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             ia = [];
         end
     end
-    
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function defineMarkerSize(~,~)
+        answer = inputdlg({'Enter marker size [recommended: 5-25]'},'Input',[1 40],{num2str(UI.settings.markerSize)});
+        if ~isempty(answer)
+            UI.settings.markerSize = str2double(answer);
+            uiresume(UI.fig);
+        end
+    end
 % % % % % % % % % % % % % % % % % % % % % %
 
         function editSortingMetric(~,~)
@@ -2973,14 +3008,30 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             % UI.settings.referenceData
             UI.tabs.referenceData = uitab(UI.panel.tabgroup2,'Title','Reference');
-            UI.listbox.referenceData = uicontrol('Parent',UI.tabs.referenceData,'Style','listbox','Position',getpixelposition(UI.tabs.referenceData),'Units','normalized','String',UI.settings.cellTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
+            UI.listbox.referenceData = uicontrol('Parent',UI.tabs.referenceData,'Style','listbox','Position',getpixelposition(UI.tabs.referenceData),'Units','normalized','String',UI.settings.cellTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)referenceDataSelection,'KeyPressFcn', {@keyPress});
             UI.panel.tabgroup2.SelectedTab = UI.tabs.referenceData;
+            initReferenceDataTab
         end
-        
         uiresume(UI.fig);
-        
     end
-
+    
+% % % % % % % % % % % % % % % % % % % % % %
+    
+    function initReferenceDataTab
+        % Defining Cell count for listbox
+        UI.listbox.referenceData.String = strcat(UI.settings.cellTypes,' (',referenceData.counts,')');
+        if ~isfield(referenceData,'selection')
+            referenceData.selection = 1:length(UI.settings.cellTypes);
+        end
+        UI.listbox.referenceData.Value = referenceData.selection;
+    end
+    
+    % % % % % % % % % % % % % % % % % % % % % %
+    
+    function referenceDataSelection(src,evnt)
+        referenceData.selection = UI.listbox.referenceData.Value;
+        uiresume(UI.fig);
+    end
 % % % % % % % % % % % % % % % % % % % % % %
     
     function showGroundTruthData(src,evnt)
@@ -3012,15 +3063,32 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     defineGroundTruthData;
                 end
             end
-            % UI.settings.groundTruthData
             UI.tabs.groundTruthData = uitab(UI.panel.tabgroup2,'Title','GroundTruth');
-            UI.listbox.groundTruthData = uicontrol('Parent',UI.tabs.groundTruthData,'Style','listbox','Position',getpixelposition(UI.tabs.groundTruthData),'Units','normalized','String',UI.settings.groundTruth,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
+            UI.listbox.groundTruthData = uicontrol('Parent',UI.tabs.groundTruthData,'Style','listbox','Position',getpixelposition(UI.tabs.groundTruthData),'Units','normalized','String',UI.settings.groundTruthTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)groundTruthDataSelection,'KeyPressFcn', {@keyPress});
             UI.panel.tabgroup2.SelectedTab = UI.tabs.groundTruthData;
+            initGroundTruthTab
         end
         uiresume(UI.fig);
-        
     end
-
+    
+    % % % % % % % % % % % % % % % % % % % % % %
+    
+    function initGroundTruthTab
+        % Defining Cell count for listbox
+        UI.listbox.groundTruthData.String = strcat(UI.settings.groundTruthTypes,' (',groundTruthData.counts,')');
+        if ~isfield(groundTruthData,'selection')
+            groundTruthData.selection = 1:length(UI.settings.groundTruthTypes);
+        end
+        UI.listbox.groundTruthData.Value = groundTruthData.selection;
+    end
+    
+    % % % % % % % % % % % % % % % % % % % % % %
+    
+    function groundTruthDataSelection(src,evnt)
+        groundTruthData.selection = UI.listbox.groundTruthData.Value;
+        uiresume(UI.fig);
+    end
+    
 % % % % % % % % % % % % % % % % % % % % % %
 
     function out = loadReferenceData
@@ -3143,7 +3211,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         listing = dir(fullfile(referenceData_path,'*.cell_metrics.cellinfo.mat'));
         listing = {listing.name};
         listing = cellfun(@(x) x(1:end-26), listing(:),'uni',0);
-        [indx,tf] = listdlg('PromptString',['Select the metrics to load for ground truth classification'],'ListString',listing,'SelectionMode','multiple','ListSize',[350,400],'InitialValue',1);
+        if ~isempty(groundTruth_cell_metrics)
+            initValue = find(ismember(listing',groundTruth_cell_metrics.sessionName));
+        else
+            initValue = 1;
+        end
+        [indx,tf] = listdlg('PromptString',['Select the metrics to load for ground truth classification'],'ListString',listing,'SelectionMode','multiple','ListSize',[350,400],'InitialValue',initValue);
         
         if ~isempty(indx)
             listSession = listing(indx);
@@ -3157,6 +3230,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             % Initializing
             [groundTruth_cell_metrics,groundTruthData] = initializeReferenceData(groundTruth_cell_metrics,'groundTruth');
+            initGroundTruthTab
+            uiresume(UI.fig);
         end
     end
 % % % % % % % % % % % % % % % % % % % % % %
@@ -3413,6 +3488,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     save(fullfile(referenceData_path,'reference_cell_metrics.cellinfo.mat'),'reference_cell_metrics','-v7.3','-nocompression');
                     
                     [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
+                    initReferenceDataTab
                     
                     if ishandle(f_LoadCellMetrics)
                         close(f_LoadCellMetrics)
@@ -5456,16 +5532,24 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     
     function viewSessionMetaData(~,~)
         if BatchMode
-            sessionMetaFilename = fullfile(cell_metrics.general.basepaths{cell_metrics.batchIDs(ii)},'session.mat');
+            sessionMetaFilename = fullfile(cell_metrics.general.basepaths{cell_metrics.batchIDs(ii)},cell_metrics.general.basenames{cell_metrics.batchIDs(ii)},'.session.mat');
             if exist(sessionMetaFilename,'file')
-                sessionIn = load(sessionMetaFilename);
-                gui_session(sessionIn.session);
+                gui_session(sessionMetaFilename);
             else
                 MsgLog(['Session metadata file not available:' sessionMetaFilename],2)
             end
         else
-            sessionIn = load('session.mat');
-            gui_session (sessionIn.session);
+            [~,basename,~] = fileparts(pwd);
+            sessionMetaFilename = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename,'.session.mat']);
+            if exist(sessionMetaFilename,'file')
+                gui_session(sessionMetaFilename);
+            elseif exist(fullfile(cell_metrics.general.path,[cell_metrics.general.basename,'.session.mat']),'file')
+                gui_session(fullfile(cell_metrics.general.path,[cell_metrics.general.basename,'.session.mat']));
+            elseif exist([basename,'.session.mat'],'file')
+                gui_session;
+            else
+                MsgLog(['Session metadata file not available:' sessionMetaFilename],2)
+            end
         end
     end
 
@@ -6753,9 +6837,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         fig3_axislimit_x = [min(tSNE_metrics.plot(:,1)), max(tSNE_metrics.plot(:,1))];
         fig3_axislimit_y = [min(tSNE_metrics.plot(:,2)), max(tSNE_metrics.plot(:,2))];
         
-        % Updating refrence data if already loaded
+        % Updating reference and ground truth data if already loaded
         if ~isempty(reference_cell_metrics)
             [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
+            initializeReferenceData
+        end
+        if ~isempty(groundTruth_cell_metrics)
+            [groundTruth_cell_metrics,groundTruthData] = initializeReferenceData(groundTruth_cell_metrics,'GroundTruth');
+            initGroundTruthTab
         end
         
         subsetGroundTruth = [];
@@ -6769,42 +6858,40 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if strcmp(inputType,'reference')
             % Cell type initialization
             %         UI.settings.cellTypes = unique([UI.settings.cellTypes,cell_metrics.putativeCellType],'stable');
+            clear referenceData1 
             referenceData.clusClas = ones(1,length(cell_metrics.putativeCellType));
             for i = 1:length(UI.settings.cellTypes)
                 referenceData.clusClas(strcmp(cell_metrics.putativeCellType,UI.settings.cellTypes{i}))=i;
             end
         else
             % Ground truth initialization
-            referenceData.clusClas = ones(1,length(cell_metrics.groundTruthClassification));
-            
-            for i = 1:length(UI.settings.groundTruth)
-                if any(strcmp([cell_metrics.groundTruthClassification{:}],UI.settings.groundTruth{i}))
-                    referenceData.clusClas(strcmp([cell_metrics.groundTruthClassification{:}],UI.settings.groundTruth{i}))=i;
-                end
-            end
+            clear groundTruthData1 
+            [referenceData.clusClas, UI.settings.groundTruthTypes] = findgroups([cell_metrics.groundTruthClassification{:}]);
         end
+        referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas)'))';
         
         % Creating surface of reference points
         referenceData.x = fig2_axislimit_x(1):10:fig2_axislimit_x(2);
-        referenceData.y = 10.^(log10(fig2_axislimit_y(1)):0.1:log10(fig2_axislimit_y(2)));
-        referenceData.z = ones(length(referenceData.x)-1,length(referenceData.y)-1,3);
-        K = gausswin(5)*gausswin(5)';
-        K = K/sum(K(:));
+        referenceData.y = 10.^(log10(fig2_axislimit_y(1)):0.05:log10(fig2_axislimit_y(2)));
+        
         if strcmp(inputType,'reference')
-            colors = (1-1.7 * (UI.settings.cellTypeColors-0.2)) * 100;
+            colors = (1-(UI.settings.cellTypeColors)) * 250;
         else
-            colors = (1-1.7 * (UI.settings.groundTruthColors-0.2)) * 100;
+            colors = (1-(UI.settings.groundTruthColors)) * 250;
         end
         temp = unique(referenceData.clusClas);
-        for i = 1:length(temp)
-            idx = find(referenceData.clusClas==temp(i));
+        
+        referenceData.z = zeros(length(referenceData.x)-1,length(referenceData.y)-1,3,size(colors,1));
+        for i = temp
+            idx = find(referenceData.clusClas==i);
             [z_referenceData_temp,~,~] = histcounts2(cell_metrics.troughToPeak(idx) * 1000, cell_metrics.burstIndex_Royer2012(idx),referenceData.x,referenceData.y,'norm','probability');
-            referenceData.z = referenceData.z-bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
+            referenceData.z(:,:,:,i) = bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
+            
         end
-        referenceData.z = flip(referenceData.z,2);
-        referenceData.z = imrotate(referenceData.z,90);
         referenceData.x = referenceData.x(1:end-1)+5;
-        referenceData.y = 10.^(log10(fig2_axislimit_y(1))+0.05:0.1:log10(fig2_axislimit_y(2))-0.1);
+        referenceData.y = 10.^(log10(fig2_axislimit_y(1))+0.025:0.05:log10(fig2_axislimit_y(2))-0.05);
+        
+        referenceData.selection = temp;
         
         % 'All raw waveforms'
         if isfield(cell_metrics.waveforms,'raw')
@@ -7078,7 +7165,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         else
                             clusteringpath = basepath;
                         end
-                        %                             [session, basename, basepath, clusteringpath] = db_set_path('id',str2double(db_menu_ids(indx)),'saveMat',false);
                         SWR_in = {};
                         successMessage = LoadSession;
                     end
@@ -7720,7 +7806,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 % % % % % % % % % % % % % % % % % % % % % %
 
     function compareToReference(src,evnt)
-        if strcmp(src.Text,'Compare cell groups to reference data')
+        if isfield(src,'Text') && strcmp(src.Text,'Compare cell groups to reference data')
             inputReferenceData = 1;
             clr2 = UI.settings.cellTypeColors(unique(referenceData.clusClas),:);
             listClusClas_referenceData = unique(referenceData.clusClas);
@@ -7857,7 +7943,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 else
 %                     basepath1 = basepath;
                     basename1 = cell_metricsIn.general.basename;
-                    path1 = cell_metricsIn.general.path;
+                    path1 = fullfile(cell_metricsIn.general.basepath,cell_metricsIn.general.clusteringpath);
                 end
                 MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
                 if exist(MonoSynFile,'file')

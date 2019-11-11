@@ -3,7 +3,7 @@
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 16-08-2019
+% Last edited: 07-11-2019
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Cell Explorer Preferences  
@@ -28,7 +28,8 @@ UI.settings.dispLegend = 0;                     % [0,1] Display legend for scatt
 UI.settings.plotWaveformMetrics = 0;            % show waveform metrics on the single waveform
 UI.settings.sortingMetric = 'burstIndex_Royer2012'; % metrics used for sorting image data
 UI.settings.referenceData = 'None';             % ['None','Image','Points']
-UI.settings.groundTruthData = 'None';             % ['None','Image','Points']
+UI.settings.groundTruthData = 'None';           % ['None','Image','Points']
+UI.settings.markerSize = 15;                    % marker size in the group pltos [default: 20]
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 6;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
@@ -45,7 +46,7 @@ UI.settings.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
 UI.settings.tags = {'Good','Bad','Mua','Noise','InverseSpike','Other'};
 UI.settings.groundTruth = {'PV+','NOS1+','GAT1+','SST+','Axoaxonic','5HT3a'}; 
 UI.settings.groundTruthMarkers = {'om','dg','sm','*k','+k','+p'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
-UI.settings.groundTruthColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
+UI.settings.groundTruthColors = [[.9,.2,.2];[.2,.2,.9];[0.2,0.9,0.9];[0.9,0.2,0.9];[.2,.9,.2];[.5,.5,.5]];
 UI.settings.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
 
 % tSNE representation

@@ -1,20 +1,25 @@
 function sessions_out = db_load_sessions(varargin)
+% Loads session metadata from the buzsakilab database
+
+% By Peter Petersen
+% petersen.peter@gmail.com
+% Last edited: 07-11-2019
+
 p = inputParser;
-addParameter(p,'id',[],@isnumeric);
-addParameter(p,'session','',@isstr);
+addParameter(p,'sessionId',[],@isnumeric);
+addParameter(p,'sessionName','',@isstr);
 addParameter(p,'sessions','',@iscell);
 addParameter(p,'animal','',@isstr);
 addParameter(p,'details','1',@isstr);
 addParameter(p,'db_settings',db_load_settings,@isstr);
 parse(p,varargin{:})
 
-id = p.Results.id;
-session = p.Results.session;
+sessionId = p.Results.sessionId;
+sessionName = p.Results.sessionName;
 sessions = p.Results.sessions;
 animal = p.Results.animal;
 details = p.Results.details;
 db_settings = p.Results.db_settings;
-% db_settings = db_load_settings
 sessions_out = [];
 
 options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','get','Timeout',50);
@@ -23,12 +28,12 @@ options.CertificateFilename=('');
 
 if ~isempty(animal)
     bz_db = webread([db_settings.address,'views/15274/'],options,'animal',animal,'details',details);
-elseif ~isempty(session)
-    bz_db = webread([db_settings.address,'views/15274/'],options,'session',session,'details',details);
+elseif ~isempty(sessionName)
+    bz_db = webread([db_settings.address,'views/15274/'],options,'session',sessionName,'details',details);
 elseif ~isempty(sessions)
     bz_db = webread([db_settings.address,'views/15274/'],options,'session',sessions,'details',details);
-elseif ~isempty(id)
-    bz_db = webread([db_settings.address,'views/15274/'],options,'entryid',id,'details',details);
+elseif ~isempty(sessionId)
+    bz_db = webread([db_settings.address,'views/15274/'],options,'entryid',sessionId,'details',details);
 else
     bz_db = webread([db_settings.address,'views/15274/'],options,'details',details);
 end
