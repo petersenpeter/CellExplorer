@@ -83,7 +83,7 @@ addParameter(p,'manualAdjustMonoSyn',true,@islogical);
 addParameter(p,'showGUI',false,@islogical);
 
 addParameter(p,'forceReload',false,@islogical);
-addParameter(p,'submitToDatabase',false,@islogical);
+addParameter(p,'submitToDatabase',true,@islogical);
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 addParameter(p,'saveBackup',true,@islogical);
@@ -1068,7 +1068,19 @@ cell_metrics.general = rmfield(cell_metrics.general,field2remove(test));
 % Submitting to database
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-if submitToDatabase
+% Checks weather db credentials exist
+if exist('db_load_settings') == 2
+    db_settings = db_load_settings;
+    if ~strcmp(db_settings.credentials.username,'user')
+        enableDatabase = 1;
+    else
+        enableDatabase = 0;
+    end
+else
+    enableDatabase = 0;
+end
+
+if submitToDatabase && enableDatabase
     disp('* Submitting cells to database');
     if debugMode
         session = db_update_session(session,'forceReload',true);

@@ -553,12 +553,24 @@ uiwait(UI.fig)
         session.animal.strain = UI.edit.strain.String;
         session.animal.geneticLine = UI.edit.geneticLine.String;
         
-        session.extracellular.leastSignificantBit = str2double(UI.edit.leastSignificantBit.String);
-        session.extracellular.sr = str2double(UI.edit.sr.String);
-        session.extracellular.srLfp = str2double(UI.edit.srLfp.String);
-        session.extracellular.nChannels = str2double(UI.edit.nChannels.String);
-        session.extracellular.probeDepths = str2double(UI.edit.probeDepths.String);
-        session.extracellular.precision = str2double(UI.edit.precision.String);
+        if ~strcmp(UI.edit.leastSignificantBit.String,'')
+            session.extracellular.leastSignificantBit = str2double(UI.edit.leastSignificantBit.String);
+        end
+        if ~strcmp(UI.edit.sr.String,'')
+            session.extracellular.sr = str2double(UI.edit.sr.String);
+        end
+        if ~strcmp(UI.edit.srLfp.String,'')
+            session.extracellular.srLfp = str2double(UI.edit.srLfp.String);
+        end
+        if ~strcmp(UI.edit.nChannels.String,'')
+            session.extracellular.nChannels = str2double(UI.edit.nChannels.String);
+        end
+        if ~strcmp(UI.edit.probeDepths.String,'')
+            session.extracellular.probeDepths = str2double(UI.edit.probeDepths.String);
+        end
+        if ~strcmp(UI.edit.precision.String,'')
+            session.extracellular.precision = str2double(UI.edit.precision.String);
+        end
     end
     
     function cancelMetricsWindow
