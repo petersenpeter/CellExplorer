@@ -2696,8 +2696,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 MsgLog(['Failed to reload dataset from database: ',strjoin(cell_metrics.general.basenames)],4);
             end
         elseif strcmp(answer,'Yes')
-            path1 = cell_metrics.general.path;
-            file = fullfile(cell_metrics.general.path,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
+            if isfield(cell_metrics.general,'path') && exist(cell_metrics.general.path,'dir')
+                path1 = cell_metrics.general.path;
+                file = fullfile(cell_metrics.general.path,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
+            else isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir')
+                path1 = fullfile(cell_metrics.general.basepath,cell_metrics.general.clusteringpath);
+                file = fullfile(path1,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
+            end
             if exist(file,'file')
                 load(file);
                 initializeSession;
@@ -7941,9 +7946,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     basename1 = cell_metricsIn.general.basenames{batchIDs};
                     path1 = cell_metricsIn.general.path{batchIDs};
                 else
-%                     basepath1 = basepath;
-                    basename1 = cell_metricsIn.general.basename;
-                    path1 = fullfile(cell_metricsIn.general.basepath,cell_metricsIn.general.clusteringpath);
+                    if isfield( cell_metricsIn.general,'path')
+                        basename1 = cell_metricsIn.general.basename;
+                        path1 = cell_metricsIn.general.path;
+                    else
+                        basename1 = cell_metricsIn.general.basename;
+                        path1 = fullfile(cell_metricsIn.general.basepath,cell_metricsIn.general.clusteringpath);
+                    end
                 end
                 MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
                 if exist(MonoSynFile,'file')
@@ -7974,7 +7983,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     % Saving new metrics
                     disp(['Saving cells to ', saveAs,'.mat']);
                     load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
-                    %                 load(fullfile(path1,[saveAs,'.mat']));
                     cell_metrics.putativeConnections.excitatory = mono_res.sig_con; % Vectors with cell pairs
                     cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_metrics.general.cellCount);
                     cell_metrics.synapticEffect(cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']

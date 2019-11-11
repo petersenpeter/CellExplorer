@@ -7,8 +7,8 @@ function cell_metrics = calc_CellMetrics(varargin)
 %
 %   Check the wiki of the Cell Explorer for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
 %
-%   % % % % % % % % % 
-%   INPUTS
+%   % % % % % % % % %
+%   INPUTS           
 %   % % % % % % % % %
 %
 %   varargin (Variable-length input argument list; see below)

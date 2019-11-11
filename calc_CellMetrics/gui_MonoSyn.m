@@ -53,6 +53,12 @@ plotTitle = uicontrol('Parent',h,'Style','text','Position',[130 410 350 10],'Uni
 i = 1;
 while i > 0 && i <= length(allcel)
     if ~ishandle(h)
+        mono_res.sig_con = keep_con;
+        
+        if ischar(mono_res_in)
+            disp('Saving mono_res file')
+            save(mono_res_in,'mono_res','-v7.3','-nocompression');
+        end
         return
     end
     delete(findobj(h, 'type', 'axes'));
