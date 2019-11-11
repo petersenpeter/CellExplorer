@@ -5,7 +5,7 @@ function session = sessionTemplate(input1,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 01-11-2019
+% Last edited: 11-11-2019
 
 p = inputParser;
 addParameter(p,'importSkippedChannels',true,@islogical); % Import skipped channels from the xml as bad channels
@@ -49,9 +49,9 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 pathPieces = regexp(basepath, filesep, 'split'); % Assumes file structure: animal/session/
 
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % General metadata
-% % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 session.general.basePath =  basepath; % Full path
 temp = dir('Kilosort_*');
 if ~isempty(temp)
@@ -62,41 +62,41 @@ end
 session.general.name = pathPieces{end}; % Session name
 session.general.version = 1; % Metadata version
 
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Limited animal metadata (practical information)
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 session.animal.name = pathPieces{end-1}; % Animal name
 session.animal.sex = 'Male'; % Male, Female, Unknown
 session.animal.species = 'Rat'; % Mouse, Rat, ... (http://buzsakilab.com/wp/species/)
 session.animal.strain = 'Long Evans'; % (http://buzsakilab.com/wp/strains/)
 session.animal.geneticLine = 'Wild type';
 
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Extracellular
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 session.analysisTags.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
 session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
 session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
 session.extracellular.probeDepths = 0;
 session.extracellular.precision = 'int16';
 
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 session.spikeSorting{1}.format = 'Phy'; % Sorting data-format: Phy, Kilosort, Klustakwik, KlustaViewer, SpikingCircus, Neurosuite
 session.spikeSorting{1}.method = 'KiloSort'; % Sorting algorith: KiloSort, Klustakwik, MaskedKlustakwik, SpikingCircus
 session.spikeSorting{1}.relativePath = session.general.clusteringPath;
 session.spikeSorting{1}.channels = [];
 
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Brain regions 
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Brain regions  must be defined as index-1. Can be specified on a channel or spike group basis (below example for CA1 across all channels)
 % session.brainRegions.CA1.channels = 1:128; % Brain region assignment (Allan institute Acronyms: http://atlas.brain-map.org/atlas?atlas=1)
 
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Channel tags
-% % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Channel tags must be defined as 1-index. Each tag is a fieldname with the
 % channels or spike groups as subfields. Below examples shows 5 tags (Theta, Ripple, RippleNoise, Cortical, Bad)
 
@@ -143,7 +143,9 @@ else
     sessionInfo = [];
 end
 
-% Channel tags
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Importing channel tags
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if isfield(sessionInfo,'badchannels')
     if isfield(session.channelTags,'Bad')
         session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,sessionInfo.badchannels+1]);
@@ -163,7 +165,9 @@ if isfield(sessionInfo,'channelTags')
     end
 end
 
-% Brain regions
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Importing brain regions
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if isfield(sessionInfo,'region')
     load BrainRegions.mat
     regionNames = unique(cellfun(@num2str,sessionInfo.region,'uni',0));
@@ -189,12 +193,16 @@ if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'fi
     end
 end
 
-% Time series
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Importing time series
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Loading info about time series from Intan metadatafile info.rhd
 session = loadIntanMetadata(session);
 
 
-% Skipped and dead channels
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Importing skipped and dead channels
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if (importSkippedChannels || importSyncedChannels) && exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
     sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
     

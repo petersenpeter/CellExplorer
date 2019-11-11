@@ -13,7 +13,7 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 08-11-2019
+% Last edited: 11-11-2019
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
@@ -546,7 +546,11 @@ uiwait(UI.fig)
         session.general.name = UI.edit.session.String;
         session.general.basePath = UI.edit.basepath.String;
         session.general.clusteringPath = UI.edit.clusteringpath.String;
-            
+        session.general.duration = UI.edit.duration.String;
+        session.general.location = UI.edit.location.String;
+        session.general.experimenters = UI.edit.experimenters.String;
+        session.general.notes = UI.edit.notes.String;
+        
         session.animal.name = UI.edit.name.String;
         session.animal.sex = UI.edit.sex.String{UI.edit.sex.Value};
         session.animal.species = UI.edit.species.String;
