@@ -19,7 +19,7 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
 sortingFormatList = {'Phy', 'KiloSort', 'SpikingCircus', 'Klustakwik', 'KlustaViewer', 'Neurosuite'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
-
+sessionTypesList = {'Chronic', 'Acute'}; % session types
 % % % % % % % % % % % % % % % % % % % %
 % Handling inputs
 % % % % % % % % % % % % % % % % % % % %
@@ -156,7 +156,8 @@ statusExit = 0;
 % % % % % % % % % % % % % % % % % % % %
 
 % Creating figure for the GUI
-UI.fig = figure('units','pixels','position',[50,50,600,560],'Name','Session','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape'); movegui(UI.fig,'center')
+UI.fig = figure('units','pixels','position',[50,50,600,560],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','visible','off'); 
+movegui(UI.fig,'center')
 
 % Tabs
 % tempPosition = UI.fig.InnerPosition;
@@ -165,6 +166,7 @@ if exist('parameters','var')
     UI.tabs.parameters = uitab(UI.uitabgroup,'Title','Cell metrics');
 end
 UI.tabs.general = uitab(UI.uitabgroup,'Title','General');
+UI.tabs.epochs = uitab(UI.uitabgroup,'Title','Epochs');
 UI.tabs.animal = uitab(UI.uitabgroup,'Title','Animal');
 UI.tabs.extracellular = uitab(UI.uitabgroup,'Title','Extracellular');
 UI.tabs.spikeSorting = uitab(UI.uitabgroup,'Title','Spike sorting');
@@ -210,13 +212,17 @@ end
 % % % % % % % % % % % % % % % % % % % %
 % General
 % % % % % % % % % % % % % % % % % % % %
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session name (base name)', 'Position', [10, 500, 580, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 475, 580, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'base path', 'Position', [10, 448, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 425, 580, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Base path', 'Position', [10, 500, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 475, 580, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Relative clustering path', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session name (base name)', 'Position', [10, 450, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 425, 280, 25],'HorizontalAlignment','left','Units','normalized');
+
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [300, 450, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', sessionTypesList, 'Position', [300, 425, 290, 25],'HorizontalAlignment','left','Units','normalized');
+
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Clustering path (relative)', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Duration', 'Position', [300, 398, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
@@ -234,20 +240,33 @@ UI.edit.location = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String',
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Experimenters', 'Position', [300, 298, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.experimenters = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 275, 290, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 248, 580, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', 'temp', 'Position', [10, 225, 580, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Investigator', 'Position', [10, 255, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.investigator = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 230, 280, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Projects', 'Position', [300, 255, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.projects = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 230, 290, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Repositories', 'Position', [10, 205, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.repositories = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 180, 280, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'DB entry ID', 'Position', [300, 205, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 180, 290, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 150, 580, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', 'temp', 'Position', [10, 10, 580, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
 
 % % % % % % % % % % % % % % % % % % % % %
 % Epochs
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.table.epochs = uitable(UI.tabs.general,'Data',tableData,'Position',[1, 40, 599, 160],'ColumnWidth',{20 20 160 100 100 100 60 80 80 95},'columnname',{'','','Name','Paradigm','Environment','Manipulations','Stimuli','Start time','Stop time','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[10, 5, 100, 30],'String','Add epoch','Callback',@(src,evnt)addEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Edit epoch','Callback',@(src,evnt)editEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[230, 5 100, 30],'String','Delete epoch(s)','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[420, 5, 80, 30],'String','Move up','Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[510, 5 80, 30],'String','Move down','Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
+% uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 20 160 100 100 100 60 80 80 95},'columnname',{'','','Name','Paradigm','Environment','Manipulations','Stimuli','Start time','Stop time','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Add epoch','Callback',@(src,evnt)addEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[110, 10, 100, 30],'String','Edit epoch','Callback',@(src,evnt)editEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[220, 10 100, 30],'String','Delete epoch(s)','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[330, 10, 80, 30],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[420, 10, 80, 30],'String','Move up','Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[510, 10 80, 30],'String','Move down','Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -306,9 +325,9 @@ UI.list.tableData = {false,'','',''};
 UI.table.spikeGroups = uitable(UI.tabs.extracellular,'Data',UI.list.tableData,'Position',[1, 50, 599, 300],'ColumnWidth',{20 50 370 139},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[370, 10, 100, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[480, 10, 110, 30],'String','Import from buzcode','Callback',@(src,evnt)syncSpikeGroups,'Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[350, 10, 110, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[470, 10, 120, 30],'String','Import from buzcode','Callback',@(src,evnt)syncSpikeGroups,'Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -362,7 +381,7 @@ UI.table.behaviors = uitable(UI.tabs.behaviors,'Data',tableData,'Position',[1, 5
 uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add tracking','Callback',@(src,evnt)addBehavior,'Units','normalized');
 uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit tracking','Callback',@(src,evnt)editBehavior,'Units','normalized');
 uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete tracking(s)','Callback',@(src,evnt)deleteBehavior,'Units','normalized');
-% uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[330, 10, 160, 30],'String','Import tracking?','Callback',@(src,evnt)importBadChannelsFromXML);
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[340, 10, 100, 30],'String','Duplicate tracking','Callback',@(src,evnt)duplicateBehavior,'Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -373,7 +392,7 @@ UI.table.analysis = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add analysis tag','Callback',@(src,evnt)addAnalysis,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit analysis tag','Callback',@(src,evnt)editAnalysis,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized');
-% uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[330, 10, 160, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML);
+% uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[340, 10, 110, 30],'String','Duplicate tag','Callback',@(src,evnt)duplicateAnalysis,'Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -387,7 +406,7 @@ uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[230, 10, 
 uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[490, 10, 100, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
 
 loadSessionStruct
-
+UI.fig.Visible = 'on';
 uiwait(UI.fig)
 
 %% % % % % % % % % % % % % % % % % % % % %
@@ -414,21 +433,44 @@ uiwait(UI.fig)
         UIsetString(session.general,'time');
         UIsetString(session.general,'duration');
         if isfield(session.general,'experimenters') && ~isempty(session.general.experimenters)
-            UI.edit.experimenters.String = strjoin(session.general.experimenters,', ');
-        else
-            UI.edit.experimenters.String = '';
+            if iscell(session.general.experimenters)
+                UI.edit.experimenters.String = strjoin(session.general.experimenters,', ');
+            else
+                UI.edit.experimenters.String = session.general.experimenters;
+            end
         end
         if isfield(session.general,'location') && ~isempty(session.general.location)
             UI.edit.location.String = session.general.location;
-        else
-            UI.edit.location.String = '';
         end
         if isfield(session.general,'notes') && ~isempty(session.general.notes)
-            session.general.notes = regexprep(session.general.notes, '<.*?>', '' ) ;
+            session.general.notes = regexprep(session.general.notes, '<.*?>', '' );
             UI.edit.notes.String = session.general.notes;
-        else
-            UI.edit.notes.String = '';
         end
+        
+        UIsetString(session.general,'investigator');
+        UI.edit.sessionID.String = num2str(session.general.entryID);
+        
+        if isfield(session.general,'sessionType') && ~isempty(session.general.sessionType)
+            UI.edit.sessionType.Value = find(strcmp(session.general.sessionType,sessionTypesList));
+        end
+        if isfield(session.general,'repositories') && ~isempty(session.general.repositories)
+            if iscell(session.general.repositories)
+                UI.edit.repositories.String = strjoin(session.general.repositories,', ');
+            else
+                UI.edit.repositories.String = session.general.repositories;
+            end
+        else
+            UI.edit.repositories.String = '';
+        end
+        if isfield(session.general,'projects') && ~isempty(session.general.projects)
+            if iscell(session.general.projects)
+                UI.edit.projects.String = strjoin(session.general.projects,', ');
+            else
+                UI.edit.projects.String = session.general.projects;
+            end
+        end
+        
+        
         updateEpochsList
         updateSpikeGroupsList
         updateSpikeSortingList
@@ -550,6 +592,7 @@ uiwait(UI.fig)
         session.general.location = UI.edit.location.String;
         session.general.experimenters = UI.edit.experimenters.String;
         session.general.notes = UI.edit.notes.String;
+        session.general.sessionType = sessionTypesList{UI.edit.sessionType.Value};
         
         session.animal.name = UI.edit.name.String;
         session.animal.sex = UI.edit.sex.String{UI.edit.sex.Value};
@@ -557,6 +600,7 @@ uiwait(UI.fig)
         session.animal.strain = UI.edit.strain.String;
         session.animal.geneticLine = UI.edit.geneticLine.String;
         
+        % Extracellular
         if ~strcmp(UI.edit.leastSignificantBit.String,'')
             session.extracellular.leastSignificantBit = str2double(UI.edit.leastSignificantBit.String);
         end
@@ -895,13 +939,19 @@ uiwait(UI.fig)
             initSpikeGroups = '';
         end
         % Opens dialog
-        UI.dialog.brainRegion = dialog('Position', [300, 300, 600, 400],'Name','Add brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
+        UI.dialog.brainRegion = dialog('Position', [300, 300, 600, 400],'Name','Brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
         
         uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 375, 580, 20],'HorizontalAlignment','left');
         brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 350, 580, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
+        if exist('regionIn','var')
+            brainRegionsTextfield.Enable = 'off';
+        end
         
         uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Selct brain region below', 'Position', [10, 320, 580, 20],'HorizontalAlignment','left');
         brainRegionsList = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'ListBox', 'String', brainRegions_list, 'Position', [10, 100, 580, 220],'Value',InitBrainRegion);
+        if exist('regionIn','var')
+            brainRegionsList.Enable = 'off';
+        end
         
         uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 75, 280, 20],'HorizontalAlignment','left');
         brainRegionsChannels = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 280, 25],'HorizontalAlignment','left');
@@ -1006,11 +1056,13 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.tags = dialog('Position', [300, 300, 500, 160],'Name','Add channel tag','WindowStyle','modal'); movegui(UI.dialog.tags,'center')
+        UI.dialog.tags = dialog('Position', [300, 300, 500, 160],'Name','Channel tag','WindowStyle','modal'); movegui(UI.dialog.tags,'center')
         
         uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', 'Channel tag name (e.g. Theta, Gamma, Bad, Cortical, Ripple, RippleNoise)', 'Position', [10, 130, 480, 20],'HorizontalAlignment','left');
         tagsTextfield = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', InitTag, 'Position', [10, 105, 480, 25],'HorizontalAlignment','left');
-        
+        if exist('regionIn','var')
+            tagsTextfield.Enable = 'off';
+        end
         uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
         tagsChannels = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
         
@@ -1116,11 +1168,13 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.inputs = dialog('Position', [300, 300, 500, 215],'Name','Add input','WindowStyle','modal'); movegui(UI.dialog.inputs,'center')
+        UI.dialog.inputs = dialog('Position', [300, 300, 500, 215],'Name','Input','WindowStyle','modal'); movegui(UI.dialog.inputs,'center')
         
         uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'input name', 'Position', [10, 195, 230, 20],'HorizontalAlignment','left');
         inputsTextfield = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', InitInput, 'Position', [10, 170, 230, 25],'HorizontalAlignment','left');
-        
+        if exist('regionIn','var')
+            inputsTextfield.Enable = 'off';
+        end
         uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Equipment', 'Position', [250, 195, 240, 20],'HorizontalAlignment','left');
         inputsEquipment = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', InitEquipment, 'Position', [250, 170, 240, 25],'HorizontalAlignment','left');
         
@@ -1315,7 +1369,7 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.epochs = dialog('Position', [300, 300, 500, 215],'Name','Add epoch','WindowStyle','modal'); movegui(UI.dialog.epochs,'center')
+        UI.dialog.epochs = dialog('Position', [300, 300, 500, 215],'Name','Epoch','WindowStyle','modal'); movegui(UI.dialog.epochs,'center')
         
         uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Name', 'Position', [10, 195, 230, 20],'HorizontalAlignment','left');
         epochsName = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', InitName, 'Position', [10, 170, 230, 25],'HorizontalAlignment','left');
@@ -1382,6 +1436,19 @@ uiwait(UI.fig)
             addEpoch(fieldtoedit)
         else
             errordlg(['Please select the epoch to edit'],'Error')
+        end
+    end
+
+    function duplicateEpoch
+        % Selected epoch is parsed to the addEpoch dialog for edits,
+        if ~isempty(UI.table.epochs.Data) && ~isempty(find([UI.table.epochs.Data{:,1}], 1)) && sum([UI.table.epochs.Data{:,1}]) == 1
+            fieldtoedit = find([UI.table.epochs.Data{:,1}]);
+            session.epochs{end+1} = session.epochs{fieldtoedit};
+            session.epochs{end}.name = [session.epochs{fieldtoedit}.name,'_duplicated'];
+            updateEpochsList
+            addEpoch(length(session.epochs));
+        else
+            errordlg(['Please select the epoch to duplicate'],'Error')
         end
     end
 
@@ -1452,7 +1519,7 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.behaviors = dialog('Position', [300, 300, 500, 215],'Name','Add behavior','WindowStyle','modal'); movegui(UI.dialog.behaviors,'center')
+        UI.dialog.behaviors = dialog('Position', [300, 300, 500, 215],'Name','Behavior','WindowStyle','modal'); movegui(UI.dialog.behaviors,'center')
         
         uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'File names', 'Position', [10, 195, 230, 20],'HorizontalAlignment','left');
         behaviorsFileNames = uicontrol('Parent',UI.dialog.behaviors,'Style', 'Edit', 'String', InitFilenames, 'Position', [10, 170, 230, 25],'HorizontalAlignment','left');
@@ -1518,6 +1585,19 @@ uiwait(UI.fig)
             addBehavior(fieldtoedit)
         else
             errordlg(['Please select the behavior to edit'],'Error')
+        end
+    end
+
+    function duplicateBehavior
+        % Selected behavior is parsed to the addBehavior dialog for edits,
+        if ~isempty(UI.table.behaviors.Data) && ~isempty(find([UI.table.behaviors.Data{:,1}], 1)) && sum([UI.table.behaviors.Data{:,1}]) == 1
+            fieldtoedit = find([UI.table.behaviors.Data{:,1}]);
+            session.behavioralTracking{end+1} = session.behavioralTracking{fieldtoedit};
+            session.behavioralTracking{end}.filenames = [session.behavioralTracking{fieldtoedit}.filenames,'_duplicated'];
+            updateBehaviorsList;
+            addBehavior(length(session.behavioralTracking));
+        else
+            errordlg(['Please select the tracking to duplicate'],'Error')
         end
     end
 
@@ -1604,7 +1684,7 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.spikeSorting = dialog('Position', [300, 300, 500, 245],'Name','Add spike sorting','WindowStyle','modal'); movegui(UI.dialog.spikeSorting,'center')
+        UI.dialog.spikeSorting = dialog('Position', [300, 300, 500, 245],'Name','Spike sorting','WindowStyle','modal'); movegui(UI.dialog.spikeSorting,'center')
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting method', 'Position', [10, 205, 230, 20],'HorizontalAlignment','left');
         spikeSortingMethod = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', sortingMethodList, 'Position', [10, 180, 230, 25],'HorizontalAlignment','left');
@@ -1705,11 +1785,13 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.analysis = dialog('Position', [300, 300, 500, 160],'Name','Add analysis tag','WindowStyle','modal'); movegui(UI.dialog.analysis,'center')
+        UI.dialog.analysis = dialog('Position', [300, 300, 500, 160],'Name','Analysis tag','WindowStyle','modal'); movegui(UI.dialog.analysis,'center')
         
         uicontrol('Parent',UI.dialog.analysis,'Style', 'text', 'String', 'Analysis tag name', 'Position', [10, 130, 480, 20],'HorizontalAlignment','left');
         analysisName = uicontrol('Parent',UI.dialog.analysis,'Style', 'Edit', 'String', InitAnalysis, 'Position', [10, 105, 480, 25],'HorizontalAlignment','left');
-        
+        if exist('regionIn','var')
+            analysisName.Enable = 'off';
+        end
         uicontrol('Parent',UI.dialog.analysis,'Style', 'text', 'String', 'Value', 'Position', [10, 75, 480, 20],'HorizontalAlignment','left');
         analysisValue = uicontrol('Parent',UI.dialog.analysis,'Style', 'Edit', 'String', initValue, 'Position', [10, 50, 840, 25],'HorizontalAlignment','left');
         
@@ -1828,7 +1910,7 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.timeSeries = dialog('Position', [300, 300, 500, 255],'Name','Add time serie','WindowStyle','modal'); movegui(UI.dialog.timeSeries,'center')
+        UI.dialog.timeSeries = dialog('Position', [300, 300, 500, 255],'Name','Time serie','WindowStyle','modal'); movegui(UI.dialog.timeSeries,'center')
         
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'File name', 'Position', [10, 225, 230, 20],'HorizontalAlignment','left');
         timeSeriesFileName = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'edit', 'String', InitFileName, 'Position', [10, 200, 230, 25],'HorizontalAlignment','left');
@@ -1947,7 +2029,7 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.spikeGroups = dialog('Position', [300, 300, 500, 210],'Name','Add spike group','WindowStyle','modal'); movegui(UI.dialog.spikeGroups,'center')
+        UI.dialog.spikeGroups = dialog('Position', [300, 300, 500, 210],'Name','Spike group','WindowStyle','modal'); movegui(UI.dialog.spikeGroups,'center')
         
         uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [10, 175, 480, 20],'HorizontalAlignment','left');
         spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'Edit', 'String', initSpikeGroups, 'Position', [10, 150, 480, 25],'HorizontalAlignment','left','enable', 'off');
@@ -2004,7 +2086,7 @@ uiwait(UI.fig)
         uniqueChannels = length(unique(channels));
         nChannels = length(channels);
         if nChannels ~= session.extracellular.nChannels
-            errordlg('Channel count in spike groups does not corresponds to nChannels','Error')
+            errordlg(['Channel count in spike groups (', num2str(nChannels), ') does not corresponds to nChannels (',num2str(session.extracellular.nChannels),')'],'Error')
         elseif uniqueChannels ~= session.extracellular.nChannels
             errordlg('The unique channel count does not corresponds to nChannels','Error')
         elseif any(sort(channels) ~= [1:session.extracellular.nChannels]-1)

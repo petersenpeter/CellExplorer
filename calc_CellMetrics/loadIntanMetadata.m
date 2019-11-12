@@ -16,6 +16,10 @@ else
 end
 if exist('read_Intan_RHD2000_file_from_basepath','file') && exist(fullfile(basepath,'info.rhd'),'file')
     Intan_rec_info = read_Intan_RHD2000_file_from_basepath(basepath);
+    if iscell(session.timeSeries)
+        warning('session.timeSeries not formatted correctly. Overwriting existing structure.')
+        session.timeSeries = [];
+    end
     if isfield(Intan_rec_info,'board_adc_channels')
         session.timeSeries.adc.fileName  = 'analogin.dat';
         session.timeSeries.adc.precision  = 'uint16';

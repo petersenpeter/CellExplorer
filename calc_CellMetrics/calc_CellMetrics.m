@@ -52,7 +52,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 
 %   By Peter Petersen
 %   petersen.peter@gmail.com
-%   Last edited: 08-11-2019
+%   Last edited: 12-11-2019
 
 %   TODO
 %   Exclude spikes during manipulations
@@ -898,7 +898,9 @@ end
 
 session.general.sessionName = session.general.name;
 cell_metrics.sessionName = repmat({session.general.name},1,cell_metrics.general.cellCount);
+cell_metrics.sessionType = repmat({session.general.sessionType},1,cell_metrics.general.cellCount);
 cell_metrics.animal = repmat({session.animal.name},1,cell_metrics.general.cellCount);
+
 listMetrics = {'sex','species','strain','geneticLine'};
 for i = find(isfield(session.animal,listMetrics))
     cell_metrics.(listMetrics{i}) = repmat({session.animal.(listMetrics{i})},1,cell_metrics.general.cellCount);
@@ -1000,7 +1002,6 @@ end
 if ~isfield(cell_metrics,'labels')
     cell_metrics.labels = repmat({''},1,cell_metrics.general.cellCount);
 end
-
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % cell_classification_putativeCellType
