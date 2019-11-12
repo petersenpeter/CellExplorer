@@ -13,13 +13,14 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 11-11-2019
+% Last edited: 12-11-2019
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
 sortingFormatList = {'Phy', 'KiloSort', 'SpikingCircus', 'Klustakwik', 'KlustaViewer', 'Neurosuite'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
+
 % % % % % % % % % % % % % % % % % % % %
 % Handling inputs
 % % % % % % % % % % % % % % % % % % % %
@@ -213,13 +214,13 @@ end
 % General
 % % % % % % % % % % % % % % % % % % % %
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Base path', 'Position', [10, 500, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Base path', 'Position', [10, 498, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 475, 580, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session name (base name)', 'Position', [10, 450, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session name (base name)', 'Position', [10, 448, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 425, 280, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [300, 450, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [300, 448, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', sessionTypesList, 'Position', [300, 425, 290, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Clustering path (relative)', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
@@ -240,19 +241,19 @@ UI.edit.location = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String',
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Experimenters', 'Position', [300, 298, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.experimenters = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 275, 290, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Investigator', 'Position', [10, 255, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Investigator', 'Position', [10, 253, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.investigator = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 230, 280, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Projects', 'Position', [300, 255, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Projects', 'Position', [300, 253, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.projects = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 230, 290, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Repositories', 'Position', [10, 205, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Repositories', 'Position', [10, 203, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.repositories = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 180, 280, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'DB entry ID', 'Position', [300, 205, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'DB entry ID', 'Position', [300, 203, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 180, 290, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 150, 580, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 580, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', 'temp', 'Position', [10, 10, 580, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -448,8 +449,9 @@ uiwait(UI.fig)
         end
         
         UIsetString(session.general,'investigator');
-        UI.edit.sessionID.String = num2str(session.general.entryID);
-        
+        if isfield(session.general,'entryID')
+            UI.edit.sessionID.String = session.general.entryID;
+        end
         if isfield(session.general,'sessionType') && ~isempty(session.general.sessionType)
             UI.edit.sessionType.Value = find(strcmp(session.general.sessionType,sessionTypesList));
         end
@@ -692,7 +694,7 @@ uiwait(UI.fig)
             end
             for fn = 1:nTotal
                 tableData{fn,1} = false;
-                tableData{fn,2} = num2str(fn);
+                tableData{fn,2} = fn;
                 if isnumeric(session.extracellular.spikeGroups.channels)
                     tableData{fn,3} = num2str(session.extracellular.spikeGroups.channels(fn,:));
                 else
@@ -717,7 +719,7 @@ uiwait(UI.fig)
             tableData = cell(nEntries,10);
             tableData(:,1) = {false};
             for fn = 1:nEntries
-                tableData{fn,2} = num2str(fn);
+                tableData{fn,2} = fn;
                 tableData{fn,3} = session.epochs{fn}.name;
                 if isfield(session.epochs{fn},'behavioralParadigm') && ~isempty(session.epochs{fn}.behavioralParadigm)
                     tableData{fn,4} = session.epochs{fn}.behavioralParadigm;
@@ -732,7 +734,7 @@ uiwait(UI.fig)
                     tableData{fn,7} = session.epochs{fn}.stimuli;
                 end
                 if isfield(session.epochs{fn},'startTime') && ~isempty(session.epochs{fn}.startTime)
-                    tableData{fn,8} = num2str(session.epochs{fn}.startTime);
+                    tableData{fn,8} = session.epochs{fn}.startTime;
                 end
                 if isfield(session.epochs{fn},'stopTime') && ~isempty(session.epochs{fn}.stopTime)
                     tableData{fn,9} = session.epochs{fn}.stopTime;
@@ -794,13 +796,13 @@ uiwait(UI.fig)
                     tableData{fn,3} = session.behavioralTracking{fn}.equipment;
                 end
                 if isfield(session.behavioralTracking{fn},'epoch') && ~isempty(session.behavioralTracking{fn}.epoch)
-                    tableData{fn,4} = num2str(session.behavioralTracking{fn}.epoch);
+                    tableData{fn,4} = session.behavioralTracking{fn}.epoch;
                 end
                 if isfield(session.behavioralTracking{fn},'type') && ~isempty(session.behavioralTracking{fn}.type)
                     tableData{fn,5} = session.behavioralTracking{fn}.type;
                 end
                 if isfield(session.behavioralTracking{fn},'framerate') && ~isempty(session.behavioralTracking{fn}.framerate)
-                    tableData{fn,6} = num2str(session.behavioralTracking{fn}.framerate);
+                    tableData{fn,6} = session.behavioralTracking{fn}.framerate;
                 end
                 if isfield(session.behavioralTracking{fn},'notes') && ~isempty(session.behavioralTracking{fn}.notes)
                     tableData{fn,7} = session.behavioralTracking{fn}.notes;
@@ -837,10 +839,10 @@ uiwait(UI.fig)
                     tableData{fn,7} = session.spikeSorting{fn}.notes;
                 end
                 if isfield(session.spikeSorting{fn},'cellMetrics') && ~isempty(session.spikeSorting{fn}.cellMetrics)
-                    tableData{fn,8} = num2str(session.spikeSorting{fn}.cellMetrics);
+                    tableData{fn,8} = session.spikeSorting{fn}.cellMetrics;
                 end
                 if isfield(session.spikeSorting{fn},'manuallyCurated') && ~isempty(session.spikeSorting{fn}.manuallyCurated)
-                    tableData{fn,9} = num2str(session.spikeSorting{fn}.manuallyCurated);
+                    tableData{fn,9} = session.spikeSorting{fn}.manuallyCurated;
                 end
             end
             UI.table.spikeSorting.Data = tableData;
@@ -882,16 +884,16 @@ uiwait(UI.fig)
                     tableData{fn,4} = session.timeSeries.(Fieldnames{fn}).precision;
                 end
                 if isfield(session.timeSeries.(Fieldnames{fn}),'nChannels') && ~isempty(session.timeSeries.(Fieldnames{fn}).nChannels)
-                    tableData{fn,5} = num2str(session.timeSeries.(Fieldnames{fn}).nChannels);
+                    tableData{fn,5} = session.timeSeries.(Fieldnames{fn}).nChannels;
                 end
                 if isfield(session.timeSeries.(Fieldnames{fn}),'sr') && ~isempty(session.timeSeries.(Fieldnames{fn}).sr)
-                    tableData{fn,6} = num2str(session.timeSeries.(Fieldnames{fn}).sr);
+                    tableData{fn,6} = session.timeSeries.(Fieldnames{fn}).sr;
                 end
                 if isfield(session.timeSeries.(Fieldnames{fn}),'nSamples') && ~isempty(session.timeSeries.(Fieldnames{fn}).nSamples)
-                    tableData{fn,7} = num2str(session.timeSeries.(Fieldnames{fn}).nSamples);
+                    tableData{fn,7} = session.timeSeries.(Fieldnames{fn}).nSamples;
                 end
                 if isfield(session.timeSeries.(Fieldnames{fn}),'leastSignificantBit') && ~isempty(session.timeSeries.(Fieldnames{fn}).leastSignificantBit)
-                    tableData{fn,8} = num2str(session.timeSeries.(Fieldnames{fn}).leastSignificantBit);
+                    tableData{fn,8} = session.timeSeries.(Fieldnames{fn}).leastSignificantBit;
                 end
                 if isfield(session.timeSeries.(Fieldnames{fn}),'equipment') && ~isempty(session.timeSeries.(Fieldnames{fn}).equipment)
                     tableData{fn,9} = session.timeSeries.(Fieldnames{fn}).equipment;
@@ -941,7 +943,7 @@ uiwait(UI.fig)
         % Opens dialog
         UI.dialog.brainRegion = dialog('Position', [300, 300, 600, 400],'Name','Brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 375, 580, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 373, 580, 20],'HorizontalAlignment','left');
         brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 350, 580, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
         if exist('regionIn','var')
             brainRegionsTextfield.Enable = 'off';
@@ -953,10 +955,10 @@ uiwait(UI.fig)
             brainRegionsList.Enable = 'off';
         end
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 75, 280, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 73, 280, 20],'HorizontalAlignment','left');
         brainRegionsChannels = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 280, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [300, 75, 290, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [300, 73, 290, 20],'HorizontalAlignment','left');
         brainRegionsSpikeGroups = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initSpikeGroups, 'Position', [300, 50, 290, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Save region','Callback',@(src,evnt)CloseBrainRegions_dialog);
@@ -1056,17 +1058,17 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.tags = dialog('Position', [300, 300, 500, 160],'Name','Channel tag','WindowStyle','modal'); movegui(UI.dialog.tags,'center')
+        UI.dialog.tags = dialog('Position', [300, 300, 500, 150],'Name','Channel tag','WindowStyle','modal'); movegui(UI.dialog.tags,'center')
         
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', 'Channel tag name (e.g. Theta, Gamma, Bad, Cortical, Ripple, RippleNoise)', 'Position', [10, 130, 480, 20],'HorizontalAlignment','left');
-        tagsTextfield = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', InitTag, 'Position', [10, 105, 480, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', 'Channel tag name (e.g. Theta, Gamma, Bad, Cortical, Ripple, RippleNoise)', 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
+        tagsTextfield = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', InitTag, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
         if exist('regionIn','var')
             tagsTextfield.Enable = 'off';
         end
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 73, 230, 20],'HorizontalAlignment','left');
         tagsChannels = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [250, 75, 240, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [250, 73, 240, 20],'HorizontalAlignment','left');
         tagsSpikeGroups = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initSpikeGroups, 'Position', [250, 50, 240, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.tags,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save tag','Callback',@(src,evnt)CloseTags_dialog);
@@ -1168,24 +1170,24 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.inputs = dialog('Position', [300, 300, 500, 215],'Name','Input','WindowStyle','modal'); movegui(UI.dialog.inputs,'center')
+        UI.dialog.inputs = dialog('Position', [300, 300, 500, 200],'Name','Input','WindowStyle','modal'); movegui(UI.dialog.inputs,'center')
         
-        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'input name', 'Position', [10, 195, 230, 20],'HorizontalAlignment','left');
-        inputsTextfield = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', InitInput, 'Position', [10, 170, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'input name', 'Position', [10, 173, 230, 20],'HorizontalAlignment','left');
+        inputsTextfield = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', InitInput, 'Position', [10, 150, 230, 25],'HorizontalAlignment','left');
         if exist('regionIn','var')
             inputsTextfield.Enable = 'off';
         end
-        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Equipment', 'Position', [250, 195, 240, 20],'HorizontalAlignment','left');
-        inputsEquipment = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', InitEquipment, 'Position', [250, 170, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Equipment', 'Position', [250, 173, 240, 20],'HorizontalAlignment','left');
+        inputsEquipment = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', InitEquipment, 'Position', [250, 150, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Channels', 'Position', [10, 130, 230, 20],'HorizontalAlignment','left');
-        inputsChannels = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', initChannels, 'Position', [10, 105, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Channels', 'Position', [10, 123, 230, 20],'HorizontalAlignment','left');
+        inputsChannels = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Input type', 'Position', [250, 130, 240, 20],'HorizontalAlignment','left');
-        inputsType = uicontrol('Parent',UI.dialog.inputs,'Style', 'popup', 'String', inputsTypeList , 'Position', [250, 105, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Input type', 'Position', [250, 123, 240, 20],'HorizontalAlignment','left');
+        inputsType = uicontrol('Parent',UI.dialog.inputs,'Style', 'popup', 'String', inputsTypeList , 'Position', [250, 100, 240, 25],'HorizontalAlignment','left');
         UIsetValue(inputsType,initInputType)
         
-        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Description', 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Description', 'Position', [10, 73, 230, 20],'HorizontalAlignment','left');
         inputsDescription = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', initDescription, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.inputs,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save input','Callback',@(src,evnt)CloseInputs_dialog);
@@ -1369,28 +1371,28 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.epochs = dialog('Position', [300, 300, 500, 215],'Name','Epoch','WindowStyle','modal'); movegui(UI.dialog.epochs,'center')
+        UI.dialog.epochs = dialog('Position', [300, 300, 500, 250],'Name','Epoch','WindowStyle','modal'); movegui(UI.dialog.epochs,'center')
         
-        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Name', 'Position', [10, 195, 230, 20],'HorizontalAlignment','left');
-        epochsName = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', InitName, 'Position', [10, 170, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Name', 'Position', [10, 223, 230, 20],'HorizontalAlignment','left');
+        epochsName = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', InitName, 'Position', [10, 200, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Paradigm', 'Position', [250, 195, 240, 20],'HorizontalAlignment','left');
-        epochsParadigm = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initParadigm, 'Position', [250, 170, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Paradigm', 'Position', [250, 223, 240, 20],'HorizontalAlignment','left');
+        epochsParadigm = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initParadigm, 'Position', [250, 200, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Environment', 'Position', [10, 130, 230, 20],'HorizontalAlignment','left');
-        epochsEnvironment = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initEnvironment, 'Position', [10, 105, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Environment', 'Position', [10, 173, 230, 20],'HorizontalAlignment','left');
+        epochsEnvironment = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initEnvironment, 'Position', [10, 150, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Manipulation', 'Position', [250, 130, 240, 20],'HorizontalAlignment','left');
-        epochsManipulation = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initManipulation, 'Position', [250, 105, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Manipulation', 'Position', [250, 173, 240, 20],'HorizontalAlignment','left');
+        epochsManipulation = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initManipulation, 'Position', [250, 150, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Start time', 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
-        epochsDuration = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initStartTime, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Start time', 'Position', [10, 123, 230, 20],'HorizontalAlignment','left');
+        epochsStartTime = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initStartTime, 'Position', [10, 100, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Stop time', 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
-        epochsDuration = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initStopTime, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Stop time', 'Position', [250, 123, 240, 20],'HorizontalAlignment','left');
+        epochsStopTime = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initStopTime, 'Position', [250, 100, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Notes', 'Position', [250, 75, 240, 20],'HorizontalAlignment','left');
-        epochsNotes = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initNotes, 'Position', [250, 50, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Notes', 'Position', [10, 73, 440, 20],'HorizontalAlignment','left');
+        epochsNotes = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initNotes, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.epochs,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save epoch','Callback',@(src,evnt)CloseEpochs_dialog);
         uicontrol('Parent',UI.dialog.epochs,'Style','pushbutton','Position',[250, 10, 240, 30],'String','Cancel','Callback',@(src,evnt)CancelEpochs_dialog);
@@ -1413,8 +1415,11 @@ uiwait(UI.fig)
                 if ~isempty(epochsManipulation.String)
                     session.epochs{SelectedEpoch}.manipulation = epochsManipulation.String;
                 end
-                if ~isempty(epochsDuration.String)
-                    session.epochs{SelectedEpoch}.duration = str2double(epochsDuration.String);
+                if ~isempty(epochsStartTime.String)
+                    session.epochs{SelectedEpoch}.startTime = str2double(epochsStartTime.String);
+                end
+                if ~isempty(epochsStopTime.String)
+                    session.epochs{SelectedEpoch}.stopTime = str2double(epochsStopTime.String);
                 end
                 if ~isempty(epochsNotes.String)
                     session.epochs{SelectedEpoch}.notes = epochsNotes.String;
@@ -1519,26 +1524,26 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.behaviors = dialog('Position', [300, 300, 500, 215],'Name','Behavior','WindowStyle','modal'); movegui(UI.dialog.behaviors,'center')
+        UI.dialog.behaviors = dialog('Position', [300, 300, 500, 200],'Name','Behavior','WindowStyle','modal'); movegui(UI.dialog.behaviors,'center')
         
-        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'File names', 'Position', [10, 195, 230, 20],'HorizontalAlignment','left');
-        behaviorsFileNames = uicontrol('Parent',UI.dialog.behaviors,'Style', 'Edit', 'String', InitFilenames, 'Position', [10, 170, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'File names', 'Position', [10, 173, 230, 20],'HorizontalAlignment','left');
+        behaviorsFileNames = uicontrol('Parent',UI.dialog.behaviors,'Style', 'Edit', 'String', InitFilenames, 'Position', [10, 150, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Equipment', 'Position', [250, 195, 240, 20],'HorizontalAlignment','left');
-        behaviorsEquipment = uicontrol('Parent',UI.dialog.behaviors,'Style', 'Edit', 'String', initEquipment, 'Position', [250, 170, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Equipment', 'Position', [250, 173, 240, 20],'HorizontalAlignment','left');
+        behaviorsEquipment = uicontrol('Parent',UI.dialog.behaviors,'Style', 'Edit', 'String', initEquipment, 'Position', [250, 150, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Epoch', 'Position', [10, 130, 230, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Epoch', 'Position', [10, 123, 230, 20],'HorizontalAlignment','left');
         epochList = strcat(cellfun(@num2str,num2cell(1:length(session.epochs)),'un',0),{': '}, cellfun(@(x) x.name,session.epochs,'UniformOutput',false));
         
-        behaviorsEpoch = uicontrol('Parent',UI.dialog.behaviors,'Style', 'popup', 'String', epochList, 'Position', [10, 105, 230, 25],'HorizontalAlignment','left');
+        behaviorsEpoch = uicontrol('Parent',UI.dialog.behaviors,'Style', 'popup', 'String', epochList, 'Position', [10, 100, 230, 25],'HorizontalAlignment','left');
         behaviorsEpoch.Value = initEpoch;
-        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Type', 'Position', [250, 130, 240, 20],'HorizontalAlignment','left');
-        behaviorsType = uicontrol('Parent',UI.dialog.behaviors,'Style', 'Edit', 'String', initType, 'Position', [250, 105, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Type', 'Position', [250, 123, 240, 20],'HorizontalAlignment','left');
+        behaviorsType = uicontrol('Parent',UI.dialog.behaviors,'Style', 'Edit', 'String', initType, 'Position', [250, 100, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Frame rate', 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Frame rate', 'Position', [10, 73, 230, 20],'HorizontalAlignment','left');
         behaviorsFramerate = uicontrol('Parent',UI.dialog.behaviors,'Style', 'Edit', 'String', initFramerate, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Notes', 'Position', [250, 75, 240, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.behaviors,'Style', 'text', 'String', 'Notes', 'Position', [250, 73, 240, 20],'HorizontalAlignment','left');
         behaviorsNotes = uicontrol('Parent',UI.dialog.behaviors,'Style', 'Edit', 'String', initNotes, 'Position', [250, 50, 240, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.behaviors,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save behavior','Callback',@(src,evnt)CloseBehaviors_dialog);
@@ -1684,27 +1689,27 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.spikeSorting = dialog('Position', [300, 300, 500, 245],'Name','Spike sorting','WindowStyle','modal'); movegui(UI.dialog.spikeSorting,'center')
+        UI.dialog.spikeSorting = dialog('Position', [300, 300, 500, 225],'Name','Spike sorting','WindowStyle','modal'); movegui(UI.dialog.spikeSorting,'center')
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting method', 'Position', [10, 205, 230, 20],'HorizontalAlignment','left');
-        spikeSortingMethod = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', sortingMethodList, 'Position', [10, 180, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting method', 'Position', [10, 198, 230, 20],'HorizontalAlignment','left');
+        spikeSortingMethod = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', sortingMethodList, 'Position', [10, 175, 230, 25],'HorizontalAlignment','left');
         UIsetValue(spikeSortingMethod,InitMethod)
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting format', 'Position', [250, 205, 240, 20],'HorizontalAlignment','left');
-        spikeSortinFormat = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', sortingFormatList, 'Position', [250, 180, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting format', 'Position', [250, 198, 240, 20],'HorizontalAlignment','left');
+        spikeSortinFormat = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', sortingFormatList, 'Position', [250, 175, 240, 25],'HorizontalAlignment','left');
         UIsetValue(spikeSortinFormat,initFormat) 
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Relative path', 'Position', [10, 155, 230, 20],'HorizontalAlignment','left');
-        spikeSortingRelativePath = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initRelativePath, 'Position', [10, 130, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Relative path', 'Position', [10, 148, 230, 20],'HorizontalAlignment','left');
+        spikeSortingRelativePath = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initRelativePath, 'Position', [10, 125, 230, 25],'HorizontalAlignment','left');
 
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Channels', 'Position', [250, 155, 240, 20],'HorizontalAlignment','left');
-        spikeSortingChannels = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initChannels, 'Position', [250, 130, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Channels', 'Position', [250, 148, 240, 20],'HorizontalAlignment','left');
+        spikeSortingChannels = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initChannels, 'Position', [250, 125, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Spike sorter', 'Position', [10, 105, 230, 20],'HorizontalAlignment','left');
-        spikeSortingSpikeSorter = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initSpikeSorter, 'Position', [10, 80, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Spike sorter', 'Position', [10, 98, 230, 20],'HorizontalAlignment','left');
+        spikeSortingSpikeSorter = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initSpikeSorter, 'Position', [10, 75, 230, 25],'HorizontalAlignment','left');
                 
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Notes', 'Position', [250, 105, 240, 20],'HorizontalAlignment','left');
-        spikeSortingNotes = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initNotes, 'Position', [250, 80, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Notes', 'Position', [250, 98, 240, 20],'HorizontalAlignment','left');
+        spikeSortingNotes = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initNotes, 'Position', [250, 75, 240, 25],'HorizontalAlignment','left');
         
 %         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Manually curated', 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
         spikeSortingManuallyCurated = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'checkbox','String','Manually curated', 'value', initManuallyCurated, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
@@ -1785,14 +1790,14 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.analysis = dialog('Position', [300, 300, 500, 160],'Name','Analysis tag','WindowStyle','modal'); movegui(UI.dialog.analysis,'center')
+        UI.dialog.analysis = dialog('Position', [300, 300, 500, 150],'Name','Analysis tag','WindowStyle','modal'); movegui(UI.dialog.analysis,'center')
         
-        uicontrol('Parent',UI.dialog.analysis,'Style', 'text', 'String', 'Analysis tag name', 'Position', [10, 130, 480, 20],'HorizontalAlignment','left');
-        analysisName = uicontrol('Parent',UI.dialog.analysis,'Style', 'Edit', 'String', InitAnalysis, 'Position', [10, 105, 480, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.analysis,'Style', 'text', 'String', 'Analysis tag name', 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
+        analysisName = uicontrol('Parent',UI.dialog.analysis,'Style', 'Edit', 'String', InitAnalysis, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
         if exist('regionIn','var')
             analysisName.Enable = 'off';
         end
-        uicontrol('Parent',UI.dialog.analysis,'Style', 'text', 'String', 'Value', 'Position', [10, 75, 480, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.analysis,'Style', 'text', 'String', 'Value', 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
         analysisValue = uicontrol('Parent',UI.dialog.analysis,'Style', 'Edit', 'String', initValue, 'Position', [10, 50, 840, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.analysis,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save tag','Callback',@(src,evnt)CloseAnalysis_dialog);
@@ -1921,22 +1926,22 @@ uiwait(UI.fig)
         if exist('behaviorIn','var')
             timeSeriesType.Enable = 'off';
         end
-        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Precision', 'Position', [10, 175, 230, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Precision', 'Position', [10, 173, 230, 20],'HorizontalAlignment','left');
         timeSeriesPrecision = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initPrecision, 'Position', [10, 150, 230, 25],'HorizontalAlignment','left');
 
-        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'nChannels', 'Position', [250, 175, 240, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'nChannels', 'Position', [250, 173, 240, 20],'HorizontalAlignment','left');
         timeSeriesnChannels = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initnChannels, 'Position', [250, 150, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Sample rate', 'Position', [10, 125, 230, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Sample rate', 'Position', [10, 123, 230, 20],'HorizontalAlignment','left');
         timeSeriesSr = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initSr, 'Position', [10, 100, 230, 25],'HorizontalAlignment','left');
                 
-        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'nSamples', 'Position', [250, 125, 240, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'nSamples', 'Position', [250, 123, 240, 20],'HorizontalAlignment','left');
         timeSeriesnSamples = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initnSamples, 'Position', [250, 100, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Least significant bit', 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Least significant bit', 'Position', [10, 73, 230, 20],'HorizontalAlignment','left');
         timeSeriesLeastSignificantBit = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit','String',initLeastSignificantBit, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Equipment', 'Position', [250, 75, 240, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Equipment', 'Position', [250, 73, 240, 20],'HorizontalAlignment','left');
         timeSerieEquipment = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'edit','String',initEquipment, 'Position', [250, 50, 240, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.timeSeries,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save time serie','Callback',@(src,evnt)CloseTimeSeries_dialog);
@@ -2029,15 +2034,15 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.spikeGroups = dialog('Position', [300, 300, 500, 210],'Name','Spike group','WindowStyle','modal'); movegui(UI.dialog.spikeGroups,'center')
+        UI.dialog.spikeGroups = dialog('Position', [300, 300, 500, 200],'Name','Spike group','WindowStyle','modal'); movegui(UI.dialog.spikeGroups,'center')
         
-        uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [10, 175, 480, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [10, 173, 480, 20],'HorizontalAlignment','left');
         spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'Edit', 'String', initSpikeGroups, 'Position', [10, 150, 480, 25],'HorizontalAlignment','left','enable', 'off');
         
-        uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 125, 480, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
         spikeGroupsChannels = uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', 'Label', 'Position', [10, 75, 480, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', 'Label', 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
         spikeGroupsLabel = uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'Edit', 'String', initLabel, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.spikeGroups,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save spike group','Callback',@(src,evnt)CloseSpikeGroups_dialog);
