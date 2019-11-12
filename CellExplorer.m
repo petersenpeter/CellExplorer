@@ -41,7 +41,7 @@ function cell_metrics = CellExplorer(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 08-11-2019
+% Last edited: 11-11-2019
 
 % Shortcuts to built-in functions
 % initializeSession, DatabaseSessionDialog, saveDialog, restoreBackup,keyPress, defineSpikesPlots, customPlot, importGroundTruth

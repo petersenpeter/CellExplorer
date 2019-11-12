@@ -1,4 +1,4 @@
-function classification_deepSuperficial(session)
+function classification_deepSuperficial(session,varargin)
 % SWR ripples classification of Deep-superficial channels
 % Defines the deep superficial boundary by the sharp wave reversal.
 %
@@ -26,7 +26,7 @@ function classification_deepSuperficial(session)
 % session.extracellular.spikeGroups struct following the xml anatomical format
 % 
 % Requirements
-% downsampled (and lowpass filtered) basename.lfp file in the basePath folder
+% downsampled (and lowpass filtered) basename.lfp file in basepath
 %
 % Dependencies:
 % nanconv (included with the Cell Explorer)
@@ -35,7 +35,14 @@ function classification_deepSuperficial(session)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 08-11-2019
+% Last edited: 12-11-2019
+
+p = inputParser;
+addParameter(p,'buzcode',false,@islogical); % Import skipped channels from the xml as bad channels
+
+% Parsing inputs
+parse(p,varargin{:})
+buzcode = p.Results.buzcode;
 
 % Gets basepath and basename from session struct
 basepath = session.general.basePath;
@@ -44,17 +51,26 @@ basename = session.general.name;
 % Loading detected ripples
 if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
     load(fullfile(basepath,[basename,'.ripples.events.mat']));
+elseif buzcode
+    if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple')
+        disp('  Using RippleNoise reference channel')
+        RippleNoiseChannel = double(LoadBinary(fullfile(basepath,[basename, '.lfp']),'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
+        ripples = bz_FindRipples(basename,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
+    elseif isfield(session.channelTags,'Ripple')
+        ripples = bz_FindRipples(basename,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
+    else
+        error('Ripple channel not defined!')
+    end
 else
     if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple')
         disp('  Using RippleNoise reference channel')
         RippleNoiseChannel = double(LoadBinary(fullfile(basepath,[basename, '.lfp']),'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
-        ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
+        ripples = ce_FindRipples(session,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
     elseif isfield(session.channelTags,'Ripple')
-        ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
+        ripples = ce_FindRipples(session,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
     else
         error('Ripple channel not defined!')
     end
-    
 end
 if isfield(ripples,'detectorinfo') & isfield(ripples.detectorinfo,'detectionparms') & isfield(ripples.detectorinfo.detectionparms,'channel')
     ripple_channel_detector = ripples.detectorinfo.detectionparms.channel;

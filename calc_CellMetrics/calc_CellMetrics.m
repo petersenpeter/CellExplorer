@@ -467,13 +467,13 @@ end
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
     disp('* Deep-Superficial by ripple polarity reversal')
     if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple)
-        lfpExtension = exist_LFP(basepath,basename);
+        lfpExtension = exist_LFP(session);
         if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple') & isnumeric(session.channelTags.Ripple)
             disp('  Using RippleNoise reference channel')
-            RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
-            ripples = bz_FindRipples('basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
+            RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
+            ripples = ce_FindRipples(session,'basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
         elseif isfield(session.channelTags,'Ripple') & isnumeric(session.channelTags.Ripple)
-            ripples = bz_FindRipples('basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
+            ripples = ce_FindRipples(session,'basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
         else
             warning('Ripple channel not defined')
         end
@@ -481,7 +481,7 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
     
     deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') && (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || forceReload == true)
-        lfpExtension = exist_LFP(basepath,basename);
+        lfpExtension = exist_LFP(session);
         if ~exist(deepSuperficial_file,'file')
             if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout')
                 session = determineProbeSpacing(session);
@@ -786,7 +786,7 @@ end
 % if any(contains(metrics,{'ripple_metrics','all'})) && ~any(contains(excludeMetrics,{'ripple_metrics'}))
 %     disp('* Calculating ripple metrics')
 %     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
-%         lfpExtension = exist_LFP(basepath,basename);
+%         lfpExtension = exist_LFP(session);
 %         load(fullfile(basepath,[basename,'.ripples.events.mat']));
 %         [PSTH,PSTH_time] = calc_PSTH(ripples.peaks,spikes);
 %         [rippleModulationIndex,ripplePeakDelay,rippleCorrelogram] = calc_RippleModulationIndex(PSTH,PSTH_time);
