@@ -96,7 +96,11 @@ if ~isempty(bz_db)
                 db_out.(label).EntryKey = entrylist{j};
             end
         else
-            warning(['Failed to entry as name is not a valid varname: ', bz_db.(entrylist{j}).meta.Name])
+            try 
+                warning(['Failed to entry as name is not a valid varname: ', bz_db.(entrylist{j}).meta.Name])
+            catch
+                warning('Failed to entry as name is not a valid varname')
+            end
         end
         
     end

@@ -28,7 +28,6 @@ if ~isfield(session.general,'duration') | session.general.duration == 0 | forceR
         sr = xml.SampleRate;
     end
     fname = [session.general.name '.dat'];
-    
     temp_ = dir(fname);
     
     session.extracellular.nChannels = nChannels;
@@ -51,29 +50,60 @@ end
 % Epochs
 % % % % % % % % % % % % % % % % % % % %
 
-if isempty(session.epochs) || any(cell2mat(cellfun(@(x) ~isfield(x,'duration'),session.epochs,'uni',0))) || any(cell2mat(cellfun(@(x) x.duration,session.epochs,'uni',0)) == 0) || forceReload
-    duration = [];
+if isempty(session.epochs) || any(cell2mat(cellfun(@(x) ~isfield(x,'stopTime'),session.epochs,'uni',0))) || any(cell2mat(cellfun(@(x) x.stopTime,session.epochs,'uni',0)) == 0) || forceReload
+    startTime = [];
+    stopTime = [];
+    startTime(1) = 0;
     for i = 1:size(session.epochs,2)
         fname = 'amplifier.dat';
         if exist(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, fname))
             temp_ = dir(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, fname));
-             duration(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
+             stopTime(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
         elseif exist(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, [session.epochs{i}.name,'.dat']))
             temp_ = dir(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, [session.epochs{i}.name,'.dat']));
-             duration(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
+             stopTime(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
         else
-             duration(i) = 0;
+             stopTime(i) = 0;
         end
-       
-        web_address1 = [db_settings.address,'entries/', num2str(session.epochs{i}.entryIDs)];
+       if i > 1
+           startTime(i) = stopTime(i-1);
+       end
+        web_address1 = [db_settings.address,'entries/', num2str(session.epochs{i}.entryID)];
         options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password);
-        webwrite(web_address1,options,'5ssi4',duration(i));
-        session.epochs{i}.duration = duration(i);
+        webwrite(web_address1,options,'5ssi4',stopTime(i));
+        session.epochs{i}.stopTime = stopTime(i);
+        session.epochs{i}.startTime = startTime(i);
     end
 end
 
 %% % % % % % % % % % % % % % % % % % % %
-% SpikeGroups
+% Electrode groups
+% % % % % % % % % % % % % % % % % % % %
+jsonStructure = [];
+jsonStructure.form_id = 143; % Form id of sessions
+jsonStructure.ca5yu.form = 191; % Form id of spikeGroups repeatable section
+jsonStructure.fiElD_2463 = length(sessionInfo.spikeGroups.groups); % nSpikeGroups
+
+for i = 1:length(sessionInfo.spikeGroups.groups)
+    shank_label = ['shank' num2str(i)];
+    channels = sprintf('%.0f, ' , sessionInfo.spikeGroups.groups{i}); channels = channels(1:end-2);
+    jsonStructure.ca5yu.(shank_label).fiElD_2460 = i; % Group
+    jsonStructure.ca5yu.(shank_label).fiElD_2461 = channels; % Channels
+    jsonStructure.ca5yu.(shank_label).fiElD_2562 = ''; % Label
+    jsonStructure.ca5yu.(shank_label).fiElD_2462 = '1'; % Counter
+end
+
+jsonStructure = jsonencode(jsonStructure);
+jsonStructure = strrep(jsonStructure,'fiElD_','');
+options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+RESPONSE = webwrite(web_address,jsonStructure,options);
+if RESPONSE.success==1
+    disp('Electrode groups successfully submitted to db')
+end
+
+
+%% % % % % % % % % % % % % % % % % % % %
+% Spike groups
 % % % % % % % % % % % % % % % % % % % %
 jsonStructure = [];
 jsonStructure.form_id = 143; % Form id of sessions

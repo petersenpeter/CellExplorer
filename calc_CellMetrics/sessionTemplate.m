@@ -44,8 +44,9 @@ elseif ~exist('session','var')
     session = [];
 end
 
+
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Standard parameters. Please change accordingly to represent your session
+% Standard parameters below. Please change accordingly to represent your session
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 pathPieces = regexp(basepath, filesep, 'split'); % Assumes file structure: animal/session/
 
@@ -72,14 +73,14 @@ session.animal.species = 'Rat'; % Mouse, Rat, ... (http://buzsakilab.com/wp/spec
 session.animal.strain = 'Long Evans'; % (http://buzsakilab.com/wp/strains/)
 session.animal.geneticLine = 'Wild type';
 
+
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Extracellular
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-session.analysisTags.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
-session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
 session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
 session.extracellular.probeDepths = 0;
 session.extracellular.precision = 'int16';
+
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
@@ -88,33 +89,43 @@ session.spikeSorting{1}.format = 'Phy'; % Sorting data-format: Phy, Kilosort, Kl
 session.spikeSorting{1}.method = 'KiloSort'; % Sorting algorith: KiloSort, Klustakwik, MaskedKlustakwik, SpikingCircus
 session.spikeSorting{1}.relativePath = session.general.clusteringPath;
 session.spikeSorting{1}.channels = [];
+session.spikeSorting{1}.manuallyCurated = 1;
+session.spikeSorting{1}.notes = '';
+
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Brain regions 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Brain regions  must be defined as index-1. Can be specified on a channel or spike group basis (below example for CA1 across all channels)
-% session.brainRegions.CA1.channels = 1:128; % Brain region assignment (Allan institute Acronyms: http://atlas.brain-map.org/atlas?atlas=1)
+% Brain regions  must be defined as index 1. Can be specified on a channel or spike group basis (below example for CA1 across all channels)
+% session.brainRegions.CA1.channels = 1:128; % Brain region acronyms from Allan institute: http://atlas.brain-map.org/atlas?atlas=1)
+
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Channel tags
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Channel tags must be defined as 1-index. Each tag is a fieldname with the
-% channels or spike groups as subfields. Below examples shows 5 tags (Theta, Ripple, RippleNoise, Cortical, Bad)
-
+% Channel tags must be defined as index 1. Each tag is a fieldname with the channels or spike groups as subfields.
+% Below examples shows 5 tags (Theta, Ripple, RippleNoise, Cortical, Bad)
 % session.channelTags.Theta.channels = 64; % Theta channel
 % session.channelTags.Ripple.channels = 64; % Ripple channel
-% session.channelTags.Ripple.spikeGroups = 3; % Ripple spike group
 % session.channelTags.RippleNoise.channels = 1; % Ripple Noise reference channel
 % session.channelTags.Cortical.spikeGroups = 3; % Cortical spike groups
 % session.channelTags.Bad.channels = 1; % Bad channels
 % session.channelTags.Bad.spikeGroups = 1; % Bad spike groups (broken shanks)
 
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Analysis tags
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+session.analysisTags.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
+session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
+
+
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Loading parameters from Buzcode and Neurosuite (including skipped and dead channels)
+% Loading parameters from sessionInfo and xml (including skipped and dead channels)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-if exist([session.general.basePath,session.general.name,'.sessionInfo.mat'],'file')
-    load([session.general.basePath,session.general.name,'.sessionInfo.mat'])
+if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'file')
+    load(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']))
 %     sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
     if sessionInfo.spikeGroups.nGroups>0
         session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
@@ -124,9 +135,12 @@ if exist([session.general.basePath,session.general.name,'.sessionInfo.mat'],'fil
         session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
         session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
     end
+    session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
+    session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
     session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
     session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
     session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
+    
 elseif exist('LoadXml.m','file')
     sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
     if isfield(sessionInfo,'SpkGrps')
@@ -137,11 +151,17 @@ elseif exist('LoadXml.m','file')
         session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
         session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
     end
+    session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
+    session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
     session.extracellular.sr = sessionInfo.SampleRate; % Sampling rate of dat file
     session.extracellular.srLfp = sessionInfo.lfpSampleRate; % Sampling rate of lfp file
     session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
 else
     sessionInfo = [];
+end
+
+if ~isfield(session.general,'date') || isempty(session.general.date)
+    session.general.date = sessionInfo.Date;
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -166,6 +186,7 @@ if isfield(sessionInfo,'channelTags')
     end
 end
 
+
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Importing brain regions
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -174,12 +195,18 @@ if isfield(sessionInfo,'region')
     regionNames = unique(cellfun(@num2str,sessionInfo.region,'uni',0));
     regionNames(cellfun('isempty',regionNames)) = [];
     for iRegion = 1:length(regionNames)
-        if any(strcmp(regionNames(iRegion),BrainRegions(:,2)))
-            session.brainRegions.(regionNames{iRegion}).channels = find(strcmp(regionNames(iRegion),sessionInfo.region));
-        elseif strcmp(regionNames(iRegion),'HPC')
-            session.brainRegions.HIP.channels = find(strcmp(regionNames(iRegion),sessionInfo.region));
+        if any(strcmp(regionNames{iRegion},BrainRegions(:,2)))
+            session.brainRegions.(regionNames{iRegion}).channels = find(strcmp(regionNames{iRegion},sessionInfo.region));
+        elseif strcmp(lower(regionNames{iRegion}),'hpc')
+            session.brainRegions.HIP.channels = find(strcmp(regionNames{iRegion},sessionInfo.region));
         else
-            warning(['Brain region does not exist in the Allen Brain Atlas: ' regionNames{iRegion}])
+            disp(['Brain region does not exist in the Allen Brain Atlas: ' regionNames{iRegion}])
+            regionName = regexprep(regionNames{iRegion}, {'[%() ]+', '_+$'}, {'_', ''});
+            tagName = ['brainRegion_', regionName];
+            if all(~strcmp(tagName,fieldnames(session.channelTags)))
+                disp(['Creating a channeltag with assigned channels: ' tagName])
+                session.channelTags.(tagName).channels = find(strcmp(regionNames{iRegion},sessionInfo.region));
+            end
         end
     end
 end
@@ -194,6 +221,7 @@ if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'fi
     end
 end
 
+
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Importing time series
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -205,7 +233,7 @@ session = loadIntanMetadata(session);
 % Importing skipped and dead channels
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if (importSkippedChannels || importSyncedChannels) && exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
-    sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
+    [sessionInfo, rxml] = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
     
     % Removing dead channels by the skip parameter in the xml file
     if importSkippedChannels
@@ -227,6 +255,20 @@ if (importSkippedChannels || importSyncedChannels) && exist(fullfile(session.gen
         session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,badChannels_skipped,badChannels_synced]);
     else
         session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);
+    end
+    % Importing notes
+    try
+    	if isfield(session.general,'notes')
+            session.general.notes = [session.general.notes,'   Notes from xml: ',rxml.child(1).child(3).value,'   Description: ' rxml.child(1).child(4).value];
+        else
+            session.general.notes = ['Notes: ',rxml.child(1).child(3).value,'   Description from xml: ' rxml.child(1).child(4).value];
+        end
+    end
+    % Importing experimenters
+    try
+    	if ~isfield(session.general,'experimenters') || isempty(session.general.experimenters)
+            session.general.experimenters = rxml.child(1).child(2).value;
+        end
     end
 end
 

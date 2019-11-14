@@ -18,7 +18,7 @@ for j = 1:size(acg2,2)
     rsquare(j) = gof.rsquare;
 
     if rem(j,12)==1
-        figure,
+        figure('position',[50,50,1000,800]),
         jj = 1;
     end
     subplot(3,4,jj)

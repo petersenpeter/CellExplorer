@@ -270,15 +270,16 @@ end
 % Initializing cell_metrics struct
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-saveAsFullfile = fullfile(clusteringpath,[basename,'.',saveAs,'.cellinfo.mat']);
+clusteringpath_full = fullfile(basepath,clusteringpath);
+saveAsFullfile = fullfile(clusteringpath_full,[basename,'.',saveAs,'.cellinfo.mat']);
 
 if exist(saveAsFullfile,'file')
     disp(['* Loading existing metrics: ' saveAsFullfile])
     load(saveAsFullfile)
-elseif exist(fullfile(clusteringpath,[saveAs,'.mat']),'file')
+elseif exist(fullfile(clusteringpath_full,[saveAs,'.mat']),'file')
     % For compatibility
     warning(['Loading existing legacy metrics: ' saveAs])
-    load(fullfile(clusteringpath,[saveAs,'.mat']))
+    load(fullfile(clusteringpath_full,[saveAs,'.mat']))
 else
     cell_metrics = [];
 end
@@ -288,8 +289,8 @@ if saveBackup && ~isempty(cell_metrics)
     backupDirectory = 'revisions_cell_metrics';
     disp(['* Creating backup of existing user adjustable metrics ''',backupDirectory,'''']);
     
-    if ~(exist(fullfile(clusteringpath,backupDirectory),'dir'))
-        mkdir(fullfile(clusteringpath,backupDirectory));
+    if ~(exist(fullfile(clusteringpath_full,backupDirectory),'dir'))
+        mkdir(fullfile(clusteringpath_full,backupDirectory));
     end
     
     temp = {};
@@ -314,7 +315,7 @@ if saveBackup && ~isempty(cell_metrics)
     if isfield(cell_metrics,'groundTruthClassification')
         temp.cell_metrics.groundTruthClassification = cell_metrics.groundTruthClassification;
     end
-    save(fullfile(clusteringpath, backupDirectory, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat',]),'cell_metrics','-v7.3','-nocompression', '-struct', 'temp')
+    save(fullfile(clusteringpath_full, backupDirectory, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat',]),'cell_metrics','-v7.3','-nocompression', '-struct', 'temp')
 end
 
 cell_metrics.general.basepath = basepath;
@@ -507,17 +508,22 @@ end
 
 if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(excludeMetrics,{'monoSynaptic_connections'}))
     disp('* Calculating MonoSynaptic connections')
-    if ~exist(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'file') || forceReload == true
+    if ~exist(fullfile(clusteringpath_full,[basename,'.mono_res.cellinfo.mat']),'file')
         spikeIDs = [spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)];
         mono_res = bz_MonoSynConvClick(spikeIDs,spikes.spindices(:,1),'plot',false);
         if manualAdjustMonoSyn
             mono_res = gui_MonoSyn(mono_res);
         end
-        save(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+        save(fullfile(clusteringpath_full,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
     else
         disp('  Loading previous detected MonoSynaptic connections')
-        load(fullfile(clusteringpath,[basename,'.mono_res.cellinfo.mat']),'mono_res');
+        load(fullfile(clusteringpath_full,[basename,'.mono_res.cellinfo.mat']),'mono_res');
+        if forceReload == true && manualAdjustMonoSyn
+            mono_res = gui_MonoSyn(mono_res);
+            save(fullfile(clusteringpath_full,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+        end
     end
+    
     field2remove = {'putativeConnections'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
@@ -612,8 +618,8 @@ if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetr
     cell_metrics = rmfield(cell_metrics,field2remove(test));
 
     % General firing rate map
-    if exist(fullfile(clusteringpath,[basename,'.firingRateMap.firingRateMap.mat']),'file')
-        temp2 = load(fullfile(clusteringpath,[basename,'.firingRateMap.firingRateMap.mat']));
+    if exist(fullfile(clusteringpath_full,[basename,'.firingRateMap.firingRateMap.mat']),'file')
+        temp2 = load(fullfile(clusteringpath_full,[basename,'.firingRateMap.firingRateMap.mat']));
         disp('  Loaded firingRateMap.mat succesfully');
         if isfield(temp2,'firingRateMap')
             firingRateMap = temp2.firingRateMap;
@@ -659,12 +665,12 @@ if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetr
     
     % State dependent firing rate maps
     % e.g. basename.LeftRightRateMap.firingRateMap.mat
-    firingRateMap_filelist = dir(fullfile(clusteringpath,[basename,'.*.firingRateMap.mat'])); 
+    firingRateMap_filelist = dir(fullfile(clusteringpath_full,[basename,'.*.firingRateMap.mat'])); 
     firingRateMap_filelist = {firingRateMap_filelist.name};
     
     for i = 1:length(firingRateMap_filelist)
         
-        temp2 = load(fullfile(clusteringpath,firingRateMap_filelist{i}));
+        temp2 = load(fullfile(clusteringpath_full,firingRateMap_filelist{i}));
         firingRateMapName = strsplit(firingRateMap_filelist{i},'.'); 
         firingRateMapName = firingRateMapName{end-2};
 %         firingRateMapName = firingRateMap_filelist{i}(1:end-4);
@@ -912,23 +918,28 @@ firingRateAcrossTime_binsize = 3*60;
 if max(cellfun(@max,spikes.times))/firingRateAcrossTime_binsize<40
     firingRateAcrossTime_binsize = ceil((max(cellfun(@max,spikes.times))/40)/10)*10;
 end
+
+% Clarning out firingRateAcrossTime
 field2remove = {'firingRateAcrossTime'};
 test = isfield(cell_metrics,field2remove);
 cell_metrics = rmfield(cell_metrics,field2remove(test));
-        
+test = isfield(cell_metrics.general.responseCurves,field2remove);
+cell_metrics.general.responseCurves = rmfield(cell_metrics.general.responseCurves,field2remove(test));
+
 cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges = [0:firingRateAcrossTime_binsize:max(cellfun(@max,spikes.times))];
 cell_metrics.general.responseCurves.firingRateAcrossTime.x_bins = cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges(1:end-1)+firingRateAcrossTime_binsize/2;
 
 if isfield(session,'epochs')
     for j = 1:length(session.epochs)
-        cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries(j) = session.epochs{j}.stopTime;
-        if isfield(session.epochs{j},'behavioralParadigm')
+        if isfield(session.epochs{j},'behavioralParadigm') && isfield(session.epochs{j},'stopTime')
+            cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries(j) = session.epochs{j}.stopTime;
             cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries_labels{j} = session.epochs{j}.behavioralParadigm;
         end
     end
-    cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries = cumsum(cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries);
+    if isfield(cell_metrics.general.responseCurves.firingRateAcrossTime,'boundaries')
+        cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries = cumsum(cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries);
+    end
 end
-
 % cell_metrics.firingRateAcrossTime = mat2cell(zeros(length(cell_metrics.general.firingRateAcrossTime.x_bins),cell_metrics.general.cellCount));
 
 if isfield(session,'brainRegions') & ~isempty(session.brainRegions)

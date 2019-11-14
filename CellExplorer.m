@@ -133,7 +133,7 @@ groundTruthCelltypesList = {''}; ACGLogIntervals = -3:0.04:1; idx_textFilter = [
 cellsExcitatoryPostsynaptic = []; cellsInhibitoryPostsynaptic = []; reference_cell_metrics = []; 
 groundTruth_cell_metrics = []; groundTruthData=[]; K = gausswin(5)*gausswin(5)'; K = 0.5*K/sum(K(:));
 set(groot, 'DefaultFigureVisible', 'on'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1200,maxFigureSize(3)-50), min(800,maxFigureSize(4)-50)];
-set(0,'DefaultAxesLooseInset',[.01,.01,.01,.01])
+
 if isempty(basename)
     s = regexp(basepath, filesep, 'split');
     basename = s{end};
@@ -141,9 +141,9 @@ end
 
 CellExplorerVersion = 1.48;
 
-UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'visible','off');
+UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'visible','off','DefaultAxesLooseInset',[.01,.01,.01,.01]);
+% set(UI.fig,'DefaultAxesLooseInset',[.01,.01,.01,.01])
 hManager = uigetmodemanager(UI.fig);
-
 % % % % % % % % % % % % % % % % % % % % % %
 % User preferences for the Cell Explorer
 % % % % % % % % % % % % % % % % % % % % % %

@@ -370,7 +370,7 @@ nGoodChannels = length(goodChannels);
 
 f = waitbar(0,['Getting waveforms from dat file'],'Name',['Processing ' basename]);
 if showWaveforms
-    fig1 = figure('Name', ['Getting waveforms for ' basename],'NumberTitle', 'off');
+    fig1 = figure('Name', ['Getting waveforms for ' basename],'NumberTitle', 'off','position',[100,100,1000,800]);
 end
 wfWin = round((wfWin_sec * xml.SampleRate)/2);
 t1 = toc(timerVal);
@@ -447,16 +447,14 @@ for ii = 1 : size(spikes.times,2)
     if ishandle(fig1)
         figure(fig1)
         subplot(2,2,1), hold off
-        plot(wfF2), hold on, plot(wfF2(:,idx),'k','linewidth',2), title('Filt waveform across channels'), xlabel('Samples'), hold off
-        
+        plot(wfF2), hold on, plot(wfF2(:,idx),'k','linewidth',2), title('Filtered waveforms across channels'), xlabel('Samples'), ylabel('uV'),hold off
         subplot(2,2,2), hold off,
-        plot(wfF), title('Peak channel waveforms'), xlabel('Samples')
-        
+        plot(wfF), title(['Peak channel waveforms (maxWaveformCh1=',num2str(spikes.maxWaveformCh1(ii)),')']), xlabel('Samples'), ylabel('uV')
         subplot(2,2,3), hold on,
-        plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii}), title('Raw waveform'), xlabel('Time (ms)')
+        plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii}), title(['Raw waveform (',num2str(ii),'/',num2str(size(spikes.times,2)),')']), xlabel('Time (ms)'), ylabel('uV')
         xlim([-0.8,0.8])
         subplot(2,2,4), hold on,
-        plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii}), title('Filtered waveform'), xlabel('Time (ms)')
+        plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii}), title('Filtered waveform'), xlabel('Time (ms)'), ylabel('uV')
         xlim([-0.8,0.8])
     end
     clear wf wfF wf2 wfF2

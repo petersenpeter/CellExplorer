@@ -63,6 +63,7 @@ if gpuDeviceCount>0
     useGPU = true;
 end
 sizeInBytes = 2; %
+timerVal = tic;
 
 %% files check
 fdat = fullfile(basepath,[basename,'.dat']);
@@ -70,7 +71,7 @@ flfp = fullfile(basepath,[basename,'.lfp']);
 
 %Check the dat
 if ~exist(fdat,'file')
-    error('Dat file does not exist')
+    error([basename, '.dat file does not exist'])
 end
 fInfo = dir(fullfile(basepath, [basename '.dat']));
 
@@ -118,17 +119,24 @@ nbChunks = floor(nBytes/(nChannels*sizeInBytes*chunksize));
 fidI = fopen(fdat, 'r');
 fprintf('Extraction of LFP begun \n')
 fidout = fopen(flfp, 'a');
-
+h=waitbar(0,'Please wait...','Name',[basename,'.lfp']);
 for ibatch = 1:nbChunks
-
     if mod(ibatch,10)==0
-        if ibatch~=10
-            fprintf(repmat('\b',[1 length([num2str(round(100*(ibatch-10)/nbChunks)), ' percent complete'])]))
+        if ishandle(h)
+            waitbar(ibatch/(nbChunks+1),h,[num2str(100*ibatch/nbChunks,2),' percent complete (duration ', num2str(toc(timerVal)/60,2),' minutes)'])
+        else
+            warning('LFP extraction cancelled. Deleting partly created .lfp file...')
+            fclose(fidI);
+            fclose(fidout);
+            delete(flfp)
+            return
         end
-        fprintf('%d percent complete', round(100*ibatch/nbChunks));
+        
+        if ibatch~=10
+            fprintf(repmat('\b',[1 length([round(100*(ibatch-10)/nbChunks), ' percent complete'])]))
+        end
+        disp([round(100*(ibatch)/nbChunks), ' percent complete']);
     end
-    
-    h=waitbar(ibatch/(nbChunks+1));
     
     if ibatch>1
         fseek(fidI,((ibatch-1)*(nChannels*sizeInBytes*chunksize))-(nChannels*sizeInBytes*ntbuff),'bof');
@@ -166,11 +174,8 @@ for ibatch = 1:nbChunks
         end
         
     end
-    
     fwrite(fidout,DATA(:),'int16'); 
 end
-
-
 
 remainder = nBytes/(sizeInBytes*nChannels) - nbChunks*chunksize;
 if ~isempty(remainder)
@@ -197,13 +202,15 @@ if ~isempty(remainder)
     
     fwrite(fidout,DATA(:),'int16');
 end
-
+if ishandle(h)
+    waitbar(1,h,['lfp file created. Processing time: ', num2str(toc(timerVal)/60,3),' min']);
+end
 close(h);
 
 fclose(fidI);
 fclose(fidout);
 
-disp(['lfp file created: ', flfp])
+disp(['lfp file created: ', flfp,'. Process time: ' num2str(toc(timerVal)/60,2),' minutes'])
 
     function x = gather_try(x)
         try

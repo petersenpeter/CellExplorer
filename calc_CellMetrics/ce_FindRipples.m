@@ -131,20 +131,20 @@ thresholded = normalizedSquaredSignal > lowThresholdFactor;
 start = find(diff(thresholded)>0);
 stop = find(diff(thresholded)<0);
 % Exclude last ripple if it is incomplete
-if length(stop) == length(start)-1,
+if length(stop) == length(start)-1
 	start = start(1:end-1);
 end
 % Exclude first ripple if it is incomplete
-if length(stop)-1 == length(start),
+if length(stop)-1 == length(start)
     stop = stop(2:end);
 end
 % Correct special case when both first and last ripples are incomplete
-if start(1) > stop(1),
+if start(1) > stop(1)
 	stop(1) = [];
 	start(end) = [];
 end
 firstPass = [start,stop];
-if isempty(firstPass),
+if isempty(firstPass)
 	disp('Detection by thresholding failed');
 	return
 else
@@ -156,7 +156,7 @@ minInterRippleSamples = minInterRippleInterval/1000*frequency;
 secondPass = [];
 ripple = firstPass(1,:);
 for i = 2:size(firstPass,1)
-	if firstPass(i,1) - ripple(2) < minInterRippleSamples,
+	if firstPass(i,1) - ripple(2) < minInterRippleSamples
 		% Merge
 		ripple = [ripple(1) firstPass(i,2)];
 	else
@@ -165,7 +165,7 @@ for i = 2:size(firstPass,1)
 	end
 end
 secondPass = [secondPass ; ripple];
-if isempty(secondPass),
+if isempty(secondPass)
 	disp('Ripple merge failed');
 	return
 else
@@ -177,12 +177,12 @@ thirdPass = [];
 peakNormalizedPower = [];
 for i = 1:size(secondPass,1)
 	[maxValue,maxIndex] = max(normalizedSquaredSignal([secondPass(i,1):secondPass(i,2)]));
-	if maxValue > highThresholdFactor,
+	if maxValue > highThresholdFactor
 		thirdPass = [thirdPass ; secondPass(i,:)];
 		peakNormalizedPower = [peakNormalizedPower ; maxValue];
 	end
 end
-if isempty(thirdPass),
+if isempty(thirdPass)
 	disp('Peak thresholding failed.');
 	return
 else
@@ -191,7 +191,7 @@ end
 
 % Detect negative peak position for each ripple
 peakPosition = zeros(size(thirdPass,1),1);
-for i=1:size(thirdPass,1),
+for i=1:size(thirdPass,1)
 	[minValue,minIndex] = min(signal(thirdPass(i,1):thirdPass(i,2)));
 	peakPosition(i) = minIndex + thirdPass(i,1) - 1;
 end
@@ -250,27 +250,27 @@ if strcmp(show,'on')
 		subplot(nPlots,1,3);
   		ylim([0 highThresholdFactor*1.1]);
 	end
-	for i = 1:nPlots,
+	for i = 1:nPlots
 		subplot(nPlots,1,i);
 		hold on;
   		yLim = ylim;
-		for j=1:size(ripples,1),
+		for j=1:size(ripples,1)
 			plot([ripples(j,1) ripples(j,1)],yLim,'g-');
 			plot([ripples(j,2) ripples(j,2)],yLim,'k-');
 			plot([ripples(j,3) ripples(j,3)],yLim,'r-');
-			if i == 3,
+			if i == 3
 				plot([ripples(j,1) ripples(j,3)],[ripples(j,4) ripples(j,4)],'k-');
 			end
 		end
-		for j=1:size(bad,1),
+		for j=1:size(bad,1)
 			plot([bad(j,1) bad(j,1)],yLim,'k-');
 			plot([bad(j,2) bad(j,2)],yLim,'k-');
 			plot([bad(j,3) bad(j,3)],yLim,'k-');
-			if i == 3,
+			if i == 3
 				plot([bad(j,1) bad(j,3)],[bad(j,4) bad(j,4)],'k-');
 			end
 		end
-		if mod(i,3) == 0,
+		if mod(i,3) == 0
 			plot(xlim,[lowThresholdFactor lowThresholdFactor],'k','linestyle','--');
 			plot(xlim,[highThresholdFactor highThresholdFactor],'k-');
 		end
@@ -325,14 +325,14 @@ y = [y0(shift+1:end,:) ; z(1:shift,:)];
 
 function [U,stdA] = unity(A,sd,restrict)
 
-if ~isempty(restrict),
+if ~isempty(restrict)
 	meanA = mean(A(restrict));
 	stdA = std(A(restrict));
 else
 	meanA = mean(A);
 	stdA = std(A);
 end
-if ~isempty(sd),
+if ~isempty(sd)
 	stdA = sd;
 end
 

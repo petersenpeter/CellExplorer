@@ -157,7 +157,7 @@ statusExit = 0;
 % % % % % % % % % % % % % % % % % % % %
 
 % Creating figure for the GUI
-UI.fig = figure('units','pixels','position',[50,50,600,560],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','visible','off'); 
+UI.fig = figure('units','pixels','position',[50,50,600,560],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape');  % ,'visible','off'
 movegui(UI.fig,'center')
 
 % Tabs
@@ -170,6 +170,7 @@ UI.tabs.general = uitab(UI.uitabgroup,'Title','General');
 UI.tabs.epochs = uitab(UI.uitabgroup,'Title','Epochs');
 UI.tabs.animal = uitab(UI.uitabgroup,'Title','Animal');
 UI.tabs.extracellular = uitab(UI.uitabgroup,'Title','Extracellular');
+
 UI.tabs.spikeSorting = uitab(UI.uitabgroup,'Title','Spike sorting');
 UI.tabs.brainRegions = uitab(UI.uitabgroup,'Title','Brain regions');
 UI.tabs.channelTags = uitab(UI.uitabgroup,'Title','Tags');
@@ -293,6 +294,7 @@ uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Genetic line', 'Po
 UI.edit.geneticLine = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized');
 UIsetString(session.animal,'geneticLine');
 
+
 % % % % % % % % % % % % % % % % % % % % %
 % Extracellular
 % % % % % % % % % % % % % % % % % % % % %
@@ -320,15 +322,31 @@ uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Depth (µm)'
 UI.edit.probeDepths = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [300, 425, 290, 25],'HorizontalAlignment','left','Units','normalized');
 UIsetString(session.extracellular,'probeDepths');
 
-% Spike groups
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Spike groups', 'Position', [10, 350, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+% % % % % % % % % % % % % % % % % % % % % %
+% Channel groups
+% % % % % % % % % % % % % % % % % % % % % % 
+UI.channelGroups = uitabgroup('units','pixels','Position',[0, 0, 599, 365],'Parent',UI.tabs.extracellular,'Units','normalized');
+% Electrode groups
+UI.tabs.electrodeGroups = uitab(UI.channelGroups,'Title','Electrode groups');
 UI.list.tableData = {false,'','',''};
-UI.table.spikeGroups = uitable(UI.tabs.extracellular,'Data',UI.list.tableData,'Position',[1, 50, 599, 300],'ColumnWidth',{20 50 370 139},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[350, 10, 110, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[470, 10, 120, 30],'String','Import from buzcode','Callback',@(src,evnt)syncSpikeGroups,'Units','normalized');
+UI.table.electrodeGroups = uitable(UI.tabs.electrodeGroups,'Data',UI.list.tableData,'Position',[1, 50, 599, 315],'ColumnWidth',{20 50 370 139},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[10, 10, 75, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[95, 10, 75, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
+uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
+
+% Spike groups
+UI.tabs.spikeGroups = uitab(UI.channelGroups,'Title','Spike groups');
+UI.list.tableData = {false,'','',''};
+UI.table.spikeGroups = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 50, 599, 315],'ColumnWidth',{20 50 370 139},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[10, 10, 75, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[95, 10, 75, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -360,7 +378,7 @@ UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300,
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 260, 100, 30],'String','Add channel tag','Callback',@(src,evnt)addTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 100, 30],'String','Edit channel tag','Callback',@(src,evnt)editTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 260, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[440, 260, 160, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[450, 260, 140, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -444,7 +462,7 @@ uiwait(UI.fig)
             UI.edit.location.String = session.general.location;
         end
         if isfield(session.general,'notes') && ~isempty(session.general.notes)
-            session.general.notes = regexprep(session.general.notes, '<.*?>', '' );
+%             session.general.notes = regexprep(session.general.notes, '<.*?>', '');
             UI.edit.notes.String = session.general.notes;
         end
         
@@ -474,7 +492,7 @@ uiwait(UI.fig)
         
         
         updateEpochsList
-        updateSpikeGroupsList
+        updateChannelGroupsList
         updateSpikeSortingList
         updateBrainRegionList
         updateTagList
@@ -615,12 +633,12 @@ uiwait(UI.fig)
         if ~strcmp(UI.edit.nChannels.String,'')
             session.extracellular.nChannels = str2double(UI.edit.nChannels.String);
         end
-        if ~strcmp(UI.edit.probeDepths.String,'')
+        if ~strcmp(UI.edit.probeDepths.String,'') 
             session.extracellular.probeDepths = str2double(UI.edit.probeDepths.String);
+        else
+            session.extracellular.probeDepths = 0;
         end
-        if ~strcmp(UI.edit.precision.String,'')
-            session.extracellular.precision = str2double(UI.edit.precision.String);
-        end
+        session.extracellular.precision = UI.edit.precision.String;
     end
     
     function cancelMetricsWindow
@@ -682,8 +700,35 @@ uiwait(UI.fig)
             UI.table.tags.Data = {};
         end
     end
-    
-    function updateSpikeGroupsList
+
+    function updateChannelGroupsList
+        % Updates the list of electrode groups
+        tableData = {};
+        if isfield(session.extracellular,'electrodeGroups')
+            if isnumeric(session.extracellular.electrodeGroups.channels)
+                nTotal = size(session.extracellular.electrodeGroups.channels,1);
+            else
+                nTotal = size(session.extracellular.electrodeGroups.channels,2);
+            end
+            for fn = 1:nTotal
+                tableData{fn,1} = false;
+                tableData{fn,2} = num2str(fn);
+                if isnumeric(session.extracellular.electrodeGroups.channels)
+                    tableData{fn,3} = num2str(session.extracellular.electrodeGroups.channels(fn,:));
+                else
+                    tableData{fn,3} = num2str(session.extracellular.electrodeGroups.channels{fn});
+                end
+                if isfield(session.extracellular.electrodeGroups,'label') & size(session.extracellular.electrodeGroups.label,2)>=fn
+                    tableData{fn,4} = session.extracellular.electrodeGroups.label{fn};
+                else
+                    tableData{fn,4} = '';
+                end
+            end
+            UI.table.electrodeGroups.Data = tableData;
+        else
+            UI.table.electrodeGroups.Data = {false,'','',''};
+        end
+        
         % Updates the list of spike groups
         tableData = {};
         if isfield(session.extracellular,'spikeGroups')
@@ -694,7 +739,7 @@ uiwait(UI.fig)
             end
             for fn = 1:nTotal
                 tableData{fn,1} = false;
-                tableData{fn,2} = fn;
+                tableData{fn,2} = num2str(fn);
                 if isnumeric(session.extracellular.spikeGroups.channels)
                     tableData{fn,3} = num2str(session.extracellular.spikeGroups.channels(fn,:));
                 else
@@ -1861,12 +1906,8 @@ uiwait(UI.fig)
             else
                 InitFileName = '';
             end
-            % format
-            if isfield(session.timeSeries.(behaviorIn),'type')
-                initType = session.timeSeries.(behaviorIn).type;
-            else
-                initType = 'aux';
-            end
+            % type
+            initType = behaviorIn;
             % precision
             if isfield(session.timeSeries.(behaviorIn),'precision')
                 initPrecision = session.timeSeries.(behaviorIn).precision;
@@ -1905,7 +1946,7 @@ uiwait(UI.fig)
             end
         else 
             InitFileName = '';
-            initType = 'aux';
+            initType = 'adc';
             initPrecision = 'int16';
             initnChannels = '';
             initSr = '';
@@ -2083,15 +2124,15 @@ uiwait(UI.fig)
     end
 
     function verifySpikeGroup
-        if isnumeric(session.extracellular.spikeGroups.channels)
-            channels = session.extracellular.spikeGroups.channels(:);
+        if isnumeric(session.extracellular.electrodeGroups.channels)
+            channels = session.extracellular.electrodeGroups.channels(:);
         else
-            channels = [session.extracellular.spikeGroups.channels{:}];
+            channels = [session.extracellular.electrodeGroups.channels{:}];
         end
         uniqueChannels = length(unique(channels));
         nChannels = length(channels);
         if nChannels ~= session.extracellular.nChannels
-            errordlg(['Channel count in spike groups (', num2str(nChannels), ') does not corresponds to nChannels (',num2str(session.extracellular.nChannels),')'],'Error')
+            errordlg(['Channel count in electrode groups (', num2str(nChannels), ') does not corresponds to nChannels (',num2str(session.extracellular.nChannels),')'],'Error')
         elseif uniqueChannels ~= session.extracellular.nChannels
             errordlg('The unique channel count does not corresponds to nChannels','Error')
         elseif any(sort(channels) ~= [1:session.extracellular.nChannels]-1)
@@ -2100,18 +2141,37 @@ uiwait(UI.fig)
             msgbox('Channels verified succesfully!');
         end
     end
-    
-    function syncSpikeGroups
+
+    function importGroupsFromXML
         xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
         if exist(xml_filepath,'file')
             sessionInfo = LoadXml(xml_filepath);
-            updateSpikeGroupsList
-            msgbox('spike groups imported from buzcode sessionInfo and .xml file');
+            if isfield(sessionInfo,'SpkGrps')
+                session.extracellular.nSpikeGroups = length(sessionInfo.SpkGrps); % Number of spike groups
+                session.extracellular.spikeGroups.channels = {sessionInfo.SpkGrps.Channels}; % Spike groups
+            else
+                disp('No spike groups exist in the xml. Anatomical groups used instead')
+                session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
+                session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
+            end
+            session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
+            session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
+            updateChannelGroupsList
+            msgbox('Channel groups imported from xml file');
         else
             errordlg(['xml file not accessible: ' xml_filepath],'Error')
         end
     end
     
+    function syncChannelGroups
+        answer = questdlg('How do you want to sync the channel groups?','Sync channel groups','electrode groups -> spike groups', 'spike groups -> electrode groups','Cancel','electrode groups -> spike groups');
+        if strcmp(answer,'electrode groups -> spike groups')
+            session.extracellular.spikeGroups = session.extracellular.electrodeGroups;
+        elseif strcmp(answer,'spike groups -> electrode groups')
+            session.extracellular.electrodeGroups = session.extracellular.spikeGroups;
+        end
+        updateChannelGroupsList
+    end
     function importBadChannelsFromXML
         xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
         if exist(xml_filepath,'file')

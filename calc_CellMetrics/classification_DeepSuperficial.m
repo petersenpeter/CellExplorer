@@ -38,7 +38,7 @@ function classification_deepSuperficial(session,varargin)
 % Last edited: 12-11-2019
 
 p = inputParser;
-addParameter(p,'buzcode',false,@islogical); % Import skipped channels from the xml as bad channels
+addParameter(p,'buzcode',false,@islogical); % Defines whether bz_FindRipples or ce_FindRipples is called
 
 % Parsing inputs
 parse(p,varargin{:})

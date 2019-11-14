@@ -14,12 +14,9 @@ forceReload = p.Results.forceReload;
 saveMat = p.Results.saveMat;
 saveAs = p.Results.saveAs;
 
-saveAsFullfile = fullfile(session.general.basePath,[session.general.baseName,'.',saveAs,'.lfp.mat']);
+saveAsFullfile = fullfile(session.general.basePath,[session.general.name,'.',saveAs,'.lfp.mat']);
 
-if ~exist([session.general.baseName, '.lfp']) && ~exist(saveAsFullfile,'file') || forceReload
-    disp('Creating lfp file')
-    bz_LFPfromDat(pwd,'noPrompts',true)
-end
+ch_theta = session.channelTags.Theta.channels;
 
 if ~forceReload && exist(saveAsFullfile,'file')
     disp('Loading existing InstantaneousTheta.lfp.mat file')
@@ -29,7 +26,7 @@ if ~forceReload && exist(saveAsFullfile,'file')
         disp(['InstantaneousTheta not calculated correctly. Hold on'])
         InstantaneousTheta = [];
         forceReload = true;
-    elseif isempty(InstantaneousTheta) || size(InstantaneousTheta.ThetaInstantFreq,2)<recording.ch_theta || isempty(InstantaneousTheta.ThetaInstantFreq{session.channelTags.Theta.channels})
+    elseif isempty(InstantaneousTheta) || size(InstantaneousTheta.ThetaInstantFreq,2) < ch_theta || isempty(InstantaneousTheta.ThetaInstantFreq{ch_theta})
         forceReload = true;
         disp(['Selected channel not calculated yet. Hold on'])
     end
@@ -37,9 +34,13 @@ end
 
 % Calculating the instantaneous theta frequency
 if ~exist(saveAsFullfile,'file') || forceReload
+    if ~exist(fullfile(session.general.basePath,[session.general.name, '.lfp']),'file')
+        disp('Creating lfp file')
+        ce_LFPfromDat(session,'noPrompts',true)
+    end
     srLfp = session.extracellular.srLfp;
     disp('Calculating the instantaneous theta frequency')
-    signal = session.extracellular.leastSignificantBit * double(LoadBinary([session.general.baseName '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.Theta.channels,'precision','int16','frequency',srLfp)); % ,'start',start,'duration',duration
+    signal = session.extracellular.leastSignificantBit * double(LoadBinary(fullfile(session.general.basePath,[session.general.name '.lfp']),'nChannels',session.extracellular.nChannels,'channels',ch_theta,'precision','int16','frequency',srLfp)); % ,'start',start,'duration',duration
     Fpass = [4,10];
     Wn_theta = [Fpass(1)/(srLfp/2) Fpass(2)/(srLfp/2)]; % normalized by the nyquist frequency
     [btheta,atheta] = butter(3,Wn_theta);
@@ -55,7 +56,7 @@ if ~exist(saveAsFullfile,'file') || forceReload
     
     % Theta frequency
     freqlist = [4:0.1:10];
-    wt = spectrogram(signal_filtered,srLfp,2*srLfp/10,freqlist,srLfp);
+    [wt,w,wt_t] = spectrogram(signal_filtered,srLfp,2*srLfp/10,freqlist,srLfp);
     wt = medfilt2(abs(wt),[2,10]);
     h = 1/10*ones(10,1);
     H= h*h';
@@ -66,12 +67,12 @@ if ~exist(saveAsFullfile,'file') || forceReload
     
     %max(mean(wt2(:,indexes),2))
     %signal_freq = sr_eeg/(2*pi)*diff(signal_phase2);
-    InstantaneousTheta.ThetaInstantFreq{recording.ch_theta} = ThetaInstantFreq;
+    InstantaneousTheta.ThetaInstantFreq{ch_theta} = ThetaInstantFreq;
     InstantaneousTheta.timestamps = ThetaInstantTime;
-    InstantaneousTheta.signal_phase{recording.ch_theta} = signal_phase;
-    InstantaneousTheta.signal_phase2{recording.ch_theta} = signal_phase2;
-    InstantaneousTheta.signal_freq{recording.ch_theta} = signal_freq;
-    InstantaneousTheta.signal_power{recording.ch_theta} = signal_power;
+    InstantaneousTheta.signal_phase{ch_theta} = signal_phase;
+    InstantaneousTheta.signal_phase2{ch_theta} = signal_phase2;
+    InstantaneousTheta.signal_freq{ch_theta} = signal_freq;
+    InstantaneousTheta.signal_power{ch_theta} = signal_power;
     InstantaneousTheta.signal_time = wt_t;
     if saveMat
         save(saveAsFullfile,'InstantaneousTheta')
