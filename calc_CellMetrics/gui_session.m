@@ -276,23 +276,18 @@ uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[510, 10 80, 3
 % % % % % % % % % % % % % % % % % % % % %
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Name', 'Position', [10, 500, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.name = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 475, 280, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.animal,'name');
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Sex', 'Position', [300, 500, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.sex = uicontrol('Parent',UI.tabs.animal,'Style', 'popup', 'String', {'Unknown','Male','Female'}, 'Position', [300, 475, 290, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetValue(UI.edit.sex,session.animal.sex)
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Species', 'Position', [10, 450, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.species = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 425, 280, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.animal,'species');
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Strain', 'Position', [300, 450, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.strain = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [300, 425, 290, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.animal,'strain');
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Genetic line', 'Position', [10, 400, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.geneticLine = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.animal,'geneticLine');
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -300,35 +295,28 @@ UIsetString(session.animal,'geneticLine');
 % % % % % % % % % % % % % % % % % % % % %
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nChannels', 'Position', [10, 498, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.nChannels = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 475, 180, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'nChannels');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Sampling rate (Hz)', 'Position', [200, 498, 190, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.sr = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 475, 190, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'sr');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nSamples', 'Position', [400, 498, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.nSamples = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 475, 190, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'nSamples');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (e.g. int16)', 'Position', [10, 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 180, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'precision');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [200, 448, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 425, 190, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'leastSignificantBit');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Depth (µm)', 'Position', [400, 448, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.probeDepths = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 425, 190, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'probeDepths');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Equipment', 'Position', [10, 398, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.equipment = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 375, 380, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'equipment');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'LFP sampling rate (Hz)', 'Position', [400, 398, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 375, 190, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'srLfp');
+
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Channel groups
@@ -502,9 +490,20 @@ uiwait(UI.fig)
                 UI.edit.projects.String = session.general.projects;
             end
         end
-        
-        
         updateEpochsList
+        UIsetString(session.animal,'name');
+        UIsetValue(UI.edit.sex,session.animal.sex)
+        UIsetString(session.animal,'species');
+        UIsetString(session.animal,'strain');
+        UIsetString(session.animal,'geneticLine');
+        UIsetString(session.extracellular,'nChannels');
+        UIsetString(session.extracellular,'sr');
+        UIsetString(session.extracellular,'nSamples');
+        UIsetString(session.extracellular,'precision');
+        UIsetString(session.extracellular,'leastSignificantBit');
+        UIsetString(session.extracellular,'probeDepths');
+        UIsetString(session.extracellular,'equipment');
+        UIsetString(session.extracellular,'srLfp');
         updateChannelGroupsList
         if isfield(session.extracellular,'electrodes')
             updateElectrodeList
@@ -516,7 +515,6 @@ uiwait(UI.fig)
         updateBehaviorsList
         updateAnalysisList
         updateTimeSeriesList
-        
     end
 
     function buttonUpdateFromDB
@@ -603,8 +601,8 @@ uiwait(UI.fig)
     end
 
     function CloseMetricsWindow
-        readBackFields
-        delete(UI.fig)
+        readBackFields;
+        delete(UI.fig);
         statusExit = 1;
     end
     
@@ -648,6 +646,9 @@ uiwait(UI.fig)
         if ~strcmp(UI.edit.srLfp.String,'')
             session.extracellular.srLfp = str2double(UI.edit.srLfp.String);
         end
+        if ~strcmp(UI.edit.nSamples.String,'')
+            session.extracellular.nSamples = str2double(UI.edit.nSamples.String);
+        end
         if ~strcmp(UI.edit.nChannels.String,'')
             session.extracellular.nChannels = str2double(UI.edit.nChannels.String);
         end
@@ -657,6 +658,7 @@ uiwait(UI.fig)
             session.extracellular.probeDepths = 0;
         end
         session.extracellular.precision = UI.edit.precision.String;
+        session.extracellular.equipment = UI.edit.equipment.String;
     end
     
     function cancelMetricsWindow
