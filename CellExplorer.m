@@ -5537,7 +5537,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     
     function viewSessionMetaData(~,~)
         if BatchMode
-            sessionMetaFilename = fullfile(cell_metrics.general.basepaths{cell_metrics.batchIDs(ii)},cell_metrics.general.basenames{cell_metrics.batchIDs(ii)},'.session.mat');
+            sessionMetaFilename = fullfile(cell_metrics.general.basepaths{cell_metrics.batchIDs(ii)},[cell_metrics.general.basenames{cell_metrics.batchIDs(ii)},'.session.mat']);
             if exist(sessionMetaFilename,'file')
                 gui_session(sessionMetaFilename);
             else
