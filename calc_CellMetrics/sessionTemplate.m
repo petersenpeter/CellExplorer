@@ -61,7 +61,7 @@ else
     session.general.clusteringPath = ''; % Full path to the clustered data (here assumed to be the basepath)
 end
 session.general.name = pathPieces{end}; % Session name
-session.general.version = 1; % Metadata version
+session.general.version = 2; % Metadata version
 session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %

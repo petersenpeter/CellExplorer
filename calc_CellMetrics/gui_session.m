@@ -122,7 +122,7 @@ end
 
 
 % Importing session metadata from DB if metadata is out of data
-if ~isfield(session,'animal') || (isfield(session,'epochs') && ~iscell(session.epochs)) || (isfield(session,'behavioralTracking') && ~iscell(session.behavioralTracking)) || ~isfield(session.general,'version')
+if ~isfield(session.general,'version') || session.general.version<2
     if isfield(session.general,'entryID')
         disp('Metadata not up to date. Downloading from server')
         success = updateFromDB;
@@ -298,29 +298,37 @@ UIsetString(session.animal,'geneticLine');
 % % % % % % % % % % % % % % % % % % % % %
 % Extracellular
 % % % % % % % % % % % % % % % % % % % % %
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nChannels', 'Position', [10, 500, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.nChannels = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 475, 280, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nChannels', 'Position', [10, 498, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.nChannels = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 475, 180, 25],'HorizontalAlignment','left','Units','normalized');
 UIsetString(session.extracellular,'nChannels');
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [300, 500, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [300, 475, 290, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Sampling rate (Hz)', 'Position', [200, 498, 190, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.sr = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 475, 190, 25],'HorizontalAlignment','left','Units','normalized');
+UIsetString(session.extracellular,'sr');
+
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nSamples', 'Position', [400, 498, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.nSamples = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 475, 190, 25],'HorizontalAlignment','left','Units','normalized');
+UIsetString(session.extracellular,'nSamples');
+
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (e.g. int16)', 'Position', [10, 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 180, 25],'HorizontalAlignment','left','Units','normalized');
+UIsetString(session.extracellular,'precision');
+
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [200, 448, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 425, 190, 25],'HorizontalAlignment','left','Units','normalized');
 UIsetString(session.extracellular,'leastSignificantBit');
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Sampling rate (Hz)', 'Position', [10, 450, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.sr = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 280, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'sr');
-    
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'LFP sampling rate (Hz)', 'Position', [300, 400, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [300, 375, 290, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'srLfp');
-
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (e.g. int16)', 'Position', [10, 400, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized');
-UIsetString(session.extracellular,'precision');
-    
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Depth (µm)', 'Position', [300, 450, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.probeDepths = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [300, 425, 290, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Depth (µm)', 'Position', [400, 448, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.probeDepths = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 425, 190, 25],'HorizontalAlignment','left','Units','normalized');
 UIsetString(session.extracellular,'probeDepths');
+
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Equipment', 'Position', [10, 398, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.equipment = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 375, 380, 25],'HorizontalAlignment','left','Units','normalized');
+UIsetString(session.extracellular,'equipment');
+
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'LFP sampling rate (Hz)', 'Position', [400, 398, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 375, 190, 25],'HorizontalAlignment','left','Units','normalized');
+UIsetString(session.extracellular,'srLfp');
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Channel groups
@@ -348,7 +356,12 @@ uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[290, 10,
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
-
+% Electrodes
+if isfield(session.extracellular,'electrodes')
+    UI.tabs.spikeGroups = uitab(UI.channelGroups,'Title','Electrodes');
+    UI.list.tableData = {false,'','','',''};
+    UI.table.electrodes = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 1, 599, 364],'ColumnWidth',{20 200 120 70 60 80},'columnname',{'','Probes','Company','nChannels','nShanks','Brain region'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
+end
 % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
 % % % % % % % % % % % % % % % % % % % % %
@@ -493,6 +506,9 @@ uiwait(UI.fig)
         
         updateEpochsList
         updateChannelGroupsList
+        if isfield(session.extracellular,'electrodes')
+            updateElectrodeList
+        end
         updateSpikeSortingList
         updateBrainRegionList
         updateTagList
@@ -500,6 +516,7 @@ uiwait(UI.fig)
         updateBehaviorsList
         updateAnalysisList
         updateTimeSeriesList
+        
     end
 
     function buttonUpdateFromDB
@@ -510,6 +527,7 @@ uiwait(UI.fig)
            errordlg('Database tools not available'); 
         end
     end
+
     function success = updateFromDB
         success = 0;
         if enableDatabase 
@@ -707,8 +725,10 @@ uiwait(UI.fig)
         if isfield(session.extracellular,'electrodeGroups')
             if isnumeric(session.extracellular.electrodeGroups.channels)
                 nTotal = size(session.extracellular.electrodeGroups.channels,1);
-            else
+            elseif ~isempty(session.extracellular.electrodeGroups.channels) && ~isempty(session.extracellular.electrodeGroups.channels{1})
                 nTotal = size(session.extracellular.electrodeGroups.channels,2);
+            else
+                nTotal = 0;
             end
             for fn = 1:nTotal
                 tableData{fn,1} = false;
@@ -757,6 +777,25 @@ uiwait(UI.fig)
         end
     end
     
+    function updateElectrodeList
+        % Updates the list of electrodes
+        if isfield(session.extracellular,'electrodes')
+            tableData = {};
+            nTotal = length(session.extracellular.electrodes.nChannels);
+            for fn = 1:nTotal
+                tableData{fn,1} = false;
+                tableData{fn,2} = session.extracellular.electrodes.siliconProbe{fn};
+                tableData{fn,3} = session.extracellular.electrodes.company{fn};
+                tableData{fn,4} = session.extracellular.electrodes.nChannels(fn);
+                tableData{fn,5} = session.extracellular.electrodes.nShanks(fn);
+                tableData{fn,6} = session.extracellular.electrodes.brainRegion{fn};
+            end
+            UI.table.electrodes.Data = tableData;
+        else
+            UI.table.electrodes.Data = {false,'','','','',''};
+        end
+        
+    end
     function updateEpochsList
         % Updates the plot table from the spikesPlots structure
         if isfield(session,'epochs') & ~isempty(session.epochs)
