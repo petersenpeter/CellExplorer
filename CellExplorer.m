@@ -802,16 +802,23 @@ while ii <= size(cell_metrics.troughToPeak,2)
     if any(groundTruthSelection)
         tagFilter2 = find(cellfun(@(X) ~isempty(X), cell_metrics.groundTruthClassification));
         if ~isempty(tagFilter2)
-            filter = [];
-            for i = 1:length(tagFilter2)
-                filter(i,:) = strcmp(cell_metrics.groundTruthClassification{tagFilter2(i)},{UI.settings.groundTruth{groundTruthSelection}});
-            end
             subsetGroundTruth = [];
             for j = 1:length({UI.settings.groundTruth{groundTruthSelection}})
-                subsetGroundTruth{j} = tagFilter2(find(filter(:,j)));
+                subsetGroundTruth{j} = tagFilter2(cell2mat(cellfun(@(X) any(contains(X,UI.settings.groundTruth(groundTruthSelection(j)))), cell_metrics.groundTruthClassification(tagFilter2),'UniformOutput',false)));
             end
         end
-    end
+      end  
+%         if ~isempty(tagFilter2)
+%             filter = [];
+%             
+%             for j = 1:length({UI.settings.groundTruth{groundTruthSelection}})
+%                 for i = 1:length(tagFilter2)
+%                     filter(i,j) = strcmp(cell_metrics.groundTruthClassification{tagFilter2(i)},{UI.settings.groundTruth{groundTruthSelection(j)}});
+%                 end
+%                 subsetGroundTruth{j} = tagFilter2(find(filter(:,j)));
+%             end
+%         end
+    
     
     % Updating tags
     updateTags
@@ -8079,15 +8086,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         function updateGroundTruthCount
             tagFilter2 = find(cellfun(@(X) ~isempty(X), cell_metrics.groundTruthClassification));
-            cellCount = zeros(1,length(groundTruthCelltypes));
             if ~isempty(tagFilter2)
-                filter = [];
-                for i = 1:length(tagFilter2)
-                    filter(i,:) = strcmp(cell_metrics.groundTruthClassification{tagFilter2(i)},groundTruthCelltypes);
-                end
-                
-                for j = 1:length({groundTruthCelltypes})
-                    cellCount = sum(filter);
+                cellCount = [];
+                for j = 1:length(groundTruthCelltypes)
+                    cellCount(j) = sum(cell2mat(cellfun(@(X) any(contains(X,groundTruthCelltypes{j})), cell_metrics.groundTruthClassification(tagFilter2),'UniformOutput',false)));
                 end
             end
             cellCount = cellstr(num2str(cellCount'))';
