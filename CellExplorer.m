@@ -41,7 +41,7 @@ function cell_metrics = CellExplorer(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 11-11-2019
+% Last edited: 18-11-2019
 
 % Shortcuts to built-in functions
 % initializeSession, DatabaseSessionDialog, saveDialog, restoreBackup,keyPress, defineSpikesPlots, customPlot, importGroundTruth
@@ -105,17 +105,14 @@ UI.settings.tSNE_calcNarrowAcg = true; UI.settings.tSNE_calcFiltWaveform = true;
 UI.settings.tSNE_calcWideAcg = true; UI.settings.dispLegend = 1; UI.settings.tags = {'good','bad','mua','noise','inverseSpike','Other'};
 UI.settings.groundTruthMarkers = {'d','o','s','*','+','p'}; UI.settings.groundTruth = {'PV+','NOS1+','GAT1+'};
 UI.settings.plotWaveformMetrics = 1; UI.settings.metricsTable = 1; synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'};
-UI.settings.stickySelection = false;
-tableDataSortBy = 'cellID'; tableDataColumn1 = 'putativeCellType'; tableDataColumn2 = 'brainRegion'; 
-tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','spikeGroup'});
-plotOptionsToExlude = {'acg_','waveforms_','isi_'}; UI.settings.tSNE_dDistanceMetric = 'euclidean';
-menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassification'};
-tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial'};
-fieldsMenuMetricsToExlude  = {'tags','groundTruthClassification'};
-tableDataSortBy = 'cellID'; tableDataColumn1 = 'putativeCellType'; tableDataColumn2 = 'brainRegion'; 
-tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','spikeGroup'});
+UI.settings.stickySelection = false; UI.settings.fieldsMenuMetricsToExlude  = {'tags','groundTruthClassification'};
+UI.settings.plotOptionsToExlude = {'acg_','waveforms_','isi_'}; UI.settings.tSNE_dDistanceMetric = 'euclidean';
+UI.settings.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassification'};
+UI.settings.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial'};
+UI.settings.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','spikeGroup'});
 UI.settings.firingRateMap.showHeatmap = false; UI.settings.firingRateMap.showLegend = false; UI.settings.firingRateMap.showHeatmapColorbar = false;
 
+tableDataSortBy = 'cellID'; tableDataColumn1 = 'putativeCellType'; tableDataColumn2 = 'brainRegion'; 
 db_menu_values = []; db_menu_items = []; clusClas = []; plotX = []; plotY = []; plotZ = []; timerVal = tic;
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
 brainRegions_list = []; brainRegions_acronym = []; cell_class_count = [];  customCellPlot3 = 1; customCellPlot4 = 1; customPlotOptions = '';
@@ -139,11 +136,11 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.48;
+CellExplorerVersion = 1.50;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'visible','off','DefaultAxesLooseInset',[.01,.01,.01,.01]);
-% set(UI.fig,'DefaultAxesLooseInset',[.01,.01,.01,.01])
 hManager = uigetmodemanager(UI.fig);
+
 % % % % % % % % % % % % % % % % % % % % % %
 % User preferences for the Cell Explorer
 % % % % % % % % % % % % % % % % % % % % % %
@@ -458,22 +455,22 @@ UI.menu.tableData.ops(1) = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell metr
 UI.menu.tableData.ops(2) = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell list',menuSelectedFcn,@buttonShowMetrics);
 UI.menu.tableData.ops(3) = uimenu(UI.menu.tableData.topMenu,menuLabel,'None',menuSelectedFcn,@buttonShowMetrics);
 UI.menu.tableData.column1 = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell list metric 1','Separator','on');
-for i = 1:length(tableDataSortingList)
-    UI.menu.tableData.column1_ops(i) = uimenu(UI.menu.tableData.column1,menuLabel,tableDataSortingList{i},menuSelectedFcn,@setColumn1_metric);
+for i = 1:length(UI.settings.tableDataSortingList)
+    UI.menu.tableData.column1_ops(i) = uimenu(UI.menu.tableData.column1,menuLabel,UI.settings.tableDataSortingList{i},menuSelectedFcn,@setColumn1_metric);
 end
-UI.menu.tableData.column1_ops(find(strcmp(tableDataColumn1,tableDataSortingList))).Checked = 'on';
+UI.menu.tableData.column1_ops(find(strcmp(tableDataColumn1,UI.settings.tableDataSortingList))).Checked = 'on';
 
 UI.menu.tableData.column2 = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell list metric 2');
-for i = 1:length(tableDataSortingList)
-    UI.menu.tableData.column2_ops(i) = uimenu(UI.menu.tableData.column2,menuLabel,tableDataSortingList{i},menuSelectedFcn,@setColumn2_metric);
+for i = 1:length(UI.settings.tableDataSortingList)
+    UI.menu.tableData.column2_ops(i) = uimenu(UI.menu.tableData.column2,menuLabel,UI.settings.tableDataSortingList{i},menuSelectedFcn,@setColumn2_metric);
 end
-UI.menu.tableData.column2_ops(find(strcmp(tableDataColumn2,tableDataSortingList))).Checked = 'on';
+UI.menu.tableData.column2_ops(find(strcmp(tableDataColumn2,UI.settings.tableDataSortingList))).Checked = 'on';
 
 uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell list sorting:','Separator','on');
-for i = 1:length(tableDataSortingList)
-    UI.menu.tableData.sortingList(i) = uimenu(UI.menu.tableData.topMenu,menuLabel,tableDataSortingList{i},menuSelectedFcn,@setTableDataSorting);
+for i = 1:length(UI.settings.tableDataSortingList)
+    UI.menu.tableData.sortingList(i) = uimenu(UI.menu.tableData.topMenu,menuLabel,UI.settings.tableDataSortingList{i},menuSelectedFcn,@setTableDataSorting);
 end
-UI.menu.tableData.sortingList(find(strcmp(tableDataSortBy,tableDataSortingList))).Checked = 'on';
+UI.menu.tableData.sortingList(find(strcmp(tableDataSortBy,UI.settings.tableDataSortingList))).Checked = 'on';
 
 % Spikes
 UI.menu.spikeData.topMenu = uimenu(UI.fig,menuLabel,'Spikes');
@@ -483,7 +480,8 @@ uimenu(UI.menu.spikeData.topMenu,menuLabel,'Edit spike plot',menuSelectedFcn,@ed
 % Session
 UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
 uimenu(UI.menu.session.topMenu,menuLabel,'Open directory of current session',menuSelectedFcn,@openSessionDirectory,'Accelerator','C');
-uimenu(UI.menu.session.topMenu,menuLabel,'Open current session in the Buzsaki lab web DB',menuSelectedFcn,@openSessionInWebDB);
+uimenu(UI.menu.session.topMenu,menuLabel,'Show current session in the Buzsaki lab web DB',menuSelectedFcn,@openSessionInWebDB);
+uimenu(UI.menu.session.topMenu,menuLabel,'Show current animal in the Buzsaki lab web DB',menuSelectedFcn,@showAnimalInWebDB);
 uimenu(UI.menu.session.topMenu,menuLabel,'View metadata for current session',menuSelectedFcn,@viewSessionMetaData);
 
 % Help 
@@ -1620,6 +1618,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Creates all cell specific plots
         subsetPlots = [];
         col = UI.settings.cellTypeColors(clusClas(ii),:);
+%         [~, ~, ic] = unique(plotClas,'stable');
+%         col = clr(ic(ii),:);
         axis tight
         if strcmp(customPlotSelection,'Single waveform')
             
@@ -2918,6 +2918,17 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
+    function showAnimalInWebDB(~,~)
+        % Opens the current animal in the Buzsaki lab web database
+        if isfield(cell_metrics,'animal')
+            web(['https://buzsakilab.com/wp/animals/?frm_search=', cell_metrics.animal{ii}],'-new','-browser')
+        else
+            web(['https://buzsakilab.com/wp/animals/'],'-new','-browser')
+        end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function [list_metrics,ia] = generateMetricsList(fieldType,preselectedList)
         subfieldsnames = fieldnames(cell_metrics);
         subfieldstypes = struct2cell(structfun(@class,cell_metrics,'UniformOutput',false));
@@ -3364,7 +3375,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 newStr2 = split(loadDB.popupmenu.filter.String,' & ');
                 idx_textFilter2 = zeros(length(newStr2),size(db.dataTable,1));
                 for i = 1:length(newStr2)
-                    idx_textFilter2(i,:) = contains(db.sessionList,newStr2{i},'IgnoreCase',true);
+                    newStr3 = split(newStr2{i},' | ');
+                    idx_textFilter2(i,:) = contains(db.sessionList,newStr3,'IgnoreCase',true);
                 end
                 idx1 = find(sum(idx_textFilter2,1)==length(newStr2));
             else
@@ -5485,10 +5497,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         else
             tableDataSortBy = src.Label;
         end
-        for i = 1:length(tableDataSortingList)
+        for i = 1:length(UI.settings.tableDataSortingList)
             UI.menu.tableData.sortingList(i).Checked = 'off';
         end
-        idx = find(strcmp(tableDataSortBy,tableDataSortingList));
+        idx = find(strcmp(tableDataSortBy,UI.settings.tableDataSortingList));
         UI.menu.tableData.sortingList(idx).Checked = 'on';
         if UI.settings.metricsTable==2
             updateCellTableData
@@ -5503,10 +5515,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         else
             tableDataColumn1 = src.Label;
         end
-        for i = 1:length(tableDataSortingList)
+        for i = 1:length(UI.settings.tableDataSortingList)
             UI.menu.tableData.column1_ops(i).Checked = 'off';
         end
-        idx = find(strcmp(tableDataColumn1,tableDataSortingList));
+        idx = find(strcmp(tableDataColumn1,UI.settings.tableDataSortingList));
         UI.menu.tableData.column1_ops(idx).Checked = 'on';
         if UI.settings.metricsTable==2
             UI.table.ColumnName = {'','#',tableDataColumn1,tableDataColumn2};
@@ -5522,10 +5534,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         else
             tableDataColumn2 = src.Label;
         end
-        for i = 1:length(tableDataSortingList)
+        for i = 1:length(UI.settings.tableDataSortingList)
             UI.menu.tableData.column2_ops(i).Checked = 'off';
         end
-        idx = find(strcmp(tableDataColumn2,tableDataSortingList));
+        idx = find(strcmp(tableDataColumn2,UI.settings.tableDataSortingList));
         UI.menu.tableData.column2_ops(idx).Checked = 'on';
         if UI.settings.metricsTable==2
             UI.table.ColumnName = {'','#',tableDataColumn1,tableDataColumn2};
@@ -6474,7 +6486,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Fieldnames
         metrics_fieldsNames = fieldnames(cell_metrics);
         table_fieldsNames = metrics_fieldsNames(find(ismember(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),{'cell','double'})));
-        table_fieldsNames(find(contains(table_fieldsNames,tableOptionsToExlude)))=[];
+        table_fieldsNames(find(contains(table_fieldsNames,UI.settings.tableOptionsToExlude)))=[];
         
         % Cell type initialization
         UI.settings.cellTypes = unique([UI.settings.cellTypes,cell_metrics.putativeCellType],'stable');
@@ -6512,7 +6524,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Plotting menues initialization
         fieldsMenuCells = metrics_fieldsNames;
         fieldsMenuCells = fieldsMenuCells(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'cell'));
-        fieldsMenuCells(find(contains(fieldsMenuCells,fieldsMenuMetricsToExlude)))=[];
+        fieldsMenuCells(find(contains(fieldsMenuCells,UI.settings.fieldsMenuMetricsToExlude)))=[];
         fieldsMenuCells = sort(fieldsMenuCells);
         groups_ids = [];
         
@@ -6765,7 +6777,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
 %         customPlotOptions = customPlotOptions(   (strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.spikeCount,2) )   );
 %         customPlotOptions = [customPlotOptions;customPlotOptions2];
-        customPlotOptions(find(contains(customPlotOptions,plotOptionsToExlude)))=[]; %
+        customPlotOptions(find(contains(customPlotOptions,UI.settings.plotOptionsToExlude)))=[]; %
         customPlotOptions = unique([waveformOptions; waveformOptions2; acgOptions; otherOptions; customPlotOptions],'stable');
         
         % Initilizing view #1
@@ -6803,7 +6815,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         colorMenu = colorMenu(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'cell'));
         fields2keep = [];
         for i = 1:length(colorMenu)
-            if ~any(cell2mat(cellfun(@isnumeric,cell_metrics.(colorMenu{i}),'UniformOutput',false))) && ~contains(colorMenu{i},menuOptionsToExlude )
+            if ~any(cell2mat(cellfun(@isnumeric,cell_metrics.(colorMenu{i}),'UniformOutput',false))) && ~contains(colorMenu{i},UI.settings.menuOptionsToExlude )
                 fields2keep = [fields2keep,i];
             end
         end
@@ -7090,7 +7102,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 newStr2 = split(loadDB.popupmenu.filter.String,' & ');
                 idx_textFilter2 = zeros(length(newStr2),size(db.dataTable,1));
                 for i = 1:length(newStr2)
-                    idx_textFilter2(i,:) = contains(db.sessionList,newStr2{i},'IgnoreCase',true);
+                    newStr3 = split(newStr2{i},' | ');
+                    idx_textFilter2(i,:) = contains(db.sessionList,newStr3,'IgnoreCase',true);
                 end
                 idx1 = find(sum(idx_textFilter2,1)==length(newStr2));
             else
@@ -7348,9 +7361,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         MsgLog(['Spike loading canceled by the user'],2);
                         return
                     end
-%                     spikesfilesize = dir(fullfile(clusteringpath1,[basename1,'.spikes.cellinfo.mat']));
-                    spikesfilesize = ByteSize(fullfile(clusteringpath1,[basename1,'.spikes.cellinfo.mat']),'file');
-                    waitbar_spikes = waitbar((batchIDsPrivate-1)/length(batchIDsIn),waitbar_spikes,[num2str(batchIDsPrivate) '. Loading ', basename1 , ' (', spikesfilesize, ')']);
+                    waitbar_spikes = waitbar((batchIDsPrivate-1)/length(batchIDsIn),waitbar_spikes,[num2str(batchIDsPrivate) '. Loading ', basename1]);
                     temp = load(fullfile(clusteringpath1,[basename1,'.spikes.cellinfo.mat']));
                     spikes{batchIDsPrivate} = temp.spikes;
                     out = true;
@@ -7937,71 +7948,69 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 % % % % % % % % % % % % % % % % % % % % % %
 
     function adjustMonoSyn_UpdateMetrics(cell_metricsIn,cell_metrics)
-        answer = questdlg('Are you sure you want to adjust monosyn connections for this session?', 'Adjust monosynaptic connections', 'Yes','Cancel','Cancel');
-        switch answer
-            case 'Yes'
-                % Manually select connections
-                if BatchMode
-%                     basepath1 = cell_metricsIn.general.basepaths{batchIDs};
-                    basename1 = cell_metricsIn.general.basenames{batchIDs};
-                    path1 = cell_metricsIn.general.path{batchIDs};
-                else
-                    if isfield( cell_metricsIn.general,'path')
-                        basename1 = cell_metricsIn.general.basename;
-                        path1 = cell_metricsIn.general.path;
-                    else
-                        basename1 = cell_metricsIn.general.basename;
-                        path1 = fullfile(cell_metricsIn.general.basepath,cell_metricsIn.general.clusteringpath);
-                    end
-                end
-                MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
-                if exist(MonoSynFile,'file')
-                    mono_res = gui_MonoSyn(MonoSynFile);
-                elseif ~exist(MonoSynFile,'file')
-                    MsgLog(['Mono_syn file does not exist: ' MonoSynFile],4);
-                    return
-                end
-                
-                % Saves output to the cell_metrics from the select session
-                if isfield(general,'saveAs')
-                    saveAs = general.saveAs;
-                else
-                    saveAs = 'cell_metrics';
-                end
-                
-                try
-                    % Creating backup of existing metrics
-                    disp(['Creating backup of cells']);
-                    dirname = 'revisions_cell_metrics';
-                    if ~(exist(fullfile(path1,dirname),'dir'))
-                        mkdir(fullfile(path1,dirname));
-                    end
-                    if exist(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'file')
-                        copyfile(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), fullfile(path1, dirname, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']));
-                    end
-                    
-                    % Saving new metrics
-                    disp(['Saving cells to ', saveAs,'.mat']);
-                    load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
-                    cell_metrics.putativeConnections.excitatory = mono_res.sig_con; % Vectors with cell pairs
-                    cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_metrics.general.cellCount);
-                    cell_metrics.synapticEffect(cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
-                    cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
-                    cell_metrics.synapticConnectionsIn = zeros(1,cell_metrics.general.cellCount);
-                    [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,1),unique(cell_metrics.putativeConnections.excitatory(:,1)));
-                    cell_metrics.synapticConnectionsOut(b) = a; cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);
-                    [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,2),unique(cell_metrics.putativeConnections.excitatory(:,2)));
-                    cell_metrics.synapticConnectionsIn(b) = a; cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
-                    save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'cell_metrics','-v7.3','-nocompression')
-                    MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
-                catch
-                    MsgLog(['Synaptic connections adjustment failed.'],4);
-                end
+        
+        % Manually select connections
+        if BatchMode
+            %                     basepath1 = cell_metricsIn.general.basepaths{batchIDs};
+            basename1 = cell_metricsIn.general.basenames{batchIDs};
+            path1 = cell_metricsIn.general.path{batchIDs};
+        else
+            if isfield( cell_metricsIn.general,'path')
+                basename1 = cell_metricsIn.general.basename;
+                path1 = cell_metricsIn.general.path;
+            else
+                basename1 = cell_metricsIn.general.basename;
+                path1 = fullfile(cell_metricsIn.general.basepath,cell_metricsIn.general.clusteringpath);
+            end
         end
+        MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
+        if exist(MonoSynFile,'file')
+            mono_res = gui_MonoSyn(MonoSynFile);
+        elseif ~exist(MonoSynFile,'file')
+            MsgLog(['Mono_syn file does not exist: ' MonoSynFile],4);
+            return
+        end
+        
+        % Saves output to the cell_metrics from the select session
+        if isfield(general,'saveAs')
+            saveAs = general.saveAs;
+        else
+            saveAs = 'cell_metrics';
+        end
+        
+        try
+            % Creating backup of existing metrics
+            disp(['Creating backup of cells']);
+            dirname = 'revisions_cell_metrics';
+            if ~(exist(fullfile(path1,dirname),'dir'))
+                mkdir(fullfile(path1,dirname));
+            end
+            if exist(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'file')
+                copyfile(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), fullfile(path1, dirname, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']));
+            end
+            
+            % Saving new metrics
+            disp(['Saving cells to ', saveAs,'.mat']);
+            load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
+            cell_metrics.putativeConnections.excitatory = mono_res.sig_con; % Vectors with cell pairs
+            cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_metrics.general.cellCount);
+            cell_metrics.synapticEffect(cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
+            cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
+            cell_metrics.synapticConnectionsIn = zeros(1,cell_metrics.general.cellCount);
+            [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,1),unique(cell_metrics.putativeConnections.excitatory(:,1)));
+            cell_metrics.synapticConnectionsOut(b) = a; cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);
+            [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,2),unique(cell_metrics.putativeConnections.excitatory(:,2)));
+            cell_metrics.synapticConnectionsIn(b) = a; cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
+            save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'cell_metrics','-v7.3','-nocompression')
+            MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
+        catch
+            MsgLog(['Synaptic connections adjustment failed.'],4);
+        end
+        
     end
-
-% % % % % % % % % % % % % % % % % % % % % %
-
+    
+    % % % % % % % % % % % % % % % % % % % % % %
+    
     function performGroundTruthClassification(~,~)
         if ~isfield(UI.tabs,'groundTruthClassification')
             % UI.settings.groundTruth
@@ -8121,7 +8130,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function filterCellsByText(src,event)
         if ~isempty(UI.textFilter.String) && ~strcmp(UI.textFilter.String,'Filter')
             freeText = {''};
-            newStr2 = split(UI.textFilter.String,' & ');
+            [newStr2,matches] = split(UI.textFilter.String,[" & "," | "]);
             idx_textFilter2 = zeros(length(newStr2),size(cell_metrics.troughToPeak,2));
             failCheck = 0;
             for i = 1:length(newStr2)
@@ -8159,7 +8168,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 end
             end
             if failCheck == 0
-                idx_textFilter = find(sum(idx_textFilter2,1)==length(newStr2));
+                orPairs = find(contains(matches,' | '));
+                if ~isempty(orPairs)
+                    for i = 1:length(orPairs)
+                        idx_textFilter2([orPairs(i),orPairs(i)+1],:) = any(idx_textFilter2([orPairs(i),orPairs(i)+1],:)).*[1;1];
+                    end
+                end
+                idx_textFilter = find(all(idx_textFilter2,1));
                 MsgLog([num2str(length(idx_textFilter)),'/',num2str(size(cell_metrics.troughToPeak,2)),' cells selected with ',num2str(length(newStr2)),' filter: ' ,UI.textFilter.String]);
             elseif failCheck == 2
                 MsgLog('Filter not formatted correctly. Field does not exist',2);

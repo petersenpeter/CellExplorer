@@ -13,7 +13,11 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 12-11-2019
+% Last edited: 14-11-2019
+
+% TODO
+% 1. Import meta data from files
+% 2. Write meta data back to db
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
@@ -39,7 +43,7 @@ if exist('sessionIn') & isstruct(sessionIn)
         clusteringpath = '';
     end
 elseif exist('sessionIn') & ischar(sessionIn)
-    disp('Loading basename.session.mat from sessionIn path');
+    disp(['Loading ' sessionIn]);
     load(sessionIn);
     [filepath,~,~] = fileparts(sessionIn);
     basepath = filepath;
@@ -53,7 +57,7 @@ else
     basepath = pwd;
     [~,basename,~] = fileparts(pwd);
     if exist([basename,'.session.mat'],'file')
-        disp(['Loading ',basename,'.session.mat from current folder']);
+        disp(['Loading ',basename,'.session.mat from current path']);
         
         load([basename,'.session.mat']);
         sessionIn = session;
@@ -64,7 +68,7 @@ else
             clusteringpath = '';
         end
     elseif exist(['session.mat'],'file')
-        disp(['Loading session.mat from current folder']);
+        disp(['Loading session.mat from current path']);
         
         load(['session.mat']);
         sessionIn = session;
@@ -2089,7 +2093,7 @@ uiwait(UI.fig)
         if ~isempty(UI.table.spikeGroups.Data) && ~isempty(find([UI.table.spikeGroups.Data{:,1}], 1))
             session.extracellular.spikeGroups.channels([UI.table.spikeGroups.Data{:,1}]) = [];
             session.extracellular.nSpikeGroups = size(session.extracellular.spikeGroups.channels,2);
-            updateSpikeGroupsList
+            updateChannelGroupsList
         else
             errordlg(['Please select the spike group(s) to delete'],'Error')
         end
@@ -2147,7 +2151,7 @@ uiwait(UI.fig)
             session.extracellular.spikeGroups.label{spikeGroup} = spikeGroupsLabel.String;
             delete(UI.dialog.spikeGroups);
             session.extracellular.nSpikeGroups = size(session.extracellular.spikeGroups,2);
-            updateSpikeGroupsList;
+            updateChannelGroupsList;
         end
         function CancelSpikeGroups_dialog
             delete(UI.dialog.spikeGroups);

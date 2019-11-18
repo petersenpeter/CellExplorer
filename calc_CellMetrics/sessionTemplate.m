@@ -5,7 +5,7 @@ function session = sessionTemplate(input1,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 11-11-2019
+% Last edited: 14-11-2019
 
 p = inputParser;
 addParameter(p,'importSkippedChannels',true,@islogical); % Import skipped channels from the xml as bad channels
@@ -67,31 +67,34 @@ session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Limited animal metadata (practical information)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-session.animal.name = pathPieces{end-1}; % Animal name
-session.animal.sex = 'Male'; % Male, Female, Unknown
-session.animal.species = 'Rat'; % Mouse, Rat, ... (http://buzsakilab.com/wp/species/)
-session.animal.strain = 'Long Evans'; % (http://buzsakilab.com/wp/strains/)
-session.animal.geneticLine = 'Wild type';
-
+if ~isfield(session,'animal')
+    session.animal.name = pathPieces{end-1}; % Animal name
+    session.animal.sex = 'Male'; % Male, Female, Unknown
+    session.animal.species = 'Rat'; % Mouse, Rat, ... (http://buzsakilab.com/wp/species/)
+    session.animal.strain = 'Long Evans'; % (http://buzsakilab.com/wp/strains/)
+    session.animal.geneticLine = 'Wild type';
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Extracellular
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
+if ~isfield(session.extracellular,'leastSignificantBit')  || isempty(session.extracellular.leastSignificantBit) 
+    session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
+end
 session.extracellular.probeDepths = 0;
 session.extracellular.precision = 'int16';
-
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-session.spikeSorting{1}.format = 'Phy'; % Sorting data-format: Phy, Kilosort, Klustakwik, KlustaViewer, SpikingCircus, Neurosuite
-session.spikeSorting{1}.method = 'KiloSort'; % Sorting algorith: KiloSort, Klustakwik, MaskedKlustakwik, SpikingCircus
-session.spikeSorting{1}.relativePath = session.general.clusteringPath;
-session.spikeSorting{1}.channels = [];
-session.spikeSorting{1}.manuallyCurated = 1;
-session.spikeSorting{1}.notes = '';
-
+if ~isfield(session,'spikeSorting')
+    session.spikeSorting{1}.format = 'Phy'; % Sorting data-format: Phy, Kilosort, Klustakwik, KlustaViewer, SpikingCircus, Neurosuite
+    session.spikeSorting{1}.method = 'KiloSort'; % Sorting algorith: KiloSort, Klustakwik, MaskedKlustakwik, SpikingCircus
+    session.spikeSorting{1}.relativePath = session.general.clusteringPath;
+    session.spikeSorting{1}.channels = [];
+    session.spikeSorting{1}.manuallyCurated = 1;
+    session.spikeSorting{1}.notes = '';
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Brain regions 

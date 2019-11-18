@@ -19,6 +19,9 @@ function Intan_rec_info = read_Intan_RHD2000_file_from_basepath(path_in)
 
 % [file, path, filterindex] = ...
 %     uigetfile('*.rhd', 'Select an RHD2000 Data File', 'MultiSelect', 'off');
+%
+% Modified by Peter Petersen to take path as input and write output as struct
+
 
 file = 'info.rhd';
 path = path_in;
