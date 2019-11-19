@@ -13,7 +13,7 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 14-11-2019
+% Last edited: 18-11-2019
 
 % TODO
 % 1. Import meta data from files
@@ -161,7 +161,7 @@ statusExit = 0;
 % % % % % % % % % % % % % % % % % % % %
 
 % Creating figure for the GUI
-UI.fig = figure('units','pixels','position',[50,50,600,560],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape');  % ,'visible','off'
+UI.fig = figure('units','pixels','position',[50,50,600,560],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','visible','off');
 movegui(UI.fig,'center')
 
 % Tabs
@@ -259,7 +259,7 @@ uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'DB entry ID', 'Po
 UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 180, 290, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 580, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', 'temp', 'Position', [10, 10, 580, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
+UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 580, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
 
 % % % % % % % % % % % % % % % % % % % % %
 % Epochs

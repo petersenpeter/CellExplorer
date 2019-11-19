@@ -50,6 +50,7 @@ function cell_metrics = CellExplorer(varargin)
 % TODO
 % GUI to reverse changes from backup files. Implemented but needs testing
 % Incorporate ground truth into color group dropdown
+% Filter session by ground truth
 
 p = inputParser;
 
@@ -136,7 +137,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.50;
+CellExplorerVersion = 1.51;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'visible','off','DefaultAxesLooseInset',[.01,.01,.01,.01]);
 hManager = uigetmodemanager(UI.fig);
@@ -536,7 +537,9 @@ UI.panel.navigation = uipanel('Title','Navigation','TitlePosition','centertop','
 UI.panel.cellAssignment = uipanel('Title','Cell assignments','TitlePosition','centertop','Position',[0.898 0.643 0.1 0.275],'Units','normalized');
 UI.panel.displaySettings = uipanel('Title','Display Settings','TitlePosition','centertop','Position',[0.898 0.165 0.1 0.323],'Units','normalized');
 UI.panel.custom = uipanel('Title','Plot selection','TitlePosition','centertop','Position',[0.002 0.537 0.093 0.435],'Units','normalized');
+% UI.panel.legends = uipanel('Title','Legends','TitlePosition','centertop','Position',[0.002 0.002 0.093 0.2],'Units','normalized');
 % UI.panel.loadSave = uipanel('Title','File handling','TitlePosition','centertop','Position',[0.895 0.01 0.1 0.095],'Units','normalized');
+
 
 % UI cell assignment tabs
 UI.panel.tabgroup1 = uitabgroup('Position',[0.898 0.493 0.1 0.142],'Units','normalized');
@@ -544,9 +547,10 @@ UI.tabs.tags = uitab(UI.panel.tabgroup1,'Title','Tags');
 UI.tabs.deepsuperficial = uitab(UI.panel.tabgroup1,'Title','D/S');
 
 % UI display settings tabs
-UI.panel.tabgroup2 = uitabgroup('Position',[0.898 0.002 0.1 0.16],'Units','normalized');
+UI.panel.tabgroup2 = uitabgroup('Position',[0.898 0.002 0.1 0.16],'Units','normalized','SelectionChangedFcn',@updateLegend);
 UI.tabs.dispTags = uitab(UI.panel.tabgroup2,'Title','-Tags');
 UI.tabs.dispTags2 = uitab(UI.panel.tabgroup2,'Title','+Tags');
+UI.tabs.legends = uitab(UI.panel.tabgroup2,'Title','Legends');
 
 % % % % % % % % % % % % % % % % % % % %
 % Message log
@@ -701,11 +705,9 @@ UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu
 % Custom colors
 uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 80 45 10],'Units','normalized','String','Color group','HorizontalAlignment','left');
 UI.popupmenu.groups = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 72 44 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
-% UI.checkbox.legend = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[24 82 22 10],'Units','normalized','String','Legend','HorizontalAlignment','right','Callback',@(src,evnt)buttonDispLegend(),'KeyPressFcn', {@keyPress});
 UI.listbox.groups = uicontrol('Parent',UI.panel.custom,'Style','listbox','Position',[3 22 42 50],'Units','normalized','String',{'Type 1','Type 2','Type 3'},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Visible','Off');
 UI.checkbox.groups = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 12 44 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Visible','Off');
 UI.checkbox.compare = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 2 44 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress});
-UI.checkbox.legend.Value = UI.settings.dispLegend;
 
 % % % % % % % % % % % % % % % % % % %
 % Metrics table
@@ -808,17 +810,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
             end
         end
       end  
-%         if ~isempty(tagFilter2)
-%             filter = [];
-%             
-%             for j = 1:length({UI.settings.groundTruth{groundTruthSelection}})
-%                 for i = 1:length(tagFilter2)
-%                     filter(i,j) = strcmp(cell_metrics.groundTruthClassification{tagFilter2(i)},{UI.settings.groundTruth{groundTruthSelection(j)}});
-%                 end
-%                 subsetGroundTruth{j} = tagFilter2(find(filter(:,j)));
-%             end
-%         end
-    
     
     % Updating tags
     updateTags
@@ -862,8 +853,10 @@ while ii <= size(cell_metrics.troughToPeak,2)
         subset = 1:length(plotClas);
         classes2plotSubset = unique(plotClas);
         plotClasGroups = {'Other cells','Selected cells'};
-    else
+    elseif UI.popupmenu.groups.Value == 1
         classes2plotSubset = intersect(plotClas(subset),classes2plot);
+    else
+        classes2plotSubset = intersect(plotClas(subset),groups2plot);
     end
     
     % Defining putative connections for selected cells
@@ -939,6 +932,13 @@ while ii <= size(cell_metrics.troughToPeak,2)
             clr = UI.settings.cellTypeColors(1,:);
         end
     end
+    % Ground truth and reference data colors
+    if ~strcmp(UI.settings.referenceData, 'None')
+        clr2 = UI.settings.cellTypeColors(intersect(referenceData.clusClas,referenceData.selection),:);
+    end
+    if ~strcmp(UI.settings.groundTruthData, 'None')
+        clr3 = UI.settings.groundTruthColors(intersect(groundTruthData.clusClas,groundTruthData.selection),:);
+    end
     
     % Updating table for selected cell
     updateTableColumnWidth
@@ -958,7 +958,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
     end
     
     
-    % % % % % % % % % % % % % % % % % % % % % %
+    %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 1
     % % % % % % % % % % % % % % % % % % % % % %
     
@@ -1004,11 +1004,10 @@ while ii <= size(cell_metrics.troughToPeak,2)
             % 2D plot
             set(subfig_ax(1),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on, axis tight
             view([0 90]);
-
+            
             % Reference data
             if strcmp(UI.settings.referenceData, 'Points') && ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,plotX_title) && isfield(reference_cell_metrics,plotY_title)
                 idx = find(ismember(referenceData.clusClas,referenceData.selection));
-                clr2 = UI.settings.cellTypeColors(intersect(referenceData.clusClas,referenceData.selection),:);
                 legendScatter2 = gscatter(reference_cell_metrics.(plotX_title)(idx), reference_cell_metrics.(plotY_title)(idx), referenceData.clusClas(idx), clr2,'x',8,'off');
                 set(legendScatter2,'HitTest','off')
             elseif strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(reference_cell_metrics,plotX_title) && isfield(reference_cell_metrics,plotY_title)
@@ -1062,8 +1061,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
             % Ground truth data
             if strcmp(UI.settings.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,plotX_title) && isfield(groundTruth_cell_metrics,plotY_title)
                 idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
-                clr2 = UI.settings.groundTruthColors(intersect(groundTruthData.clusClas,groundTruthData.selection),:);
-                legendScatter2 = gscatter(groundTruth_cell_metrics.(plotX_title)(idx), groundTruth_cell_metrics.(plotY_title)(idx), groundTruthData.clusClas(idx), clr2,'x',8,'off');
+                legendScatter2 = gscatter(groundTruth_cell_metrics.(plotX_title)(idx), groundTruth_cell_metrics.(plotY_title)(idx), groundTruthData.clusClas(idx), clr3,'x',8,'off');
                 set(legendScatter2,'HitTest','off')
             elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(groundTruth_cell_metrics,plotX_title) && isfield(groundTruth_cell_metrics,plotY_title)
                 if ~exist('groundTruthData1') || ~strcmp(groundTruthData1.x_field,plotX_title) || ~strcmp(groundTruthData1.y_field,plotY_title) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
@@ -1245,11 +1243,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
 
         [az,el] = view;
         
-        % Setting legend
-        if ~isempty(subset) && UI.settings.layout == 1 && UI.settings.dispLegend == 1
-            legend(legendScatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northeast','Box','off','AutoUpdate','off');
-        end
-        
     elseif customPlotHistograms == 1
         % Double kernel-histogram with scatter plot
         hold off
@@ -1284,11 +1277,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
                     plot(plotX(subsetGroundTruth{jj}), plotY(subsetGroundTruth{jj}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                 end
             end
-        end
-        if ~isempty(subset) && UI.settings.layout == 1  && UI.settings.dispLegend == 1
-            legendScatter = h_scatter(1).Children;
-            legendScatter = legendScatter(end-length(nanUnique(plotClas(subset)))+1:end);
-            legend(legendScatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northeast','Box','off','AutoUpdate','off');
         end
     else
         % Double stairs-histogram with scatter plot
@@ -1338,15 +1326,9 @@ while ii <= size(cell_metrics.troughToPeak,2)
                 end
             end
         end
-        
-        if ~isempty(subset) && UI.settings.layout == 1  && UI.settings.dispLegend == 1
-            legendScatter = h_scatter(1).Children;
-            legendScatter = legendScatter(end-length(nanUnique(plotClas(subset)))+1:end);
-            legend(legendScatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northeast','Box','off','AutoUpdate','off');
-        end
     end
     
-    % % % % % % % % % % % % % % % % % % % % % %
+    %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 2
     % % % % % % % % % % % % % % % % % % % % % %
     
@@ -1364,7 +1346,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
         % Reference data
         if strcmp(UI.settings.referenceData, 'Points') && ~isempty(reference_cell_metrics)
             idx = find(ismember(referenceData.clusClas,referenceData.selection));
-            clr2 = UI.settings.cellTypeColors(intersect(referenceData.clusClas,referenceData.selection),:);
             legendScatter2 = gscatter(reference_cell_metrics.troughToPeak(idx) * 1000, reference_cell_metrics.burstIndex_Royer2012(idx), referenceData.clusClas(idx), clr2,'x',8,'off');
             set(legendScatter2,'HitTest','off')
         elseif strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics)
@@ -1381,8 +1362,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
         % Ground truth data
         if strcmp(UI.settings.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics)
             idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
-            clr2 = UI.settings.groundTruthColors(intersect(groundTruthData.clusClas,groundTruthData.selection),:);
-            legendScatter3 = gscatter(groundTruth_cell_metrics.troughToPeak(idx) * 1000, groundTruth_cell_metrics.burstIndex_Royer2012(idx), groundTruthData.clusClas(idx), clr2,'x',8,'off');
+            legendScatter3 = gscatter(groundTruth_cell_metrics.troughToPeak(idx) * 1000, groundTruth_cell_metrics.burstIndex_Royer2012(idx), groundTruthData.clusClas(idx), clr3,'x',8,'off');
             set(legendScatter3,'HitTest','off')
         elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics)
             yyaxis left
@@ -1446,16 +1426,11 @@ while ii <= size(cell_metrics.troughToPeak,2)
         % Sticky selection
         if UI.settings.stickySelection
         	plot(cell_metrics.troughToPeak(ClickedCells)*1000,cell_metrics.burstIndex_Royer2012(ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-        end
-        % Setting legend
-        if ~isempty(subset) && UI.settings.layout >2 && UI.settings.dispLegend == 1
-            legend(legendScatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northwest','Box','off','AutoUpdate','off');
-        end
-        
+        end        
         ylabel('Burst Index (Royer 2012)'); xlabel('Trough-to-Peak (µs)'), 
     end
     
-    % % % % % % % % % % % % % % % % % % % % % %
+    %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 3
     % % % % % % % % % % % % % % % % % % % % % %
     
@@ -1519,14 +1494,9 @@ while ii <= size(cell_metrics.troughToPeak,2)
         if UI.settings.stickySelection
             plot(tSNE_metrics.plot(ClickedCells,1),tSNE_metrics.plot(ClickedCells,2),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9)
         end
-        
-        % Setting legend
-        if ~isempty(subset) && UI.settings.layout == 2  && UI.settings.dispLegend == 1
-            legend(legendScatter, {plotClasGroups{nanUnique(plotClas(subset))}},'Location','northeast','Box','off','AutoUpdate','off');
-        end
     end
     
-    % % % % % % % % % % % % % % % % % % % % % %
+    %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 4
     % % % % % % % % % % % % % % % % % % % % % %
     
@@ -1589,14 +1559,23 @@ while ii <= size(cell_metrics.troughToPeak,2)
     if strcmp(UI.panel.subfig_ax9.Visible,'on')
         delete(UI.panel.subfig_ax9.Children)
         subfig_ax(9) = axes('Parent',UI.panel.subfig_ax9);
-%         set(subfig_ax(9),'LooseInset',get(subfig_ax(9),'TightInset'))
+        %         set(subfig_ax(9),'LooseInset',get(subfig_ax(9),'TightInset'))
         set(subfig_ax(9),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
         subsetPlots6 = customPlot(customCellPlot6,ii,general,batchIDs);
     end
     
+    % % % % % % % % % % % % % % % % % % % % % %
+    % Separate legend in side panel
+    % % % % % % % % % % % % % % % % % % % % % %
+    
+    updateLegend
+
+    
+    % % % % % % % % % % % % % % % % % % % % % %
     % Response including benchmarking the UI
+    
     UI.benchmark.String = [num2str(length(subset)),'/',num2str(size(cell_metrics.troughToPeak,2)), ' cells displayed. Processing time: ', num2str(toc(timerVal),3),' sec'];
-   
+    
     % Waiting for uiresume call
     uiwait(UI.fig);
     timerVal = tic;
@@ -1624,9 +1603,29 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function subsetPlots = customPlot(customPlotSelection,ii,general,batchIDs)
         % Creates all cell specific plots
         subsetPlots = [];
-        col = UI.settings.cellTypeColors(clusClas(ii),:);
-%         [~, ~, ic] = unique(plotClas,'stable');
-%         col = clr(ic(ii),:);
+        
+        % Determinig the plot color
+        if UI.checkbox.compare.Value == 1
+            col = UI.settings.cellTypeColors(plotClas(ii),:);
+        elseif Colorval == 1 ||  UI.checkbox.groups.Value == 1
+            col = UI.settings.cellTypeColors(plotClas(ii),:);
+        else
+            if isnan(clr)
+                col = clr;
+            else
+                temp = find(nanUnique(plotClas(subset))==plotClas(ii));
+                if temp <= size(clr,1)
+                    col = clr(temp,:);
+                else
+                    col = [0.3,0.3,0.3];
+                end
+                if isempty(col)
+                    col = [0.3,0.3,0.3];
+                end
+            end
+        end
+        %         col = UI.settings.cellTypeColors(clusClas(ii),:);
+        
         axis tight
         if strcmp(customPlotSelection,'Single waveform')
             
@@ -2847,7 +2846,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             mkdir(fullfile(path1,'revisions_cell_metrics'));
         end
         save(fullfile(path1, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'-struct', 'S','-v7.3','-nocompression');
-        MsgLog(['Backup succesfully created: ' path1],1)
     end
     
     % % % % % % % % % % % % % % % % % % % % % %
@@ -3274,20 +3272,23 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             LoadDB_sessionlist
         end
         
-        loadDB.dialog = dialog('Position', [300, 300, 900, 553],'Name','Cell Explorer: Load reference data','WindowStyle','modal'); movegui(loadDB.dialog,'center')
-        loadDB.popupmenu.filter = uicontrol('Parent',loadDB.dialog,'Style', 'Edit', 'String', 'Filter', 'Position', [10, 518, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left');
+        loadDB.dialog = dialog('Position', [300, 300, 900, 565],'Name','Cell Explorer: Load reference data','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
+        uicontrol('Parent',loadDB.dialog,'Style','text','Position',[10, 534, 100, 25],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
+        uicontrol('Parent',loadDB.dialog,'Style','text','Position',[480, 534, 100, 25],'Units','normalized','String','Sort by','HorizontalAlignment','left','Units','normalized');
+        uicontrol('Parent',loadDB.dialog,'Style','text','Position',[640, 534, 100, 25],'Units','normalized','String','Repositories','HorizontalAlignment','left','Units','normalized');
+        loadDB.popupmenu.filter = uicontrol('Parent',loadDB.dialog,'Style', 'Edit', 'String', '', 'Position', [10, 518, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left','Units','normalized');
         
-        loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[480, 520, 150, 20],'Units','normalized','String',{'Sort by','Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList);
-        loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[640, 520, 150, 20],'Units','normalized','String',{'Your repositories','All repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList);
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 515, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist);
+        loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[480, 520, 150, 20],'Units','normalized','String',{'Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+        loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[640, 520, 150, 20],'Units','normalized','String',{'Your repositories','All repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 515, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist,'Units','normalized');
         
-        loadDB.sessionList = uitable(loadDB.dialog,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 140 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false]); % ,'CellSelectionCallback',@ClicktoSelectFromTable
+        loadDB.sessionList = uitable(loadDB.dialog,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 140 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
         
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll);
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll);
-        loadDB.summaryText = uicontrol('Parent',loadDB.dialog,'Style','text','Position',[210, 10, 480, 20],'Units','normalized','String','','HorizontalAlignment','center');
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[700, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog);
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog);
+        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll,'Units','normalized');
+        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll,'Units','normalized');
+        loadDB.summaryText = uicontrol('Parent',loadDB.dialog,'Style','text','Position',[210, 10, 480, 20],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
+        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[700, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog,'Units','normalized');
+        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
         UpdateSummaryText
         Button_DB_filterList
         if ~isempty(reference_cell_metrics)
@@ -3390,18 +3391,18 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 idx1 = 1:size(db.dataTable,1);
             end
             
-            if loadDB.popupmenu.sorting.Value == 3 % Cell count
+            if loadDB.popupmenu.sorting.Value == 2 % Cell count
                 cellCount = cell2mat( cellfun(@(x) x.spikeSorting.cellCount,db.sessions,'UniformOutput',false));
                 [~,idx2] = sort(cellCount(db.index),'descend');
-            elseif loadDB.popupmenu.sorting.Value == 4 % Animal
+            elseif loadDB.popupmenu.sorting.Value == 3 % Animal
                 [~,idx2] = sort(db.menu_animals(db.index));
-            elseif loadDB.popupmenu.sorting.Value == 5 % Species
+            elseif loadDB.popupmenu.sorting.Value == 4 % Species
                 [~,idx2] = sort(db.menu_species(db.index));
-            elseif loadDB.popupmenu.sorting.Value == 6 % Behavioral paradigm
+            elseif loadDB.popupmenu.sorting.Value == 5 % Behavioral paradigm
                 [~,idx2] = sort(db.menu_behavioralParadigm(db.index));
-            elseif loadDB.popupmenu.sorting.Value == 7 % Investigator
+            elseif loadDB.popupmenu.sorting.Value == 6 % Investigator
                 [~,idx2] = sort(db.menu_investigator(db.index));
-            elseif loadDB.popupmenu.sorting.Value == 8 % Data repository
+            elseif loadDB.popupmenu.sorting.Value == 7 % Data repository
                 [~,idx2] = sort(db.menu_repository(db.index));
             else
                 idx2 = 1:size(db.dataTable,1);
@@ -4054,6 +4055,72 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
+
+    function updateLegend(src,evnt)
+        % Updates the legends in the Legends tab with active plot types
+        if strcmp(UI.panel.tabgroup2.SelectedTab.Title,'Legends')
+        nLegends = -1;
+        axes(UI.tabs.legends,'Position',[0 0 1 1])
+        plot(0,0,'xw', 'LineWidth', 3., 'MarkerSize',18,'HitTest','off'), xlim([-0.3,2]), hold on, yticks([]), xticks([])
+        plot(0,0,'xk', 'LineWidth', 1.5, 'MarkerSize',16,'HitTest','off');
+        text(0.2,0,'Selected cell')
+        legendNames = plotClasGroups(nanUnique(plotClas(subset)));
+        for i = 1:length(legendNames)
+            plot(0,nLegends,'.','color',clr(i,:), 'MarkerSize',25)
+            text(0.2,nLegends,legendNames{i})
+            nLegends = nLegends - 1;
+        end
+        
+        % Synaptic connections
+        switch monoSynDisp
+            case 'All'
+                plot([-0.1,0.1],nLegends*[1,1],'-k','LineWidth', 2)
+                text(0.2,nLegends,'All connections')
+                nLegends = nLegends - 1;
+            case {'Selected','Upstream','Downstream','Up & downstream'}
+                if ~isempty(inbound)
+                    plot([-0.1,0.1],nLegends*[1,1],'-b','LineWidth', 2)
+                    text(0.2,nLegends,'Inbound connection')
+                    nLegends = nLegends - 1;
+                end
+                if ~isempty(outbound)
+                    plot([-0.1,0.1],nLegends*[1,1],'-m','LineWidth', 2)
+                    text(0.2,nLegends,'Outbound connection')
+                    nLegends = nLegends - 1;
+                end
+        end
+        % Ground truth cell types within session
+        if groundTruthSelection
+            idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
+            for jj = 1:length(idGroundTruth)
+                plot(0, nLegends,UI.settings.groundTruthMarkers{jj},'LineWidth', 1.5, 'MarkerSize',8);
+                text(0.2,nLegends,UI.settings.groundTruth{idGroundTruth(jj)})
+                nLegends = nLegends - 1;
+            end
+        end
+        % Reference data
+        if ~strcmp(UI.settings.referenceData, 'None') % 'Points','Image'
+            idx = find(ismember(referenceData.clusClas,referenceData.selection));
+            legends2plot = unique(referenceData.clusClas(idx));
+            for jj = 1:length(legends2plot)
+                plot(0, nLegends,'x','color',clr2(jj,:),'markersize',8);
+                text(0.2,nLegends,UI.settings.cellTypes{legends2plot(jj)})
+                nLegends = nLegends - 1;
+            end
+        end
+        % Ground truth data
+        if ~strcmp(UI.settings.groundTruthData, 'None') % 'Points','Image'
+            idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
+            legends2plot = unique(groundTruthData.clusClas(idx));
+            for jj = 1:length(legends2plot)
+                plot(0, nLegends,'x','color', clr3(jj,:),'markersize',8);
+                text(0.2,nLegends,UI.settings.groundTruthTypes{legends2plot(jj)})
+                nLegends = nLegends - 1;
+            end
+        end
+        ylim([min(nLegends,-5),1])
+        end
+    end
 
     function advanceClass(ClasIn)
         if ~exist('ClasIn')
@@ -5304,6 +5371,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         else
             UI.menu.display.dispLegend.Checked = 'on';
             UI.settings.dispLegend = 1;
+            UI.panel.tabgroup2.SelectedTab = UI.tabs.legends;
         end
         uiresume(UI.fig);
     end
@@ -7006,20 +7074,20 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     LoadDB_sessionlist
                 end
                 
-                loadDB.dialog = dialog('Position', [300, 300, 900, 553],'Name','Cell Explorer: Load sessions from DB','WindowStyle','modal'); movegui(loadDB.dialog,'center')
-                loadDB.popupmenu.filter = uicontrol('Parent',loadDB.dialog,'Style', 'Edit', 'String', 'Filter', 'Position', [10, 518, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left');
-                
-                loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[480, 520, 150, 20],'Units','normalized','String',{'Sort by','Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList);
-                loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[640, 520, 150, 20],'Units','normalized','String',{'All repositories','Your repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList);
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 515, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist);
-                
-                loadDB.sessionList = uitable(loadDB.dialog,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 140 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false]); % ,'CellSelectionCallback',@ClicktoSelectFromTable
-                
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll);
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll);
-                loadDB.summaryText = uicontrol('Parent',loadDB.dialog,'Style','text','Position',[210, 10, 480, 25],'Units','normalized','String','','HorizontalAlignment','center');
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[700, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog);
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog);
+                loadDB.dialog = dialog('Position', [300, 300, 900, 565],'Name','Cell Explorer: Load sessions from DB','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
+                uicontrol('Parent',loadDB.dialog,'Style','text','Position',[10, 534, 100, 25],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
+                uicontrol('Parent',loadDB.dialog,'Style','text','Position',[480, 534, 100, 25],'Units','normalized','String','Sort by','HorizontalAlignment','left','Units','normalized');
+                uicontrol('Parent',loadDB.dialog,'Style','text','Position',[640, 534, 100, 25],'Units','normalized','String','Repositories','HorizontalAlignment','left','Units','normalized');
+                loadDB.popupmenu.filter = uicontrol('Parent',loadDB.dialog,'Style', 'Edit', 'String', '', 'Position', [10, 518, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left','Units','normalized');
+                loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[480, 520, 150, 20],'Units','normalized','String',{'Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+                loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[640, 520, 150, 20],'Units','normalized','String',{'All repositories','Your repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 515, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist,'Units','normalized');
+                loadDB.sessionList = uitable(loadDB.dialog,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 140 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll,'Units','normalized');
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll,'Units','normalized');
+                loadDB.summaryText = uicontrol('Parent',loadDB.dialog,'Style','text','Position',[210, 10, 480, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[700, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog,'Units','normalized');
+                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
                 UpdateSummaryText
                 uiwait(loadDB.dialog)
             
@@ -7117,18 +7185,18 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 idx1 = 1:size(db.dataTable,1);
             end
             
-            if loadDB.popupmenu.sorting.Value == 3 % Cell count
+            if loadDB.popupmenu.sorting.Value == 2 % Cell count
                 cellCount = cell2mat( cellfun(@(x) x.spikeSorting.cellCount,db.sessions,'UniformOutput',false));
                 [~,idx2] = sort(cellCount(db.index),'descend');
-            elseif loadDB.popupmenu.sorting.Value == 4 % Animal
+            elseif loadDB.popupmenu.sorting.Value == 3 % Animal
                 [~,idx2] = sort(db.menu_animals(db.index));
-            elseif loadDB.popupmenu.sorting.Value == 5 % Species
+            elseif loadDB.popupmenu.sorting.Value == 4 % Species
                 [~,idx2] = sort(db.menu_species(db.index));
-            elseif loadDB.popupmenu.sorting.Value == 6 % Behavioral paradigm
+            elseif loadDB.popupmenu.sorting.Value == 5 % Behavioral paradigm
                 [~,idx2] = sort(db.menu_behavioralParadigm(db.index));
-            elseif loadDB.popupmenu.sorting.Value == 7 % Investigator
+            elseif loadDB.popupmenu.sorting.Value == 6 % Investigator
                 [~,idx2] = sort(db.menu_investigator(db.index));
-            elseif loadDB.popupmenu.sorting.Value == 8 % Data repository
+            elseif loadDB.popupmenu.sorting.Value == 7 % Data repository
                 [~,idx2] = sort(db.menu_repository(db.index));
             else
                 idx2 = 1:size(db.dataTable,1);
@@ -8091,7 +8159,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 for j = 1:length(groundTruthCelltypes)
                     cellCount(j) = sum(cell2mat(cellfun(@(X) any(contains(X,groundTruthCelltypes{j})), cell_metrics.groundTruthClassification(tagFilter2),'UniformOutput',false)));
                 end
+            else
+                cellCount = zeros(1,length(groundTruthCelltypes));
             end
+            
             cellCount = cellstr(num2str(cellCount'))';
             groundTruthCelltypesList = strcat(groundTruthCelltypes,' (',cellCount,')');
         end
