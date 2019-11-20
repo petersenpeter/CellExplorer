@@ -10,5 +10,3 @@ The Cell Explorer: a graphical user interface and a standardized pipeline for ex
 
 <a href="https://zenodo.org/badge/latestdoi/152647739"><img src="https://zenodo.org/badge/152647739.svg" alt="DOI"></a>
 
-### Demo
-![Cell Explorer Demo](https://buzsakilab.com/wp/wp-content/uploads/2019/11/CellExplorerAnimation.gif)
