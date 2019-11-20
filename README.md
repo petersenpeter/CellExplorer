@@ -3,8 +3,7 @@ The Cell Explorer is a graphical user interface (GUI) and standardized pipeline 
 
 <a href="https://github.com/petersenpeter/Cell-Explorer/wiki">![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)</a>
 
-### How to cite
-Please use below DOI for citing the Cell Explorer:
+### Please use below DOI for citing the Cell Explorer:
 
 The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells. By Peter C. Petersen and György Buzsáki. 2019.
 
