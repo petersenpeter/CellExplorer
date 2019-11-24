@@ -1,8 +1,11 @@
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Load meta data for single session
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Please provide your credentials and define relevant local paths before running these examples:
-% edit db_credentials
-% edit db_local_repositories
+edit db_credentials
+edit db_local_repositories
 
+%% Load session from db
 sessionName = 'Rat08-20130708';
 sessions = db_load_sessions('sessionName',sessionName);
 session = sessions{1};
@@ -26,7 +29,6 @@ animals = db_load_table('animals');
 % Load all silicon probes
 
 siliconprobes = db_load_table('siliconprobes'); % Examples: siliconprobes, projects
-
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Save meta data from data to database

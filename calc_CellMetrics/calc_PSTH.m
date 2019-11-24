@@ -50,7 +50,7 @@ switch alignment
     case 'onset'
         event_times = event.timestamps(:,1);
         padding = binDistribution(1)/binDistribution(2)*duration;
-        binsToKeep = ceil((padding+duration/2)/binSize):(duration+padding)*2/binSize;
+        binsToKeep = int64(ceil((padding+duration/2)/binSize):(duration+padding)*2/binSize);
     case 'center'
         event_times = mean(event.timestamps);
         padding = 0;

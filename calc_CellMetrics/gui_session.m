@@ -11,13 +11,10 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % parameters : parameters struct
 % statusExit : Whether the GUI was closed via the OK button or canceled
 
+% gui_session is part of the Cell Explorer: https://github.com/petersenpeter/Cell-Explorer
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 18-11-2019
-
-% TODO
-% 1. Import meta data from files
-% 2. Write meta data back to db
+% Last edited: 22-11-2019
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
@@ -123,10 +120,10 @@ if exist('db_load_settings') == 2
 else
     enableDatabase = 0;
 end
-
+uiLoaded = false;
 
 % Importing session metadata from DB if metadata is out of data
-if ~isfield(session.general,'version') || session.general.version<2
+if ~isfield(session.general,'version') || session.general.version<3
     if isfield(session.general,'entryID')
         disp('Metadata not up to date. Downloading from server')
         success = updateFromDB;
@@ -431,6 +428,7 @@ uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[490, 10, 
 
 loadSessionStruct
 UI.fig.Visible = 'on';
+uiLoaded = true;
 uiwait(UI.fig)
 
 %% % % % % % % % % % % % % % % % % % % % %
@@ -539,7 +537,9 @@ uiwait(UI.fig)
                 session = db_set_session('sessionName',session.general.name,'changeDir',false,'saveMat',true);
             end
             if ~isempty(session)
-                loadSessionStruct
+                if uiLoaded
+                    loadSessionStruct
+                end
                 success = 1;
             end
         else
@@ -790,11 +790,11 @@ uiwait(UI.fig)
             nTotal = length(session.extracellular.electrodes.nChannels);
             for fn = 1:nTotal
                 tableData{fn,1} = false;
-                tableData{fn,2} = session.extracellular.electrodes.siliconProbe{fn};
+                tableData{fn,2} = session.extracellular.electrodes.siliconProbes{fn};
                 tableData{fn,3} = session.extracellular.electrodes.company{fn};
                 tableData{fn,4} = session.extracellular.electrodes.nChannels(fn);
                 tableData{fn,5} = session.extracellular.electrodes.nShanks(fn);
-                tableData{fn,6} = session.extracellular.electrodes.brainRegion{fn};
+                tableData{fn,6} = session.extracellular.electrodes.brainRegions{fn};
             end
             UI.table.electrodes.Data = tableData;
         else
@@ -2169,21 +2169,25 @@ uiwait(UI.fig)
     end
 
     function verifySpikeGroup
-        if isnumeric(session.extracellular.electrodeGroups.channels)
-            channels = session.extracellular.electrodeGroups.channels(:);
+        if isfield(session.extracellular,'electrodeGroups')
+            if isnumeric(session.extracellular.electrodeGroups.channels)
+                channels = session.extracellular.electrodeGroups.channels(:);
+            else
+                channels = [session.extracellular.electrodeGroups.channels{:}];
+            end
+            uniqueChannels = length(unique(channels));
+            nChannels = length(channels);
+            if nChannels ~= session.extracellular.nChannels
+                errordlg(['Channel count in electrode groups (', num2str(nChannels), ') does not corresponds to nChannels (',num2str(session.extracellular.nChannels),')'],'Error')
+            elseif uniqueChannels ~= session.extracellular.nChannels
+                errordlg('The unique channel count does not corresponds to nChannels','Error')
+            elseif any(sort(channels) ~= [1:session.extracellular.nChannels]-1)
+                errordlg('Channels are not ranging from 0 : nChannels-1','Error')
+            else
+                msgbox('Channels verified succesfully!');
+            end
         else
-            channels = [session.extracellular.electrodeGroups.channels{:}];
-        end
-        uniqueChannels = length(unique(channels));
-        nChannels = length(channels);
-        if nChannels ~= session.extracellular.nChannels
-            errordlg(['Channel count in electrode groups (', num2str(nChannels), ') does not corresponds to nChannels (',num2str(session.extracellular.nChannels),')'],'Error')
-        elseif uniqueChannels ~= session.extracellular.nChannels
-            errordlg('The unique channel count does not corresponds to nChannels','Error')
-        elseif any(sort(channels) ~= [1:session.extracellular.nChannels]-1)
-            errordlg('Channels are not ranging from 0 : nChannels-1','Error')
-        else
-            msgbox('Channels verified succesfully!');
+            msgbox('Error: No electrode groups found.');
         end
     end
 
@@ -2210,9 +2214,9 @@ uiwait(UI.fig)
     
     function syncChannelGroups
         answer = questdlg('How do you want to sync the channel groups?','Sync channel groups','electrode groups -> spike groups', 'spike groups -> electrode groups','Cancel','electrode groups -> spike groups');
-        if strcmp(answer,'electrode groups -> spike groups')
+        if strcmp(answer,'electrode groups -> spike groups') && isfield(session.extracellular,'electrodeGroups')
             session.extracellular.spikeGroups = session.extracellular.electrodeGroups;
-        elseif strcmp(answer,'spike groups -> electrode groups')
+        elseif strcmp(answer,'spike groups -> electrode groups') && isfield(session.extracellular,'spikeGroups')
             session.extracellular.electrodeGroups = session.extracellular.spikeGroups;
         end
         updateChannelGroupsList

@@ -2,9 +2,9 @@ function [ripples] = ce_FindRipples(session,varargin)
 %FindRipples - Find hippocampal ripples (100~200Hz oscillations).
 %
 % USAGE
-%    [ripples] = bz_FindRipples(lfp.data,lfp.timestamps,<options>)
+%    [ripples] = ce_FindRipples(lfp.data,lfp.timestamps,<options>)
 %    OR
-%    [ripples] = bz_FindRipples(basepath,channel,<options>)
+%    [ripples] = ce_FindRipples(basepath,channel,<options>)
 %
 %    Ripples are detected using the normalized squared signal (NSS) by
 %    thresholding the baseline, merging neighboring events, thresholding

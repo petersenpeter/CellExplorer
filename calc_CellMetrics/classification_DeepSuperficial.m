@@ -31,8 +31,9 @@ function classification_deepSuperficial(session,varargin)
 % Dependencies:
 % nanconv (included with the Cell Explorer)
 % LoadBinary (loading lfp)
-% bz_FindRipples (finding ripples)
+% ce_FindRipples / bz_FindRipples (find ripples)
 
+% Part of the Cell Explorer: https://github.com/petersenpeter/Cell-Explorer
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 12-11-2019

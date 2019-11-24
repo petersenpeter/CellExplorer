@@ -5,17 +5,17 @@
 % petersen.peter@gmail.com
 % Last edited: 19-11-2019
 
-% % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Cell Explorer Preferences  
-% % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 % Display settings - An incomplete list:
-% 'Single waveform','All waveforms','All waveforms (image)','Single raw waveform','All raw waveforms','Single ACG',
-% 'All ACGs','All ACGs (image)','CCGs (image)','Sharp wave-ripple'
-UI.settings.customCellPlotIn1 = 'All waveforms';
-UI.settings.customCellPlotIn2 = 'Single ACG'; 
+% 'Waveforms (single)','Waveforms (all)','Waveforms (image)','Raw waveforms (single)','Raw waveforms (all)','ACGs (single)',
+% 'ACGs (all)','ACGs (image)','CCGs (image)','Sharp wave-ripple'
+UI.settings.customCellPlotIn1 = 'Waveforms (all)';
+UI.settings.customCellPlotIn2 = 'ACGs (single)'; 
 UI.settings.customCellPlotIn3 = 'responseCurves_firingRateAcrossTime';
-UI.settings.customCellPlotIn4 = 'Single waveform';
+UI.settings.customCellPlotIn4 = 'Waveforms (single)';
 UI.settings.customCellPlotIn5 = 'CCGs (image)';
 UI.settings.customCellPlotIn6 = 'firingRateMap';
 
@@ -27,8 +27,6 @@ UI.settings.plotCountIn = 'GUI 3+3';            % ['GUI 1+3','GUI 2+3','GUI 3+3'
 UI.settings.dispLegend = 0;                     % [0,1] Display legends in plots?
 UI.settings.plotWaveformMetrics = 0;            % show waveform metrics on the single waveform
 UI.settings.sortingMetric = 'burstIndex_Royer2012'; % metrics used for sorting image data
-UI.settings.referenceData = 'None';             % ['None','Image','Points']
-UI.settings.groundTruthData = 'None';           % ['None','Image','Points']
 UI.settings.markerSize = 15;                    % marker size in the group pltos [default: 20]
 
 % Autosave settings
@@ -73,11 +71,10 @@ UI.settings.firingRateMap.showHeatmap = false;          % boolean
 UI.settings.firingRateMap.showLegend = false;           % boolean
 UI.settings.firingRateMap.showHeatmapColorbar = false;  % boolean
 
-% % % % % % % % % % % % % % % % % % % % % %
-% Spikes plot definitions
-%
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Spikes plot definitions 
 % Can be loaded by pressing CTRL+A in the Cell Explorer
-% % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 plotName = 'spikes_pos_vs_phase';
 spikesPlots.(plotName).x = 'pos_linearized';

@@ -22,10 +22,10 @@ VerticalSpacingBetweenSites_corrected = [];
 Layout = [];
 
 % Loads the list of silicon probes from the database
-siliconprobes = struct2cell(db_load_table('siliconprobes',SiliconProbes{1}));
-
-
-% Determines the best estimate of the vertical spacing across channels for different probe designs.
+temp = db_load_table('siliconprobes',SiliconProbes{1});
+if ~isempty(temp)
+    siliconprobes = struct2cell(temp);
+    % Determines the best estimate of the vertical spacing across channels for different probe designs.
 for i =1:length(SiliconProbes)
     probeids(i) = find(arrayfun(@(n) strcmp(siliconprobes{n}.DescriptiveName, SiliconProbes{1}), 1:numel(siliconprobes)));
     VerticalSpacingBetweenSites(i) = str2num(siliconprobes{probeids(i)}.VerticalSpacingBetweenSites);
@@ -43,6 +43,9 @@ for i =1:length(SiliconProbes)
         error('No probe layout defined');
     end
 end
+end
+
+
 if length(unique(VerticalSpacingBetweenSites_corrected))==1
     VerticalSpacing = VerticalSpacingBetweenSites_corrected(1);
 else

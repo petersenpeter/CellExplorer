@@ -61,7 +61,7 @@ else
     session.general.clusteringPath = ''; % Full path to the clustered data (here assumed to be the basepath)
 end
 session.general.name = pathPieces{end}; % Session name
-session.general.version = 2; % Metadata version
+session.general.version = 3; % Metadata version
 session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -78,7 +78,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Extracellular
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-if ~isfield(session.extracellular,'leastSignificantBit')  || isempty(session.extracellular.leastSignificantBit) 
+if isfield(session,'extracellular') && (~isfield(session.extracellular,'leastSignificantBit')  || isempty(session.extracellular.leastSignificantBit))
     session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
 end
 session.extracellular.probeDepths = 0;
@@ -144,7 +144,7 @@ if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.m
     session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
     session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
     
-elseif exist('LoadXml.m','file')
+elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
     sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
     if isfield(sessionInfo,'SpkGrps')
         session.extracellular.nSpikeGroups = length(sessionInfo.SpkGrps); % Number of spike groups
@@ -163,7 +163,7 @@ else
     sessionInfo = [];
 end
 
-if ~isfield(session.general,'date') || isempty(session.general.date)
+if (~isfield(session.general,'date') || isempty(session.general.date)) && isfield(sessionInfo,'Date')
     session.general.date = sessionInfo.Date;
 end
 

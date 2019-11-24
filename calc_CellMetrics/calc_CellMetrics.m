@@ -7,9 +7,9 @@ function cell_metrics = calc_CellMetrics(varargin)
 %
 %   Check the wiki of the Cell Explorer for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
 %
-%   % % % % % % % % %
+%   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %   INPUTS           
-%   % % % % % % % % %
+%   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %
 %   varargin (Variable-length input argument list; see below)
 %
@@ -44,9 +44,9 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   plots                  - logical. Plot summary figures
 %   debugMode              - logical. Activate a debug mode avoiding try/catch 
 %
-%   % % % % % % % % %
+%   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %   OUTPUT
-%   % % % % % % % % %
+%   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %
 %   Cell_metrics : structure described on the wiki https://github.com/petersenpeter/Cell-Explorer/wiki/Cell-metrics
 
@@ -57,8 +57,8 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   TODO
 %   Exclude spikes during manipulations
 %   Determine and implement optimal length of unfiltered waveforms
-%   Standardize tracking data
-%   Import cell types classified in Buzcode
+%   Standardize and implement tracking data
+%   Import cell types classified in Buzcode (partly done)
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -138,8 +138,8 @@ if ~isempty(id) || ~isempty(sessionin) || ~isempty(sessionStruct)
             if isempty(session.general.entryID)
                 session.general.entryID = ''; % DB id
             end
-            if isempty(session.spikeSorting{1}.entryIDs)
-                session.spikeSorting{1}.entryIDs = ''; % DB id
+            if isempty(session.spikeSorting{1}.entryID)
+                session.spikeSorting{1}.entryID = ''; % DB id
             end
         end
     else
@@ -167,6 +167,13 @@ if ~exist('session','var')
     end
 end
 
+% Checking format of spike groups and electrode groups (must be of type cell)
+if isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels') && isnumeric(session.extracellular.spikeGroups.channels)
+    session.extracellular.spikeGroups.channels = num2cell(session.extracellular.spikeGroups.channels,2);
+end
+if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.electrodeGroups,'channels') && isnumeric(session.extracellular.electrodeGroups.channels)
+    session.extracellular.electrodeGroups.channels = num2cell(session.extracellular.electrodeGroups.channels,2);
+end
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % showGUI
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -178,7 +185,7 @@ if showGUI
     session.general.clusteringPath = clusteringpath;
     
     % Non-standard parameters: probeSpacing and probeLayout
-    if ~isfield(session.analysisTags,'probesVerticalSpacing') & ~isfield(session.analysisTags,'probesLayout')
+    if ~isfield(session.analysisTags,'probesVerticalSpacing') & ~isfield(session.analysisTags,'probesLayout') & isfield(session.extracellular.electrodes,'siliconProbes')
         session = determineProbeSpacing(session);
     end
     [session,parameters,status] = gui_session(session,parameters);
@@ -208,7 +215,6 @@ end
 
 disp('* Getting spikes')
 sr = session.extracellular.sr;
-srLfp = session.extracellular.srLfp;
 spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting{1}.format,'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
 if ~isfield(spikes,'processinginfo') || ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.5
     spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting{1}.format,'basepath',basepath,'basename',basename,'forceReload',true,'spikes',spikes,'LSB',session.extracellular.leastSignificantBit);
@@ -328,7 +334,6 @@ cell_metrics.general.cellCount = length(spikes.total);
 % Waveform based calculations
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-
 if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
     if ~all(isfield(cell_metrics,{'waveforms23','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || forceReload == true
         disp('* Getting waveforms');
@@ -425,7 +430,6 @@ if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,
         
         disp('* Fitting triple exponential to ACG')
         fit_params = fit_ACG(acg_metrics.acg2);
-
         
         cell_metrics.acg.wide = acg_metrics.acg; % Wide: 1000ms wide CCG with 1ms bins
         cell_metrics.acg.narrow = acg_metrics.acg2; % Narrow: 100ms wide CCG with 0.5ms bins
@@ -573,8 +577,8 @@ if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetric
         end
         
         for j = 1:size(spikes.times,2)
-            spikes2.ts{j} = spikes2.ts{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/srLfp);
-            spikes2.times{j} = spikes2.times{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/srLfp);
+            spikes2.ts{j} = spikes2.ts{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/session.extracellular.srLfp);
+            spikes2.times{j} = spikes2.times{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/session.extracellular.srLfp);
             spikes2.ts_eeg{j} = ceil(spikes2.ts{j}/16);
             spikes2.theta_phase{j} = InstantaneousTheta.signal_phase(spikes2.ts_eeg{j});
             spikes2.speed{j} = interp1(animal.time,animal.speed,spikes2.times{j});
@@ -892,8 +896,13 @@ if any(contains(metrics,{'importCellTypeClassification','all'})) && ~any(contain
         disp('* Importing classified cell types from buzcode');
         temp = load(filename);
         disp(['  Loaded ' filename ' succesfully']);
-        if isfield(temp.CellClass,'label') & size(emp.CellClass.label,2) == cell_metrics.general.cellCount
-            cell_metrics.CellClassBuzcode = temp.CellClass.label;
+        if isfield(temp.CellClass,'label') & size(temp.CellClass.label,2) == cell_metrics.general.cellCount
+            cell_metrics.CellClassBuzcode = repmat({'Unknown'},1,cell_metrics.general.cellCount);
+            for i = 1:cell_metrics.general.cellCount
+                if ~isempty(temp.CellClass.label{i})
+                    cell_metrics.CellClassBuzcode{i} = temp.CellClass.label{i};
+                end
+            end
         end
     end
 end    
@@ -963,7 +972,7 @@ for j = 1:cell_metrics.general.cellCount
         cell_metrics.sessionID(j) = str2num(session.general.entryID); % cell_sessionid OK
     end 
     if isfield(session.spikeSorting{1},'entryID')
-        cell_metrics.spikeSortingID(j) = session.spikeSorting{1}.entryIDs; % cell_spikesortingid OK
+        cell_metrics.spikeSortingID(j) = session.spikeSorting{1}.entryID; % cell_spikesortingid OK
     end
     
     % Spikes metrics
