@@ -46,11 +46,6 @@ function cell_metrics = CellExplorer(varargin)
 % Shortcuts to built-in functions
 % initializeSession, DatabaseSessionDialog, saveDialog, restoreBackup,keyPress, defineSpikesPlots, customPlot, importGroundTruth
 % GroupAction, brainRegionDlg, FromPlot, GroupSelectFromPlot, tSNE_redefineMetrics, ScrolltoZoomInPlot, defineReferenceData
- 
-% TODO
-% Generalize SignificanceMetricsMatrix
-% GUI to reverse changes from backup files (Implemented but needs testing)
-
 
 p = inputParser;
 
@@ -139,7 +134,7 @@ end
 
 CellExplorerVersion = 1.52;
 
-UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'visible','off','DefaultAxesLooseInset',[.01,.01,.01,.01]);
+UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback); 
 hManager = uigetmodemanager(UI.fig);
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -506,17 +501,45 @@ end
 % UI panels
 % % % % % % % % % % % % % % % % % % % % % %
 
+% Flexib grid box for adjusting the width of the side panels 
+UI.HBox = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0 ); 
+
+% Left panel 
+UI.panel.left = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.HBox);
+
+% Vertical center box with the title at top, grid flex with plots as middle element and message log and bechmark text at bottom 
+UI.VBox = uix.VBox( 'Parent', UI.HBox, 'Spacing', 0, 'Padding', 0 ); 
+
+% Title box
+UI.panel.centerTop = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.VBox);
+
+% Grid Flex with plots
+UI.panel.GridFlex = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.VBox);
+% UI.panel.GridFlex = uix.GridFlex( 'Parent', UI.VBox, 'Spacing', 5 , 'Padding', 5); 
+
 % UI plot panels
-left_margin = 0.098;
-UI.panel.subfig_ax1 = uipanel('position',[left_margin 0.66 0.26 0.31],'BorderType','none');
-UI.panel.subfig_ax2 = uipanel('position',[left_margin+0.265 0.66 0.26 0.31],'BorderType','none');
-UI.panel.subfig_ax3 = uipanel('position',[left_margin+0.53 0.66 0.265 0.31],'BorderType','none');
-UI.panel.subfig_ax4 = uipanel('position',[left_margin 0.33 0.26 0.325],'BorderType','none');
-UI.panel.subfig_ax5 = uipanel('position',[left_margin+0.265 0.33 0.26 0.325],'BorderType','none');
-UI.panel.subfig_ax6 = uipanel('position',[left_margin+0.53 0.33 0.265 0.325],'BorderType','none');
-UI.panel.subfig_ax7 = uipanel('position',[left_margin 0.03 0.26 0.33-0.035],'BorderType','none');
-UI.panel.subfig_ax8 = uipanel('position',[left_margin+0.265 0.03 0.26 0.33-0.035],'BorderType','none');
-UI.panel.subfig_ax9 = uipanel('position',[left_margin+0.53 0.03 0.265 0.33-0.035],'BorderType','none');
+UI.panel.subfig_ax1 = uipanel('position',[0 0.66 0.33 0.34],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax2 = uipanel('position',[0.33 0.66 0.33 0.34],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax3 = uipanel('position',[0.66 0.66 0.34 0.34],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax4 = uipanel('position',[0 0.33 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax5 = uipanel('position',[0.33 0.33 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax6 = uipanel('position',[0.66 0.33 0.34 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax7 = uipanel('position',[0 0 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax8 = uipanel('position',[0.33 0 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax9 = uipanel('position',[0.66 0 0.34 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+% set(UI.panel.GridFlex, 'Widths', [-1 -1 -1], 'Heights', [-1 -1 -1] );
+
+% Right panel 
+UI.panel.right = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.HBox);
+
+% Message log and performance
+UI.panel.centerBottom = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.VBox);
+
+% set VBox elements sizes
+set( UI.HBox, 'Widths', [150 -1 150]);
+
+% set HBox elements sizes
+set( UI.VBox, 'Heights', [25 -1 25]);
 
 subfig_ax(1) = axes('Parent',UI.panel.subfig_ax1);
 subfig_ax(2) = axes('Parent',UI.panel.subfig_ax2);
@@ -528,23 +551,57 @@ subfig_ax(7) = axes('Parent',UI.panel.subfig_ax7);
 subfig_ax(8) = axes('Parent',UI.panel.subfig_ax8);
 subfig_ax(9) = axes('Parent',UI.panel.subfig_ax9);
 
+% % % % % % % % % % % % % % % % % % %
+% Title and Benchmark
+% % % % % % % % % % % % % % % % % % %
+
+% Benchmark with display time in seconds for most recent plot call
+UI.benchmark = uicontrol('Style','text','Units','normalized','Position',[0.66 0 0.34 1],'String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3],'Parent',UI.panel.centerBottom);
+
+% Title with details about the selected cell and current session
+UI.title = uicontrol('Style','text','Units','normalized','Position',[0 0 1 1],'String',{'Cell details'},'HorizontalAlignment','center','FontSize',13,'Parent',UI.panel.centerTop);
+
+% % % % % % % % % % % % % % % % % % %
+% Metrics table
+% % % % % % % % % % % % % % % % % % %
+
+% Table with metrics for selected cell
+UI.table = uitable('Parent',UI.panel.left,'Data',[table_fieldsNames,table_metrics(1,:)'],'Units','normalized','Position',[0 0.003 1 0.53],'ColumnWidth',{100,  100},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn', {@keyPress}); % [10 10 150 575] {85, 46} %
+
+if strcmp(UI.settings.metricsTableType,'Metrics')
+    UI.settings.metricsTable=1;
+    UI.menu.tableData.ops(1).Checked = 'On';
+elseif strcmp(UI.settings.metricsTableType,'Cells')
+    UI.settings.metricsTable=2; UI.table.ColumnName = {'','#',tableDataColumn1,tableDataColumn2};
+    UI.table.ColumnEditable = [true false false false];
+    UI.menu.tableData.ops(2).Checked = 'On';
+else
+    UI.settings.metricsTable=3; UI.table.Visible='Off';
+    UI.menu.tableData.ops(3).Checked = 'On';
+end
+
 %% % % % % % % % % % % % % % % % % % % % % %
 % UI content
 % % % % % % % % % % % % % % % % % % % % % %
+
+% Search field
+UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Callback',@filterCellsByText,'Parent',UI.panel.left);
+
 % UI menu panels
-UI.panel.navigation = uipanel('Title','Navigation','TitlePosition','centertop','Position',[0.898 0.927 0.1 0.065],'Units','normalized');
-UI.panel.cellAssignment = uipanel('Title','Cell assignments','TitlePosition','centertop','Position',[0.898 0.643 0.1 0.275],'Units','normalized');
-UI.panel.displaySettings = uipanel('Title','Display Settings','TitlePosition','centertop','Position',[0.898 0.165 0.1 0.323],'Units','normalized');
-UI.panel.custom = uipanel('Title','Custom plot','TitlePosition','centertop','Position',[0.002 0.767 0.093 0.205],'Units','normalized');
-UI.panel.group = uipanel('Title','Color groups','TitlePosition','centertop','Position',[0.002 0.537 0.093 0.23],'Units','normalized');
+UI.panel.custom = uipanel('Title','Custom plot','TitlePosition','centertop','Position',[0 0.767 1 0.205],'Units','normalized','Parent',UI.panel.left);
+UI.panel.group = uipanel('Title','Color groups','TitlePosition','centertop','Position',[0 0.537 1 0.23],'Units','normalized','Parent',UI.panel.left);
+
+UI.panel.navigation = uipanel('Title','Navigation','TitlePosition','centertop','Position',[0 0.927 1 0.065],'Units','normalized','Parent',UI.panel.right);
+UI.panel.cellAssignment = uipanel('Title','Cell assignments','TitlePosition','centertop','Position',[0 0.643 1 0.275],'Units','normalized','Parent',UI.panel.right);
+UI.panel.displaySettings = uipanel('Title','Display Settings','TitlePosition','centertop','Position',[0 0.165 1 0.323],'Units','normalized','Parent',UI.panel.right);
 
 % UI cell assignment tabs
-UI.panel.tabgroup1 = uitabgroup('Position',[0.898 0.493 0.1 0.142],'Units','normalized');
+UI.panel.tabgroup1 = uitabgroup('Position',[0 0.493 1 0.142],'Units','normalized','Parent',UI.panel.right);
 UI.tabs.tags = uitab(UI.panel.tabgroup1,'Title','Tags');
 UI.tabs.deepsuperficial = uitab(UI.panel.tabgroup1,'Title','D/S');
 
 % UI display settings tabs
-UI.panel.tabgroup2 = uitabgroup('Position',[0.898 0.002 0.1 0.16],'Units','normalized','SelectionChangedFcn',@updateLegends);
+UI.panel.tabgroup2 = uitabgroup('Position',[0 0.002 1 0.16],'Units','normalized','SelectionChangedFcn',@updateLegends,'Parent',UI.panel.right);
 UI.tabs.legends = uitab(UI.panel.tabgroup2,'Title','Legends');
 UI.tabs.dispTags = uitab(UI.panel.tabgroup2,'Title','-Tags');
 UI.tabs.dispTags2 = uitab(UI.panel.tabgroup2,'Title','+Tags');
@@ -553,7 +610,7 @@ UI.tabs.dispTags2 = uitab(UI.panel.tabgroup2,'Title','+Tags');
 % Message log
 % % % % % % % % % % % % % % % % % % % %
 
-UI.popupmenu.log = uicontrol('Style','popupmenu','Units','normalized','Position',[0.098 0.003 0.53 0.022],'String',{},'HorizontalAlignment','left','FontSize',10);
+UI.popupmenu.log = uicontrol('Style','popupmenu','Units','normalized','Position',[0 0 0.66 1],'String',{''},'HorizontalAlignment','left','FontSize',10,'Parent',UI.panel.centerBottom);
 MsgLog('Welcome to the Cell Explorer. Please check the Help menu to learn keyboard shortcuts or visit the wiki') 
 
 % % % % % % % % % % % % % % % % % % % %
@@ -561,9 +618,9 @@ MsgLog('Welcome to the Cell Explorer. Please check the Help menu to learn keyboa
 % % % % % % % % % % % % % % % % % % % %
 
 % Navigation buttons
-uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[2 2 15 12],'Units','normalized','String','<','Callback',@(src,evnt)back,'KeyPressFcn', {@keyPress});
-uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[18 2 18 12],'Units','normalized','String','GoTo','Callback',@(src,evnt)goToCell,'KeyPressFcn', {@keyPress});
-UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[37 2 15 12],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[2 2 48 12],'Units','normalized','String','<','Callback',@(src,evnt)back,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[50 2 48 12],'Units','normalized','String','GoTo','Callback',@(src,evnt)goToCell,'KeyPressFcn', {@keyPress});
+UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Position',[100 2 48 12],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell assignments panel (right side)
@@ -571,17 +628,17 @@ UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton'
 
 % Cell classification
 colored_string = DefineCellTypeList;
-UI.listbox.cellClassification = uicontrol('Parent',UI.panel.cellAssignment,'Style','listbox','Position',[2 54 50 45],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyPressFcn', {@keyPress});
+UI.listbox.cellClassification = uicontrol('Parent',UI.panel.cellAssignment,'Style','listbox','Position',[2 54 145 43],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyPressFcn', {@keyPress});
 
 % Poly-select and adding new cell type
-uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 36 24 15],'Units','normalized','String','O Polygon','Callback',@(src,evnt)polygonSelection,'KeyPressFcn', {@keyPress});
-uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[27 36 25 15],'Units','normalized','String','+ Cell-type','Callback',@(src,evnt)AddNewCellType,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 36 73 15],'Units','normalized','String','O Polygon','Callback',@(src,evnt)polygonSelection,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[75 36 73 15],'Units','normalized','String','+ Cell-type','Callback',@(src,evnt)AddNewCellType,'KeyPressFcn', {@keyPress});
 
 % Brain region
-UI.pushbutton.brainRegion = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 20 50 15],'Units','normalized','String',['Region: ', cell_metrics.brainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyPressFcn', {@keyPress});
+UI.pushbutton.brainRegion = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 20 145 15],'Units','normalized','String',['Region: ', cell_metrics.brainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyPressFcn', {@keyPress});
 
 % Custom labels
-UI.pushbutton.labels = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 3 50 15],'Units','normalized','String',['Label: ', cell_metrics.labels{ii}],'Callback',@(src,evnt)buttonLabel,'KeyPressFcn', {@keyPress});
+UI.pushbutton.labels = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 3 145 15],'Units','normalized','String',['Label: ', cell_metrics.labels{ii}],'Callback',@(src,evnt)buttonLabel,'KeyPressFcn', {@keyPress});
 
 % % % % % % % % % % % % % % % % % % % %
 % Tab panel 1 (right side)
@@ -603,45 +660,45 @@ end
 % Select subset of cell type
 updateCellCount
  
-UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[2 73 50 50],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.settings.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress});
+UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[2 73 145 43],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.settings.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress});
 
 % Number of plots
-uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 20 10],'Units','normalized','String','Layout','HorizontalAlignment','left');
-UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[20 61 32 10],'Units','normalized','String',{'GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6'},'max',1,'min',1,'Value',3,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Layout','HorizontalAlignment','left');
+UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[50 61 100 10],'Units','normalized','String',{'GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6'},'max',1,'min',1,'Value',3,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress});
 
 % #1 custom view
-uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 52 20 10],'Units','normalized','String','1.','HorizontalAlignment','left');
-UI.popupmenu.customplot1 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[6 51 46 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleWaveformsPlot,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 50 20 10],'Units','normalized','String','1.','HorizontalAlignment','left');
+UI.popupmenu.customplot1 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 51 125 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleWaveformsPlot,'KeyPressFcn', {@keyPress});
 if any(strcmp(UI.settings.customCellPlotIn1,UI.popupmenu.customplot1.String)); UI.popupmenu.customplot1.Value = find(strcmp(UI.settings.customCellPlotIn1,UI.popupmenu.customplot1.String)); else; UI.popupmenu.customplot1.Value = 1; end
 customCellPlot1 = customPlotOptions{UI.popupmenu.customplot1.Value};
 
 % #2 custom view
-uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 42 25 10],'Units','normalized','String','2.','HorizontalAlignment','left');
-UI.popupmenu.customplot2 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[6 41 46 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleACGplot,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 40 25 10],'Units','normalized','String','2.','HorizontalAlignment','left');
+UI.popupmenu.customplot2 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 41 125 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleACGplot,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn2,UI.popupmenu.customplot2.String)); UI.popupmenu.customplot2.Value = find(strcmp(UI.settings.customCellPlotIn2,UI.popupmenu.customplot2.String)); else; UI.popupmenu.customplot2.Value = 4; end
 customCellPlot2 = customPlotOptions{UI.popupmenu.customplot2.Value};
 
 % #3 custom view
-uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 32 35 10],'Units','normalized','String','3.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.popupmenu.customplot3 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[6 31 46 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 30 35 10],'Units','normalized','String','3.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot3 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 31 125 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn3,UI.popupmenu.customplot3.String)); UI.popupmenu.customplot3.Value = find(strcmp(UI.settings.customCellPlotIn3,UI.popupmenu.customplot3.String)); else; UI.popupmenu.customplot3.Value = 1; end
 customCellPlot3 = customPlotOptions{UI.popupmenu.customplot3.Value};
 
 % #4 custom view
-uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 22 35 10],'Units','normalized','String','4.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.popupmenu.customplot4 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[6 21 46 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc2,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 20 35 10],'Units','normalized','String','4.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot4 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 21 125 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc2,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn4,UI.popupmenu.customplot4.String)); UI.popupmenu.customplot4.Value = find(strcmp(UI.settings.customCellPlotIn4,UI.popupmenu.customplot4.String)); else; UI.popupmenu.customplot4.Value = 1; end
 customCellPlot4 = customPlotOptions{UI.popupmenu.customplot4.Value};
 
 % #5 custom view
-uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 12 35 10],'Units','normalized','String','5.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.popupmenu.customplot5 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[6 11 46 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc3,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 10 35 10],'Units','normalized','String','5.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot5 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 11 125 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc3,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn5,UI.popupmenu.customplot5.String)); UI.popupmenu.customplot5.Value = find(strcmp(UI.settings.customCellPlotIn5,UI.popupmenu.customplot5.String)); else; UI.popupmenu.customplot5.Value = 2; end
 customCellPlot5 = customPlotOptions{UI.popupmenu.customplot5.Value};
 
 % #6 custom view
-uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 2 35 10],'Units','normalized','String','6.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.popupmenu.customplot6 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[6 1 46 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc4,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 0 35 10],'Units','normalized','String','6.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot6 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 1 125 10],'Units','normalized','String',customPlotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc4,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn6,UI.popupmenu.customplot6.String)); UI.popupmenu.customplot6.Value = find(strcmp(UI.settings.customCellPlotIn6,UI.popupmenu.customplot6.String)); else; UI.popupmenu.customplot5.Value = 3; end
 customCellPlot6 = customPlotOptions{UI.popupmenu.customplot6.Value};
 
@@ -672,64 +729,31 @@ end
 % % % % % % % % % % % % % % % % % % % %
 
 % Custom plotting menues
-uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 59 20 10],'Units','normalized','String','X data','HorizontalAlignment','left');
-UI.checkbox.logx = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[28 62 18 10],'Units','normalized','String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 52 44 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 59 50 10],'Units','normalized','String','X data','HorizontalAlignment','left');
+UI.checkbox.logx = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 62 73 10],'Units','normalized','String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress});
+UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 52 146 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress});
 
-uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 39 20 10],'Units','normalized','String','Y data','HorizontalAlignment','left');
-UI.checkbox.logy = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[28 42 18 10],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 32 44 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 39 50 10],'Units','normalized','String','Y data','HorizontalAlignment','left');
+UI.checkbox.logy = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 42 73 10],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress});
+UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 32 146 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress});
 
-UI.checkbox.showz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 22 24 10],'Units','normalized','String','Z data','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlot3axis(),'KeyPressFcn', {@keyPress});
-UI.checkbox.logz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[28 22 18 10],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 12 44 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress});
+UI.checkbox.showz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 22 72 10],'Units','normalized','String','Z data','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlot3axis(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 22 73 10],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress});
+UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 12 146 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress});
 UI.popupmenu.zData.Enable = 'Off';
 UI.checkbox.logz.Enable = 'Off';
 
 % Custom plot
 % uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 10 45 10],'Units','normalized','String','Plot style','HorizontalAlignment','left');
-UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 44 10],'Units','normalized','String',{'Scatter plot','+ Smooth histograms','+ Stairs histograms'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)togglePlotHistograms,'KeyPressFcn', {@keyPress});
+UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 146 10],'Units','normalized','String',{'Scatter plot','+ Smooth histograms','+ Stairs histograms'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)togglePlotHistograms,'KeyPressFcn', {@keyPress});
 
 % % % % % % % % % % % % % % % % % % % %
 % Custom colors
 % % % % % % % % % % % % % % % % % % % %
-UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 72 44 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
-UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[3 22 42 50],'Units','normalized','String',{'Type 1','Type 2','Type 3'},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Visible','Off');
-UI.checkbox.groups = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 12 44 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Visible','Off');
-UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 2 44 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress});
-
-% % % % % % % % % % % % % % % % % % %
-% Metrics table
-% % % % % % % % % % % % % % % % % % %
-
-% Table with metrics for selected cell
-UI.table = uitable(UI.fig,'Data',[table_fieldsNames,table_metrics(1,:)'],'Units','normalized','Position',[0.002 0.003 0.093 0.53],'ColumnWidth',{100,  100},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn', {@keyPress}); % [10 10 150 575] {85, 46} %
-% UI.popupmenu.tableType = uicontrol('Style','popupmenu','Position',[3 2 50 10],'Units','normalized','String',{'Table: Cell metrics','Table: Cell types','Table: None'},'max',1,'min',1,'Value',1,'Callback',@(src,evnt)buttonShowMetrics(),'KeyPressFcn', {@keyPress});
-
-if strcmp(UI.settings.metricsTableType,'Metrics')
-    UI.settings.metricsTable=1;
-    UI.menu.tableData.ops(1).Checked = 'On';
-elseif strcmp(UI.settings.metricsTableType,'Cells')
-    UI.settings.metricsTable=2; UI.table.ColumnName = {'','#',tableDataColumn1,tableDataColumn2};
-    UI.table.ColumnEditable = [true false false false];
-    UI.menu.tableData.ops(2).Checked = 'On';
-else
-    UI.settings.metricsTable=3; UI.table.Visible='Off';
-    UI.menu.tableData.ops(3).Checked = 'On';
-end
-
-% % % % % % % % % % % % % % % % % % %
-% Search field, title and Benchmark
-% % % % % % % % % % % % % % % % % % %
-
-% Search field
-UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0.002 0.973 0.093 0.024],'String','Filter','HorizontalAlignment','left','Callback',@filterCellsByText);
-
-% Benchmark with display time in seconds for most recent plot call
-UI.benchmark = uicontrol('Style','text','Units','normalized','Position',[0.633 0.003 0.25 0.022],'String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3]);
-
-% Title with details about the selected cell and current session
-UI.title = uicontrol('Style','text','Units','normalized','Position',[0.1 0.975 0.78 0.025],'String',{'Cell details'},'HorizontalAlignment','center','FontSize',13);
+UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 68 146 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
+UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[3 20 144 50],'Units','normalized','String',{'Type 1','Type 2','Type 3'},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Visible','Off');
+UI.checkbox.groups = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 10 146 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Visible','Off');
+UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 0 146 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress});
 
 % % % % % % % % % % % % % % % % % % %
 % Maximazing figure to full screen
@@ -3023,14 +3047,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
     
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function initReferenceDataTab
         % Defining Cell count for listbox
-        UI.listbox.referenceData.String = strcat(referenceData.cellTypes,' (',referenceData.counts,')');
-        if ~isfield(referenceData,'selection')
-            referenceData.selection = 1:length(referenceData.cellTypes);
+        if isfield(UI.listbox,'referenceData') && ishandle(UI.listbox.referenceData)
+            UI.listbox.referenceData.String = strcat(referenceData.cellTypes,' (',referenceData.counts,')');
+            if ~isfield(referenceData,'selection')
+                referenceData.selection = 1:length(referenceData.cellTypes);
+            end
+            UI.listbox.referenceData.Value = referenceData.selection;
         end
-        UI.listbox.referenceData.Value = referenceData.selection;
     end
     
     % % % % % % % % % % % % % % % % % % % % % %
@@ -3210,7 +3236,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function defineGroundTruthData(src,evnt)
         [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
         referenceData_path = fullfile(referenceData_path,'groundTruthData');
@@ -3241,8 +3267,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             uiresume(UI.fig);
         end
     end
+
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function defineReferenceData(src,evnt)
         % Load reference data from NYU, through either local or internet connection
         % Dialog is shown with sessions from the database with calculated cell metrics.
@@ -3259,22 +3286,24 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         
         loadDB.dialog = dialog('Position', [300, 300, 900, 565],'Name','Cell Explorer: Load reference data','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
-        uicontrol('Parent',loadDB.dialog,'Style','text','Position',[10, 534, 100, 25],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
-        uicontrol('Parent',loadDB.dialog,'Style','text','Position',[480, 534, 150, 25],'Units','normalized','String','Sort by','HorizontalAlignment','center','Units','normalized');
-        uicontrol('Parent',loadDB.dialog,'Style','text','Position',[640, 534, 150, 25],'Units','normalized','String','Repositories','HorizontalAlignment','center','Units','normalized');
-        loadDB.popupmenu.filter = uicontrol('Parent',loadDB.dialog,'Style', 'Edit', 'String', '', 'Position', [10, 518, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left','Units','normalized');
+        loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 );
+        loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
+        loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
+        loadDB.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
+        set(loadDB.VBox, 'Heights', [50 -1 35]);
+        uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[10, 25, 150, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
+        uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[480, 25, 150, 20],'Units','normalized','String','Sort by','HorizontalAlignment','center','Units','normalized');
+        uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[640, 25, 150, 20],'Units','normalized','String','Repositories','HorizontalAlignment','center','Units','normalized');
+        loadDB.popupmenu.filter = uicontrol('Parent',loadDB.panel.top,'Style', 'Edit', 'String', '', 'Position', [10, 5, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left','Units','normalized');
+        loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[480, 5, 150, 22],'Units','normalized','String',{'Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+        loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[640, 5, 150, 22],'Units','normalized','String',{'All repositories','Your repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.top,'Style','pushbutton','Position',[800, 5, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[10, 5, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[110, 5, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll,'Units','normalized');
+        loadDB.summaryText = uicontrol('Parent',loadDB.panel.bottom,'Style','text','Position',[210, 5, 480, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[700, 5, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[800, 5, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
         
-        loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[480, 520, 150, 20],'Units','normalized','String',{'Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
-        loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[640, 520, 150, 20],'Units','normalized','String',{'Your repositories','All repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 515, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist,'Units','normalized');
-        
-        loadDB.sessionList = uitable(loadDB.dialog,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 140 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
-        
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll,'Units','normalized');
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll,'Units','normalized');
-        loadDB.summaryText = uicontrol('Parent',loadDB.dialog,'Style','text','Position',[210, 10, 480, 20],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[700, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog,'Units','normalized');
-        uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
         UpdateSummaryText
         Button_DB_filterList
         if ~isempty(reference_cell_metrics)
@@ -4270,17 +4299,67 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function ScrolltoZoomInPlot(h,event,direction)
         % Called when scrolling/zooming in the cell inspector.
         % Checks first, if a plot is underneath the curser
-        h2 = overobj2('flat','visible','on');
-        
-        %v if ~isempty(h2) && strcmp(h2.Type,'uipanel') && strcmp(h2.Title,'') && ~isempty(h2.Children) && any(ismember(subfig_ax, h2.Children))>0 && any(find(ismember(subfig_ax, h2.Children)) == [1:9])
-        if isfield(UI,'panel') & any(ismember([UI.panel.subfig_ax1,UI.panel.subfig_ax2,UI.panel.subfig_ax3,UI.panel.subfig_ax4,UI.panel.subfig_ax5,UI.panel.subfig_ax6,UI.panel.subfig_ax7,UI.panel.subfig_ax8,UI.panel.subfig_ax9], h2))
-            handle34 = h2.Children(end);
-            um_axes = get(handle34,'CurrentPoint');
-            if any(ismember(subfig_ax, h2.Children))>0 && any(find(ismember(subfig_ax, h2.Children)) == [1:9])
-                axnum = find(ismember(subfig_ax, h2.Children));
+        temp1 = UI.fig.Position([3,4]);
+        temp2 = UI.panel.left.Position(3);
+        temp3 = UI.panel.right.Position(3);
+        temp4 = get(UI.fig, 'CurrentPoint');
+        if temp4(1)> temp2 & temp4(1) < (temp1(1)-temp3)
+            fractionalPositionX = (temp4(1) - temp2 ) / (temp1(1)-temp3-temp2);
+            fractionalPositionY = (temp4(2) - 26 ) / (temp1(2)-20-26);
+            if UI.settings.layout == 1 && fractionalPositionX < 0.7
+                axnum = 1;
+            elseif UI.settings.layout == 1 && fractionalPositionX > 0.7
+                axnum = 6-floor(fractionalPositionY*3);
+            elseif UI.settings.layout == 2 && fractionalPositionY > 0.4
+                axnum = ceil(fractionalPositionX*2);
+            elseif UI.settings.layout == 2 && fractionalPositionY < 0.4
+                axnum = ceil(fractionalPositionX*3)+3;
+            elseif UI.settings.layout == 3 && fractionalPositionY > 0.5
+                axnum = ceil(fractionalPositionX*3);
+            elseif UI.settings.layout == 3 && fractionalPositionY < 0.5
+                axnum = ceil(fractionalPositionX*3)+3;
+            elseif UI.settings.layout == 4 && fractionalPositionY > 0.5
+                axnum = ceil(fractionalPositionX*3);
+            elseif UI.settings.layout == 4 && fractionalPositionY < 0.5
+                axnum = ceil(fractionalPositionX*3)+3;
+                if fractionalPositionY < 0.25 & axnum == 6
+                    axnum = axnum + 1;
+                end
+            elseif UI.settings.layout == 5 && fractionalPositionY > 0.5
+                axnum = ceil(fractionalPositionX*3);
+            elseif UI.settings.layout == 5 && fractionalPositionY < 0.5
+                axnum = ceil(fractionalPositionX*3)+3;
+                if fractionalPositionY < 0.25 & axnum >= 5
+                    axnum = axnum + 2;
+                end
+            elseif UI.settings.layout == 6 && fractionalPositionY > 0.66
+                axnum = ceil(fractionalPositionX*3);
+            elseif UI.settings.layout == 6 && fractionalPositionY > 0.33
+                axnum = ceil(fractionalPositionX*3)+3;
+            elseif UI.settings.layout == 6 && fractionalPositionY < 0.33
+                axnum = ceil(fractionalPositionX*3)+6;
             else
                 axnum = 1;
             end
+            handle34 = subfig_ax(axnum);
+%             UI.panel.GridFlex.Children(axnum).Children(end);
+        else
+            axnum = [];
+        end
+        
+%         h2 = overobj2('flat','visible','on');
+%         h2 = gca;
+        %v if ~isempty(h2) && strcmp(h2.Type,'uipanel') && strcmp(h2.Title,'') && ~isempty(h2.Children) && any(ismember(subfig_ax, h2.Children))>0 && any(find(ismember(subfig_ax, h2.Children)) == [1:9])
+%         if isfield(UI,'panel') & any(ismember([UI.panel.subfig_ax1,UI.panel.subfig_ax2,UI.panel.subfig_ax3,UI.panel.subfig_ax4,UI.panel.subfig_ax5,UI.panel.subfig_ax6,UI.panel.subfig_ax7,UI.panel.subfig_ax8,UI.panel.subfig_ax9], h2)) 
+        if isfield(UI,'panel') & ~isempty(axnum)
+            
+%             handle34 = h2.Children(end);
+             um_axes = get(handle34,'CurrentPoint');
+%             if any(ismember(subfig_ax, h2.Children))>0 && any(find(ismember(subfig_ax, h2.Children)) == [1:9])
+%                 axnum = find(ismember(subfig_ax, h2.Children));
+%             else
+%                 axnum = 1;
+%             end
             
             % If ScrolltoZoomInPlot is called by a keypress, the underlying
             % mouse position must be determined by the WindowButtonMotionFcn
@@ -4471,10 +4550,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 zlim(globalZoom(3,:));
             end
         end
+    end
+
+    function hoverCallback(src,evt)
             
-        function hoverCallback(src,evt)
-            
-        end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -6953,18 +7032,21 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if strcmp(inputType,'reference')
             % Cell type initialization
             referenceData.cellTypes = unique([UI.settings.cellTypes,cell_metrics.putativeCellType],'stable');
-            clear referenceData1 
+            clear referenceData1
             referenceData.clusClas = ones(1,length(cell_metrics.putativeCellType));
             for i = 1:length(referenceData.cellTypes)
                 referenceData.clusClas(strcmp(cell_metrics.putativeCellType,referenceData.cellTypes{i}))=i;
             end
+%             [referenceData.clusClas, referenceData.cellTypes] = findgroups(cell_metrics.putativeCellType);
+            referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas,[1:length(referenceData.cellTypes)+1])'))';
         else
             % Ground truth initialization
             clear groundTruthData1 
 %             referenceData.groundTruthTypes = unique([UI.settings.groundTruth,cell_metrics.groundTruthClassification],'stable');
             [referenceData.clusClas, referenceData.groundTruthTypes] = findgroups([cell_metrics.groundTruthClassification{:}]);
+            referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas)'))';
         end
-        referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas)'))';
+        
         
         % Creating surface of reference points
         referenceData.x = fig2_axislimit_x(1):10:fig2_axislimit_x(2);
@@ -7079,19 +7161,24 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 end
                 
                 loadDB.dialog = dialog('Position', [300, 300, 900, 565],'Name','Cell Explorer: Load sessions from DB','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
-                uicontrol('Parent',loadDB.dialog,'Style','text','Position',[10, 534, 150, 25],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
-                uicontrol('Parent',loadDB.dialog,'Style','text','Position',[480, 534, 150, 25],'Units','normalized','String','Sort by','HorizontalAlignment','center','Units','normalized');
-                uicontrol('Parent',loadDB.dialog,'Style','text','Position',[640, 534, 150, 25],'Units','normalized','String','Repositories','HorizontalAlignment','center','Units','normalized');
-                loadDB.popupmenu.filter = uicontrol('Parent',loadDB.dialog,'Style', 'Edit', 'String', '', 'Position', [10, 518, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left','Units','normalized');
-                loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[480, 520, 150, 20],'Units','normalized','String',{'Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
-                loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.dialog,'Style','popupmenu','Position',[640, 520, 150, 20],'Units','normalized','String',{'All repositories','Your repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 515, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist,'Units','normalized');
-                loadDB.sessionList = uitable(loadDB.dialog,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 140 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll,'Units','normalized');
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[110, 10, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll,'Units','normalized');
-                loadDB.summaryText = uicontrol('Parent',loadDB.dialog,'Style','text','Position',[210, 10, 480, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[700, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog,'Units','normalized');
-                uicontrol('Parent',loadDB.dialog,'Style','pushbutton','Position',[800, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
+                loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 ); 
+                loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
+                loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
+                loadDB.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
+                set(loadDB.VBox, 'Heights', [50 -1 35]);
+                uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[10, 25, 150, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
+                uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[480, 25, 150, 20],'Units','normalized','String','Sort by','HorizontalAlignment','center','Units','normalized');
+                uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[640, 25, 150, 20],'Units','normalized','String','Repositories','HorizontalAlignment','center','Units','normalized');
+                loadDB.popupmenu.filter = uicontrol('Parent',loadDB.panel.top,'Style', 'Edit', 'String', '', 'Position', [10, 5, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left','Units','normalized');
+                loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[480, 5, 150, 22],'Units','normalized','String',{'Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+                loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[640, 5, 150, 22],'Units','normalized','String',{'All repositories','Your repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+                uicontrol('Parent',loadDB.panel.top,'Style','pushbutton','Position',[800, 5, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist,'Units','normalized');
+                uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[10, 5, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll,'Units','normalized');
+                uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[110, 5, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll,'Units','normalized');
+                loadDB.summaryText = uicontrol('Parent',loadDB.panel.bottom,'Style','text','Position',[210, 5, 480, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
+                uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[700, 5, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog,'Units','normalized');
+                uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[800, 5, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
+                
                 UpdateSummaryText
                 if ~isempty(cell_metrics)
                     loadDB.sessionList.Data(find(ismember(loadDB.sessionList.Data(:,3),unique(cell_metrics.sessionName))),1) = {true};
@@ -8310,7 +8397,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function AdjustGUI(~,~)
         % Adjusts the number of subplots. 1-3 general plots can be displayed, 3-6 cell-specific plots can be
         % displayed. The necessary panels are re-sized and toggled for the requested number of plots.
-        left_margin = 0.098;
         if UI.settings.layout == 1
             % GUI: 3+6 figures
             UI.popupmenu.customplot4.Enable = 'on';
@@ -8321,15 +8407,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.panel.subfig_ax7.Visible = 'on';
             UI.panel.subfig_ax8.Visible = 'on';
             UI.panel.subfig_ax9.Visible = 'on';
-            UI.panel.subfig_ax1.Position = [left_margin 0.66 0.26 0.31];
-            UI.panel.subfig_ax2.Position = [left_margin+0.265 0.66 0.26 0.31];
-            UI.panel.subfig_ax3.Position = [left_margin+0.53 0.66 0.265 0.31];
-            UI.panel.subfig_ax4.Position = [left_margin 0.33 0.26 0.325];
-            UI.panel.subfig_ax5.Position = [left_margin+0.265 0.33 0.26 0.325];
-            UI.panel.subfig_ax6.Position = [left_margin+0.53 0.33 0.265 0.325];
-            UI.panel.subfig_ax7.Position = [left_margin 0.03 0.26 0.33-0.035];
-            UI.panel.subfig_ax8.Position = [left_margin+0.265 0.03 0.26 0.33-0.035];
-            UI.panel.subfig_ax9.Position = [left_margin+0.53 0.03 0.265 0.33-0.035];
+            UI.panel.subfig_ax1.Position = [0 0.66 0.33 0.34];
+            UI.panel.subfig_ax2.Position = [0.33 0.66 0.33 0.34];
+            UI.panel.subfig_ax3.Position = [0.66 0.66 0.34 0.34];
+            UI.panel.subfig_ax4.Position = [0 0.33 0.33 0.33];
+            UI.panel.subfig_ax5.Position = [0.33 0.33 0.33 0.33];
+            UI.panel.subfig_ax6.Position = [0.66 0.33 0.34 0.33];
+            UI.panel.subfig_ax7.Position = [0 0 0.33 0.33];
+            UI.panel.subfig_ax8.Position = [0.33 0 0.33 0.33];
+            UI.panel.subfig_ax9.Position = [0.66 0 0.34 0.33];
             UI.popupmenu.plotCount.Value = 6;
             UI.settings.layout = 6;
         elseif UI.settings.layout == 6
@@ -8342,14 +8428,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.panel.subfig_ax7.Visible = 'on';
             UI.panel.subfig_ax8.Visible = 'on';
             UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [left_margin 0.5 0.26 0.47];
-            UI.panel.subfig_ax2.Position = [left_margin+0.265 0.5 0.26 0.47];
-            UI.panel.subfig_ax3.Position = [left_margin+0.53 0.5 0.265 0.47];
-            UI.panel.subfig_ax4.Position = [left_margin 0.03 0.26 0.5-0.035];
-            UI.panel.subfig_ax5.Position = [left_margin+0.265 0.25 0.26 0.245];
-            UI.panel.subfig_ax6.Position = [left_margin+0.53 0.25 0.265 0.245];
-            UI.panel.subfig_ax7.Position = [left_margin+0.265 0.03 0.26 0.250-0.035];
-            UI.panel.subfig_ax8.Position = [left_margin+0.53 0.03 0.26 0.250-0.035];
+            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax2.Position = [0.33 0.5 0.33 0.5];
+            UI.panel.subfig_ax3.Position = [0.66 0.5 0.34 0.5];
+            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax5.Position = [0.33 0.25 0.33 0.25];
+            UI.panel.subfig_ax6.Position = [0.66 0.25 0.34 0.25];
+            UI.panel.subfig_ax7.Position = [0.33 0 0.33 0.25];
+            UI.panel.subfig_ax8.Position = [0.66 0 0.34 0.25];
             UI.popupmenu.plotCount.Value = 5;
             UI.settings.layout = 5;
         elseif UI.settings.layout == 5
@@ -8362,13 +8448,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.panel.subfig_ax7.Visible = 'on';
             UI.panel.subfig_ax8.Visible = 'off';
             UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [left_margin 0.5 0.26 0.47];
-            UI.panel.subfig_ax2.Position = [left_margin+0.265 0.5 0.26 0.47];
-            UI.panel.subfig_ax3.Position = [left_margin+0.53 0.5 0.265 0.47];
-            UI.panel.subfig_ax4.Position = [left_margin 0.03 0.26 0.5-0.035];
-            UI.panel.subfig_ax5.Position = [left_margin+0.265 0.03 0.26 0.5-0.035];
-            UI.panel.subfig_ax6.Position = [left_margin+0.53 0.25 0.265 0.245];
-            UI.panel.subfig_ax7.Position = [left_margin+0.53 0.03 0.265 0.250-0.035];
+            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax2.Position = [0.33 0.5 0.33 0.5];
+            UI.panel.subfig_ax3.Position = [0.66 0.5 0.34 0.5];
+            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax5.Position = [0.33 0 0.33 0.5];
+            UI.panel.subfig_ax6.Position = [0.66 0.25 0.34 0.25];
+            UI.panel.subfig_ax7.Position = [0.66 0 0.34 0.25];
             UI.popupmenu.plotCount.Value = 4;
             UI.settings.layout = 4;
         elseif UI.settings.layout == 4
@@ -8381,12 +8467,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.panel.subfig_ax7.Visible = 'off';
             UI.panel.subfig_ax8.Visible = 'off';
             UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [left_margin 0.5 0.26 0.47];
-            UI.panel.subfig_ax2.Position = [left_margin+0.265 0.5 0.26 0.47];
-            UI.panel.subfig_ax3.Position = [left_margin+0.53 0.5 0.265 0.47];
-            UI.panel.subfig_ax4.Position = [left_margin 0.03 0.26 0.5-0.035];
-            UI.panel.subfig_ax5.Position = [left_margin+0.265 0.03 0.26 0.5-0.035];
-            UI.panel.subfig_ax6.Position = [left_margin+0.53 0.03 0.265 0.5-0.035];
+            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax2.Position = [0.33 0.5 0.33 0.5];
+            UI.panel.subfig_ax3.Position = [0.66 0.5 0.34 0.5];
+            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax5.Position = [0.33 0 0.33 0.5];
+            UI.panel.subfig_ax6.Position = [0.66 0 0.34 0.5];
             UI.popupmenu.plotCount.Value = 3;
             UI.settings.layout = 3;
         elseif UI.settings.layout == 3
@@ -8399,11 +8485,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.panel.subfig_ax7.Visible = 'off';
             UI.panel.subfig_ax8.Visible = 'off';
             UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [left_margin 0.4 0.39 0.57];
-            UI.panel.subfig_ax3.Position = [left_margin+0.395 0.4 0.40 0.57];
-            UI.panel.subfig_ax4.Position = [left_margin 0.03 0.26 0.4-0.035];
-            UI.panel.subfig_ax5.Position = [left_margin+0.265 0.03 0.26 0.4-0.035];
-            UI.panel.subfig_ax6.Position = [left_margin+0.53 0.03 0.265 0.4-0.035];
+            UI.panel.subfig_ax1.Position = [0 0.4 0.5 0.6];
+            UI.panel.subfig_ax3.Position = [0.5 0.4 0.5 0.6];
+            UI.panel.subfig_ax4.Position = [0 0 0.33 0.4];
+            UI.panel.subfig_ax5.Position = [0.33 0 0.33 0.4];
+            UI.panel.subfig_ax6.Position = [0.66 0 0.34 0.4];
             UI.popupmenu.plotCount.Value = 2;
             UI.settings.layout = 2;
         elseif UI.settings.layout == 2
@@ -8416,10 +8502,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.panel.subfig_ax7.Visible = 'off';
             UI.panel.subfig_ax8.Visible = 'off';
             UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [left_margin 0.03 0.5 0.945];
-            UI.panel.subfig_ax4.Position = [left_margin+0.505 0.66 0.29 0.315];
-            UI.panel.subfig_ax5.Position = [left_margin+0.505 0.33 0.29 0.325];
-            UI.panel.subfig_ax6.Position = [left_margin+0.505 0.03 0.29 0.325-0.03];
+            UI.panel.subfig_ax1.Position = [0 0 0.7 1];
+            UI.panel.subfig_ax4.Position = [0.70 0.66 0.3 0.34];
+            UI.panel.subfig_ax5.Position = [0.70 0.33 0.3 0.33];
+            UI.panel.subfig_ax6.Position = [0.70 0 0.3 0.33];
             UI.popupmenu.plotCount.Value = 1;
             UI.settings.layout = 1;
         end

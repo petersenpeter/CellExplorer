@@ -17,7 +17,7 @@ UI.settings.customCellPlotIn2 = 'ACGs (single)';
 UI.settings.customCellPlotIn3 = 'responseCurves_firingRateAcrossTime';
 UI.settings.customCellPlotIn4 = 'Waveforms (single)';
 UI.settings.customCellPlotIn5 = 'CCGs (image)';
-UI.settings.customCellPlotIn6 = 'firingRateMap';
+UI.settings.customCellPlotIn6 = 'Sharp wave-ripple';
 
 UI.settings.acgType = 'Normal';                 % Normal (100ms), Wide (1s), Narrow (30ms), Log10
 UI.settings.isiNormalization = 'Rate';          % 'Rate', 'Occurance'
