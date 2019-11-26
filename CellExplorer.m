@@ -628,7 +628,7 @@ UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton'
 
 % Cell classification
 colored_string = DefineCellTypeList;
-UI.listbox.cellClassification = uicontrol('Parent',UI.panel.cellAssignment,'Style','listbox','Position',[2 54 145 43],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyPressFcn', {@keyPress});
+UI.listbox.cellClassification = uicontrol('Parent',UI.panel.cellAssignment,'Style','listbox','Position',[2 54 145 50],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType(),'KeyPressFcn', {@keyPress});
 
 % Poly-select and adding new cell type
 uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 36 73 15],'Units','normalized','String','O Polygon','Callback',@(src,evnt)polygonSelection,'KeyPressFcn', {@keyPress});
@@ -660,7 +660,7 @@ end
 % Select subset of cell type
 updateCellCount
  
-UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[2 73 145 43],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.settings.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress});
+UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[2 73 145 50],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.settings.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress});
 
 % Number of plots
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Layout','HorizontalAlignment','left');
@@ -750,8 +750,8 @@ UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu
 % % % % % % % % % % % % % % % % % % % %
 % Custom colors
 % % % % % % % % % % % % % % % % % % % %
-UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 68 146 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
-UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[3 20 144 50],'Units','normalized','String',{'Type 1','Type 2','Type 3'},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Visible','Off');
+UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 73 146 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
+UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[3 20 144 54],'Units','normalized','String',{'Type 1','Type 2','Type 3'},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Visible','Off');
 UI.checkbox.groups = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 10 146 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Visible','Off');
 UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 0 146 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress});
 
@@ -1238,8 +1238,9 @@ while ii <= size(cell_metrics.troughToPeak,2)
 
             % Ground truth cell types
             if groundTruthSelection
-                for jj = 1:length(subsetGroundTruth)
-                    plot(plotX(subsetGroundTruth{jj}), plotY(subsetGroundTruth{jj}), plotZ(subsetGroundTruth{jj}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
+                idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
+                for jj = 1:length(idGroundTruth)
+                    plot3(plotX(subsetGroundTruth{idGroundTruth(jj)}), plotY(subsetGroundTruth{idGroundTruth(jj)}), plotZ(subsetGroundTruth{idGroundTruth(jj)}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                 end
             end
             
@@ -4296,9 +4297,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function ScrolltoZoomInPlot(h,event,direction)
-        % Called when scrolling/zooming in the cell inspector.
-        % Checks first, if a plot is underneath the curser
+    function getAxisBelowCursor
         temp1 = UI.fig.Position([3,4]);
         temp2 = UI.panel.left.Position(3);
         temp3 = UI.panel.right.Position(3);
@@ -4341,25 +4340,22 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             else
                 axnum = 1;
             end
-            handle34 = subfig_ax(axnum);
-%             UI.panel.GridFlex.Children(axnum).Children(end);
         else
             axnum = [];
         end
-        
-%         h2 = overobj2('flat','visible','on');
-%         h2 = gca;
-        %v if ~isempty(h2) && strcmp(h2.Type,'uipanel') && strcmp(h2.Title,'') && ~isempty(h2.Children) && any(ismember(subfig_ax, h2.Children))>0 && any(find(ismember(subfig_ax, h2.Children)) == [1:9])
-%         if isfield(UI,'panel') & any(ismember([UI.panel.subfig_ax1,UI.panel.subfig_ax2,UI.panel.subfig_ax3,UI.panel.subfig_ax4,UI.panel.subfig_ax5,UI.panel.subfig_ax6,UI.panel.subfig_ax7,UI.panel.subfig_ax8,UI.panel.subfig_ax9], h2)) 
+    end
+
+    % % % % % % % % % % % % % % % % % % % % % %
+
+    function ScrolltoZoomInPlot(h,event,direction)
+        % Called when scrolling/zooming in the cell inspector.
+        % Checks first, if a plot is underneath the curser
+        axnum = getAxisBelowCursor;
         if isfield(UI,'panel') & ~isempty(axnum)
-            
-%             handle34 = h2.Children(end);
+            handle34 = subfig_ax(axnum);
+
              um_axes = get(handle34,'CurrentPoint');
-%             if any(ismember(subfig_ax, h2.Children))>0 && any(find(ismember(subfig_ax, h2.Children)) == [1:9])
-%                 axnum = find(ismember(subfig_ax, h2.Children));
-%             else
-%                 axnum = 1;
-%             end
+
             
             % If ScrolltoZoomInPlot is called by a keypress, the underlying
             % mouse position must be determined by the WindowButtonMotionFcn
@@ -7180,7 +7176,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[800, 5, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
                 
                 UpdateSummaryText
-                if ~isempty(cell_metrics)
+                if exist('cell_metrics','var') && ~isempty(cell_metrics)
                     loadDB.sessionList.Data(find(ismember(loadDB.sessionList.Data(:,3),unique(cell_metrics.sessionName))),1) = {true};
                 end
                 uicontrol(loadDB.popupmenu.filter)
@@ -7946,14 +7942,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end
 
+% % % % % % % % % % % % % % % % % % % % % %
 
     function editSelectedSpikePlot(~,~)
         % Called when scrolling/zooming in the cell inspector.
         % Checks first, if a plot is underneath the curser
-        h2 = overobj2('flat','visible','on');
         
-        %v if ~isempty(h2) && strcmp(h2.Type,'uipanel') && strcmp(h2.Title,'') && ~isempty(h2.Children) && any(ismember(subfig_ax, h2.Children))>0 && any(find(ismember(subfig_ax, h2.Children)) == [1:9])
-        if isfield(UI,'panel') & any(ismember([UI.panel.subfig_ax4,UI.panel.subfig_ax5,UI.panel.subfig_ax6,UI.panel.subfig_ax7,UI.panel.subfig_ax8,UI.panel.subfig_ax9], h2))
+        axnum = getAxisBelowCursor;
+        if isfield(UI,'panel') & ~isempty(axnum)
+            handle34 = subfig_ax(axnum);
             handle34 = h2.Children(end);
             um_axes = get(handle34,'CurrentPoint');
             if any(ismember(subfig_ax, h2.Children))>0 && any(find(ismember(subfig_ax, h2.Children)) == [4:9])
@@ -8517,64 +8514,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function keyPress(src, event)
         % Keyboard shortcuts. Sorted alphabetically
         switch event.Key
-            case 'a'
-                % Load spike plot options
-%                 defineSpikesPlots;
-            case 'b'
-%                 buttonBrainRegion;
-            case 'c'
-                % Opens the file directory for the selected cell
-%                 openSessionDirectory
-            case 'd'
-                % Opens the current session in the Buzsaki lab web database
-%                 openSessionInWebDB
-            case 'e'
-                % Highlight excitatory cells
-%                 highlightExcitatoryCells
-            case 'f'
-%                 toggleACGfit;
-            case 'g'
-%                 goToCell;
             case 'h'
                 HelpDialog;
-            case 'i'
-                % Highlight inhibitory cells
-%                 highlightInhibitoryCells
-            case 'j'
-%                 adjustMonoSyn_UpdateMetrics(cell_metrics);
-            case 'k'
-% %                 SignificanceMetricsMatrix;
-            case 'l'
-%                 buttonLabel;
             case 'm'
                 % Hide/show menubar
                 ShowHideMenu
             case 'n'
                 % Adjusts the number of subplots in the GUI
                 AdjustGUI;
-            case 'o'
-                % Loads list of sessions from database 
-%                 DatabaseSessionDialog
-            case 'p'
-%                 LoadPreferences;
-            case 'r'
-%                 reclassify_celltypes;
-            case 't'
-                % Redefine the space of the t-SNE representation
-%                 tSNE_redefineMetrics;
-            case 'u'
-                % Load ground truth datasets
-%                 loadGroundTruth
-            case 'v'
-                % Opens the Cell Explorer wiki in your browser
-%                 openWiki
-            case 'w'
-%                 showWaveformMetrics
-            case 'x'
-
-            case 'y'
-                % Load ground truth datasets
-%                 performGroundTruthClassification
             case 'z'
 %                 undoClassification;
             case 'space'
@@ -8627,6 +8574,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end
 
+% % % % % % % % % % % % % % % % % % % % % % 
+
     function ShowHideMenu(~,~)
         % Hide/show menubar
         if UI.settings.displayMenu == 0
@@ -8646,8 +8595,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         msgbox({['\bfCell Explorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\itgithub.com/petersenpeter/Cell-Explorer\rm'},'About the Cell Explorer','help',opts);
     end
     
-% % % % % % % % % % %
-        % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % 
+
     function HelpDialog(~,~)
         opts.Interpreter = 'tex';
         opts.WindowStyle = 'normal';
@@ -8658,6 +8607,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             '+ sign indicatea that the key must be combined with command/control (Mac/Windows)','','\bfVisit the Cell Explorer''s wiki for further help\rm',''},'Keyboard shortcuts','help',opts);
     end
     
+% % % % % % % % % % % % % % % % % % % % % % 
+
     function subplot_advanced(x,y,z,w,new,titleIn)
         if isempty('new')
             new = 1;

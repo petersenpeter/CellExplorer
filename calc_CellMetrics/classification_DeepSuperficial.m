@@ -23,7 +23,7 @@ function classification_deepSuperficial(session,varargin)
 % session.extracellular.srLfp: in Hz, e.g. 1250
 % session.extracellular.nChannels: integer, e.g. 128
 % session.extracellular.nSpikeGroups: integer, e.g. 8
-% session.extracellular.spikeGroups struct following the xml anatomical format
+% session.extracellular.spikeGroups struct following the xml anatomical format but 1-indexed
 % 
 % Requirements
 % downsampled (and lowpass filtered) basename.lfp file in basepath
@@ -148,7 +148,7 @@ for jj = 1:session.extracellular.nSpikeGroups
     fprintf(['Analysing spike group ', num2str(jj),', ']);
     
     % Get list of channels belong to spike group (1-indexed)
-    ripple_channels{jj} = session.extracellular.spikeGroups.channels{jj}+1;
+    ripple_channels{jj} = session.extracellular.spikeGroups.channels{jj};
     
     % Loading .lfp file
     signal = 0.000195 * double(LoadBinary([basename '.lfp'],'nChannels',nChannels,'channels',ripple_channels{jj},'precision','int16','frequency',srLfp));

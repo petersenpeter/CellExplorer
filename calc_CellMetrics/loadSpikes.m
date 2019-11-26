@@ -349,7 +349,7 @@ badChannels = [];
 if ~isempty(session)
     badChannels = session.channelTags.Bad.channels;
     if ~isempty(session.channelTags.Bad.spikeGroups)
-        badChannels = [badChannels,session.extracellular.spikeGroups(session.channelTags.Bad.spikeGroups)+1];
+        badChannels = [badChannels,session.extracellular.spikeGroups(session.channelTags.Bad.spikeGroups)];
     end
     badChannels = unique(badChannels);
 end

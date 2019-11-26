@@ -143,7 +143,9 @@ if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.m
     session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
     session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
     session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
-    
+    % Changing index from 0 to 1:
+    session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0);
+    session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
 elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
     sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
     if isfield(sessionInfo,'SpkGrps')
@@ -159,6 +161,9 @@ elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[ses
     session.extracellular.sr = sessionInfo.SampleRate; % Sampling rate of dat file
     session.extracellular.srLfp = sessionInfo.lfpSampleRate; % Sampling rate of lfp file
     session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
+    % Changing index from 0 to 1:
+    session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0);
+    session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
 else
     sessionInfo = [];
 end

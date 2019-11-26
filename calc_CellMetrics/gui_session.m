@@ -183,7 +183,8 @@ UI.tabs.timeSeries = uitab(UI.uitabgroup,'Title','Time series');
 UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized');
 UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized');
 UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[230, 5, 100, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized');
-UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[460, 5, 130, 30],'String','Update from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized');
+UI.button.uploadToDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[370, 5, 100, 30],'String','Upload to DB','Callback',@(src,evnt)buttonUploadToDB,'Units','normalized');
+UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[480, 5, 100, 30],'String','download from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell metrics parameters
@@ -253,7 +254,9 @@ uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Repositories', 'P
 UI.edit.repositories = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 180, 280, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'DB entry ID', 'Position', [300, 203, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 180, 290, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 180, 100, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+
+UI.edit.sessionDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[410, 180, 170, 25],'String','View db session','Callback',@(src,evnt)openSessionInWebDB,'Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 580, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 580, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
@@ -435,6 +438,11 @@ uiwait(UI.fig)
 % Embedded functions
 % % % % % % % % % % % % % % % % % % % % %
 
+    function openSessionInWebDB(~,~)
+        % Opens the current session in the Buzsaki lab web database
+        web(['https://buzsakilab.com/wp/sessions/?frm_search=', session.general.name],'-new','-browser')
+    end
+    
     function importMetaFromIntan(~,~)
         session = loadIntanMetadata(session);
         updateTimeSeriesList
@@ -472,7 +480,11 @@ uiwait(UI.fig)
         UIsetString(session.general,'investigator');
         if isfield(session.general,'entryID')
             UI.edit.sessionID.String = session.general.entryID;
+            UI.edit.sessionDBbutton.Enable = 'on';
+        else
+            UI.edit.sessionDBbutton.Enable = 'off';
         end
+        
         if isfield(session.general,'sessionType') && ~isempty(session.general.sessionType)
             UI.edit.sessionType.Value = find(strcmp(session.general.sessionType,sessionTypesList));
         end
@@ -518,16 +530,33 @@ uiwait(UI.fig)
         updateAnalysisList
         updateTimeSeriesList
     end
-
+    
     function buttonUpdateFromDB
-        success = updateFromDB;
-        if success
-            msgbox('Session updated from database','Sucess');
-        else
-           errordlg('Database tools not available'); 
+        answer = questdlg('Are you sure you want to update the session struct from the database?', 'Update session from DB', 'Yes','Cancel','Cancel');
+        % Handle response
+        if strcmp(answer,'Yes')
+            success = updateFromDB;
+            if success
+                msgbox('Session updated from database','Sucess');
+            else
+                errordlg('Database tools not available');
+            end
         end
     end
-
+    
+    function buttonUploadToDB
+        listing = fieldnames(session);
+        [indx,tf] = listdlg('PromptString',['Select the data types to upload to the database'],'ListString',listing,'SelectionMode','multiple','ListSize',[350,300],'InitialValue',1,'Name','Upload session changes to DB');
+        if ~isempty(indx)
+            success = db_upload_session(session,'fields',listing(indx));
+            if success
+                msgbox('Session uploaded to database','Sucess');
+            else
+                errordlg('Database tools not available');
+            end
+        end
+    end
+    
     function success = updateFromDB
         success = 0;
         if enableDatabase 
@@ -738,12 +767,8 @@ uiwait(UI.fig)
             end
             for fn = 1:nTotal
                 tableData{fn,1} = false;
-                tableData{fn,2} = num2str(fn);
-                if isnumeric(session.extracellular.electrodeGroups.channels)
-                    tableData{fn,3} = num2str(session.extracellular.electrodeGroups.channels(fn,:));
-                else
-                    tableData{fn,3} = num2str(session.extracellular.electrodeGroups.channels{fn});
-                end
+                tableData{fn,2} = [num2str(fn),' (',num2str(length(session.extracellular.electrodeGroups.channels{fn})),')'];
+                tableData{fn,3} = num2str(session.extracellular.electrodeGroups.channels{fn});
                 if isfield(session.extracellular.electrodeGroups,'label') & size(session.extracellular.electrodeGroups.label,2)>=fn
                     tableData{fn,4} = session.extracellular.electrodeGroups.label{fn};
                 else
@@ -765,7 +790,7 @@ uiwait(UI.fig)
             end
             for fn = 1:nTotal
                 tableData{fn,1} = false;
-                tableData{fn,2} = num2str(fn);
+                tableData{fn,2} = [num2str(fn),' (',num2str(length(session.extracellular.spikeGroups.channels{fn})),')'];
                 if isnumeric(session.extracellular.spikeGroups.channels)
                     tableData{fn,3} = num2str(session.extracellular.spikeGroups.channels(fn,:));
                 else
@@ -2181,8 +2206,8 @@ uiwait(UI.fig)
                 errordlg(['Channel count in electrode groups (', num2str(nChannels), ') does not corresponds to nChannels (',num2str(session.extracellular.nChannels),')'],'Error')
             elseif uniqueChannels ~= session.extracellular.nChannels
                 errordlg('The unique channel count does not corresponds to nChannels','Error')
-            elseif any(sort(channels) ~= [1:session.extracellular.nChannels]-1)
-                errordlg('Channels are not ranging from 0 : nChannels-1','Error')
+            elseif any(sort(channels) ~= [1:session.extracellular.nChannels])
+                errordlg('Channels are not ranging from 1 : nChannels','Error')
             else
                 msgbox('Channels verified succesfully!');
             end
@@ -2205,6 +2230,9 @@ uiwait(UI.fig)
             end
             session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
             session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
+            % Changing index from 0 to 1:
+            session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0);
+            session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
             updateChannelGroupsList
             msgbox('Channel groups imported from xml file');
         else

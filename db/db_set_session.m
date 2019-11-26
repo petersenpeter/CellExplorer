@@ -79,6 +79,14 @@ for i = 1:length(sessions)
     	session.extracellular.leastSignificantBit = 0.195; % Intan system = 0.195 µV/bit
     end
     
+    % Checking format of spike groups and electrode groups (must be of type cell)
+    if isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels') && isnumeric(session.extracellular.spikeGroups.channels)
+        session.extracellular.spikeGroups.channels = num2cell(session.extracellular.spikeGroups.channels,2);
+    end
+    if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.electrodeGroups,'channels') && isnumeric(session.extracellular.electrodeGroups.channels)
+        session.extracellular.electrodeGroups.channels = num2cell(session.extracellular.electrodeGroups.channels,2)';
+    end
+    
     if changeDir
         try 
             disp(['Changing Matlab directory to session basepath: ' basepath])
@@ -87,19 +95,7 @@ for i = 1:length(sessions)
             error(['db_set_path: Unable to change directory to basepath: ', basepath])
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-    % Loading parameters from sessionInfo (Buzcode)
-    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-    if loadBuzcode && exist('bz_getSessionInfo.m','file')
-        sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
-        session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
-        session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
-        session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
-        session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
-        session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
-    end
-    
+
     if saveMat
         [stat,mess]=fileattrib(fullfile(basepath, 'session.mat'));
         if stat==0

@@ -52,13 +52,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 
 %   By Peter Petersen
 %   petersen.peter@gmail.com
-%   Last edited: 12-11-2019
-
-%   TODO
-%   Exclude spikes during manipulations
-%   Determine and implement optimal length of unfiltered waveforms
-%   Standardize and implement tracking data
-%   Import cell types classified in Buzcode (partly done)
+%   Last edited: 24-11-2019
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -172,7 +166,7 @@ if isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular
     session.extracellular.spikeGroups.channels = num2cell(session.extracellular.spikeGroups.channels,2);
 end
 if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.electrodeGroups,'channels') && isnumeric(session.extracellular.electrodeGroups.channels)
-    session.extracellular.electrodeGroups.channels = num2cell(session.extracellular.electrodeGroups.channels,2);
+    session.extracellular.electrodeGroups.channels = num2cell(session.extracellular.electrodeGroups.channels,2)';
 end
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % showGUI
@@ -979,11 +973,8 @@ for j = 1:cell_metrics.general.cellCount
     if isfield(session,'brainRegions') & ~isempty(session.brainRegions)
         cell_metrics.brainRegion{j} = chListBrainRegions{spikes.maxWaveformCh1(j)}; % cell_brainregion OK
     end
-    if isstruct(session.extracellular.spikeGroups.channels) || iscell(session.extracellular.spikeGroups.channels)
-        cell_metrics.maxWaveformChannelOrder(j) = find([session.extracellular.spikeGroups.channels{:}] == spikes.maxWaveformCh(j)); %
-    else
-        cell_metrics.maxWaveformChannelOrder(j) = find([session.extracellular.spikeGroups.channels(:)] == spikes.maxWaveformCh(j)); %
-    end
+    cell_metrics.maxWaveformChannelOrder(j) = find([session.extracellular.spikeGroups.channels{:}] == spikes.maxWaveformCh1(j)); %
+
 
     % Spike times based metrics
     if ~isempty(excludeIntervals)

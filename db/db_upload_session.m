@@ -1,112 +1,68 @@
-function session = db_update_session(session,varargin)
+function success = db_upload_session(session,varargin)
 % Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 04-11-2019
+% Last edited: 26-11-2019
 
+% Parsing inputs
 p = inputParser;
 addParameter(p,'forceReload',false,@islogical);
+addParameter(p,'fields',{'all'},@iscell);
+
 parse(p,varargin{:})
 forceReload = p.Results.forceReload;
+fields = p.Results.fields;
 
+% Setting success toggle
+success = false;
+
+% loading and defining db settings
 db_settings = db_load_settings;
-web_address = [db_settings.address, 'entries/' session.general.entryID];
-cd(session.general.basePath)
-sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
+db_settings.web_address = [db_settings.address, 'entries/' num2str(session.general.entryID)];
+
+% General
+if any(contains(fields,{'general','all'})) 
+    
+end
 
 % Extracellular
-if ~isfield(session.general,'duration') | session.general.duration == 0 | forceReload
-    sr = sessionInfo.rates.wideband;
-    if exist(fullfile(session.general.basePath,'info.rhd'))
-        Intan_rec_info = read_Intan_RHD2000_file_Peter(pwd);
-        nChannels = size(Intan_rec_info.amplifier_channels,2);
-        sr = Intan_rec_info.frequency_parameters.amplifier_sample_rate;
-    elseif exist(fullfile(session.general.clusteringPath,[session.general.baseName, '.xml']))
-        xml = LoadXml(fullfile(session.general.clusteringPath,[session.general.baseName, '.xml']));
-        nChannels = xml.nChannels;
-        sr = xml.SampleRate;
-    end
-    fname = [session.general.name '.dat'];
-    temp_ = dir(fname);
-    
-    session.extracellular.nChannels = nChannels;
-    session.extracellular.fileFormat = 'dat';
-    session.extracellular.precision = 'int16';
-    session.extracellular.nSamples = temp_.bytes/nChannels/2;
-    session.general.duration = temp_.bytes/sr/nChannels/2;
-    
-    session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
-    if sessionInfo.spikeGroups.nGroups>0
-        session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
-        session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
-    else
-        warning('No spike groups exist in the xml. Anatomical groups used instead')
-        session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
-        session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
-    end
-    session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
-    session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
-    % Changing index from 0 to 1:
-    session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0);
-    session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
-    
-    
-    session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
-    session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
+if any(contains(fields,{'extracellular','all'})) 
+    % Updating fields
     options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password);
     options.CertificateFilename=('');
-    webwrite(web_address,options,'form_id','143','h1nhs',session.extracellular.nChannels,'wnvla',session.extracellular.sr,'ngvax',session.general.duration,'s2l9r',session.extracellular.nSamples,'jr29w',session.extracellular.precision);
+    webwrite(db_settings.web_address,options,'form_id','143','h1nhs',session.extracellular.nChannels,'wnvla',session.extracellular.sr,'ngvax',session.general.duration,'s2l9r',session.extracellular.nSamples,'jr29w',session.extracellular.precision);
+    
+    % Electrode groups
+    db_update_electrodeGroups(session,db_settings)
+    % Spike groups
+    db_update_spikeGroups(session,db_settings)
 end
 
 % Epochs
-db_update_epochs(session,db_settings)
-
-% Electrode groups
-db_update_electrodeGroups(session,db_settings)
-
-% Spike groups
-db_update_spikeGroups(session,db_settings)
+if any(contains(fields,{'epochs','all'})) 
+    db_update_epochs(session,db_settings)
+end
 
 % Channel tags
-if isfield(sessionInfo,'badchannels')
-    if isfield(session.channelTags,'Bad')
-        session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,sessionInfo.badchannels+1]);
-    else
-        session.channelTags.Bad.channels = sessionInfo.badchannels+1;
-    end
+if any(contains(fields,{'channelTags','all'})) 
+    db_update_channelTags(session,db_settings)
 end
-if isfield(sessionInfo,'channelTags')
-    tagNames = fieldnames(sessionInfo.channelTags);
-    for iTag = 1:length(tagNames)
-        if isfield(session.channelTags,tagNames{iTag})
-            session.channelTags.(tagNames{iTag}).channels = unique([session.channelTags.(tagNames{iTag}).channels,sessionInfo.channelTags.(tagNames{iTag})+1]);
-        else
-            session.channelTags.(tagNames{iTag}).channels = sessionInfo.channelTags.(tagNames{iTag})+1;
-        end
-    end
-end
-db_update_channelTags(session,db_settings)
-
 
 % Brain regions
-if isfield(sessionInfo,'region')
-    load BrainRegions.mat
-    regionNames = unique(cellfun(@num2str,sessionInfo.region,'uni',0));
-    regionNames(cellfun('isempty',regionNames)) = [];
-    for iRegion = 1:length(regionNames)
-        if any(strcmp(regionNames(iRegion),BrainRegions(:,2)))
-            session.brainRegions.(regionNames{iRegion}).channels = find(strcmp(regionNames(iRegion),sessionInfo.region));
-        elseif strcmp(regionNames(iRegion),'HPC')
-            session.brainRegions.HIP.channels = find(strcmp(regionNames(iRegion),sessionInfo.region));
-        else
-            warning(['Select brain region does not exist in the Allen Brain Atlas: ' regionNames{iRegion}])
-        end
-    end
+if any(contains(fields,{'brainRegions','all'})) 
+    db_update_brainRegions(session,db_settings)
 end
-db_update_brainRegions(session,db_settings)
 
 % Time series
-session = loadIntanMetadata(session);
-db_update_TimeSeries(session,db_settings)
+if any(contains(fields,{'timeSeries','all'})) 
+    db_update_TimeSeries(session,db_settings)
+end
+% inputs
+% behavioralTracking
+% analysisStats
+% analysisTags
+% spikeSorting
+
+success = true;
 
 %% % % % % % % % % % % % % % % % % % % %
 % Builtin functions
@@ -122,7 +78,7 @@ db_update_TimeSeries(session,db_settings)
             shank_label = ['shank' num2str(iTag)];
             jsonStructure.vc5ra.(shank_label).fiElD_2982 = nameTags{iTag};
             jsonStructure.vc5ra.(shank_label).fiElD_2974 = session.timeSeries.(nameTags{iTag}).fileName;
-            if isfield(session.timeSeries.(nameTags{iTag}),'equipment')
+            if isfield(session.timeSeries.(nameTags{iTag}),'precision')
                 jsonStructure.vc5ra.(shank_label).fiElD_2975 = session.timeSeries.(nameTags{iTag}).precision;
             end
             if isfield(session.timeSeries.(nameTags{iTag}),'nChannels') & ~isempty(session.timeSeries.(nameTags{iTag}).nChannels)
@@ -144,46 +100,39 @@ db_update_TimeSeries(session,db_settings)
         jsonStructure = jsonencode(jsonStructure);
         jsonStructure = strrep(jsonStructure,'fiElD_','');
         options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
-        RESPONSE = webwrite(web_address,jsonStructure,options);
+        RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
         if RESPONSE.success==1
-            disp('Channel tags successfully submitted to db')
+            disp('Time series successfully submitted to db')
         end
     end
     
     function db_update_epochs(session,db_settings)
-        if isempty(session.epochs) || any(cell2mat(cellfun(@(x) ~isfield(x,'stopTime'),session.epochs,'uni',0))) || any(cell2mat(cellfun(@(x) x.stopTime,session.epochs,'uni',0)) == 0) || forceReload
-            startTime = [];
-            stopTime = [];
-            startTime(1) = 0;
-            for i = 1:size(session.epochs,2)
-                fname = 'amplifier.dat';
-                if exist(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, fname))
-                    temp_ = dir(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, fname));
-                    stopTime(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
-                elseif exist(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, [session.epochs{i}.name,'.dat']))
-                    temp_ = dir(fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.epochs{i}.name, [session.epochs{i}.name,'.dat']));
-                    stopTime(i) = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
-                else
-                    stopTime(i) = 0;
-                end
-                if i > 1
-                    startTime(i) = stopTime(i-1);
-                end
-                web_address1 = [db_settings.address,'entries/', num2str(session.epochs{i}.entryID)];
-                options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password);
-                webwrite(web_address1,options,'tsr5t',startTime(i),'5ssi4',stopTime(i));
-                session.epochs{i}.stopTime = stopTime(i);
-                session.epochs{i}.startTime = startTime(i);
+        for i = 1:length(session.epochs)
+            if isfield(session.epochs{i},'startTime')
+                startTime = session.epochs{i}.startTime;
+            else
+                startTime = 0;
             end
+            if isfield(session.epochs{i},'stopTime')
+                stopTime = session.epochs{i}.stopTime;
+            else
+                stopTime = 0;
+            end
+            web_address1 = [db_settings.address,'entries/', num2str(session.epochs{i}.entryID)];
+            options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password);
+            webwrite(web_address1,options,'tsr5t',startTime,'5ssi4',stopTime);
         end
+        disp('Epochs successfully submitted to db')
     end
+    
+    
     function db_update_electrodeGroups(session,db_settings)
         jsonStructure = [];
         jsonStructure.form_id = 143; % Form id of sessions
         jsonStructure.vtcx9.form = 219; % Form id of spikeGroups repeatable section
         jsonStructure.fiElD_2983 = session.extracellular.nElectrodeGroups; % nElectrodeGroups
         
-        for i = 1:length(session.extracellular.nElectrodeGroups)
+        for i = 1:session.extracellular.nElectrodeGroups
             shank_label = ['shank' num2str(i)];
             channels = sprintf('%.0f, ' , session.extracellular.electrodeGroups.channels{i}); channels = channels(1:end-2);
             jsonStructure.vtcx9.(shank_label).fiElD_2933 = i;           % Group
@@ -195,13 +144,11 @@ db_update_TimeSeries(session,db_settings)
         jsonStructure = jsonencode(jsonStructure);
         jsonStructure = strrep(jsonStructure,'fiElD_','');
         options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
-        RESPONSE = webwrite(web_address,jsonStructure,options);
+        RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
         if RESPONSE.success==1
             disp('Electrode groups successfully submitted to db')
         end
     end
-
-
 
     function db_update_spikeGroups(session,db_settings)
         jsonStructure = [];
@@ -209,7 +156,7 @@ db_update_TimeSeries(session,db_settings)
         jsonStructure.ca5yu.form = 191; % Form id of spikeGroups repeatable section
         jsonStructure.fiElD_2463 = session.extracellular.nSpikeGroups;  % nSpikeGroups
         
-        for i = 1:length(session.extracellular.nSpikeGroups)
+        for i = 1:session.extracellular.nSpikeGroups
             shank_label = ['shank' num2str(i)];
             channels = sprintf('%.0f, ' , session.extracellular.spikeGroups.channels{i}); channels = channels(1:end-2);
             jsonStructure.ca5yu.(shank_label).fiElD_2460 = i;           % Group
@@ -221,7 +168,7 @@ db_update_TimeSeries(session,db_settings)
         jsonStructure = jsonencode(jsonStructure);
         jsonStructure = strrep(jsonStructure,'fiElD_','');
         options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
-        RESPONSE = webwrite(web_address,jsonStructure,options);
+        RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
         if RESPONSE.success==1
             disp('Spike groups successfully submitted to db')
         end
@@ -249,7 +196,7 @@ db_update_TimeSeries(session,db_settings)
         jsonStructure = jsonencode(jsonStructure);
         jsonStructure = strrep(jsonStructure,'fiElD_','');
         options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
-        RESPONSE = webwrite(web_address,jsonStructure,options);
+        RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
         if RESPONSE.success==1
             disp('Channel tags successfully submitted to db')
         end
@@ -287,7 +234,7 @@ db_update_TimeSeries(session,db_settings)
         jsonStructure = jsonencode(jsonStructure);
         jsonStructure = strrep(jsonStructure,'fiElD_','');
         options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
-        RESPONSE = webwrite(web_address,jsonStructure,options);
+        RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
         if RESPONSE.success==1
             disp('Brain regions successfully submitted to db')
         end

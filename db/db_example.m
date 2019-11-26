@@ -1,6 +1,6 @@
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Load meta data for single session
-%% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Please provide your credentials and define relevant local paths before running these examples:
 edit db_credentials
 edit db_local_repositories
@@ -8,7 +8,7 @@ edit db_local_repositories
 %% Load session from db
 sessionName = 'Rat08-20130708';
 sessions = db_load_sessions('sessionName',sessionName);
-session = sessions{1};
+session = sessions{1}
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Load and set session parameters
@@ -33,7 +33,7 @@ siliconprobes = db_load_table('siliconprobes'); % Examples: siliconprobes, proje
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Save meta data from data to database
 
-session = db_update_session(session,'forceReload',true);
+session = db_upload_session(session);
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Example as to loading spikes via database/metadata
