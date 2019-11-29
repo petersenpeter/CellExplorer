@@ -123,7 +123,7 @@ end
 uiLoaded = false;
 
 % Importing session metadata from DB if metadata is out of data
-if ~isfield(session.general,'version') || session.general.version<3
+if ~isfield(session.general,'version') || session.general.version<4
     if isfield(session.general,'entryID')
         disp('Metadata not up to date. Downloading from server')
         success = updateFromDB;
@@ -245,18 +245,20 @@ uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Experimenters', '
 UI.edit.experimenters = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 275, 290, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Investigator', 'Position', [10, 253, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.investigator = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 230, 280, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.investigator = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 230, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.investigatorDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[160, 230, 130, 25],'String','View db investigator','Callback',@openInWebDB,'Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Projects', 'Position', [300, 253, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.projects = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 230, 290, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.projects = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 230, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.projectsDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[450, 230, 140, 25],'String','View db projects','Callback',@openInWebDB,'Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Repositories', 'Position', [10, 203, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.repositories = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 180, 280, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.repositories = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 180, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.repositoryDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[160, 180, 130, 25],'String','View db repository','Callback',@openInWebDB,'Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'DB entry ID', 'Position', [300, 203, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 180, 100, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
-
-UI.edit.sessionDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[410, 180, 170, 25],'String','View db session','Callback',@(src,evnt)openSessionInWebDB,'Units','normalized');
+UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 180, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.sessionDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[450, 180, 140, 25],'String','View db session','Callback',@openInWebDB,'Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 580, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 580, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
@@ -266,13 +268,15 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
 % uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 20 160 100 100 100 60 80 80 95},'columnname',{'','','Name','Paradigm','Environment','Manipulations','Stimuli','Start time','Stop time','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Add epoch','Callback',@(src,evnt)addEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[110, 10, 100, 30],'String','Edit epoch','Callback',@(src,evnt)editEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[220, 10 100, 30],'String','Delete epoch(s)','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[330, 10, 80, 30],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[420, 10, 80, 30],'String','Move up','Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[510, 10 80, 30],'String','Move down','Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
+UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 90, 599, 435],'ColumnWidth',{20 20 160 100 100 100 60 80 80 95},'columnname',{'','','Name','Paradigm','Environment','Manipulations','Stimuli','Start time','Stop time','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add epoch','Callback',@(src,evnt)addEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 50, 100, 30],'String','Edit epoch','Callback',@(src,evnt)editEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 10 100, 30],'String','Delete epoch(s)','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 50, 100, 30],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
+UI.button.importEpochsIntervalsFromMergePoints = uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 50, 130, 30],'String','Import merge points','Callback',@importEpochsIntervalsFromMergePoints,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 10 130, 30],'String','Import children','Callback',@importFromFiles,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 50, 90, 30],'String','Move up','Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 10 90, 30],'String','Move down','Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -335,7 +339,7 @@ uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[95, 
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
-uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
+UI.button.importGroupsFromXML1 = uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
 % Spike groups
 UI.tabs.spikeGroups = uitab(UI.channelGroups,'Title','Spike groups');
@@ -346,7 +350,7 @@ uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[95, 10, 
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
+UI.button.importGroupsFromXML2 = uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
 % Electrodes
 if isfield(session.extracellular,'electrodes')
@@ -427,7 +431,7 @@ UI.table.timeSeries = uitable(UI.tabs.timeSeries,'Data',tableData,'Position',[1,
 uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[490, 10, 100, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
+UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[490, 10, 100, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
 
 loadSessionStruct
 UI.fig.Visible = 'on';
@@ -435,18 +439,103 @@ uiLoaded = true;
 uiwait(UI.fig)
 
 %% % % % % % % % % % % % % % % % % % % % %
-% Embedded functions
+% Embedded functions 
 % % % % % % % % % % % % % % % % % % % % %
+    
+    function importEpochsIntervalsFromMergePoints(~,~)
+        % Epochs derived from MergePoints
+        if exist(fullfile(UI.edit.basepath.String,[UI.edit.session.String,'.MergePoints.events.mat']),'file')
+            buttonColor = UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor;
+            buttonString = UI.button.importEpochsIntervalsFromMergePoints.String;
+            UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor = [1,0.6,0.0];
+            UI.button.importEpochsIntervalsFromMergePoints.String = 'Uploading...';
+            drawnow
+            temp = load(fullfile(UI.edit.basepath.String,[UI.edit.session.String,'.MergePoints.events.mat']));
+            for i = 1:size(temp.MergePoints.foldernames)
+                session.epochs{i}.name = temp.MergePoints.foldernames{i};
+                session.epochs{i}.startTime = temp.MergePoints.timestamps(i,1);
+                session.epochs{i}.stopTime = temp.MergePoints.timestamps(i,2);
+            end
+            updateEpochsList
+            UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor = [0.3,0.7,0.3];
+            UI.button.importEpochsIntervalsFromMergePoints.String = 'Updated';
+            pause(0.6)
+            UI.button.importEpochsIntervalsFromMergePoints.String = buttonString;
+            UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor = buttonColor;
+        else
+            msgbox(['No ', UI.edit.session.String,'.MergePoints.events.mat',' exist in basepath'],'Error');
+        end
+    end
 
-    function openSessionInWebDB(~,~)
-        % Opens the current session in the Buzsaki lab web database
-        web(['https://buzsakilab.com/wp/sessions/?frm_search=', session.general.name],'-new','-browser')
+    function importFromFiles(~,~)
+        if ~isempty(session.epochs)
+            answer = questdlg('Where is your epochs located?','Import epoch data','outside session level','inside session folder','outside session level');
+            if ~isempty(answer)
+                [filepath,~,~] = fileparts(UI.edit.basepath.String);
+                fname = 'amplifier.dat';
+                k = 0;
+                for i = 1:size(session.epochs,2)
+                    temp_ = [];
+                    if strcmp(answer,'outside session level')
+                        filepath1 = fullfile(filepath,session.epochs{i}.name,[session.epochs{i}.name,'.dat']);
+                        filepath2 = fullfile(filepath,session.epochs{i}.name,fname);
+                    else
+                        filepath1 = fullfile(UI.edit.basepath.String,session.epochs{i}.name,[session.epochs{i}.name,'.dat']);
+                        filepath2 = fullfile(UI.edit.basepath.String,session.epochs{i}.name,fname);
+                    end
+                    if exist(filepath1)
+                        temp_ = dir(filepath1);
+                    elseif exist(filepath2)
+                        temp_ = dir(filepath1);
+                    end
+                    if exist(filepath1) || exist(filepath2)
+                        session.epochs{i}.stopTime = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
+                        if i == 1
+                            session.epochs{i}.startTime = 0;
+                        else
+                            session.epochs{i}.startTime = session.epochs{i-1}.stopTime;
+                            session.epochs{i}.stopTime = session.epochs{i}.stopTime+session.epochs{i-1}.stopTime;
+                        end
+                        disp(['Epoch #' num2str(i),': ' num2str(session.epochs{i}.startTime),'-', num2str(session.epochs{i}.stopTime)])
+                        k = k +1;
+                    end
+                end
+                updateEpochsList
+                msgbox([num2str(k), ' epoch intervals imported.']);
+            end
+        end
+    end
+
+    function openInWebDB(src,evnt)
+        switch src.String
+            case 'View db session'
+                % Opens session in the Buzsaki lab web database
+                web(['https://buzsakilab.com/wp/sessions/?frm_search=', session.general.name],'-new','-browser')
+            case 'View db projects'
+                % Opens project in the Buzsaki lab web database
+                web(['https://buzsakilab.com/wp/projects/?frm_search=', session.general.projects],'-new','-browser')
+            case 'View db investigator'
+                % Opens session in the Buzsaki lab web database
+                web(['https://buzsakilab.com/wp/persons/?frm_search=', session.general.investigator],'-new','-browser')
+            case 'View db repository'
+                % Opens session in the Buzsaki lab web database
+                web(['https://buzsakilab.com/wp/repositories/?frm_search=', session.general.repositories{1}],'-new','-browser')
+        end
     end
     
     function importMetaFromIntan(~,~)
+        buttonColor = UI.button.importMetaFromIntan.BackgroundColor;
+        buttonString = UI.button.importMetaFromIntan.String;
+        UI.button.importMetaFromIntan.BackgroundColor = [1,0.6,0.0];
+        UI.button.importMetaFromIntan.String = 'Loading...';
+        drawnow
         session = loadIntanMetadata(session);
         updateTimeSeriesList
-        msgbox('time series updated from the info.rhd intan file','Sucess');
+        UI.button.importMetaFromIntan.BackgroundColor = [0.3,0.7,0.3];
+        UI.button.importMetaFromIntan.String = 'Updated';
+        pause(0.6)
+        UI.button.importMetaFromIntan.String = buttonString;
+        UI.button.importMetaFromIntan.BackgroundColor = buttonColor;
     end
     
     function loadSessionStruct
@@ -481,8 +570,14 @@ uiwait(UI.fig)
         if isfield(session.general,'entryID')
             UI.edit.sessionID.String = session.general.entryID;
             UI.edit.sessionDBbutton.Enable = 'on';
+            UI.edit.projectsDBbutton.Enable = 'on';
+            UI.edit.investigatorDBbutton.Enable = 'on';
+            UI.edit.repositoriesDBbutton.Enable = 'on';
         else
             UI.edit.sessionDBbutton.Enable = 'off';
+            UI.edit.projectsDBbutton.Enable = 'off';
+            UI.edit.investigatorDBbutton.Enable = 'off';
+            UI.edit.repositoriesDBbutton.Enable = 'off';
         end
         
         if isfield(session.general,'sessionType') && ~isempty(session.general.sessionType)
@@ -535,25 +630,44 @@ uiwait(UI.fig)
         answer = questdlg('Are you sure you want to update the session struct from the database?', 'Update session from DB', 'Yes','Cancel','Cancel');
         % Handle response
         if strcmp(answer,'Yes')
+            buttonColor = UI.button.updateFromDB.BackgroundColor;
+            buttonString = UI.button.updateFromDB.String;
+            UI.button.updateFromDB.BackgroundColor = [1,0.6,0.0];
+            UI.button.updateFromDB.String = 'Updating...';
+            drawnow
             success = updateFromDB;
             if success
-                msgbox('Session updated from database','Sucess');
+                UI.button.updateFromDB.BackgroundColor = [0.3,0.7,0.3];
+                UI.button.updateFromDB.String = 'Updated';
+                pause(0.6)
             else
                 errordlg('Database tools not available');
             end
+            UI.button.updateFromDB.String = buttonString;
+            UI.button.updateFromDB.BackgroundColor = buttonColor;
         end
     end
     
     function buttonUploadToDB
         listing = fieldnames(session);
-        [indx,tf] = listdlg('PromptString',['Select the data types to upload to the database'],'ListString',listing,'SelectionMode','multiple','ListSize',[350,300],'InitialValue',1,'Name','Upload session changes to DB');
+        [indx,tf] = listdlg('PromptString',['Select the data types to upload to the database'],'ListString',listing,'SelectionMode','multiple','ListSize',[300,220],'InitialValue',1,'Name','Upload session changes to DB');
         if ~isempty(indx)
+            buttonColor = UI.button.uploadToDB.BackgroundColor;
+            buttonString = UI.button.uploadToDB.String;
+            UI.button.uploadToDB.BackgroundColor = [1,0.6,0.0];
+            UI.button.uploadToDB.String = 'Uploading...';
+            drawnow
+            readBackFields;
             success = db_upload_session(session,'fields',listing(indx));
             if success
-                msgbox('Session uploaded to database','Sucess');
+                UI.button.uploadToDB.BackgroundColor = [0.3,0.7,0.3];
+                UI.button.uploadToDB.String = 'Updated';
+                pause(0.6)
             else
                 errordlg('Database tools not available');
             end
+            UI.button.uploadToDB.String = buttonString;
+            UI.button.uploadToDB.BackgroundColor = buttonColor;
         end
     end
     
@@ -585,6 +699,7 @@ uiwait(UI.fig)
     end
 
     function saveSessionFile
+        BackgroundColor = UI.button.save.BackgroundColor;
         if ~strcmp(pwd,UI.edit.basepath.String)
             answer = questdlg('Base path is different from current path. Where would you like to save the session struct to','Location','basepath','current path','Select location','basepath');
         else
@@ -604,12 +719,17 @@ uiwait(UI.fig)
         end
         
         readBackFields;
-        
         try
             save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
-            msgbox(['Saved ',filename1,' to: ',filepath1],'Sucessfully saved');
+            UI.button.save.BackgroundColor = [0.3,0.7,0.3];
+            UI.button.save.String = 'Saved';
+            pause(0.6)
+            UI.button.save.String = 'Save';
+            UI.button.save.BackgroundColor = BackgroundColor;
         catch
             msgbox(['Failed to save ',filename1,'. Location not available'],'Error','error');
+            UI.button.save.String = 'Save';
+            UI.button.save.BackgroundColor = BackgroundColor;
         end
         
     end
@@ -839,8 +959,8 @@ uiwait(UI.fig)
                 if isfield(session.epochs{fn},'behavioralParadigm') && ~isempty(session.epochs{fn}.behavioralParadigm)
                     tableData{fn,4} = session.epochs{fn}.behavioralParadigm;
                 end
-                if isfield(session.epochs{fn},'builtMaze') && ~isempty(session.epochs{fn}.builtMaze)
-                    tableData{fn,5} = session.epochs{fn}.builtMaze;
+                if isfield(session.epochs{fn},'environment') && ~isempty(session.epochs{fn}.environment)
+                    tableData{fn,5} = session.epochs{fn}.environment;
                 end
                 if isfield(session.epochs{fn},'manipulation') && ~isempty(session.epochs{fn}.manipulation)
                     tableData{fn,6} = session.epochs{fn}.manipulation;
@@ -1440,9 +1560,9 @@ uiwait(UI.fig)
             else
                 initParadigm = '';
             end
-            % builtMaze
-            if isfield(session.epochs{epochIn},'builtMaze')
-                initEnvironment = session.epochs{epochIn}.builtMaze;
+            % environment
+            if isfield(session.epochs{epochIn},'environment')
+                initEnvironment = session.epochs{epochIn}.environment;
             else
                 initEnvironment = '';
             end
@@ -1525,7 +1645,7 @@ uiwait(UI.fig)
                     session.epochs{SelectedEpoch}.behavioralParadigm = epochsParadigm.String;
                 end                
                 if ~isempty(epochsEnvironment.String)
-                    session.epochs{SelectedEpoch}.builtMaze = epochsEnvironment.String;
+                    session.epochs{SelectedEpoch}.environment = epochsEnvironment.String;
                 end
                 if ~isempty(epochsManipulation.String)
                     session.epochs{SelectedEpoch}.manipulation = epochsManipulation.String;
@@ -1749,9 +1869,9 @@ uiwait(UI.fig)
             else
                 initFormat = 'Phy';
             end
-            % format
-            if isfield(session.spikeSorting{behaviorIn},'format')
-                initRelativePath = session.spikeSorting{behaviorIn}.format;
+            % relativePath
+            if isfield(session.spikeSorting{behaviorIn},'relativePath')
+                initRelativePath = session.spikeSorting{behaviorIn}.relativePath;
             else
                 initRelativePath = '';
             end
@@ -1839,7 +1959,8 @@ uiwait(UI.fig)
         uiwait(UI.dialog.spikeSorting);
         
         function CloseSorting_dialog
-            if strcmp(spikeSortingRelativePath.String,'') || isvarname(spikeSortingRelativePath.String)
+            if strcmp(spikeSortingRelativePath.String,'') || isempty(regexp(spikeSortingRelativePath.String, '[/\*:?"<>|]', 'once'))
+                % isvarname(spikeSortingRelativePath.String)
                 SelectedBehavior = behaviorIn;
                 session.spikeSorting{SelectedBehavior}.method = spikeSortingMethod.String{spikeSortingMethod.Value};               
                 session.spikeSorting{SelectedBehavior}.format = spikeSortinFormat.String{spikeSortinFormat.Value};               
@@ -2193,7 +2314,7 @@ uiwait(UI.fig)
         end
     end
 
-    function verifySpikeGroup
+    function verifySpikeGroup(~,~)
         if isfield(session.extracellular,'electrodeGroups')
             if isnumeric(session.extracellular.electrodeGroups.channels)
                 channels = session.extracellular.electrodeGroups.channels(:);
@@ -2219,6 +2340,13 @@ uiwait(UI.fig)
     function importGroupsFromXML
         xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
         if exist(xml_filepath,'file')
+            buttonColor = UI.button.importGroupsFromXML1.BackgroundColor;
+            buttonString = UI.button.importGroupsFromXML1.String;
+            UI.button.importGroupsFromXML1.BackgroundColor = [1,0.6,0.0];
+            UI.button.importGroupsFromXML1.String = 'Importing...';
+            UI.button.importGroupsFromXML2.BackgroundColor = [1,0.6,0.0];
+            UI.button.importGroupsFromXML2.String = 'Importing...';
+            drawnow
             sessionInfo = LoadXml(xml_filepath);
             if isfield(sessionInfo,'SpkGrps')
                 session.extracellular.nSpikeGroups = length(sessionInfo.SpkGrps); % Number of spike groups
@@ -2234,10 +2362,18 @@ uiwait(UI.fig)
             session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0);
             session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
             updateChannelGroupsList
-            msgbox('Channel groups imported from xml file');
+            UI.button.importGroupsFromXML1.BackgroundColor = [0.3,0.7,0.3];
+            UI.button.importGroupsFromXML1.String = 'Imported';
+            UI.button.importGroupsFromXML2.BackgroundColor = [0.3,0.7,0.3];
+            UI.button.importGroupsFromXML2.String = 'Imported';
+            pause(0.6)
         else
             errordlg(['xml file not accessible: ' xml_filepath],'Error')
         end
+        UI.button.importGroupsFromXML1.String = buttonString;
+        UI.button.importGroupsFromXML1.BackgroundColor = buttonColor;
+        UI.button.importGroupsFromXML2.String = buttonString;
+        UI.button.importGroupsFromXML2.BackgroundColor = buttonColor;
     end
     
     function syncChannelGroups

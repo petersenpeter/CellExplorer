@@ -22,7 +22,6 @@ addParameter(p,'session',[],@isstruct); % session struct (can be used to generat
 % Parameters
 addParameter(p,'saveMat',true,@islogical);      % Saves the session struct to a mat file
 addParameter(p,'changeDir',true,@islogical);    % change directory to basepath?
-addParameter(p,'loadBuzcode',false,@islogical);  % Loads and saves select info from buzcode sessionInfo 
 
 parse(p,varargin{:})
 
@@ -31,7 +30,6 @@ sessionName = p.Results.sessionName;
 session = p.Results.session;
 saveMat = p.Results.saveMat;
 changeDir = p.Results.changeDir;
-loadBuzcode = p.Results.loadBuzcode;
 
 if ~isempty(sessionId)
     sessions = db_load_sessions('sessionId',sessionId);
@@ -66,7 +64,7 @@ for i = 1:length(sessions)
         basepath = fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.general.name);
     end
     
-    if ~isempty(session.spikeSorting{1}.relativePath)
+    if ~isempty(session.spikeSorting) && ~isempty(session.spikeSorting{1}.relativePath)
         clusteringpath = session.spikeSorting{1}.relativePath;
     else
         clusteringpath = '';

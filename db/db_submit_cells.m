@@ -54,11 +54,9 @@ for j = 1:size(cell_metrics.sessionID,2)
         dialog_text = ['DB: Submitting cells: Cell ' num2str(j),' (Updated)'];
         cell_metrics.entryID(j) = str2num(temp_entryID(4:end));
         web_address1 = [db_settings.address, 'entries/', temp_entryID(4:end)];
-        
     else
         dialog_text = ['DB: Submitting cells: Cell ' num2str(j),'/',num2str(size(cell_metrics.sessionID,2)),' (New)'];
         web_address1 = [db_settings.address, 'entries'];
-        
     end
     
     waitbar(j/size(cell_metrics.sessionID,2),f_submit_cells,dialog_text);

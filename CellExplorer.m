@@ -3571,7 +3571,18 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         %         [indx,tf] = listdlg('PromptString',['Select the metrics to use for the tSNE plot'],'ListString',list_tSNE_metrics,'SelectionMode','multiple','ListSize',[350,400],'InitialValue',1:length(ia));
         
         load_tSNE.dialog = dialog('Position', [300, 300, 500, 518],'Name','Select metrics for the tSNE plot','WindowStyle','modal'); movegui(load_tSNE.dialog,'center')
-        load_tSNE.sessionList = uicontrol('Parent',load_tSNE.dialog,'Style','listbox','String',list_tSNE_metrics,'Position',[10, 60, 480, 447],'Value',1:length(ia),'Max',100,'Min',1);
+        load_tSNE.sessionList = uicontrol('Parent',load_tSNE.dialog,'Style','listbox','String',list_tSNE_metrics,'Position',[10, 95, 480, 402],'Value',1:length(ia),'Max',100,'Min',1);
+        uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[10, 75, 100, 20],'Units','normalized','String','nPCAComponents','HorizontalAlignment','center');
+        uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[120, 75, 90, 20],'Units','normalized','String','LearnRate','HorizontalAlignment','center');
+        uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[220, 75, 70, 20],'Units','normalized','String','Perplexity','HorizontalAlignment','center');
+        uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[300, 75, 70, 20],'Units','normalized','String','LearnRate','HorizontalAlignment','center');
+        uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[380, 75, 110, 20],'Units','normalized','String','InitialY','HorizontalAlignment','center');
+        load_tSNE.popupmenu.NumPCAComponents = uicontrol('Parent',load_tSNE.dialog,'Style','Edit','Position',[10, 55, 100, 20],'Units','normalized','String','','HorizontalAlignment','left');
+        load_tSNE.popupmenu.LearnRate = uicontrol('Parent',load_tSNE.dialog,'Style','Edit','Position',[120, 55, 90, 20],'Units','normalized','String','','HorizontalAlignment','left');
+        load_tSNE.popupmenu.Perplexity = uicontrol('Parent',load_tSNE.dialog,'Style','Edit','Position',[220, 55, 70, 20],'Units','normalized','String','','HorizontalAlignment','left');
+        load_tSNE.popupmenu.LearnRate = uicontrol('Parent',load_tSNE.dialog,'Style','Edit','Position',[300, 55, 70, 20],'Units','normalized','String','','HorizontalAlignment','left');
+        load_tSNE.popupmenu.InitialY = uicontrol('Parent',load_tSNE.dialog,'Style','popupmenu','Position',[380, 55, 110, 20],'Units','normalized','String',{'Random','PCA space'},'HorizontalAlignment','left','Value',1);
+        
         uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[10, 35, 90, 20],'Units','normalized','String','Algorithm','HorizontalAlignment','center');
         uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[100, 35, 110, 20],'Units','normalized','String','Distance metric','HorizontalAlignment','center');
         uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[220, 35, 70, 20],'Units','normalized','String','Exaggeration','HorizontalAlignment','center');
@@ -3605,8 +3616,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             X(isnan(X) | isinf(X)) = 0;
             switch UI.settings.tSNE_algorithm
                 case 'tSNE'
-                    waitbar(0.1,f_waitbar,'Calculating tSNE space...')
-                    tSNE_metrics.plot = tsne(X','Standardize',UI.settings.tSNE_standardize,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration);
+                    waitbar(0.1,f_waitbar,'Calculating PCA init space space...')
+                    initPCA = pca(X,'NumComponents',2);
+                    waitbar(0.2,f_waitbar,'Calculating tSNE space...')
+                    tSNE_metrics.plot = tsne(X','Standardize',UI.settings.tSNE_standardize,'Distance',UI.settings.tSNE_dDistanceMetric,'Exaggeration',UI.settings.tSNE_exaggeration,'NumPCAComponents',0,'LearnRate',500,'Perplexity',200,'InitialY',initPCA,'LearnRate',1000);
                 case 'UMAP'
                     waitbar(0.1,f_waitbar,'Calculating UMAP space...')
                     tSNE_metrics.plot = run_umap(X','verbose','none'); % ,'metric',UI.settings.tSNE_dDistanceMetric
