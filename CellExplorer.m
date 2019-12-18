@@ -1137,22 +1137,23 @@ while ii <= size(cell_metrics.troughToPeak,2)
                 end
             end
             
-            % Scatter plot
-            plotGroupScatter(plotX, plotY)
-
-            % Plot putative connections
-            if plotConnections(1) == 1
-                plotPutativeConnections(plotX,plotY)
-            end
-            % Plots X marker for selected cell
-            plotMarker(plotX(ii),plotY(ii))
-        
-            % Plots tagget ground-truth cell types
-            plotGroudhTruthCells(plotX, plotY)
-            
-            if UI.settings.stickySelection
-                plot(plotX(UI.params.ClickedCells),plotY(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-            end
+            plotGroupData(plotX,plotY,plotConnections(1))
+%             % Scatter plot
+%             plotGroupScatter(plotX, plotY)
+% 
+%             % Plot putative connections
+%             if plotConnections(1) == 1
+%                 plotPutativeConnections(plotX,plotY)
+%             end
+%             % Plots X marker for selected cell
+%             plotMarker(plotX(ii),plotY(ii))
+%         
+%             % Plots tagget ground-truth cell types
+%             plotGroudhTruthCells(plotX, plotY)
+%             
+%             if UI.settings.stickySelection
+%                 plot(plotX(UI.params.ClickedCells),plotY(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+%             end
             axis tight
             
         else
@@ -1337,7 +1338,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
             yyaxis right
         end
         
-        xlim(fig2_axislimit_x), ylim(fig2_axislimit_y)
+        xlim(fig2_axislimit_x), ylim(fig2_axislimit_y), ylabel('Burst Index (Royer 2012)'); xlabel('Trough-to-Peak (µs)')
         set(subfig_ax(2), 'YScale', 'log');
         
         % Reference data
@@ -1372,24 +1373,26 @@ while ii <= size(cell_metrics.troughToPeak,2)
             yyaxis right, hold on
         end
         
-        % Scatter plot
-        plotGroupScatter(cell_metrics.troughToPeak * 1000, cell_metrics.burstIndex_Royer2012)
-
-        % Plot putative connections
-        if plotConnections(2) == 1
-            plotPutativeConnections(cell_metrics.troughToPeak * 1000,cell_metrics.burstIndex_Royer2012)
-        end
-        % Plot X marker for selected cell
-        plotMarker(cell_metrics.troughToPeak(ii) * 1000,cell_metrics.burstIndex_Royer2012(ii))
+        plotGroupData(cell_metrics.troughToPeak * 1000,cell_metrics.burstIndex_Royer2012,plotConnections(2))
         
-        % Plot tagget ground-truth cell types
-        plotGroudhTruthCells(cell_metrics.troughToPeak * 1000, cell_metrics.burstIndex_Royer2012)
-
-        % Sticky selection
-        if UI.settings.stickySelection
-        	plot(cell_metrics.troughToPeak(UI.params.ClickedCells)*1000,cell_metrics.burstIndex_Royer2012(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-        end        
-        ylabel('Burst Index (Royer 2012)'); xlabel('Trough-to-Peak (µs)'), 
+%         % Scatter plot
+%         plotGroupScatter(cell_metrics.troughToPeak * 1000, cell_metrics.burstIndex_Royer2012)
+% 
+%         % Plot putative connections
+%         if plotConnections(2) == 1
+%             plotPutativeConnections(cell_metrics.troughToPeak * 1000,cell_metrics.burstIndex_Royer2012)
+%         end
+%         % Plot X marker for selected cell
+%         plotMarker(cell_metrics.troughToPeak(ii) * 1000,cell_metrics.burstIndex_Royer2012(ii))
+%         
+%         % Plot tagget ground-truth cell types
+%         plotGroudhTruthCells(cell_metrics.troughToPeak * 1000, cell_metrics.burstIndex_Royer2012)
+% 
+%         % Sticky selection
+%         if UI.settings.stickySelection
+%         	plot(cell_metrics.troughToPeak(UI.params.ClickedCells)*1000,cell_metrics.burstIndex_Royer2012(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+%         end        
+        
     end
     
     %% % % % % % % % % % % % % % % % % % % % % %
@@ -1403,23 +1406,28 @@ while ii <= size(cell_metrics.troughToPeak,2)
         cla, hold on
         
         % Scatter plot with t-SNE metrics
-        plotGroupScatter(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2))
         xlim(fig3_axislimit_x), ylim(fig3_axislimit_y), xlabel('t-SNE'), ylabel('t-SNE')
         
-        % Plots putative connections
-        if plotConnections(3) == 1
-            plotPutativeConnections(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)')
-        end
+        plotGroupData(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)',plotConnections(3))
         
-        % Plots X marker for selected cell
-        plotMarker(tSNE_metrics.plot(ii,1),tSNE_metrics.plot(ii,2))
         
-        % Plots tagget ground-truth cell types
-        plotGroudhTruthCells(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2))
+%         plotGroupScatter(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2))
         
-        if UI.settings.stickySelection
-            plot(tSNE_metrics.plot(UI.params.ClickedCells,1),tSNE_metrics.plot(UI.params.ClickedCells,2),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9)
-        end
+        
+%         % Plots putative connections
+%         if plotConnections(3) == 1
+%             plotPutativeConnections(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)')
+%         end
+%         
+%         % Plots X marker for selected cell
+%         plotMarker(tSNE_metrics.plot(ii,1),tSNE_metrics.plot(ii,2))
+%         
+%         % Plots tagget ground-truth cell types
+%         plotGroudhTruthCells(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2))
+%         
+%         if UI.settings.stickySelection
+%             plot(tSNE_metrics.plot(UI.params.ClickedCells,1),tSNE_metrics.plot(UI.params.ClickedCells,2),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9)
+%         end
     end
     
     %% % % % % % % % % % % % % % % % % % % % % %
@@ -2462,6 +2470,66 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 plot(plotX1(subsetGroundTruth{idGroundTruth(jj)}), plotY1(subsetGroundTruth{idGroundTruth(jj)}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
             end
         end
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function plotGroupData(plotX1,plotY1,plotConnections1)
+        if ~isempty(clr)
+            legendScatter = gscatter(plotX1(UI.params.subset), plotY1(UI.params.subset), plotClas(UI.params.subset), clr,'',UI.settings.markerSize,'off');
+            set(legendScatter,'HitTest','off')
+        end
+        if UI.settings.displayExcitatory && ~isempty(cellsExcitatory_subset)
+            plot(plotX1(cellsExcitatory_subset), plotY1(cellsExcitatory_subset),'^k', 'HitTest','off')
+        end
+        if UI.settings.displayInhibitory && ~isempty(cellsInhibitory_subset)
+            plot(plotX1(cellsInhibitory_subset), plotY1(cellsInhibitory_subset),'ok', 'HitTest','off')
+        end
+        if UI.settings.displayExcitatoryPostsynapticCells && ~isempty(cellsExcitatoryPostsynaptic_subset)
+            plot(plotX1(cellsExcitatoryPostsynaptic_subset), plotY1(cellsExcitatoryPostsynaptic_subset),'vk', 'HitTest','off')
+        end
+        if UI.settings.displayInhibitoryPostsynapticCells && ~isempty(cellsInhibitoryPostsynaptic_subset)
+            plot(plotX1(cellsInhibitoryPostsynaptic_subset), plotY1(cellsInhibitoryPostsynaptic_subset),'*k', 'HitTest','off')
+        end
+        
+        % Plots putative connections
+        if plotConnections1 == 1 && ~isempty(putativeSubset)
+            switch UI.monoSyn.disp
+                case 'All'
+                    xdata = [plotX1(UI.params.a1);plotX1(UI.params.a2);nan(1,length(UI.params.a2))];
+                    ydata = [plotY1(UI.params.a1);plotY1(UI.params.a2);nan(1,length(UI.params.a2))];
+                    plot(xdata(:),ydata(:),'-k','HitTest','off')
+                case {'Selected','Upstream','Downstream','Up & downstream'}
+                    if ~isempty(UI.params.inbound)
+                        xdata = [plotX1(UI.params.incoming);plotX1(UI.params.a2(UI.params.inbound));nan(1,length(UI.params.a2(UI.params.inbound)))];
+                        ydata = [plotY1(UI.params.incoming);plotY1(UI.params.a2(UI.params.inbound));nan(1,length(UI.params.a2(UI.params.inbound)))];
+                        plot(xdata,ydata,'-ob','HitTest','off')
+                    end
+                    if ~isempty(UI.params.outbound)
+                        xdata = [plotX1(UI.params.a1(UI.params.outbound));plotX1(UI.params.outgoing);nan(1,length(UI.params.outgoing))];
+                        ydata = [plotY1(UI.params.a1(UI.params.outbound));plotY1(UI.params.outgoing);nan(1,length(UI.params.outgoing))];
+                        plot(xdata(:),ydata(:),'-om','HitTest','off')
+                    end
+            end
+        end
+        
+        % Plots X marker for selected cell
+%         plotMarker(tSNE_metrics.plot(ii,1),tSNE_metrics.plot(ii,2))
+        plot(plotX1(ii), plotY1(ii),'xw', 'LineWidth', 3., 'MarkerSize',22,'HitTest','off');
+        plot(plotX1(ii), plotY1(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
+        
+        % Plots tagget ground-truth cell types
+        if groundTruthSelection
+            idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
+            for jj = 1:length(idGroundTruth)
+                plot(plotX1(subsetGroundTruth{idGroundTruth(jj)}), plotY1(subsetGroundTruth{idGroundTruth(jj)}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
+            end
+        end
+        
+        if UI.settings.stickySelection
+            plot(plotX1(UI.params.ClickedCells),plotY1(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9)
+        end
+        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -5624,8 +5692,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             else
                 ha = tight_subplot(plotRows(1),plotRows(2),[.06 .03],[.12 .06],[.06 .05]);
             end
-            
             axes(ha(1)), hold on
+            
             % Scatter plot with t-SNE metrics
             plotGroupScatter(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2)), axis tight
             xlabel('t-SNE'), ylabel('t-SNE')
@@ -5636,6 +5704,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             % Plots: X marker for selected cell
             plotMarker(tSNE_metrics.plot(cellIDs(j),1),tSNE_metrics.plot(cellIDs(j),2))
+            
             % Plots: tagget ground-truth cell types
             plotGroudhTruthCells(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2))
             

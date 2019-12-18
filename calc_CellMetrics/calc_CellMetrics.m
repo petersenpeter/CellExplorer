@@ -922,7 +922,7 @@ customCalculationsOptions(strcmpi(customCalculationsOptions,'template')) = [];
 for i = 1:length(customCalculationsOptions)
     if any(contains(metrics,{customCalculationsOptions{i},'all'})) && ~any(contains(excludeMetrics,{customCalculationsOptions{i}}))
         disp(['* Custom calculation:' customCalculationsOptions{i}]);
-        cell_metrics = customCalculations.(customCalculationsOptions{i})(cell_metrics,spikes,spikes_all);
+        cell_metrics = customCalculations.(customCalculationsOptions{i})(cell_metrics,session,spikes,spikes_all);
     end
 end
 
