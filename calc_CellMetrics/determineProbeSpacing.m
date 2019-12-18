@@ -16,42 +16,34 @@ else
     probeimplants = struct2cell(db_load_table('probeimplants',session.general.animal));
     SiliconProbes = cellstr(string(probeimplants{1}.DynamicProbeLayout));
 end
-probeids = [];
-VerticalSpacingBetweenSites = [];
-VerticalSpacingBetweenSites_corrected = [];
-Layout = [];
 
 % Loads the list of silicon probes from the database
-temp = db_load_table('siliconprobes',SiliconProbes{1});
-if ~isempty(temp)
-    siliconprobes = struct2cell(temp);
-    % Determines the best estimate of the vertical spacing across channels for different probe designs.
-for i =1:length(SiliconProbes)
-    probeids(i) = find(arrayfun(@(n) strcmp(siliconprobes{n}.DescriptiveName, SiliconProbes{1}), 1:numel(siliconprobes)));
-    VerticalSpacingBetweenSites(i) = str2num(siliconprobes{probeids(i)}.VerticalSpacingBetweenSites);
-    Layout{i} = siliconprobes{probeids(i)}.Layout;
-    if any(strcmp(Layout{i},{'staggered','poly2','poly 2','edge'}))
-        VerticalSpacingBetweenSites_corrected(i) = VerticalSpacingBetweenSites(i)/2;
-    elseif strcmp(Layout{i},{'linear'})
-        VerticalSpacingBetweenSites_corrected(i) = VerticalSpacingBetweenSites(i);
-    elseif any(strcmp(Layout{i},{'poly3','poly 3'}))
-        VerticalSpacingBetweenSites_corrected(i) = VerticalSpacingBetweenSites(i)/3;
-    elseif any(strcmp(Layout{i},{'poly5','poly 5'}))
-        VerticalSpacingBetweenSites_corrected(i) = VerticalSpacingBetweenSites(i)/5;
+db_settings = db_load_settings;
+options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password);
+db_siliconprobes = webread([db_settings.address,'views/16742/'],options,'page_size','5000','descriptiveName',SiliconProbes{1});
+if ~strcmp(db_siliconprobes.renderedHtml,'<div class="frm_no_entries">No Entries Found</div>')
+    db_siliconprobes = loadjson(db_siliconprobes.renderedHtml);
+else
+    db_siliconprobes = [];
+end
+
+% Determines the best estimate of the vertical spacing across channels for different probe designs.
+if ~isempty(db_siliconprobes)
+    layout = db_siliconprobes{1}.layout;
+    verticalSpacing = db_siliconprobes{1}.verticalSpacing;
+    
+    if any(strcmp(layout,{'staggered','poly2','poly 2','edge'}))
+        VerticalSpacingBetweenSites_corrected = verticalSpacing/2;
+    elseif strcmp(layout,{'linear'})
+        VerticalSpacingBetweenSites_corrected = verticalSpacing;
+    elseif any(strcmp(layout,{'poly3','poly 3'}))
+        VerticalSpacingBetweenSites_corrected = verticalSpacing/3;
+    elseif any(strcmp(layout,{'poly5','poly 5'}))
+        VerticalSpacingBetweenSites_corrected = verticalSpacing/5;
     else
-        % If no probe design is provided, it assumes a staggered/poly2 layout (most common)
         error('No probe layout defined');
     end
+    disp(['  Vertical spacing applied: ', num2str(VerticalSpacingBetweenSites_corrected),' µm'])
+    session.analysisTags.probesVerticalSpacing = VerticalSpacingBetweenSites_corrected;
+    session.analysisTags.probesLayout = layout;
 end
-end
-
-
-if length(unique(VerticalSpacingBetweenSites_corrected))==1
-    VerticalSpacing = VerticalSpacingBetweenSites_corrected(1);
-else
-    VerticalSpacing = VerticalSpacingBetweenSites_corrected;
-end
-disp(['Vertical spacing applied: ', num2str(VerticalSpacing),' µm'])
-session.analysisTags.probesVerticalSpacing = VerticalSpacing;
-session.analysisTags.probesLayout = Layout;
-

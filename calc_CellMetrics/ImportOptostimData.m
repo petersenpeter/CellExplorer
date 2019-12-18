@@ -2,7 +2,8 @@
 % fileName = '20160210.evt.ait';
 sessionNames = {'20160225','20160309','20160308','20160307','20170301','20170203','20170124','20170125','20160210','20160505'};
 % sessionNames = {'mouse1_180502b','mouse1_180502a','mouse1_180501b','mouse1_180501a','mouse1_180414','mouse1_180415','mouse1_180412','mouse4_181114b','mouse3_180629','mouse3_180628','mouse3_180627','mouse5_181112B','mouse5_181116','mouse6_190330','mouse6_190331'};
-
+sessionsRoyer = {'som1_1','som1_2','som2_1','som2_2','som3_1','som3_2','som4','som5','som6','P1','P2_1','P2_2','P3_1','P3_2','P4_1','P4_2','P4_1'};
+sessionNames = sessionsRoyer;
 disp('Processing opto-tagget datasets')
 for i = 1:length(sessionNames)
     [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionNames{i});

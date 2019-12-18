@@ -22,23 +22,61 @@ db_settings.web_address = [db_settings.address, 'entries/' num2str(session.gener
 % General
 if any(contains(fields,{'general','all'}))
     % Updating fields
-    options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'CertificateFilename','','Timeout',30);
-    RESPONSE = webwrite(db_settings.web_address,options,'form_id','143','ngvax',session.general.duration,'l6piv',session.general.location,'10227a',session.general.time,...
-        '5qos5',session.general.date,'mxph',session.general.sessionType,'e253q',session.general.notes);
+    jsonStructure = [];
+    jsonStructure.form_id = 143;
+    jsonStructure.user_id = 3;
+    jsonStructure.fiElD_2556 = session.general.duration;
+    jsonStructure.fiElD_1901 = session.general.location;
+    jsonStructure.fiElD_2013 = session.general.time;
+    jsonStructure.fiElD_1903 = session.general.sessionType;
+    jsonStructure.fiElD_1902 = session.general.notes;
+    jsonStructure.fiElD_1892 = session.general.date;
+
+    cluIDs = fieldnames(jsonStructure);
+    jsonStructure = rmfield(jsonStructure,cluIDs(find(struct2array(structfun(@(x) any(isnan(x) | isinf(x)), jsonStructure,'UniformOutput', false)))));
+    jsonStructure = jsonencode(jsonStructure);
+    jsonStructure = strrep(jsonStructure,'fiElD_','');
+    options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+    RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
     if RESPONSE.success==1
-        disp('General meta data successfully submitted to db')
+        disp('General metadata successfully submitted to db')
     end
+%     % Updating fields
+%     options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'CertificateFilename','','Timeout',30);
+%     RESPONSE = webwrite(db_settings.web_address,options,'form_id','143','ngvax',session.general.duration,'l6piv',session.general.location,'10227a',session.general.time,...
+%         '5qos5',session.general.date,'mxph',session.general.sessionType,'e253q',session.general.notes);
+%     if RESPONSE.success==1
+%         disp('General meta data successfully submitted to db')
+%     end
 end
 
 % Extracellular
 if any(contains(fields,{'extracellular','all'}))
     % Updating fields
-    options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'CertificateFilename','','Timeout',30);
-    RESPONSE = webwrite(db_settings.web_address,options,'form_id','143','h1nhs',session.extracellular.nChannels,'wnvla',session.extracellular.sr,'ngvax',session.general.duration,'s2l9r',session.extracellular.nSamples,'jr29w',session.extracellular.precision,...
-        'kvqyy',session.extracellular.fileFormat,'m80cn',session.extracellular.probeDepths,'mkg8c',session.extracellular.srLfp,'wnn6p',session.extracellular.leastSignificantBit);
+    jsonStructure = [];
+    jsonStructure.form_id = 143;
+    jsonStructure.user_id = 3;
+    jsonStructure.fiElD_1908 = session.extracellular.nChannels;
+    jsonStructure.fiElD_1909 = session.extracellular.sr;
+    if isfield(session.extracellular,'nSamples')
+        jsonStructure.fiElD_1911 = session.extracellular.nSamples;
+    end
+    jsonStructure.fiElD_1910 = session.extracellular.precision;
+    jsonStructure.fiElD_2010 = session.extracellular.fileFormat;
+    jsonStructure.fiElD_1915 = session.extracellular.probeDepths;
+    jsonStructure.fiElD_2930 = session.extracellular.leastSignificantBit;
+    if isfield(session.extracellular,'srLfp')
+        jsonStructure.fiElD_1971 = session.extracellular.srLfp;
+    end
+    cluIDs = fieldnames(jsonStructure);
+    jsonStructure = rmfield(jsonStructure,cluIDs(find(struct2array(structfun(@(x) any(isnan(x) | isinf(x)), jsonStructure,'UniformOutput', false)))));
+    jsonStructure = jsonencode(jsonStructure);
+    jsonStructure = strrep(jsonStructure,'fiElD_','');
+    options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+    RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
     if RESPONSE.success==1
-            disp('extracellular meta data successfully submitted to db')
-        end
+        disp('extracellular meta data successfully submitted to db')
+    end
     % Electrode groups
     db_update_electrodeGroups(session,db_settings)
     % Spike groups

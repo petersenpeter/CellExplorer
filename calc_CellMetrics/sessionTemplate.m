@@ -111,9 +111,9 @@ end
 % session.channelTags.Theta.channels = 64; % Theta channel
 % session.channelTags.Ripple.channels = 64; % Ripple channel
 % session.channelTags.RippleNoise.channels = 1; % Ripple Noise reference channel
-% session.channelTags.Cortical.spikeGroups = 3; % Cortical spike groups
+% session.channelTags.Cortical.electrodeGroups = 3; % Cortical spike groups
 % session.channelTags.Bad.channels = 1; % Bad channels
-% session.channelTags.Bad.spikeGroups = 1; % Bad spike groups (broken shanks)
+% session.channelTags.Bad.electrodeGroups = 1; % Bad spike groups (broken shanks)
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %

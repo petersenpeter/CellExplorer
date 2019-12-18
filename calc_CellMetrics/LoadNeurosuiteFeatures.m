@@ -20,7 +20,7 @@ disp('Loading Neurosuite waveforms')
 
 % Extracts parameters from the session struct
 sr = session.extracellular.sr;                   % Sample rate (Hz)
-basename = session.general.baseName;             % basename of the session
+basename = session.general.name;             % basename of the session
 clusteringpath = session.general.clusteringPath; % path to clustering data (basename.spikes.cellinfo.mat and basename.clu.* and basename.fet.* files)
 
 spikeGroups = unique(spikes.shankID);

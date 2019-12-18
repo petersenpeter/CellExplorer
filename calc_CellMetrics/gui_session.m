@@ -21,12 +21,16 @@ sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwi
 sortingFormatList = {'Phy', 'KiloSort', 'SpikingCircus', 'Klustakwik', 'KlustaViewer', 'Neurosuite'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
+% metrics in cell metrics pipeline
+UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics','importCellTypeClassification'};
+% Parameters in cell metrics pipeline
+UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn'};
 
 % % % % % % % % % % % % % % % % % % % %
 % Handling inputs
 % % % % % % % % % % % % % % % % % % % %
 
-if exist('sessionIn') & isstruct(sessionIn)
+if exist('sessionIn') && isstruct(sessionIn)
     session = sessionIn;
     if isfield(session.general,'basePath')
         basepath = session.general.basePath;
@@ -175,16 +179,15 @@ UI.tabs.extracellular = uitab(UI.uitabgroup,'Title','Extracellular');
 UI.tabs.spikeSorting = uitab(UI.uitabgroup,'Title','Spike sorting');
 UI.tabs.brainRegions = uitab(UI.uitabgroup,'Title','Brain regions');
 UI.tabs.channelTags = uitab(UI.uitabgroup,'Title','Tags');
-UI.tabs.inputs = uitab(UI.uitabgroup,'Title','Inputs');
+UI.tabs.inputs = uitab(UI.uitabgroup,'Title','Inputs & time series');
 UI.tabs.behaviors = uitab(UI.uitabgroup,'Title','Tracking');
-UI.tabs.timeSeries = uitab(UI.uitabgroup,'Title','Time series');
 
 % Buttons
 UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized');
 UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized');
 UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[230, 5, 100, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized');
 UI.button.uploadToDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[370, 5, 100, 30],'String','Upload to DB','Callback',@(src,evnt)buttonUploadToDB,'Units','normalized');
-UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[480, 5, 100, 30],'String','download from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized');
+UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[480, 5, 100, 30],'String','Download from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell metrics parameters
@@ -192,7 +195,6 @@ UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Positio
 
 if exist('parameters','var')
     % Include metrics
-    UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','ripple_metrics','monoSynaptic_connections','spatial_metrics','perturbation_metrics','theta_metrics','psth_metrics'};
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Include metrics (default: all)', 'Position', [10, 500, 285, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     UI.listbox.includeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[10 330 275 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metrics),'Units','normalized');
     
@@ -201,7 +203,6 @@ if exist('parameters','var')
     UI.listbox.excludeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[300 330 290 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.excludeMetrics),'Units','normalized');
     
     % Parameters
-    UI.list.params = {'forceReload','plots','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','useNeurosuiteWaveforms','excludeManipulations','manualAdjustMonoSyn'};
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Parameters', 'Position', [10, 305, 288, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     for iParams = 1:length(UI.list.params)
         if iParams <=6
@@ -330,6 +331,7 @@ UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'Strin
 % Channel groups
 % % % % % % % % % % % % % % % % % % % % % % 
 UI.channelGroups = uitabgroup('units','pixels','Position',[0, 0, 599, 365],'Parent',UI.tabs.extracellular,'Units','normalized');
+
 % Electrode groups
 UI.tabs.electrodeGroups = uitab(UI.channelGroups,'Title','Electrode groups');
 UI.list.tableData = {false,'','',''};
@@ -352,12 +354,14 @@ uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[290, 10,
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
 UI.button.importGroupsFromXML2 = uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
-% Electrodes
+% Silicon probes from db
 if isfield(session.extracellular,'electrodes')
     UI.tabs.spikeGroups = uitab(UI.channelGroups,'Title','Electrodes');
     UI.list.tableData = {false,'','','',''};
     UI.table.electrodes = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 1, 599, 364],'ColumnWidth',{20 200 120 70 60 80},'columnname',{'','Probes','Company','nChannels','nShanks','Brain region'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
 end
+
+
 % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
 % % % % % % % % % % % % % % % % % % % % %
@@ -373,33 +377,39 @@ uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[230, 10
 % Brain regions
 % % % % % % % % % % % % % % % % % % % % %
 UI.list.tableData = {false,'','','',''};
-UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 70 280 80 142},'columnname',{'','Region','Channels','Spike groups','Notes'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
+UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 70 280 80 142},'columnname',{'','Region','Channels','Electrode groups','Notes'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add region','Callback',@(src,evnt)addRegion,'Units','normalized');
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit region','Callback',@(src,evnt)editRegion,'Units','normalized');
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion,'Units','normalized');
-
 
 % % % % % % % % % % % % % % % % % % % % %
 % Channel tags
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 599, 225],'ColumnWidth',{20 130 315 127},'columnname',{'','Channel tags','Channels','Spike groups'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
+UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 599, 225],'ColumnWidth',{20 130 315 127},'columnname',{'','Channel tags','Channels','Electrode groups'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 260, 100, 30],'String','Add channel tag','Callback',@(src,evnt)addTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 100, 30],'String','Edit channel tag','Callback',@(src,evnt)editTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 260, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[450, 260, 140, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
 
-
 % % % % % % % % % % % % % % % % % % % % %
 % Inputs
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 120 75 70 120 187},'columnname',{'','Tag','Channels','Type','Equipment','Description'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
-% uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[330, 10, 160, 30],'String','Import inputs?','Callback',@(src,evnt)importBadChannelsFromXML);
+UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 599, 225],'ColumnWidth',{20 120 75 70 120 187},'columnname',{'','Tag','Channels','Type','Equipment','Description'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 260, 100, 30],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 100, 30],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 260, 100, 30],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
 
+% % % % % % % % % % % % % % % % % % % % %
+% Time series
+% % % % % % % % % % % % % % % % % % % % %
+tableData = {false,'','',''};
+UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 50, 599, 200],'ColumnWidth',{20 90 65 60 70 40 60 110 78},'columnname',{'','File name', 'Type (tag)', 'Precision', 'nChannels', 'sr', 'nSamples', 'Least significant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
+UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[490, 10, 100, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % BehavioralTracking
@@ -422,16 +432,6 @@ uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 10,
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized');
 % uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[340, 10, 110, 30],'String','Duplicate tag','Callback',@(src,evnt)duplicateAnalysis,'Units','normalized');
 
-
-% % % % % % % % % % % % % % % % % % % % %
-% Time series
-% % % % % % % % % % % % % % % % % % % % %
-tableData = {false,'','',''};
-UI.table.timeSeries = uitable(UI.tabs.timeSeries,'Data',tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 90 65 60 70 40 60 110 78},'columnname',{'','File name', 'Type (tag)', 'Precision', 'nChannels', 'sr', 'nSamples', 'least significant bit', 'equipment'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
-UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.timeSeries,'Style','pushbutton','Position',[490, 10, 100, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
 
 loadSessionStruct
 UI.fig.Visible = 'on';
@@ -483,10 +483,10 @@ uiwait(UI.fig)
                         filepath1 = fullfile(UI.edit.basepath.String,session.epochs{i}.name,[session.epochs{i}.name,'.dat']);
                         filepath2 = fullfile(UI.edit.basepath.String,session.epochs{i}.name,fname);
                     end
-                    if exist(filepath1)
+                    if exist(filepath1,'file')
                         temp_ = dir(filepath1);
-                    elseif exist(filepath2)
-                        temp_ = dir(filepath1);
+                    elseif exist(filepath2,'file')
+                        temp_ = dir(filepath2);
                     end
                     if exist(filepath1) || exist(filepath2)
                         session.epochs{i}.stopTime = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
@@ -832,8 +832,8 @@ uiwait(UI.fig)
                 else
                     tableData{fn,3} = '';
                 end
-                if isfield(session.brainRegions.(brainRegionFieldnames{fn}),'spikeGroups')
-                    tableData{fn,4} = num2str(session.brainRegions.(brainRegionFieldnames{fn}).spikeGroups);
+                if isfield(session.brainRegions.(brainRegionFieldnames{fn}),'electrodeGroups')
+                    tableData{fn,4} = num2str(session.brainRegions.(brainRegionFieldnames{fn}).electrodeGroups);
                 else
                     tableData{fn,4} = '';
                 end
@@ -862,8 +862,8 @@ uiwait(UI.fig)
                 else
                     tableData{fn,3} = '';
                 end
-                if isfield(session.channelTags.(tagFieldnames{fn}),'spikeGroups')
-                    tableData{fn,4} = num2str(session.channelTags.(tagFieldnames{fn}).spikeGroups);
+                if isfield(session.channelTags.(tagFieldnames{fn}),'electrodeGroups')
+                    tableData{fn,4} = num2str(session.channelTags.(tagFieldnames{fn}).electrodeGroups);
                 else
                     tableData{fn,4} = '';
                 end
@@ -1165,15 +1165,15 @@ uiwait(UI.fig)
             else
                 initChannels = '';
             end
-            if isfield(session.brainRegions.(regionIn),'spikeGroups')
-                initSpikeGroups = num2str(session.brainRegions.(regionIn).spikeGroups);
+            if isfield(session.brainRegions.(regionIn),'electrodeGroups')
+                initElectrodeGroups = num2str(session.brainRegions.(regionIn).electrodeGroups);
             else
-                initSpikeGroups = '';
+                initElectrodeGroups = '';
             end
         else
             InitBrainRegion = 1;
             initChannels = '';
-            initSpikeGroups = '';
+            initElectrodeGroups = '';
         end
         % Opens dialog
         UI.dialog.brainRegion = dialog('Position', [300, 300, 600, 400],'Name','Brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
@@ -1193,8 +1193,8 @@ uiwait(UI.fig)
         uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 73, 280, 20],'HorizontalAlignment','left');
         brainRegionsChannels = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 280, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [300, 73, 290, 20],'HorizontalAlignment','left');
-        brainRegionsSpikeGroups = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initSpikeGroups, 'Position', [300, 50, 290, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [300, 73, 290, 20],'HorizontalAlignment','left');
+        brainRegionsElectrodeGroups = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [300, 50, 290, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Save region','Callback',@(src,evnt)CloseBrainRegions_dialog);
         uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[300, 10, 290, 30],'String','Cancel','Callback',@(src,evnt)CancelBrainRegions_dialog);
@@ -1227,12 +1227,12 @@ uiwait(UI.fig)
                             uicontrol(brainRegionsChannels);
                         end
                     end
-                    if ~isempty(brainRegionsSpikeGroups.String)
+                    if ~isempty(brainRegionsElectrodeGroups.String)
                         try
-                            session.brainRegions.(SelectedBrainRegion).spikeGroups = eval(['[',brainRegionsSpikeGroups.String,']']);
+                            session.brainRegions.(SelectedBrainRegion).electrodeGroups = eval(['[',brainRegionsElectrodeGroups.String,']']);
                         catch
                             errordlg(['Spike groups not formatted correctly'],'Error')
-                            uicontrol(brainRegionsSpikeGroups);
+                            uicontrol(brainRegionsElectrodeGroups);
                         end
                     end
                 end
@@ -1265,7 +1265,9 @@ uiwait(UI.fig)
         % Deletes any selected tags
         if ~isempty(UI.table.tags.Data) && ~isempty(find([UI.table.tags.Data{:,1}], 1))
             spikesPlotFieldnames = fieldnames(session.channelTags);
-            session.channelTags = rmfield(session.channelTags,{spikesPlotFieldnames{find([UI.table.tags.Data{:,1}])}});
+            if ~isempty({spikesPlotFieldnames{find([UI.table.tags.Data{:,1}])}})
+                session.channelTags = rmfield(session.channelTags,{spikesPlotFieldnames{find([UI.table.tags.Data{:,1}])}});
+            end
             updateTagList
         else
             errordlg(['Please select the channel tag(s) to delete'],'Error')
@@ -1281,15 +1283,15 @@ uiwait(UI.fig)
             else
                 initChannels = '';
             end
-            if isfield(session.channelTags.(regionIn),'spikeGroups')
-                initSpikeGroups = num2str(session.channelTags.(regionIn).spikeGroups);
+            if isfield(session.channelTags.(regionIn),'electrodeGroups')
+                initElectrodeGroups = num2str(session.channelTags.(regionIn).electrodeGroups);
             else
-                initSpikeGroups = '';
+                initElectrodeGroups = '';
             end
         else
             InitTag = '';
             initChannels = '';
-            initSpikeGroups = '';
+            initElectrodeGroups = '';
         end
         
         % Opens dialog
@@ -1303,8 +1305,8 @@ uiwait(UI.fig)
         uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 73, 230, 20],'HorizontalAlignment','left');
         tagsChannels = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [250, 73, 240, 20],'HorizontalAlignment','left');
-        tagsSpikeGroups = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initSpikeGroups, 'Position', [250, 50, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [250, 73, 240, 20],'HorizontalAlignment','left');
+        tagsElectrodeGroups = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [250, 50, 240, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.tags,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save tag','Callback',@(src,evnt)CloseTags_dialog);
         uicontrol('Parent',UI.dialog.tags,'Style','pushbutton','Position',[250, 10, 240, 30],'String','Cancel','Callback',@(src,evnt)CancelTags_dialog);
@@ -1326,16 +1328,16 @@ uiwait(UI.fig)
                 else
                     session.channelTags.(SelectedTag).channels = [];
                 end
-                if ~isempty(tagsSpikeGroups.String)
+                if ~isempty(tagsElectrodeGroups.String)
                     try
-                        session.channelTags.(SelectedTag).spikeGroups = eval(['[',tagsSpikeGroups.String,']']);
+                        session.channelTags.(SelectedTag).electrodeGroups = eval(['[',tagsElectrodeGroups.String,']']);
                     catch
                         errordlg(['Spike groups not formatted correctly'],'Error')
-                        uicontrol(tagsSpikeGroups);
+                        uicontrol(tagsElectrodeGroups);
                         return
                     end
                 else
-                    session.channelTags.(SelectedTag).spikeGroups = [];
+                    session.channelTags.(SelectedTag).electrodeGroups = [];
                 end
             end
             delete(UI.dialog.tags);
@@ -2034,7 +2036,7 @@ uiwait(UI.fig)
             analysisName.Enable = 'off';
         end
         uicontrol('Parent',UI.dialog.analysis,'Style', 'text', 'String', 'Value', 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
-        analysisValue = uicontrol('Parent',UI.dialog.analysis,'Style', 'Edit', 'String', initValue, 'Position', [10, 50, 840, 25],'HorizontalAlignment','left');
+        analysisValue = uicontrol('Parent',UI.dialog.analysis,'Style', 'Edit', 'String', initValue, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.analysis,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save tag','Callback',@(src,evnt)CloseAnalysis_dialog);
         uicontrol('Parent',UI.dialog.analysis,'Style','pushbutton','Position',[250, 10, 240, 30],'String','Cancel','Callback',@(src,evnt)CancelAnalysis_dialog);
@@ -2047,7 +2049,11 @@ uiwait(UI.fig)
                 SelectedTag = analysisName.String;
                 if ~isempty(analysisValue.String)
                     try
-                        session.analysisTags.(SelectedTag) = eval(['[',analysisValue.String,']']);
+                        if any(isletter(analysisValue.String))
+                            session.analysisTags.(SelectedTag) = analysisValue.String;
+                        else
+                            session.analysisTags.(SelectedTag) = eval(['[',analysisValue.String,']']);
+                        end
                     catch
                        errordlg(['Values not not formatted correctly'],'Error')
                         uicontrol(analysisValue);
@@ -2385,6 +2391,7 @@ uiwait(UI.fig)
         end
         updateChannelGroupsList
     end
+
     function importBadChannelsFromXML
         xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
         if exist(xml_filepath,'file')
@@ -2409,14 +2416,17 @@ uiwait(UI.fig)
                 session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);
             end
             if isempty(session.channelTags.Bad.channels)
-                session.channelTags.Bad = rmfield(session.channelTags.Bad,channels);
+                session.channelTags.Bad = rmfield(session.channelTags.Bad,'channels');
             end
-            updateTagList
-            if length(session.channelTags.Bad.channels)>0
+            if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'channels') && length(session.channelTags.Bad.channels) > 0
                 msgbox([num2str(length(session.channelTags.Bad.channels)),' bad channels detected (' num2str(session.channelTags.Bad.channels),')'])
             else
                 msgbox('No bad channels detected')
+                if isfield(session.channelTags,'Bad')
+                    session.channelTags = rmfield(session.channelTags,'Bad');
+                end
             end
+            updateTagList
         else
             errordlg(['xml file not accessible: ' xml_filepath],'Error')
         end

@@ -23,7 +23,7 @@ for ih = 1:Nh
     px = marg_w(1);
     for ix = 1:Nw
         ii = ii+1;
-        ha(ii) = axes('Units','normalized','Position',[px py axw axh]); % 'XTickLabel','','YTickLabel',''
+        ha(ii) = axes('Units','normalized','Position',[px py axw axh]); 
         px = px+axw+gap(2);
     end
     py = py-axh-gap(1);

@@ -16,7 +16,7 @@ disp('   Loading Neurosuite waveforms')
 % accepted_units = good_units{1}(find(strcmp({good_units{2}{:}},'good')));
 
 sr = session.extracellular.sr;
-basename = session.general.baseName;
+basename = session.general.name;
 clusteringpath = session.general.clusteringPath;
 spikeGroups = unique(spikes.shankID);
 if session.extracellular.leastSignificantBit==0

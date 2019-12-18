@@ -15,7 +15,7 @@ function classification_deepSuperficial(session,varargin)
 % session struct with required fields:
 %
 % session.general.basePath: basePath e.g. 'Z:\peterp03\IntanData\MS22\Peter_MS22_180629_110319_concat'
-% session.general.baseName: baseName of the recording, e.g. 'Peter_MS22_180629_110319_concat'
+% session.general.name: name of the recording, e.g. 'Peter_MS22_180629_110319_concat'
 % session.channelTags.(Bad or Cortical) specifying spikeGroups (1-indexed), channels (1-indexed)
 %   e.g. session.channelTags.Bad.channels = [1,25,128]; session.channelTags.Bad.spikeGroups = [1]
 % session.analysisTags.probesVerticalSpacing: in µm, e.g. 20

@@ -15,15 +15,15 @@ function cell_metrics = db_submit_cells(cell_metrics,session)
 % Check for existing cells for a given spike session in case the local cell metrics
 % has been deleted to avoid resubmission of the same cells.
 
-f_submit_cells = waitbar(0,'DB: Submitting cells to database');
+f_submit_cells = waitbar(0,'DB: Submitting cells to database','Name',session.general.name);
 
 % Database options
 db_settings = db_load_settings;
 options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password); % 'ContentType','json','MediaType','application/json'
 
 % Updating Session with toggle
-if isempty(session.spikeSorting{1}.cellMetrics) || ~strcmp(session.spikeSorting{1}.cellMetrics, '1')
-    waitbar(0,f_submit_cells,['DB: Adjusting cell metrics toggle: ',session.general.name]);
+if ~isfield(session.spikeSorting{1},'cellMetrics') || isempty(session.spikeSorting{1}.cellMetrics) || ~strcmp(session.spikeSorting{1}.cellMetrics, '1')
+    waitbar(0,f_submit_cells,['DB: Adjusting cell metrics toggle']);
     web_address1 = [db_settings.address,'entries/', num2str(cell_metrics.spikeSortingID(1))];
     webwrite(web_address1,options,'session_cellmetrics',1);
 end
@@ -34,19 +34,30 @@ web_address1 = [db_settings.address,'entries/', num2str(cell_metrics.spikeSortin
 webwrite(web_address1,options,'session_cell_count',cell_metrics.general.cellCount);
 
 waitbar(0,f_submit_cells,'DB: Submitting cells to database');
-db_cells = db_load_table('cells',cell_metrics.general.basename);
-if ~isempty(db_cells) & length(fieldnames(db_cells))>0
-    cluIDs2  = structfun(@(X) str2num(X.CluID), db_cells,'UniformOutput', true);
-    entryIDs2  = fieldnames(db_cells);
+% Requesting db list
+db_cells = webread([db_settings.address,'views/16737/'],options,'page_size','5000','sorted','1','spikeSorting',session.spikeSorting{1}.entryID); % session.spikeSorting{1}.entryID
+if ~strcmp(db_cells.renderedHtml,'<div class="frm_no_entries">No Entries Found</div>')
+    db_cells = loadjson(db_cells.renderedHtml);
+    cluIDs2  = cellfun(@(X) (X.cluID), db_cells,'UniformOutput', true);
+    entryIDs2  = cellfun(@(X) (X.id), db_cells,'UniformOutput', true);
 else
+    db_cells = [];
     cluIDs2 = [];
 end
+% db_cells = db_load_table('cells',cell_metrics.general.basename);
+% if ~isempty(db_cells) & length(fieldnames(db_cells))>0
+%     cluIDs  = cellfun(@(X) (X.cluID), db_cells,'UniformOutput', true);
+%     entryIDs  = cellfun(@(X) (X.id), db_cells,'UniformOutput', true);
+%     fieldnames(db_cells);
+% else
+%     cluIDs = [];
+% end
+
 for j = 1:size(cell_metrics.sessionID,2)
     if ~ishandle(f_submit_cells)
         break
     end
-    
-    if isfield(cell_metrics, 'entryID') && length(cell_metrics.entryID) >= j && cell_metrics.entryID(j) > 0 && isfield(db_cells,['id_',num2str(cell_metrics.entryID(j))])
+    if isfield(cell_metrics, 'entryID') && length(cell_metrics.entryID) >= j && cell_metrics.entryID(j) > 0 %&& isfield(db_cells,['id_',num2str(cell_metrics.entryID(j))])
         dialog_text = ['DB: Submitting cells: Cell ' num2str(j),' (Updated)'];
         web_address1 = [db_settings.address, 'entries/', num2str(cell_metrics.entryID(j))];
     elseif any( cluIDs2 == cell_metrics.cluID(j))

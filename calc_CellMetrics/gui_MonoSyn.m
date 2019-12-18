@@ -28,7 +28,6 @@ disp('gui_MonoSyn: Loading GUI')
 ccgR = mono_res.ccgR;
 sig_con = mono_res.sig_con;
 Pred = mono_res.Pred;
-Bounds = mono_res.Bounds;
 completeIndex = mono_res.completeIndex;
 binSize = mono_res.binSize;
 duration = mono_res.duration;
@@ -38,7 +37,7 @@ window  =false(size(ccgR,1),1);
 window(ceil(length(window)/2) - round(.004/binSize): ceil(length(window)/2) + round(.004/binSize)) = true;
 halfBins = round(duration/binSize/2);
 
-t = (-halfBins:halfBins)'*binSize;
+t = 1000*(-halfBins:halfBins)'*binSize;
 
 allcel = unique(sig_con(:));
 %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,6 +48,14 @@ h = figure('KeyReleaseFcn', {@keyPress},'Name','MonoSynCon inspector','NumberTit
 uicontrol('Parent',h,'Style','pushbutton','Position',[5 405 20 15],'Units','normalized','String','<','Callback',@(src,evnt)goBack,'KeyPressFcn', {@keyPress});
 uicontrol('Parent',h,'Style','pushbutton','Position',[540 405 20 15],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
 plotTitle = uicontrol('Parent',h,'Style','text','Position',[130 410 350 10],'Units','normalized','String','','HorizontalAlignment','center','FontSize',13);
+
+
+if ~verLessThan('matlab', '9.4')
+    set(h,'WindowState','maximize','visible','on'), drawnow nocallbacks; 
+else
+    set(h,'visible','on')
+    drawnow nocallbacks; frame_h = get(h,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks; 
+end
 
 i = 1;
 while i > 0 && i <= length(allcel)
@@ -66,7 +73,7 @@ while i > 0 && i <= length(allcel)
     prs = sig_con(any(sig_con==allcel(i),2),:);
     [plotRows,~]= numSubplots(max(2+size(prs,1),4));
 %     ha = tight_subplot(plotRows(1),plotRows(2),[.02 .01]);
-    ha = tight_subplot(plotRows(1),plotRows(2),[.03 .03],[.12 .05],[.06 .05]);
+    ha = tight_subplot(plotRows(1),plotRows(2),[.03 .03],[.05 .05],[.03 .03]);
     
     prs2 = [];
     for j=1:length(ha)
@@ -78,10 +85,10 @@ while i > 0 && i <= length(allcel)
             end
             prs2(j,:) = prs1;
             exc=ccgR(:,prs1(1),prs1(2));
-            exc(exc<Bounds(:,prs1(1),prs1(2),1)|~window)=0;
+            exc(exc<mono_res.Bounds(:,prs1(1),prs1(2),1)|~window)=0;
             
             inh=ccgR(:,prs1(1),prs1(2));
-            inh(inh>Bounds(:,prs1(1),prs1(2),2)|~window)=0;
+            inh(inh>mono_res.Bounds(:,prs1(1),prs1(2),2)|~window)=0;
             bar_from_patch(t,ccgR(:,prs1(1),prs1(2)),'b')
             % bar(t,ccgR(:,prs1(1),prs1(2)),1,'FaceColor','b','EdgeColor','b');
             hold on;
@@ -90,8 +97,8 @@ while i > 0 && i <= length(allcel)
             plot(t,Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
             
             %Plot upper and lower boundaries
-            plot(t,Bounds(:,prs1(1),prs1(2),1),'r--', 'HitTest','off');
-            plot(t,Bounds(:,prs1(1),prs1(2),2),'r--', 'HitTest','off');
+            plot(t,mono_res.Bounds(:,prs1(1),prs1(2),1),'r--', 'HitTest','off');
+            plot(t,mono_res.Bounds(:,prs1(1),prs1(2),2),'r--', 'HitTest','off');
             
             % Plot signif increased bins in red
             bar_from_patch(t,exc,'r')
@@ -105,18 +112,20 @@ while i > 0 && i <= length(allcel)
             plot([0 0],[0 upL(2)],'k', 'HitTest','off')
             xlim([min(t) max(t)]);
             
-            text(min(t) +.1*abs(min(t)),double(max(ccgR(:,prs(j,1),prs(j,2)))),['max cnt: ' num2str(max(ccgR(:,prs(j,1),prs(j,2))))])
+%             text(min(t) +.05*abs(min(t)),double(max(ccgR(:,prs(j,1),prs(j,2)))),['max bin spike count: ' num2str(max(ccgR(:,prs(j,1),prs(j,2))))])
             
-            set(gca,'yticklabel',[],'xtick',[min(t) 0 max(t)],'xticklabel',[])
+            
+%             set(gca,'yticklabel',[],'xtick',[min(t) 0 max(t)],'xticklabel',[])
             
             tcel = setdiff(prs(j,:),allcel(i,:));
             targ=completeIndex(completeIndex(:,3)==tcel,1:2);
-            xlabel(['sh: ' num2str(targ(1)) ' cell '  num2str(targ(2))]);
+%             xlabel(['sh: ' num2str(targ(1)) ' cell '  num2str(targ(2))]);
+            temp = ylim;
+            text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ(2)) ', spike group '  num2str(targ(1))])
             
             %the bad ones are in pink
             if  ~ismember(prs(j,:),keep_con,'rows')
                 set(ha(j),'Color',[1 .75 .75])
-                
             end
             
             set(gca,'UserData',j,'ButtonDownFcn',@subplotclick);
@@ -133,10 +142,9 @@ while i > 0 && i <= length(allcel)
         elseif j<length(ha)
             zdata = ccgR(:,:,allcel(i))';
             imagesc(flip(t),1:size(ccgR,3),(zdata'./max(zdata'))'), hold on
-            plot(-0.058*ones(size(prs2,1),1),prs2(:,2),'.w', 'HitTest','off', 'MarkerSize',12)
-            plot(-0.058*ones(size(prs2,1),1),prs2(:,1),'.k', 'HitTest','off', 'MarkerSize',12)
-            plot(-0.058*ones(size(prs2,1),1),[prs2(:,2),prs2(:,1)],'ok', 'HitTest','off')
-%             plot(-0.058*ones(size(prs2,1),1),prs2(:,1),'ok', 'HitTest','off')
+            plot(-58*ones(size(prs2,1),1),prs2(:,2),'.w', 'HitTest','off', 'MarkerSize',12)
+            plot(-58*ones(size(prs2,1),1),prs2(:,1),'.k', 'HitTest','off', 'MarkerSize',12)
+            plot(-58*ones(size(prs2,1),1),[prs2(:,2),prs2(:,1)],'ok', 'HitTest','off')
             plot([0;0],[0;1]*size(zdata,1),'m', 'HitTest','off')
             xlabel('CCGs (black marker: reference cell)')
         else
@@ -145,7 +153,7 @@ while i > 0 && i <= length(allcel)
             xlim([min(t) max(t)]);
             xlabel('Reference Cell ACG');
             targ=completeIndex(completeIndex(:,3) == allcel(i),1:2);
-            plotTitle.String = ['Reference Cell sh: ' num2str(targ(1)) ' cell '  num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'];
+            plotTitle.String = ['Reference Cell: cell ' num2str(targ(2)) ', spike group '  num2str(targ(1)),' (', num2str(i),'/' num2str(length(allcel)),')'];
             %             mtit(['Reference Cell sh: ' num2str(targ(1)) ' cell '  num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'])
             
             uiwait(h);
@@ -177,7 +185,22 @@ end
             keep_con = [keep_con;prs(axdata,:)];
         end
     end
-
+    
+    function numericSelect(subplotNum) %when an axes is clicked
+        if subplotNum<length(ha)-1
+            obj = ha(subplotNum);
+            axdata = get(obj,'UserData');
+            clr2 = get(obj,'Color');
+            if sum(clr2 == [1 1 1])==3 %if white (ie synapse), set to pink (bad), remember as bad
+                set(obj,'Color',[1 .75 .75])
+                keep_con(ismember(keep_con,prs(axdata,:),'rows'),:)=[];
+            elseif sum(clr2 == [1 .75 .75])==3%if pink, set to white, set to good
+                set(obj,'Color',[1 1 1])
+                keep_con = [keep_con;prs(axdata,:)];
+            end
+        end
+    end
+    
     function goBack
         i = max(i-1,1);
         uiresume(h);
@@ -195,14 +218,20 @@ end
         end
     end
 
-    function keyPress(src, e)
-        switch e.Key
+    function keyPress(src,event)
+        switch event.Key
             case 'space'
                 advance
             case 'rightarrow'
                 advance
             case 'leftarrow'
                 goBack
+            case 'leftarrow'
+                goBack
+            case {'1','2','3','4','5','6','7','8','9'}
+                numericSelect(str2num(event.Key));
+            case {'numpad1','numpad2','numpad3','numpad4','numpad5','numpad6','numpad7','numpad8','numpad9'}
+                numericSelect(str2num(event.Key(end)))
         end
     end
     
@@ -223,7 +252,7 @@ function axh = AxesInsetBars(h,ratio,color,xdata,ydata)
 
 
 figpos = get(h,'Position');
-newpos = [figpos(1)+(1-ratio)*figpos(3) figpos(2)+(1-ratio)*figpos(4) ratio*figpos(3) ratio*figpos(4)];
+newpos = [figpos(1)+(0.99-ratio)*figpos(3) figpos(2)+(1-ratio)*figpos(4) ratio*figpos(3) ratio*figpos(4)];
 axh = axes('Position',newpos, 'HitTest','off');
 
 bar_from_patch(xdata,ydata,color)
