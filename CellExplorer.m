@@ -41,7 +41,7 @@ function cell_metrics = CellExplorer(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 14-12-2019
+% Last edited: 21-12-2019
 
 % Shortcuts to built-in functions
 % initializeSession, DatabaseSessionDialog, saveDialog, restoreBackup, keyPress, defineSpikesPlots, customPlot, importGroundTruth
@@ -110,7 +110,7 @@ UI.settings.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVolta
 UI.settings.firingRateMap.showHeatmap = false; UI.settings.firingRateMap.showLegend = false; UI.settings.firingRateMap.showHeatmapColorbar = false;
 UI.settings.referenceData = 'None'; UI.settings.groundTruthData = 'None'; UI.BatchMode = false; UI.params.ii_history = 1; UI.params.ClickedCells = [];
 UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoSyn.dispHollowGauss = true;
-tableDataSortBy = 'cellID'; tableDataColumn1 = 'putativeCellType'; tableDataColumn2 = 'brainRegion'; 
+tableDataSortBy = 'cellID'; tableDataColumn1 = 'putativeCellType'; tableDataColumn2 = 'brainRegion';  groups_ids = []; plotX_title = ''; plotY_title = ''; plotZ_title = '';
 db_menu_values = []; db_menu_items = []; clusClas = []; plotX = []; plotY = []; plotZ = []; timerVal = tic;
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
 brainRegions_list = []; brainRegions_acronym = []; cell_class_count = [];  customCellPlot3 = 1; customCellPlot4 = 1; plotOptions = '';
@@ -134,7 +134,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.53;
+CellExplorerVersion = 1.54;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback); 
 hManager = uigetmodemanager(UI.fig);
@@ -428,7 +428,7 @@ UI.menu.monoSyn.highlightInhibitory = uimenu(UI.menu.monoSyn.topMenu,menuLabel,'
 UI.menu.monoSyn.excitatoryPostsynapticCells = uimenu(UI.menu.monoSyn.topMenu,menuLabel,'Highlight cells receiving excitatory input',menuSelectedFcn,@highlightExcitatoryPostsynapticCells);
 UI.menu.monoSyn.inhibitoryPostsynapticCells = uimenu(UI.menu.monoSyn.topMenu,menuLabel,'Highlight cells receiving inhibitory input',menuSelectedFcn,@highlightInhibitoryPostsynapticCells);
 UI.menu.monoSyn.toggleHollowGauss = uimenu(UI.menu.monoSyn.topMenu,menuLabel,'Show hollow gaussian in CCG plots',menuSelectedFcn,@toggleHollowGauss,'Separator','on','Accelerator','F','Checked','on');
-uimenu(UI.menu.monoSyn.topMenu,menuLabel,'Adjust monosynaptic connections',menuSelectedFcn,@adjustMonoSyn1,'Separator','on');
+uimenu(UI.menu.monoSyn.topMenu,menuLabel,'Adjust monosynaptic connections',menuSelectedFcn,@adjustMonoSyn_UpdateMetrics,'Separator','on');
 
 % Reference data
 UI.menu.referenceData.topMenu = uimenu(UI.fig,menuLabel,'Reference data');
@@ -2848,12 +2848,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             mkdir(fullfile(path1,'revisions_cell_metrics'));
         end
         save(fullfile(path1, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'-struct', 'S','-v7.3','-nocompression');
-    end
-    
-% % % % % % % % % % % % % % % % % % % % % %
-    
-    function adjustMonoSyn1(~,~)
-        adjustMonoSyn_UpdateMetrics(cell_metrics)
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -6040,7 +6034,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         function  CloseGoTo_dialog(cellIDs)
             choice = brainRegionsList.Value;
             MsgLog(['Action selected: ' actionList{choice} ' for ' num2str(length(cellIDs)) ' cells']);
-            if any(choice == [1:5,7:8,11:13,15:length(actionList)])
+            if any(choice == [2:6,8:9,11:13,15:length(actionList)])
                 delete(GoTo_dialog);
                 
                 if choice == 2
@@ -6367,7 +6361,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         if ispc
                             ha = tight_subplot(plotRows(1),plotRows(2),[.08 .04],[.05 .05],[.05 .05]);
                         else
-                            ha = tight_subplot(plotRows(1),plotRows(2),[.06 .03],[.12 .06],[.06 .05]);
+                            ha = tight_subplot(plotRows(1),plotRows(2),[.06 .03],[.05 .03],[.04 .03]);
                         end
                                                 
                         axes(ha(1)); hold on
@@ -7189,6 +7183,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         customCellPlot2 = UI.settings.customCellPlotIn2;
         UI.checkbox.groups.Value = 0;
         
+        % Init synaptic connections
         if isfield(cell_metrics,'synapticEffect')
             cellsExcitatory = find(strcmp(cell_metrics.synapticEffect,'Excitatory'));
             cellsInhibitory = find(strcmp(cell_metrics.synapticEffect,'Inhibitory'));
@@ -8346,66 +8341,131 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function adjustMonoSyn_UpdateMetrics(cell_metricsIn,cell_metrics)
-        
+    function adjustMonoSyn_UpdateMetrics(~,~)
         % Manually select connections
         if UI.BatchMode
-            %                     basepath1 = cell_metricsIn.general.basepaths{batchIDs};
-            basename1 = cell_metricsIn.general.basenames{batchIDs};
-            path1 = cell_metricsIn.general.path{batchIDs};
+            basename1 = cell_metrics.general.basenames{batchIDs};
+            path1 = cell_metrics.general.path{batchIDs};
         else
-            if isfield( cell_metricsIn.general,'path')
-                basename1 = cell_metricsIn.general.basename;
-                path1 = cell_metricsIn.general.path;
+            if isfield( cell_metrics.general,'path')
+                basename1 = cell_metrics.general.basename;
+                path1 = cell_metrics.general.path;
             else
-                basename1 = cell_metricsIn.general.basename;
-                path1 = fullfile(cell_metricsIn.general.basepath,cell_metricsIn.general.clusteringpath);
+                basename1 = cell_metrics.general.basename;
+                path1 = fullfile(cell_metrics.general.basepath,cell_metrics.general.clusteringpath);
             end
         end
+        
         MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
         if exist(MonoSynFile,'file')
-            mono_res = gui_MonoSyn(MonoSynFile);
+            f_LoadMonoSyn = waitbar(0,' ','name','Cell Explorer: loading MonoSyn file');
+            mono_res1 = load(MonoSynFile);
+            if ishandle(f_LoadMonoSyn)
+                waitbar(1,f_LoadMonoSyn,'Complete');
+                close(f_LoadMonoSyn)
+            end
+            mono_res = gui_MonoSyn(mono_res1.mono_res,cell_metrics.UID(ii));
+            % Saves output to the cell_metrics from the select session
+            answer = questdlg('Do you want to save the manual monosynaptic curration?', 'Save monosynaptic curration', 'Yes','No','Yes');
+            if strcmp(answer,'Yes')
+                f_LoadMonoSyn = waitbar(0,' ','name','Cell Explorer: Updating MonoSyn');
+                if isfield(general,'saveAs')
+                    saveAs = general.saveAs;
+                else
+                    saveAs = 'cell_metrics';
+                end
+                try
+                    % Saving MonoSynFile fule
+                    if ishandle(f_LoadMonoSyn)
+                        waitbar(0.05,f_LoadMonoSyn,'Saving MonoSyn file');
+                    end
+                    save(MonoSynFile,'mono_res','-v7.3','-nocompression');
+                    
+                    % Creating backup of existing metrics
+                    if ishandle(f_LoadMonoSyn)
+                        waitbar(0.4,f_LoadMonoSyn,'Creating backup of existing metrics');
+                    end
+                    dirname = 'revisions_cell_metrics';
+                    if ~(exist(fullfile(path1,dirname),'dir'))
+                        mkdir(fullfile(path1,dirname));
+                    end
+                    if exist(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'file')
+                        copyfile(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), fullfile(path1, dirname, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']));
+                    end
+                    
+                    % Saving new metrics
+                    if ishandle(f_LoadMonoSyn)
+                        waitbar(0.7,f_LoadMonoSyn,['Saving cells to cell_metrics file']);
+                    end
+                    cell_session = load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
+                    cell_session.cell_metrics.putativeConnections.excitatory = mono_res.sig_con; % Vectors with cell pairs
+                    cell_session.cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_session.cell_metrics.general.cellCount);
+                    cell_session.cell_metrics.synapticEffect(cell_session.cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_session.cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
+                    cell_session.cell_metrics.synapticConnectionsOut = zeros(1,cell_session.cell_metrics.general.cellCount);
+                    cell_session.cell_metrics.synapticConnectionsIn = zeros(1,cell_session.cell_metrics.general.cellCount);
+                    [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,1),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,1)));
+                    cell_session.cell_metrics.synapticConnectionsOut(b) = a; cell_session.cell_metrics.synapticConnectionsOut = cell_session.cell_metrics.synapticConnectionsOut(1:cell_session.cell_metrics.general.cellCount);
+                    [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,2),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,2)));
+                    cell_session.cell_metrics.synapticConnectionsIn(b) = a; cell_session.cell_metrics.synapticConnectionsIn = cell_session.cell_metrics.synapticConnectionsIn(1:cell_session.cell_metrics.general.cellCount);
+                    
+                    save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), '-struct', 'cell_session','-v7.3','-nocompression')
+%                     MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
+                    
+                    if ishandle(f_LoadMonoSyn)
+                        waitbar(0.9,f_LoadMonoSyn,'Updating session');
+                    end
+                    if UI.BatchMode
+                        idx = find(cell_metrics.batchIDs == batchIDs);
+                    else
+                        idx = 1:cell_metrics.general.cellCount;
+                    end
+                    if length(idx) == cell_session.cell_metrics.general.cellCount
+                        [~,ia,~] = intersect(cell_metrics.putativeConnections.excitatory(:,1), idx);
+                        cell_metrics.putativeConnections.excitatory(ia,:) = [];
+                        cell_metrics.putativeConnections.excitatory = [cell_metrics.putativeConnections.excitatory;idx(mono_res.sig_con)];
+                        cell_metrics.synapticEffect(idx) = repmat({'Unknown'},1,cell_session.cell_metrics.general.cellCount);
+                        cell_metrics.synapticEffect(idx(cell_session.cell_metrics.putativeConnections.excitatory(:,1))) = repmat({'Excitatory'},1,size(cell_session.cell_metrics.putativeConnections.excitatory,1));
+                        
+                        cell_metrics.synapticConnectionsOut(idx) = cell_session.cell_metrics.synapticConnectionsOut;
+                        cell_metrics.synapticConnectionsIn(idx) = cell_session.cell_metrics.synapticConnectionsIn;
+                        
+                        if isfield(cell_metrics,'synapticEffect')
+                            cellsExcitatory = find(strcmp(cell_metrics.synapticEffect,'Excitatory'));
+                            cellsInhibitory = find(strcmp(cell_metrics.synapticEffect,'Inhibitory'));
+                        end
+                        if isfield(cell_metrics,'putativeConnections') & isfield(cell_metrics.putativeConnections,'excitatory') & ~isempty(cell_metrics.putativeConnections.excitatory)
+                            cellsExcitatoryPostsynaptic = unique(cell_metrics.putativeConnections.excitatory(:,2));
+                        else
+                            cellsExcitatoryPostsynaptic = [];
+                        end
+                        if isfield(cell_metrics,'putativeConnections') & isfield(cell_metrics.putativeConnections,'inhibitory') & ~isempty(cell_metrics.putativeConnections.inhibitory)
+                            cellsInhibitoryPostsynaptic = unique(cell_metrics.putativeConnections.inhibitory(:,2));
+                        else
+                            cellsInhibitoryPostsynaptic = [];
+                        end
+                    else
+                        MsgLog(['Error updating current session. Reload session to see the changes'],4);
+                    end
+                    
+                    if ishandle(f_LoadMonoSyn)
+                        waitbar(1,f_LoadMonoSyn,'Complete');
+                    end
+                    MsgLog(['Synaptic connections adjusted for: ', basename1]);
+                    uiresume(UI.fig);
+                catch
+                    MsgLog(['Synaptic connections adjustment failed.'],4);
+                end
+                
+                if ishandle(f_LoadMonoSyn)
+                    close(f_LoadMonoSyn)
+                end
+            else
+                MsgLog(['Synaptic connections not updated.']);
+            end
         elseif ~exist(MonoSynFile,'file')
             MsgLog(['Mono_syn file does not exist: ' MonoSynFile],4);
             return
         end
-        
-        % Saves output to the cell_metrics from the select session
-        if isfield(general,'saveAs')
-            saveAs = general.saveAs;
-        else
-            saveAs = 'cell_metrics';
-        end
-        
-        try
-            % Creating backup of existing metrics
-            disp(['Creating backup of cells']);
-            dirname = 'revisions_cell_metrics';
-            if ~(exist(fullfile(path1,dirname),'dir'))
-                mkdir(fullfile(path1,dirname));
-            end
-            if exist(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'file')
-                copyfile(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), fullfile(path1, dirname, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']));
-            end
-            
-            % Saving new metrics
-            disp(['Saving cells to ', saveAs,'.mat']);
-            load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
-            cell_metrics.putativeConnections.excitatory = mono_res.sig_con; % Vectors with cell pairs
-            cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_metrics.general.cellCount);
-            cell_metrics.synapticEffect(cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
-            cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
-            cell_metrics.synapticConnectionsIn = zeros(1,cell_metrics.general.cellCount);
-            [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,1),unique(cell_metrics.putativeConnections.excitatory(:,1)));
-            cell_metrics.synapticConnectionsOut(b) = a; cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);
-            [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,2),unique(cell_metrics.putativeConnections.excitatory(:,2)));
-            cell_metrics.synapticConnectionsIn(b) = a; cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
-            save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'cell_metrics','-v7.3','-nocompression')
-            MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
-        catch
-            MsgLog(['Synaptic connections adjustment failed.'],4);
-        end
-        
     end
     
     % % % % % % % % % % % % % % % % % % % % % %

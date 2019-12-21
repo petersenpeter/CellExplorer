@@ -1,4 +1,4 @@
-function mono_res = gui_MonoSyn(mono_res_in)
+function mono_res = gui_MonoSyn(mono_res_in,UID)
 % Manual curating detected CCGs
 % Limitation: can only deselect connections at this point. Click the CCG subplot to deselect a connection (turns pink)
 % 
@@ -56,8 +56,11 @@ else
     set(h,'visible','on')
     drawnow nocallbacks; frame_h = get(h,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks; 
 end
-
-i = 1;
+if exist('UID','var') && any(UID == allcel)
+    i = find(UID == allcel);
+else
+    i = 1;
+end
 while i > 0 && i <= length(allcel)
     if ~ishandle(h)
         mono_res.sig_con = keep_con;
