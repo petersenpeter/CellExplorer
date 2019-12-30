@@ -22,8 +22,7 @@ details = p.Results.details;
 db_settings = p.Results.db_settings;
 sessions_out = [];
 
-options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','get','Timeout',50);
-options.CertificateFilename=('');
+options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','get','Timeout',50,'CertificateFilename','');
 
 
 if ~isempty(animal)

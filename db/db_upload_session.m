@@ -175,8 +175,12 @@ success = true;
             jsonStructure.wu0al.(idx).fiElD_1935 = session.spikeSorting{i}.relativePath;
             jsonStructure.wu0al.(idx).fiElD_1937 = session.spikeSorting{i}.channels;
             jsonStructure.wu0al.(idx).fiElD_1938 = session.spikeSorting{i}.notes;
-            jsonStructure.wu0al.(idx).fiElD_2944 = session.spikeSorting{i}.cellMetrics;
-            jsonStructure.wu0al.(idx).fiElD_1936 = session.spikeSorting{i}.manuallyCurated;
+            if isfield(session.spikeSorting{i},'cellMetrics')
+                jsonStructure.wu0al.(idx).fiElD_2944 = session.spikeSorting{i}.cellMetrics;
+            end
+            if isfield(session.spikeSorting{i},'manuallyCurated')
+                jsonStructure.wu0al.(idx).fiElD_1936 = session.spikeSorting{i}.manuallyCurated;
+            end
             if isfield(session.spikeSorting{i},'cellCount')
                 jsonStructure.wu0al.(idx).fiElD_2938 = session.spikeSorting{i}.cellCount;
             end
@@ -255,7 +259,7 @@ success = true;
         jsonStructure = [];
         jsonStructure.form_id = 143; % Form id of sessions
         jsonStructure.vc5ra.form = 223; % Form id of time series repeatable section
-        
+        if ~isempty(session.timeSeries)
         nameTags = fieldnames(session.timeSeries);
         for iTag = 1:length(nameTags)
             if isfield(session.timeSeries.(nameTags{iTag}),'entryID') && session.timeSeries.(nameTags{iTag}).entryID>0
@@ -290,6 +294,7 @@ success = true;
         RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
         if RESPONSE.success==1
             disp('Time series successfully submitted to db')
+        end
         end
     end
     

@@ -522,7 +522,7 @@ end
 if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(excludeMetrics,{'monoSynaptic_connections'}))
     disp('* MonoSynaptic connections')
     if ~exist(fullfile(clusteringpath_full,[basename,'.mono_res.cellinfo.mat']),'file')
-        spikeIDs = [spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)];
+        spikeIDs = double([spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)]);
         mono_res = ce_MonoSynConvClick(spikeIDs,spikes.spindices(:,1));
         if manualAdjustMonoSyn
             mono_res = gui_MonoSyn(mono_res);
@@ -1009,8 +1009,6 @@ cell_metrics.spikeCount = spikes.total; % cell_spikecount OK
 if isfield(session.spikeSorting{1},'method')
     cell_metrics.spikeSortingMethod = repmat({session.spikeSorting{1}.method},1,cell_metrics.general.cellCount);
 end
-
-
 
 for j = 1:cell_metrics.general.cellCount
     % Session metrics

@@ -154,7 +154,7 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
     
     
     % Create CCGs (including autoCG) for all cells
-    [ccgR1,tR] = CCG(spiketimes,spikeIDs(:,3),'binSize',binSize,'duration',duration);
+    [ccgR1,tR] = CCG(spiketimes,double(spikeIDs(:,3)),'binSize',binSize,'duration',duration);
     
     ccgR = nan(size(ccgR1,1),nCel,nCel);
     ccgR(:,1:size(ccgR1,2),1:size(ccgR1,2)) = ccgR1;

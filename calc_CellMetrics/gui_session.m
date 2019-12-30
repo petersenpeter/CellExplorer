@@ -12,9 +12,10 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % statusExit : Whether the GUI was closed via the OK button or canceled
 
 % gui_session is part of the Cell Explorer: https://github.com/petersenpeter/Cell-Explorer
+
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 22-11-2019
+% Last edited: 26-12-2019
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
@@ -183,11 +184,11 @@ UI.tabs.inputs = uitab(UI.uitabgroup,'Title','Inputs & time series');
 UI.tabs.behaviors = uitab(UI.uitabgroup,'Title','Tracking');
 
 % Buttons
-UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized');
-UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized');
-UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[230, 5, 100, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized');
-UI.button.uploadToDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[370, 5, 100, 30],'String','Upload to DB','Callback',@(src,evnt)buttonUploadToDB,'Units','normalized');
-UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[480, 5, 100, 30],'String','Download from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized');
+UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 5, 100, 28],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized');
+UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[120, 5, 100, 28],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized');
+UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[230, 5, 100, 28],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized');
+UI.button.uploadToDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[370, 5, 100, 28],'String','Upload to DB','Callback',@(src,evnt)buttonUploadToDB,'Units','normalized');
+UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[480, 5, 110, 28],'String','Download from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell metrics parameters
@@ -269,7 +270,7 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
 % uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 90, 599, 435],'ColumnWidth',{20 20 160 100 100 100 60 80 80 95},'columnname',{'','','Name','Paradigm','Environment','Manipulations','Stimuli','Start time','Stop time','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
+UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 90, 599, 435],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add epoch','Callback',@(src,evnt)addEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 50, 100, 30],'String','Edit epoch','Callback',@(src,evnt)editEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 10 100, 30],'String','Delete epoch(s)','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
@@ -314,7 +315,7 @@ UI.edit.nSamples = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'St
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (e.g. int16)', 'Position', [10, 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 180, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [200, 448, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [200, 448, 220, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 425, 190, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Depth (µm)', 'Position', [400, 448, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
@@ -357,8 +358,8 @@ UI.button.importGroupsFromXML2 = uicontrol('Parent',UI.tabs.spikeGroups,'Style',
 % Silicon probes from db
 if isfield(session.extracellular,'electrodes')
     UI.tabs.spikeGroups = uitab(UI.channelGroups,'Title','Electrodes');
-    UI.list.tableData = {false,'','','',''};
-    UI.table.electrodes = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 1, 599, 364],'ColumnWidth',{20 200 120 70 60 80},'columnname',{'','Probes','Company','nChannels','nShanks','Brain region'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
+    UI.list.tableData = {false,'','','','','','',''};
+    UI.table.electrodes = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 1, 599, 364],'ColumnWidth',{20 200 120 70 60 80 60 60 80},'columnname',{'','Probes','Company','nChannels','nShanks','Brain region','AP (mm)','ML (mm)','Depth (mm)'},'RowName',[],'ColumnEditable',[true false false false false false false false],'Units','normalized');
 end
 
 
@@ -377,7 +378,7 @@ uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[230, 10
 % Brain regions
 % % % % % % % % % % % % % % % % % % % % %
 UI.list.tableData = {false,'','','',''};
-UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 70 280 80 142},'columnname',{'','Region','Channels','Electrode groups','Notes'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
+UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 70 280 95 127},'columnname',{'','Region','Channels','Electrode groups','Notes'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add region','Callback',@(src,evnt)addRegion,'Units','normalized');
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit region','Callback',@(src,evnt)editRegion,'Units','normalized');
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion,'Units','normalized');
@@ -386,7 +387,7 @@ uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[230, 10
 % Channel tags
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 599, 225],'ColumnWidth',{20 130 315 127},'columnname',{'','Channel tags','Channels','Electrode groups'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
+UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 599, 225],'ColumnWidth',{20 130 315 127},'columnname',{'','Channel tag','Channels','Electrode groups'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 260, 100, 30],'String','Add channel tag','Callback',@(src,evnt)addTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 100, 30],'String','Edit channel tag','Callback',@(src,evnt)editTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 260, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized');
@@ -396,7 +397,7 @@ uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[450, 260
 % Inputs
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 599, 225],'ColumnWidth',{20 120 75 70 120 187},'columnname',{'','Tag','Channels','Type','Equipment','Description'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
+UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 599, 225],'ColumnWidth',{20 120 75 70 120 187},'columnname',{'','Input tag','Channels','Type','Equipment','Description'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 260, 100, 30],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 100, 30],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 260, 100, 30],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
@@ -405,7 +406,7 @@ uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 260, 100
 % Time series
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 50, 599, 200],'ColumnWidth',{20 90 65 60 70 40 60 110 78},'columnname',{'','File name', 'Type (tag)', 'Precision', 'nChannels', 'sr', 'nSamples', 'Least significant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
+UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 50, 599, 200],'ColumnWidth',{20 90 85 60 70 40 60 90 78},'columnname',{'','Time series tag','File name', 'Precision', 'nChannels', 'sr', 'nSamples', 'summaryFiguresificant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
@@ -426,7 +427,7 @@ uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[340, 10, 1
 % Analysis tags
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.analysis = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 50, 599, 200],'ColumnWidth',{20 250 322},'columnname',{'','Analysis tags','Value'},'RowName',[],'ColumnEditable',[true false false],'Units','normalized');
+UI.table.analysis = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 50, 599, 200],'ColumnWidth',{20 250 322},'columnname',{'','Analysis tag','Value'},'RowName',[],'ColumnEditable',[true false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add analysis tag','Callback',@(src,evnt)addAnalysis,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit analysis tag','Callback',@(src,evnt)editAnalysis,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized');
@@ -881,7 +882,7 @@ uiwait(UI.fig)
             if isnumeric(session.extracellular.electrodeGroups.channels)
                 nTotal = size(session.extracellular.electrodeGroups.channels,1);
             elseif ~isempty(session.extracellular.electrodeGroups.channels) && ~isempty(session.extracellular.electrodeGroups.channels{1})
-                nTotal = size(session.extracellular.electrodeGroups.channels,2);
+                nTotal = length(session.extracellular.electrodeGroups.channels);
             else
                 nTotal = 0;
             end
@@ -906,7 +907,7 @@ uiwait(UI.fig)
             if isnumeric(session.extracellular.spikeGroups.channels)
             	nTotal = size(session.extracellular.spikeGroups.channels,1);
             else
-                nTotal = size(session.extracellular.spikeGroups.channels,2);
+                nTotal = length(session.extracellular.spikeGroups.channels);
             end
             for fn = 1:nTotal
                 tableData{fn,1} = false;
@@ -940,10 +941,19 @@ uiwait(UI.fig)
                 tableData{fn,4} = session.extracellular.electrodes.nChannels(fn);
                 tableData{fn,5} = session.extracellular.electrodes.nShanks(fn);
                 tableData{fn,6} = session.extracellular.electrodes.brainRegions{fn};
+                if isfield(session.extracellular.electrodes,'AP_coordinates') && ~isempty(session.extracellular.electrodes.AP_coordinates)
+                    tableData{fn,7} = session.extracellular.electrodes.AP_coordinates(fn);
+                end
+                if isfield(session.extracellular.electrodes,'ML_coordinates') && ~isempty(session.extracellular.electrodes.ML_coordinates)
+                    tableData{fn,8} = session.extracellular.electrodes.ML_coordinates(fn);
+                end
+                if isfield(session.extracellular.electrodes,'depth') && ~isempty(session.extracellular.electrodes.depth)
+                    tableData{fn,9} = session.extracellular.electrodes.depth(fn);
+                end
             end
             UI.table.electrodes.Data = tableData;
         else
-            UI.table.electrodes.Data = {false,'','','','',''};
+            UI.table.electrodes.Data = {false,'','','','','','','',''};
         end
         
     end
@@ -956,24 +966,25 @@ uiwait(UI.fig)
             for fn = 1:nEntries
                 tableData{fn,2} = fn;
                 tableData{fn,3} = session.epochs{fn}.name;
-                if isfield(session.epochs{fn},'behavioralParadigm') && ~isempty(session.epochs{fn}.behavioralParadigm)
-                    tableData{fn,4} = session.epochs{fn}.behavioralParadigm;
-                end
-                if isfield(session.epochs{fn},'environment') && ~isempty(session.epochs{fn}.environment)
-                    tableData{fn,5} = session.epochs{fn}.environment;
-                end
-                if isfield(session.epochs{fn},'manipulation') && ~isempty(session.epochs{fn}.manipulation)
-                    tableData{fn,6} = session.epochs{fn}.manipulation;
-                end
-                if isfield(session.epochs{fn},'stimuli') && ~isempty(session.epochs{fn}.stimuli)
-                    tableData{fn,7} = session.epochs{fn}.stimuli;
-                end
                 if isfield(session.epochs{fn},'startTime') && ~isempty(session.epochs{fn}.startTime)
-                    tableData{fn,8} = session.epochs{fn}.startTime;
+                    tableData{fn,4} = session.epochs{fn}.startTime;
                 end
                 if isfield(session.epochs{fn},'stopTime') && ~isempty(session.epochs{fn}.stopTime)
-                    tableData{fn,9} = session.epochs{fn}.stopTime;
+                    tableData{fn,5} = session.epochs{fn}.stopTime;
                 end
+                if isfield(session.epochs{fn},'behavioralParadigm') && ~isempty(session.epochs{fn}.behavioralParadigm)
+                    tableData{fn,6} = session.epochs{fn}.behavioralParadigm;
+                end
+                if isfield(session.epochs{fn},'environment') && ~isempty(session.epochs{fn}.environment)
+                    tableData{fn,7} = session.epochs{fn}.environment;
+                end
+                if isfield(session.epochs{fn},'manipulation') && ~isempty(session.epochs{fn}.manipulation)
+                    tableData{fn,8} = session.epochs{fn}.manipulation;
+                end
+                if isfield(session.epochs{fn},'stimuli') && ~isempty(session.epochs{fn}.stimuli)
+                    tableData{fn,9} = session.epochs{fn}.stimuli;
+                end
+
                 if isfield(session.epochs{fn},'notes') && ~isempty(session.epochs{fn}.notes)
                     tableData{fn,10} = session.epochs{fn}.notes;
                 end
@@ -1113,8 +1124,8 @@ uiwait(UI.fig)
             tableData = cell(nEntries,9);
             tableData(:,1) = {false};
             for fn = 1:nEntries
-                tableData{fn,2} = session.timeSeries.(Fieldnames{fn}).fileName;
-                tableData{fn,3} = Fieldnames{fn};
+                tableData{fn,2} = Fieldnames{fn};
+                tableData{fn,3} = session.timeSeries.(Fieldnames{fn}).fileName;
                 if isfield(session.timeSeries.(Fieldnames{fn}),'precision') && ~isempty(session.timeSeries.(Fieldnames{fn}).precision)
                     tableData{fn,4} = session.timeSeries.(Fieldnames{fn}).precision;
                 end

@@ -7,7 +7,7 @@
 cd(basepath)
 
 %% 2. Generate session metadata struct using the template function and display the meta data in a gui
-session = sessionTemplate('showGUI',true);
+session = sessionTemplate(pwd,'showGUI',true);
 
 %% 3. Run the cell metrics pipeline 'calc_CellMetrics' using the session struct as input
 cell_metrics = calc_CellMetrics('session', session);

@@ -5,25 +5,24 @@ function session = sessionTemplate(input1,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 14-11-2019
+% Last edited: 30-12-2019
 
 p = inputParser;
+addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
 addParameter(p,'importSkippedChannels',true,@islogical); % Import skipped channels from the xml as bad channels
 addParameter(p,'importSyncedChannels',true,@islogical); % Import channel not synchronized between anatomical and spike groups as bad channels
 addParameter(p,'noPrompts',true,@islogical); % Show the session gui if requested
 addParameter(p,'showGUI',false,@islogical); % Show the session gui if requested
 
 % Parsing inputs
-parse(p,varargin{:})
+parse(p,input1,varargin{:})
 importSkippedChannels = p.Results.importSkippedChannels;
 importSyncedChannels = p.Results.importSyncedChannels;
 noPrompts = p.Results.noPrompts;
 showGUI = p.Results.showGUI;
 
 % Initializing session struct and defining basepath, if not specified as an input
-if nargin<1
-    basepath = pwd;
-elseif ischar(input1)
+if ischar(input1)
     basepath = input1;
     cd(basepath)
 elseif isstruct(input1)
@@ -39,6 +38,7 @@ end
 % Loading existing basename.session.mat file if exist
 [~,basename,~] = fileparts(basepath);
 if ~exist('session','var') && exist(fullfile(basepath,[basename,'.session.mat']),'file')
+    disp('Loading existing basename.session.mat file')
     load(fullfile(basepath,[basename,'.session.mat']))
 elseif ~exist('session','var')
     session = [];
@@ -61,7 +61,7 @@ else
     session.general.clusteringPath = ''; % Full path to the clustered data (here assumed to be the basepath)
 end
 session.general.name = pathPieces{end}; % Session name
-session.general.version = 3; % Metadata version
+session.general.version = 5; % Metadata version
 session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %

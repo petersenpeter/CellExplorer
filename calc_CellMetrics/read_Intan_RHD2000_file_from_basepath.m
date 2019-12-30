@@ -56,10 +56,10 @@ end
 data_file_main_version_number = fread(fid, 1, 'int16');
 data_file_secondary_version_number = fread(fid, 1, 'int16');
 
-fprintf(1, '\n');
-fprintf(1, 'Reading Intan Technologies RHD2000 Data File, Version %d.%d\n', ...
-    data_file_main_version_number, data_file_secondary_version_number);
-fprintf(1, '\n');
+% fprintf(1, '\n');
+% fprintf(1, 'Reading Intan Technologies RHD2000 Data File, Version %d.%d\n', ...
+%     data_file_main_version_number, data_file_secondary_version_number);
+% fprintf(1, '\n');
 
 if (data_file_main_version_number == 1)
     num_samples_per_data_block = 60;
@@ -246,21 +246,21 @@ num_board_adc_channels = board_adc_index - 1;
 num_board_dig_in_channels = board_dig_in_index - 1;
 num_board_dig_out_channels = board_dig_out_index - 1;
 
-fprintf(1, 'Found %d amplifier channel%s.\n', ...
-    num_amplifier_channels, plural(num_amplifier_channels));
-fprintf(1, 'Found %d auxiliary input channel%s.\n', ...
-    num_aux_input_channels, plural(num_aux_input_channels));
-fprintf(1, 'Found %d supply voltage channel%s.\n', ...
-    num_supply_voltage_channels, plural(num_supply_voltage_channels));
-fprintf(1, 'Found %d board ADC channel%s.\n', ...
-    num_board_adc_channels, plural(num_board_adc_channels));
-fprintf(1, 'Found %d board digital input channel%s.\n', ...
-    num_board_dig_in_channels, plural(num_board_dig_in_channels));
-fprintf(1, 'Found %d board digital output channel%s.\n', ...
-    num_board_dig_out_channels, plural(num_board_dig_out_channels));
-fprintf(1, 'Found %d temperature sensor channel%s.\n', ...
-    num_temp_sensor_channels, plural(num_temp_sensor_channels));
-fprintf(1, '\n');
+% fprintf(1, 'Found %d amplifier channel%s.\n', ...
+%     num_amplifier_channels, plural(num_amplifier_channels));
+% fprintf(1, 'Found %d auxiliary input channel%s.\n', ...
+%     num_aux_input_channels, plural(num_aux_input_channels));
+% fprintf(1, 'Found %d supply voltage channel%s.\n', ...
+%     num_supply_voltage_channels, plural(num_supply_voltage_channels));
+% fprintf(1, 'Found %d board ADC channel%s.\n', ...
+%     num_board_adc_channels, plural(num_board_adc_channels));
+% fprintf(1, 'Found %d board digital input channel%s.\n', ...
+%     num_board_dig_in_channels, plural(num_board_dig_in_channels));
+% fprintf(1, 'Found %d board digital output channel%s.\n', ...
+%     num_board_dig_out_channels, plural(num_board_dig_out_channels));
+% fprintf(1, 'Found %d temperature sensor channel%s.\n', ...
+%     num_temp_sensor_channels, plural(num_temp_sensor_channels));
+% fprintf(1, '\n');
 
 % Determine how many samples the data file contains.
 
@@ -304,20 +304,20 @@ num_board_dig_out_samples = num_samples_per_data_block * num_data_blocks;
 
 record_time = num_amplifier_samples / sample_rate;
 
-if (data_present)
-    fprintf(1, 'File contains %0.3f seconds of data.  Amplifiers were sampled at %0.2f kS/s.\n', ...
-        record_time, sample_rate / 1000);
-    fprintf(1, '\n');
-else
-    fprintf(1, 'Header file contains no data.  Amplifiers were sampled at %0.2f kS/s.\n', ...
-        sample_rate / 1000);
-    fprintf(1, '\n');
-end
+% if (data_present)
+%     fprintf(1, 'File contains %0.3f seconds of data.  Amplifiers were sampled at %0.2f kS/s.\n', ...
+%         record_time, sample_rate / 1000);
+%     fprintf(1, '\n');
+% else
+%     fprintf(1, 'Header file contains no data.  Amplifiers were sampled at %0.2f kS/s.\n', ...
+%         sample_rate / 1000);
+%     fprintf(1, '\n');
+% end
 
 if (data_present)
     
     % Pre-allocate memory for data.
-    fprintf(1, 'Allocating memory for data...\n');
+%     fprintf(1, 'Allocating memory for data...\n');
 
     t_amplifier = zeros(1, num_amplifier_samples);
 
@@ -332,7 +332,7 @@ if (data_present)
     board_dig_out_raw = zeros(1, num_board_dig_out_samples);
 
     % Read sampled data from file.
-    fprintf(1, 'Reading data from file...\n');
+%     fprintf(1, 'Reading data from file...\n');
 
     amplifier_index = 1;
     aux_input_index = 1;
@@ -384,7 +384,7 @@ if (data_present)
 
         fraction_done = 100 * (i / num_data_blocks);
         if (fraction_done >= percent_done)
-            fprintf(1, '%d%% done...\n', percent_done);
+%             fprintf(1, '%d%% done...\n', percent_done);
             percent_done = percent_done + print_increment;
         end
     end
@@ -402,7 +402,7 @@ fclose(fid);
 
 if (data_present)
     
-    fprintf(1, 'Parsing data...\n');
+%     fprintf(1, 'Parsing data...\n');
 
     % Extract digital input channels to separate variables.
     for i=1:num_board_dig_in_channels
@@ -430,7 +430,7 @@ if (data_present)
     % Check for gaps in timestamps.
     num_gaps = sum(diff(t_amplifier) ~= 1);
     if (num_gaps == 0)
-        fprintf(1, 'No missing timestamps in data.\n');
+%         fprintf(1, 'No missing timestamps in data.\n');
     else
         fprintf(1, 'Warning: %d gaps in timestamp data found.  Time scale will not be uniform!\n', ...
             num_gaps);
@@ -529,14 +529,14 @@ if (num_temp_sensor_channels > 0)
     end
 end
 
-fprintf(1, 'Done!  Elapsed time: %0.1f seconds\n', toc);
+% fprintf(1, 'Done!  Elapsed time: %0.1f seconds\n', toc);
 if (data_present)
-    fprintf(1, 'Extracted data are now available in the MATLAB workspace.\n');
+%     fprintf(1, 'Extracted data are now available in the MATLAB workspace.\n');
 else
-    fprintf(1, 'Extracted waveform information is now available in the MATLAB workspace.\n');
+%     fprintf(1, 'Extracted waveform information is now available in the MATLAB workspace.\n');
 end
-fprintf(1, 'Type ''whos'' to see variables.\n');
-fprintf(1, '\n');
+% fprintf(1, 'Type ''whos'' to see variables.\n');
+% fprintf(1, '\n');
 
 
 

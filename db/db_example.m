@@ -6,7 +6,8 @@ edit db_credentials
 edit db_local_repositories
 
 %% Load session from db
-sessionName = 'Rat08-20130708';
+
+sessionName = 'Peter_MS13_171129_105507_concat';
 sessions = db_load_sessions('sessionName',sessionName);
 session = sessions{1}
 

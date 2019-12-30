@@ -81,7 +81,7 @@ clusteringpath = p.Results.clusteringpath;
 sessionIDs = p.Results.sessionIDs;
 sessionsin = p.Results.sessions;
 basepaths = p.Results.basepaths;
-clusteringpaths = p.Results.clusteringpaths;
+clusteringpaths = p.Results.clusteringpaths; 
 
 % Extra inputs
 SWR_in = p.Results.SWR;
@@ -103,7 +103,7 @@ UI.settings.tSNE.calcWideAcg = true; UI.settings.dispLegend = 1; UI.settings.tag
 UI.settings.groundTruthMarkers = {'d','o','s','*','+','p'}; UI.settings.groundTruth = {'PV+','NOS1+','GAT1+'};
 UI.settings.plotWaveformMetrics = 1; UI.settings.metricsTable = 1; synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'};
 UI.settings.stickySelection = false; UI.settings.fieldsMenuMetricsToExlude  = {'tags','groundTruthClassification'};
-UI.settings.plotOptionsToExlude = {'acg_','waveforms_','isi_'}; UI.settings.tSNE.dDistanceMetric = 'euclidean';
+UI.settings.plotOptionsToExlude = {'acg_','waveforms_','isi_','responseCurves_thetaPhase_zscored'}; UI.settings.tSNE.dDistanceMetric = 'euclidean';
 UI.settings.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassification'}; UI.params.inbound = [];
 UI.settings.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial'};
 UI.settings.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','spikeGroup'});
@@ -1436,7 +1436,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
     
     delete(UI.panel.subfig_ax4.Children)
     subfig_ax(4) = axes('Parent',UI.panel.subfig_ax4);
-%     set(subfig_ax(4),'LooseInset',get(subfig_ax(4),'TightInset'))
     set(subfig_ax(4),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
     subsetPlots1 = customPlot(customCellPlot1,ii,general,batchIDs);
     
@@ -1447,7 +1446,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
     
     delete(UI.panel.subfig_ax5.Children)
     subfig_ax(5) = axes('Parent',UI.panel.subfig_ax5);
-%     set(subfig_ax(5),'LooseInset',get(subfig_ax(5),'TightInset'))
     set(subfig_ax(5),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
     subsetPlots2 = customPlot(customCellPlot2,ii,general,batchIDs);
     
@@ -1458,7 +1456,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
     
     delete(UI.panel.subfig_ax6.Children)
     subfig_ax(6) = axes('Parent',UI.panel.subfig_ax6);
-%     set(subfig_ax(6),'LooseInset',get(subfig_ax(6),'TightInset'))
     set(subfig_ax(6),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
     subsetPlots3 = customPlot(customCellPlot3,ii,general,batchIDs);
     
@@ -1469,7 +1466,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
     if strcmp(UI.panel.subfig_ax7.Visible,'on')
         delete(UI.panel.subfig_ax7.Children)
         subfig_ax(7) = axes('Parent',UI.panel.subfig_ax7);
-%         set(subfig_ax(7),'LooseInset',get(subfig_ax(7),'TightInset'))
         set(subfig_ax(7),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
         subsetPlots4 = customPlot(customCellPlot4,ii,general,batchIDs);
     end
@@ -1481,7 +1477,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
     if strcmp(UI.panel.subfig_ax8.Visible,'on')
         delete(UI.panel.subfig_ax8.Children)
         subfig_ax(8) = axes('Parent',UI.panel.subfig_ax8);
-%         set(subfig_ax(8),'LooseInset',get(subfig_ax(8),'TightInset'))
         set(subfig_ax(8),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
         subsetPlots5 = customPlot(customCellPlot5,ii,general,batchIDs);
     end
@@ -1493,7 +1488,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
     if strcmp(UI.panel.subfig_ax9.Visible,'on')
         delete(UI.panel.subfig_ax9.Children)
         subfig_ax(9) = axes('Parent',UI.panel.subfig_ax9);
-        %         set(subfig_ax(9),'LooseInset',get(subfig_ax(9),'TightInset'))
         set(subfig_ax(9),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
         subsetPlots6 = customPlot(customCellPlot6,ii,general,batchIDs);
     end
@@ -2198,7 +2192,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             title([responseCurvesName ' response'], 'Interpreter', 'none')
             
-        elseif contains(customPlotSelection,'responseCurves_') & contains(customPlotSelection,'Phase')
+        elseif contains(customPlotSelection,'responseCurves_') && contains(customPlotSelection,'Phase') && ~contains(customPlotSelection,'(image)') && ~contains(customPlotSelection,'(all)')
             responseCurvesName = customPlotSelection(16:end);
             if isfield(cell_metrics.responseCurves,responseCurvesName) && ~isempty(cell_metrics.responseCurves.(responseCurvesName){ii})
                 thetaPhaseResponse = cell_metrics.responseCurves.(responseCurvesName){ii};
@@ -2230,6 +2224,36 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             title([responseCurvesName, ' response'],'Interpreter', 'none'), xlabel('Phase'), ylabel('Probability')
             set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
             xticks([-pi,-pi/2,0,pi/2,pi]),xticklabels({'-\pi','-\pi/2','0','\pi/2','\pi'}),xlim([-pi,pi])
+            
+        elseif contains(customPlotSelection,'responseCurves_') && contains(customPlotSelection,'(image)')
+            responseCurvesName = customPlotSelection(16:end-8);
+            
+            % All responseCurves shown in an imagesc plot
+            % Sorted according to user input
+            [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
+            [~,idx] = find(UI.params.subset(troughToPeakSorted) == ii);
+            
+            imagesc(UI.x_bins.thetaPhase, [1:length(UI.params.subset)], cell_metrics.responseCurves.thetaPhase_zscored(:,UI.params.subset(troughToPeakSorted))','HitTest','off'),
+            colormap hot(512), xlabel('Phase '), title('Theta phase (image)')
+            
+            % selected cell highlighted in white
+            if ~isempty(idx)
+                plot([UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
+            end
+            
+        elseif contains(customPlotSelection,'responseCurves_') && contains(customPlotSelection,'(all)')
+            
+            responseCurvesName = customPlotSelection(16:end-6);
+            % All responseCurves colored according to cell type
+            for jj = 1:length(classes2plotSubset)
+                set1 = intersect(find(plotClas==classes2plotSubset(jj)), UI.params.subset);
+                xdata = repmat([UI.x_bins.thetaPhase,nan(1,1)],length(set1),1)';
+                ydata = [cell_metrics.responseCurves.thetaPhase_zscored(:,set1);nan(1,length(set1))];
+                plot(xdata(:),ydata(:), 'color', [clr(jj,:),0.2],'HitTest','off')
+            end
+            % selected cell in black
+            plot(UI.x_bins.thetaPhase, cell_metrics.responseCurves.thetaPhase_zscored(:,ii), 'color', 'k','linewidth',2,'HitTest','off'), grid on
+            xlabel('Phase'), ylabel('z-scored distribution'), title('Theta phase')
             
         elseif contains(customPlotSelection,{'spikes_'}) && ~isempty(spikesPlots.(customPlotSelection).event)
             
@@ -3288,7 +3312,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         loadDB.dialog = dialog('Position', [300, 300, 900, 565],'Name','Cell Explorer: Load reference data','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
         loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 );
         loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
-        loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
+        loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository','Brain regions'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
         loadDB.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
         set(loadDB.VBox, 'Heights', [50 -1 35]);
         uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[10, 25, 150, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
@@ -4837,7 +4861,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     
                 case 'Waveforms (image)'
                     
-                    [~,troughToPeakSorted] = sort(cell_metrics.troughToPeak(UI.params.subset));
+                    [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
                         iii = UI.params.subset(troughToPeakSorted(round(v)));
                         if highlight
@@ -4990,6 +5014,33 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         if highlight
                             Xdata = general.isis.log10([1,end]);
                             plot(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
+                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
+                        end
+                    end
+                
+                case 'responseCurves_thetaPhase (all)'
+                    
+                    x1 = UI.x_bins.thetaPhase'*ones(1,length(UI.params.subset));
+                    y1 = cell_metrics.responseCurves.thetaPhase_zscored(:,UI.params.subset);
+                    x_scale = range(x1(:));
+                    y_scale = range(y1(:));
+                    [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
+%                     [~,In] = min(hypot(x1(:)-u,y1(:)-v));
+                    In = unique(floor(In/length(UI.x_bins.thetaPhase)))+1;
+                    iii = UI.params.subset(In);
+                    [~,time_index] = min(abs(UI.x_bins.thetaPhase-u));
+                    if highlight
+                        plot(UI.x_bins.thetaPhase,y1(:,In),'linewidth',2, 'HitTest','off')
+                        text(UI.x_bins.thetaPhase(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                    end
+                    
+                case 'responseCurves_thetaPhase (image)'
+                    
+                    [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
+                    if round(v) > 0 && round(v) <= length(UI.params.subset)
+                        iii = UI.params.subset(troughToPeakSorted(round(v)));
+                        if highlight
+                            plot([UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
                             text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
                         end
                     end
@@ -5319,7 +5370,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             In = UI.params.subset(In);
                             
                         case 'Waveforms (image)'
-                            [~,troughToPeakSorted] = sort(cell_metrics.troughToPeak(UI.params.subset));
+                            [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
                             In = UI.params.subset(troughToPeakSorted(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2)))));
                             
                         case 'Waveforms (tSNE)'
@@ -5389,6 +5440,20 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         case 'tSNE of wide ACGs'
                             In = find(inpolygon(tSNE_metrics.acg_wide(UI.params.subset,1), tSNE_metrics.acg_wide(UI.params.subset,2), polygon_coords(:,1)',polygon_coords(:,2)'));
                             In = UI.params.subset(In);
+                                                
+                        case 'responseCurves_thetaPhase (all)'
+                            x1 = UI.x_bins.thetaPhase'*ones(1,length(UI.params.subset));
+                            y1 = cell_metrics.responseCurves.thetaPhase_zscored(:,UI.params.subset);
+                            In = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
+                            In = unique(floor(In/length(UI.x_bins.thetaPhase)))+1;
+                            if ~isempty(In)
+                                plot(UI.x_bins.thetaPhase,y1(:,In),'linewidth',2, 'HitTest','off')
+                            end
+                            In = UI.params.subset(In);
+                            
+                        case 'responseCurves_thetaPhase (image)'
+                            [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
+                            In = UI.params.subset(troughToPeakSorted(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2)))));
                             
                         otherwise
                             if any(strcmp(UI.monoSyn.disp,{'All','Selected','Upstream','Downstream','Up & downstream'}))
@@ -7033,6 +7098,26 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
         end
         
+        % Response curves
+        tempNames = fieldnames(cell_metrics.responseCurves);
+        UI.x_bins.thetaPhase = [-1:0.05:1]*pi;
+        UI.x_bins.thetaPhase = UI.x_bins.thetaPhase(1:end-1)+diff(UI.x_bins.thetaPhase([1,2]))/2;
+        if isfield(cell_metrics.responseCurves,'thetaPhase') && (~isfield(cell_metrics.responseCurves,'thetaPhase_zscored')  || size(cell_metrics.responseCurves.thetaPhase_zscored,2) ~= length(cell_metrics.troughToPeak))
+            thetaPhaseCurves = nan(length(UI.x_bins.thetaPhase),size(cell_metrics.troughToPeak,2));
+            for i = 1:length(cell_metrics.responseCurves.thetaPhase)
+                if isempty(cell_metrics.responseCurves.thetaPhase{i}) || any(isnan(cell_metrics.responseCurves.thetaPhase{i}))
+                    thetaPhaseCurves(:,i) = nan(size(UI.x_bins.thetaPhase));
+                elseif UI.BatchMode
+                    thetaPhaseCurves(:,i) = interp1(cell_metrics.general.batch{cell_metrics.batchIDs(i)}.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i}',UI.x_bins.thetaPhase,'spline',nan);
+                else
+                    thetaPhaseCurves(:,i) = interp1(cell_metrics.general.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i},UI.x_bins.thetaPhase,'spline',nan);
+                end
+            end
+            cell_metrics.responseCurves.thetaPhase_zscored = (thetaPhaseCurves-nanmean(thetaPhaseCurves))./nanstd(thetaPhaseCurves);
+%             cell_metrics.responseCurves.thetaPhase_zscored = thetaPhaseCurves;
+            clear thetaPhaseCurves
+        end
+        
         % Setting initial settings for plots, popups and listboxes
         UI.popupmenu.xData.String = fieldsMenu;
         UI.popupmenu.yData.String = fieldsMenu;
@@ -7115,7 +7200,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 acgOptions = [acgOptions;tSNE_listLabels{i}];
             end
         end
-        
+        if isfield(cell_metrics.responseCurves,'thetaPhase_zscored')
+            responseCurvesOptions = {'responseCurves_thetaPhase (all)';'responseCurves_thetaPhase (image)'};
+        else
+            responseCurvesOptions = {};
+        end
         % Custom plot options
         customPlotOptions = what('customPlots');
         customPlotOptions = cellfun(@(X) X(1:end-2),customPlotOptions.m,'UniformOutput', false);
@@ -7132,7 +7221,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 %         customPlotOptions = customPlotOptions(   (strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.spikeCount,2) )   );
 %         customPlotOptions = [customPlotOptions;customPlotOptions2];
         plotOptions(find(contains(plotOptions,UI.settings.plotOptionsToExlude)))=[]; %
-        plotOptions = unique([waveformOptions; waveformOptions2; acgOptions; customPlotOptions; plotOptions],'stable');
+        plotOptions = unique([waveformOptions; waveformOptions2; acgOptions; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
         
         % Initilizing view #1
         UI.popupmenu.customplot1.String = plotOptions;
@@ -7373,7 +7462,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 loadDB.dialog = dialog('Position', [300, 300, 900, 565],'Name','Cell Explorer: Load sessions from DB','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
                 loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 ); 
                 loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
-                loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
+                loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository','Brain regions'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
                 loadDB.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
                 set(loadDB.VBox, 'Heights', [50 -1 35]);
                 uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[10, 25, 150, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
@@ -7625,9 +7714,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     else
                         db.menu_behavioralParadigm{i} = '';
                     end
+                    if ~isempty(db.sessions{i}.brainRegion)
+                        db.menu_brainRegion{i} = strjoin(db.sessions{i}.brainRegion,', ');
+                    else
+                        db.menu_brainRegion{i} = '';
+                    end
                 end
-                %             db.menu_behavioralParadigm = cellfun(@(x) x.behavioralParadigm{1},db.sessions,'UniformOutput',false);
-                %             db.menu_behavioralParadigm = cellfun(@(x) strjoin(x{:}),db.menu_behavioralParadigm,'UniformOutput',false);
                 db.menu_investigator = cellfun(@(x) x.investigator,db.sessions,'UniformOutput',false);
                 db.menu_repository = cellfun(@(x) x.repositories{1},db.sessions,'UniformOutput',false);
                 db.menu_cells = cellfun(@(x) num2str(x.spikeSorting.cellCount),db.sessions,'UniformOutput',false);
@@ -7636,14 +7728,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 db.menu_values = db.menu_values(db.index);
                 db.menu_items2 = strcat(db.menu_items);
                 sessionEnumerator = cellstr(num2str([1:length(db.menu_items2)]'))';
-                db.sessionList = strcat(sessionEnumerator,{' '},db.menu_items2,{' '},db.menu_cells(db.index),{' '},db.menu_animals(db.index),{' '},db.menu_behavioralParadigm(db.index),{' '},db.menu_species(db.index),{' '},db.menu_investigator(db.index),{' '},db.menu_repository(db.index));
+                db.sessionList = strcat(sessionEnumerator,{' '},db.menu_items2,{' '},db.menu_cells(db.index),{' '},db.menu_animals(db.index),{' '},db.menu_behavioralParadigm(db.index),{' '},db.menu_species(db.index),{' '},db.menu_investigator(db.index),{' '},db.menu_repository(db.index),{' '},db.menu_brainRegion(db.index));
                 
                 % Promt user with a tabel with sessions
                 if ishandle(loadBD_waitbar)
                     close(loadBD_waitbar)
                 end
                 db.dataTable = {};
-                db.dataTable(:,2:9) = [sessionEnumerator;db.menu_items2;db.menu_cells(db.index);db.menu_animals(db.index);db.menu_species(db.index);db.menu_behavioralParadigm(db.index);db.menu_investigator(db.index);db.menu_repository(db.index)]';
+                db.dataTable(:,2:10) = [sessionEnumerator;db.menu_items2;db.menu_cells(db.index);db.menu_animals(db.index);db.menu_species(db.index);db.menu_behavioralParadigm(db.index);db.menu_investigator(db.index);db.menu_repository(db.index);db.menu_brainRegion(db.index)]';
                 db.dataTable(:,1) = {false};
                 [db_path,~,~] = fileparts(which('db_load_sessions.m'));
                 try
