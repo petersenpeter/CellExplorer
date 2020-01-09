@@ -4054,11 +4054,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function plotLegends
+    function plotLegends(showTitle)
         nLegends = -1;
         plot(0,0,'xw', 'LineWidth', 3., 'MarkerSize',18,'HitTest','off'), xlim([-0.3,2]), hold on, yticks([]), xticks([])
         plot(0,0,'xk', 'LineWidth', 1.5, 'MarkerSize',16,'HitTest','off');
-        text(0.2,1,'Legends','HorizontalAlignment','left','FontWeight', 'Bold')
+        if showTitle
+            text(0.2,1,'Legends','HorizontalAlignment','left','FontWeight', 'Bold')
+        end
         text(0.2,0,'Selected cell')
         legendNames = plotClasGroups(nanUnique(plotClas(UI.params.subset)));
         for i = 1:length(legendNames)
@@ -4164,7 +4166,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Updates the legends in the Legends tab with active plot types
         if strcmp(UI.panel.tabgroup2.SelectedTab.Title,'Legends')
             axes(UI.tabs.legends,'Position',[0 0 1 1])
-            plotLegends
+            plotLegends(false)
         end
     end
 
@@ -5779,7 +5781,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             axes(ha(length(plotOptions)+2))
             set(gca,'Visible','off');  hold on
-            plotLegends
+            plotLegends(true)
             
             axes(ha(length(plotOptions)+3))
             set(gca,'Visible','off'); hold on
@@ -6455,7 +6457,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             end
                         end
                         axes(ha(length(selectedActions)+2))
-                        plotLegends, title('Legends')
+                        plotLegends(true)
                         
                         axes(ha(length(selectedActions)+3))
                         plotCharacteristics(cellIDs(j)), title('Characteristics')
