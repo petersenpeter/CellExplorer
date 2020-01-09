@@ -1,4 +1,3 @@
-# Cell Explorer
 The Cell Explorer is a graphical user interface (GUI) and standardized pipeline for exploring and classifying spike sorted single units acquired using extracellular electrodes. Visit the wiki for extensive documentation: https://github.com/petersenpeter/Cell-Explorer/wiki
 
 <a href="https://github.com/petersenpeter/Cell-Explorer/wiki">![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)</a>
