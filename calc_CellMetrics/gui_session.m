@@ -13,9 +13,9 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % gui_session is part of the Cell Explorer: https://github.com/petersenpeter/Cell-Explorer
 
-% By Peter Petersen
-% petersen.peter@gmail.com
-% Last edited: 26-12-2019
+% By Peter Petersen 
+% petersen.peter@gmail.com 
+% Last edited: 26-12-2019 
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods

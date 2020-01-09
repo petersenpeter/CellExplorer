@@ -28,6 +28,9 @@ function spikes = loadSpikes(varargin)
 % DEPENDENCIES: 
 %
 % LoadXml.m & xmltools.m (default) or bz_getSessionInfo.m
+% 
+% EXAMPLE CALL
+% spikes = loadSpikes('clusteringpath',KilosortOutputPath,'basepath',pwd); % Run from basepath, assumes Phy format. Requires xml file and dat file in basepath
 
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -77,7 +80,7 @@ if ~isempty(session)
     basename = session.general.name;
     basepath = session.general.basePath;
     clusteringFormat = session.spikeSorting{1}.format;
-    clusteringpath = session.general.clusteringPath;
+    clusteringpath = session.spikeSorting{1}.relativePath;
     if isfield(session.extracellular,'leastSignificantBit') && session.extracellular.leastSignificantBit>0
         LSB = session.extracellular.leastSignificantBit;
     end
@@ -114,7 +117,7 @@ if forceReload
     else
         if ~exist('LoadXml.m','file') || ~exist('xmltools.m','file')
             error('''LoadXml.m'' and ''xmltools.m'' is not in your path and is required to load the xml file. If you have buzcode installed, please set ''buzcode'' to true in the input parameters.')
-        else
+        elseif exist(fullfile(clusteringpath_full,[basename, '.xml']),'file')
             xml = LoadXml(fullfile(clusteringpath_full,[basename, '.xml']));
         end
     end
@@ -362,7 +365,7 @@ showWaveforms = true;
 badChannels = [];
 
 % Removing channels marked as Bad in session struct
-if ~isempty(session)
+if ~isempty(session) && isfield(session.channelTags,'Bad')
     badChannels = session.channelTags.Bad.channels;
     if ~isempty(session.channelTags.Bad.spikeGroups)
         badChannels = [badChannels,session.extracellular.electrodeGroups(session.channelTags.Bad.spikeGroups)];

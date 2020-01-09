@@ -36,7 +36,7 @@ end
 if ~exist(saveAsFullfile,'file') || forceReload
     if ~exist(fullfile(session.general.basePath,[session.general.name, '.lfp']),'file')
         disp('Creating lfp file')
-        ce_LFPfromDat(session,'noPrompts',true)
+        ce_LFPfromDat(session)
     end
     srLfp = session.extracellular.srLfp;
     disp('Calculating the instantaneous theta frequency')

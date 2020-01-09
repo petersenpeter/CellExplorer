@@ -8,7 +8,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   Check the wiki of the Cell Explorer for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
 %
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-%   INPUTS           
+%   INPUTS
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %
 %   varargin (Variable-length input argument list; see below)
@@ -54,7 +54,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 
 %   By Peter Petersen
 %   petersen.peter@gmail.com
-%   Last edited: 24-11-2019
+%   Last edited: 08-01-2020
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -164,6 +164,11 @@ if ~exist('session','var')
         session = sessionTemplate;
         showGUI = true;
     end
+end
+
+% If no arguments are given, the GUI is shown
+if nargin==0
+    showGUI = true;
 end
 
 % Checking format of spike groups and electrode groups (must be of type cell)
@@ -574,10 +579,10 @@ end
 % Theta related activity
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetrics,{'theta_metrics'})) && exist(fullfile(basepath,'animal.mat'),'file') && (~isfield(cell_metrics,'thetaEntrainment') || forceReload == true)
+if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetrics,{'theta_metrics'})) && exist(fullfile(basepath,[basename,'.animal.behavior.mat']),'file') && isfield(session.channelTags,'Theta') %&& (~isfield(cell_metrics,'thetaEntrainment') || forceReload == true)
     disp('* Theta metrics');
     InstantaneousTheta = calcInstantaneousTheta2(session);
-    load(fullfile(basepath,'animal.mat'));
+    load(fullfile(basepath,[basename,'.animal.behavior.mat']));
     theta_bins =[-1:0.05:1]*pi;
     cell_metrics.thetaPhasePeak = nan(1,cell_metrics.general.cellCount);
     cell_metrics.thetaPhaseTrough = nan(1,cell_metrics.general.cellCount);
@@ -591,10 +596,10 @@ if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetric
     end
     
     for j = 1:size(spikes.times,2)
-        spikes2.ts{j} = spikes2.ts{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/session.extracellular.srLfp);
-        spikes2.times{j} = spikes2.times{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase)/session.extracellular.srLfp);
+        spikes2.ts{j} = spikes2.ts{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase{session.channelTags.Theta.channels})/session.extracellular.srLfp);
+        spikes2.times{j} = spikes2.times{j}(spikes.ts{j}/sr < length(InstantaneousTheta.signal_phase{session.channelTags.Theta.channels})/session.extracellular.srLfp);
         spikes2.ts_eeg{j} = ceil(spikes2.ts{j}/16);
-        spikes2.theta_phase{j} = InstantaneousTheta.signal_phase(spikes2.ts_eeg{j});
+        spikes2.theta_phase{j} = InstantaneousTheta.signal_phase{session.channelTags.Theta.channels}(spikes2.ts_eeg{j});
         spikes2.speed{j} = interp1(animal.time,animal.speed,spikes2.times{j});
         if sum(spikes2.speed{j} > 10)> 500
             
@@ -622,7 +627,6 @@ if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetric
     histogram(cell_metrics.thetaPhaseTrough,[-1:0.2:1]*pi),title('Theta trough and peak'), hold on
     histogram(cell_metrics.thetaPhasePeak,[-1:0.2:1]*pi), legend({'Trough','Peak'})
 end
-
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Spatial related metrics
@@ -984,11 +988,13 @@ if isfield(session,'epochs')
         if isfield(session.epochs{j},'behavioralParadigm') && isfield(session.epochs{j},'stopTime')
             cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries(j) = session.epochs{j}.stopTime;
             cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries_labels{j} = session.epochs{j}.behavioralParadigm;
+        elseif isfield(session.epochs{j},'stopTime')
+            cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries(j) = session.epochs{j}.stopTime;
         end
     end
-    if isfield(cell_metrics.general.responseCurves.firingRateAcrossTime,'boundaries')
-        cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries = cumsum(cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries);
-    end
+%     if isfield(cell_metrics.general.responseCurves.firingRateAcrossTime,'boundaries')
+%         cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries = cumsum(cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries);
+%     end
 end
 % cell_metrics.firingRateAcrossTime = mat2cell(zeros(length(cell_metrics.general.firingRateAcrossTime.x_bins),cell_metrics.general.cellCount));
 
@@ -1043,6 +1049,9 @@ for j = 1:cell_metrics.general.cellCount
     % Firing rate across time
     temp = histcounts(spikes.times{j},cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges)/firingRateAcrossTime_binsize;
     cell_metrics.responseCurves.firingRateAcrossTime{j} = temp(:);
+    cell_metrics.firingRateGiniCoeff(j) = 1-2*sum(temp(:))./length(temp(:));
+    cell_metrics.firingRateStd(j) = std(temp(:))./mean(temp(:));
+    cell_metrics.firingRateInstability(j) = median(abs(diff(temp(:))))./mean(temp(:));
     
     % CV2
     tau = diff(spikes.times{j});
@@ -1131,7 +1140,7 @@ cell_metrics.general = rmfield(cell_metrics.general,field2remove(test));
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 % Checks weather db credentials exist
-if exist('db_load_settings') == 2
+if exist('db_load_settings','file')
     db_settings = db_load_settings;
     if ~strcmp(db_settings.credentials.username,'user')
         enableDatabase = 1;
@@ -1185,7 +1194,7 @@ end
 if isfield(spikes,'processinginfo')
     cell_metrics.general.processinginfo.spikes = spikes.processinginfo;
 end
-if exist('deepSuperficialfromRipple') && isfield(deepSuperficialfromRipple,'processinginfo')
+if exist('deepSuperficialfromRipple','var') && isfield(deepSuperficialfromRipple,'processinginfo')
     cell_metrics.general.processinginfo.deepSuperficialfromRipple = deepSuperficialfromRipple.processinginfo;
 end
 
