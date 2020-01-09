@@ -6260,15 +6260,18 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         k = 1;
                         [plotRows,~]= numSubplots(length(plot_cells));
                         ha = tight_subplot(plotRows(1),plotRows(2),[.06 .03],[.08 .06],[.06 .05]);
+                        
                         for j = 2:length(plot_cells)
                             axes(ha(k));
                             col1 = UI.settings.cellTypeColors(clusClas(plot_cells(j)),:);
-                            bar_from_patch(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(1)),col1), hold on
+                            bar_from_patch(general.ccg_time*1000,general.ccg(:,plot_cells2(1),plot_cells2(j)),col1), hold on
                             if UI.monoSyn.dispHollowGauss && j > 1
-                                [ ~,pred] = ce_cch_conv(general.ccg(:,plot_cells2(j),plot_cells2(1))*cell_metrics.spikeCount(plot_cells2(j)),20); hold on
-                                nBonf = round(.004/0.001)*2;
-                                hiBound=poissinv(1-0.01/nBonf,pred/cell_metrics.spikeCount(plot_cells2(j)));
-                                plot(general.ccg_time*1000,pred/cell_metrics.spikeCount(plot_cells2(j)),'-k',general.ccg_time*1000,hiBound,'-r')
+                                norm_factor = cell_metrics.spikeCount(plot_cells2(1))*0.0005;
+                                [ ~,pred] = ce_cch_conv(general.ccg(:,plot_cells2(1),plot_cells2(j))*norm_factor,20); hold on
+                                nBonf = round(.004/0.001)*2; % alpha = 0.001;
+%                                 hiBound=poissinv(1-0.001/nBonf,pred);
+                                hiBound=poissinv(1-0.001,pred);
+                                plot(general.ccg_time*1000,pred/norm_factor,'-k',general.ccg_time*1000,hiBound/norm_factor,'-r')
                             end
                             
                             title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.spikeGroup(plot_cells(j))),' (cluID ',num2str(cell_metrics.cluID(plot_cells(j))),')']),
