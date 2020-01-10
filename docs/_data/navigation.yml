@@ -4,3 +4,11 @@
   url: /Cell-Explorer/data-structure-and-format
 - title: View on GitHub
   url: https://github.com/petersenpeter/Cell-Explorer
+  sublinks:
+    - title: FAQ
+      url: /faq.html
+    - title: Documentation
+      url: /documentation.html
+    - title: separator
+    - title: Customer Support
+      url: /customer-support.html
