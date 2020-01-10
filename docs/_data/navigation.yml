@@ -1,8 +1,8 @@
 - name: Home
   link: /Cell-Explorer/
 - name: Pipeline
-  link: /Cell-Explorer/running-pipeline.md
+  link: /Cell-Explorer/running-pipeline
 - name: Data data structure and format
-  link: /Cell-Explorer/data-structure-and-format.md
-- name: Staff
+  link: /Cell-Explorer/data-structure-and-format
+- name: Database
   link: /staff.html
