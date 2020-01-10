@@ -28,8 +28,7 @@ There is an example dataset included in the repository. Load the mat-file ['cell
 There is a [tutorial script: CellExplorer_Tutorial.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m) included for running the pipeline on your data.
 
 ### Please use below DOI for citing the Cell Explorer in your research and publications:
+Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. http://doi.org/10.5281/zenodo.3604173
 
-The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells. By Peter C. Petersen and György Buzsáki. 2019.
-
-<a href="https://zenodo.org/badge/latestdoi/152647739"><img src="https://zenodo.org/badge/152647739.svg" alt="DOI"></a>
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604173.svg)](https://doi.org/10.5281/zenodo.3604173)
 
