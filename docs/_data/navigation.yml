@@ -1,8 +1,8 @@
 - name: Home
-  link: /
-- name: About
-  link: /about.html
-- name: Blog
-  link: /blog.html
+  link: /Cell-Explorer/
+- name: Pipeline
+  link: /Cell-Explorer/running-pipeline.md
+- name: Data data structure and format
+  link: /Cell-Explorer/data-structure-and-format.md
 - name: Staff
   link: /staff.html
