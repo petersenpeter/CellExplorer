@@ -2,3 +2,5 @@
   link: /Cell-Explorer/running-pipeline
 - name: Graphical interface
   link: /Cell-Explorer/data-structure-and-format
+- name: View on GitHub
+  link: https://github.com/petersenpeter/Cell-Explorer
