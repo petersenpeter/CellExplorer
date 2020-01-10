@@ -1,6 +1,6 @@
-- name: Pipeline
-  link: /Cell-Explorer/running-pipeline
-- name: Graphical interface
-  link: /Cell-Explorer/data-structure-and-format
-- name: View on GitHub
-  link: https://github.com/petersenpeter/Cell-Explorer
+- title: Pipeline
+  url: /Cell-Explorer/running-pipeline
+- title: Graphical interface
+  url: /Cell-Explorer/data-structure-and-format
+- title: View on GitHub
+  url: https://github.com/petersenpeter/Cell-Explorer
