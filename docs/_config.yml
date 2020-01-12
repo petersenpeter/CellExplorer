@@ -1,2 +1,44 @@
-theme: jekyll-theme-cayman
-google_analytics: 155839433
+theme: just-the-docs
+remote_theme: pmarsceill/just-the-docs
+# Set the search token separator for hyphenated-word search:
+search_tokenizer_separator: /[\s/]+/
+# Aux links for the upper right navigation
+aux_links:
+  "Cell Explorer on GitHub":
+    - "//github.com/petersenpeter/Cell-Explorer"
+
+
+title: Cell Explorer
+description: "Matlab GUI and standardized pipeline for exploring and classifying spike sorted single units acquired using extracellular electrodes."
+#baseurl: "/just-the-docs" # the subpath of your site, e.g. /blog
+#url: "https://pmarsceill.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+
+permalink: pretty
+exclude: ["node_modules/", "*.gemspec", "*.gem", "Gemfile", "Gemfile.lock", "package.json", "package-lock.json",  "script/", "LICENSE.txt", "lib/", "bin/", "README.md", "Rakefile"]
+
+# Set a path/url to a logo that will be displayed instead of the title
+#logo: "/assets/images/just-the-docs.png"
+
+# Enable or disable the site search
+search_enabled: true
+
+# Enable or disable heading anchors
+heading_anchors: true
+
+# Footer content appears at the bottom of every page's main content
+footer_content: "Copyright &copy; 2019-2020 Peter Petersen"
+
+# Color scheme currently only supports "dark" or nil (default)
+color_scheme: nil
+
+# Google Analytics Tracking (optional)
+# e.g, UA-1234567-89
+ga_tracking: 155839433
+
+compress_html:
+  clippings: all
+  comments: all
+  endings: all
+  startings: []
+  blanklines: false
+  profile: false

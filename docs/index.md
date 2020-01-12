@@ -1,8 +1,18 @@
+---
+layout: default
+title: Home
+nav_order: 1
+has_children: false
+---
+# Cell Explorer
+{: .fs-9 }
+
+The Cell Explorer is a graphical user interface (GUI) and standardized pipeline for exploring and classifying spike sorted single units acquired using extracellular electrodes.
+{: .fs-6 .fw-300 }
+
+[Get started now](#installation){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [View it on GitHub](https://github.com/petersenpeter/Cell-Explorer){: .btn .fs-5 .mb-4 .mb-md-0 }
+
 ![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)
-
-The Cell Explorer is a graphical user interface and a standardized pipeline for exploring and classifying spike sorted single units acquired using extracellular electrodes, like silicon probes or tetrodes.
-
-Please use the right hand menu to navigate the documentation for the Cell Explorer.
 
 ### Installation
 Download the repository and add it to your Matlab setpath. The pipeline uses CCGHeart.c. to calculate the CCGs. Compiled versions are included for Windows and Mac. If you are using Linux you have to compile the script. In Matlab, go to Cell-Explorer/calc_CellMetrics/CCG/ and run this line:

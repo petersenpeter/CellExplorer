@@ -1,7 +1,15 @@
-**Content**
-* [Instructions for running the pipeline with a base path](https://github.com/petersenpeter/Cell-Explorer/wiki/Running-the-cell-metrics-pipeline#instructions-for-running-the-pipeline-from-a-data-path)
-* [Instructions for running the pipeline using the Buzsaki lab database](https://github.com/petersenpeter/Cell-Explorer/wiki/Running-the-cell-metrics-pipeline#instructions-for-running-the-pipeline-using-the-buzsaki-lab-database)
-* [Running the Cell Explorer in batch mode](https://github.com/petersenpeter/Cell-Explorer/wiki/Running-the-cell-metrics-pipeline#running-the-cell-explorer-in-batch-mode)
+---
+layout: default
+title: Running pipeline
+nav_order: 2
+has_children: true
+has_toc: false
+---
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ### Instructions for running the pipeline from a data path
 The pipeline follows the data standards [described here](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format). Saving your data in the specified data formats, integrates your data better with the Cell Explorer, allowing you to plot spike rasters and event histograms among other things.

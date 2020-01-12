@@ -1,3 +1,15 @@
+---
+layout: default
+title: Data structure and format
+parent: Running pipeline
+nav_order: 2
+---
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
 ## Data paths
 For each session there are two main paths that the Cell Explorer uses, a basepath and a clusteringpath (relative to basepath). 
 
@@ -6,7 +18,6 @@ The basepath contains the raw data and session level files. The data in the base
 The clusteringpath contains the spike data, including cell metrics. The cell metrics are all stored in a cell_metrics struct/file. 
 
 ## Data structures
-[Cell metrics](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format#cell-metrics), [Session metadata](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format#session-metadata), [Spikes](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format#spikes), [Firing rate maps](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format#firing-rate-maps), [Events](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format#events), [Manipulations](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format#manipulations), [Channels](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format#channels), [Time series](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format#time-series)
 
 ### Cell metrics
 The cell metrics are kept in a [cell_metrics struct as described here](https://github.com/petersenpeter/Cell-Explorer/wiki/Cell-metrics). The cell metrics are stored in: sessionName.cell_metrics.cellinfo.mat in the clustering path.
