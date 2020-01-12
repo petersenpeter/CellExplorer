@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Data structure and format
-parent: Running pipeline
+parent: Pipeline
 nav_order: 2
 ---
 # Data structure and format
@@ -16,7 +16,6 @@ nav_order: 2
 For each session there are two main paths that the Cell Explorer uses, a basepath and a clusteringpath (relative to basepath). 
 
 The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: sessionName.*, e.g. sessionName.dat and sessionName.lfp (lowpass filtered and downsampled. The lfp file is automatically generated in the pipeline if necessary). The metadata is stored in a sessionName.session.mat file located in the basepath.
-
 The clusteringpath contains the spike data, including cell metrics. The cell metrics are all stored in a cell_metrics struct/file. 
 
 ## Data structures

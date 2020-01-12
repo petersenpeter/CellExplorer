@@ -1,9 +1,8 @@
 ---
 layout: default
-title: Database
-has_children: true
-nav_order: 4
-has_toc: false
+title: Preparation
+parent: Database
+nav_order: 1
 ---
 # Database preparation
 {: .no_toc}

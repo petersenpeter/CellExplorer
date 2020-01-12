@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Custom calculations
-parent: Running pipeline
+parent: Pipeline
 nav_order: 4
 ---
 # Custom calculations

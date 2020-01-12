@@ -1,9 +1,8 @@
 ---
 layout: default
 title: Running pipeline
-nav_order: 2
-has_children: true
-has_toc: false
+parent: Pipeline
+nav_order: 1
 ---
 # Running pipeline
 {: .no_toc}
