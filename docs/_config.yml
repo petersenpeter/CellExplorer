@@ -17,7 +17,7 @@ permalink: pretty
 exclude: ["node_modules/", "*.gemspec", "*.gem", "Gemfile", "Gemfile.lock", "package.json", "package-lock.json",  "script/", "LICENSE.txt", "lib/", "bin/", "README.md", "Rakefile"]
 
 # Set a path/url to a logo that will be displayed instead of the title
-logo: "/assets/images/logo.png"
+logo: "/assets/images/logo2.png"
 
 # Enable or disable the site search
 search_enabled: true
@@ -26,7 +26,7 @@ search_enabled: true
 heading_anchors: true
 
 # Footer content appears at the bottom of every page's main content
-footer_content: "Copyright &copy; 2019-2020 Peter Petersen"
+footer_content: "Copyright &copy; 2019-2020 Peter Petersen."
 
 # Color scheme currently only supports "dark" or nil (default)
 color_scheme: nil
