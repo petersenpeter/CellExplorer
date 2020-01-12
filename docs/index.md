@@ -37,10 +37,10 @@ There is an example dataset included in the repository. Load the mat-file ['cell
 ### Tutorial for running the pipeline on your data
 There is a [tutorial script: CellExplorer_Tutorial.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m) included for running the pipeline on your data.
 
-### Learn about components of the Cell Explorer
-The Cell Explorer can be separated into three components.
+### The components of the Cell Explorer
+The Cell Explorer can be separated into three components:
 
-[Pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2} [Graphical interface](/Cell-Explorer/interface/interface/){: .btn .fs-5 .mb-4 .mb-md-0 } [Database](/Cell-Explorer/database/preparation/){: .btn .fs-5 .mb-4 .mb-md-0 }
+[Pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface](/Cell-Explorer/interface/interface/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Database](/Cell-Explorer/database/preparation/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
 
 ### Please use below DOI for citing the Cell Explorer in your research and publications:
 Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. http://doi.org/10.5281/zenodo.3604173
