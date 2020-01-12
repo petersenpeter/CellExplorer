@@ -5,6 +5,8 @@ has_children: true
 nav_order: 4
 has_toc: false
 ---
+# Database preparation
+{: .no_toc}
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -47,6 +49,6 @@ Now you can test the connection by typing:
 
 `session = sessions{1};`
 
-If succesfull it will create the session struct in your workspace containing metadata for that session. You can learn more about the data structure and format [here](https://github.com/petersenpeter/Cell-Explorer/wiki/Running-the-cell-metrics-pipeline#data-structure-and-format).
+If succesfull it will create the session struct in your workspace containing metadata for that session. You can learn more about the data structure and format [here](/pipeline/data-structure-and-format/).
 
 There are a couple of database example calls in the Matlab script [db_example.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/db/db_example.m) located in the db folder.

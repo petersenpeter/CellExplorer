@@ -4,6 +4,8 @@ title: Single cell plot options
 parent: Graphical interface
 nav_order: 3
 ---
+# Single cell plot options
+{: .no_toc}
 The single cells can be plotted with various plot options: 
 * waveforms
 * ACGs

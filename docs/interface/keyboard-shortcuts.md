@@ -4,7 +4,8 @@ title: Keyboard shortcuts
 parent: Graphical interface
 nav_order: 5
 ---
-
+# Keyboard shortcuts
+{: .no_toc}
 Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing H in the cell Explorer will show available shortcuts. A + (plus) sign indicate that the key must be combined with command/control (Mac/Windows).
 
 ### Navigation
@@ -47,4 +48,4 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
 - +D : Open sessions in the Buzsaki lab database
 - +A : Load spike data
 - +J : Adjust mono-synaptic connections for selected session
-- +V : Visit the Github wiki
+- +V : Visit the Github documentation

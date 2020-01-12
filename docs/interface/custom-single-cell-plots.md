@@ -4,6 +4,8 @@ title: Custom single cell plots
 parent: Graphical interface
 nav_order: 8
 ---
+# Custom single cell plots
+{: .no_toc}
 Custom single cell plots can be created and loaded in the Cell Explorer. Custom plot functions must be located in the subfolder /+customPlots. Each plot must be saved individually, for them to be loaded in the Cell Explorer. There is a template available to get you started:
 
 <pre><code>function subsetPlots = template(cell_metrics,UI,ii,col)

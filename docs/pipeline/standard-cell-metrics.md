@@ -4,6 +4,8 @@ title: Standard cell metrics
 parent: Running pipeline
 nav_order: 3
 ---
+# Standard cell metrics
+{: .no_toc}
 ## Table of contents
 {: .no_toc .text-delta }
 

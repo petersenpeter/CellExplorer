@@ -4,6 +4,8 @@ title: Capabilities
 parent: Graphical interface
 nav_order: 2
 ---
+# Capabilities
+{: .no_toc}
 The Cell Explorer is a graphical user interface that allow you to explore your data on a single cell level. Each of the plots are interactive using your mouse and keyboard.
 
 ### Classification

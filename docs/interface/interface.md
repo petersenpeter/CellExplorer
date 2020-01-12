@@ -5,7 +5,8 @@ nav_order: 3
 has_children: true
 has_toc: false
 ---
-
+# Graphical interface
+{: .no_toc}
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-Interface-description-1.png)
 ## Table of contents
 {: .no_toc .text-delta }
@@ -15,7 +16,7 @@ has_toc: false
 
 
 ### Introduction
-The interface consists of 4-9 main plots, where the top row is dedicated to population level representations of the cells and the other plots are [selectable and customizable plots for individual cells](https://github.com/petersenpeter/Cell-Explorer/wiki/Single-cell-plot-options) (including variations of waveforms, ACGs, ISIs, CCGs, PSTHs, response curves and firing rate maps). The surrounding interface consists of 7 panels placed on either side of the graphs: On the right side there is a navigation panel, cell assignment panel, display settings panel, and on the left side a plot selection panel, color group panel and a table with cell metrics. The panels are described in details below. Further there is a text field for custom text filter, a message log and figure legends. There are [[https://github.com/petersenpeter/Cell-Explorer/wiki/Keyboard-shortcuts][keyboard shortcuts]] that allow you to quickly navigate your data. Press H in the cell Explorer to learn Keyboard shortcuts.
+The interface consists of 4-9 main plots, where the top row is dedicated to population level representations of the cells and the other plots are [selectable and customizable plots for individual cells](/interface/single-cell-plot-options/) (including variations of waveforms, ACGs, ISIs, CCGs, PSTHs, response curves and firing rate maps). The surrounding interface consists of 7 panels placed on either side of the graphs: On the right side there is a navigation panel, cell assignment panel, display settings panel, and on the left side a plot selection panel, color group panel and a table with cell metrics. The panels are described in details below. Further there is a text field for custom text filter, a message log and figure legends. There are [keyboard shortcuts](http://localhost:4000/interface/keyboard-shortcuts/) that allow you to quickly navigate your data. Press H in the cell Explorer to learn Keyboard shortcuts.
 
 ### Navigation and cell selection
 The Navigation panel allows you can navigate and select which cell to display.
@@ -56,7 +57,7 @@ MonoSyn: [None/Selected/All] Display monosynaptic connections for selected cell 
 
 Display synaptic connections: You can select in which of the plots you want the mono-synaptic connections displayed, using the toggles for the three main scatter plots.
 
-*** Plot selection
+### Plot selection
 The plot selection panel allows you to customize the first scatter plot, select what data to display, change the axis type, adjust the plotting style and the color groups.
 
 Select X,Y and Z data: Allows you to select what metrics that are displayed on the X,Y and Z axes respectively.

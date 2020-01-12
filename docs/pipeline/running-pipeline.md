@@ -5,6 +5,8 @@ nav_order: 2
 has_children: true
 has_toc: false
 ---
+# Running pipeline
+{: .no_toc}
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -12,7 +14,7 @@ has_toc: false
 {:toc}
 
 ### Instructions for running the pipeline from a data path
-The pipeline follows the data standards [described here](https://github.com/petersenpeter/Cell-Explorer/wiki/Data-structure-and-format). Saving your data in the specified data formats, integrates your data better with the Cell Explorer, allowing you to plot spike rasters and event histograms among other things.
+The pipeline follows the data standards [described here](/pipeline/data-structure-and-format/). Saving your data in the specified data formats, integrates your data better with the Cell Explorer, allowing you to plot spike rasters and event histograms among other things.
 
 To run the pipeline from a session struct, please see this example
 [sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) file for how to format this properly. You can edit the template to fit to your data.
