@@ -6,5 +6,4 @@ has_children: true
 ---
 # Graphical interface
 {: .no_toc}
-The graphical interface is built in MATLAB 
-![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-Interface-description-1.png)
+![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)
