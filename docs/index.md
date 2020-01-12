@@ -10,7 +10,7 @@ has_children: false
 The Cell Explorer is a graphical user interface (GUI), standardized pipeline and data structure for exploring and classifying spike sorted single units acquired using extracellular electrodes.
 {: .fs-6 .fw-300 }
 
-[Get started now](#installation){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [Pipeline](/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2} [Graphical interface](/interface/interface/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2} [View it on GitHub](https://github.com/petersenpeter/Cell-Explorer){: .btn .fs-5 .mb-4 .mb-md-0 }
+[Get started now](#installation){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [View it on GitHub](https://github.com/petersenpeter/Cell-Explorer){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)
 
@@ -36,6 +36,9 @@ There is an example dataset included in the repository. Load the mat-file ['cell
 
 ### Tutorial for running the pipeline on your data
 There is a [tutorial script: CellExplorer_Tutorial.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m) included for running the pipeline on your data.
+
+### Learn about the pipeline and graphical interface
+[Pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2} [Graphical interface](/Cell-Explorer/interface/interface/){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ### Please use below DOI for citing the Cell Explorer in your research and publications:
 Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. http://doi.org/10.5281/zenodo.3604173
