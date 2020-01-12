@@ -4,9 +4,10 @@ title: Keyboard shortcuts
 parent: Graphical interface
 nav_order: 5
 ---
+
 Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing H in the cell Explorer will show available shortcuts. A + (plus) sign indicate that the key must be combined with command/control (Mac/Windows).
 
-*** Navigation
+### Navigation
 - < : Navigate to next cell
 - > : Navigate to previous cell
 - . : Navigate to next cell with same class
@@ -17,7 +18,7 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
 - Numpad0   : Navigate to first cell
 - Numpad1-9 : Navigate to next cell with that numeric class
 
-*** Cell assignment actions
+### Cell assignment actions
 - 1-9 : Assign Cell-types
 - +B : Assign Brain region
 - +L : Assign Label
@@ -25,7 +26,7 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
 - +Z : Undo assignment
 - +R : Reclassify cell types
 
-*** Display
+### Display
 - M : Show/Hide menubar
 - N : Change layout (6, 5 or 4 subplots)
 - +E : Highlight excitatory cells (triangles)
@@ -38,7 +39,7 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
 - +U : Load ground truth cell types
 - Space : Show action dialog for selected cells
 
-*** Other shortcuts
+### Other shortcuts
 - H : Open list of keyboard shortcuts
 
 - +P : Open preferences for the Cell Explorer
