@@ -12,7 +12,7 @@ nav_order: 1
 1. TOC
 {:toc}
 
-### Instructions for running the pipeline from a data path
+### Running the pipeline from a data path
 The pipeline follows the data standards [described here](/pipeline/data-structure-and-format/). Saving your data in the specified data formats, integrates your data better with the Cell Explorer, allowing you to plot spike rasters and event histograms among other things.
 
 To run the pipeline from a session struct, please see this example
@@ -38,7 +38,7 @@ Once complete, view the result in the Cell Explorer by typing:
 
 `cell_metrics = CellExplorer('metrics',cell_metrics);`
 
-### Instructions for running the pipeline using the Buzsaki lab database
+### Running the pipeline using the Buzsaki lab database
 The Cell Explorer pipeline uses a single Matlab struct for handling metadata. The struct is automatically loaded from the buzsaki lab database if you are running the pipeline with the database, and is located in the base path once a session has been processed. To run the pipeline on a session named 'PetersSession' using the database type:
 
 `cell_metrics = calc_CellMetrics('sessionName','PetersSession');`

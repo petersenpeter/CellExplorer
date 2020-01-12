@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Preparation
+title: Database preparation
 parent: Database
 nav_order: 1
 ---
