@@ -6,16 +6,14 @@ nav_order: 3
 ---
 # Single cell plot options
 {: .no_toc}
-The single cells can be plotted with various plot options: 
-* waveforms
-* ACGs
-* ISIs
-* CCGs
-* PSTHs
-* response curves
-* Firing rate maps
+The single cells can be plotted with various plot options. You can further create [your own custom plots](/interface/custom-single-cell-plots/), which can be loaded and displayed in the Cell Explorer, by saving plot function in the customPlots folder.
+## Table of contents
+{: .no_toc .text-delta }
 
-You can create [your own custom plots](https://github.com/petersenpeter/Cell-Explorer/wiki/Custom-single-cell-plots), which can be loaded and displayed in the Cell Explorer, by saving plot function in the customPlots folder.
+1. TOC
+{:toc}
+
+
 
 ### Waveforms
 There are three types of waveform plots: single waveform with noise curves in absolute amplitude, z-scored waveforms across population, and color plot with same z-scored waveforms. Further there are filtered and unfiltered waveform plot options. 
@@ -45,7 +43,7 @@ PSTHs can be shown for either sessionName.*.psth.mat files or for sessionName.*.
 ![PSTH](https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png)
 
 ### Spike rasters
-The raw spiking data can also be loaded. [Click here to learn more about how to generate the spike raster plots](https://github.com/petersenpeter/Cell-Explorer/wiki/Spike-and-event-data).
+The raw spiking data can also be loaded. [Click here to learn more about how to generate the spike raster plots](/interface/spike-and-event-data/).
 ![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRaster.png)
 ![Rasters in the Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRasterCellExplorer.png)
 

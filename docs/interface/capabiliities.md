@@ -8,6 +8,12 @@ nav_order: 2
 {: .no_toc}
 The Cell Explorer is a graphical user interface that allow you to explore your data on a single cell level. Each of the plots are interactive using your mouse and keyboard.
 
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
 ### Classification
 You can do direct classification in the GUI. The following types of classification can be performed.
 * **Putative cell type**: You can create new cell types directly in the GUI.
@@ -17,13 +23,13 @@ You can do direct classification in the GUI. The following types of classificati
 * **Tags**: A selection of predetermined tags can also be assigned. 
 * **Ground truth cell types**: Ground truth data can be analysed directly in the GUI.
 
-## Interface for deep-superfial classification**
+### Interface for deep-superfial classification
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_deep-superfial.png)
 
 ### Monosynaptic connections
 Monosynaptic connections are determined in the pipeline, and you can visualize the connections in the GUI and redo the manual curation directly from the GUI. You can adjust connections from the Cell Explorer by launching the monosyn interface.
 
-##Interface for adjustment of monosynaptic connections**
+###Interface for adjustment of monosynaptic connections
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_monosyn.png)
 
 ### Reference data
