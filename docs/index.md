@@ -39,6 +39,7 @@ There is a [tutorial script: CellExplorer_Tutorial.m](https://github.com/peterse
 
 ### Learn about components of the Cell Explorer
 The Cell Explorer can be separated into three components.
+{: .fs-6 .fw-300 }
 [Pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [Graphical interface](/Cell-Explorer/interface/interface/){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 } [Database](/Cell-Explorer/database/preparation/){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ### Please use below DOI for citing the Cell Explorer in your research and publications:
