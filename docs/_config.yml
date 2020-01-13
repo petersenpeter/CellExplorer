@@ -1,4 +1,4 @@
-theme: just-the-docs
+#theme: just-the-docs
 remote_theme: pmarsceill/just-the-docs
 # Set the search token separator for hyphenated-word search:
 search_tokenizer_separator: /[\s/]+/
