@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Standard cell metrics
-parent: Pipeline
+parent: Processing pipeline
 nav_order: 3
 ---
 # Standard cell metrics
