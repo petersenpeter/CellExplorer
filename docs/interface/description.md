@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Description
+title: UI elements
 parent: Graphical interface
 nav_order: 1
 ---
