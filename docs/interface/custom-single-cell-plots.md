@@ -26,6 +26,7 @@ function subsetPlots = template(cell_metrics,UI,ii,col)
 
     subsetPlots = [];
     plot(cell_metrics.waveforms.time{ii},cell_metrics.waveforms.filt_zscored(:,ii),'-','Color',col)
+    
 end
 ```
 

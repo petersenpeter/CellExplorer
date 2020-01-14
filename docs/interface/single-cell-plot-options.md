@@ -13,8 +13,6 @@ The single cells can be plotted with various plot options. You can further creat
 1. TOC
 {:toc}
 
-
-
 ### Waveforms
 There are three types of waveform plots: single waveform with noise curves in absolute amplitude, z-scored waveforms across population, and color plot with same z-scored waveforms. Further there are filtered and unfiltered waveform plot options. 
 ![Waveforms](https://buzsakilab.com/wp/wp-content/uploads/2019/12/waveforms.png)

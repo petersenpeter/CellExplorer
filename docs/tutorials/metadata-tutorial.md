@@ -4,9 +4,9 @@ title: Metadata tutorial
 parent: Tutorials
 nav_order: 2
 ---
-# General tutorial
+# Metadata tutorial
 {: .no_toc}
-This tutorial shows you the full processing pipeline, from creating the necessary session metadata from the template, running the processing pipeline, openinh multiple sessions for manual curation in the Cell Explorer, and finally using the cell_metrics for filtering the cells, by two different criteria.
+This tutorial shows you how to generate the metadata struct used by the Cell Explorer. The tutorial is also available as a matlab script
 
 ```m
 %  1. Define the basepath of the dataset to run. The dataset should at minimum consist of a basename.dat, a basename.xml and spike sorted data.
