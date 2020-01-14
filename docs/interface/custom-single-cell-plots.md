@@ -6,9 +6,10 @@ nav_order: 8
 ---
 # Custom single cell plots
 {: .no_toc}
-Custom single cell plots can be created and loaded in the Cell Explorer. Custom plot functions must be located in the subfolder /+customPlots. Each plot must be saved individually, for them to be loaded in the Cell Explorer. There is a template available to get you started:
+Custom single cell plots can be created and loaded in the Cell Explorer. Custom plot functions must be located in the subfolder `/+customPlots`. Each plot must be saved individually, for them to be loaded in the Cell Explorer. There is a template available to get you started:
 
-<pre><code>function subsetPlots = template(cell_metrics,UI,ii,col)
+```m
+function subsetPlots = template(cell_metrics,UI,ii,col)
     % This is a example template for creating your own custom single cell plots
     %
     % INPUTS
@@ -25,6 +26,7 @@ Custom single cell plots can be created and loaded in the Cell Explorer. Custom 
 
     subsetPlots = [];
     plot(cell_metrics.waveforms.time{ii},cell_metrics.waveforms.filt_zscored(:,ii),'-','Color',col)
-end</code></pre>
+end
+```
 
 Your custom plot must accept the same inputs as defined in the template.

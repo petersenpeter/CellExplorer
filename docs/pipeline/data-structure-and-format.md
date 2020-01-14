@@ -15,16 +15,16 @@ nav_order: 2
 ## Data paths
 For each session there are two main paths that the Cell Explorer uses, a basepath and a clusteringpath (relative to basepath). 
 
-The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: sessionName.*, e.g. sessionName.dat and sessionName.lfp (lowpass filtered and downsampled. The lfp file is automatically generated in the pipeline if necessary). The metadata is stored in a sessionName.session.mat file located in the basepath.
+The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: sessionName.\*, e.g. sessionName.dat and sessionName.lfp (lowpass filtered and downsampled. The lfp file is automatically generated in the pipeline if necessary). The metadata is stored in a sessionName.session.mat file located in the basepath.
 The clusteringpath contains the spike data, including cell metrics. The cell metrics are all stored in a cell_metrics struct/file. 
 
 ## Data structures
 
 ### Cell metrics
-The cell metrics are kept in a [cell_metrics struct as described here](/pipeline/standard-cell-metrics/). The cell metrics are stored in: sessionName.cell_metrics.cellinfo.mat in the clustering path.
+The cell metrics are kept in a [cell_metrics struct as described here](/pipeline/standard-cell-metrics/). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat` in the clustering path.
 
 ### Session metadata
-A Matlab struct (session), stored in a .mat file: sessionName.session.mat. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) and visualized with [gui_session.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/gui_session.m). It is structured by data types as defined below:
+A Matlab struct (session), stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) and visualized with [gui_session.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/gui_session.m). It is structured by data types as defined below:
 
 * general
   * name : name of session

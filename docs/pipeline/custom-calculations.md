@@ -6,11 +6,12 @@ nav_order: 4
 ---
 # Custom calculations
 {: .no_toc}
-The Cell Explorer pipeline has a subfolder for calculations to exist outside the main pipeline, such that updates can be applied without affecting your own additions to the pipeline. Please save your scripts to the folder calc_CellMetrics/+customCalculations/ and follow the template already in that folder to integrate your own calculations into the regular pipeline.
+The Cell Explorer pipeline has a subfolder for calculations to exist outside the main pipeline, such that updates can be applied without affecting your own additions to the pipeline. Please save your scripts to the folder `calc_CellMetrics/+customCalculations/` and follow the template already in that folder to integrate your own calculations into the regular pipeline.
 
 Your metrics has to follow the Cell Explorer [cell_metrics standard](/pipeline/your-own-metrics/).
 
-<pre><code>function cell_metrics = template(cell_metrics,session,spikes,spikes_all)
+```m
+function cell_metrics = template(cell_metrics,session,spikes,spikes_all)
     % This is a example template for creating your own calculations
     %
     % INPUTS
@@ -21,6 +22,6 @@ Your metrics has to follow the Cell Explorer [cell_metrics standard](/pipeline/y
     %
     % OUTPUT
     % cell_metrics      updated cell_metrics struct
-    
-   
-end</code></pre>
+
+end
+```

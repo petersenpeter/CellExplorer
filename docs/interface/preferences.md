@@ -6,7 +6,7 @@ nav_order: 4
 ---
 # Preferences
 {: .no_toc}
-Allows the user to customize the Cell Explorer. Preferences are located in CellExplorer_Preferences.m.
+Allows the user to customize the Cell Explorer. Preferences are located in `CellExplorer_Preferences.m`.
 
 ### Display settings
 1. customCellPlotIn1-6 : 

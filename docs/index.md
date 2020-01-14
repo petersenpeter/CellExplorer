@@ -11,7 +11,7 @@ has_children: false
 The Cell Explorer is a graphical user interface (GUI), standardized pipeline and data structure for exploring and classifying spike sorted single units acquired using extracellular electrodes.
 {: .fs-6 .fw-300 }
 
-[Get started now](#installation){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [View code on GitHub](https://github.com/petersenpeter/Cell-Explorer){: .btn .fs-5 .mb-4 .mb-md-0 }
+[Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [View code on GitHub](https://github.com/petersenpeter/Cell-Explorer){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)
 
@@ -31,7 +31,7 @@ The Cell Explorer can be separated into three main components:
 1. TOC
 {:toc}
 
-## Installation
+## Getting started
 [Download](https://github.com/petersenpeter/Cell-Explorer/archive/master.zip) or [clone](x-github-client://openRepo/https://github.com/petersenpeter/Cell-Explorer) the repository and add it to your Matlab setpath. Cloning is strongly recommended. 
 
 The pipeline uses CCGHeart.c. to calculate the CCGs. Compiled versions are included for Windows and Mac. If you are using Linux you have to compile the script. In Matlab, go to Cell-Explorer/calc_CellMetrics/CCG/ and run this line:
@@ -50,9 +50,9 @@ The Cell Explorer GUI and pipeline uses six toolboxes (four required toolboxes a
 
 ### Try the Cell Explorer with example data
 There is an example dataset included in the repository. Load the mat-file ['cell_metrics_batch.mat'](https://github.com/petersenpeter/Cell-Explorer/tree/master/exampleData) into Matlab and type:
-
-`CellExplorer('metrics',cell_metrics).`
-
+```m
+CellExplorer('metrics',cell_metrics)
+```
 ### Tutorial for running the pipeline on your data
 There is a [tutorial script: CellExplorer_Tutorial.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m) included for running the pipeline on your data.
 

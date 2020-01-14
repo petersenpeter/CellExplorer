@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Use public data as reference
+title: Use public data as reference data
 parent: Database
 nav_order: 3
 ---

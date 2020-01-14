@@ -50,10 +50,11 @@ To view the result in the Cell Explorer type:
 ### Running the Cell Explorer in batch mode
 To open multiple sessions together you can run the Cell Explorer in batch mode. Below is an example for running the Cell Explorer on three sessions from the database:
 
-`sessionNames = {'sessionName1','sessionName2','sessionName3'};`
+```m
+sessionNames = {'sessionName1','sessionName2','sessionName3'};
 
-`cell_metrics = LoadCellMetricBatch('sessions',sessionNames);`
+cell_metrics = LoadCellMetricBatch('sessions',sessionNames);
 
-`cell_metrics = CellExplorer('metrics',cell_metrics);`
-
+cell_metrics = CellExplorer('metrics',cell_metrics);
+```
 As you perform classifications in the Cell Explorer, you may save back to the original cell metrics stored with the sessions defined above. You can perform the batch mode from a list of paths as well.

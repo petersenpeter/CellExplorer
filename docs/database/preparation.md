@@ -23,11 +23,11 @@ Once the Cell Explorer has been added to your Matlab Set Path, you should provid
 `edit db_credentials.m`
 
 In the Matlab file, replace the two lines below with your credentials:
+```m
+credentials.username = 'user';
 
-`credentials.username = 'user';`
-
-`credentials.password = 'password';`
-
+credentials.password = 'password';
+```
 ### Define paths to data repositories
 Paths are generated from the [repository](https://buzsakilab.com/wp/repositories/) definition in the database. Here you need to define the root path for each repository in [db_local_repositories.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/db/db_local_repositories.m). To use the NYUshare_Datasets (the NYU share dataset directory), you must define the system path to the repository, e.g.:
 
@@ -41,13 +41,13 @@ This system allows you to define paths that are specific to each computer-system
 
 ### Test db connection
 Now you can test the connection by typing:
+```m
+sessionTest = 'Peter_MS10_170307_154746_concat';
 
-`sessionTest = 'Peter_MS10_170307_154746_concat';`
+sessions = db_load_sessions('sessionName',sessionTest);
 
-`sessions = db_load_sessions('sessionName',sessionTest);`
-
-`session = sessions{1};`
-
+session = sessions{1};
+```
 If succesfull it will create the session struct in your workspace containing metadata for that session. You can learn more about the data structure and format [here](/pipeline/data-structure-and-format/).
 
 There are a couple of database example calls in the Matlab script [db_example.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/db/db_example.m) located in the db folder.

@@ -97,5 +97,3 @@ The spatial metrics are all based on average firing rate map.
 * firingRateStd : Standard deviation of the "firing rate across time" divided by the mean. 
 * firingRateInstability : Mean of the absolute differential "firing rate across time" divided by the mean. abs(diff(firingRateAcrossTime))
 
-### Other metrics
-* Promoter
