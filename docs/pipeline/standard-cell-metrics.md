@@ -12,7 +12,7 @@ nav_order: 3
 1. TOC
 {:toc}
 
-The Cell Explorer used a single Matlab struct for handling all cell metrics called 'cell_metrics'. The 'cell_metrics' struct consists of four types of fields for handling different types of data: double, char cells and structs. Each field should be defined for all cells in the session (1xnCells). Single numeric values are saved to numeric fields with double precision, and character/string fields are saved in char cells. Time series data like waveforms and session parameters are stored in standard struct fields:
+The Cell Explorer used a single Matlab struct for handling all cell metrics called `cell_metrics`. The `cell_metrics` struct consists of four types of fields for handling different types of data: double, char cells and structs. Each field should be defined for all cells in the session (1xnCells). Single numeric values are saved to numeric fields with double precision, and character/string fields are saved in char cells. Time series data like waveforms and session parameters are stored in standard struct fields:
 * general: basename, basepath, clusteringpath, cellCount, ccg, processinginfo. The general fields also contains a list of timestamps for timeseries metrics. 
 * acg: autocorrelograms. Three types: wide [-1000ms:1ms:1000ms], narrow [-50:0.5:50] and log10 [log-intervals spanning 1ms:10s].
 * isi: log10 [log-intervals spanning 1ms:10s].
@@ -90,7 +90,7 @@ The spatial metrics are all based on average firing rate map.
 * spatialCoherence: Spatial Coherence. Defined by the degree of correlation between the firing rate map and a hollow convolution with the same map (reference?)
 * spatialPeakRate: Spatial peak firing rate (Hz). Defined as the peak rate from the firing rate map.
 * placeFieldsCount: Number of place fields. Defined as the number of intervals along the firing rate map that fulfills a number of spatial criteria: minimum rate of 2Hz and above 10% of the maximum firing rate bin and minimum of 4 connecting bins. The cell further has to have a spatial coherence greater than 0.6 (Mizuseki et al ?).
-* placeCell: Place cell (binary, determined from the Mizuseki spatial metrics)
+* placeCell: Place cell (binary, determined from the Mizuseki spatial metrics).
 
 ### Firing rate stability metrics
 * firingRateGiniCoeff : The Gini coefficient of the firing rate across time.

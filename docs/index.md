@@ -36,8 +36,9 @@ The Cell Explorer can be separated into three main components:
 
 The pipeline uses `CCGHeart.c`. to calculate the CCGs. Compiled versions are included for Windows and Mac. If you are using Linux you have to compile the script. In Matlab, go to `Cell-Explorer/calc_CellMetrics/CCG/` and run this line:
 
-`mex -O CCGHeart.c`
-
+```m
+mex -O CCGHeart.c
+```
 The Cell Explorer GUI and pipeline uses six toolboxes (four required toolboxes are included in the repository in the folder toolboxes, and two Matlab toolboxes must be installed manually).
 
 **Toolbox dependencies**
