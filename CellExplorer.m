@@ -1,7 +1,7 @@
 function cell_metrics = CellExplorer(varargin)
 % The Cell Explorer is a Matlab GUI and standardized pipeline for exploring and 
 % classifying spike sorted single units acquired using extracellular electrodes.
-% Check out the wiki for extensive documentation: https://github.com/petersenpeter/Cell-Explorer/wiki
+% Check out the website for extensive documentation: https://petersenpeter.github.io/Cell-Explorer/
 %
 % Below follows a detailed description of how to call the Cell Explorer
 %
@@ -134,7 +134,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.54;
+CellExplorerVersion = 1.55;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback); 
 hManager = uigetmodemanager(UI.fig);
@@ -487,7 +487,7 @@ uimenu(UI.menu.session.topMenu,menuLabel,'Show current animal in the Buzsaki lab
 % Help 
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
 uimenu(UI.menu.help.topMenu,menuLabel,'Show keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','H');
-uimenu(UI.menu.help.topMenu,menuLabel,'Open the wiki on Github',menuSelectedFcn,@openWiki,'Accelerator','V');
+uimenu(UI.menu.help.topMenu,menuLabel,'Open the Cell Explorer website',menuSelectedFcn,@openWebsite,'Accelerator','V');
 
 if UI.settings.plotWaveformMetrics; UI.menu.display.showMetrics.Checked = 'on'; end
 
@@ -615,7 +615,7 @@ UI.tabs.dispTags2 = uitab(UI.panel.tabgroup2,'Title','+Tags');
 % % % % % % % % % % % % % % % % % % % %
 
 UI.popupmenu.log = uicontrol('Style','popupmenu','Units','normalized','Position',[0 0 0.66 1],'String',{''},'HorizontalAlignment','left','FontSize',10,'Parent',UI.panel.centerBottom);
-MsgLog('Welcome to the Cell Explorer. Please check the Help menu to learn keyboard shortcuts or visit the wiki') 
+MsgLog('Welcome to the Cell Explorer. Please check the Help menu to learn keyboard shortcuts or visit the website') 
 
 % % % % % % % % % % % % % % % % % % % %
 % Navigation panel (right side)
@@ -2915,9 +2915,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function openWiki(~,~)
-        % Opens the Cell Explorer wiki in your browser
-        web('https://github.com/petersenpeter/Cell-Explorer/wiki','-new','-browser')
+    function openWebsite(~,~)
+        % Opens the Cell Explorer website in your browser
+        web('https://petersenpeter.github.io/Cell-Explorer/','-new','-browser')
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -8984,7 +8984,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function AboutDialog(~,~)
         opts.Interpreter = 'tex';
         opts.WindowStyle = 'normal';
-        msgbox({['\bfCell Explorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\itgithub.com/petersenpeter/Cell-Explorer\rm'},'About the Cell Explorer','help',opts);
+        msgbox({['\bfCell Explorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\itpetersenpeter.github.io/Cell-Explorer/\rm'},'About the Cell Explorer','help',opts);
     end
     
 % % % % % % % % % % % % % % % % % % % % % % 
@@ -8995,8 +8995,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         msgbox({'\bfNavigation\rm','<    : Next cell', '>    : Previous cell','.     : Next cell with same class',',     : Previous cell with same class','+G   : Go to a specific cell','Page Up      : Next session in batch (only in batch mode)','Page Down  : Previous session in batch (only in batch mode)','Numpad0     : First cell', 'Numpad1-9 : Next cell with that numeric class','Backspace   : Previously selected cell','Numeric + / - / *          : Zoom in / out / reset plots','   ',...
             '\bfCell assigments\rm','1-9 : Cell-types','+B    : Brain region','+L    : Label','Plus   : Add Cell-type','+Z    : Undo assignment', '+R    : Reclassify cell types','   ',...
             '\bfDisplay shortcuts\rm','M    : Show/Hide menubar','N    : Change layout [6, 5 or 4 subplots]','+E     : Highlight excitatory cells (triangles)','+I      : Highlight inhibitory cells (circles)','+F     : Display ACG fit', 'K    : Calculate and display significance matrix for all metrics (KS-test)','+T     : Calculate tSNE space from a selection of metrics','W    : Display waveform metrics','+Y    : Perform ground truth cell type classification','+U    : Load ground truth cell types','Space  : Show action dialog for selected cells','     ',...
-            '\bfOther shortcuts\rm', '+P    : Open preferences for the Cell Explorer','+C    : Open the file directory of the selected cell','+D    : Opens sessions from the Buzsaki lab database','+A    : Load spike data','+J     : Adjust monosynaptic connections','+V    : Visit the Github wiki in your browser','',...
-            '+ sign indicatea that the key must be combined with command/control (Mac/Windows)','','\bfVisit the Cell Explorer''s wiki for further help\rm',''},'Keyboard shortcuts','help',opts);
+            '\bfOther shortcuts\rm', '+P    : Open preferences for the Cell Explorer','+C    : Open the file directory of the selected cell','+D    : Opens sessions from the Buzsaki lab database','+A    : Load spike data','+J     : Adjust monosynaptic connections','+V    : Visit the Cell Explorer website in your browser','',...
+            '+ sign indicatea that the key must be combined with command/control (Mac/Windows)','','\bfVisit the Cell Explorer''s website for further help\rm',''},'Keyboard shortcuts','help',opts);
     end
     
 % % % % % % % % % % % % % % % % % % % % % % 
