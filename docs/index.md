@@ -5,6 +5,7 @@ nav_order: 1
 has_children: false
 ---
 # Framework for single cell classification
+{: .no_toc}
 {: .fs-9 }
 
 The Cell Explorer is a graphical user interface (GUI), standardized pipeline and data structure for exploring and classifying spike sorted single units acquired using extracellular electrodes.
@@ -14,12 +15,30 @@ The Cell Explorer is a graphical user interface (GUI), standardized pipeline and
 
 ![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)
 
+## Introduction
+{: .no_toc}
+The large diversity of cell types of the brain provides the means by which circuits perform complex operations. Understanding such diversity is one of the key challenges of modern neuroscience. These cells have many unique electrophysiological and behavioral features from which parallel cell types classification can be inferred. The Cell Explorer is a framework for analyzing and characterizing single cells recorded using extracellular electrodes. A high dimensional representation is built from electrophysiological and functional features including the spike waveform, spiking statistics, behavioral spiking dynamics, spatial firing maps and various brain rhythms. Moreover, we are incorporating opto-tagget cells in this pipeline (ground-truth cell types). The user friendly graphical interface allows for verification, classification and exploration of those same features. The framework is built entirely in Matlab making it fast and intuitive to implement your own code and incorporate the Cell Explorer in your overall pipeline and analysis scripts.
+
+### The components of the Cell Explorer
+{: .no_toc}
+The Cell Explorer can be separated into three main components:
+
+[1. Processing pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [2. Graphical interface](/Cell-Explorer/interface/interface/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [3. Database](/Cell-Explorer/database/preparation/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
 ## Installation
-Download the repository and add it to your Matlab setpath. The pipeline uses CCGHeart.c. to calculate the CCGs. Compiled versions are included for Windows and Mac. If you are using Linux you have to compile the script. In Matlab, go to Cell-Explorer/calc_CellMetrics/CCG/ and run this line:
+[Download](https://github.com/petersenpeter/Cell-Explorer/archive/master.zip) or [clone](x-github-client://openRepo/https://github.com/petersenpeter/Cell-Explorer) the repository and add it to your Matlab setpath. Cloning is strongly recommended. 
+
+The pipeline uses CCGHeart.c. to calculate the CCGs. Compiled versions are included for Windows and Mac. If you are using Linux you have to compile the script. In Matlab, go to Cell-Explorer/calc_CellMetrics/CCG/ and run this line:
 
 `mex -O CCGHeart.c`
 
-The Cell Explorer GUI and pipeline have uses six toolboxes (four required toolboxes are included in the repository in the folder toolboxes, and two Matlab toolboxes must be installed manually).
+The Cell Explorer GUI and pipeline uses six toolboxes (four required toolboxes are included in the repository in the folder toolboxes, and two Matlab toolboxes must be installed manually).
 
 **Toolbox dependencies**
 * [GUI Layout toolbox](https://www.mathworks.com/matlabcentral/fileexchange/47982-gui-layout-toolbox) (Graphical elements in Cell Explorer)
@@ -37,12 +56,7 @@ There is an example dataset included in the repository. Load the mat-file ['cell
 ### Tutorial for running the pipeline on your data
 There is a [tutorial script: CellExplorer_Tutorial.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m) included for running the pipeline on your data.
 
-## The components of the Cell Explorer
-The Cell Explorer can be separated into three components:
-
-[1. Processing pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [2. Graphical interface](/Cell-Explorer/interface/interface/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [3. Database](/Cell-Explorer/database/preparation/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
-
-## Please use below DOI for citing the Cell Explorer in your research and publications:
+## Citing the Cell Explorer in your research and publications
 Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. http://doi.org/10.5281/zenodo.3604173
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604173.svg)](https://doi.org/10.5281/zenodo.3604173)
