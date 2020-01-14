@@ -34,7 +34,7 @@ The Cell Explorer can be separated into three main components:
 ## Getting started
 [Download](https://github.com/petersenpeter/Cell-Explorer/archive/master.zip) or [clone](x-github-client://openRepo/https://github.com/petersenpeter/Cell-Explorer) the repository and add it to your Matlab setpath. Cloning is strongly recommended. 
 
-The pipeline uses CCGHeart.c. to calculate the CCGs. Compiled versions are included for Windows and Mac. If you are using Linux you have to compile the script. In Matlab, go to Cell-Explorer/calc_CellMetrics/CCG/ and run this line:
+The pipeline uses `CCGHeart.c`. to calculate the CCGs. Compiled versions are included for Windows and Mac. If you are using Linux you have to compile the script. In Matlab, go to `Cell-Explorer/calc_CellMetrics/CCG/` and run this line:
 
 `mex -O CCGHeart.c`
 
@@ -49,12 +49,12 @@ The Cell Explorer GUI and pipeline uses six toolboxes (four required toolboxes a
 * [Signal Processing Toolbox ](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin; install manually)
 
 ### Try the Cell Explorer with example data
-There is an example dataset included in the repository. Load the mat-file ['cell_metrics_batch.mat'](https://github.com/petersenpeter/Cell-Explorer/tree/master/exampleData) into Matlab and type:
+There is an example dataset included in the repository. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/tree/master/exampleData) into Matlab and type:
 ```m
 CellExplorer('metrics',cell_metrics)
 ```
 ### Tutorial for running the pipeline on your data
-There is a [tutorial script: CellExplorer_Tutorial.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m) included for running the pipeline on your data.
+There is a [tutorial script: `CellExplorer_Tutorial.m`](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m) included for running the pipeline on your data.
 
 ## Citing the Cell Explorer in your research and publications
 Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. http://doi.org/10.5281/zenodo.3604173
