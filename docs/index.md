@@ -32,7 +32,7 @@ The Cell Explorer can be separated into three main components:
 {:toc}
 
 ## Getting started
-[Download](https://github.com/petersenpeter/Cell-Explorer/archive/master.zip) or [clone](x-github-client://openRepo/https://github.com/petersenpeter/Cell-Explorer) the repository and add it to your Matlab setpath. Cloning is strongly recommended. 
+[Clone](x-github-client://openRepo/https://github.com/petersenpeter/Cell-Explorer) or [download](https://github.com/petersenpeter/Cell-Explorer/archive/master.zip) the repository and add it to your Matlab setpath (Cloning is strongly recommended). 
 
 The pipeline uses `CCGHeart.c`. to calculate the CCGs. Compiled versions are included for Windows and Mac. If you are using Linux you have to compile the script. In Matlab, go to `Cell-Explorer/calc_CellMetrics/CCG/` and run this line:
 
