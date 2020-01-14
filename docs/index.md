@@ -54,7 +54,7 @@ There is an example dataset included in the repository. Load the mat-file [`cell
 CellExplorer('metrics',cell_metrics)
 ```
 ### Tutorial for running the pipeline on your data
-There is a [tutorial script: `CellExplorer_Tutorial.m`](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m) included for running the pipeline on your data.
+There is a [tutorial script](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m): `CellExplorer_Tutorial.m` included for running the pipeline on your data.
 
 ## Citing the Cell Explorer in your research and publications
 Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. http://doi.org/10.5281/zenodo.3604173
