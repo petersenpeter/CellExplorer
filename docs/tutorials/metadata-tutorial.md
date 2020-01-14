@@ -1,6 +1,6 @@
 ---
 layout: default
-title: General tutorial
+title: Metadata tutorial
 parent: Tutorials
 nav_order: 2
 ---

@@ -1,6 +1,6 @@
 ---
 layout: default
-title: General tutorial
+title: Cell Explorer tutorial
 parent: Tutorials
 nav_order: 3
 ---
