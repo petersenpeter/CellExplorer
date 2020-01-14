@@ -1,8 +1,8 @@
 ---
 layout: default
-title: Tutorial pipeline
-parent: Processing pipeline
-nav_order: 0
+title: General tutorial
+parent: Tutorials
+nav_order: 1
 ---
 # General tutorial
 {: .no_toc}
