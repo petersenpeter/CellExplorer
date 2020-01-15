@@ -23,7 +23,7 @@ The large diversity of cell types of the brain provides the means by which circu
 {: .no_toc}
 The Cell Explorer can be separated into three main components:
 
-[1. Processing pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [2. Graphical interface](/Cell-Explorer/interface/interface/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [3. Database](/Cell-Explorer/database/preparation/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
+[1. Processing pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [2. Graphical interface]({{ "/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [3. Database]({{ "/database/preparation/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -55,7 +55,7 @@ There is an example dataset included in the repository. Load the mat-file [`cell
 CellExplorer('metrics',cell_metrics)
 ```
 ### Tutorial for running the pipeline on your data
-There is a [tutorial script](https://github.com/petersenpeter/Cell-Explorer/blob/master/CellExplorer_Tutorial.m): `CellExplorer_Tutorial.m` included for running the pipeline on your data.
+There is a [tutorial script](https://github.com/petersenpeter/Cell-Explorer/blob/master/tutorials/CellExplorer_Tutorial.m): `CellExplorer_Tutorial.m` included for running the pipeline on your data.
 
 ## Citing the Cell Explorer in your research and publications
 Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. http://doi.org/10.5281/zenodo.3604173
