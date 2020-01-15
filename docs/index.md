@@ -63,7 +63,9 @@ Please use the [GitHub issues system](https://github.com/petersenpeter/Cell-Expl
 
 ## Citing the Cell Explorer in your research and publications
 ```
-Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. http://doi.org/10.5281/zenodo.3604173
+Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user 
+interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. 
+http://doi.org/10.5281/zenodo.3604173
 ```
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604173.svg)](https://doi.org/10.5281/zenodo.3604173)
 
