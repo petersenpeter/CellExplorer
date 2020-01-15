@@ -4,7 +4,7 @@ title: Cell Explorer tutorial
 parent: Tutorials
 nav_order: 3
 ---
-# Cell Explorer tutorial
+# Cell Explorer tutorial (TODO)
 {: .no_toc}
 This tutorial will guide you through the interface and the manual curation process. This tutorial is also available as a Matlab script.
 

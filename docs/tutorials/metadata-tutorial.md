@@ -4,7 +4,7 @@ title: Metadata tutorial
 parent: Tutorials
 nav_order: 2
 ---
-# Metadata tutorial
+# Metadata tutorial (TODO)
 {: .no_toc}
 This tutorial shows you how to generate the metadata struct used by the Cell Explorer. The tutorial is also available as a matlab script
 
