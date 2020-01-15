@@ -23,7 +23,7 @@ The large diversity of cell types of the brain provides the means by which circu
 {: .no_toc}
 The Cell Explorer can be separated into three main components:
 
-[1. Processing pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [2. Graphical interface]({{ "/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [3. Database]({{ "/database/preparation/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
+[1. Processing pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [2. Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [3. Database]({{ "/database/preparation/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -50,7 +50,7 @@ The Cell Explorer GUI and pipeline uses six toolboxes (four required toolboxes a
 * [Signal Processing Toolbox ](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin; install manually)
 
 ### Try the Cell Explorer with example data
-There is an example dataset included in the repository. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/tree/master/exampleData) into Matlab and type:
+There is an example dataset included in the repository. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/blob/master/LoadCellMetricBatch.m) into Matlab and type:
 ```m
 CellExplorer('metrics',cell_metrics)
 ```

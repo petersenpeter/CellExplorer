@@ -6,7 +6,7 @@ nav_order: 3
 ---
 # Single cell plot options
 {: .no_toc}
-The single cells can be plotted with various plot options. You can further create [your own custom plots](/interface/custom-single-cell-plots/), which can be loaded and displayed in the Cell Explorer, by saving plot function in the customPlots folder.
+The single cells can be plotted with various plot options. You can further create [your own custom plots]({{"/interface/custom-single-cell-plots/"|absolute_url}}), which can be loaded and displayed in the Cell Explorer, by saving plot function in the customPlots folder.
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -41,7 +41,7 @@ PSTHs can be shown for either sessionName.*.psth.mat files or for sessionName.*.
 ![PSTH](https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png)
 
 ### Spike rasters
-The raw spiking data can also be loaded. [Click here to learn more about how to generate the spike raster plots](/interface/spike-and-event-data/).
+The raw spiking data can also be loaded. [Click here to learn more about how to generate the spike raster plots]({{"/interface/spike-and-event-data/"|absolute_url}}).
 ![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRaster.png)
 ![Rasters in the Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRasterCellExplorer.png)
 

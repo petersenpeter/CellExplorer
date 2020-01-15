@@ -54,5 +54,5 @@ The Cell Explorer automatically saves your manual curation every 6 classificatio
 
 ### Database capabilities
 
-The Cell Explorer is capable of loading datasets from and writing to the Buzsaki lab database. Please setup your credentials and local paths as [described here](https://github.com/petersenpeter/Cell-Explorer/wiki/Using-the-buzsaki-lab-database).
+The Cell Explorer is capable of loading datasets from and writing to the Buzsaki lab database. Please setup your credentials and local paths as [described here]({{"/database/preparation/"|absolute_url}}).
 
