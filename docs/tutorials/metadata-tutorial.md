@@ -4,10 +4,9 @@ title: Metadata
 parent: Tutorials
 nav_order: 2
 ---
-# Metadata tutorial (TODO)
+# Metadata tutorial (coming)
 {: .no_toc}
-This tutorial shows you how to generate the metadata struct used by the Cell Explorer. The tutorial is also available as a matlab script
-
+This tutorial shows you how to generate the metadata struct used by the Cell Explorer.
 
 1. Define the basepath of the dataset to run. The dataset should at minimum consist of a `basename.dat`, a `basename.xml` and spike sorted data.
 ```m
