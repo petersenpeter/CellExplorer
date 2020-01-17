@@ -1,10 +1,10 @@
 ---
 layout: default
-title: Cell Explorer
+title: Manual curation
 parent: Tutorials
 nav_order: 3
 ---
-# Cell Explorer tutorial (coming)
+# Manual curation tutorial (draft)
 {: .no_toc}
 This tutorial will guide you through the interface and the manual curation process.
 
