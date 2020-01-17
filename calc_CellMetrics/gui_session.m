@@ -14,14 +14,15 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % gui_session is part of the Cell Explorer: https://github.com/petersenpeter/Cell-Explorer
 
 % By Peter Petersen 
-% petersen.peter@gmail.com 
-% Last edited: 26-12-2019 
+% petersen.peter@gmail.com
+% Last edited: 26-12-2019
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
 sortingFormatList = {'Phy', 'KiloSort', 'SpikingCircus', 'Klustakwik', 'KlustaViewer', 'Neurosuite'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
+
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics','importCellTypeClassification'};
 % Parameters in cell metrics pipeline

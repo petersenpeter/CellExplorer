@@ -84,13 +84,13 @@ end
 
 % Use Cortical channelTag to spike groups not belonging to the hippocampus
 spikeGroupsToExclude = [];
-if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Cortical.spikeGroups)
-    spikeGroupsToExclude = [spikeGroupsToExclude,session.channelTags.Cortical.spikeGroups];
+if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Cortical.electrodeGroups)
+    spikeGroupsToExclude = [spikeGroupsToExclude,session.channelTags.Cortical.electrodeGroups];
 end
 
 % Use Bad channelTag for spike groups, that are not working properly (i.e. broken shanks)
-if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'spikeGroups') &&~isempty(session.channelTags.Bad.spikeGroups)
-    spikeGroupsToExclude = [spikeGroupsToExclude,session.channelTags.Bad.spikeGroups];
+if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'spikeGroups') &&~isempty(session.channelTags.Bad.electrodeGroups)
+    spikeGroupsToExclude = [spikeGroupsToExclude,session.channelTags.Bad.electrodeGroups];
 end
 
 % John's swr detector
@@ -246,16 +246,16 @@ end
 
 clear signal
 % Labels channels Cortical if spike group has channelTags
-if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Cortical.spikeGroups)
-    for jj = session.channelTags.Cortical.spikeGroups
+if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Cortical.electrodeGroups)
+    for jj = session.channelTags.Cortical.electrodeGroups
         deepSuperficial_ChClass3(ripple_channels{jj}) = repmat({'Cortical'},length(ripple_channels{jj}),1);
         deepSuperficial_ChClass(ripple_channels{jj}) = repmat({'Cortical'},length(ripple_channels{jj}),1);
     end
 end
 
 % Removes channel-labels if spike group has channelTags Bad
-if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'spikeGroups') && ~isempty(session.channelTags.Bad.spikeGroups)
-    for jj = session.channelTags.Bad.spikeGroups
+if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'electrodeGroups') && ~isempty(session.channelTags.Bad.electrodeGroups)
+    for jj = session.channelTags.Bad.electrodeGroups
         deepSuperficial_ChClass3(ripple_channels{jj}) = repmat({''},length(ripple_channels{jj}),1);
         deepSuperficial_ChClass(ripple_channels{jj}) = repmat({''},length(ripple_channels{jj}),1);
     end

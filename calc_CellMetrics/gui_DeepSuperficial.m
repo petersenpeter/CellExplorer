@@ -5,8 +5,14 @@ function deepSuperficialfromRipple = gui_DeepSuperficial(basepath,basename)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 13-10-2019
+% Last edited: 17-01-2019
 
+if ~exist('basepath','var')
+    basepath = pwd;
+end
+if ~exist('basename','var')
+    [~,basename,~] = fileparts(basepath);
+end
 spikegroup = 1;
 deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
 gain = 0.1;
@@ -72,7 +78,7 @@ saveDeepSuperficial
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*gain,'ok')
             end
             % Plotting the channel used for the ripple detection if it is part of current spike group
-            if deepSuperficialfromRipple.detectorinfo.detectionparms.channel+1==deepSuperficialfromRipple.ripple_channels{jj}(jjj)
+            if isfield(deepSuperficialfromRipple,'detectorinfo') && deepSuperficialfromRipple.detectorinfo.detectionparms.channel+1==deepSuperficialfromRipple.ripple_channels{jj}(jjj)
                 plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'k','linewidth',2)
             end
         end

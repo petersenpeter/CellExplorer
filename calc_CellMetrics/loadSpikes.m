@@ -211,7 +211,7 @@ if forceReload
             elseif exist(filename2) == 2
                 filename = filename2;
             else
-                disp('Phy: No cluster group file found')
+                error('Phy: No cluster group file found')
             end
             delimiter = '\t';
             startRow = 2;

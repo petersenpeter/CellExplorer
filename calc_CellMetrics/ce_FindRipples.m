@@ -78,7 +78,7 @@ addParameter(p,'restrict',[],@isnumeric)
 addParameter(p,'stdev',[],@isnumeric)
 addParameter(p,'noise',[],@ismatrix)
 addParameter(p,'saveMat',false,@islogical);
-addRequired(p,'channel',@isnumeric)
+addParameter(p,'channel',1,@isnumeric)
 
 parse(p,varargin{:})
 passband = p.Results.passband;

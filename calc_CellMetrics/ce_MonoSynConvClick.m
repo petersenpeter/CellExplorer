@@ -52,7 +52,7 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
     
     
     %get experimentally validated probabilities
-    fil = which('bz_MonoSynConvClick');
+    fil = which('ce_MonoSynConvClick');
     if ispc
         sl = regexp(fil,'\');
     else

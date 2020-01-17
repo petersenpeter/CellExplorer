@@ -187,6 +187,8 @@ if showGUI
     disp('* Showing GUI for adjusting parameters and session meta data') 
     parameters = p.Results;
     parameters.excludeIntervals = excludeIntervals;
+    parameters.summaryFigures = summaryFigures;
+    
     session.general.basePath = basepath;
     session.general.clusteringPath = clusteringpath;
     
@@ -202,6 +204,7 @@ if showGUI
     basename = session.general.name;
     basepath = session.general.basePath;
     clusteringpath = session.general.clusteringPath;
+    
     % Parameters
     metrics = parameters.metrics;
     excludeMetrics = parameters.excludeMetrics;
@@ -210,7 +213,14 @@ if showGUI
     excludeManipulationIntervals = parameters.excludeManipulationIntervals;
     keepCellClassification = parameters.keepCellClassification;
     manualAdjustMonoSyn = parameters.manualAdjustMonoSyn;
+    forceReload = parameters.forceReload;
+    summaryFigures = parameters.summaryFigures;
+    submitToDatabase = parameters.submitToDatabase;
+    saveMat = parameters.saveMat;
+    saveBackup = parameters.saveBackup;
+    debugMode = parameters.debugMode;
     cd(basepath)
+    
 end
 
 
@@ -483,24 +493,20 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
-    if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple)
+    if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple.channels)
         disp('* Finding ripples')
-        lfpExtension = exist_LFP(session);
-        if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple') & isnumeric(session.channelTags.Ripple)
+        if isfield(session.channelTags,'RippleNoise')
             disp('  Using RippleNoise reference channel')
             RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
-            ripples = ce_FindRipples(session,'basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
-        elseif isfield(session.channelTags,'Ripple') & isnumeric(session.channelTags.Ripple)
-            ripples = ce_FindRipples(session,'basepath',basepath,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.5);
+            ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',[50 150],'passband',[120 180],'noise',RippleNoiseChannel);
         else
-            warning('Ripple channel not defined')
+            ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',[50 150]);
         end
     end
-    
+
     deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') && (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || forceReload == true)
         disp('* Deep-Superficial by ripple polarity reversal')
-        lfpExtension = exist_LFP(session);
         if ~exist(deepSuperficial_file,'file')
             if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout')
                 session = determineProbeSpacing(session);
@@ -1293,32 +1299,33 @@ if summaryFigures
     if exist(deepSuperficial_file,'file')
         load(deepSuperficial_file)
         fig = figure('Name',['Deep-Superficial assignment'],'pos',[50,50,1000,800]);
+        ripple_scaling = 0.2;
         for jj = 1:session.extracellular.nSpikeGroups
             subplot(2,ceil(session.extracellular.nSpikeGroups/2),jj)
-            plot((deepSuperficialfromRipple.SWR_diff{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_diff{jj},2)-1]*0.04,'-k','linewidth',2), hold on, grid on
-            plot((deepSuperficialfromRipple.SWR_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_amplitude{jj},2)-1]*0.04,'k','linewidth',1)
+            plot((deepSuperficialfromRipple.SWR_diff{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_diff{jj},2)-1]*ripple_scaling,'-k','linewidth',2), hold on, grid on
+            plot((deepSuperficialfromRipple.SWR_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_amplitude{jj},2)-1]*ripple_scaling,'k','linewidth',1)
             % Plotting ripple amplitude along vertical axis
-            plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*0.04,'m','linewidth',1)
+            plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*ripple_scaling,'m','linewidth',1)
             
             for jjj = 1:size(deepSuperficialfromRipple.ripple_average{jj},2)
                 % Plotting depth (µm)
-                text(deepSuperficialfromRipple.ripple_time_axis(end)+5,deepSuperficialfromRipple.ripple_average{jj}(1,jjj)-(jjj-1)*0.04,[num2str(round(deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{jj}(jjj))))])
+                text(deepSuperficialfromRipple.ripple_time_axis(end)+5,deepSuperficialfromRipple.ripple_average{jj}(1,jjj)-(jjj-1)*ripple_scaling,[num2str(round(deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{jj}(jjj))))])
                 % Plotting channel number (0 indexes)
-                text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,-(jjj-1)*0.04,num2str(deepSuperficialfromRipple.ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
-                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*0.04)
+                text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,-(jjj-1)*ripple_scaling,num2str(deepSuperficialfromRipple.ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
+                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*ripple_scaling)
                 % Plotting assigned channel labels
                 if strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Superficial')
-                    plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'or','linewidth',2)
+                    plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*ripple_scaling,'or','linewidth',2)
                 elseif strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Deep')
-                    plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'ob','linewidth',2)
+                    plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*ripple_scaling,'ob','linewidth',2)
                 elseif strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Cortical')
-                    plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'og','linewidth',2)
+                    plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*ripple_scaling,'og','linewidth',2)
                 else
-                    plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*0.04,'ok')
+                    plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*ripple_scaling,'ok')
                 end
                 % Plotting the channel used for the ripple detection if it is part of current spike group
                 %             if ripple_channel_detector==deepSuperficialfromRipple.ripple_channels{jj}(jjj)
-                %                 plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*0.04,'k','linewidth',2)
+                %                 plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*ripple_scaling,'k','linewidth',2)
                 %             end
             end
             

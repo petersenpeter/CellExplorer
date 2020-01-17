@@ -1743,7 +1743,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             ax5 = axis; grid on, set(gca, 'Layer', 'top')
             plot([0 0], [ax5(3) ax5(4)],'color',[.1 .1 .3]); plot([ax5(1) ax5(2)],cell_metrics.firingRate(ii)*[1 1],'--k')
-            xlabel('Time (ms)'), ylabel('Rate (Hz)'),title(['Autocorrelogram - firing rate: ', num2str(cell_metrics.firingRate(ii),3),'Hz'])
+            xlabel('Time (ms)'), ylabel('Rate (Hz)'),title('Autocorrelogram')
         
         elseif strcmp(customPlotSelection,'ISIs (single)') % ISIs
             
@@ -4137,17 +4137,17 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             text(0.2,nLegends,'Cells receiving inhibition')
             nLegends = nLegends - 1;
         end
-        ylim([min(nLegends,-5),1])
+        ylim([min(nLegends,-5)+1,0.5])
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
     function plotCharacteristics(cellID)
         nLegends = 0;
-        fieldname = {'cellID','UID','spikeGroup','cluID','putativeCellType','cv2','peakVoltage','animal','firingRate','troughToPeak'};
+        fieldname = {'cellID','spikeGroup','cluID','putativeCellType','peakVoltage','firingRate','troughToPeak'};
         xlim([-2,2]), hold on, yticks([]), xticks([]), 
         text(0,1.2,'Characteristics','HorizontalAlignment','center','FontWeight', 'Bold')
-        for i = 1:10
+        for i = 1:length(fieldname)
             text(-0.2,nLegends,fieldname{i},'HorizontalAlignment','right')
             if isnumeric(cell_metrics.(fieldname{i}))
                 text(0.2,nLegends,num2str(cell_metrics.(fieldname{i})(cellID)))
@@ -4157,7 +4157,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             nLegends = nLegends - 1;
         end
         plot([0,0],[min(nLegends,-5),0]+0.5,'k')
-        ylim([min(nLegends,-5),1])
+        ylim([min(nLegends,-5)+1,0.5])
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -5731,7 +5731,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         classes2plotSubset = unique(plotClas);
         [plotRows,~]= numSubplots(length(plotOptions)+3);
         cellIDs = 1:length(cell_metrics.cellID);
+        f_waitbar = waitbar(0,['Summary figures'],'name','Generating summary figures','WindowStyle','modal');
         for j = 1:length(cellIDs)
+            if ~ishandle(f_waitbar)
+                    warning(['Summary figures canceled by user']);
+                    break
+            end
+            waitbar(j/length(cellIDs),f_waitbar,['Cell ' num2str(j),'/',num2str(length(cellIDs))])
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
                 general1 = cell_metrics.general.batch{batchIDs1};
@@ -5789,6 +5795,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             % Saving figure
             savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
+        end
+        if ishandle(f_waitbar)
+            close(f_waitbar)
         end
         
         function savefigure(fig,savePathIn,fileNameIn)
@@ -8999,7 +9008,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             '+ sign indicatea that the key must be combined with command/control (Mac/Windows)','','\bfVisit the Cell Explorer''s website for further help\rm',''},'Keyboard shortcuts','help',opts);
     end
     
-% % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % %
 
     function subplot_advanced(x,y,z,w,new,titleIn)
         if isempty('new')
