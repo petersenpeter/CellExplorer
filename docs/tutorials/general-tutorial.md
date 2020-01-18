@@ -34,11 +34,12 @@ cell_metrics = LoadCellMetricBatch('clusteringpaths',clusteringpaths,'basenames'
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 
-6. load a subset of units fullfilling multiple of criterium
+6. load a subset of units fullfilling multiple criteria
+
 ```m
-% Get cells that are assigned as 'Interneuron'
+% Get cells that are assigned as Interneuron
 cell_metrics_idxs1 = loadCellMetrics('cell_metrics',cell_metrics,'putativeCellType',{'Interneuron'});
 
-% Get cells that are has groundTruthClassification as 'Axoaxonic'
+% Get cells that are has groundTruthClassification as Axoaxonic
 cell_metrics_idxs2 = loadCellMetrics('cell_metrics',cell_metrics,'groundTruthClassification',{'Axoaxonic'});
 ```
