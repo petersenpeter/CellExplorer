@@ -35,7 +35,6 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 
 6. load a subset of units fullfilling multiple criteria
-
 ```m
 % Get cells that are assigned as Interneuron
 cell_metrics_idxs1 = loadCellMetrics('cell_metrics',cell_metrics,'putativeCellType',{'Interneuron'});
