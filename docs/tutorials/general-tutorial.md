@@ -38,7 +38,6 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 ```m
 % Get cells that are assigned as Interneuron
 cell_metrics_idxs1 = loadCellMetrics('cell_metrics',cell_metrics,'putativeCellType',{'Interneuron'});
-
 % Get cells that are has groundTruthClassification as Axoaxonic
 cell_metrics_idxs2 = loadCellMetrics('cell_metrics',cell_metrics,'groundTruthClassification',{'Axoaxonic'});
 ```
