@@ -4,7 +4,7 @@ title: Hippocampal metrics
 parent: Tutorials
 nav_order: 7
 ---
-# Tutorial on generating hippocampal and spatial metrics (draft)
+# Tutorial on hippocampal and spatial metrics (draft)
 {: .no_toc}
 This tutorial will guide you through providing the necessary input and understanding the outputs of the hippocampal and spatial calculations and metrics.
 
