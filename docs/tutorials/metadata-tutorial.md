@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Metadata
+title: Generate metadata struct
 parent: Tutorials
 nav_order: 2
 ---

@@ -117,7 +117,7 @@ end
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Analysis tags
+% Deep Superficial parameters
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 session.analysisTags.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
 session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
