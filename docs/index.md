@@ -39,7 +39,7 @@ The pipeline uses `CCGHeart.c`. to calculate the CCGs. Compiled versions are inc
 ```m
 mex -O CCGHeart.c
 ```
-The Cell Explorer GUI and pipeline uses six toolboxes (four required toolboxes are included in the repository in the folder toolboxes, and two Matlab toolboxes must be installed manually).
+The Cell Explorer GUI and pipeline uses a few toolboxes (four required toolboxes are included in the repository in the folder toolboxes, and three Matlab toolboxes must be installed manually).
 
 **Toolbox dependencies**
 * [GUI Layout toolbox](https://www.mathworks.com/matlabcentral/fileexchange/47982-gui-layout-toolbox) (Graphical elements in Cell Explorer)
@@ -47,7 +47,8 @@ The Cell Explorer GUI and pipeline uses six toolboxes (four required toolboxes a
 * [UMAP Matlab toolbox](https://www.mathworks.com/matlabcentral/fileexchange/71902-uniform-manifold-approximation-and-projection-umap) (clustering in Cell Explorer)
 * [IoSR Matlab Toolbox](https://github.com/IoSR-Surrey/MatlabToolbox) (lfp filtering in pipeline)
 * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline; install manually)
-* [Signal Processing Toolbox ](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin; install manually)
+* [Signal Processing Toolbox](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin; install manually)
+* [Image Processing Toolbox ](https://www.mathworks.com/products/image.html) (imrotate; install manually)
 
 ### Try the Cell Explorer with example data
 There is an example dataset included in the repository. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/blob/master/LoadCellMetricBatch.m) into Matlab and type:

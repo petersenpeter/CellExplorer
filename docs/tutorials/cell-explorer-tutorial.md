@@ -6,16 +6,15 @@ nav_order: 3
 ---
 # Manual curation tutorial (draft)
 {: .no_toc}
-This tutorial will guide you through the interface and the manual curation process.
+This tutorial will guide you through the manual curation process.
 
-1. Visualize the cell metrics in the Cell Explorer
+1. Launch the Cell Explorer
 ```m
 cell_metrics = CellExplorer('metrics',cell_metrics); 
 ```
-2. Open several session from paths
-```m
-basenames = {'Rat08-20130708','Rat08-20130709'};
-clusteringpaths = {'/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130709'};
-cell_metrics = LoadCellMetricBatch('clusteringpaths',clusteringpaths,'basenames',basenames);
-cell_metrics = CellExplorer('metrics',cell_metrics);
-```
+2. Navigate the cells using the keyboard, the graphical buttons, or by left-clicking the plots. 
+3. Assign cell type from the `Cell Assignment` side menu usng your mouse or the numeric keys (not the keypad).
+4. You can save your progress from the top menu `File` -> `Save metrics`. This will save your metrics to the original session-wise cell_metrics files, even when working in batch mode. 
+5. A dialog will be shown and you can select to update sessions with tracked changes or  all sessions.
+
+All your classification actions are tracked, shown in the message log, and can be reversed by clicking `ctrl+z`.
