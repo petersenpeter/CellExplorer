@@ -14,7 +14,7 @@ The Cell Explorer contains a select set of ground truth data located at `groundT
 4. From the `Ground truth` menu, you can select how to display the ground truth data: as scatter points, or as a density map (image).
 5. You can select which of the ground truth cell types to display in the Display Settings tab group `GroundTruth`
 
-Once a selection has been made, you can skip step 2 and 3. If you have data that you are interested in sharing please contact us. See the optotagging tutorial for how to add your own data to the ground truth selection. The ground truth cells has a label in `cell_metrics.groundTruthClassification`.  The video below shwos the steps in the Cell Explorer:
+Once a selection has been made, you can skip step 2 and 3. If you have data that you are interested in sharing please contact us. See the optotagging tutorial for how to add your own data to the ground truth selection. The ground truth cells have a label in `cell_metrics.groundTruthClassification`.  The video below shows the steps in the Cell Explorer:
 
 <video width="100%" height="auto">
   <source src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/GroundTruthTutorial.mp4" type="video/mp4">
