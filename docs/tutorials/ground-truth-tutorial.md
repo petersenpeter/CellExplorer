@@ -16,6 +16,6 @@ The Cell Explorer contains a select set of ground truth data located at `groundT
 
 Once a selection has been made, you can skip step 2 and 3. If you have data that you are interested in sharing please contact us. See the optotagging tutorial for how to add your own data to the ground truth selection. The ground truth cells has a label in `cell_metrics.groundTruthClassification`.
 
-<video width=100% height=auto controls="controls">
+<video width="100%" height="auto" controls="controls">
   <source src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/GroundTruthTutorial.mp4" type="video/mp4">
 </video>
