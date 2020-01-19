@@ -15,7 +15,8 @@ The Buzsaki lab is sharing a large set of datasets and a large set of these sess
 4. The data can be shown in two ways: as scatter points, or as a density map (image) from the `Reference data` menu.
 5. You can select which of the reference cell types to display in the Display Settings tab group `Reference`.
 
-Once a selection has been made, you can skip step 2 and 3.
+Once a selection has been made, you can skip step 2 and 3. The video below shwos the steps in the Cell Explorer:
+
 <video width="100%" height="auto" controls="controls">
   <source src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/ReferenceDataTutorial.mp4" type="video/mp4">
 </video>
