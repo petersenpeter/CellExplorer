@@ -16,9 +16,6 @@ dl {
     font-weight: bold;
     color: blue;
   }
-  dt::after {
-    content: ":";
-  }
   dd {
     margin: 0 0 0 110px;
     padding: 0 0 0.5em 0;
