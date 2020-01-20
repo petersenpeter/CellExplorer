@@ -45,7 +45,7 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 * `firingRate`: Firing rate in Hz: Spike count normalized by the interval between the first and the last spike.
 * `cv2`: [Coefficient of variation](https://www.ncbi.nlm.nih.gov/pubmed/8734581) (CV2). 
 * `refractoryPeriodViolation`: Refractory period violation (‰): Fraction of ISIs less than 2ms.
-* `burstIndex_Mizuseki2012` Burst index: Fraction of spikes with a neighboring ISI < 6ms as defined in [Mizuseki et al. Hippocampus 2012](http://www.buzsakilab.com/content/PDFs/Mizuseki2012.pdf).
+* `burstIndex_Mizuseki2012` Burst index: Fraction of spikes with a neighboring ISI < 6ms as defined by [Mizuseki et al. Hippocampus 2012](http://www.buzsakilab.com/content/PDFs/Mizuseki2012.pdf).
 
 ### Waveform based metrics
 * `waveforms`: Spike waveform struct with below fields:
@@ -55,8 +55,8 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 * `maxWaveformCh`: Max channel zero-indexed: The channel where the spike has the largest amplitude.
 * `maxWaveformCh1`: Max channel one-indexed: The channel where the spike has the largest amplitude.
 * `troughToPeak`: Trough-to-peak latency is defined from the trough to the following peak of the waveform. 
-* `WaveformAsymmetry`: the ratio between the two positive peaks (peakB-peakA)/(peakA+peakB)
-* `peakVoltage`: Peak voltage (µV) Defined from the channel with the maximum waveform (highpass filtered). max(waveform)-min(waveform).
+* `ab_ratio`: Waveform asymmetry; the ratio between the two positive peaks `(peakB-peakA)/(peakA+peakB)`.
+* `peakVoltage`: Peak voltage (µV) Defined from the channel with the maximum waveform (highpass filtered). `max(waveform)-min(waveform)`.
 
 ### PCA feature based metrics
 Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscience. 2005.](https://www.ncbi.nlm.nih.gov/pubmed/15680687)
@@ -64,17 +64,17 @@ Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscie
 * `lRatio`: L-ratio.
 
 ### ACG & CCG based metrics
-* `Theta modulation index` is defined by the difference between the theta modulation trough (mean of autocorrelogram bins 50-70 ms) and the theta modulation peak (mean of autocorrelogram bins 100-140ms) over their sum. Autocorrelogram fits with time constants are fitted with a double-exponential equation ( `fit = c*exp(-x/τ_decay)-d*exp(-x/τ_rise)` )
+* `thetaModulationIndex` is defined by the difference between the theta modulation trough (mean of autocorrelogram bins 50-70 ms) and the theta modulation peak (mean of autocorrelogram bins 100-140ms) over their sum. Autocorrelogram fits with time constants are fitted with a double-exponential equation ( `fit = c*exp(-x/τ_decay)-d*exp(-x/τ_rise)` )
 * `synapticEffect`: Synaptic effect
-* ` ` ACG tau rise (ms)
-* ` ` ACG tau decay (ms)
-* ` ` ACG tau bursts (ms)
-* ` ` ACG refractory period (ms)
-* ` ` ACG fit R-square
-* ` ` Burst index (Royer 2012)
-* ` ` Burst index doublets
-* `synapticConnectionsIn`:  Synaptic ingoing connections count
-* `synapticConnectionsOut`: Synaptic outgoing connections count
+* `acg_tau_rise` ACG tau rise (ms)
+* `acg_tau_decay` ACG tau decay (ms)
+* `acg_tau_burst` ACG tau bursts (ms)
+* `acg_refrac` ACG refractory period (ms)
+* `acg_fit_rsquare` ACG fit R-square
+* `burstIndex_Royer2012` Burst index (Royer 2012)
+* `burstIndex_Doublets` Burst index doublets.
+* `synapticConnectionsIn`:  Synaptic ingoing connections count.
+* `synapticConnectionsOut`: Synaptic outgoing connections count.
 
 ### Sharp wave ripple metrics
 * `ripples_modulationIndex`: strength of ripple modulation of the firing rate)
@@ -90,7 +90,7 @@ Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscie
 
 ### Spatial metrics
 The spatial metrics are all based on average firing rate map.
-* `spatialCoverageIndex`: Spatial coverage index. Defined from the inverse cumulative distribution, where bins are sorted by decreasing rate. The 75 percentile point defines the spatial coverage by the fraction of bins below and above the point  [(defined by Royer et al., NN 2012)](http://www.buzsakilab.com/content/PDFs/Royer2012.pdf)
+* `spatialCoverageIndex`: Spatial coverage index. Defined from the inverse cumulative distribution, where bins are sorted by decreasing rate. The 75 percentile point defines the spatial coverage by the fraction of bins below and above the point [(defined by Royer et al., NN 2012)](http://www.buzsakilab.com/content/PDFs/Royer2012.pdf)
 * `spatialGiniCoeff`: Spatial Gini coefficient. Defined as the [Gini coefficient](https://en.wikipedia.org/wiki/Gini_coefficient) of the firing rate map.
 * `spatialCoherence`: Spatial Coherence. Defined by the degree of correlation between the firing rate map and a hollow convolution with the same map (reference?)
 * `spatialPeakRate`: Spatial peak firing rate (Hz). Defined as the peak rate from the firing rate map.
@@ -100,5 +100,5 @@ The spatial metrics are all based on average firing rate map.
 ### Firing rate stability metrics
 * `firingRateGiniCoeff` : The Gini coefficient of the firing rate across time.
 * `firingRateStd` : Standard deviation of the "firing rate across time" divided by the mean. 
-* `firingRateInstability` : Mean of the absolute differential "firing rate across time" divided by the mean. abs(diff(firingRateAcrossTime))
+* `firingRateInstability` : Mean of the absolute differential "firing rate across time" divided by the mean: `abs(diff(firingRateAcrossTime))`.
 
