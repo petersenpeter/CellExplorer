@@ -10,8 +10,6 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
 
 ### Navigation
 <dl>
-  <dt></dt>
-  <dd><b>Navigation</b></dd>
   <dt><</dt>
   <dd>Navigate to next cell</dd>
   <dt>></dt>
