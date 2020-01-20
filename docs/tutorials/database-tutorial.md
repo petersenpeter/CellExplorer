@@ -22,7 +22,7 @@ Paths are generated from the repository definition in the database. Here you nee
 ```m
 repositories.NYUshare_Datasets = '/Volumes/buzsakilab/Buzsakilabspace/Datasets';
 ```
-2. Load session from db
+4. Load session from database
    1. Load single session by filtering by a `sessionName`
 ```m
 sessionName = 'Peter_MS13_171129_105507_concat';
@@ -31,23 +31,24 @@ session = sessions{1};
 ```
    1. Load and set session parameters
 ```m
+sessionName = 'Peter_MS13_171129_105507_concat';
 [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionName);
 ```
-4. Inspect and edit the session metadata if necessary
+5. Inspect and edit the session metadata if necessary
 ```m
 session = gui_session(session);
 ```
-6. Example as to loading spikes via database/metadata
-   1. Loading spikes via the db
+6. Loading spikes via database/metadata
 ```m
 spikes = loadSpikes('session',session);
 ```
-   1. Running the Cell Explorer pipeline via the db
+7. Loading via database/metadata
+   1. Running the processing pipeline and CellExplorer from `sessionName`
 ```m
 cell_metrics = calc_CellMetrics('sessionName',sessionName);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
-   1. Running the Cell Explorer directly via the db
+   1. Running the Cell Explorer directly from `sessionName`
 ```m
 cell_metrics = CellExplorer('sessionName',sessionName);
 ```
