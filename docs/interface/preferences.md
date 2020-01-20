@@ -26,7 +26,7 @@ dl {
 
 # Preferences
 {: .no_toc}
-Allows the user to customize the Cell Explorer. Preferences are located in `CellExplorer_Preferences.m`.
+Allows the user to customize the Cell Explorer. Preferences are located in `CellExplorer_Preferences.m` each a field in `UI.settings.*`.
 
 ### Display settings
 <dl>
@@ -58,9 +58,9 @@ Allows the user to customize the Cell Explorer. Preferences are located in `Cell
 
 ### Autosave settings
 <dl>
-  <dt>UI.settings.autoSaveFrequency</dt>
+  <dt>autoSaveFrequency</dt>
   <dd>6</dd>
-  <dt>UI.settings.autoSaveVarName</dt>
+  <dt>autoSaveVarName</dt>
   <dd>'cell_metrics'</dd>
 </dl>
 
