@@ -1,12 +1,12 @@
 ---
 layout: default
-title: Database
+title: Using the database
 parent: Tutorials
-nav_order: 3
+nav_order: 8
 ---
 # Database tutorial (draft)
 {: .no_toc}
-The public data in the database can be loaded as reference data, and can be accessed without providing credentials, but login credentials are necessary for full functionality of the database. This tutorial will show you the preparatory steps to use the database and various interactions.
+The public data in the database can be loaded as reference data, and can be accessed without providing credentials, but login credentials are necessary for full functionality of the database. This tutorial will show you the preparatory steps to use the database and various interactions. If you are using the public data, you can skip step 1-3.
 
 1. Add your db credentials
 Provide your buzsakilab.com credentials
@@ -37,20 +37,18 @@ session = sessions{1}
 ```m
 session = gui_session(session);
 ```
-5. Save meta data from data to database
-```m
-session = db_upload_session(session);
-```
 6. Example as to loading spikes via database/metadata
+6. 1. Loading spikes via the db
 ```m
 spikes = loadSpikes('session',session);
 ```
-1. Running the Cell Explorer pipeline via the db
+
+6. 1. Running the Cell Explorer pipeline via the db
 ```m
 cell_metrics = calc_CellMetrics('sessionName',sessionName);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
-1. Running the Cell Explorer directly via the db
+6. 1. Running the Cell Explorer directly via the db
 ```m
 cell_metrics = CellExplorer('sessionName',sessionName);
 ```
