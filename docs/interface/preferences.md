@@ -13,7 +13,7 @@ dl {
     clear: left;
     width: 150px;
     text-align: right;
-    color: ;
+    color: black;
   }
   dt::after {
     content: " ";
