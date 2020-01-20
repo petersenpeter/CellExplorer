@@ -8,8 +8,7 @@ nav_order: 8
 {: .no_toc}
 The public data in the database can be loaded as reference data, and can be accessed without providing credentials, but login credentials are necessary for full functionality of the database. This tutorial will show you the preparatory steps to use the database and various interactions. If you are using the public data, you can skip step 1-3.
 
-1. Add your db credentials
-Provide your buzsakilab.com credentials
+1. Provide your [buzsakilab.com](https://buzsakilab.com/wp/database/) credentials
 ```m
 edit db_credentials.m
 ```
@@ -24,16 +23,17 @@ Paths are generated from the repository definition in the database. Here you nee
 repositories.NYUshare_Datasets = '/Volumes/buzsakilab/Buzsakilabspace/Datasets';
 ```
 2. Load session from db
+   1. Load single session by filtering by a `sessionName`
 ```m
 sessionName = 'Peter_MS13_171129_105507_concat';
 sessions = db_load_sessions('sessionName',sessionName);
-session = sessions{1}
+session = sessions{1};
 ```
-3. Load and set session parameters
+   1. Load and set session parameters
 ```m
 [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionName);
 ```
-4. Inspecting and editing local session metadata
+4. Inspect and edit the session metadata if necessary
 ```m
 session = gui_session(session);
 ```
