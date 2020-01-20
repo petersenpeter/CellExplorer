@@ -26,6 +26,6 @@ session = gui_session(session);
 Below is a screenshot of the metadata interface and a short video.
 ![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_session-general.png)
 
-<video width="100%" height="auto" controls="controls">
+<video max-width="100%" height="auto" controls="controls">
   <source src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/MetadataTutorial.mp4" type="video/mp4">
 </video>
