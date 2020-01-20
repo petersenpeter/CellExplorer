@@ -23,3 +23,5 @@ session = sessionTemplate(basepath);
 ```m
 session = gui_session(session);
 ```
+Below is a screenshot of the metadata interface.
+![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_session-general.png)
