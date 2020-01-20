@@ -4,6 +4,26 @@ title: Preferences
 parent: Graphical interface
 nav_order: 4
 ---
+<style>
+dl {
+    padding: 0.1em;
+  }
+  dt {
+    float: left;
+    clear: left;
+    width: 100px;
+    text-align: right;
+    color: ;
+  }
+  dt::after {
+    content: "";
+  }
+  dd {
+    margin: 0 0 0 110px;
+    padding: 0 0 0.5em 0;
+  }
+</style>
+
 # Preferences
 {: .no_toc}
 Allows the user to customize the Cell Explorer. Preferences are located in `CellExplorer_Preferences.m`.
