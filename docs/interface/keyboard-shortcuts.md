@@ -6,7 +6,6 @@ nav_order: 5
 ---
 <style>
 dl {
-    border: 3px double #ccc;
     padding: 0.5em;
   }
   dt {
@@ -15,7 +14,7 @@ dl {
     width: 100px;
     text-align: right;
     font-weight: bold;
-    color: green;
+    color: blue;
   }
   dt::after {
     content: ":";
@@ -25,6 +24,7 @@ dl {
     padding: 0 0 0.5em 0;
   }
 </style>
+
 # Keyboard shortcuts
 {: .no_toc}
 Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing `H` in the cell Explorer will show available shortcuts. A `+` sign indicate that the key must be combined with command/control (Mac/Windows).
