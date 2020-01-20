@@ -16,7 +16,7 @@ dl {
     color: ;
   }
   dt::after {
-    content: "";
+    content: " ";
   }
   dd {
     margin: 0 0 0 110px;

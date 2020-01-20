@@ -11,12 +11,12 @@ dl {
   dt {
     float: left;
     clear: left;
-    width: 100px;
+    width: 150px;
     text-align: right;
     color: ;
   }
   dt::after {
-    content: "";
+    content: " ";
   }
   dd {
     margin: 0 0 0 110px;
