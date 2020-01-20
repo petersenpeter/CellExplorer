@@ -6,7 +6,7 @@ nav_order: 5
 ---
 # Keyboard shortcuts
 {: .no_toc}
-Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing H in the cell Explorer will show available shortcuts. A + (plus) sign indicate that the key must be combined with command/control (Mac/Windows).
+Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing `H` in the cell Explorer will show available shortcuts. A `+` (plus) sign indicate that the key must be combined with command/control (Mac/Windows).
 
 ### Navigation
 <dl>
@@ -31,14 +31,23 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
 </dl>
 
 `<` : Navigate to next cell
+
 `>` : Navigate to previous cell
+
 `.` : Navigate to next cell with same class
+
 `,` : Navigate to previous cell with same class
+
 `+G` : Go to a specific cell
+
 `Page Up` : Next session in batch (only in batch mode)
-Page Down : Previous session in batch (only in batch mode)
-Numpad0   : Navigate to first cell
-Numpad1-9 : Navigate to next cell with that numeric class
+
+`Page Down` : Previous session in batch (only in batch mode)
+
+`Numpad0`   : Navigate to first cell
+
+`Numpad1-9` : Navigate to next cell with that numeric class
+
 
 ### Cell assignment actions
 - 1-9 : Assign Cell-types
