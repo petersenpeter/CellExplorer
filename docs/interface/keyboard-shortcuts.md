@@ -9,12 +9,33 @@ nav_order: 5
 Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing H in the cell Explorer will show available shortcuts. A + (plus) sign indicate that the key must be combined with command/control (Mac/Windows).
 
 ### Navigation
-- < : Navigate to next cell
-- > : Navigate to previous cell
-- . : Navigate to next cell with same class
-- , : Navigate to previous cell with same class
-- +G : Go to a specific cell
-- Page Up : Next session in batch (only in batch mode)
+<dl>
+  <dt>`<`</dt>
+  <dd>Navigate to next cell</dd>
+  <dt>`>`</dt>
+  <dd>Navigate to previous cell</dd>
+  <dt>`.`</dt>
+  <dd>Navigate to next cell with same class</dd>
+  <dt>`,`</dt>
+  <dd>Navigate to previous cell with same class</dd>
+  <dt>`+G`</dt>
+  <dd>Go to a specific cell</dd>
+  <dt>`Page Up`</dt>
+  <dd>Next session in batch (only in batch mode)</dd>
+  <dt>`Page Down`</dt>
+  <dd>Previous session in batch (only in batch mode)</dd>
+  <dt>`Numpad0`</dt>
+  <dd>Navigate to first cell</dd>
+  <dt>`Numpad1-9`</dt>
+  <dd>Navigate to next cell with that numeric class</dd>
+</dl>
+
+- `<` : Navigate to next cell
+- `>` : Navigate to previous cell
+- `.` : Navigate to next cell with same class
+- `,` : Navigate to previous cell with same class
+- `+G` : Go to a specific cell
+- `Page Up` : Next session in batch (only in batch mode)
 - Page Down : Previous session in batch (only in batch mode)
 - Numpad0   : Navigate to first cell
 - Numpad1-9 : Navigate to next cell with that numeric class
