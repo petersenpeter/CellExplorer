@@ -6,10 +6,12 @@ nav_order: 5
 ---
 # Keyboard shortcuts
 {: .no_toc}
-Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing `H` in the cell Explorer will show available shortcuts. A `+` (plus) sign indicate that the key must be combined with command/control (Mac/Windows).
+Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing `H` in the cell Explorer will show available shortcuts. A `+` sign indicate that the key must be combined with command/control (Mac/Windows).
 
 ### Navigation
 <dl>
+  <dt></dt>
+  <dd><b>Navigation</b></dd>
   <dt><</dt>
   <dd>Navigate to next cell</dd>
   <dt>></dt>
@@ -82,7 +84,7 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
   <dd>Open file directory of the selected cell</dd>
   <dt>+D</dt>
   <dd>Open sessions in the Buzsaki lab database</dd>
-  <dt><+A/dt>
+  <dt>+A</dt>
   <dd>Load spike data</dd>
   <dt>+J</dt>
   <dd>Adjust mono-synaptic connections for selected session</dd>
