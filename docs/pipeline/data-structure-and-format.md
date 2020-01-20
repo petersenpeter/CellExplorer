@@ -26,53 +26,53 @@ The cell metrics are kept in a [cell_metrics struct as described here]({{"/pipel
 ### Session metadata
 A Matlab struct (session), stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) and visualized with [gui_session.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/gui_session.m). It is structured by data types as defined below:
 
-* general
-  * name : name of session
-  * investigator : investigator of the session
-  * projects : projects the session belong to
-  * date : date the session was recorded
-  * time : start time of the session
-  * location : location where the session took place
-  * experimenters : who performed the experiments
-  * duration : the total duration of the session (seconds)
-  * sessionType : type of session (chronic/acute)
-  * notes : any notes
-* animal
-  * name : name of animal
-  * sex : sex of animal
-  * species : species of animal
-  * strain : strain of animal
-  * geneticLine : genetic line of animal
-* epochs
-  * name
-  * behavioralParadigm
-  * builtMaze
-  * mazeType
-  * manipulations
-  * startTime
-  * stopTime
-* extracellular
-  * equipment : hardware used to acquire the data
-  * fileFormat : format of the raw data
-  * sr : sample rate
-  * nChannels : number of channels
-  * nSamples : number of samples
-  * nElectrodeGroups : number of electrode groups
-  * electrodeGroups (struct) : struct with definition of electrode groups (1-indexed)
-  * nSpikeGroups : number of spike groups
-  * spikeGroups (struct) : struct with definition of spike groups (1-indexed)
-  * precision : e.g. signed int16.
-  * leastSignificantBit : range/precision in µV. Intan system: 0.195µV/bit
-  * srLFP : sample rate of the LFP file
-  * electrode : struct with implanted electrodes
-    * siliconProbes : name of the probe
-    * company : company producing the probe
-    * nChannels : number of channels
-    * nShanks : number of shanks
-    * AP_coordinates : Anterior-Posterior coordinates(mm)
-    * ML_coordinates : Medial-Lateral coordinates (mm)
-    * depth : implant depth (mm)
-    * brainRegions : implant brain region acronym (Allen institute Atlas)
+* `general`
+  * `name` : name of session
+  * `investigator` : investigator of the session
+  * `projects` : projects the session belong to
+  * `date` : date the session was recorded
+  * `time` : start time of the session
+  * `location` : location where the session took place
+  * `experimenters` : who performed the experiments
+  * `duration` : the total duration of the session (seconds)
+  * `sessionType` : type of session (chronic/acute)
+  * `notes` : any notes
+* `animal`
+  * `name` : name of animal
+  * `sex` : sex of animal
+  * `species` : species of animal
+  * `strain` : strain of animal
+  * `geneticLine` : genetic line of animal
+* `epochs`
+  * `name`
+  * `behavioralParadigm`
+  * `builtMaze`
+  * `mazeType`
+  * `manipulations`
+  * `startTime`
+  * `stopTime`
+* `extracellular`
+  * `equipment` : hardware used to acquire the data
+  * `fileFormat` : format of the raw data
+  * `sr` : sample rate
+  * `nChannels` : number of channels
+  * `nSamples` : number of samples
+  * `nElectrodeGroups` : number of electrode groups
+  * `electrodeGroups` (struct) : struct with definition of electrode groups (1-indexed)
+  * `nSpikeGroups` : number of spike groups
+  * `spikeGroups` (struct) : struct with definition of spike groups (1-indexed)
+  * `precision` : e.g. signed int16.
+  * `leastSignificantBit` : range/precision in µV. Intan system: 0.195µV/bit
+  * `srLFP` : sample rate of the LFP file
+  * `electrode` : struct with implanted electrodes
+    * `siliconProbes` : name of the probe
+    * `company` : company producing the probe
+    * `nChannels` : number of channels
+    * `nShanks` : number of shanks
+    * `AP_coordinates` : Anterior-Posterior coordinates(mm)
+    * `ML_coordinates` : Medial-Lateral coordinates (mm)
+    * `depth` : implant depth (mm)
+    * `brainRegions` : implant brain region acronym (Allen institute Atlas)
 * brainRegions
   * regionAcronym : e.g. CA1 or HIP, Allen institute Atlas
     * brainRegion 
