@@ -43,12 +43,12 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 ### Spike events based metrics
 * `spikeCount`: Spike count of the cell from the entire session.
 * `firingRate`: Firing rate in Hz: Spike count normalized by the interval between the first and the last spike.
-* `cv2`: Coefficient of variation (CV2), https://www.ncbi.nlm.nih.gov/pubmed/8734581. 
+* `cv2`: [Coefficient of variation](https://www.ncbi.nlm.nih.gov/pubmed/8734581) (CV2). 
 * `refractoryPeriodViolation`: Refractory period violation (‰): Fraction of ISIs less than 2ms.
 * `burstIndex_Mizuseki2012` Burst index: Fraction of spikes with a neighboring ISI < 6ms as defined in [Mizuseki et al. Hippocampus 2012](http://www.buzsakilab.com/content/PDFs/Mizuseki2012.pdf).
 
 ### Waveform based metrics
-* `waveforms`: Spike waveform struct with below fields
+* `waveforms`: Spike waveform struct with below fields:
   * `filt`: Average filtered spike waveform from channel with max amplitude. Highpass filtered above 500Hz to standardize waveforms.
   * `raw`: Average raw spike waveform from channel with max amplitude. 
   * `time`: Time vector for average raw spike waveform from channel with max amplitude.
