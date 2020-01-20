@@ -5,16 +5,13 @@ parent: Graphical interface
 nav_order: 5
 ---
 <style>
-dl {
-    padding: 0.5em;
-  }
   dt {
     float: left;
     clear: left;
     width: 100px;
     text-align: right;
     font-weight: bold;
-    color: blue;
+    color: black;
   }
   dd {
     margin: 0 0 0 110px;
