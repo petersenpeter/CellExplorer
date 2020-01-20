@@ -4,6 +4,26 @@ title: Keyboard shortcuts
 parent: Graphical interface
 nav_order: 5
 ---
+dl {
+    border: 3px double #ccc;
+    padding: 0.5em;
+  }
+  dt {
+    float: left;
+    clear: left;
+    width: 100px;
+    text-align: right;
+    font-weight: bold;
+    color: green;
+  }
+  dt::after {
+    content: ":";
+  }
+  dd {
+    margin: 0 0 0 110px;
+    padding: 0 0 0.5em 0;
+  }
+  
 # Keyboard shortcuts
 {: .no_toc}
 Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing `H` in the cell Explorer will show available shortcuts. A `+` sign indicate that the key must be combined with command/control (Mac/Windows).
