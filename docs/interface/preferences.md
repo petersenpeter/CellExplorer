@@ -19,7 +19,7 @@ dl {
     content: " ";
   }
   dd {
-    margin: 0 0 0 110px;
+    margin: 0 0 0 160px;
     padding: 0 0 0.5em 0;
   }
 </style>
