@@ -38,17 +38,16 @@ session = sessions{1}
 session = gui_session(session);
 ```
 6. Example as to loading spikes via database/metadata
-6. 1. Loading spikes via the db
+   1. Loading spikes via the db
 ```m
 spikes = loadSpikes('session',session);
 ```
-
-6. 1. Running the Cell Explorer pipeline via the db
+   1. Running the Cell Explorer pipeline via the db
 ```m
 cell_metrics = calc_CellMetrics('sessionName',sessionName);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
-6. 1. Running the Cell Explorer directly via the db
+   1. Running the Cell Explorer directly via the db
 ```m
 cell_metrics = CellExplorer('sessionName',sessionName);
 ```
