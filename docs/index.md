@@ -61,7 +61,7 @@ We have created a few tutorials, please check them out. There is a [tutorial scr
 
 [View tutorials]({{ "/tutorials/tutorials/"|absolute_url}}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2}
 
-### Reporting bugs, enhancements or questions
+## Reporting bugs, enhancements or questions
 Please use the [GitHub issues system](https://github.com/petersenpeter/Cell-Explorer/issues) for reporting bugs, enhancement requests or geneal questions.
 
 ## Citing the Cell Explorer in your research and publications
