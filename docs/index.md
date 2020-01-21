@@ -59,7 +59,7 @@ CellExplorer('metrics',cell_metrics)
 ## Tutorials for using the framework with your own data 
 We have created a few tutorials, please check them out. There is a [tutorial script](https://github.com/petersenpeter/Cell-Explorer/blob/master/tutorials/CellExplorer_Tutorial.m): `CellExplorer_Tutorial.m` included for running the pipeline on your data.
 
-[Tutorials]({{ "/tutorials/tutorials/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
+[Tutorials]({{ "/tutorials/tutorials/"|absolute_url}}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2}
 
 ## Reporting bugs, enhancements or questions
 Please use the [GitHub issues system](https://github.com/petersenpeter/Cell-Explorer/issues) for reporting bugs, enhancement requests or geneal questions.
