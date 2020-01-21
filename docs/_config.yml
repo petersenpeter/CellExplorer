@@ -26,7 +26,7 @@ search_enabled: true
 heading_anchors: true
 
 # Footer content appears at the bottom of every page's main content
-footer_content: "Copyright &copy; 2019-2020 Peter Petersen."
+footer_content: "Copyright &copy; 2019-2020 Peter Petersen. Theme: Just the Docs."
 
 # Color scheme currently only supports "dark" or nil (default)
 color_scheme: nil
