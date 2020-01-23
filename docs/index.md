@@ -46,6 +46,7 @@ mex -O CCGHeart.c
   * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline; __install manually__)
   * [Signal Processing Toolbox](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin; __install manually__)
   * [Image Processing Toolbox ](https://www.mathworks.com/products/image.html) (imrotate; __install manually__)
+5. That's it! Now you can try exploring the software with below example data. 
 
 ### Try the Cell Explorer with example data
 There is an example dataset included in the repository. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/blob/master/LoadCellMetricBatch.m) into Matlab and type:
