@@ -46,7 +46,7 @@ mex -O CCGHeart.c
   * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline; __install manually__)
   * [Signal Processing Toolbox](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin; __install manually__)
   * [Image Processing Toolbox ](https://www.mathworks.com/products/image.html) (imrotate; __install manually__)
-5. That's it! Now you can try exploring the software with below example data. 
+5. That's it! Now you can explore the software with below example data or try one of the tutorials.
 
 ### Try the Cell Explorer with example data
 There is an example dataset included in the repository. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/blob/master/LoadCellMetricBatch.m) into Matlab and type:
@@ -64,7 +64,7 @@ Please use the [GitHub issues system](https://github.com/petersenpeter/Cell-Expl
 
 ## Citing the Cell Explorer in your research and publications
 
-Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. http://doi.org/10.5281/zenodo.3604173
+Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. [http://doi.org/10.5281/zenodo.3604173](http://doi.org/10.5281/zenodo.3604173)
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604173.svg)](https://doi.org/10.5281/zenodo.3604173)
 
