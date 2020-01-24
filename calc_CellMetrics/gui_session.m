@@ -2365,20 +2365,7 @@ uiwait(UI.fig)
             UI.button.importGroupsFromXML2.BackgroundColor = [1,0.6,0.0];
             UI.button.importGroupsFromXML2.String = 'Importing...';
             drawnow
-            sessionInfo = LoadXml(xml_filepath);
-            if isfield(sessionInfo,'SpkGrps')
-                session.extracellular.nSpikeGroups = length(sessionInfo.SpkGrps); % Number of spike groups
-                session.extracellular.spikeGroups.channels = {sessionInfo.SpkGrps.Channels}; % Spike groups
-            else
-                disp('No spike groups exist in the xml. Anatomical groups used instead')
-                session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
-                session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
-            end
-            session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
-            session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
-            % Changing index from 0 to 1:
-            session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0);
-            session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
+            session = import_xml2session(xml_filepath,session);
             updateChannelGroupsList
             UI.button.importGroupsFromXML1.BackgroundColor = [0.3,0.7,0.3];
             UI.button.importGroupsFromXML1.String = 'Imported';

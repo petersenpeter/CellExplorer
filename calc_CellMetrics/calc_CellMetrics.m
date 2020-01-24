@@ -178,7 +178,19 @@ end
 if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.electrodeGroups,'channels') && isnumeric(session.extracellular.electrodeGroups.channels)
     session.extracellular.electrodeGroups.channels = num2cell(session.extracellular.electrodeGroups.channels,2)';
 end
-
+% Non-standard parameters: probeSpacing and probeLayout
+if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout') && isfield(session.extracellular,'electrodes') && isfield(session.extracellular.electrodes,'siliconProbes')
+    session = determineProbeSpacing(session);
+    if ~isfield(session.analysisTags,'probesVerticalSpacing')
+        session.analysisTags.probesVerticalSpacing = 10;
+        disp('  Using default probesVerticalSpacing = 10')
+    end
+    if ~isfield(session.analysisTags,'probesLayout')
+        session.analysisTags.probesLayout = 'poly2';
+        disp('  Using default probesLayout = poly2')
+    end
+end
+    
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % showGUI
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -192,10 +204,7 @@ if showGUI
     session.general.basePath = basepath;
     session.general.clusteringPath = clusteringpath;
     
-    % Non-standard parameters: probeSpacing and probeLayout
-    if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout') && isfield(session.extracellular,'electrodes') && isfield(session.extracellular.electrodes,'siliconProbes')
-        session = determineProbeSpacing(session);
-    end
+    
     [session,parameters,status] = gui_session(session,parameters);
     if status==0
         disp('  Metrics calculations canceled by user')
@@ -495,6 +504,10 @@ end
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
     if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple.channels)
         disp('* Finding ripples')
+        if ~exist(fullfile(session.general.basePath,[session.general.name, '.lfp']),'file')
+            disp('Creating lfp file')
+            ce_LFPfromDat(session)
+        end
         if isfield(session.channelTags,'RippleNoise')
             disp('  Using RippleNoise reference channel')
             RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *

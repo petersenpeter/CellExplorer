@@ -53,7 +53,7 @@ basename = session.general.name;
 if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
     load(fullfile(basepath,[basename,'.ripples.events.mat']));
 elseif buzcode
-    if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple')
+    if isfield(session.channelTags,'RippleNoise') && isfield(session.channelTags,'Ripple')
         disp('  Using RippleNoise reference channel')
         RippleNoiseChannel = double(LoadBinary(fullfile(basepath,[basename, '.lfp']),'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
         ripples = bz_FindRipples(basename,session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);
@@ -63,7 +63,7 @@ elseif buzcode
         error('Ripple channel not defined!')
     end
 else
-    if isfield(session.channelTags,'RippleNoise') & isfield(session.channelTags,'Ripple')
+    if isfield(session.channelTags,'RippleNoise') && isfield(session.channelTags,'Ripple')
         disp('  Using RippleNoise reference channel')
         RippleNoiseChannel = double(LoadBinary(fullfile(basepath,[basename, '.lfp']),'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
         ripples = ce_FindRipples(session,'channel',session.channelTags.Ripple.channels-1,'basepath',basepath,'durations',[50 150],'passband',[120 180],'EMGThresh',0.9,'noise',RippleNoiseChannel);

@@ -13,7 +13,7 @@ if ~isempty(session.extracellular.electrodes.siliconProbes)
 else
     % if no probe information is given in the session struct, it tries
     % to get the probe type from probe implants in the database
-    probeimplants = struct2cell(db_load_table('probeimplants',session.general.animal));
+    probeimplants = struct2cell(db_load_table('probeimplants',session.animal.name));
     SiliconProbes = cellstr(string(probeimplants{1}.DynamicProbeLayout));
 end
 

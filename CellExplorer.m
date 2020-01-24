@@ -44,8 +44,8 @@ function cell_metrics = CellExplorer(varargin)
 % Last edited: 09-01-2020
 
 % Shortcuts to built-in functions:
-% Data handling: initializeSession, saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData
-% UI: customPlot, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics
+% Data handling: initializeSession, saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData
+% UI: customPlot, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics plotSummaryFigures
 
 p = inputParser;
 
@@ -109,7 +109,7 @@ UI.settings.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassi
 UI.settings.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','spikeGroup'});
 UI.settings.firingRateMap.showHeatmap = false; UI.settings.firingRateMap.showLegend = false; UI.settings.firingRateMap.showHeatmapColorbar = false;
 UI.settings.referenceData = 'None'; UI.settings.groundTruthData = 'None'; UI.BatchMode = false; UI.params.ii_history = 1; UI.params.ClickedCells = [];
-UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoSyn.dispHollowGauss = true;
+UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoSyn.dispHollowGauss = true; UI.settings.binCount = 60;
 tableDataSortBy = 'cellID'; tableDataColumn1 = 'putativeCellType'; tableDataColumn2 = 'brainRegion';  groups_ids = []; plotX_title = ''; plotY_title = ''; plotZ_title = '';
 db_menu_values = []; db_menu_items = []; clusClas = []; plotX = []; plotY = []; plotZ = []; timerVal = tic;
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
@@ -331,7 +331,6 @@ else
                 return
             end
     end
-    
 end
 
 
@@ -402,6 +401,7 @@ UI.menu.display.significanceMetricsMatrix = uimenu(UI.menu.display.topMenu,menuL
 UI.menu.display.redefineMetrics = uimenu(UI.menu.display.topMenu,menuLabel,'Change metrics used for t-SNE plot',menuSelectedFcn,@tSNE_redefineMetrics,'Accelerator','T');
 UI.menu.display.sortingMetric = uimenu(UI.menu.display.topMenu,menuLabel,'Change metric used for sorting image data',menuSelectedFcn,@editSortingMetric);
 UI.menu.display.markerSizeMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Adjust marker size for group plots',menuSelectedFcn,@defineMarkerSize,'Separator','on');
+UI.menu.display.histBins = uimenu(UI.menu.display.topMenu,menuLabel,'Adjust bin count for reference and ground truth plots',menuSelectedFcn,@defineBinSize,'Separator','on');
 
 % ACG 
 UI.menu.ACG.topMenu = uimenu(UI.fig,menuLabel,'ACG');
@@ -435,6 +435,7 @@ UI.menu.referenceData.topMenu = uimenu(UI.fig,menuLabel,'Reference data');
 UI.menu.referenceData.ops(1) = uimenu(UI.menu.referenceData.topMenu,menuLabel,'No reference data',menuSelectedFcn,@showReferenceData,'Checked','on');
 UI.menu.referenceData.ops(2) = uimenu(UI.menu.referenceData.topMenu,menuLabel,'Image data',menuSelectedFcn,@showReferenceData);
 UI.menu.referenceData.ops(3) = uimenu(UI.menu.referenceData.topMenu,menuLabel,'Scatter data',menuSelectedFcn,@showReferenceData);
+UI.menu.referenceData.ops(4) = uimenu(UI.menu.referenceData.topMenu,menuLabel,'Histogram data',menuSelectedFcn,@showReferenceData);
 uimenu(UI.menu.referenceData.topMenu,menuLabel,'Define reference data',menuSelectedFcn,@defineReferenceData,'Separator','on');
 uimenu(UI.menu.referenceData.topMenu,menuLabel,'Compare cell groups to reference data',menuSelectedFcn,@compareToReference,'Separator','on');
 
@@ -443,6 +444,7 @@ UI.menu.groundTruth.topMenu = uimenu(UI.fig,menuLabel,'Ground truth');
 UI.menu.groundTruth.ops(1) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'No ground truth data',menuSelectedFcn,@showGroundTruthData,'Checked','on');
 UI.menu.groundTruth.ops(2) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Image data',menuSelectedFcn,@showGroundTruthData);
 UI.menu.groundTruth.ops(3) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Scatter data',menuSelectedFcn,@showGroundTruthData);
+UI.menu.groundTruth.ops(4) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Histogram data',menuSelectedFcn,@showGroundTruthData);
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Define ground truth data',menuSelectedFcn,@defineGroundTruthData,'Separator','on');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Compare cell groups to ground truth cell types',menuSelectedFcn,@compareToReference,'Separator','on');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Perform ground truth cell type classification in current session(s)',menuSelectedFcn,@performGroundTruthClassification,'Accelerator','Y','Separator','on');
@@ -1037,27 +1039,25 @@ while ii <= size(cell_metrics.troughToPeak,2)
                 legendScatter2 = gscatter(reference_cell_metrics.(plotX_title)(idx), reference_cell_metrics.(plotY_title)(idx), referenceData.clusClas(idx), clr2,'x',8,'off');
                 set(legendScatter2,'HitTest','off')
             elseif strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(reference_cell_metrics,plotX_title) && isfield(reference_cell_metrics,plotY_title)
-                if ~exist('referenceData1','var') || ~strcmp(referenceData1.x_field,plotX_title) || ~strcmp(referenceData1.y_field,plotY_title) || referenceData1.x_log ~= UI.checkbox.logx.Value || referenceData1.y_log ~= UI.checkbox.logy.Value
+                if ~exist('referenceData1','var') || ~isfield(referenceData1,'z') || ~strcmp(referenceData1.x_field,plotX_title) || ~strcmp(referenceData1.y_field,plotY_title) || referenceData1.x_log ~= UI.checkbox.logx.Value || referenceData1.y_log ~= UI.checkbox.logy.Value
                     if UI.checkbox.logx.Value == 1
-                        referenceData1.x = linspace(log10(min(reference_cell_metrics.(plotX_title))),log10(max(reference_cell_metrics.(plotX_title))),60);
+                        referenceData1.x = linspace(log10(nanmin(reference_cell_metrics.(plotX_title))),log10(nanmax(reference_cell_metrics.(plotX_title))),UI.settings.binCount);
                         xdata = log10(reference_cell_metrics.(plotX_title));
                     else
-                        referenceData1.x = linspace(min(reference_cell_metrics.(plotX_title)),max(reference_cell_metrics.(plotX_title)),60);
+                        referenceData1.x = linspace(nanmin(reference_cell_metrics.(plotX_title)),nanmax(reference_cell_metrics.(plotX_title)),UI.settings.binCount);
                         xdata = reference_cell_metrics.(plotX_title);
                     end
                     if UI.checkbox.logy.Value == 1
-                        referenceData1.y = linspace(log10(min(reference_cell_metrics.(plotY_title))),log10(max(reference_cell_metrics.(plotY_title))),60);
+                        referenceData1.y = linspace(log10(nanmin(reference_cell_metrics.(plotY_title))),log10(nanmax(reference_cell_metrics.(plotY_title))),UI.settings.binCount);
                         ydata = log10(reference_cell_metrics.(plotY_title));
                     else
-                        referenceData1.y = linspace(min(reference_cell_metrics.(plotY_title)),max(reference_cell_metrics.(plotY_title)),60);
+                        referenceData1.y = linspace(nanmin(reference_cell_metrics.(plotY_title)),nanmax(reference_cell_metrics.(plotY_title)),UI.settings.binCount);
                         ydata = reference_cell_metrics.(plotY_title);
                     end
-                    
                     referenceData1.x_field = plotX_title;
                     referenceData1.y_field = plotY_title;
                     referenceData1.x_log = UI.checkbox.logx.Value;
                     referenceData1.y_log = UI.checkbox.logy.Value;
-
                     colors = (1-(UI.settings.cellTypeColors)) * 250;
                     referenceData1.z = zeros(length(referenceData1.x)-1,length(referenceData1.y)-1,3,size(colors,1));
                     for i = referenceData.selection
@@ -1082,6 +1082,61 @@ while ii <= size(cell_metrics.troughToPeak,2)
                 if strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics) && UI.checkbox.logy.Value == 1
                     yyaxis right, hold on
                 end
+            elseif strcmp(UI.settings.referenceData, 'Histogram') && ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,plotX_title) && isfield(reference_cell_metrics,plotY_title)
+                % if ~exist('referenceData1','var') || ~strcmp(referenceData1.x_field,plotX_title) || ~strcmp(referenceData1.y_field,plotY_title) || referenceData1.x_log ~= UI.checkbox.logx.Value || referenceData1.y_log ~= UI.checkbox.logy.Value
+                if UI.checkbox.logx.Value == 1
+                    referenceData1.x = linspace(log10(nanmin([cell_metrics.(plotX_title),reference_cell_metrics.(plotX_title)])),log10(nanmax([cell_metrics.(plotX_title),reference_cell_metrics.(plotX_title)])),UI.settings.binCount);
+                    xdata = log10(reference_cell_metrics.(plotX_title));
+                else
+                    referenceData1.x = linspace(nanmin([cell_metrics.(plotX_title),reference_cell_metrics.(plotX_title)]),nanmax([cell_metrics.(plotX_title),reference_cell_metrics.(plotX_title)]),UI.settings.binCount);
+                    xdata = reference_cell_metrics.(plotX_title);
+                end
+                if UI.checkbox.logy.Value == 1
+                    referenceData1.y = linspace(log10(nanmin([cell_metrics.(plotY_title),reference_cell_metrics.(plotY_title)])),log10(nanmax([cell_metrics.(plotY_title),reference_cell_metrics.(plotY_title)])),UI.settings.binCount);
+                    ydata = log10(reference_cell_metrics.(plotY_title));
+                else
+                    referenceData1.y = linspace(nanmin([cell_metrics.(plotY_title),reference_cell_metrics.(plotY_title)]),nanmax([cell_metrics.(plotY_title),reference_cell_metrics.(plotY_title)]),UI.settings.binCount);
+                    ydata = reference_cell_metrics.(plotY_title);
+                end
+                referenceData1.x_field = plotX_title;
+                referenceData1.y_field = plotY_title;
+                referenceData1.x_log = UI.checkbox.logx.Value;
+                referenceData1.y_log = UI.checkbox.logy.Value;
+                % end
+                
+                idx = find(ismember(referenceData.clusClas,referenceData.selection));
+                clusClas_list = unique(referenceData.clusClas(idx));
+                line_histograms_X = []; line_histograms_Y = [];
+                
+                if ~any(isnan(referenceData1.x)) && ~any(isinf(referenceData1.x))
+                    for i = 1:length(clusClas_list)
+                        idx1 = find(referenceData.clusClas(idx)==clusClas_list(i));
+                        line_histograms_X(:,i) = histcounts(xdata(idx(idx1)),referenceData1.x,'norm','pro');
+                    end
+                    yyaxis right, hold on
+                    if UI.checkbox.logx.Value == 0
+                        legendScatter2 = plot(referenceData1.x(1:end-1),line_histograms_X,'-','linewidth',1,'HitTest','off');
+                    else
+                        legendScatter2 = plot(10.^(referenceData1.x(1:end-1)),line_histograms_X,'-','linewidth',1,'HitTest','off');
+                    end
+                    set(legendScatter2, {'color'}, num2cell(clr2,2));
+                end
+                
+                if ~any(isnan(referenceData1.y)) || ~any(isinf(referenceData1.y))
+                    for i = 1:length(clusClas_list)
+                        idx1 = find(referenceData.clusClas(idx)==clusClas_list(i));
+                        line_histograms_Y(:,i) = histcounts(ydata(idx(idx1)),referenceData1.y,'norm','pro');
+                    end
+                    if UI.checkbox.logx.Value == 0
+                        legendScatter22 = plot(referenceData1.x(1)+line_histograms_Y*(referenceData1.x(end)-referenceData1.x(1))/2,[0:1/size(line_histograms_Y,1):0.9999]'*ones(1,length(clusClas_list)),'-','linewidth',1,'HitTest','off');
+                    else
+                        
+                        legendScatter22 = plot(10.^(referenceData1.x(1)+line_histograms_Y*(referenceData1.x(end)-referenceData1.x(1))/2),[0:1/size(line_histograms_Y,1):0.9999]'*ones(1,length(clusClas_list)),'-','linewidth',1,'HitTest','off');
+                    end
+                    set(legendScatter22, {'color'}, num2cell(clr2,2));
+                end
+                ylim([0,1]), set(gca,'YTick',[])
+                yyaxis left, hold on
             end
             
             % Ground truth data
@@ -1090,19 +1145,20 @@ while ii <= size(cell_metrics.troughToPeak,2)
                 legendScatter2 = gscatter(groundTruth_cell_metrics.(plotX_title)(idx), groundTruth_cell_metrics.(plotY_title)(idx), groundTruthData.clusClas(idx), clr3,'x',8,'off');
                 set(legendScatter2,'HitTest','off')
             elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(groundTruth_cell_metrics,plotX_title) && isfield(groundTruth_cell_metrics,plotY_title)
-                if ~exist('groundTruthData1','var') || ~strcmp(groundTruthData1.x_field,plotX_title) || ~strcmp(groundTruthData1.y_field,plotY_title) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
+                if ~exist('groundTruthData1','var') || ~isfield(groundTruthData1,'z') || ~strcmp(groundTruthData1.x_field,plotX_title) || ~strcmp(groundTruthData1.y_field,plotY_title) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
+                    
                     if UI.checkbox.logx.Value == 1
-                        groundTruthData1.x = linspace(log10(min(groundTruth_cell_metrics.(plotX_title))),log10(max(groundTruth_cell_metrics.(plotX_title))),60);
+                        groundTruthData1.x = linspace(log10(nanmin([cell_metrics.(plotX_title),groundTruth_cell_metrics.(plotX_title)])),log10(nanmax([cell_metrics.(plotX_title),groundTruth_cell_metrics.(plotX_title)])),UI.settings.binCount);
                         xdata = log10(groundTruth_cell_metrics.(plotX_title));
                     else
-                        groundTruthData1.x = linspace(min(groundTruth_cell_metrics.(plotX_title)),max(groundTruth_cell_metrics.(plotX_title)),60);
+                        groundTruthData1.x = linspace(nanmin([cell_metrics.(plotX_title),groundTruth_cell_metrics.(plotX_title)]),nanmax([cell_metrics.(plotX_title),groundTruth_cell_metrics.(plotX_title)]),UI.settings.binCount);
                         xdata = groundTruth_cell_metrics.(plotX_title);
                     end
                     if UI.checkbox.logy.Value == 1
-                        groundTruthData1.y = linspace(log10(min(groundTruth_cell_metrics.(plotY_title))),log10(max(groundTruth_cell_metrics.(plotY_title))),60);
+                        groundTruthData1.y = linspace(log10(nanmin([cell_metrics.(plotY_title),groundTruth_cell_metrics.(plotY_title)])),log10(nanmax([cell_metrics.(plotY_title),groundTruth_cell_metrics.(plotY_title)])),UI.settings.binCount);
                         ydata = log10(groundTruth_cell_metrics.(plotY_title));
                     else
-                        groundTruthData1.y = linspace(min(groundTruth_cell_metrics.(plotY_title)),max(groundTruth_cell_metrics.(plotY_title)),60);
+                        groundTruthData1.y = linspace(nanmin([cell_metrics.(plotY_title),groundTruth_cell_metrics.(plotY_title)]),nanmax([cell_metrics.(plotY_title),groundTruth_cell_metrics.(plotY_title)]),UI.settings.binCount);
                         ydata = groundTruth_cell_metrics.(plotY_title);
                     end
                     
@@ -1132,31 +1188,68 @@ while ii <= size(cell_metrics.troughToPeak,2)
                 groundTruthData1.image = imrotate(groundTruthData1.image,90);
                 legendScatter2 = image(groundTruthData1.x,groundTruthData1.y,groundTruthData1.image,'HitTest','off', 'PickableParts', 'none'); axis tight
                 set(legendScatter2,'HitTest','off'),legendScatter2.AlphaData = 0.9;
-                alpha(0.3) 
+                alpha(0.3)
                 if strcmp(UI.settings.referenceData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logy.Value == 1
                     yyaxis right, hold on
                 end
+            elseif strcmp(UI.settings.groundTruthData, 'Histogram') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,plotX_title) && isfield(groundTruth_cell_metrics,plotY_title)
+                %                 if ~exist('groundTruthData1','var') || ~strcmp(groundTruthData1.x_field,plotX_title) || ~strcmp(groundTruthData1.y_field,plotY_title) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
+                if UI.checkbox.logx.Value == 1
+                    groundTruthData1.x = linspace(log10(nanmin([cell_metrics.(plotX_title),groundTruth_cell_metrics.(plotX_title)])),log10(nanmax([cell_metrics.(plotX_title),groundTruth_cell_metrics.(plotX_title)])),UI.settings.binCount);
+                    xdata = log10(groundTruth_cell_metrics.(plotX_title));
+                else
+                    groundTruthData1.x = linspace(nanmin([cell_metrics.(plotX_title),groundTruth_cell_metrics.(plotX_title)]),nanmax([cell_metrics.(plotX_title),groundTruth_cell_metrics.(plotX_title)]),UI.settings.binCount);
+                    xdata = groundTruth_cell_metrics.(plotX_title);
+                end
+                if UI.checkbox.logy.Value == 1
+                    groundTruthData1.y = linspace(log10(nanmin([cell_metrics.(plotY_title),groundTruth_cell_metrics.(plotY_title)])),log10(nanmax([cell_metrics.(plotY_title),groundTruth_cell_metrics.(plotY_title)])),UI.settings.binCount);
+                    ydata = log10(groundTruth_cell_metrics.(plotY_title));
+                else
+                    groundTruthData1.y = linspace(nanmin([cell_metrics.(plotY_title),groundTruth_cell_metrics.(plotY_title)]),nanmax([cell_metrics.(plotY_title),groundTruth_cell_metrics.(plotY_title)]),UI.settings.binCount);
+                    ydata = groundTruth_cell_metrics.(plotY_title);
+                end
+                groundTruthData1.x_field = plotX_title;
+                groundTruthData1.y_field = plotY_title;
+                groundTruthData1.x_log = UI.checkbox.logx.Value;
+                groundTruthData1.y_log = UI.checkbox.logy.Value;
+                %                 end
+                idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
+                clusClas_list = unique(groundTruthData.clusClas(idx));
+                line_histograms_X = []; line_histograms_Y = [];
+                
+                if ~any(isnan(groundTruthData1.y)) || ~any(isinf(groundTruthData1.y))
+                    for i = 1:length(clusClas_list)
+                        idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(i));
+                        line_histograms_X(:,i) = histcounts(xdata(idx(idx1)),groundTruthData1.x,'norm','pro');
+                    end
+                    yyaxis right, hold on
+                    if UI.checkbox.logx.Value == 0
+                        legendScatter2 = plot(groundTruthData1.x(1:end-1),line_histograms_X,'-','linewidth',1,'HitTest','off');
+                    else
+                        legendScatter2 = plot(10.^(groundTruthData1.x(1:end-1)),line_histograms_X,'-','linewidth',1,'HitTest','off');
+                    end
+                    set(legendScatter2, {'color'}, num2cell(clr3,2));
+                end
+                
+                if ~any(isnan(groundTruthData1.y)) || ~any(isinf(groundTruthData1.y))
+                    for i = 1:length(clusClas_list)
+                        idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(i));
+                        line_histograms_Y(:,i) = histcounts(ydata(idx(idx1)),groundTruthData1.y,'norm','pro');
+                    end
+                    yyaxis right, hold on
+                    if UI.checkbox.logx.Value == 0
+                        legendScatter22 = plot(groundTruthData1.x(1)+line_histograms_Y*(groundTruthData1.x(end)-groundTruthData1.x(1))/2,[0:1/size(line_histograms_Y,1):0.9999]'*ones(1,length(clusClas_list)),'-','linewidth',1,'HitTest','off');
+                    else
+                        legendScatter22 = plot(10.^(groundTruthData1.x(1)+line_histograms_Y*(groundTruthData1.x(end)-groundTruthData1.x(1))/2),[0:1/size(line_histograms_Y,1):0.9999]'*ones(1,length(clusClas_list)),'-','linewidth',1,'HitTest','off');
+                    end
+                    set(legendScatter22, {'color'}, num2cell(clr3,2));
+                end
+                ylim([0,1]), set(gca,'YTick',[])
+                yyaxis left, hold on
             end
             
             plotGroupData(plotX,plotY,plotConnections(1))
-%             % Scatter plot
-%             plotGroupScatter(plotX, plotY)
-% 
-%             % Plot putative connections
-%             if plotConnections(1) == 1
-%                 plotPutativeConnections(plotX,plotY)
-%             end
-%             % Plots X marker for selected cell
-%             plotMarker(plotX(ii),plotY(ii))
-%         
-%             % Plots tagget ground-truth cell types
-%             plotGroudhTruthCells(plotX, plotY)
-%             
-%             if UI.settings.stickySelection
-%                 plot(plotX(UI.params.ClickedCells),plotY(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-%             end
             axis tight
-            
         else
             % 3D plot
             view([az,el]); axis tight
@@ -1339,7 +1432,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
             yyaxis right
         end
         
-        xlim(fig2_axislimit_x), ylim(fig2_axislimit_y), ylabel('Burst Index (Royer 2012)'); xlabel('Trough-to-Peak (µs)')
+        ylabel('Burst Index (Royer 2012)'); xlabel('Trough-to-Peak (µs)')
         set(subfig_ax(2), 'YScale', 'log');
         
         % Reference data
@@ -1349,13 +1442,27 @@ while ii <= size(cell_metrics.troughToPeak,2)
             set(legendScatter2,'HitTest','off')
         elseif strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics)
             yyaxis left
-            referenceData.image = 1-sum(referenceData.z(:,:,:,referenceData.selection),4);
-            referenceData.image = flip(referenceData.image,2);
-            referenceData.image = imrotate(referenceData.image,90);
+            referenceData.image = imrotate(flip(1-sum(referenceData.z(:,:,:,referenceData.selection),4),2),90);
             legendScatter2 = image(referenceData.x,referenceData.y,referenceData.image,'HitTest','off', 'PickableParts', 'none'); axis tight
             set(gca,'YTick',[])
             set(legendScatter2,'HitTest','off')
             yyaxis right, hold on
+        elseif strcmp(UI.settings.referenceData, 'Histogram') && ~isempty(reference_cell_metrics)
+            idx = find(ismember(referenceData.clusClas,referenceData.selection));
+            clusClas_list = unique(referenceData.clusClas(idx));
+            line_histograms_X = []; line_histograms_Y = [];
+            for i = 1:length(clusClas_list)
+                idx1 = find(referenceData.clusClas(idx)==clusClas_list(i));
+                line_histograms_X(:,i) = histcounts(reference_cell_metrics.troughToPeak(idx(idx1)) * 1000,referenceData.x,'norm','pro');
+                line_histograms_Y(:,i) = histcounts(reference_cell_metrics.burstIndex_Royer2012(idx(idx1)),referenceData.y,'norm','pro');
+            end
+            yyaxis right, hold on
+            legendScatter2 = plot(referenceData.x(1:end-1),line_histograms_X,'-','linewidth',1,'HitTest','off');
+            set(legendScatter2, {'color'}, num2cell(clr2,2));
+            legendScatter22 = plot(fig2_axislimit_x(1)+1000*line_histograms_Y,[0:1/size(line_histograms_Y,1):0.9999]'*ones(1,length(clusClas_list)),'-','linewidth',1,'HitTest','off');
+            set(legendScatter22, {'color'}, num2cell(clr2,2));
+             ylim([0,1]), set(gca,'YTick',[])
+            yyaxis left, hold on
         end
         
         % Ground truth data
@@ -1372,28 +1479,26 @@ while ii <= size(cell_metrics.troughToPeak,2)
             set(gca,'YTick',[])
             set(legendScatter3,'HitTest','off')
             yyaxis right, hold on
+        elseif strcmp(UI.settings.groundTruthData, 'Histogram') && ~isempty(groundTruth_cell_metrics)
+            idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
+            clusClas_list = unique(groundTruthData.clusClas(idx));
+            line_histograms_X = []; line_histograms_Y = [];
+            for i = 1:length(clusClas_list)
+                idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(i));
+                line_histograms_X(:,i) = histcounts(groundTruth_cell_metrics.troughToPeak(idx(idx1)) * 1000,groundTruthData.x,'norm','pro');
+                line_histograms_Y(:,i) = histcounts(groundTruth_cell_metrics.burstIndex_Royer2012(idx(idx1)),groundTruthData.y,'norm','pro');
+            end
+            yyaxis right, hold on
+            legendScatter2 = plot(groundTruthData.x(1:end-1),line_histograms_X,'-','linewidth',1,'HitTest','off');
+            set(legendScatter2, {'color'}, num2cell(clr3,2));
+            legendScatter22 = plot(fig2_axislimit_x(1)+1000*line_histograms_Y,[0:1/size(line_histograms_Y,1):0.9999]'*ones(1,length(clusClas_list)),'-','linewidth',1,'HitTest','off');
+            set(legendScatter22, {'color'}, num2cell(clr3,2));
+             ylim([0,1]), set(gca,'YTick',[])
+            yyaxis left, hold on
         end
         
         plotGroupData(cell_metrics.troughToPeak * 1000,cell_metrics.burstIndex_Royer2012,plotConnections(2))
-        
-%         % Scatter plot
-%         plotGroupScatter(cell_metrics.troughToPeak * 1000, cell_metrics.burstIndex_Royer2012)
-% 
-%         % Plot putative connections
-%         if plotConnections(2) == 1
-%             plotPutativeConnections(cell_metrics.troughToPeak * 1000,cell_metrics.burstIndex_Royer2012)
-%         end
-%         % Plot X marker for selected cell
-%         plotMarker(cell_metrics.troughToPeak(ii) * 1000,cell_metrics.burstIndex_Royer2012(ii))
-%         
-%         % Plot tagget ground-truth cell types
-%         plotGroudhTruthCells(cell_metrics.troughToPeak * 1000, cell_metrics.burstIndex_Royer2012)
-% 
-%         % Sticky selection
-%         if UI.settings.stickySelection
-%         	plot(cell_metrics.troughToPeak(UI.params.ClickedCells)*1000,cell_metrics.burstIndex_Royer2012(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-%         end        
-        
+        xlim(fig2_axislimit_x), ylim(fig2_axislimit_y)
     end
     
     %% % % % % % % % % % % % % % % % % % % % % %
@@ -1410,25 +1515,6 @@ while ii <= size(cell_metrics.troughToPeak,2)
         xlim(fig3_axislimit_x), ylim(fig3_axislimit_y), xlabel('t-SNE'), ylabel('t-SNE')
         
         plotGroupData(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)',plotConnections(3))
-        
-        
-%         plotGroupScatter(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2))
-        
-        
-%         % Plots putative connections
-%         if plotConnections(3) == 1
-%             plotPutativeConnections(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)')
-%         end
-%         
-%         % Plots X marker for selected cell
-%         plotMarker(tSNE_metrics.plot(ii,1),tSNE_metrics.plot(ii,2))
-%         
-%         % Plots tagget ground-truth cell types
-%         plotGroudhTruthCells(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2))
-%         
-%         if UI.settings.stickySelection
-%             plot(tSNE_metrics.plot(UI.params.ClickedCells,1),tSNE_metrics.plot(UI.params.ClickedCells,2),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9)
-%         end
     end
     
     %% % % % % % % % % % % % % % % % % % % % % %
@@ -3008,6 +3094,17 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             uiresume(UI.fig);
         end
     end
+    
+    % % % % % % % % % % % % % % % % % % % % % %
+
+    function defineBinSize(~,~)
+        answer = inputdlg({'Enter bin count [recommended: 20-60]'},'Input',[1 40],{num2str(UI.settings.binCount)});
+        if ~isempty(answer)
+            UI.settings.binCount = str2double(answer);
+            uiresume(UI.fig);
+        end
+    end
+    
 % % % % % % % % % % % % % % % % % % % % % %
 
         function editSortingMetric(~,~)
@@ -3038,6 +3135,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.menu.referenceData.ops(1).Checked = 'on';
             UI.menu.referenceData.ops(2).Checked = 'off';
             UI.menu.referenceData.ops(3).Checked = 'off';
+            UI.menu.referenceData.ops(4).Checked = 'off';
             if isfield(UI.tabs,'referenceData')
                 delete(UI.tabs.referenceData);
                 UI.tabs = rmfield(UI.tabs,'referenceData');
@@ -3047,11 +3145,19 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.menu.referenceData.ops(1).Checked = 'off';
             UI.menu.referenceData.ops(2).Checked = 'on';
             UI.menu.referenceData.ops(3).Checked = 'off';
+            UI.menu.referenceData.ops(4).Checked = 'off';
         elseif src.Position == 3
             UI.settings.referenceData = 'Points';
             UI.menu.referenceData.ops(1).Checked = 'off';
             UI.menu.referenceData.ops(2).Checked = 'off';
             UI.menu.referenceData.ops(3).Checked = 'on';
+            UI.menu.referenceData.ops(4).Checked = 'off';
+        elseif src.Position == 4
+            UI.settings.referenceData = 'Histogram';
+            UI.menu.referenceData.ops(1).Checked = 'off';
+            UI.menu.referenceData.ops(2).Checked = 'off';
+            UI.menu.referenceData.ops(3).Checked = 'off';
+            UI.menu.referenceData.ops(4).Checked = 'on';
         end
         if ~isfield(UI.tabs,'referenceData') && src.Position > 1
             if isempty(reference_cell_metrics)
@@ -3096,6 +3202,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.menu.groundTruth.ops(1).Checked = 'on';
             UI.menu.groundTruth.ops(2).Checked = 'off';
             UI.menu.groundTruth.ops(3).Checked = 'off';
+            UI.menu.groundTruth.ops(4).Checked = 'off';
             if isfield(UI.tabs,'groundTruthData')
                 delete(UI.tabs.groundTruthData);
                 UI.tabs = rmfield(UI.tabs,'groundTruthData');
@@ -3105,11 +3212,19 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.menu.groundTruth.ops(1).Checked = 'off';
             UI.menu.groundTruth.ops(2).Checked = 'on';
             UI.menu.groundTruth.ops(3).Checked = 'off';
+            UI.menu.groundTruth.ops(4).Checked = 'off';
         elseif src.Position == 3
             UI.settings.groundTruthData = 'Points';
             UI.menu.groundTruth.ops(1).Checked = 'off';
             UI.menu.groundTruth.ops(2).Checked = 'off';
             UI.menu.groundTruth.ops(3).Checked = 'on';
+            UI.menu.groundTruth.ops(4).Checked = 'off';
+        elseif src.Position == 4
+            UI.settings.groundTruthData = 'Histogram';
+            UI.menu.groundTruth.ops(1).Checked = 'off';
+            UI.menu.groundTruth.ops(2).Checked = 'off';
+            UI.menu.groundTruth.ops(3).Checked = 'off';
+            UI.menu.groundTruth.ops(4).Checked = 'on';
         end
         
         if ~isfield(UI.tabs,'groundTruthData') && src.Position > 1
@@ -4137,7 +4252,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             text(0.2,nLegends,'Cells receiving inhibition')
             nLegends = nLegends - 1;
         end
-        ylim([min(nLegends,-5)+1,0.5])
+        ylim([min(nLegends,-5)+0.5,0.5])
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -5995,7 +6110,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function togglePlotHistograms
         if UI.popupmenu.metricsPlot.Value == 1
             customPlotHistograms = 0;
-            delete(h_scatter)
+            if exist('h_scatter','var') & any(ishandle(h_scatter))
+                delete(h_scatter)
+            end
         elseif UI.popupmenu.metricsPlot.Value == 2
             customPlotHistograms = 1;
         elseif UI.popupmenu.metricsPlot.Value == 3
@@ -7364,10 +7481,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas)'))';
         end
         
-        
         % Creating surface of reference points
-        referenceData.x = fig2_axislimit_x(1):10:fig2_axislimit_x(2);
-        referenceData.y = 10.^(log10(fig2_axislimit_y(1)):0.05:log10(fig2_axislimit_y(2)));
+        referenceData.x = linspace(fig2_axislimit_x(1),fig2_axislimit_x(2),UI.settings.binCount);
+        referenceData.y = 10.^(linspace(log10(fig2_axislimit_y(1)),log10(fig2_axislimit_y(2)),UI.settings.binCount));
         
         if strcmp(inputType,'reference')
             colors = (1-(UI.settings.cellTypeColors)) * 250;
@@ -7383,8 +7499,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             referenceData.z(:,:,:,i) = bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
             
         end
-        referenceData.x = referenceData.x(1:end-1)+5;
-        referenceData.y = 10.^(log10(fig2_axislimit_y(1))+0.025:0.05:log10(fig2_axislimit_y(2))-0.05);
+        referenceData.x = referenceData.x(1:end-1)+diff(referenceData.x([1,2]));
+        referenceData.y = 10.^(linspace(log10(fig2_axislimit_y(1)),log10(fig2_axislimit_y(2)),UI.settings.binCount) + (log10(fig2_axislimit_y(2))-log10(fig2_axislimit_y(1)))/UI.settings.binCount/2);
+        referenceData.y = referenceData.y(1:end-1);
         
         referenceData.selection = temp;
         
