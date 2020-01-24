@@ -46,6 +46,7 @@ The raw spiking data can also be loaded. [Click here to learn more about how to 
 ![Rasters in the Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRasterCellExplorer.png)
 
 ## Group action plots
-![Group action dialog](https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png)
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%">
+
 ### Multiplot options and figure exporting
-![Multiplot options](https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png)
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%">
