@@ -150,12 +150,12 @@ end
 if ~exist('session','var')
     [~,basename,~] = fileparts(basepath);
     if exist([basename,'.session.mat'],'file')
-        disp(['* Loading ',basename,'.session.mat from current folder']);
+        dispLog(['Loading ',basename,'.session.mat from current folder']);
         load([basename,'.session.mat']);
         session.general.basePath = basepath;
         clusteringpath = session.general.clusteringPath;
     elseif exist(['session.mat'],'file')
-        disp(['* Loading session.mat from current folder']);
+        dispLog(['Loading session.mat from current folder']);
         load(['session.mat']);
         session.general.basePath = basepath;
         clusteringpath = session.general.clusteringPath;
@@ -196,7 +196,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if showGUI
-    disp('* Showing GUI for adjusting parameters and session meta data') 
+    dispLog('Showing GUI for adjusting parameters and session meta data') 
     parameters = p.Results;
     parameters.excludeIntervals = excludeIntervals;
     parameters.summaryFigures = summaryFigures;
@@ -237,7 +237,7 @@ end
 % Getting spikes  -  excluding user specified- and manipulation intervals
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-disp('* Getting spikes')
+dispLog('Getting spikes')
 sr = session.extracellular.sr;
 spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting{1}.format,'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
 if ~isfield(spikes,'processinginfo') || ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.5
@@ -245,7 +245,7 @@ if ~isfield(spikes,'processinginfo') || ~isfield(spikes.processinginfo.params,'W
 end
 
 if excludeManipulationIntervals
-    disp('* Excluding manipulation events')
+    dispLog('Excluding manipulation events')
     manipulationFiles = dir(fullfile(basepath,[basename,'.*.manipulation.mat']));
     manipulationFiles = {manipulationFiles.name};
     manipulationFiles(find(contains(manipulationFiles,ignoreManipulationTypes)))=[];
@@ -307,7 +307,7 @@ clusteringpath_full = fullfile(basepath,clusteringpath);
 saveAsFullfile = fullfile(clusteringpath_full,[basename,'.',saveAs,'.cellinfo.mat']);
 
 if exist(saveAsFullfile,'file')
-    disp(['* Loading existing metrics: ' saveAsFullfile])
+    dispLog(['Loading existing metrics: ' saveAsFullfile])
     load(saveAsFullfile)
 elseif exist(fullfile(clusteringpath_full,[saveAs,'.mat']),'file')
     % For compatibility
@@ -320,7 +320,7 @@ end
 if saveBackup && ~isempty(cell_metrics)
     % Creating backup of existing user adjustable metrics
     backupDirectory = 'revisions_cell_metrics';
-    disp(['* Creating backup of existing user adjustable metrics ''',backupDirectory,'''']);
+    dispLog(['Creating backup of existing user adjustable metrics ''',backupDirectory,'''']);
     
     if ~(exist(fullfile(clusteringpath_full,backupDirectory),'dir'))
         mkdir(fullfile(clusteringpath_full,backupDirectory));
@@ -368,7 +368,7 @@ cell_metrics.general.cellCount = length(spikes.total);
 
 if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
     if ~all(isfield(cell_metrics,{'waveforms23','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || forceReload == true
-        disp('* Getting waveforms');
+        dispLog('Getting waveforms');
         if all(isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % 'filtWaveform_std'
             waveforms.filtWaveform = spikes.filtWaveform;
             if isfield(spikes,'timeWaveform')
@@ -396,7 +396,7 @@ if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMet
             waveforms.peakVoltage = spikes.peakVoltage;
             waveforms.UID = spikes.UID;
         end
-        disp('* Calculating waveform classifications: Trough-to-peak latency');
+        dispLog('Calculating waveform classifications: Trough-to-peak latency');
         waveform_metrics = calc_waveform_metrics(waveforms,sr);
         field2remove = {'derivative_TroughtoPeak','filtWaveform','filtWaveform_std','rawWaveform','rawWaveform_std','timeWaveform'};
         test = isfield(cell_metrics,field2remove);
@@ -429,7 +429,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 % if any(contains(metrics,{'PCA_features','all'})) && ~any(contains(excludeMetrics,{'PCA_features'}))
-%     disp('* PCA classifications: Isolation distance, L-Ratio')
+%     dispLog('PCA classifications: Isolation distance, L-Ratio')
 %     if ~all(isfield(cell_metrics,{'isolationDistance','lRatio'})) || forceReload == true
 %         if strcmp(session.spikeSorting{1}.method,{'Neurosuite','KlustaKwik'})
 %             PCA_features = LoadNeurosuiteFeatures(spikes,session,excludeIntervals); %(clusteringpath,basename,sr,excludeIntervals);
@@ -457,10 +457,10 @@ if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,
         cell_metrics = rmfield(cell_metrics,field2remove(test));
     end
     if ~all(isfield(cell_metrics,{'acg','thetaModulationIndex','burstIndex_Royer2012','burstIndex_Doublets','acg_tau_decay','acg_tau_rise'})) || forceReload == true
-        disp('* CCG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets')
+        dispLog('CCG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets')
         acg_metrics = calc_ACG_metrics(spikes);
         
-        disp('* Fitting triple exponential to ACG')
+        dispLog('Fitting triple exponential to ACG')
         fit_params = fit_ACG(acg_metrics.acg2);
         
         cell_metrics.acg.wide = acg_metrics.acg; % Wide: 1000ms wide CCG with 1ms bins
@@ -483,13 +483,13 @@ if any(contains(metrics,{'acg_metrics','all'})) && ~any(contains(excludeMetrics,
         cell_metrics.general.ccg_time = acg_metrics.ccg_time;
     end
     if ~all(isfield(cell_metrics,{'acg'}))  || ~isfield(cell_metrics.acg,{'log10'})  || forceReload == true
-        disp('* Calculating log10 ACGs')
+        dispLog('Calculating log10 ACGs')
          acg = calc_logACGs(spikes);
          cell_metrics.acg.log10 = acg.log10;
          cell_metrics.general.acgs.log10 = acg.log10_bins;
     end
     if ~all(isfield(cell_metrics,{'isi'}))  || ~isfield(cell_metrics.isi,{'log10'})  || forceReload == true
-        disp('* Calculating log10 ISIs')
+        dispLog('Calculating log10 ISIs')
         isi = calc_logISIs(spikes);
         cell_metrics.isi.log10 = isi.log10;
         cell_metrics.general.isis.log10 = isi.log10_bins;
@@ -503,7 +503,7 @@ end
 
 if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetrics,{'deepSuperficial'}))
     if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple.channels)
-        disp('* Finding ripples')
+        dispLog('Finding ripples')
         if ~exist(fullfile(session.general.basePath,[session.general.name, '.lfp']),'file')
             disp('Creating lfp file')
             ce_LFPfromDat(session)
@@ -519,7 +519,7 @@ if any(contains(metrics,{'deepSuperficial','all'})) && ~any(contains(excludeMetr
 
     deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') && (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || forceReload == true)
-        disp('* Deep-Superficial by ripple polarity reversal')
+        dispLog('Deep-Superficial by ripple polarity reversal')
         if ~exist(deepSuperficial_file,'file')
             if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout')
                 session = determineProbeSpacing(session);
@@ -544,7 +544,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'monoSynaptic_connections','all'})) && ~any(contains(excludeMetrics,{'monoSynaptic_connections'}))
-    disp('* MonoSynaptic connections')
+    dispLog('MonoSynaptic connections')
     if ~exist(fullfile(clusteringpath_full,[basename,'.mono_res.cellinfo.mat']),'file')
         spikeIDs = double([spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)]);
         mono_res = ce_MonoSynConvClick(spikeIDs,spikes.spindices(:,1));
@@ -599,7 +599,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'theta_metrics','all'})) && ~any(contains(excludeMetrics,{'theta_metrics'})) && exist(fullfile(basepath,[basename,'.animal.behavior.mat']),'file') && isfield(session.channelTags,'Theta') %&& (~isfield(cell_metrics,'thetaEntrainment') || forceReload == true)
-    disp('* Theta metrics');
+    dispLog('Theta metrics');
     InstantaneousTheta = calcInstantaneousTheta2(session);
     load(fullfile(basepath,[basename,'.animal.behavior.mat']));
     theta_bins =[-1:0.05:1]*pi;
@@ -652,7 +652,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'spatial_metrics','all'})) && ~any(contains(excludeMetrics,{'spatial_metrics'}))
-    disp('* Spatial metrics');
+    dispLog('Spatial metrics');
     field2remove = {'firingRateMap_CoolingStates','firingRateMap_LeftRight','firingRateMaps','firingRateMap','firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate','FiringRateMap','FiringRateMap_CoolingStates','FiringRateMap_StimStates','FiringRateMap_LeftRight'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
@@ -767,7 +767,7 @@ if any(contains(metrics,{'event_metrics','all'})) && ~any(contains(excludeMetric
     field2remove = {'rippleCorrelogram','events','rippleModulationIndex','ripplePeakDelay'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
-    disp('* Event metrics')
+    dispLog('Event metrics')
     eventFiles = dir(fullfile(basepath,[basename,'.*.events.mat']));
     eventFiles = {eventFiles.name};
     eventFiles(find(contains(eventFiles,ignoreEventTypes)))=[];
@@ -824,7 +824,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'manipulation_metrics','all'})) && ~any(contains(excludeMetrics,{'manipulation_metrics'}))
-    disp('* Manipulation metrics');
+    dispLog('Manipulation metrics');
     field2remove = {'manipulations'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
@@ -867,7 +867,7 @@ end
 
 if any(contains(metrics,{'state_metrics','all'})) && ~any(contains(excludeMetrics,{'state_metrics'}))
     
-    disp('* State metrics');
+    dispLog('State metrics');
     statesFiles = dir(fullfile(basepath,[basename,'.*.states.mat']));
     statesFiles = {statesFiles.name};
     statesFiles(find(contains(statesFiles,ignoreStateTypes)))=[];
@@ -902,7 +902,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'psth_metrics','all'})) && ~any(contains(excludeMetrics,{'psth_metrics'}))
-    disp('* Perturbation metrics');
+    dispLog('Perturbation metrics');
     
     % PSTH response
     psth_filelist = dir(fullfile(basepath,[basename,'.*.psth.mat']));
@@ -944,7 +944,7 @@ customCalculationsOptions = cellfun(@(X) X(1:end-2),customCalculationsOptions.m,
 customCalculationsOptions(strcmpi(customCalculationsOptions,'template')) = [];
 for i = 1:length(customCalculationsOptions)
     if any(contains(metrics,{customCalculationsOptions{i},'all'})) && ~any(contains(excludeMetrics,{customCalculationsOptions{i}}))
-        disp(['* Custom calculation:' customCalculationsOptions{i}]);
+        dispLog(['Custom calculation:' customCalculationsOptions{i}]);
         cell_metrics = customCalculations.(customCalculationsOptions{i})(cell_metrics,session,spikes,spikes_all);
     end
 end
@@ -956,7 +956,7 @@ end
 if any(contains(metrics,{'importCellTypeClassification','all'})) && ~any(contains(excludeMetrics,{'importCellTypeClassification'}))
     filename = fullfile(basepath,[basename,'.CellClass.cellinfo.mat']);
     if exist(filename,'file')
-        disp('* Importing classified cell types from buzcode');
+        dispLog('Importing classified cell types from buzcode');
         temp = load(filename);
         disp(['  Loaded ' filename ' succesfully']);
         if isfield(temp.CellClass,'label') & size(temp.CellClass.label,2) == cell_metrics.general.cellCount
@@ -1098,7 +1098,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if ~isfield(cell_metrics,'putativeCellType') || ~keepCellClassification
-    disp('* Performing Cell-type classification');
+    dispLog('Performing Cell-type classification');
     % All cells assigned as Pyramidal cells at first
     cell_metrics.putativeCellType = repmat({'Pyramidal Cell'},1,cell_metrics.general.cellCount);
     
@@ -1129,9 +1129,9 @@ if ~isfield(cell_metrics,'brainRegion')
     cell_metrics.brainRegion = repmat({'Unknown'},1,cell_metrics.general.cellCount);
 end
 
-disp('* Cleaning metrics')
+dispLog('Cleaning metrics')
 if any(contains(removeMetrics,{'deepSuperficial'}))
-    disp('* Removing deepSuperficial metrics')
+    dispLog('Removing deepSuperficial metrics')
     field2remove = {'deepSuperficial','deepSuperficialDistance'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
@@ -1144,7 +1144,7 @@ if ~isfield(cell_metrics,'deepSuperficial')
     cell_metrics.deepSuperficialDistance = nan(1,cell_metrics.general.cellCount);
 end
 
-disp('* Cleaning legacy fields')
+dispLog('Cleaning legacy fields')
 field2remove = {'firingRateMap_StimStates','rawWaveform_zscored','firingRateMap_StimStates','acg2_zscored','acg_zscored','filtWaveform_zscored','firingRateAcrossTime','thetaPhaseResponse','firingRateMap_CoolingStates','firingRateMap_LeftRight','firingRateMap','firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate','FiringRateMap','FiringRateMap_CoolingStates','FiringRateMap_StimStates','FiringRateMap_LeftRight'};
 % cleaning cell_metrics
 test2 = isfield(cell_metrics,field2remove);
@@ -1171,7 +1171,7 @@ else
 end
 
 if submitToDatabase && enableDatabase
-    disp('* Submitting cells to database');
+    dispLog('Submitting cells to database');
     if debugMode
         cell_metrics = db_submit_cells(cell_metrics,session);
 %         session = db_update_session(session,'forceReload',true);
@@ -1223,9 +1223,9 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if saveMat
-    disp(['* Saving cells to: ',saveAsFullfile]);
+    dispLog(['Saving cells to: ',saveAsFullfile]);
     save(saveAsFullfile,'cell_metrics','-v7.3','-nocompression')
-    disp(['* Saving session struct: ' fullfile(basepath,[basename,'.session.mat'])]);
+    dispLog(['Saving session struct: ' fullfile(basepath,[basename,'.session.mat'])]);
     save(fullfile(basepath,[basename,'.session.mat']),'session','-v7.3','-nocompression')
 end
 
@@ -1356,4 +1356,13 @@ if summaryFigures
     end
 end
 
-disp(['* Cell metrics calculations complete. Elapsed time is ', num2str(toc(timerCalcMetrics),5),' seconds.'])
+dispLog(['Cell metrics calculations complete. Elapsed time is ', num2str(toc(timerCalcMetrics),5),' seconds.'])
+
+
+end
+
+function dispLog(message)
+timestamp = datestr(now, 'dd-mm-yyyy HH:MM:SS');
+message2 = sprintf('[%s] %s', timestamp, message);
+disp(message2);
+end
