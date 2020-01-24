@@ -68,6 +68,8 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 * `ab_ratio`: Waveform asymmetry; the ratio between the two positive peaks `(peakB-peakA)/(peakA+peakB)`.
 * `peakVoltage`: Peak voltage (µV) Defined from the channel with the maximum waveform (highpass filtered). `max(waveform)-min(waveform)`.
 
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="70%">
+
 ## Cell-type classification
 * `putativeCellType`: Cell are classified into three putative cell types: Narrow Interneurons, Wide Interneurons and Pyramidal Cells. 
 
