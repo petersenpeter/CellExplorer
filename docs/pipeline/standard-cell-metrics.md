@@ -79,8 +79,9 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 <img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%">
 
 ## Cell-type classification
-* `putativeCellType`: Cell are classified into three putative cell types: Narrow Interneurons, Wide Interneurons and Pyramidal Cells.
-  * Interneurons label is assigned by 3 separate criteria:
+* `putativeCellType`: Putative cell types.
+  * In the processing pipeline, cells are classified into three putative cell types: Narrow Interneurons, Wide Interneurons and Pyramidal Cells.
+  * Interneurons are selected by 3 separate criteria:
   1. acg_tau_decay > 30ms
   2. acg_tau_rise > 3ms
   3. troughToPeak <= 0.425ms
