@@ -2,7 +2,7 @@
 layout: default
 title: Custom calculations
 parent: Processing pipeline
-nav_order: 4
+nav_order: 5
 ---
 # Custom calculations
 {: .no_toc}

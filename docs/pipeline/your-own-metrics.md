@@ -2,7 +2,7 @@
 layout: default
 title: Adding your own metrics
 parent: Processing pipeline
-nav_order: 5
+nav_order: 6
 ---
 # Adding your own metrics
 {: .no_toc}
