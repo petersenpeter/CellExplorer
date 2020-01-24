@@ -80,14 +80,14 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 
 ## Cell-type classification
 * `putativeCellType`: Cell are classified into three putative cell types: Narrow Interneurons, Wide Interneurons and Pyramidal Cells.
-Interneurons label is assigned by 3 separate criteria:
+  * Interneurons label is assigned by 3 separate criteria:
   1. acg_tau_decay > 30ms
   2. acg_tau_rise > 3ms
   3. troughToPeak <= 0.425ms
-Next interneurons are separated into two classes
+  * Next interneurons are separated into two classes
   1. Narrow interneuron assigned if troughToPeak <= 0.425ms
   2. Wide interneuron assigned if troughToPeak > 0.425ms
-Remaining cells are assigned as Pyramidal cells. 
+  * Remaining cells are assigned as Pyramidal cells. 
 
 ## Monosynaptic connections
 * `putativeConnections`: putative connections determined from cross correlograms. Contains two fields: `excitatory` and `inhibitory`, each contains connections pairs. 
