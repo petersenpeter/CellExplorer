@@ -51,7 +51,8 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 ```m
 fit = 'max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)'
  ```
-$$mean = \frac{\displaystyle\sum_{i=1}^{n} x_{i}}{n}$$
+$$ACG_{fit} = \max_{c\exp(\frac{-(x-f)}{a})-d\exp(\frac{-(x-f)}{b})+h\exp(\frac{-(x-f)}{g})+e,0}$$
+
 * `synapticEffect`: Synaptic effect
 * `acg_tau_rise` ACG tau rise (ms)
 * `acg_tau_decay` ACG tau decay (ms)
