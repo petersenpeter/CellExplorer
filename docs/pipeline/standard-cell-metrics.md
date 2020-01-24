@@ -6,13 +6,15 @@ nav_order: 3
 ---
 # Standard cell metrics
 {: .no_toc}
+The Cell Explorer used a single Matlab struct for handling all cell metrics called `cell_metrics`. The `cell_metrics` struct consists of four types of fields for handling different types of data: double, char cells and structs. Fields must be defined for all cells in the session (1xnCells). Single numeric values are saved to numeric fields with double precision, and character/string fields are saved in char cells. Time series data like waveforms and session parameters are stored in standard struct fields.
+
 ## Table of contents
 {: .no_toc .text-delta }
 
 1. TOC
 {:toc}
 
-The Cell Explorer used a single Matlab struct for handling all cell metrics called `cell_metrics`. The `cell_metrics` struct consists of four types of fields for handling different types of data: double, char cells and structs. Fields must be defined for all cells in the session (1xnCells). Single numeric values are saved to numeric fields with double precision, and character/string fields are saved in char cells. Time series data like waveforms and session parameters are stored in standard struct fields.
+
 
 ## General metrics
 * `general`
@@ -43,9 +45,13 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
   * `wide` [-1000ms:1ms:1000ms]
   * `narrow` [-50:0.5:50] 
   * `log10` [log-intervals spanning 1ms:10s].
-* `isi`: Interspike Intervals
+* `isi`: interspike intervals
   * `log10` [log-intervals spanning 1ms:10s].
-* `thetaModulationIndex` is defined by the difference between the theta modulation trough (mean of autocorrelogram bins 50-70 ms) and the theta modulation peak (mean of autocorrelogram bins 100-140ms) over their sum. Autocorrelogram fits with time constants are fitted with a double-exponential equation ( `fit = c*exp(-x/τ_decay)-d*exp(-x/τ_rise)` )
+* `thetaModulationIndex` is defined by the difference between the theta modulation trough (mean of autocorrelogram bins 50-70 ms) and the theta modulation peak (mean of autocorrelogram bins 100-140ms) over their sum. Autocorrelogram fits with time constants are fitted with a double-exponential equation:
+```m
+fit = 'max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)'
+ ```
+$$mean = \frac{\displaystyle\sum_{i=1}^{n} x_{i}}{n}$$
 * `synapticEffect`: Synaptic effect
 * `acg_tau_rise` ACG tau rise (ms)
 * `acg_tau_decay` ACG tau decay (ms)
@@ -68,7 +74,7 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 * `ab_ratio`: Waveform asymmetry; the ratio between the two positive peaks `(peakB-peakA)/(peakA+peakB)`.
 * `peakVoltage`: Peak voltage (µV) Defined from the channel with the maximum waveform (highpass filtered). `max(waveform)-min(waveform)`.
 
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="70%">
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%">
 
 ## Cell-type classification
 * `putativeCellType`: Cell are classified into three putative cell types: Narrow Interneurons, Wide Interneurons and Pyramidal Cells. 
