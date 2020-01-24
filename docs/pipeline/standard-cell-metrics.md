@@ -51,14 +51,7 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 $$ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)$$
 ```m
 ACG_fit = 'max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)'
-a = tau_decay
-b = tau_rise
-c = decay exp amplitude
-d = rise exp amplitude
-e = asymptote
-f = refrac
-g = tau_burst
-h = exp amplitude
+a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asymptote, f = refrac, g = tau_burst, h = burst_amplitude
  ```
 
 * `synapticEffect`: Synaptic effect
@@ -86,7 +79,15 @@ h = exp amplitude
 <img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%">
 
 ## Cell-type classification
-* `putativeCellType`: Cell are classified into three putative cell types: Narrow Interneurons, Wide Interneurons and Pyramidal Cells. 
+* `putativeCellType`: Cell are classified into three putative cell types: Narrow Interneurons, Wide Interneurons and Pyramidal Cells.
+Interneurons label is assigned by 3 separate criteria:
+  1. acg_tau_decay > 30ms
+  2. acg_tau_rise > 3ms
+  3. troughToPeak <= 0.425ms
+Next interneurons are separated into two classes
+  1. Narrow interneuron assigned if troughToPeak <= 0.425ms
+  2. Wide interneuron assigned if troughToPeak > 0.425ms
+Remaining cells are assigned as Pyramidal cells. 
 
 ## Monosynaptic connections
 * `putativeConnections`: putative connections determined from cross correlograms. Contains two fields: `excitatory` and `inhibitory`, each contains connections pairs. 
