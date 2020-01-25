@@ -38,14 +38,15 @@ The Cell Explorer can be separated into three main components:
 ```m
 mex -O CCGHeart.c
 ```
-4. The Cell Explorer GUI and pipeline uses a few toolboxes (four required toolboxes are included in the repository in the folder toolboxes, and three Matlab toolboxes must be installed manually).
+4. The Cell Explorer GUI and pipeline uses a few toolboxes. Four required toolboxes are included in the repository in the folder toolboxes, and three Matlab toolboxes must be installed manually).
+  * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline; __install manually__)
+  * [Signal Processing Toolbox](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin; __install manually__)
+  * [Image Processing Toolbox ](https://www.mathworks.com/products/image.html) (imrotate; __install manually__)
   * [GUI Layout toolbox](https://www.mathworks.com/matlabcentral/fileexchange/47982-gui-layout-toolbox) (Graphical elements in Cell Explorer)
   * [JSONLab Matlab toolbox](https://www.mathworks.com/matlabcentral/fileexchange/33381-jsonlab-a-toolbox-to-encode-decode-json-files) (required for db tools)
   * [UMAP Matlab toolbox](https://www.mathworks.com/matlabcentral/fileexchange/71902-uniform-manifold-approximation-and-projection-umap) (clustering in Cell Explorer)
   * [IoSR Matlab Toolbox](https://github.com/IoSR-Surrey/MatlabToolbox) (lfp filtering in pipeline)
-  * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline; __install manually__)
-  * [Signal Processing Toolbox](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin; __install manually__)
-  * [Image Processing Toolbox ](https://www.mathworks.com/products/image.html) (imrotate; __install manually__)
+
 5. That's it! Now you can explore the software with below example data or try one of the tutorials.
 
 ### Try the Cell Explorer with example data
