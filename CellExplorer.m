@@ -638,7 +638,7 @@ UI.listbox.cellClassification = uicontrol('Parent',UI.panel.cellAssignment,'Styl
 
 % Poly-select and adding new cell type
 uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 36 73 15],'Units','normalized','String','O Polygon','Callback',@(src,evnt)polygonSelection,'KeyPressFcn', {@keyPress});
-uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[75 36 73 15],'Units','normalized','String','+ Cell-type','Callback',@(src,evnt)AddNewCellType,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[75 36 72 15],'Units','normalized','String','+ Cell-type','Callback',@(src,evnt)AddNewCellType,'KeyPressFcn', {@keyPress});
 
 % Brain region
 UI.pushbutton.brainRegion = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 20 145 15],'Units','normalized','String',['Region: ', cell_metrics.brainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyPressFcn', {@keyPress});
@@ -670,41 +670,41 @@ UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','list
 
 % Number of plots
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Layout','HorizontalAlignment','left');
-UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[50 61 100 10],'Units','normalized','String',{'GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6'},'max',1,'min',1,'Value',3,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress});
+UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[50 61 96 10],'Units','normalized','String',{'GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6'},'max',1,'min',1,'Value',3,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress});
 
 % #1 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 50 20 10],'Units','normalized','String','1.','HorizontalAlignment','left');
-UI.popupmenu.customplot1 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 51 125 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleWaveformsPlot,'KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot1 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 51 123 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleWaveformsPlot,'KeyPressFcn', {@keyPress});
 if any(strcmp(UI.settings.customCellPlotIn1,UI.popupmenu.customplot1.String)); UI.popupmenu.customplot1.Value = find(strcmp(UI.settings.customCellPlotIn1,UI.popupmenu.customplot1.String)); else; UI.popupmenu.customplot1.Value = 1; end
 customCellPlot1 = plotOptions{UI.popupmenu.customplot1.Value};
 
 % #2 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 40 25 10],'Units','normalized','String','2.','HorizontalAlignment','left');
-UI.popupmenu.customplot2 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 41 125 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleACGplot,'KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot2 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 41 123 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',1,'Callback',@(src,evnt)toggleACGplot,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn2,UI.popupmenu.customplot2.String)); UI.popupmenu.customplot2.Value = find(strcmp(UI.settings.customCellPlotIn2,UI.popupmenu.customplot2.String)); else; UI.popupmenu.customplot2.Value = 4; end
 customCellPlot2 = plotOptions{UI.popupmenu.customplot2.Value};
 
 % #3 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 30 35 10],'Units','normalized','String','3.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.popupmenu.customplot3 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 31 125 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc,'KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot3 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 31 123 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn3,UI.popupmenu.customplot3.String)); UI.popupmenu.customplot3.Value = find(strcmp(UI.settings.customCellPlotIn3,UI.popupmenu.customplot3.String)); else; UI.popupmenu.customplot3.Value = 1; end
 customCellPlot3 = plotOptions{UI.popupmenu.customplot3.Value};
 
 % #4 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 20 35 10],'Units','normalized','String','4.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.popupmenu.customplot4 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 21 125 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc2,'KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot4 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 21 123 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc2,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn4,UI.popupmenu.customplot4.String)); UI.popupmenu.customplot4.Value = find(strcmp(UI.settings.customCellPlotIn4,UI.popupmenu.customplot4.String)); else; UI.popupmenu.customplot4.Value = 1; end
 customCellPlot4 = plotOptions{UI.popupmenu.customplot4.Value};
 
 % #5 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 10 35 10],'Units','normalized','String','5.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.popupmenu.customplot5 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 11 125 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc3,'KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot5 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 11 123 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc3,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn5,UI.popupmenu.customplot5.String)); UI.popupmenu.customplot5.Value = find(strcmp(UI.settings.customCellPlotIn5,UI.popupmenu.customplot5.String)); else; UI.popupmenu.customplot5.Value = 2; end
 customCellPlot5 = plotOptions{UI.popupmenu.customplot5.Value};
 
 % #6 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 0 35 10],'Units','normalized','String','6.','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.popupmenu.customplot6 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 1 125 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc4,'KeyPressFcn', {@keyPress});
+UI.popupmenu.customplot6 = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[23 1 123 10],'Units','normalized','String',plotOptions,'max',1,'min',1,'Value',7,'Callback',@(src,evnt)customCellPlotFunc4,'KeyPressFcn', {@keyPress});
 if find(strcmp(UI.settings.customCellPlotIn6,UI.popupmenu.customplot6.String)); UI.popupmenu.customplot6.Value = find(strcmp(UI.settings.customCellPlotIn6,UI.popupmenu.customplot6.String)); else; UI.popupmenu.customplot5.Value = 3; end
 customCellPlot6 = plotOptions{UI.popupmenu.customplot6.Value};
 
@@ -737,29 +737,29 @@ end
 % Custom plotting menues
 uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 59 50 10],'Units','normalized','String','X data','HorizontalAlignment','left');
 UI.checkbox.logx = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 62 73 10],'Units','normalized','String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 52 146 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress});
+UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 52 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress});
 
 uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 39 50 10],'Units','normalized','String','Y data','HorizontalAlignment','left');
 UI.checkbox.logy = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 42 73 10],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 32 146 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress});
+UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 32 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress});
 
 UI.checkbox.showz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[3 22 72 10],'Units','normalized','String','Z data','HorizontalAlignment','left','Callback',@(src,evnt)buttonPlot3axis(),'KeyPressFcn', {@keyPress});
 UI.checkbox.logz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 22 73 10],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 12 146 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress});
+UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 12 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress});
 UI.popupmenu.zData.Enable = 'Off';
 UI.checkbox.logz.Enable = 'Off';
 
 % Custom plot
 % uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 10 45 10],'Units','normalized','String','Plot style','HorizontalAlignment','left');
-UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 146 10],'Units','normalized','String',{'Scatter plot','+ Smooth histograms','+ Stairs histograms'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)togglePlotHistograms,'KeyPressFcn', {@keyPress});
+UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 144 10],'Units','normalized','String',{'Scatter plot','+ Smooth histograms','+ Stairs histograms'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)togglePlotHistograms,'KeyPressFcn', {@keyPress});
 
 % % % % % % % % % % % % % % % % % % % %
 % Custom colors
 % % % % % % % % % % % % % % % % % % % %
-UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 73 146 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
+UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 73 144 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
 UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[3 20 144 54],'Units','normalized','String',{'Type 1','Type 2','Type 3'},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Visible','Off');
-UI.checkbox.groups = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 10 146 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Visible','Off');
-UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 0 146 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress});
+UI.checkbox.groups = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 10 144 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Visible','Off');
+UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 0 144 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress});
 
 % Creates summary figures and closes the UI
 if summaryFigures
@@ -4169,13 +4169,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function plotLegends(showTitle)
+    function plotLegends
         nLegends = -1;
         plot(0,0,'xw', 'LineWidth', 3., 'MarkerSize',18,'HitTest','off'), xlim([-0.3,2]), hold on, yticks([]), xticks([])
         plot(0,0,'xk', 'LineWidth', 1.5, 'MarkerSize',16,'HitTest','off');
-        if showTitle
-            text(0.2,1,'Legends','HorizontalAlignment','left','FontWeight', 'Bold')
-        end
         text(0.2,0,'Selected cell')
         legendNames = plotClasGroups(nanUnique(plotClas(UI.params.subset)));
         for i = 1:length(legendNames)
@@ -4261,7 +4258,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         nLegends = 0;
         fieldname = {'cellID','spikeGroup','cluID','putativeCellType','peakVoltage','firingRate','troughToPeak'};
         xlim([-2,2]), hold on, yticks([]), xticks([]), 
-        text(0,1.2,'Characteristics','HorizontalAlignment','center','FontWeight', 'Bold')
+%         text(0,1.2,'Characteristics','HorizontalAlignment','center','FontWeight', 'Bold')
         for i = 1:length(fieldname)
             text(-0.2,nLegends,fieldname{i},'HorizontalAlignment','right')
             if isnumeric(cell_metrics.(fieldname{i}))
@@ -4272,7 +4269,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             nLegends = nLegends - 1;
         end
         plot([0,0],[min(nLegends,-5),0]+0.5,'k')
-        ylim([min(nLegends,-5)+1,0.5])
+        ylim([min(nLegends,-5)+0.5,0.5])
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -4281,7 +4278,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Updates the legends in the Legends tab with active plot types
         if strcmp(UI.panel.tabgroup2.SelectedTab.Title,'Legends')
             axes(UI.tabs.legends,'Position',[0 0 1 1])
-            plotLegends(false)
+            plotLegends
         end
     end
 
@@ -5846,13 +5843,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         classes2plotSubset = unique(plotClas);
         [plotRows,~]= numSubplots(length(plotOptions)+3);
         cellIDs = 1:length(cell_metrics.cellID);
-        f_waitbar = waitbar(0,['Summary figures'],'name','Generating summary figures','WindowStyle','modal');
+        fig = figure('Name',['Cell Explorer'],'NumberTitle','off','pos',UI.settings.figureSize);
         for j = 1:length(cellIDs)
-            if ~ishandle(f_waitbar)
-                    warning(['Summary figures canceled by user']);
-                    break
+            if ~ishandle(fig)
+                warning(['Summary figures canceled by user']);
+                break
             end
-            waitbar(j/length(cellIDs),f_waitbar,['Cell ' num2str(j),'/',num2str(length(cellIDs))])
+            set(fig,'Name',['Cell Explorer summary figures ',num2str(j),'/',num2str(length(cellIDs))]);
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
                 general1 = cell_metrics.general.batch{batchIDs1};
@@ -5871,9 +5868,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 UI.params.outgoing = UI.params.a2(UI.params.outbound);
                 UI.params.connections = [UI.params.incoming;UI.params.outgoing];
             end
-            fig = figure('Name',['Cell Explorer: cell ', num2str(cellIDs(j))],'NumberTitle','off','pos',UI.settings.figureSize);
             if ispc
-                ha = tight_subplot(plotRows(1),plotRows(2),[.08 .04],[.05 .05],[.05 .05]);
+                ha = tight_subplot(plotRows(1),plotRows(2),[.1 .05],[.05 .07],[.05 .05]);
             else
                 ha = tight_subplot(plotRows(1),plotRows(2),[.06 .03],[.12 .06],[.06 .05]);
             end
@@ -5900,19 +5896,19 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
                 end
             end
-            axes(ha(length(plotOptions)+2))
+            axes(ha(end-1))
             set(gca,'Visible','off');  hold on
-            plotLegends(true)
+            plotLegends, title('Characteristics')
             
-            axes(ha(length(plotOptions)+3))
+            axes(ha(end))
             set(gca,'Visible','off'); hold on
-            plotCharacteristics(cellIDs(j))
+            plotCharacteristics(cellIDs(j)), title('Characteristics')
             
             % Saving figure
-            savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
-        end
-        if ishandle(f_waitbar)
-            close(f_waitbar)
+            if ishandle(fig)
+                savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
+                clf(fig)
+            end
         end
         
         function savefigure(fig,savePathIn,fileNameIn)
@@ -6586,7 +6582,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             end
                         end
                         axes(ha(length(selectedActions)+2))
-                        plotLegends(true)
+                        plotLegends, title('Legends')
                         
                         axes(ha(length(selectedActions)+3))
                         plotCharacteristics(cellIDs(j)), title('Characteristics')

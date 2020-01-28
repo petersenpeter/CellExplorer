@@ -367,7 +367,7 @@ cell_metrics.general.cellCount = length(spikes.total);
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(metrics,{'waveform_metrics','all'})) && ~any(contains(excludeMetrics,{'waveform_metrics'}))
-    if ~all(isfield(cell_metrics,{'waveforms23','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || forceReload == true
+    if ~all(isfield(cell_metrics,{'waveforms','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || forceReload == true
         dispLog('Getting waveforms');
         if all(isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % 'filtWaveform_std'
             waveforms.filtWaveform = spikes.filtWaveform;

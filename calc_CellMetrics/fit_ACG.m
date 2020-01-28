@@ -22,7 +22,9 @@ for j = 1:size(acg2,2)
         jj = 1;
     end
     subplot(3,4,jj)
-    plot(x,y,'.-',x,f0(x),'r-'); axis tight, title([num2str(j) , ': rise=' num2str(fit_params(2,j),3),', decay=' num2str(fit_params(1,j),3),])
+    bar_from_patch(x,y,'b'), hold on
+    plot(x,f0(x),'r-'); 
+    axis tight, title([num2str(j) , ': rise=' num2str(fit_params(2,j),3),', decay=' num2str(fit_params(1,j),3),])
 %     ylim([0,1])
 %     subplot(2,1,2)
 %     [fmodel,ydata,xdata,paut(j,:)] = fitpyrint(acg2(:,j)',0:0.5:50,1,20);
@@ -75,3 +77,11 @@ fit_params_out.acg_refrac = fit_params(6,:);
 fit_params_out.acg_tau_burst = fit_params(7,:); 
 fit_params_out.acg_h = fit_params(8,:);
 fit_params_out.acg_fit_rsquare = rsquare;
+
+end
+
+function bar_from_patch(x_data, y_data,col)
+    x_data = [x_data(1),reshape([x_data,x_data([2:end,end])]',1,[]),x_data(end)];
+    y_data = [0,reshape([y_data,y_data]',1,[]),0];
+    patch(x_data, y_data,col,'EdgeColor','none','FaceAlpha',.8,'HitTest','off')
+end

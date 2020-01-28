@@ -28,6 +28,17 @@ UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperfic
 % Parameters in cell metrics pipeline
 UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn'};
 
+if exist('db_load_settings') == 2
+    db_settings = db_load_settings;
+    if ~strcmp(db_settings.credentials.username,'user')
+        enableDatabase = 1;
+    else
+        enableDatabase = 0;
+    end
+else
+    enableDatabase = 0;
+end
+uiLoaded = false;
 % % % % % % % % % % % % % % % % % % % %
 % Handling inputs
 % % % % % % % % % % % % % % % % % % % %
@@ -82,7 +93,7 @@ else
             clusteringpath = '';
         end
     else
-        answer = questdlg('basename.session.mat does not exist. Would you like to create one from a template or locate an existing session file?','No basename.session.mat file found','Create from template', 'Locate file','Cancel','Create from template');
+        answer = questdlg('basename.session.mat does not exist. Would you like to create one from a template or locate an existing session file?','No basename.session.mat file found','Create from template', 'Load from database','Locate file','Create from template');
         % Handle response
         switch answer
             case 'Create from template'
@@ -110,23 +121,25 @@ else
                     warning('Please provide a session struct')
                     return
                 end
+            case 'Load from database'
+                [~,nameFolder,~] = fileparts(pwd);
+                session.general.name = nameFolder;
+                success = updateFromDB;
+                if success == 0
+                    warning(['Failed to load session metadata from database']);
+                    return
+                else
+                    if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') & ~isempty(session.spikeSorting{1}.relativePath)
+                        clusteringpath = session.spikeSorting{1}.relativePath;
+                    else
+                        clusteringpath = '';
+                    end
+                end
             otherwise
                 return
         end
     end
 end
-
-if exist('db_load_settings') == 2
-    db_settings = db_load_settings;
-    if ~strcmp(db_settings.credentials.username,'user')
-        enableDatabase = 1;
-    else
-        enableDatabase = 0;
-    end
-else
-    enableDatabase = 0;
-end
-uiLoaded = false;
 
 % Importing session metadata from DB if metadata is out of data
 if ~isfield(session.general,'version') || session.general.version<4
@@ -155,8 +168,9 @@ if ~isfield(session.general,'version') || session.general.version<4
     end
 end
 session.general.basePath = basepath;
-session.general.clusteringPath = clusteringpath;
-
+if exist('clusteringpath','var')
+    session.general.clusteringPath = clusteringpath;
+end
 statusExit = 0;
 
 % % % % % % % % % % % % % % % % % % % %
@@ -461,7 +475,6 @@ uiwait(UI.fig)
             updateEpochsList
             UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor = [0.3,0.7,0.3];
             UI.button.importEpochsIntervalsFromMergePoints.String = 'Updated';
-            pause(0.6)
             UI.button.importEpochsIntervalsFromMergePoints.String = buttonString;
             UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor = buttonColor;
         else
@@ -535,7 +548,6 @@ uiwait(UI.fig)
         updateTimeSeriesList
         UI.button.importMetaFromIntan.BackgroundColor = [0.3,0.7,0.3];
         UI.button.importMetaFromIntan.String = 'Updated';
-        pause(0.6)
         UI.button.importMetaFromIntan.String = buttonString;
         UI.button.importMetaFromIntan.BackgroundColor = buttonColor;
     end
@@ -641,7 +653,6 @@ uiwait(UI.fig)
             if success
                 UI.button.updateFromDB.BackgroundColor = [0.3,0.7,0.3];
                 UI.button.updateFromDB.String = 'Updated';
-                pause(0.6)
             else
                 errordlg('Database tools not available');
             end
@@ -664,7 +675,6 @@ uiwait(UI.fig)
             if success
                 UI.button.uploadToDB.BackgroundColor = [0.3,0.7,0.3];
                 UI.button.uploadToDB.String = 'Updated';
-                pause(0.6)
             else
                 errordlg('Database tools not available');
             end
@@ -725,7 +735,6 @@ uiwait(UI.fig)
             save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
             UI.button.save.BackgroundColor = [0.3,0.7,0.3];
             UI.button.save.String = 'Saved';
-            pause(0.6)
             UI.button.save.String = 'Save';
             UI.button.save.BackgroundColor = BackgroundColor;
         catch
@@ -2371,7 +2380,6 @@ uiwait(UI.fig)
             UI.button.importGroupsFromXML1.String = 'Imported';
             UI.button.importGroupsFromXML2.BackgroundColor = [0.3,0.7,0.3];
             UI.button.importGroupsFromXML2.String = 'Imported';
-            pause(0.6)
         else
             errordlg(['xml file not accessible: ' xml_filepath],'Error')
         end
