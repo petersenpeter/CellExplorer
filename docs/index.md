@@ -39,9 +39,9 @@ The Cell Explorer can be separated into three main components:
 mex -O CCGHeart.c
 ```
 4. The Cell Explorer GUI and pipeline uses a few toolboxes, if which three Matlab toolboxes must be installed manually.
-  * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline; __install manually__)
-  * [Signal Processing Toolbox](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin; __install manually__)
-  * [Image Processing Toolbox ](https://www.mathworks.com/products/image.html) (imrotate; __install manually__)
+  * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline)
+  * [Signal Processing Toolbox](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin)
+  * [Image Processing Toolbox ](https://www.mathworks.com/products/image.html) (imrotate)
 
 5. That's it! Now you can explore the software with below example data or try one of the tutorials.
 
