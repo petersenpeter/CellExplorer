@@ -117,7 +117,7 @@ end
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Deep Superficial parameters
+% Analysis tags
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 session.analysisTags.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
 session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
@@ -211,7 +211,7 @@ if isfield(sessionInfo,'region')
             disp(['Brain region does not exist in the Allen Brain Atlas: ' regionNames{iRegion}])
             regionName = regexprep(regionNames{iRegion}, {'[%() ]+', '_+$'}, {'_', ''});
             tagName = ['brainRegion_', regionName];
-            if all(~strcmp(tagName,fieldnames(session.channelTags)))
+            if ~isfield(session,'channelTags') || all(~strcmp(tagName,fieldnames(session.channelTags)))
                 disp(['Creating a channeltag with assigned channels: ' tagName])
                 session.channelTags.(tagName).channels = find(strcmp(regionNames{iRegion},sessionInfo.region));
             end
@@ -222,7 +222,7 @@ end
 % Epochs derived from MergePoints
 if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'file')
     load(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']))
-    for i = 1:size(MergePoints.foldernames)
+    for i = 1:size(MergePoints.foldernames,2)
         session.epochs{i}.name =  MergePoints.foldernames{i};
         session.epochs{i}.startTime =  MergePoints.timestamps(i,1);
         session.epochs{i}.stopTime =  MergePoints.timestamps(i,2);

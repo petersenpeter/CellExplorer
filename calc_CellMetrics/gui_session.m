@@ -467,7 +467,7 @@ uiwait(UI.fig)
             UI.button.importEpochsIntervalsFromMergePoints.String = 'Uploading...';
             drawnow
             temp = load(fullfile(UI.edit.basepath.String,[UI.edit.session.String,'.MergePoints.events.mat']));
-            for i = 1:size(temp.MergePoints.foldernames)
+            for i = 1:size(temp.MergePoints.foldernames,2)
                 session.epochs{i}.name = temp.MergePoints.foldernames{i};
                 session.epochs{i}.startTime = temp.MergePoints.timestamps(i,1);
                 session.epochs{i}.stopTime = temp.MergePoints.timestamps(i,2);
