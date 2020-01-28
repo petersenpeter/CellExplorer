@@ -16,3 +16,5 @@ This tutorial will guide you through the process of tagging your cells by assign
 6. Adjust the highlighted cells using the menu option `Ground truth` -> `Show ground truth cell types in current session(s)`. This plot option is different from the plotting option for centralized ground truth data. 
 
 Opto-tagged/ground truth cells have one or more labels in `cell_metrics.groundTruthClassification`.
+
+![Optotagging interface](https://buzsakilab.com/wp/wp-content/uploads/2020/01/Cell-Explorer-optotagged-cells-2.png)
