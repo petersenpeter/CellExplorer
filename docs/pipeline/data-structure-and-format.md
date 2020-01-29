@@ -19,6 +19,7 @@ The basepath contains the raw data and session level files. The data in the base
 The clusteringpath contains the spike data, including cell metrics. The cell metrics are all stored in a cell_metrics struct/file. 
 
 ## Data structures
+Each type of data is saved in its own Matlab structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode).
 
 ### Cell metrics
 The cell metrics are kept in a [cell_metrics struct as described here]({{"/pipeline/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat` in the clustering path.
@@ -140,7 +141,7 @@ A Matlab struct (spikes), stored in a .mat file: `sessionName.spikes.cellinfo.ma
 Any extra field can be added with info about the units, e.g. the theta phase of each spike for the units, or the position/speed of the animal for each spike. `sessionName.spikes.cellinfo.mat` should be located in the clusteringpath.
 
 ### Firing rate maps
-A Matlab struct (ratemap) containing firing rat maps, stored in a .mat file: `sessionName.ratemap.firingRateMap.mat` with the following fields:
+A Matlab struct (ratemap) containing 1D or linearized firing rat maps, stored in a .mat file: `sessionName.ratemap.firingRateMap.mat` with the following fields:
 * `map`: a 1xN cell-struct for N units each containing a KxL matrix, where K corresponds to the bin count and L to the number of states. States can be trials, manipulatio states, left-right states... 
 * `x_bins`: a 1xK vector with K bin values used to generate the firing rate map.
 * `state_labels`: a 1xL vector with char labels describing the states.
