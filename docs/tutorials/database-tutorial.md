@@ -58,4 +58,5 @@ sessionNames = {'ham11_27-29_amp','ham11_34-36_amp'};
 cell_metrics = LoadCellMetricBatch('sessions',sessionNames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
-There is a description of [how to interact with the database from the Cell Explorer]({{"/database/loading-sessions/"|absolute_url}}) as well. 
+
+Please see the description of [how to interact with the database from the Cell Explorer]({{"/database/loading-sessions/"|absolute_url}}) as well.
