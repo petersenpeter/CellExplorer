@@ -17,6 +17,8 @@ We are sharing a large set of cells that is available to explore or use as refer
    1. Image data: 2d colored density map (panel A in the figure below).
    2. Scatter data: scatter points `x` (panel B in the figure below).
    3. Histogram data: histogram curves along x and y axes (panel C in the figure below). 
-![referenceDataPlotExamples](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceDataPlotExamples.png)
+
+
+![referenceDataPlotExamples](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceDataPlotExamples-1.png)
 
 The reference data is not displayed in the t-SNE plot. 
