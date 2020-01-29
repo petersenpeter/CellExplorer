@@ -14,12 +14,9 @@ We are sharing a large set of cells that is available to explore or use as refer
 4. Select the sessions you want to load. You can apply filters, change the sorting for easier selection.
 5. Press OK and the sessions will be loaded from the repository paths to the local Cell Explorer directory `referenceData/`. Session on **NYUshare_Datasets** will be downloaded automatically to the same directory. 
 6. The reference data can be displayed in the Cell Explorer in three ways (all color coded by cell types):
-   1. Image data: 2d colored density map (panel A in the figure below).
-   2. Scatter data: scatter points `x` (panel B in the figure below).
-   3. Histogram data: histogram curves along x and y axes (panel C in the figure below). 
+   1. Image data: 2d colored density map.
+   2. Scatter data: scatter points `x`.
+   3. Histogram data: histogram curves along x and y axes. 
 7. You can define the number of bins, and which of the reference cell types to display. 
-
-
-![referenceDataPlotExamples](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceDataPlotExamples-1.png)
 
 The reference data is not displayed in the t-SNE plot. 
