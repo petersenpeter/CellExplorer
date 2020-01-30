@@ -1,9 +1,9 @@
 % Preferences loaded by the Cell Explorer at startup
-% https://github.com/petersenpeter/Cell-Explorer
-
+% Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
+  
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 30-12-2019
+% Last edited: 30-01-2020
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Cell Explorer Preferences  

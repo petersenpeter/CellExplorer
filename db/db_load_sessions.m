@@ -1,9 +1,11 @@
 function sessions_out = db_load_sessions(varargin)
 % Loads session metadata from the buzsakilab database
 
+% Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
+
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 07-11-2019
+% Last edited: 30-01-2020
 
 p = inputParser;
 addParameter(p,'sessionId',[],@isnumeric);

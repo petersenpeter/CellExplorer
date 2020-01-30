@@ -1,5 +1,5 @@
 function cell_metrics = CellExplorer(varargin)
-% The Cell Explorer is a Matlab GUI and standardized pipeline for exploring and 
+% The Cell Explorer is a Matlab GUI and standardized pipeline for exploring and
 % classifying spike sorted single units acquired using extracellular electrodes.
 % Check out the website for extensive documentation: https://petersenpeter.github.io/Cell-Explorer/
 %
@@ -41,7 +41,7 @@ function cell_metrics = CellExplorer(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 09-01-2020
+% Last edited: 30-01-2020
 
 % Shortcuts to built-in functions:
 % Data handling: initializeSession, saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData
@@ -81,7 +81,7 @@ clusteringpath = p.Results.clusteringpath;
 sessionIDs = p.Results.sessionIDs;
 sessionsin = p.Results.sessions;
 basepaths = p.Results.basepaths;
-clusteringpaths = p.Results.clusteringpaths; 
+clusteringpaths = p.Results.clusteringpaths;
 
 % Extra inputs
 SWR_in = p.Results.SWR;
@@ -117,13 +117,13 @@ brainRegions_list = []; brainRegions_acronym = []; cell_class_count = [];  custo
 customCellPlot1 = ''; customPlotHistograms = 0; plotAcgFit = 0; clasLegend = 0; Colorval = 1; plotClas = []; plotClas11 = [];
 colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = [];  customCellPlot2 = '';
 plotClasGroups = [];  plotClas2 = []; general = []; plotAverage_nbins = 40; table_fieldsNames = {};
-cellsExcitatory = []; cellsInhibitory = []; cellsInhibitory_subset = []; cellsExcitatory_subset = []; 
+cellsExcitatory = []; cellsInhibitory = []; cellsInhibitory_subset = []; cellsExcitatory_subset = [];
 subsetPlots1 = []; subsetPlots2 = []; subsetPlots3 = []; subsetPlots4 = []; subsetPlots5 = []; subsetPlots6 = [];
 tSNE_metrics = [];  classificationTrackChanges = []; time_waveforms_zscored = []; spikes = [];
 spikesPlots = {}; globalZoom = cell(1,9); globalZoomLog = cell(1,9); createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal'; events = [];
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = []; groundTruthSelection = []; subsetGroundTruth = [];
 positionsTogglebutton = [[1 29 27 13];[29 29 27 13];[1 15 27 13];[29 15 27 13];[1 1 27 13];[29 1 27 13]]; dispTags = []; dispTags2 = [];
-connections = []; plotName = ''; db = {}; plotConnections = [1 1 1]; tableDataOrder = []; 
+connections = []; plotName = ''; db = {}; plotConnections = [1 1 1]; tableDataOrder = [];
 groundTruthCelltypesList = {''}; ACGLogIntervals = -3:0.04:1; idx_textFilter = []; clickPlotRegular = true; polygon1.handle = gobjects(0); referenceData=[];
 cellsExcitatoryPostsynaptic = []; cellsInhibitoryPostsynaptic = []; reference_cell_metrics = []; UI.params.outbound = [];
 groundTruth_cell_metrics = []; groundTruthData=[]; K = gausswin(5)*gausswin(5)'; K = 0.5*K/sum(K(:)); customPlotOptions = {};
@@ -134,9 +134,9 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.55;
+CellExplorerVersion = 1.56;
 
-UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback); 
+UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback);
 hManager = uigetmodemanager(UI.fig);
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -323,13 +323,13 @@ else
             loadFromFile
         end
         if ~exist('cell_metrics','var') || isempty(cell_metrics)
-                disp('No dataset selected - closing the Cell Explorer')
-                if ishandle(UI.fig)
-                    close(UI.fig)
-                end
-                cell_metrics = [];
-                return
+            disp('No dataset selected - closing the Cell Explorer')
+            if ishandle(UI.fig)
+                close(UI.fig)
             end
+            cell_metrics = [];
+            return
+        end
     end
 end
 
@@ -361,12 +361,13 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Load session(s) from database',menuSelect
 UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save classification',menuSelectedFcn,@saveDialog,'Separator','on','Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Restore classification from backup',menuSelectedFcn,@restoreBackup);
 uimenu(UI.menu.file.topMenu,menuLabel,'Reload cell metrics',menuSelectedFcn,@reloadCellMetrics,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Export figure',menuSelectedFcn,@exportFigure,'Separator','on');
 
 % Navigation
 UI.menu.navigation.topMenu = uimenu(UI.fig,menuLabel,'Navigation');
 UI.menu.navigation.goToCell = uimenu(UI.menu.navigation.topMenu,menuLabel,'Go to cell',menuSelectedFcn,@goToCell,'Accelerator','G');
 UI.menu.navigation.previousSelectedCell = uimenu(UI.menu.navigation.topMenu,menuLabel,'Go to previous select cell [backspace]',menuSelectedFcn,@ii_history_reverse);
-                
+
 UI.menu.cellSelection.topMenu = uimenu(UI.fig,menuLabel,'Cell selection');
 uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Polygon selection of cells from plot',menuSelectedFcn,@polygonSelection,'Accelerator','P');
 uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Perform group action [space]',menuSelectedFcn,@selectCellsForGroupAction);
@@ -403,7 +404,7 @@ UI.menu.display.sortingMetric = uimenu(UI.menu.display.topMenu,menuLabel,'Change
 UI.menu.display.markerSizeMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Adjust marker size for group plots',menuSelectedFcn,@defineMarkerSize,'Separator','on');
 UI.menu.display.histBins = uimenu(UI.menu.display.topMenu,menuLabel,'Adjust bin count for reference and ground truth plots',menuSelectedFcn,@defineBinSize,'Separator','on');
 
-% ACG 
+% ACG
 UI.menu.ACG.topMenu = uimenu(UI.fig,menuLabel,'ACG');
 UI.menu.ACG.window.ops(1) = uimenu(UI.menu.ACG.topMenu,menuLabel,'30 msec',menuSelectedFcn,@buttonACG);
 UI.menu.ACG.window.ops(2) = uimenu(UI.menu.ACG.topMenu,menuLabel,'100 msec',menuSelectedFcn,@buttonACG);
@@ -486,7 +487,7 @@ uimenu(UI.menu.session.topMenu,menuLabel,'Open directory of current session',men
 uimenu(UI.menu.session.topMenu,menuLabel,'Show current session in the Buzsaki lab web DB',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
 uimenu(UI.menu.session.topMenu,menuLabel,'Show current animal in the Buzsaki lab web DB',menuSelectedFcn,@showAnimalInWebDB);
 
-% Help 
+% Help
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
 uimenu(UI.menu.help.topMenu,menuLabel,'Show keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','H');
 uimenu(UI.menu.help.topMenu,menuLabel,'Open the Cell Explorer website',menuSelectedFcn,@openWebsite,'Accelerator','V');
@@ -507,21 +508,21 @@ end
 % UI panels
 % % % % % % % % % % % % % % % % % % % % % %
 
-% Flexib grid box for adjusting the width of the side panels 
-UI.HBox = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0 ); 
+% Flexib grid box for adjusting the width of the side panels
+UI.HBox = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0 );
 
-% Left panel 
+% Left panel
 UI.panel.left = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.HBox);
 
-% Vertical center box with the title at top, grid flex with plots as middle element and message log and bechmark text at bottom 
-UI.VBox = uix.VBox( 'Parent', UI.HBox, 'Spacing', 0, 'Padding', 0 ); 
+% Vertical center box with the title at top, grid flex with plots as middle element and message log and bechmark text at bottom
+UI.VBox = uix.VBox( 'Parent', UI.HBox, 'Spacing', 0, 'Padding', 0 );
 
 % Title box
 UI.panel.centerTop = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.VBox);
 
 % Grid Flex with plots
 UI.panel.GridFlex = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.VBox);
-% UI.panel.GridFlex = uix.GridFlex( 'Parent', UI.VBox, 'Spacing', 5 , 'Padding', 5); 
+% UI.panel.GridFlex = uix.GridFlex( 'Parent', UI.VBox, 'Spacing', 5 , 'Padding', 5);
 
 % UI plot panels
 UI.panel.subfig_ax1 = uipanel('position',[0 0.66 0.33 0.34],'BorderType','none','Parent',UI.panel.GridFlex);
@@ -535,7 +536,7 @@ UI.panel.subfig_ax8 = uipanel('position',[0.33 0 0.33 0.33],'BorderType','none',
 UI.panel.subfig_ax9 = uipanel('position',[0.66 0 0.34 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
 % set(UI.panel.GridFlex, 'Widths', [-1 -1 -1], 'Heights', [-1 -1 -1] );
 
-% Right panel 
+% Right panel
 UI.panel.right = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.HBox);
 
 % Message log and performance
@@ -617,7 +618,7 @@ UI.tabs.dispTags2 = uitab(UI.panel.tabgroup2,'Title','+Tags');
 % % % % % % % % % % % % % % % % % % % %
 
 UI.popupmenu.log = uicontrol('Style','popupmenu','Units','normalized','Position',[0 0 0.66 1],'String',{''},'HorizontalAlignment','left','FontSize',10,'Parent',UI.panel.centerBottom);
-MsgLog('Welcome to the Cell Explorer. Please check the Help menu to learn keyboard shortcuts or visit the website') 
+MsgLog('Welcome to the Cell Explorer. Please check the Help menu to learn keyboard shortcuts or visit the website')
 
 % % % % % % % % % % % % % % % % % % % %
 % Navigation panel (right side)
@@ -654,7 +655,7 @@ UI.pushbutton.labels = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushb
 
 UI.listbox.deepSuperficial = uicontrol('Parent',UI.tabs.deepsuperficial,'Style','listbox','Position',getpixelposition(UI.tabs.deepsuperficial),'Units','normalized','String',UI.settings.deepSuperficial,'max',1,'min',1,'Value',cell_metrics.deepSuperficial_num(ii),'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
 
-% Tags    
+% Tags
 buttonPosition = getButtonLayout(UI.tabs.tags,UI.settings.tags);
 for i = 1:min(length(UI.settings.tags),10)
     UI.togglebutton.tag(i) = uicontrol('Parent',UI.tabs.tags,'Style','togglebutton','String',UI.settings.tags{i},'Position',buttonPosition{i},'Units','normalized','Callback',@(src,evnt)buttonTags(i),'KeyPressFcn', {@keyPress});
@@ -665,7 +666,7 @@ end
 % % % % % % % % % % % % % % % % % % % %
 % Select subset of cell type
 updateCellCount
- 
+
 UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[2 73 145 50],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.settings.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress});
 
 % Number of plots
@@ -777,10 +778,10 @@ end
 % % % % % % % % % % % % % % % % % % %
 
 if ~verLessThan('matlab', '9.4')
-    set(UI.fig,'WindowState','maximize','visible','on'), drawnow nocallbacks; 
+    set(UI.fig,'WindowState','maximize','visible','on'), drawnow nocallbacks;
 else
     set(UI.fig,'visible','on')
-    drawnow nocallbacks; frame_h = get(UI.fig,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks; 
+    drawnow nocallbacks; frame_h = get(UI.fig,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks;
 end
 
 %% % % % % % % % % % % % % % % % % % % % % %
@@ -839,7 +840,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
                 subsetGroundTruth{j} = tagFilter2(cell2mat(cellfun(@(X) any(contains(X,UI.settings.groundTruth(groundTruthSelection(j)))), cell_metrics.groundTruthClassification(tagFilter2),'UniformOutput',false)));
             end
         end
-      end  
+    end
     
     % Updating tags
     updateTags
@@ -1009,7 +1010,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
     if customPlotHistograms == 0
         
         if ((strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics)) || (strcmp(UI.settings.groundTruthData, 'Image')) && ~isempty(groundTruth_cell_metrics)) && UI.checkbox.logy.Value == 1 && UI.settings.plot3axis == 0
-        	yyaxis right, hold on
+            yyaxis right, hold on
         end
         hold on
         xlabel(plotX_title, 'Interpreter', 'none'), ylabel(plotY_title, 'Interpreter', 'none'),
@@ -1308,7 +1309,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
             if contains(plotZ_title,'_num')
                 zticks([1:length(groups_ids.(plotZ_title))]), zticklabels(groups_ids.(plotZ_title)),ztickangle(65),zlim([0.5,length(groups_ids.(plotZ_title))+0.5]),zlabel(plotZ_title(1:end-4), 'Interpreter', 'none')
             end
-
+            
             % Ground truth cell types
             if groundTruthSelection
                 idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
@@ -1356,14 +1357,14 @@ while ii <= size(cell_metrics.troughToPeak,2)
                 set(h_scatter(3), 'XScale', 'linear')
             end
             
-%             axes(h_scatter(1))
+            %             axes(h_scatter(1))
             % Plot putative connections
             if plotConnections(1) == 1
                 plotPutativeConnections(plotX,plotY)
             end
             % Plots X marker for selected cell
             plotMarker(plotX(ii),plotY(ii))
-        
+            
             % Plots tagget ground-truth cell types
             plotGroudhTruthCells(plotX, plotY)
             
@@ -1414,7 +1415,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
             
             % Plots X marker for selected cell
             plotMarker(plotX(ii),plotY(ii))
-        
+            
             % Plots tagget ground-truth cell types
             plotGroudhTruthCells(plotX, plotY)
         end
@@ -1461,7 +1462,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
             set(legendScatter2, {'color'}, num2cell(clr2,2));
             legendScatter22 = plot(fig2_axislimit_x(1)+1000*line_histograms_Y,[0:1/size(line_histograms_Y,1):0.9999]'*ones(1,length(clusClas_list)),'-','linewidth',1,'HitTest','off');
             set(legendScatter22, {'color'}, num2cell(clr2,2));
-             ylim([0,1]), set(gca,'YTick',[])
+            ylim([0,1]), set(gca,'YTick',[])
             yyaxis left, hold on
         end
         
@@ -1493,7 +1494,7 @@ while ii <= size(cell_metrics.troughToPeak,2)
             set(legendScatter2, {'color'}, num2cell(clr3,2));
             legendScatter22 = plot(fig2_axislimit_x(1)+1000*line_histograms_Y,[0:1/size(line_histograms_Y,1):0.9999]'*ones(1,length(clusClas_list)),'-','linewidth',1,'HitTest','off');
             set(legendScatter22, {'color'}, num2cell(clr3,2));
-             ylim([0,1]), set(gca,'YTick',[])
+            ylim([0,1]), set(gca,'YTick',[])
             yyaxis left, hold on
         end
         
@@ -1821,7 +1822,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 fiteqn = max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0);
                 if strcmp(UI.settings.acgType,'Log10')
                     plot([-flip(x),x]/1000,[flip(fiteqn),fiteqn],'linewidth',2,'color',[0,0,0,0.7])
-%                     plot(0.05,fiteqn(246),'ok')
+                    %                     plot(0.05,fiteqn(246),'ok')
                 else
                     plot([-flip(x),x],[flip(fiteqn),fiteqn],'linewidth',2,'color',[0,0,0,0.7])
                 end
@@ -1830,7 +1831,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             ax5 = axis; grid on, set(gca, 'Layer', 'top')
             plot([0 0], [ax5(3) ax5(4)],'color',[.1 .1 .3]); plot([ax5(1) ax5(2)],cell_metrics.firingRate(ii)*[1 1],'--k')
             xlabel('Time (ms)'), ylabel('Rate (Hz)'),title('Autocorrelogram')
-        
+            
         elseif strcmp(customPlotSelection,'ISIs (single)') % ISIs
             
             if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')
@@ -1843,7 +1844,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     bar_from_patch(1./general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^ACGLogIntervals))',col)
                     xlim([0,1000]), xlabel('Instantaneous rate (Hz)'), ylabel('Occurence'),
                 else
-                    bar_from_patch(general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^ACGLogIntervals))',col)  
+                    bar_from_patch(general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^ACGLogIntervals))',col)
                     xlim([0,10]), xlabel('Time (sec)'), ylabel('Occurence'),
                 end
                 set(gca,'xscale','log')
@@ -1934,31 +1935,31 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 xticks([-500:100:500]),xlim([-500,500])
             end
             xlabel('Time (ms)'), ylabel('Rate (Hz)'), title(['All ACGs'])
-        
+            
         elseif strcmp(customPlotSelection,'ISIs (image)')
-                
-                [~,burstIndexSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
-                [~,idx] = find(UI.params.subset(burstIndexSorted) == ii);
-                
-                if strcmp(UI.settings.isiNormalization,'Rate')
-                    imagesc(general.isis.log10', [1:length(UI.params.subset)], cell_metrics.isi.log10_rate(:,UI.params.subset(burstIndexSorted))','HitTest','off')
-                    xlabel('Time')
-                elseif strcmp(UI.settings.isiNormalization,'Firing rates')
-                    imagesc(1./general.isis.log10', [1:length(UI.params.subset)], cell_metrics.isi.log10_occurence(:,UI.params.subset(burstIndexSorted))','HitTest','off')
-                    xlabel('Firing rate')
+            
+            [~,burstIndexSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
+            [~,idx] = find(UI.params.subset(burstIndexSorted) == ii);
+            
+            if strcmp(UI.settings.isiNormalization,'Rate')
+                imagesc(general.isis.log10', [1:length(UI.params.subset)], cell_metrics.isi.log10_rate(:,UI.params.subset(burstIndexSorted))','HitTest','off')
+                xlabel('Time')
+            elseif strcmp(UI.settings.isiNormalization,'Firing rates')
+                imagesc(1./general.isis.log10', [1:length(UI.params.subset)], cell_metrics.isi.log10_occurence(:,UI.params.subset(burstIndexSorted))','HitTest','off')
+                xlabel('Firing rate')
+            else
+                imagesc(general.isis.log10', [1:length(UI.params.subset)], cell_metrics.isi.log10_occurence(:,UI.params.subset(burstIndexSorted))','HitTest','off')
+                xlabel('Time')
+            end
+            if ~isempty(idx)
+                if strcmp(UI.settings.isiNormalization,'Firing rates')
+                    plot(1./general.isis.log10([1,end]),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
                 else
-                    imagesc(general.isis.log10', [1:length(UI.params.subset)], cell_metrics.isi.log10_occurence(:,UI.params.subset(burstIndexSorted))','HitTest','off')
-                    xlabel('Time')
+                    plot(general.isis.log10([1,end]),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
                 end
-                if ~isempty(idx)
-                    if strcmp(UI.settings.isiNormalization,'Firing rates')
-                        plot(1./general.isis.log10([1,end]),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
-                    else
-                        plot(general.isis.log10([1,end]),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
-                    end
-                end
-                colormap hot(512), title(['All ISIs (image)']), axis tight
-                
+            end
+            colormap hot(512), title(['All ISIs (image)']), axis tight
+            
         elseif strcmp(customPlotSelection,'ACGs (image)')
             
             % All ACGs shown in an image (z-scored). Sorted by the burst-index from Royer 2012
@@ -2015,8 +2016,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             title('Autocorrelogram - tSNE visualization'), axis tight, xlabel(''),ylabel('')
             plot(tSNE_metrics.acg_wide(ii,1), tSNE_metrics.acg_wide(ii,2),'xw', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
             plot(tSNE_metrics.acg_wide(ii,1), tSNE_metrics.acg_wide(ii,2),'xk', 'LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
-          
-         elseif strcmp(customPlotSelection,'tSNE of log ACGs')
+            
+        elseif strcmp(customPlotSelection,'tSNE of log ACGs')
             
             % t-SNE scatter-plot with all ACGs. Calculated from the log10
             % ACG (-500ms:1ms:500ms). Colored by cell-type.
@@ -2096,7 +2097,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     plt1 = plot(x_bins,firingRateMap,'-','linewidth',2, 'HitTest','off');
                     xlabel('Position (cm)'),ylabel('Rate (Hz)'); grid on,
                 end
-
+                
                 axis tight, ax6 = axis;
                 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
                 if isfield(general.firingRateMaps,firingRateMapName)
@@ -2120,7 +2121,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         plot([1;1] * boundaries, [ax6(3) ax6(4)],'--','color','k', 'HitTest','off');
                     end
                 end
-%                 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
+                %                 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
             else
                 text(0.5,0.5,['No data'],'FontWeight','bold','HorizontalAlignment','center')
             end
@@ -2625,7 +2626,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         
         % Plots X marker for selected cell
-%         plotMarker(tSNE_metrics.plot(ii,1),tSNE_metrics.plot(ii,2))
+        %         plotMarker(tSNE_metrics.plot(ii,1),tSNE_metrics.plot(ii,2))
         plot(plotX1(ii), plotY1(ii),'xw', 'LineWidth', 3., 'MarkerSize',22,'HitTest','off');
         plot(plotX1(ii), plotY1(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
         
@@ -2663,14 +2664,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             plot(plotX1(cellsInhibitoryPostsynaptic_subset), plotY1(cellsInhibitoryPostsynaptic_subset),'*k', 'HitTest','off')
         end
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function plotMarker(plotX1,plotY1)
         plot(plotX1, plotY1,'xw', 'LineWidth', 3., 'MarkerSize',22,'HitTest','off');
         plot(plotX1, plotY1,'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function plotPutativeConnections(plotX1,plotY1)
@@ -2755,7 +2756,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         uiresume(UI.fig);
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function highlightExcitatoryPostsynapticCells(~,~)
@@ -2769,7 +2770,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         uiresume(UI.fig);
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function highlightInhibitoryPostsynapticCells(~,~)
@@ -2783,7 +2784,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         uiresume(UI.fig);
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function reloadCellMetrics(~,~)
@@ -2839,11 +2840,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
         end
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function restoreBackup(~,~)
-        try 
+        try
             dir(pwd);
         catch
             MsgLog(['Unable to access current folder.'],4)
@@ -2856,8 +2857,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             backupList = dir(fullfile(cell_metrics.general.path,'revisions_cell_metrics','cell_metrics_*'));
         end
         if ~isempty(backupList)
-                backupList = {backupList.name};
-            end
+            backupList = {backupList.name};
+        end
         if ~isempty(backupList)
             restoreBackup.dialog = dialog('Position', [300, 300, 300, 518],'Name','Select backup to restore','WindowStyle','modal'); movegui(restoreBackup.dialog,'center')
             restoreBackup.backupList = uicontrol('Parent',restoreBackup.dialog,'Style','listbox','String',backupList,'Position',[10, 60, 280, 447],'Value',1,'Max',1,'Min',1);
@@ -2917,11 +2918,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             delete(restoreBackup.dialog);
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function createBackup(cell_metrics,backup_subset)
-        % Creating backup of metrics 
+        % Creating backup of metrics
         if ~exist('backup_subset','var')
             backup_subset = 1:length(cell_metrics.UID);
         end
@@ -2974,7 +2975,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function updatePlotConnections(src,event)
         if strcmp(src.Checked,'on')
             plotConnections(src.Position) = 0;
@@ -3080,7 +3081,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if exist('preselectedList','var')
             [~,ia,~] = intersect(list_metrics,preselectedList);
             list_metrics = [list_metrics(ia);list_metrics(setdiff(1:length(list_metrics),ia))];
-        else 
+        else
             ia = [];
         end
     end
@@ -3094,8 +3095,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             uiresume(UI.fig);
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
+
+% % % % % % % % % % % % % % % % % % % % % %
 
     function defineBinSize(~,~)
         answer = inputdlg({'Enter bin count [recommended: 20-60]'},'Input',[1 40],{num2str(UI.settings.binCount)});
@@ -3104,10 +3105,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             uiresume(UI.fig);
         end
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
-        function editSortingMetric(~,~)
+    function editSortingMetric(~,~)
         sortingMetrics = generateMetricsList('double',UI.settings.sortingMetric);
         selectMetrics.dialog = dialog('Position', [300, 300, 400, 518],'Name','Select metric for sorting image data','WindowStyle','modal'); movegui(selectMetrics.dialog,'center')
         selectMetrics.sessionList = uicontrol('Parent',selectMetrics.dialog,'Style','listbox','String',sortingMetrics,'Position',[10, 50, 380, 457],'Value',1,'Max',1,'Min',1);
@@ -3125,10 +3126,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             % Closes the dialog
             delete(selectMetrics.dialog);
         end
-        end
-    
+    end
+
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function showReferenceData(src,evnt)
         if src.Position == 1
             UI.settings.referenceData = 'None';
@@ -3174,7 +3175,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         uiresume(UI.fig);
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function initReferenceDataTab
@@ -3187,15 +3188,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.listbox.referenceData.Value = referenceData.selection;
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function referenceDataSelection(src,evnt)
         referenceData.selection = UI.listbox.referenceData.Value;
         uiresume(UI.fig);
     end
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function showGroundTruthData(src,evnt)
         if src.Position == 1
             UI.settings.groundTruthData = 'None';
@@ -3254,14 +3255,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.listbox.groundTruthData.Value = groundTruthData.selection;
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function groundTruthDataSelection(src,evnt)
         groundTruthData.selection = UI.listbox.groundTruthData.Value;
         uiresume(UI.fig);
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function out = loadReferenceData
@@ -3456,7 +3457,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             LoadDB_sessionlist
             Button_DB_filterList
         end
-         
+        
         function UpdateSummaryText
             cellCount = sum(cell2mat( cellfun(@(x) str2double(x),loadDB.sessionList.Data(:,4),'UniformOutput',false)));
             loadDB.summaryText.String = [num2str(size(loadDB.sessionList.Data,1)),' session(s) with ', num2str(cellCount),' cells from ',num2str(length(unique(loadDB.sessionList.Data(:,5)))),' animal(s). Updated at: ', datestr(db.refreshTime)];
@@ -3527,97 +3528,97 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             indx = cell2mat(cellfun(@str2double,loadDB.sessionList.Data(find([loadDB.sessionList.Data{:,1}])',2),'un',0));
             delete(loadDB.dialog);
             if ~isempty(indx)
-                 % Loading multiple sessions
-                    % Setting paths from reference data folder/nyu share
-                    db_basename = {};
-                    db_basepath = {};
-                    db_clusteringpath = {};
-                    db_basename = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
-                    i_db_subset_all = db.index(indx);
-                    [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
-                    if ~exist(fullfile(referenceData_path,'referenceData'), 'dir')
-                        mkdir(referenceData_path,'referenceData');
-                    end
-                    referenceData_path = fullfile(referenceData_path,'referenceData');
-                    nyu_url = 'https://buzsakilab.nyumc.org/datasets/';
-                    
-                    f_LoadCellMetrics = waitbar(0,' ','name','Cell-metrics: loading reference data');
-                    for i_db = 1:length(i_db_subset_all)
-                        i_db_subset = i_db_subset_all(i_db);
-                        indx2 = indx(i_db);
-                        if ~any(strcmp(db.sessions{i_db_subset}.repositories{1},fieldnames(db_settings.repositories)))
-                            MsgLog(['The respository ', db.sessions{i_db_subset}.repositories{1} ,' has not been defined on this computer. Please edit db_local_repositories and provide the path'],4)
-                            edit db_local_repositories.m
-                            return
-                        end
-                        
-                        db_clusteringpath{i_db} = referenceData_path;
-                        db_basepath{i_db} = referenceData_path;
-                        if ~exist(fullfile(db_clusteringpath{i_db},[db_basename{indx2},'.cell_metrics.cellinfo.mat']),'file')
-                            waitbar(i_db/length(i_db_subset_all),f_LoadCellMetrics,['Downloading missing reference data : ' db_basename{indx2}]);
-                            Investigator_name = strsplit(db.sessions{i_db_subset}.investigator,' ');
-                            path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
-                            filename = fullfile(referenceData_path,[db_basename{indx2},'.cell_metrics.cellinfo.mat']);
-                            
-                            if ~any(strcmp(db.sessions{i_db_subset}.repositories{1},fieldnames(db_settings.repositories))) && strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
-                                url = [nyu_url,path_Investigator,'/',db.sessions{i_db_subset}.animal,'/', db_basename{indx2},'/',[db_basename{indx2},'.cell_metrics.cellinfo.mat']];
-                                outfilename = websave(filename,url);
-                            else
-                                if strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
-                                    url = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), path_Investigator,db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
-                                else
-                                    url = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
-                                end
-                                if ~isempty(db.sessions{i_db_subset}.spikeSorting.relativePath)
-                                    url = fullfile(url, db.sessions{i_db_subset}.spikeSorting.relativePath{1},[db_basename{indx2},'.cell_metrics.cellinfo.mat']);
-                                else
-                                    url = fullfile(url,[db_basename{indx2},'.cell_metrics.cellinfo.mat']);
-                                end
-                                status = copyfile(url,filename);
-                                if ~status
-                                    MsgLog(['Copying cell metrics failed'],4)
-                                    return
-                                end
-                            end
-                        end
-                        %                         cell_metrics2{i_db} = load(fullfile(db_clusteringpath{i_db},[db_basename{i_db_subset},'.',saveAs,'.cellinfo.mat']));
-                    end
-                    
-                    cell_metrics1 = LoadCellMetricBatch('clusteringpaths', db_clusteringpath,'basenames',db_basename(indx),'basepaths',db_basepath,'waitbar_handle',f_LoadCellMetrics);
-                    if ~isempty(cell_metrics1)
-                        reference_cell_metrics = cell_metrics1;
-                    else
+                % Loading multiple sessions
+                % Setting paths from reference data folder/nyu share
+                db_basename = {};
+                db_basepath = {};
+                db_clusteringpath = {};
+                db_basename = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
+                i_db_subset_all = db.index(indx);
+                [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
+                if ~exist(fullfile(referenceData_path,'referenceData'), 'dir')
+                    mkdir(referenceData_path,'referenceData');
+                end
+                referenceData_path = fullfile(referenceData_path,'referenceData');
+                nyu_url = 'https://buzsakilab.nyumc.org/datasets/';
+                
+                f_LoadCellMetrics = waitbar(0,' ','name','Cell-metrics: loading reference data');
+                for i_db = 1:length(i_db_subset_all)
+                    i_db_subset = i_db_subset_all(i_db);
+                    indx2 = indx(i_db);
+                    if ~any(strcmp(db.sessions{i_db_subset}.repositories{1},fieldnames(db_settings.repositories)))
+                        MsgLog(['The respository ', db.sessions{i_db_subset}.repositories{1} ,' has not been defined on this computer. Please edit db_local_repositories and provide the path'],4)
+                        edit db_local_repositories.m
                         return
                     end
                     
-                    if ishandle(f_LoadCellMetrics)
-                        waitbar(1,f_LoadCellMetrics,'Initializing session(s)');
+                    db_clusteringpath{i_db} = referenceData_path;
+                    db_basepath{i_db} = referenceData_path;
+                    if ~exist(fullfile(db_clusteringpath{i_db},[db_basename{indx2},'.cell_metrics.cellinfo.mat']),'file')
+                        waitbar(i_db/length(i_db_subset_all),f_LoadCellMetrics,['Downloading missing reference data : ' db_basename{indx2}]);
+                        Investigator_name = strsplit(db.sessions{i_db_subset}.investigator,' ');
+                        path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
+                        filename = fullfile(referenceData_path,[db_basename{indx2},'.cell_metrics.cellinfo.mat']);
+                        
+                        if ~any(strcmp(db.sessions{i_db_subset}.repositories{1},fieldnames(db_settings.repositories))) && strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
+                            url = [nyu_url,path_Investigator,'/',db.sessions{i_db_subset}.animal,'/', db_basename{indx2},'/',[db_basename{indx2},'.cell_metrics.cellinfo.mat']];
+                            outfilename = websave(filename,url);
+                        else
+                            if strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
+                                url = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), path_Investigator,db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
+                            else
+                                url = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
+                            end
+                            if ~isempty(db.sessions{i_db_subset}.spikeSorting.relativePath)
+                                url = fullfile(url, db.sessions{i_db_subset}.spikeSorting.relativePath{1},[db_basename{indx2},'.cell_metrics.cellinfo.mat']);
+                            else
+                                url = fullfile(url,[db_basename{indx2},'.cell_metrics.cellinfo.mat']);
+                            end
+                            status = copyfile(url,filename);
+                            if ~status
+                                MsgLog(['Copying cell metrics failed'],4)
+                                return
+                            end
+                        end
+                    end
+                    %                         cell_metrics2{i_db} = load(fullfile(db_clusteringpath{i_db},[db_basename{i_db_subset},'.',saveAs,'.cellinfo.mat']));
+                end
+                
+                cell_metrics1 = LoadCellMetricBatch('clusteringpaths', db_clusteringpath,'basenames',db_basename(indx),'basepaths',db_basepath,'waitbar_handle',f_LoadCellMetrics);
+                if ~isempty(cell_metrics1)
+                    reference_cell_metrics = cell_metrics1;
+                else
+                    return
+                end
+                
+                if ishandle(f_LoadCellMetrics)
+                    waitbar(1,f_LoadCellMetrics,'Initializing session(s)');
+                else
+                    disp(['Initializing session(s)']);
+                end
+                save(fullfile(referenceData_path,'reference_cell_metrics.cellinfo.mat'),'reference_cell_metrics','-v7.3','-nocompression');
+                
+                [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
+                initReferenceDataTab
+                
+                if ishandle(f_LoadCellMetrics)
+                    close(f_LoadCellMetrics)
+                end
+                try
+                    if isfield(UI,'panel')
+                        MsgLog([num2str(length(indx)),' session(s) loaded succesfully'],2);
                     else
-                        disp(['Initializing session(s)']);
+                        disp([num2str(length(indx)),' session(s) loaded succesfully']);
                     end
-                    save(fullfile(referenceData_path,'reference_cell_metrics.cellinfo.mat'),'reference_cell_metrics','-v7.3','-nocompression');
                     
-                    [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
-                    initReferenceDataTab
+                catch
+                    if isfield(UI,'panel')
+                        MsgLog(['Failed to load dataset from database: ',strjoin(db.menu_items(indx))],4);
+                    else
+                        disp(['Failed to load dataset from database: ',strjoin(db.menu_items(indx))]);
+                    end
                     
-                    if ishandle(f_LoadCellMetrics)
-                        close(f_LoadCellMetrics)
-                    end
-                    try
-                        if isfield(UI,'panel')
-                            MsgLog([num2str(length(indx)),' session(s) loaded succesfully'],2);
-                        else
-                            disp([num2str(length(indx)),' session(s) loaded succesfully']);
-                        end
-                        
-                    catch
-                        if isfield(UI,'panel')
-                            MsgLog(['Failed to load dataset from database: ',strjoin(db.menu_items(indx))],4);
-                        else
-                            disp(['Failed to load dataset from database: ',strjoin(db.menu_items(indx))]);
-                        end
-                        
-                    end
+                end
             end
             
             if ishandle(UI.fig)
@@ -3631,7 +3632,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             delete(loadDB.dialog);
         end
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function tSNE_redefineMetrics(~,~)
@@ -3645,7 +3646,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[120, 73, 90, 20],'Units','normalized','String','LearnRate','HorizontalAlignment','left');
         uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[220, 735, 70, 20],'Units','normalized','String','Perplexity','HorizontalAlignment','left');
         uicontrol('Parent',load_tSNE.dialog,'Style','text','Position',[380, 73, 110, 20],'Units','normalized','String','InitialY','HorizontalAlignment','left');
-
+        
         UI.settings.tSNE.InitialY = 'Random';
         load_tSNE.popupmenu.NumPCAComponents = uicontrol('Parent',load_tSNE.dialog,'Style','Edit','Position',[10, 55, 100, 20],'Units','normalized','String',UI.settings.tSNE.NumPCAComponents,'HorizontalAlignment','left');
         load_tSNE.popupmenu.LearnRate = uicontrol('Parent',load_tSNE.dialog,'Style','Edit','Position',[120, 55, 90, 20],'Units','normalized','String',UI.settings.tSNE.LearnRate,'HorizontalAlignment','left');
@@ -3816,10 +3817,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             eucD = pdist(X','euclidean');
             clustTreeEuc = linkage(X','average');
             cophenet(clustTreeEuc,eucD);
-                        
+            
             % K nearest neighbor clustering
             % Mdl = fitcknn(X',cell_metrics.putativeCellType,'NumNeighbors',5,'Standardize',1);
-
+            
             % UMAP visualization
             % tSNE_metrics.plot = run_umap(X');
             
@@ -4257,8 +4258,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function plotCharacteristics(cellID)
         nLegends = 0;
         fieldname = {'cellID','spikeGroup','cluID','putativeCellType','peakVoltage','firingRate','troughToPeak'};
-        xlim([-2,2]), hold on, yticks([]), xticks([]), 
-%         text(0,1.2,'Characteristics','HorizontalAlignment','center','FontWeight', 'Bold')
+        xlim([-2,2]), hold on, yticks([]), xticks([]),
+        %         text(0,1.2,'Characteristics','HorizontalAlignment','center','FontWeight', 'Bold')
         for i = 1:length(fieldname)
             text(-0.2,nLegends,fieldname{i},'HorizontalAlignment','right')
             if isnumeric(cell_metrics.(fieldname{i}))
@@ -4371,7 +4372,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function buttonACG_normalize(src,event)
         if src.Position == 7
             UI.settings.isiNormalization = 'Rate';
@@ -4383,7 +4384,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.menu.display.normalization.ops(1).Checked = 'off';
             UI.menu.display.normalization.ops(2).Checked = 'on';
             UI.menu.display.normalization.ops(3).Checked = 'off';
-            elseif src.Position == 9
+        elseif src.Position == 9
             UI.settings.isiNormalization = 'Firing rates';
             UI.menu.display.normalization.ops(1).Checked = 'off';
             UI.menu.display.normalization.ops(2).Checked = 'off';
@@ -4391,7 +4392,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         uiresume(UI.fig);
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function buttonMonoSyn(src,event)
@@ -4468,7 +4469,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end
 
-    % % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % %
 
     function ScrolltoZoomInPlot(h,event,direction)
         % Called when scrolling/zooming in the cell inspector.
@@ -4476,9 +4477,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         axnum = getAxisBelowCursor;
         if isfield(UI,'panel') & ~isempty(axnum)
             handle34 = subfig_ax(axnum);
-
-             um_axes = get(handle34,'CurrentPoint');
-
+            
+            um_axes = get(handle34,'CurrentPoint');
+            
             
             % If ScrolltoZoomInPlot is called by a keypress, the underlying
             % mouse position must be determined by the WindowButtonMotionFcn
@@ -4540,7 +4541,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             b = axesLimits(1,:);
             c = axesLimits(2,:);
             d = axesLimits(3,:);
-
+            
             if direction == 1 % zoom in
                 
                 if u < b(1) || u > b(2)
@@ -4580,7 +4581,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     z1 = max(globalZoom1(3,1),w-diff(d)/2*zoomInFactor);
                     z2 = min(globalZoom1(3,2),w+diff(d)/2*zoomInFactor);
                     if z2>z1 & globalZoomLog1(3)==0
-%                         zlim([z1,z2]);
+                        %                         zlim([z1,z2]);
                     elseif z2>z1 & globalZoomLog1(3)==1
                         zlim(10.^[z1,z2]);
                     end
@@ -4657,7 +4658,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         ylim(10.^[y1,y2]);
                     end
                     if z2>z1 & globalZoomLog1(3)==0
-%                         zlim([z1,z2]);
+                        %                         zlim([z1,z2]);
                     elseif z2>z1 & globalZoomLog1(3)==1
                         zlim(10.^[z1,z2]);
                     end
@@ -4672,7 +4673,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
 
     function hoverCallback(src,evt)
-            
+        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -4741,16 +4742,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function polygonSelection(~,~)
         clickPlotRegular = false;
         MsgLog(['Select cells by drawing a polygon with your mouse. Complete with a right click, cancel last point with middle click.']);
-%         if UI.settings.plot3axis
-%             rotate3d(subfig_ax(1),'off')
-%         end
+        %         if UI.settings.plot3axis
+        %             rotate3d(subfig_ax(1),'off')
+        %         end
         ax = get(UI.fig,'CurrentAxes');
         hold(ax, 'on');
         polygon1.counter = 0;
         polygon1.cleanExit = 0;
         polygon1.coords = [];
         set(UI.fig,'Pointer','crosshair')
-
+        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -4767,12 +4768,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function toggleStickySelectionReset(~,~)
         UI.params.ClickedCells = [];
         uiresume(UI.fig);
     end
-        
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function ClicktoSelectFromTable(src, event)
@@ -4843,7 +4844,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             axes(h_scatter(1));
             plot(plotX(UI.params.ClickedCells),plotY(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
         end
-
+        
         axes(subfig_ax(2))
         plot(cell_metrics.troughToPeak(UI.params.ClickedCells)*1000,cell_metrics.burstIndex_Royer2012(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
         
@@ -4862,7 +4863,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if isempty(axnum)
             axnum = 1;
         end
-
+        
         if axnum == 1
             if UI.checkbox.logx.Value == 1 && UI.checkbox.logy.Value == 1
                 x_scale = range(log10(plotX(find(plotX>0))));
@@ -4951,7 +4952,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     x_scale = range(x1(:));
                     y_scale = range(y1(:));
                     [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
-%                     [~,In] = min(hypot(x1(:)-u,y1(:)-v));
+                    %                     [~,In] = min(hypot(x1(:)-u,y1(:)-v));
                     In = unique(floor(In/length(time_waveforms_zscored)))+1;
                     iii = UI.params.subset(In);
                     [~,time_index] = min(abs(time_waveforms_zscored-u));
@@ -4967,7 +4968,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     x_scale = range(x1(:));
                     y_scale = range(y1(:));
                     [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
-%                     [~,In] = min(hypot(x1(:)-u,y1(:)-v));
+                    %                     [~,In] = min(hypot(x1(:)-u,y1(:)-v));
                     In = unique(floor(In/length(time_waveforms_zscored)))+1;
                     iii = UI.params.subset(In);
                     [~,time_index] = min(abs(time_waveforms_zscored-u));
@@ -5010,14 +5011,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     if highlight
                         text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
                     end
-                
+                    
                 case 'tSNE of log ISIs'
                     
                     [~,idx] = min(hypot(tSNE_metrics.isi_log10(UI.params.subset,1)-u,tSNE_metrics.isi_log10(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight
                         text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
-                    end    
+                    end
                     
                 case 'CCGs (image)'
                     
@@ -5098,7 +5099,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         plot(x2(:),y1(:,In),'linewidth',2, 'HitTest','off')
                         text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
                     end
-                
+                    
                 case 'ISIs (all)'
                     
                     x2 = general.isis.log10;
@@ -5122,7 +5123,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         plot(x2(:),y1(:,In),'linewidth',2, 'HitTest','off')
                         text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
                     end
-                
+                    
                 case 'ISIs (image)'
                     
                     [~,burstIndexSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
@@ -5134,7 +5135,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
                         end
                     end
-                
+                    
                 case 'responseCurves_thetaPhase (all)'
                     
                     x1 = UI.x_bins.thetaPhase'*ones(1,length(UI.params.subset));
@@ -5142,7 +5143,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     x_scale = range(x1(:));
                     y_scale = range(y1(:));
                     [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
-%                     [~,In] = min(hypot(x1(:)-u,y1(:)-v));
+                    %                     [~,In] = min(hypot(x1(:)-u,y1(:)-v));
                     In = unique(floor(In/length(UI.x_bins.thetaPhase)))+1;
                     iii = UI.params.subset(In);
                     [~,time_index] = min(abs(UI.x_bins.thetaPhase-u));
@@ -5186,12 +5187,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end
 
-    % % % % % % % % % % % % % % % % % % % % % %
-    
+% % % % % % % % % % % % % % % % % % % % % %
+
     function exitCellExplorer(~,~)
         close(UI.fig);
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function bar_from_patch(x_data, y_data,col)
@@ -5352,7 +5353,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 ClickedCells6_out = findSynapticConnections(filterCells.synConnectFilter.String{filterCells.synConnectFilter.Value});
                 ClickedCells6 = zeros(1,size(cell_metrics.troughToPeak,2));
                 ClickedCells6(ClickedCells6_out) = 1;
-% %                 ClickedCells6 = ismember(cell_metrics.synapticEffect, groups_ids.synapticEffect_num(filterCells.synEffect.Value));
+                % %                 ClickedCells6 = ismember(cell_metrics.synapticEffect, groups_ids.synapticEffect_num(filterCells.synEffect.Value));
             end
             
             % Finding cells fullfilling all criteria
@@ -5362,7 +5363,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             updateTableClickedCells
             % Calls the group action for highlighted cells
             if ~isempty(UI.params.ClickedCells)
-%                 highlightSelectedCells
+                %                 highlightSelectedCells
                 GroupAction(UI.params.ClickedCells)
             end
         end
@@ -5375,43 +5376,43 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 % % % % % % % % % % % % % % % % % % % % % %
 
     function connections1 = findSynapticConnections(synType)
-       if ~isempty(putativeSubset)
-        % Inbound
-        a199 = cell_metrics.putativeConnections.excitatory(putativeSubset,1);
-        % Outbound
-        a299 = cell_metrics.putativeConnections.excitatory(putativeSubset,2);
-        
-        if strcmp(synType, 'Selected')
-            inbound99 = find(a299 == ii);
-            outbound99 = find(a199 == ii);
-        elseif strcmp(synType, 'All')
-            inbound99 = 1:length(a299);
-            outbound99 = 1:length(a199);
-        else
-            inbound99 = [];
-            outbound99 = [];
-        end
-        
-        if any(strcmp(synType, {'Upstream','Up & downstream'}))
-            kkk = 1;
-            inbound99 = find(a299 == ii);
-            while ~isempty(inbound99) && any(ismember(a299, a199(inbound99))) && kkk < 10
-                inbound99 = [inbound99;find(ismember(a299, a199(inbound99)))];
-                kkk = kkk + 1;
+        if ~isempty(putativeSubset)
+            % Inbound
+            a199 = cell_metrics.putativeConnections.excitatory(putativeSubset,1);
+            % Outbound
+            a299 = cell_metrics.putativeConnections.excitatory(putativeSubset,2);
+            
+            if strcmp(synType, 'Selected')
+                inbound99 = find(a299 == ii);
+                outbound99 = find(a199 == ii);
+            elseif strcmp(synType, 'All')
+                inbound99 = 1:length(a299);
+                outbound99 = 1:length(a199);
+            else
+                inbound99 = [];
+                outbound99 = [];
             end
-        end
-        if any(strcmp(synType, {'Downstream','Up & downstream'}))
-            kkk = 1;
-            outbound99 = find(a199 == ii);
-            while ~isempty(outbound99) && any(ismember(a199, a299(outbound99))) && kkk < 10
-                outbound99 = [outbound99;find(ismember(a199, a299(outbound99)))];
-                kkk = kkk + 1;
+            
+            if any(strcmp(synType, {'Upstream','Up & downstream'}))
+                kkk = 1;
+                inbound99 = find(a299 == ii);
+                while ~isempty(inbound99) && any(ismember(a299, a199(inbound99))) && kkk < 10
+                    inbound99 = [inbound99;find(ismember(a299, a199(inbound99)))];
+                    kkk = kkk + 1;
+                end
             end
+            if any(strcmp(synType, {'Downstream','Up & downstream'}))
+                kkk = 1;
+                outbound99 = find(a199 == ii);
+                while ~isempty(outbound99) && any(ismember(a199, a299(outbound99))) && kkk < 10
+                    outbound99 = [outbound99;find(ismember(a199, a299(outbound99)))];
+                    kkk = kkk + 1;
+                end
+            end
+            incoming1 = a199(inbound99);
+            outgoing1 = a299(outbound99);
+            connections1 = [incoming1;outgoing1];
         end
-        incoming1 = a199(inbound99);
-        outgoing1 = a299(outbound99);
-        connections1 = [incoming1;outgoing1];
-    end 
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -5426,12 +5427,19 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
+    function exportFigure(~,~)
+        % Opens the export figure dialog
+        exportsetupdlg(UI.fig)
+    end
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function GroupSelectFromPlot(~,~)
         % Allows the user to select multiple cells from any plot.
         if ~isempty(UI.params.subset)
             polygon_coords = polygon1.coords;
             In = [];
-
+            
             if size(polygon_coords,1)>2
                 axnum = find(ismember(subfig_ax, gca));
                 if isempty(axnum)
@@ -5557,7 +5565,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         case 'tSNE of wide ACGs'
                             In = find(inpolygon(tSNE_metrics.acg_wide(UI.params.subset,1), tSNE_metrics.acg_wide(UI.params.subset,2), polygon_coords(:,1)',polygon_coords(:,2)'));
                             In = UI.params.subset(In);
-                                                
+                            
                         case 'responseCurves_thetaPhase (all)'
                             x1 = UI.x_bins.thetaPhase'*ones(1,length(UI.params.subset));
                             y1 = cell_metrics.responseCurves.thetaPhase_zscored(:,UI.params.subset);
@@ -5604,7 +5612,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             else
                 MsgLog(['0 cells selected']);
             end
-
+            
         else
             MsgLog(['No cells with selected classification']);
         end
@@ -5813,7 +5821,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function setTableDataSorting(src,event)
         if isfield(src,'Text')
             tableDataSortBy = src.Text;
@@ -5917,14 +5925,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if ~exist(savePath,'dir')
                 mkdir(savePathIn,'summaryFigures')
             end
-%             if exportPlots.popupmenu.fileFormat.Value == 1
-                saveas(fig,fullfile(savePath,[fileNameIn,'.png']))
-%             else
-%                 set(fig,'Units','Inches');
-%                 pos = get(fig,'Position');
-%                 set(fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-%                 print(fig, fullfile(savePath,[fileNameIn,'.pdf']),'-dpdf');
-%             end
+            %             if exportPlots.popupmenu.fileFormat.Value == 1
+            saveas(fig,fullfile(savePath,[fileNameIn,'.png']))
+            %             else
+            %                 set(fig,'Units','Inches');
+            %                 pos = get(fig,'Position');
+            %                 set(fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+            %                 print(fig, fullfile(savePath,[fileNameIn,'.pdf']),'-dpdf');
+            %             end
             
         end
     end
@@ -5968,7 +5976,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function viewSessionMetaData(~,~)
         if UI.BatchMode
             sessionMetaFilename = fullfile(cell_metrics.general.basepaths{cell_metrics.batchIDs(ii)},[cell_metrics.general.basenames{cell_metrics.batchIDs(ii)},'.session.mat']);
@@ -6030,7 +6038,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.table.ColumnEditable = [true false false false];
             updateCellTableData
             UI.table.Visible = 'on';
-%             updateCellTableData
+            %             updateCellTableData
             updateTableClickedCells
         elseif UI.settings.metricsTable==3
             UI.table.Visible = 'off';
@@ -6053,26 +6061,26 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             column2 = cellstr(num2str(column2,3));
         end
         if ~isempty(UI.params.subset)
-        dataTable(:,2:4) = [cellstr(num2str(UI.params.subset')),column1,column2];
-        dataTable(:,1) = {false};
-        if find(UI.params.subset==ii)
-            idx = find(UI.params.subset==ii);
-            dataTable{idx,2} = ['<html><b>&nbsp;',dataTable{idx,2},'</b></html>'];
-            dataTable{idx,3} = ['<html><b>',dataTable{idx,3},'</b></html>'];
-            dataTable{idx,4} = ['<html><b>',dataTable{idx,4},'</b></html>'];
-        end
-        if ~strcmp(tableDataSortBy,'cellID')
-            [~,tableDataOrder] = sort(cell_metrics.(tableDataSortBy)(UI.params.subset));
-            UI.table.Data = dataTable(tableDataOrder,:);
-        else
-            tableDataOrder = 1:length(UI.params.subset);
-            UI.table.Data = dataTable;
-        end
+            dataTable(:,2:4) = [cellstr(num2str(UI.params.subset')),column1,column2];
+            dataTable(:,1) = {false};
+            if find(UI.params.subset==ii)
+                idx = find(UI.params.subset==ii);
+                dataTable{idx,2} = ['<html><b>&nbsp;',dataTable{idx,2},'</b></html>'];
+                dataTable{idx,3} = ['<html><b>',dataTable{idx,3},'</b></html>'];
+                dataTable{idx,4} = ['<html><b>',dataTable{idx,4},'</b></html>'];
+            end
+            if ~strcmp(tableDataSortBy,'cellID')
+                [~,tableDataOrder] = sort(cell_metrics.(tableDataSortBy)(UI.params.subset));
+                UI.table.Data = dataTable(tableDataOrder,:);
+            else
+                tableDataOrder = 1:length(UI.params.subset);
+                UI.table.Data = dataTable;
+            end
         else
             UI.table.Data = {};
         end
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % % %
 
     function customCellPlotFunc
@@ -6391,13 +6399,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                                 norm_factor = cell_metrics.spikeCount(plot_cells2(1))*0.0005;
                                 [ ~,pred] = ce_cch_conv(general.ccg(:,plot_cells2(1),plot_cells2(j))*norm_factor,20); hold on
                                 nBonf = round(.004/0.001)*2; % alpha = 0.001;
-%                                 hiBound=poissinv(1-0.001/nBonf,pred);
+                                %                                 hiBound=poissinv(1-0.001/nBonf,pred);
                                 hiBound=poissinv(1-0.001,pred);
                                 plot(general.ccg_time*1000,pred/norm_factor,'-k',general.ccg_time*1000,hiBound/norm_factor,'-r')
                             end
                             
                             title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.spikeGroup(plot_cells(j))),' (cluID ',num2str(cell_metrics.cluID(plot_cells(j))),')']),
-                             xlabel(cell_metrics.putativeCellType{plot_cells(j)}), grid on
+                            xlabel(cell_metrics.putativeCellType{plot_cells(j)}), grid on
                             if j==2; ylabel('Rate (Hz)'); end
                             xticks([-50:10:50])
                             xlim([-50,50])
@@ -6559,7 +6567,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         else
                             ha = tight_subplot(plotRows(1),plotRows(2),[.06 .03],[.05 .03],[.04 .03]);
                         end
-                                                
+                        
                         axes(ha(1)); hold on
                         % Scatter plot with t-SNE metrics
                         plotGroupScatter(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2)), axis tight
@@ -6814,7 +6822,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         cell_metrics = rmfield(cell_metrics,{numeric_fields{find(contains(numeric_fields,'_num'))}});
         updatePutativeCellType
         
-%         cell_metrics.general.SWR_batch = SWR_batch;
+        %         cell_metrics.general.SWR_batch = SWR_batch;
         cell_metrics.general.tSNE_metrics = tSNE_metrics;
         cell_metrics.general.classificationTrackChanges = classificationTrackChanges;
     end
@@ -6826,7 +6834,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Saves adjustable metrics to either all sessions or the sessions
         % with registered changes
         MsgLog(['Saving metrics']);
-        drawnow nocallbacks; 
+        drawnow nocallbacks;
         cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         if nargin > 1
@@ -6903,7 +6911,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 MsgLog('Metrics were not succesfully saved for all sessions in batch',4);
             end
         else
-            if exist(cell_metrics.general.path,'dir')
+            if isfield(cell_metrics.general,'path') && exist(cell_metrics.general.path,'dir')
                 if isfield(cell_metrics.general,'saveAs')
                     saveAs = cell_metrics.general.saveAs;
                 else
@@ -6924,8 +6932,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
+
+% % % % % % % % % % % % % % % % % % % % % %
 
     function SignificanceMetricsMatrix(~,~)
         % Performs a KS-test for selected two groups and displays a colored
@@ -6944,15 +6952,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             temp1 = UI.params.subset(find(plotClas_subset==ids(1)));
             temp2 = UI.params.subset(find(plotClas_subset==ids(2)));
             testset = plotClasGroups(nanUnique(plotClas_subset));
-%             if UI.checkbox.groups.Value == 0
-%                 testset = plotClasGroups(UI.listbox.groups.Value);
-%                 temp1 = intersect(find(strcmp(cell_metrics.(UI.popupmenu.groups.String{UI.popupmenu.groups.Value}),testset{1})),UI.params.subset);
-%                 temp2 = intersect(find(strcmp(cell_metrics.(UI.popupmenu.groups.String{UI.popupmenu.groups.Value}),testset{2})),UI.params.subset);
-%             else
-%                 testset = plotClasGroups(UI.listbox.cellTypes.Value);
-%                 temp1 = intersect(find(strcmp(cell_metrics.putativeCellType,testset{1})),UI.params.subset);
-%                 temp2 = intersect(find(strcmp(cell_metrics.putativeCellType,testset{2})),UI.params.subset);
-%             end
+            %             if UI.checkbox.groups.Value == 0
+            %                 testset = plotClasGroups(UI.listbox.groups.Value);
+            %                 temp1 = intersect(find(strcmp(cell_metrics.(UI.popupmenu.groups.String{UI.popupmenu.groups.Value}),testset{1})),UI.params.subset);
+            %                 temp2 = intersect(find(strcmp(cell_metrics.(UI.popupmenu.groups.String{UI.popupmenu.groups.Value}),testset{2})),UI.params.subset);
+            %             else
+            %                 testset = plotClasGroups(UI.listbox.cellTypes.Value);
+            %                 temp1 = intersect(find(strcmp(cell_metrics.putativeCellType,testset{1})),UI.params.subset);
+            %                 temp2 = intersect(find(strcmp(cell_metrics.putativeCellType,testset{2})),UI.params.subset);
+            %             end
             [labels2,I]= sort(temp(subindex));
             for j = 1:length(subindex)
                 fieldName = labels2{j};
@@ -7161,22 +7169,22 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             clear rawWaveform
         end
         if ~isfield(cell_metrics.acg,'wide_normalized')
-            cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide); 
+            cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide);
         end
         if ~isfield(cell_metrics.acg,'narrow_normalized')
-            cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow); 
+            cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow);
         end
         
         if isfield(cell_metrics.acg,'log10') && (~isfield(cell_metrics.acg,'log10_rate') || size(cell_metrics.acg.log10_rate,2) ~= size(cell_metrics.acg.log10,2))
-            cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10); 
+            cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
             cell_metrics.acg.log10_occurence = normalize_range(cell_metrics.acg.log10.*diff(10.^ACGLogIntervals)');
         end
-
+        
         if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')  && (~isfield(cell_metrics.isi,'log10_rate') || size(cell_metrics.isi.log10_rate,2) ~= size(cell_metrics.isi.log10,2))
-            cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10); 
-            cell_metrics.isi.log10_occurence = normalize_range(cell_metrics.isi.log10.*diff(10.^ACGLogIntervals)'); 
+            cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
+            cell_metrics.isi.log10_occurence = normalize_range(cell_metrics.isi.log10.*diff(10.^ACGLogIntervals)');
         end
-
+        
         % filtWaveform, acg2, acg1, plot
         if isfield(cell_metrics.general,'tSNE_metrics')
             tSNE_fieldnames = fieldnames(cell_metrics.general.tSNE_metrics);
@@ -7245,7 +7253,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 end
             end
             cell_metrics.responseCurves.thetaPhase_zscored = (thetaPhaseCurves-nanmean(thetaPhaseCurves))./nanstd(thetaPhaseCurves);
-%             cell_metrics.responseCurves.thetaPhase_zscored = thetaPhaseCurves;
+            %             cell_metrics.responseCurves.thetaPhase_zscored = thetaPhaseCurves;
             clear thetaPhaseCurves
         end
         
@@ -7341,7 +7349,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         customPlotOptions = cellfun(@(X) X(1:end-2),customPlotOptions.m,'UniformOutput', false);
         customPlotOptions(strcmpi(customPlotOptions,'template')) = [];
         
-%         cell_metricsFieldnames = fieldnames(cell_metrics,'-full');
+        %         cell_metricsFieldnames = fieldnames(cell_metrics,'-full');
         structFieldsType = metrics_fieldsNames(find(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'struct')));
         plotOptions = {};
         for j = 1:length(structFieldsType)
@@ -7349,8 +7357,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 plotOptions = [plotOptions;strcat(structFieldsType{j},{'_'},fieldnames(cell_metrics.(structFieldsType{j})))];
             end
         end
-%         customPlotOptions = customPlotOptions(   (strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.spikeCount,2) )   );
-%         customPlotOptions = [customPlotOptions;customPlotOptions2];
+        %         customPlotOptions = customPlotOptions(   (strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.spikeCount,2) )   );
+        %         customPlotOptions = [customPlotOptions;customPlotOptions2];
         plotOptions(find(contains(plotOptions,UI.settings.plotOptionsToExlude)))=[]; %
         plotOptions = unique([waveformOptions; waveformOptions2; acgOptions; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
         
@@ -7430,7 +7438,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         fig3_axislimit_y = [min(tSNE_metrics.plot(:,2)), max(tSNE_metrics.plot(:,2))];
         
         % Updating reference and ground truth data if already loaded
-        UI.settings.referenceData = 'None'; 
+        UI.settings.referenceData = 'None';
         UI.settings.groundTruthData = 'None';
         if ~isempty(reference_cell_metrics)
             [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
@@ -7456,7 +7464,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             spikesPlots.(customSpikePlotOptions{i}) = customSpikesPlots.(customSpikePlotOptions{i});
         end
     end
-    
+
     function [cell_metrics,referenceData] = initializeReferenceData(cell_metrics,inputType)
         
         if strcmp(inputType,'reference')
@@ -7467,12 +7475,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             for i = 1:length(referenceData.cellTypes)
                 referenceData.clusClas(strcmp(cell_metrics.putativeCellType,referenceData.cellTypes{i}))=i;
             end
-%             [referenceData.clusClas, referenceData.cellTypes] = findgroups(cell_metrics.putativeCellType);
+            %             [referenceData.clusClas, referenceData.cellTypes] = findgroups(cell_metrics.putativeCellType);
             referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas,[1:length(referenceData.cellTypes)+1])'))';
         else
             % Ground truth initialization
-            clear groundTruthData1 
-%             referenceData.groundTruthTypes = unique([UI.settings.groundTruth,cell_metrics.groundTruthClassification],'stable');
+            clear groundTruthData1
+            %             referenceData.groundTruthTypes = unique([UI.settings.groundTruth,cell_metrics.groundTruthClassification],'stable');
             [referenceData.clusClas, referenceData.groundTruthTypes] = findgroups([cell_metrics.groundTruthClassification{:}]);
             referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas)'))';
         end
@@ -7518,20 +7526,20 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         
         if ~isfield(cell_metrics.acg,'wide_normalized')
-            cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide); 
+            cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide);
         end
         if ~isfield(cell_metrics.acg,'narrow_normalized')
-            cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow); 
+            cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow);
         end
         
         if isfield(cell_metrics.acg,'log10') && (~isfield(cell_metrics.acg,'log10_rate') || size(cell_metrics.acg.log10_rate,2) ~= size(cell_metrics.acg.log10,2))
-            cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10); 
+            cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
             cell_metrics.acg.log10_occurence = normalize_range(cell_metrics.acg.log10.*diff(10.^ACGLogIntervals)');
         end
-
+        
         if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')  && (~isfield(cell_metrics.isi,'log10_rate') || size(cell_metrics.isi.log10_rate,2) ~= size(cell_metrics.isi.log10,2))
-            cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10); 
-            cell_metrics.isi.log10_occurence = normalize_range(cell_metrics.isi.log10.*diff(10.^ACGLogIntervals)'); 
+            cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
+            cell_metrics.isi.log10_occurence = normalize_range(cell_metrics.isi.log10.*diff(10.^ACGLogIntervals)');
         end
     end
 
@@ -7583,40 +7591,40 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Load sessions from the database.
         % Dialog is shown with sessions from the database with calculated cell metrics.
         % Then selected sessions are loaded from the database
-                drawnow nocallbacks;
-                if isempty(db) && exist('db_cell_metrics_session_list.mat','file')
-                    load('db_cell_metrics_session_list.mat')
-                elseif isempty(db)
-                    LoadDB_sessionlist
-                end
-                
-                loadDB.dialog = dialog('Position', [300, 300, 900, 565],'Name','Cell Explorer: Load sessions from DB','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
-                loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 ); 
-                loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
-                loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository','Brain regions'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
-                loadDB.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
-                set(loadDB.VBox, 'Heights', [50 -1 35]);
-                uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[10, 25, 150, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
-                uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[480, 25, 150, 20],'Units','normalized','String','Sort by','HorizontalAlignment','center','Units','normalized');
-                uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[640, 25, 150, 20],'Units','normalized','String','Repositories','HorizontalAlignment','center','Units','normalized');
-                loadDB.popupmenu.filter = uicontrol('Parent',loadDB.panel.top,'Style', 'Edit', 'String', '', 'Position', [10, 5, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left','Units','normalized');
-                loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[480, 5, 150, 22],'Units','normalized','String',{'Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
-                loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[640, 5, 150, 22],'Units','normalized','String',{'All repositories','Your repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
-                uicontrol('Parent',loadDB.panel.top,'Style','pushbutton','Position',[800, 5, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist,'Units','normalized');
-                uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[10, 5, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll,'Units','normalized');
-                uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[110, 5, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll,'Units','normalized');
-                loadDB.summaryText = uicontrol('Parent',loadDB.panel.bottom,'Style','text','Position',[210, 5, 480, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
-                uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[700, 5, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog,'Units','normalized');
-                uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[800, 5, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
-                
-                UpdateSummaryText
-                if exist('cell_metrics','var') && ~isempty(cell_metrics)
-                    loadDB.sessionList.Data(find(ismember(loadDB.sessionList.Data(:,3),unique(cell_metrics.sessionName))),1) = {true};
-                end
-                uicontrol(loadDB.popupmenu.filter)
-                
-                uiwait(loadDB.dialog)
-            
+        drawnow nocallbacks;
+        if isempty(db) && exist('db_cell_metrics_session_list.mat','file')
+            load('db_cell_metrics_session_list.mat')
+        elseif isempty(db)
+            LoadDB_sessionlist
+        end
+        
+        loadDB.dialog = dialog('Position', [300, 300, 900, 565],'Name','Cell Explorer: Load sessions from DB','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
+        loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 );
+        loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
+        loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110 110},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository','Brain regions'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
+        loadDB.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
+        set(loadDB.VBox, 'Heights', [50 -1 35]);
+        uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[10, 25, 150, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
+        uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[480, 25, 150, 20],'Units','normalized','String','Sort by','HorizontalAlignment','center','Units','normalized');
+        uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[640, 25, 150, 20],'Units','normalized','String','Repositories','HorizontalAlignment','center','Units','normalized');
+        loadDB.popupmenu.filter = uicontrol('Parent',loadDB.panel.top,'Style', 'Edit', 'String', '', 'Position', [10, 5, 460, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left','Units','normalized');
+        loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[480, 5, 150, 22],'Units','normalized','String',{'Session','Cell count','Animal','Species','Behavioral paradigm','Investigator','Data repository'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+        loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[640, 5, 150, 22],'Units','normalized','String',{'All repositories','Your repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.top,'Style','pushbutton','Position',[800, 5, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[10, 5, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[110, 5, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll,'Units','normalized');
+        loadDB.summaryText = uicontrol('Parent',loadDB.panel.bottom,'Style','text','Position',[210, 5, 480, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[700, 5, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[800, 5, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
+        
+        UpdateSummaryText
+        if exist('cell_metrics','var') && ~isempty(cell_metrics)
+            loadDB.sessionList.Data(find(ismember(loadDB.sessionList.Data(:,3),unique(cell_metrics.sessionName))),1) = {true};
+        end
+        uicontrol(loadDB.popupmenu.filter)
+        
+        uiwait(loadDB.dialog)
+        
         function ReloadSessionlist
             LoadDB_sessionlist
             Button_DB_filterList
@@ -7660,7 +7668,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 idx2 = 1:size(db.dataTable,1);
             end
             
-            if loadDB.popupmenu.repositories.Value == 2 
+            if loadDB.popupmenu.repositories.Value == 2
                 idx3 = find(ismember(db.menu_repository(db.index),fieldnames(db_settings.repositories)));
             else
                 idx3 = 1:size(db.dataTable,1);
@@ -7800,8 +7808,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             delete(loadDB.dialog);
         end
     end
-    
-    
+
+
     function LoadDB_sessionlist
         if exist('db_load_settings','file')
             db_settings = db_load_settings;
@@ -7882,20 +7890,20 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             msgbox({'Database tools not installed. To install, follow the steps below: ','1. Go to the Cell Explorer Github webpage','2. Download the database tools', '3. Add the db directory to your Matlab path', '4. Optionally provide your credentials in db\_credentials.m and try again.'},createStruct);
         end
     end
-    
-    
+
+
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function editDBcredentials(~,~)
         edit db_credentials.m
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function editDBrepositories(~,~)
         edit db_local_repositories.m
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function successMessage = LoadSession
@@ -8188,12 +8196,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             spikesField = [spikesField;fields_new(~cellfun('isempty',fields_new))];
         end
         spikesField = unique(spikesField);
-%         
-%         if UI.BatchMode
-%             basepath1 = cell_metrics.general.basepaths{batchIDs};
-%         else
-%             basepath1 = basepath;
-%         end
+        %
+        %         if UI.BatchMode
+        %             basepath1 = cell_metrics.general.basepaths{batchIDs};
+        %         else
+        %             basepath1 = basepath;
+        %         end
         
         % Defines the uicontrols
         % Plot name
@@ -8346,7 +8354,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 spikesPlotsOut.(spikePlotName2).eventAlignment = spikePlotEventAlignment.String{spikePlotEventAlignment.Value};
                 spikesPlotsOut.(spikePlotName2).eventSorting = spikePlotEventSorting.String{spikePlotEventSorting.Value};
                 spikesPlotsOut.(spikePlotName2).eventType = spikePlotEventType.String{spikePlotEventType.Value};
-
+                
                 delete(spikePlots_dialog);
             end
             
@@ -8462,7 +8470,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             selectedFields = list_metrics(compareToGroundTruth.sessionList.Value);
             n_selectedFields = min(length(selectedFields),4);
             k = 1;
-%             [plotRows,~]= numSubplots(length(selectedFields));
+            %             [plotRows,~]= numSubplots(length(selectedFields));
             regularFields = find(~contains(selectedFields,'.'));
             figure
             for i = 1:length(regularFields)
@@ -8554,14 +8562,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
-    
+
     function data = normalize_range(data)
         % Normalizes a input matrix or vector to the interval [0,1]
         data = data./range(data);
     end
-        
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function adjustMonoSyn_UpdateMetrics(~,~)
@@ -8632,7 +8640,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     cell_session.cell_metrics.synapticConnectionsIn(b) = a; cell_session.cell_metrics.synapticConnectionsIn = cell_session.cell_metrics.synapticConnectionsIn(1:cell_session.cell_metrics.general.cellCount);
                     
                     save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), '-struct', 'cell_session','-v7.3','-nocompression')
-%                     MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
+                    %                     MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
                     
                     if ishandle(f_LoadMonoSyn)
                         waitbar(0.9,f_LoadMonoSyn,'Updating session');
@@ -8690,9 +8698,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             return
         end
     end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    
+
+% % % % % % % % % % % % % % % % % % % % % %
+
     function performGroundTruthClassification(~,~)
         if ~isfield(UI.tabs,'groundTruthClassification')
             % UI.settings.groundTruth
@@ -8708,10 +8716,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             UI.tabs.(childName) =uitab(parentPanelName,'Title',panelTitle);
             buttonPosition = getButtonLayout(parentPanelName,buttonLabels);
-
+            
             % Display settings for tags1
             for i = 1:min(length(buttonLabels),10)
-%                 innerPosition = [(1-mod(i,2))*positionToogleButtons(1),(rows-ceil(i/2))*positionToogleButtons(2),positionToogleButtons(1)*0.95,positionToogleButtons(2)*0.95];
+                %                 innerPosition = [(1-mod(i,2))*positionToogleButtons(1),(rows-ceil(i/2))*positionToogleButtons(2),positionToogleButtons(1)*0.95,positionToogleButtons(2)*0.95];
                 UI.togglebutton.(childName)(i) = uicontrol('Parent',UI.tabs.(childName),'Style','togglebutton','String',buttonLabels{i},'Position',buttonPosition{i},'Value',0,'Units','normalized','Callback',@(src,evnt)buttonGroundTruthClassification(i),'KeyPressFcn', {@keyPress});
             end
             parentPanelName.SelectedTab = UI.tabs.(childName);
@@ -8720,7 +8728,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     end
 
 
-    
+
     function buttonGroundTruthClassification(input)
         saveStateToHistory(ii)
         if UI.togglebutton.groundTruthClassification(input).Value == 1
@@ -8776,7 +8784,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         function UpdateGroundTruthList
             temp = find(contains(groundTruthCelltypes,groundTruthTextfield.String,'IgnoreCase',true));
-                
+            
             if ~isempty(groundTruthList.Value) && ~any(temp == groundTruthList.Value)
                 groundTruthList.Value = 1;
             end
@@ -8867,7 +8875,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             MsgLog('Filter reset');
         end
         if isempty(idx_textFilter)
-           idx_textFilter = -1; 
+            idx_textFilter = -1;
         end
         uiresume(UI.fig);
     end
@@ -9037,7 +9045,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 % Adjusts the number of subplots in the GUI
                 AdjustGUI;
             case 'z'
-%                 undoClassification;
+                %                 undoClassification;
             case 'space'
                 selectCellsForGroupAction
             case 'backspace'
@@ -9088,7 +9096,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end
 
-% % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % %
 
     function ShowHideMenu(~,~)
         % Hide/show menubar
@@ -9108,8 +9116,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         opts.WindowStyle = 'normal';
         msgbox({['\bfCell Explorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\itpetersenpeter.github.io/Cell-Explorer/\rm'},'About the Cell Explorer','help',opts);
     end
-    
-% % % % % % % % % % % % % % % % % % % % % % 
+
+% % % % % % % % % % % % % % % % % % % % % %
 
     function HelpDialog(~,~)
         opts.Interpreter = 'tex';
@@ -9120,7 +9128,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             '\bfOther shortcuts\rm', '+P    : Open preferences for the Cell Explorer','+C    : Open the file directory of the selected cell','+D    : Opens sessions from the Buzsaki lab database','+A    : Load spike data','+J     : Adjust monosynaptic connections','+V    : Visit the Cell Explorer website in your browser','',...
             '+ sign indicatea that the key must be combined with command/control (Mac/Windows)','','\bfVisit the Cell Explorer''s website for further help\rm',''},'Keyboard shortcuts','help',opts);
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % % %
 
     function subplot_advanced(x,y,z,w,new,titleIn)
@@ -9140,5 +9148,5 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             subplot(x,y,y*mod(z-1,x)+w)
         end
     end
-    
+
 end

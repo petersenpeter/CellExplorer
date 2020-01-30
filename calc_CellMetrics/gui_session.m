@@ -11,7 +11,7 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % parameters : parameters struct
 % statusExit : Whether the GUI was closed via the OK button or canceled
 
-% gui_session is part of the Cell Explorer: https://github.com/petersenpeter/Cell-Explorer
+% gui_session is part of the Cell Explorer: https://petersenpeter.github.io/Cell-Explorer/
 
 % By Peter Petersen 
 % petersen.peter@gmail.com

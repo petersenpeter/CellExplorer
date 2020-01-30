@@ -3,9 +3,11 @@ function session = loadIntanMetadata(session,basepathIn)
 %
 % dependencies: read_Intan_RHD2000_file_from_basepath
 
+% Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
+
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last updated 12-11-2019
+% Last updated 30-01-2020
 
 if exist('basepathIn','var')
     basepath = basepathIn;

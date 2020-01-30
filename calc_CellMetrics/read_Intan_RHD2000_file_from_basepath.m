@@ -1,5 +1,4 @@
 function Intan_rec_info = read_Intan_RHD2000_file_from_basepath(path_in)
-
 % read_Intan_RHD2000_file
 %
 % Version 2.01, 11 October 2017

@@ -2,10 +2,10 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   This function calculates cell metrics for a given recording/session
 %   Most metrics are single value per cell, either numeric or string type, but
 %   certain metrics are vectors like the autocorrelograms or cell with double content like waveforms.
-%   The metrics are based on a number of features: Spikes, Waveforms, PCA features,
+%   The metrics are based on a number of features: spikes, waveforms, PCA features,
 %   the ACG and CCGs, LFP, theta, ripples and so fourth
 %
-%   Check the wiki of the Cell Explorer for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
+%   Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
 %
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %   INPUTS
@@ -50,11 +50,11 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   OUTPUT
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %
-%   Cell_metrics : structure described on the wiki https://github.com/petersenpeter/Cell-Explorer/wiki/Cell-metrics
+%   Cell_metrics : structure described in details at: https://petersenpeter.github.io/Cell-Explorer/pipeline/standard-cell-metrics/
 
 %   By Peter Petersen
 %   petersen.peter@gmail.com
-%   Last edited: 08-01-2020
+%   Last edited: 30-01-2020
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
