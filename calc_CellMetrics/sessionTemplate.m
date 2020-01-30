@@ -3,9 +3,11 @@ function session = sessionTemplate(input1,varargin)
 % Load parameters from a Neurosuite xml file and buzcode sessionInfo file and any other parameters specified in this script.
 % This script must be called from the basepath of your dataset, or be provided with a basepath as input
 
+% Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
+
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 30-12-2019
+% Last edited: 30-01-2020
 
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
