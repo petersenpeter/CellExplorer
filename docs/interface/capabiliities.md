@@ -44,17 +44,18 @@ There are a subset of ground truth cell types provided.
 You can save your combined cell metrics from a study into a single mat file that can be shared together with a publication. This allows peers to verify your classification or use your cell metrics directly. You can save the mat file from the Cell Explorer from the menu File -> Save classification.
 
 ### Export figures
-
+There are two ways to export figures. 
+1. You can export the whole interface from the top menu from the top menu `File` -> `Export figure`. This will open the Matlab Figure Export Setup dialog box (`exportsetupdlg`). 
+2. Single cell figures
+   1. Select a number of cells, using the mouse and press `space`, this opens the action dialog. If no selection is done before pressing `space` a selection dialog will be shown.
+   2. Select either of the three `MULTI PLOT OPTIONS`
+   3. In the new dialog, toogle `save figures`, and set appropriate settings like File format, and file path.
 
 ### Work in batch-mode while handle metrics on a single session level
-
 Using the Cell Explorer on a batch of sessions, will load metrics into one struct allowing you to visualize and classify your data across recordings and classify cells across sessions, while still maintaining the data handling on a single session level, writing your changes back to the original files. You can save metrics from a batch of sessions, and still load the data back into the Cell Explorer.
 
 ### Autosave
-
 The Cell Explorer automatically saves your manual curation every 6 classification action (actions include changes to cell-type, deep-superficial assignment and brain region). You can turn this feature off or adjust the autosave-interval in preferences. The autosave only saves your progress to the workspace and you have to save your changes to the original cell_metrics file through the Cell Explorer interface.
 
 ### Database capabilities
-
 The Cell Explorer is capable of loading datasets from and writing to the Buzsaki lab database. Please setup your credentials and local paths as [described here]({{"/database/preparation/"|absolute_url}}).
-
