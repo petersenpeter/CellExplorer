@@ -19,6 +19,6 @@ We are sharing a large set of cells that is available to explore or use as refer
    3. Histogram data: histogram curves along x and y axes (panel D in figure below). 
 7. You can define the number of bins, and which of the reference cell types to display. 
 
-![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png)
-
 The reference data is not displayed in the t-SNE plot. 
+
+![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png)
