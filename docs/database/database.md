@@ -6,4 +6,4 @@ nav_order: 4
 ---
 # Database
 {: .no_toc}
-The public data in the database can be loaded as reference data, and can be accessed without providing credentials, but login credentials are necessary for full functionality of the database. 
+The Cell Explorer can communicate with the [Buzsaki lab database](https://buzsakilab.com/wp/). The public data in the database can be loaded as reference data without login credentials, but credentials are necessary for having full functionality of the database. 

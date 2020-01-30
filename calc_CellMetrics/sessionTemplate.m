@@ -4,6 +4,8 @@ function session = sessionTemplate(input1,varargin)
 % This script must be called from the basepath of your dataset, or be provided with a basepath as input
 % Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
 
+% Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
+
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 30-01-2020
