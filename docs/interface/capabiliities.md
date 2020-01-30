@@ -35,6 +35,8 @@ Monosynaptic connections are determined in the pipeline, and you can visualize t
 ### Reference data
 To help you characterize your own data, you can load reference data provided by our lab.
 
+![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png)
+
 ### Ground truth data
 There are a subset of ground truth cell types provided.
 
