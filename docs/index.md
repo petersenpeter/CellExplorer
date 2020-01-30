@@ -32,8 +32,8 @@ The Cell Explorer can be separated into three main components:
 {:toc}
 
 ## Getting started
-1. [Clone](x-github-client://openRepo/https://github.com/petersenpeter/Cell-Explorer) or [download](https://github.com/petersenpeter/Cell-Explorer/archive/master.zip) the repository (cloning is strongly recommended).
-2. Add local repository to your Matlab setpath. 
+1. [Clone](x-github-client://openRepo/https://github.com/petersenpeter/Cell-Explorer), fork, or [download](https://github.com/petersenpeter/Cell-Explorer/archive/master.zip) the repository (cloning is recommended).
+2. Add the local repository to your Matlab setpath. 
 3. The pipeline uses `CCGHeart.c`. to calculate the CCGs. Compiled versions are included for Windows and Mac. __If you are using Linux__ you have to compile the script. In Matlab, go to `Cell-Explorer/calc_CellMetrics/CCG/` and run this line:
 ```m
 mex -O CCGHeart.c
@@ -46,13 +46,13 @@ mex -O CCGHeart.c
 5. That's it! Now you can explore the software with below example data or try one of the tutorials.
 
 ### Try the Cell Explorer with example data
-There is an example dataset included in the repository. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/blob/master/LoadCellMetricBatch.m) into Matlab and type:
+There is an example dataset included in the repository for trying the Cell Explorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/blob/master/LoadCellMetricBatch.m) into Matlab and type:
 ```m
 CellExplorer('metrics',cell_metrics)
 ```
 
 ### Tutorials for using the framework with your own data 
-We have created a few tutorials, please check them out. There is a [tutorial script](https://github.com/petersenpeter/Cell-Explorer/blob/master/tutorials/CellExplorer_Tutorial.m): `CellExplorer_Tutorial.m` included for running the pipeline on your data.
+We have created a few tutorials to get you started, covering the pipeline and the graphical interface. There is also a [tutorial script](https://github.com/petersenpeter/Cell-Explorer/blob/master/tutorials/CellExplorer_Tutorial.m): `CellExplorer_Tutorial.m` included with example code for running the pipeline and the GUI on your data.
 
 [View tutorials]({{ "/tutorials/tutorials/"|absolute_url}}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2}
 
