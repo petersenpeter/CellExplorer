@@ -75,7 +75,7 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 * `ab_ratio`: Waveform asymmetry; the ratio between the two positive peaks `(peakB-peakA)/(peakA+peakB)`.
 * `peakVoltage`: Peak voltage (µV) Defined from the channel with the maximum waveform (highpass filtered). `max(waveform)-min(waveform)`.
 
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%">
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%"></p>
 
 ## Cell-type classification
 * `putativeCellType`: Putative cell types.
