@@ -15,7 +15,6 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 {:toc}
 
 
-
 ## General metrics
 * `general`
   * `basename`
