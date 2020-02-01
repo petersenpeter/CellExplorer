@@ -13,13 +13,10 @@ nav_order: 2
 {:toc}
 
 ## Flow charts
-Below three flow charts shows the three main processing steps
-1. Creating the session struct
-2. Running the pipeline
-3. Running the Cell Explorer.
+Below three flow charts shows the three main processing steps. The boxes are color coded according to external files (blue), database (purple), script (green), cell explorr mat files (yellow).
 
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/AlgorithmFlowchart.png)
-The boxes are color coded according to external files (blue), database (purple), script (green), cell explorr mat files (yellow).
+
 
 ## Data paths
 For each session there are two main paths that the Cell Explorer uses, a basepath and a clusteringpath (relative to basepath). 
