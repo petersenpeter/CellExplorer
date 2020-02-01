@@ -12,6 +12,9 @@ nav_order: 2
 1. TOC
 {:toc}
 
+## Flow charts
+Below three flow charts shows the 
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/Flowchart.png)
 ## Data paths
 For each session there are two main paths that the Cell Explorer uses, a basepath and a clusteringpath (relative to basepath). 
 
@@ -26,8 +29,6 @@ The cell metrics are kept in a [cell_metrics struct as described here]({{"/pipel
 
 ### Session metadata
 A Matlab struct (session), stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) and visualized with [gui_session.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/gui_session.m). It is structured by the data types as defined below:
-
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/02/Flowchart-Data-types.png" width="100%">
 
 * `general`
   * `name` : name of session

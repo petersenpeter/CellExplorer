@@ -50,7 +50,7 @@ There are two ways to export figures.
    1. Select a number of cells, using the mouse and press `space`, this opens the action dialog. If no selection is done before pressing `space` a selection dialog will be shown.
    <img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%">
    2. Select either of the three `MULTI PLOT OPTIONS`
-   3. In the new dialog, toogle `save figures`, and set appropriate settings like File format, and file path.
+   3. In the new dialog, toogle `Save figures`, and define format and file path.
    <img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%">
 
 ### Work in batch-mode while handling metrics on a single session level
