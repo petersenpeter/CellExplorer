@@ -12,16 +12,16 @@ nav_order: 1
 1. TOC
 {:toc}
 
-## Processing flowcharts
+### Processing flowcharts
 Below three flow charts shows the three main processing steps, 1. Gathering metadata, 2. Running the pipeline and 3. Running Cell Explorer. The boxes are color coded according to external files (blue), database (purple), script (green), Cell Explorer mat files (yellow).
 
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/AlgorithmFlowchart-1.png)
 
-### Running the pipeline from a data path
+### Running pipeline from a data path
 The pipeline follows the data standards [described here]({{"/pipeline/data-structure-and-format/"|absolute_url}}). Saving your data in the specified data formats, integrates your data better with the Cell Explorer, allowing you to plot spike rasters and event histograms among other things.
 
 To run the pipeline from a session struct, please see this example
-[sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) file for how to format this properly. You can edit the template to fit to your data.
+[sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) file for how to format this properly. You can edit the template to fit it to your data.
 ```m
 session = sessionTemplate;
 ```
@@ -45,7 +45,7 @@ Once complete, view the result in the Cell Explorer by typing:
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 
-### Running the pipeline using the Buzsaki lab database
+### Running pipeline using the Buzsaki lab database
 The Cell Explorer pipeline uses a single Matlab struct for handling metadata. The struct is automatically loaded from the buzsaki lab database if you are running the pipeline with the database, and is located in the base path once a session has been processed. To run the pipeline on a session named 'PetersSession' using the database type:
 ```m
 cell_metrics = calc_CellMetrics('sessionName','PetersSession');
@@ -54,7 +54,7 @@ To view the result in the Cell Explorer type:
 ```m
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
-### Running the Cell Explorer in batch mode
+### Running Cell Explorer in batch mode
 To open multiple sessions together you can run the Cell Explorer in batch mode. Below is an example for running the Cell Explorer on three sessions from the database:
 
 ```m

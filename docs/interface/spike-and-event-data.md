@@ -40,3 +40,6 @@ spikePlot.plotDuration = 0;                 % [binary] show event duration for e
 spikePlot.plotCount = 0;                    % [binary] show spike count for each event on a separate y-axis plot
 end
 ```
+
+Below figure shows three raster plot examples 1. Phase vs position, 2. trials vs position and 3. spike ampltude vs time. 
+![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRaster.png)

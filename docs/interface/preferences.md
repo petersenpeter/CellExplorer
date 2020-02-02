@@ -26,7 +26,7 @@ dl {
 
 # Preferences
 {: .no_toc}
-Allows the user to customize the Cell Explorer. Preferences are located in `CellExplorer_Preferences.m` each a field in `UI.settings.*`.
+Preferences are located in `CellExplorer_Preferences.m` and is stored as fields in `UI.settings.*`.
 
 ### Display settings
 <dl>
