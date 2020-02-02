@@ -4,7 +4,7 @@ title: Manual curation
 parent: Tutorials
 nav_order: 3
 ---
-# Manual curation tutorial (draft)
+# Manual curation tutorial
 {: .no_toc}
 This tutorial will guide you through the manual curation process.
 

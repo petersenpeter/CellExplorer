@@ -8,7 +8,7 @@ has_children: false
 {: .no_toc}
 {: .fs-9 }
 
-The Cell Explorer is a graphical user interface (GUI), standardized pipeline and data structure for exploring and classifying spike sorted single units acquired using extracellular electrodes.
+Cell Explorer is a graphical user interface (GUI), standardized pipeline and data structure for exploring and classifying spike sorted single units acquired using extracellular electrodes.
 {: .fs-6 .fw-300 }
 
 [Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [View code on GitHub](https://github.com/petersenpeter/Cell-Explorer){: .btn .fs-5 .mb-4 .mb-md-0 }
@@ -19,7 +19,7 @@ The Cell Explorer is a graphical user interface (GUI), standardized pipeline and
 {: .no_toc}
 The large diversity of cell-types of the brain provide the means by which circuits perform complex operations. Understanding such diversity is one of the key challenges of modern neuroscience. These cells have many unique electrophysiological and behavioral features from which parallel cell-type classification can be inferred. The Cell Explorer is a framework for analyzing and characterizing single cells recorded using extracellular electrodes. A high dimensional representation is built from electrophysiological and functional features including the spike waveform, spiking statistics, behavioral spiking dynamics, spatial firing maps and various brain rhythms. Moreover, we are incorporating opto-tagged cells into this pipeline (ground-truth cell types). The user-friendly graphical interface allows for verification, classification and exploration of those same features. The framework is built entirely in Matlab making it fast and intuitive to implement your own code and incorporate the Cell Explorer in your overall pipeline and analysis scripts.
 
-### The components of the Cell Explorer
+### The components of Cell Explorer
 {: .no_toc}
 The Cell Explorer can be separated into three main components:
 

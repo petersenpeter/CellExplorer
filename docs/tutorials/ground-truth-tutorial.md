@@ -4,7 +4,7 @@ title: Ground truth data
 parent: Tutorials
 nav_order: 3
 ---
-# Ground truth data tutorial (draft)
+# Ground truth data tutorial
 {: .no_toc}
 The Cell Explorer contains a select set of ground truth data located at `groundTruthData/`. This tutorial will guide you through using the ground truth data included with the Cell Explorer.
 

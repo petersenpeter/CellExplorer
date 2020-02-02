@@ -4,7 +4,7 @@ title: Perform opto-tagging
 parent: Tutorials
 nav_order: 3
 ---
-# Opto-tagging tutorial (draft)
+# Opto-tagging tutorial
 {: .no_toc}
 This tutorial will guide you through the process of tagging your cells by assigning groundTruthClassification-tags to your data in the Cell Explorer.
 
