@@ -12,7 +12,7 @@ This tutorial will guide you through providing the necessary input and understan
 
 | Files        | Description |
 |:-------------|:-------------|
-| `sessionName.lfp` | LFP file|
+| `sessionName.lfp` | LFP file |
 | `sessionName.theta.channelInfo.mat` | theta filtered channel |
 
 ## Spatial metrics
