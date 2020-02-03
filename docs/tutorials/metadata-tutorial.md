@@ -6,11 +6,11 @@ nav_order: 2
 ---
 # Metadata tutorial (draft)
 {: .no_toc}
-This tutorial shows you how to generate the [metadata struct](https://petersenpeter.github.io/Cell-Explorer/pipeline/data-structure-and-format/#session-metadata) used by the Cell Explorer.
+This tutorial shows you how to generate the [session metadata struct](https://petersenpeter.github.io/Cell-Explorer/pipeline/data-structure-and-format/#session-metadata) used by the Cell Explorer.
 
-1. Define the basepath of the dataset to run. The dataset should at minimum consist of a `basename.dat`, a `basename.xml` and spike sorted data.
+1. Define the basepath of the dataset to run. A valid dataset consists of a `basename.dat`, a `basename.xml` (not required) and spike sorted data.
 ```m
-% basepath = '/your/data/path/basename/';
+basepath = '/your/data/path/basename/';
 cd(basepath)
 ```
 
@@ -19,7 +19,7 @@ cd(basepath)
 session = sessionTemplate(basepath);
 ```
 
-3. Use an interface for inspecting the metadata and for further manual entry.
+3. Use the session gui for inspecting the metadata struct and for further manual entry.
 ```m
 session = gui_session(session);
 ```

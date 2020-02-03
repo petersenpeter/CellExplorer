@@ -36,7 +36,6 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 * `spikeCount`: Spike count of the cell from the entire session.
 * `firingRate`: Firing rate in Hz: Spike count normalized by the interval between the first and the last spike.
 * `cv2`: [Coefficient of variation](https://www.ncbi.nlm.nih.gov/pubmed/8734581) (CV2). 
-* `refractoryPeriodViolation`: Refractory period violation (‰): Fraction of ISIs less than 2ms.
 * `burstIndex_Mizuseki2012` Burst index: Fraction of spikes with a neighboring ISI < 6ms as defined by [Mizuseki et al. Hippocampus 2012](http://www.buzsakilab.com/content/PDFs/Mizuseki2012.pdf).
 
 ## ACG & CCG based metrics
@@ -92,10 +91,11 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 ## Monosynaptic connections
 * `putativeConnections`: putative connections determined from cross correlograms. Contains two fields: `excitatory` and `inhibitory`, each contains connections pairs. 
 
-## PCA feature based metrics
+## Sorting quality metrics
 Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscience. 2005.](https://www.ncbi.nlm.nih.gov/pubmed/15680687)
 * `isolationDistance`: Isolation distance.
 * `lRatio`: L-ratio.
+* `refractoryPeriodViolation`: Refractory period violation (‰): Fraction of ISIs less than 2ms.
 
 ## Sharp wave ripple metrics
 * `ripples_modulationIndex`: strength of ripple modulation of the firing rate)
