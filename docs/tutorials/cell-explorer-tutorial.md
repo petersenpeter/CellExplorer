@@ -6,7 +6,7 @@ nav_order: 3
 ---
 # Manual curation tutorial
 {: .no_toc}
-This tutorial will guide you through the manual curation process.
+This tutorial will guide you through the manual curation process in Cell Explorer.
 
 1. Launch the Cell Explorer
 ```m
