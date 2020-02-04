@@ -174,7 +174,12 @@ saveDeepSuperficial
         answer = questdlg('Do you want to save the manual deep superfical curration?', 'Save Deep-superficial curration', 'Yes','No','Yes');
         if strcmp(answer,'Yes')
             disp('Saving deep superfical classification')
-            save(deepSuperficial_file,'deepSuperficialfromRipple','-v7.3','-nocompression');
+            try
+                save(deepSuperficial_file,'deepSuperficialfromRipple','-v7.3','-nocompression');
+            catch
+                warndlg('Failed to save deep superfical classification','Warning');
+                return
+            end
         else
             deepSuperficialfromRipple = [];
         end

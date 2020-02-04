@@ -65,7 +65,8 @@ addParameter(p,'clusteringpaths',{},@iscell);
 
 % Extra inputs
 addParameter(p,'SWR',{},@iscell);
-addParameter(p,'summaryFigures',false,@islogical);
+addParameter(p,'summaryFigures',false,@islogical); % Creates summary figures
+addParameter(p,'plotCellIDs',[],@isnumeric); % Defines which cell ids to plot in the summary figures
 
 % Parsing inputs
 parse(p,varargin{:})
@@ -86,6 +87,7 @@ clusteringpaths = p.Results.clusteringpaths;
 % Extra inputs
 SWR_in = p.Results.SWR;
 summaryFigures = p.Results.summaryFigures;
+plotCellIDs = p.Results.plotCellIDs;
 
 %% % % % % % % % % % % % % % % % % % % % % %
 % Initialization of variables and figure
@@ -766,9 +768,13 @@ UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Posi
 if summaryFigures
     disp('Creating summary figures')
     plotSummaryFigures
+    if ishandle(fig)
+        close(fig)
+    end
     if ishandle(UI.fig)
         close(UI.fig)
     end
+    
     disp('Summary figures created')
     return
 end
@@ -5841,6 +5847,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 % % % % % % % % % % % % % % % % % % % % % %
 
     function plotSummaryFigures
+        if isempty(plotCellIDs)
+            cellIDs = 1:length(cell_metrics.cellID);
+        else
+            ids = ismember(plotCellIDs,1:length(cell_metrics.cellID));
+            cellIDs = plotCellIDs(ids);
+        end
         UI.params.subset = 1:length(cell_metrics.cellID);
         if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatory')
             putativeSubset = find(sum(ismember(cell_metrics.putativeConnections.excitatory,UI.params.subset)')==2);
@@ -5850,7 +5862,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         clr = UI.settings.cellTypeColors(intersect(classes2plot,plotClas(UI.params.subset)),:);
         classes2plotSubset = unique(plotClas);
         [plotRows,~]= numSubplots(length(plotOptions)+3);
-        cellIDs = 1:length(cell_metrics.cellID);
+        
         fig = figure('Name',['Cell Explorer'],'NumberTitle','off','pos',UI.settings.figureSize);
         for j = 1:length(cellIDs)
             if ~ishandle(fig)
@@ -5914,8 +5926,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             % Saving figure
             if ishandle(fig)
-                savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
-                clf(fig)
+                try 
+                    savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
+                catch 
+                    disp('action canceled by user')
+                end
             end
         end
         
@@ -5927,6 +5942,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             %             if exportPlots.popupmenu.fileFormat.Value == 1
             saveas(fig,fullfile(savePath,[fileNameIn,'.png']))
+            clf(fig)
+            
             %             else
             %                 set(fig,'Units','Inches');
             %                 pos = get(fig,'Position');
@@ -6223,7 +6240,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         cellIDs = unique(cellIDs);
         highlightSelectedCells
         choice = '';
-        GoTo_dialog = dialog('Position', [0, 0, 300, 350],'Name','Select action'); movegui(GoTo_dialog,'center')
+        GoTo_dialog = dialog('Position', [0, 0, 300, 350],'Name','Group action'); movegui(GoTo_dialog,'center')
         
         actionList = strcat([{'---------------- Assignments -----------------','Assign existing cell-type','Assign new cell-type','Assign label','Assign deep/superficial','Assign tag','-------------------- CCGs ---------------------','CCGs ','CCGs (only with selected cell)','----------- MULTI PLOT OPTIONS ----------','Row-wise plots (5 cells per figure)','Plot-on-top (one figure for all cells)','Dedicated figures (one figure per cell)','--------------- SINGLE PLOTS ---------------'},plotOptions']);
         brainRegionsList = uicontrol('Parent',GoTo_dialog,'Style', 'ListBox', 'String', actionList, 'Position', [10, 50, 280, 270],'Value',1,'Callback',@(src,evnt)CloseGoTo_dialog(cellIDs));
