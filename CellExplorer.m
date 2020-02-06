@@ -34,14 +34,17 @@ function cell_metrics = CellExplorer(varargin)
 % CellExplorer('sessions',{'rec1','rec2'}) % Load batch from database
 % CellExplorer('sessionIDs',[10985,2845])  % Load batch from database
 % CellExplorer('clusteringpaths',{'path1','path1'}) % Load batch from a list with paths
-% CellExplorer('basepaths',{'path1','[path1'}) % Load batch from a list with paths
+% CellExplorer('basepaths',{'path1','[path1'})      % Load batch from a list with paths
+% - Summary figure calls:
+% CellExplorer('summaryFigures',true)      % creates summary figures from current path
+% CellExplorer('summaryFigures',true,'plotCellIDs',[1,4,5]) % creates summary figures for select cells [1,4,5]
 %
 % OUTPUT
 % cell_metrics: struct
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 30-01-2020
+% Last edited: 04-02-2020
 
 % Shortcuts to built-in functions:
 % Data handling: initializeSession, saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData
@@ -49,8 +52,8 @@ function cell_metrics = CellExplorer(varargin)
 
 p = inputParser;
 
-addParameter(p,'metrics',[],@isstruct);
-addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'metrics',[],@isstruct);         % cell_metrics struct
+addParameter(p,'basepath',pwd,@isstr);          % Path to session (base directory)
 addParameter(p,'clusteringpath',pwd,@isstr);
 addParameter(p,'session',[],@isstruct);
 addParameter(p,'basename','',@isstr);
@@ -128,7 +131,7 @@ positionsTogglebutton = [[1 29 27 13];[29 29 27 13];[1 15 27 13];[29 15 27 13];[
 connections = []; plotName = ''; db = {}; plotConnections = [1 1 1]; tableDataOrder = [];
 groundTruthCelltypesList = {''}; ACGLogIntervals = -3:0.04:1; idx_textFilter = []; clickPlotRegular = true; polygon1.handle = gobjects(0); referenceData=[];
 cellsExcitatoryPostsynaptic = []; cellsInhibitoryPostsynaptic = []; reference_cell_metrics = []; UI.params.outbound = [];
-groundTruth_cell_metrics = []; groundTruthData=[]; K = gausswin(5)*gausswin(5)'; K = 0.5*K/sum(K(:)); customPlotOptions = {};
+groundTruth_cell_metrics = []; groundTruthData=[]; K = gausswin(5)*gausswin(5)'; K = 0.5*K/sum(K(:)); customPlotOptions = {}; fig = 1;
 set(groot, 'DefaultFigureVisible', 'on'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1200,maxFigureSize(3)-50), min(800,maxFigureSize(4)-50)];
 
 if isempty(basename)
@@ -775,7 +778,7 @@ if summaryFigures
         close(UI.fig)
     end
     
-    disp('Summary figures created')
+    disp('Summary figures created. Saved to /summaryFigures')
     return
 end
 
