@@ -78,7 +78,7 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 
 ## Cell-type classification
 * `putativeCellType`: Putative cell types.
-  * In the processing pipeline, cells are classified into three putative cell types: Narrow Interneurons, Wide Interneurons and Pyramidal Cells.
+  * In the processing pipeline, cells are classified into three putative cell types: **Narrow Interneurons, Wide Interneurons and Pyramidal Cells**.
   * Interneurons are selected by 3 separate criteria:
   1. acg_tau_decay > 30ms
   2. acg_tau_rise > 3ms
@@ -122,9 +122,9 @@ The spatial metrics are all based on average firing rate map.
 * `placeCell`: Place cell (binary, determined from the Mizuseki spatial metrics).
 
 ## Firing rate stability metrics
-* `firingRateGiniCoeff` : The Gini coefficient of the firing rate across time.
-* `firingRateStd` : Standard deviation of the "firing rate across time" divided by the mean. 
-* `firingRateInstability` : Mean of the absolute differential "firing rate across time" divided by the mean: `abs(diff(firingRateAcrossTime))`.
+* `firingRateGiniCoeff`: The Gini coefficient of the firing rate across time.
+* `firingRateStd`: Standard deviation of the "firing rate across time" divided by the mean. 
+* `firingRateInstability`: Mean of the absolute differential "firing rate across time" divided by the mean: `abs(diff(firingRateAcrossTime))`.
 
 ## Event metrics
 * `events`: event time series.
@@ -134,3 +134,7 @@ The spatial metrics are all based on average firing rate map.
 
 ## Response curve metrics
 * `responseCurves`: response curves.
+
+## Ground truth metrics
+* `groundTruthClassification`: Opto-tagged/ground truth cell tags. More than one tag can be assigned to each cell. 
+
