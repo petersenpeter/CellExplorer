@@ -14,7 +14,8 @@ We are sharing a large set of cells that is available to explore or use as refer
 
 ![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png)
 
-1. A representation of a session without reference data.
-2. Image data: 2d colored density map.
-3. Scatter data: scatter points `x`.
-4. Histogram data: histogram curves along x and y axes. 
+Plotting options:
+1. A representation of a session without reference data (panel A).
+2. Image data: 2d colored density map (panel B).
+3. Scatter data: scatter points `x` (panel C).
+4. Histogram data: histogram curves along x and y axes (panel D). 
