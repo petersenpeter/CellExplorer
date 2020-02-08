@@ -2,7 +2,7 @@
 layout: default
 title: Use database from UI
 parent: Tutorials
-nav_order: 8
+nav_order: 9
 ---
 # Tutorial on using the database loading dialog
 {: .no_toc}

@@ -22,6 +22,5 @@ function cell_metrics = template(cell_metrics,session,spikes,spikes_all)
     %
     % OUTPUT
     % cell_metrics      updated cell_metrics struct
-
 end
 ```
