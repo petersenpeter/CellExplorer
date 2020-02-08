@@ -6,4 +6,4 @@ has_children: true
 ---
 # Processing pipeline
 {: .no_toc}
-Below pages describes the data format at the standard metrics and how you can add your own metrics. 
+Below pages describe the data format and the standard metrics and how you can add your own metrics. 
