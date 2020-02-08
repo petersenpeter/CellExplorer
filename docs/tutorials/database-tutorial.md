@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Using the database from terminal
+title: Use database from terminal
 parent: Tutorials
 nav_order: 8
 ---

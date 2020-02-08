@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Hippocampal metrics
-parent: Data structure
+parent: DProcessing pipeline
 nav_order: 7
 ---
 # Hippocampal and spatial metrics (draft)
