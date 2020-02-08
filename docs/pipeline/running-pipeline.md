@@ -18,7 +18,7 @@ Below three flow charts shows the three main processing steps, 1. Gathering meta
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/AlgorithmFlowchart-1.png)
 
 ### Running pipeline from a data path
-The pipeline follows the data standards [described here]({{"/pipeline/data-structure-and-format/"|absolute_url}}). Saving your data in the specified data formats, integrates your data better with the Cell Explorer, allowing you to plot spike rasters and event histograms among other things.
+The pipeline follows the data standards [described here]({{"/datastructure/data-structure-and-format/"|absolute_url}}). Saving your data in the specified data formats, integrates your data better with the Cell Explorer, allowing you to plot spike rasters and event histograms among other things.
 
 To run the pipeline from a session struct, please see this example
 [sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) file for how to format this properly. You can edit the template to fit it to your data.
