@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Using database from UI
+title: Use database from UI
 parent: Tutorials
 nav_order: 8
 ---
