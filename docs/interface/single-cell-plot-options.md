@@ -15,26 +15,26 @@ The single cells can be plotted with various plot options. You can further creat
 
 ### Waveforms
 There are three types of waveform plots: single waveform with noise curves in absolute amplitude, z-scored waveforms across population, and color plot with same z-scored waveforms. Further there are filtered and unfiltered waveform plot options. 
-![Waveforms](https://buzsakilab.com/wp/wp-content/uploads/2019/12/waveforms.png)
+![Waveforms](https://buzsakilab.com/wp/wp-content/uploads/2020/02/waveforms.png)
 
 ### Autocorrelograms
 There are three types of autocorrelograms (ACGs) all normalized to firing rates: single ACG, population plot and a color plot with z-scored ACGs. Further there are three ACG types: [-50ms:0.5ms:50ms], [-500ms:1ms:500ms] and a log10 [1ms:10s]. 
-![ACGs linear](https://buzsakilab.com/wp/wp-content/uploads/2019/12/ACGlinear.png)
+![ACGs linear](https://buzsakilab.com/wp/wp-content/uploads/2020/02/ACGlinear.png)
 
-![ACGs log](https://buzsakilab.com/wp/wp-content/uploads/2019/12/ACGlog.png)
+![ACGs log](https://buzsakilab.com/wp/wp-content/uploads/2020/02/ACGlog.png)
 
 ### ISI distributions
 Three types of log10 ISI distributions: single ISI distribution with the addition from ACG shown in the same plot, all the ISIs for the whole population, and a color plot with z-scored ISIs across the population. The normalization can further be set to three different values: occurrence, rate (normalized by bin size), and instantaneous firing rates (1/ISIs).
-![ISI rate](https://buzsakilab.com/wp/wp-content/uploads/2019/12/ISIrate.png)
+![ISI rate](https://buzsakilab.com/wp/wp-content/uploads/2020/02/ISI_rate.png)
 
-![ISI occurence](https://buzsakilab.com/wp/wp-content/uploads/2019/12/ISIoccurence.png)
+![ISI occurence](https://buzsakilab.com/wp/wp-content/uploads/2020/02/ISI_occurance.png)
 
 ### Firing rate maps
-![Firing rate maps](https://buzsakilab.com/wp/wp-content/uploads/2019/12/firingRateMaps-1.png)
+![Firing rate maps](https://buzsakilab.com/wp/wp-content/uploads/2020/02/firingRateMaps.png)
 
 ### Response curves
 Response curves are generally 
-![ResponseCurves](https://buzsakilab.com/wp/wp-content/uploads/2019/12/responseCurves.png)
+![ResponseCurves](https://buzsakilab.com/wp/wp-content/uploads/2020/02/responseCurve_theta.png)
 
 ### PSTHs
 PSTHs can be shown for either sessionName.*.psth.mat files or for sessionName.*.events.mat. They are standard aligned to the onset of the event, but can also be aligned to the peak, center or offset.
