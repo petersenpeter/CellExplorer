@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Use public data as reference data
-parent: Database
+parent: Tutorials
 nav_order: 3
 ---
 # Public data

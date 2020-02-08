@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Loading sessions from the database
-parent: Database
+parent: Tutorials
 nav_order: 2
 ---
 # Loading sessions from the database

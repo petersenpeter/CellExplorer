@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Data structure and format
-parent: Processing pipeline
+parent: Data structure
 nav_order: 2
 ---
 # Data structure and format
