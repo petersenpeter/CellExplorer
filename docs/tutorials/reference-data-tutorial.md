@@ -19,12 +19,11 @@ The Buzsaki lab is sharing a large set of datasets and a large set of these sess
    3. Histogram data: histogram curves along x and y axes (panel D in figure below). 
 6. You can define the number of bins, and which of the reference cell types to display. You can select which of the reference cell types to display in the Display Settings tab group `Reference`
 
-The reference data is not displayed in the t-SNE plot. 
-
-Once a selection has been made, you can skip step 2 and 3. The video below shows the steps in the Cell Explorer:
+Once a selection has been made, you can skip step 2 and 3. The reference data is not displayed in the t-SNE plot. The video below shows the steps in the Cell Explorer:
 
 <video width="100%" height="auto" controls="controls">
   <source src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/ReferenceDataTutorial.mp4" type="video/mp4">
 </video>
 
-![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png)
+Below figure shows the various ways to plot reference data in Cell Explorer:
+![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png){: .mt-4}
