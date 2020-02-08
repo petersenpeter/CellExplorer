@@ -21,9 +21,9 @@ The large diversity of cell-types of the brain provide the means by which circui
 
 ### The components of Cell Explorer
 {: .no_toc}
-The Cell Explorer can be separated into three main components:
+The Cell Explorer can be separated into four components:
 
-[1. Processing pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [2. Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [3. Database]({{ "/database/preparation/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
+[Data structure](/Cell-Explorer/datastructure/data-structure/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Processing pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Database]({{ "/database/preparation/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
 
 ## Table of contents
 {: .no_toc .text-delta }
