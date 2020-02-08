@@ -24,7 +24,7 @@ You can do direct classification in the GUI. The following types of classificati
 * **Ground truth cell types**: Ground truth data can be analysed directly in the GUI.
 
 ### Interface for deep-superfial classification curation
-![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_deep-superfial.png)
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/gui_deepSuperficial.png){: .mt-4}
 
 ## Monosynaptic connections
 Monosynaptic connections are determined in the pipeline, and you can visualize the connections in the GUI and redo the manual curation directly from the GUI. You can adjust connections from the Cell Explorer by launching the monosyn interface.
