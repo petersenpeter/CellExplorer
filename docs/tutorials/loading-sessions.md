@@ -2,9 +2,9 @@
 layout: default
 title: Loading sessions from the database
 parent: Tutorials
-nav_order: 2
+nav_order: 8
 ---
-# Loading sessions from the database
+# Tutorial on using the database loading dialog
 {: .no_toc}
 Sessions described in the database can be loaded directly in the Cell Explorer.
 1. Launch the Cell Explorer

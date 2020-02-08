@@ -1,12 +1,12 @@
 ---
 layout: default
 title: Hippocampal metrics
-parent: Tutorials
+parent: Data structure
 nav_order: 7
 ---
-# Tutorial on hippocampal and spatial metrics (draft)
+# Hippocampal and spatial metrics (draft)
 {: .no_toc}
-This tutorial will guide you through required files and metadata necessary for hippocampal and spatial metrics.
+hippocampal and spatial metrics require specific files and metadata necessary being calculated in the pipeline.
 
 ## Theta metrics
 A theta-band filtered time series is generated from the lfp file. Continues theta power and phase is then calculated from the generated time series. For each unit the average theta firing profile is calculated together with the theta phase peak/trough and the strength of the theta entrainment. [Learn more about theta oscillation metrics](/Cell-Explorer/pipeline/standard-cell-metrics/#theta-oscillation-metrics). The tracking file is used for filtering by a minimum running speed.
