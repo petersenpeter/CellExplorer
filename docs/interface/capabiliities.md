@@ -30,7 +30,7 @@ You can do direct classification in the GUI. The following types of classificati
 Monosynaptic connections are determined in the pipeline, and you can visualize the connections in the GUI and redo the manual curation directly from the GUI. You can adjust connections from the Cell Explorer by launching the monosyn interface.
 
 ### Interface for monosynaptic connections curation
-![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_monosyn.png)
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/monosyn.png)
 
 ## Database capabilities
 The Cell Explorer is capable of loading datasets from and writing to the Buzsaki lab database. Please setup your credentials and local paths as [described here]({{"/database/preparation/"|absolute_url}}).
