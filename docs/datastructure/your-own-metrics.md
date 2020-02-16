@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Adding your own metrics
-parent: Processing pipeline
+parent: Data structure
 nav_order: 6
 ---
 # Adding your own metrics

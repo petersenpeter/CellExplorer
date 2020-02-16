@@ -46,6 +46,6 @@ sessionTest = 'Peter_MS10_170307_154746_concat';
 sessions = db_load_sessions('sessionName',sessionTest);
 session = sessions{1};
 ```
-If succesfull it will create the session struct in your workspace containing metadata for that session. You can learn more about the data structure and format [here]({{"/pipeline/data-structure-and-format/"|absolute_url}}).
+If succesfull it will create the session struct in your workspace containing metadata for that session. You can learn more about the data structure and format [here]({{"/datastructure/data-structure-and-format/"|absolute_url}}).
 
 There are a couple of database example calls in the Matlab script [db_example.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/db/db_example.m) located in the db folder.

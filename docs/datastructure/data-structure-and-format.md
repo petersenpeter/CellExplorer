@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Data structure and format
-parent: Processing pipeline
+parent: Data structure
 nav_order: 2
 ---
 # Data structure and format
@@ -22,7 +22,7 @@ The clusteringpath contains the spike data, including cell metrics. The cell met
 Each type of data is saved in its own Matlab structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode).
 
 ### Cell metrics
-The cell metrics are kept in a [cell_metrics struct as described here]({{"/pipeline/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat` in the clustering path.
+The cell metrics are kept in a [cell_metrics struct as described here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat` in the clustering path.
 
 ### Session metadata
 A Matlab struct (session), stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) and visualized with [gui_session.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/gui_session.m). It is structured by the data types as defined below:

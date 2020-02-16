@@ -21,9 +21,9 @@ The large diversity of cell-types of the brain provide the means by which circui
 
 ### The components of Cell Explorer
 {: .no_toc}
-The Cell Explorer can be separated into three main components:
+The Cell Explorer can be separated into four components:
 
-[1. Processing pipeline](/Cell-Explorer/pipeline/running-pipeline/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [2. Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [3. Database]({{ "/database/preparation/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
+[Data structure]({{"/datastructure/data-structure/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Processing pipeline]({{"/pipeline/pipeline/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Database]({{"/database/database/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -38,7 +38,7 @@ The Cell Explorer can be separated into three main components:
 ```m
 mex -O CCGHeart.c
 ```
-4. The Cell Explorer GUI and pipeline uses a few toolboxes, if which three Matlab toolboxes must be installed manually.
+4. The Cell Explorer GUI and pipeline uses a few toolboxes, of which three Matlab toolboxes must be installed manually.
   * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline)
   * [Signal Processing Toolbox](https://www.mathworks.com/help/signal/index.html?s_tid=CRUX_lftnav) (gausswin)
   * [Image Processing Toolbox ](https://www.mathworks.com/products/image.html) (imrotate)

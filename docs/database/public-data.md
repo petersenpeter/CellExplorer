@@ -1,24 +1,21 @@
 ---
 layout: default
-title: Use public data as reference data
+title: Public data
 parent: Database
-nav_order: 3
+nav_order: 2
 ---
+<style type="text/css">
+    ol { list-style-type: upper-alpha; }
+</style>
 # Public data
-{: .fs-9 }
-We are sharing a large set of cells that is available to explore or use as reference data for classifying your own data. Any sessions located in the repository **NYUshare_Datasets** is publicly available and can be downloaded and loaded automatically in the Cell Explorer, without providing any database credentials. Upon request the data will be downloaded from our [public web share](https://buzsakilab.nyumc.org/datasets/) and saved to the local Cell Explorer directory `referenceData/` for future access. The various plotting options are shown further down below this page.
-
-1. Launch the Cell Explorer
-2. Select `Reference data`-> `Define reference data` from the top menu. Below dialog will be shown in the Cell Explorer.
-![Cell Explorer database dialog](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-database-dialog-1.png)
-4. Select the sessions you want to load. You can apply filters, change the sorting for easier selection.
-5. Press OK and the sessions will be loaded from the repository paths to the local Cell Explorer directory `referenceData/`. Session on **NYUshare_Datasets** will be downloaded automatically to the same directory. 
-6. The reference data can be displayed in the Cell Explorer in three ways (all color coded by cell types):
-   1. Image data: 2d colored density map (panel B in figure below. Panel A shows the data regular data representation without reference data).
-   2. Scatter data: scatter points `x` (panel C in figure below).
-   3. Histogram data: histogram curves along x and y axes (panel D in figure below). 
-7. You can define the number of bins, and which of the reference cell types to display. 
-
-The reference data is not displayed in the t-SNE plot. 
+We are sharing a large set of cells that is available to explore or use as reference data for classifying your own data. Any sessions located in the repository **NYUshare_Datasets** is publicly available and can be downloaded and loaded automatically in the Cell Explorer, without providing any database credentials. Upon request the data will be downloaded from our [public web share](https://buzsakilab.nyumc.org/datasets/) and saved to the local Cell Explorer directory `referenceData/` for future access. The various plotting options are shown below. 
+* [Learn more about our public data](https://buzsakilab.com/wp/2018/10/29/public-datasets/). 
+* [Tutorial on reference data](/Cell-Explorer/tutorials/reference-data-tutorial/).
 
 ![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png)
+
+Plotting options:
+1. A representation of a session without reference data (panel A).
+2. Image data: 2d colored density map (panel B).
+3. Scatter data: scatter points `x` (panel C).
+4. Histogram data: histogram curves along x and y axes (panel D). 

@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Using the database
+title: Use database from terminal
 parent: Tutorials
 nav_order: 8
 ---
@@ -59,4 +59,4 @@ cell_metrics = LoadCellMetricBatch('sessions',sessionNames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 
-Please see the description of [how to interact with the database from the Cell Explorer]({{"/database/loading-sessions/"|absolute_url}}) as well.
+Please see the tutorial for [how to interact with the database from the Cell Explorer]({{"/tutorials/database-sessions-dialog/"|absolute_url}}) as well.
