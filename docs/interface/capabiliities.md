@@ -46,18 +46,16 @@ There are a subset of ground truth cell types provided.
 ### Raincloud plot
 To estimate single dimensional variations in your data you can generate a [raincloud plot](https://github.com/RainCloudPlots/RainCloudPlots). You can generate the plot from the top menu `View` -> `Generate rain cloud metrics plot`.
 
-The comparison line widths signify significance levels, `linewidth=1` signifies p>0.05, `linewidth=2` signifies p<0.05 and `linewidth=3` signifies p<0.001. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a nonparametric hypothesis test).
+The comparison line widths signify significance levels, `linewidth=1` signifies p>0.05, `linewidth=2` signifies p<0.05 and `linewidth=3` signifies p<0.001. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a nonparametric hypothesis test). You can generate a raincloud plot from any color grouping, e.g. cell types, deep-superficial or animal.
 
 Below plot shows a raincloud a comparison across putative cell types:
 ![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2020/02/raincloud-cell-types.png)
 
-Below plot shows a comparing of cells labeled either deep or superficial:
-![raincloud deep superficial](https://buzsakilab.com/wp/wp-content/uploads/2020/02/raincloud-deep-superficial.png)
 
 ### Significance matrix
 The significance matrix can help find metrics that your data into groups, e.g. deep-superfical labels. You can generate the plot from the top menu `View` -> `Generate significance matrix` or by pressing `K`. Please select a group of size 2 beforehand. This will show a dialog for selecting which metrics to use. 
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/02/SignificanceMatrix.png" width="30%"></p>
 
-![Significance matrix](https://buzsakilab.com/wp/wp-content/uploads/2020/02/SignificanceMatrix.png)
 The colors in the matrix signify significance level (right color bar in log10), `*` signifies p<0.05 and `**` signifies p<0.001. Selected metrics are shown on the left side of the matrix. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a nonparametric hypothesis test).
 
 ### Share cell metrics in your publications or with your peers
