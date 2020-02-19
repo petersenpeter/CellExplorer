@@ -4,7 +4,7 @@ title: Group plots
 parent: Graphical interface
 nav_order: 3
 ---
-# Group plots
+# Group plots (draft)
 {: .no_toc}
 The top panel row in the Cell Explorer interface is dedicated to population level representations of the cells, and consists of three main plots: the custom group plot, the classical separation plot and a t-SNE plot.
 
