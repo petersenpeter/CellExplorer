@@ -43,6 +43,23 @@ To help you characterize your own data, you can load reference data provided by 
 ### Ground truth data
 There are a subset of ground truth cell types provided.
 
+### Raincloud plot
+To estimate single dimensional variations in your data you can generate a [raincloud plot](https://github.com/RainCloudPlots/RainCloudPlots). You can generate the plot from the top menu `View` -> `Generate rain cloud metrics plot`.
+
+The comparison line widths signify significance levels, `linewidth=1` signifies p>0.05, `linewidth=2` signifies p<0.05 and `linewidth=3` signifies p<0.001. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a nonparametric hypothesis test).
+
+Below plot shows a raincloud a comparison across putative cell types:
+![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2020/02/raincloud-cell-types.png)
+
+Below plot shows a comparing of cells labeled either deep or superficial:
+![raincloud deep superficial](https://buzsakilab.com/wp/wp-content/uploads/2020/02/raincloud-deep-superficial.png)
+
+### Significance matrix
+The significance matrix can help find metrics that your data into groups, e.g. deep-superfical labels. You can generate the plot from the top menu `View` -> `Generate significance matrix` or by pressing `K`. Please select a group of size 2 beforehand. This will show a dialog for selecting which metrics to use. 
+
+![Significance matrix](https://buzsakilab.com/wp/wp-content/uploads/2020/02/SignificanceMatrix.png)
+The colors in the matrix signify significance level (right color bar in log10), `*` signifies p<0.05 and `**` signifies p<0.001. Selected metrics are shown on the left side of the matrix. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a nonparametric hypothesis test).
+
 ### Share cell metrics in your publications or with your peers
 You can save your combined cell metrics from a study into a single mat file that can be shared together with a publication. This allows peers to verify your classification or use your cell metrics directly. You can save the mat file from the Cell Explorer from the menu `File` -> `Save classification`.
 
