@@ -8,6 +8,7 @@ nav_order: 3
 {: .no_toc}
 The top panel row in the Cell Explorer interface is dedicated to population level representations of the cells, and consists of three main plots described below.
 
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/groupPlots.png){: .mt-4}
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -15,11 +16,12 @@ The top panel row in the Cell Explorer interface is dedicated to population leve
 {:toc}
 
 ## Custom group plot
-The custom group plot has four overall plotting methods
-1. Scatter plot (2D or 3D)
-2. Scatter plot with smooth histograms (2-D only)
-3. Scatter plot with stairs histograms (2-D only)
-4. Raincloud plot
+The custom group plot has three overall plotting methods.
+1. 2D and 3D scatter plot.
+2. 2D scatter plot with histograms.
+4. Raincloud plot.
+
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/groupPlotsOther.png){: .mt-4}
 
 ## Classical separation plot
 One of the most common ways to visualize putative cell types is the trough-to-peak vs the burstiness. putative PV cells (narrow waveform interneurons) separate very nicely from pyramical cells due to their narrow waveforms. The wide waveform interneurons are less clearly captured by these measures and show a continues overlap with both the narrow interneurons and the pyramidal cell population. In the Cell Explorer pipeline, the separation of interneurons from pyramidal cells  determined by the width of the waveforms and the shape of the ACG, which is captured by multiple parameters.
