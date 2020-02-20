@@ -6,7 +6,7 @@ nav_order: 3
 ---
 # Group plots (draft)
 {: .no_toc}
-The top panel row in the Cell Explorer interface is dedicated to population level representations of the cells, and consists of three main plots described below.
+The top panel row in the Cell Explorer interface is dedicated to population level representations of the cells, and consists of three main plots shown below.
 
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/groupPlots.png){: .mt-4}
 ## Table of contents
