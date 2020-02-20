@@ -15,8 +15,8 @@ nav_order: 2
 ## Data paths
 For each session there are two main paths that the Cell Explorer uses, a basepath and a clusteringpath (relative to basepath). 
 
-The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: `sessionName.*`, e.g. `sessionName.dat` and `sessionName.lfp` (lowpass filtered and downsampled. The lfp file is automatically generated in the pipeline if necessary). The metadata is stored in a `sessionName.session.mat` file located in the basepath.
-The clusteringpath contains the spike data, including cell metrics. The cell metrics are all stored in a cell_metrics struct/file. 
+The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: `sessionName.*`, e.g. `sessionName.dat` and `sessionName.lfp` (low-pass filtered and down-sampled. The lfp file is automatically generated in the pipeline if necessary). The metadata is stored in a `sessionName.session.mat` file located in the basepath.
+The clusteringpath contains the spike data, including cell metrics. The cell metrics are all stored in a cell_metrics struct/file.
 
 ## Data structures
 Each type of data is saved in its own Matlab structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode).
@@ -97,7 +97,7 @@ A Matlab struct (session), stored in a .mat file: `sessionName.session.mat`. The
 * `analysisTags`
   * `tagName`: the numeric or string values saved in the tag
 * `spikeSorting`
-  * `method` : e.g. Kilosort
+  * `method` : e.g. KiloSort
   * `format` : Phy, KiloSort, KlustaViewer, Klustakwik, ...
   * `relativePath` : relative to base/sessionpath
   * `channels` : list of channels selected.
@@ -112,18 +112,18 @@ A Matlab struct (session), stored in a .mat file: `sessionName.session.mat`. The
     * `nChannels` : number of channels
     * `sr` : sample rate
     * `nSamples` : number of samples
-    * `leastSignificantBit` : range/precision in µV. Intan system: 0.195µV/bit
+    * `leastSignificantBit` : range/precision in µV. [Intan system](http://intantech.com/): 0.195µV/bit
     * `equipment` : hardware used to acquire the data
 
 The `sessionName.session.mat` files should be stored in the basepath.
 
 ### Spikes
-A Matlab struct (spikes), stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `calc_CellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either Kilosort,Phy or Neurosuite and saves it to a spikes struct. The struct has the following fields:
+A Matlab struct `spikes`, stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `calc_CellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort,Phy or Neurosuite and saves it to a spikes struct. The struct has the following fields:
 * `ts`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in samples.
 * `times`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in seconds.
 * `cluID`: a 1xN vector with inherited IDs from the applied clustering algorithm.
 * `UID`: a 1xN vector with values 1:N.
-* `shankID`: a 1xN vector containing the corresponding shank/spikegroup each unit (1-indexed).
+* `shankID`: a 1xN vector containing the corresponding shank/electrode-group each unit (1-indexed).
 * `maxWaveformCh`: a 1xN vector with the channel for the maximum waveform for the units (0-indexed) 
 * `maxWaveformCh1`: a 1xN vector with the channel for the maximum waveform for the units (1-indexed) 
 * `total`: a 1xN vector with the total number of spikes for each unit.
@@ -141,15 +141,15 @@ A Matlab struct (spikes), stored in a .mat file: `sessionName.spikes.cellinfo.ma
 Any extra field can be added with info about the units, e.g. the theta phase of each spike for the units, or the position/speed of the animal for each spike. `sessionName.spikes.cellinfo.mat` should be located in the clusteringpath.
 
 ### Firing rate maps
-A Matlab struct (ratemap) containing 1D or linearized firing rat maps, stored in a .mat file: `sessionName.ratemap.firingRateMap.mat` with the following fields:
-* `map`: a 1xN cell-struct for N units each containing a KxL matrix, where K corresponds to the bin count and L to the number of states. States can be trials, manipulatio states, left-right states... 
+A Matlab struct `ratemap` containing 1D or linearized firing rat maps, stored in a .mat file: `sessionName.ratemap.firingRateMap.mat` with the following fields:
+* `map`: a 1xN cell-struct for N units each containing a KxL matrix, where K corresponds to the bin count and L to the number of states. States can be trials, manipulation states, left-right states... 
 * `x_bins`: a 1xK vector with K bin values used to generate the firing rate map.
 * `state_labels`: a 1xL vector with char labels describing the states.
 
 The processed spike data should be stored in the clusteringpath.
 
 ### Events
-A Matlab struct (eventName), stored in a .mat file: `sessionName.eventName.events.mat` with the following fields:
+A Matlab struct `eventName`, stored in a .mat file: `sessionName.eventName.events.mat` with the following fields:
 * `timestamps`: Px2 matrix with intervals for the P events in seconds.
 * `peaks`: Event time for the peak of each events in seconds (Px1).
 * `amplitude`: amplitude of each event (Px1).
@@ -164,7 +164,7 @@ A Matlab struct (eventName), stored in a .mat file: `sessionName.eventName.event
 The `*.events.mat` files should be stored in the basepath.
 
 ### Manipulations
-A Matlab struct (manipulationName), stored in a .mat file: `sessionName.eventName.manipulation.mat` with the following fields:
+A Matlab struct `manipulationName`, stored in a .mat file: `sessionName.eventName.manipulation.mat` with the following fields:
 * `timestamps`: Px2 matrix with intervals for the P events in seconds.
 * `peaks`: Event time for the peak of each events in seconds (Px1).
 * `amplitude`: amplitude of each event (Px1).
@@ -179,18 +179,18 @@ A Matlab struct (manipulationName), stored in a .mat file: `sessionName.eventNam
 The `*.manipulation.mat` files should be stored in the basepath.
 
 ### Channels
-A matlab struct (ChannelName), stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following fields:
-* `channel`: a 1xQ vector containing a list of Q channel indexes (0-indexed)
-* `channelClass`: a 1xQ cell with classification assigned to each channel (char)
+A matlab struct `ChannelName`, stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following fields:
+* `channel`: a 1xQ vector containing a list of Q channel indexes (0-indexed).
+* `channelClass`: a 1xQ cell with classification assigned to each channel (char).
 * `processinginfo`: a struct with information about how mat file was generated including the name of the function, version, date and the parameters.
 * `detectorinfo`: If the channelinfo struct is based on determined events, detectorinfo contains info about how the event was processed.
 
 The `*.channelinfo.mat` files should be stored in the basepath.
 
 ### Time series
-A Matlab struct (timeserieName), stored in a .mat file: `sessionName.timeserieName.timeseries.mat` with the following fields:
-* `channel`: a 1xQ vector containing a list of Q channel indexes (0-indexed)
-* `timestamps`: a 1xQ cell with classification assigned to each channel (char)
+A Matlab struct `timeserieName`, stored in a .mat file: `sessionName.timeserieName.timeseries.mat` with the following fields:
+* `channel`: a 1xQ vector containing a list of Q channel indexes (0-indexed).
+* `timestamps`: a 1xQ cell with classification assigned to each channel (char).
 * `processinginfo`: a struct with information about how mat file was generated including the name of the function, version, date and the parameters.
 
 Any other field can be added to the struct containing time series data. The `*.timeseries.mat` files should be stored in the basepath.

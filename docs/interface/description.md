@@ -11,9 +11,11 @@ nav_order: 1
 
 1. TOC
 {:toc}
+
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-Interface-description-1.png)
+
 ### Graphical elements
-The interface consists of 4-9 main plots, where the top row is dedicated to [population level representations of cells]({{"/interface/group-plots/"|absolute_url}}) and the other plots are [selectable and customizable plots for individual cells]({{"/interface/single-cell-plot-options/"|absolute_url}}) (including variations of waveforms, ACGs, ISIs, CCGs, PSTHs, response curves and firing rate maps). The surrounding interface consists of 7 panels placed on either side of the graphs: On the right side there is a navigation panel, cell assignment panel, display settings panel, and on the left side a plot selection panel, color group panel and a table with cell metrics. The panels are described in details below. Further there is a text field for custom text filter, a message log and figure legends. There are [keyboard shortcuts]({{"/interface/keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in Cell Explorer to learn Keyboard shortcuts.
+The interface consists of 4-9 main plots, where the top row is dedicated to population level representations of [cell groups]({{"/interface/group-plots/"|absolute_url}}) and the other plots are selectable and customizable plots for [individual cells]({{"/interface/single-cell-plot-options/"|absolute_url}}) (including variations of waveforms, ACGs, ISIs, CCGs, PSTHs, response curves and firing rate maps). The surrounding interface consists of 7 panels placed on either side of the graphs: On the right side there is a navigation panel, cell assignment panel, display settings panel, and on the left side a plot selection panel, color group panel and a table with cell metrics. The panels are described in details below. Further there is a text field for custom text filter, a message log and figure legends. There are [keyboard shortcuts]({{"/interface/keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in Cell Explorer to learn Keyboard shortcuts.
 
 ### Navigation and cell selection
 The Navigation panel allows you can navigate and select which cell to display.
@@ -46,10 +48,12 @@ The Cell Assignment panel allows you to perform relevant types of cell-assignmen
 The Display Settings panel allows you to customize the plots in Cell Explorer. 
 Cell-type list: Defines the displayed cell-types. 
 Layout: Adjust the layout and number of cell specific plots to display: `1+3` -> `3+6`
-1.-6. view: A dropdown for each of the cell plots containing available options like the *Firing rate map*, *tSNE plots*, *Sharp wave-ripple*, *Autocorrelograms*, *waveforms*,  all plots associated with the selected cell.
+1.-6. view: A drop-down menu for each of the cell plots containing available options like the *Firing rate map*, *tSNE plots*, *Sharp wave-ripple*, *Autocorrelograms*, *waveforms*,  all plots associated with the selected cell.
 
 ### Plot selection
 The plot selection panel allows you to customize the first scatter plot, select what data to display, change the axis type, adjust the plotting style and the color groups.
+
+`Plot style`: Allows you to alter the [custom plot]({{"/interface/group-plots/"|absolute_url}}): 1. 2D and 3D scatter plot. 2. 2D scatter plot with histograms. 3. Raincloud plot.
 
 `Select X`,`Select Y` and `Select Z` data: Allows you to select what metrics that are displayed on the X,Y and Z axes respectively.
 
@@ -57,20 +61,18 @@ The plot selection panel allows you to customize the first scatter plot, select 
 
 `Show Z`: Whether to display the third axis.
 
-`Select plot style`: Allows you to display a double histogram along the X and Y axes. A smooth or a stairs histogram can be selected. Only the X and Y axes are displayed here.
-
-`Select color group`: A dropdown menu with cell-array metrics, which allows you to group the cells according to these metrics including, Deep-Superficial, Brain regions and Labels. When selecting another option than cell-types, two new menu items appears below the dropdown that allows you to select a subset of groups in the scatter plots, and further combine this selection with a potential subset selection in Cell types.
+`Select color group`: A drop-down menu with cell-array metrics, which allows you to group the cells according to these metrics including, Deep-Superficial, Brain regions and Labels. When selecting another option than cell-types, two new menu items appears below the drop-down that allows you to select a subset of groups in the scatter plots, and further combine this selection with a potential subset selection in Cell types.
 
 `Group by cell-type`: Allows you to define a subset of cells that fulfills both the selection in cell-types and the selection in color group, but group the data according to cell types.
 
 ### Filter by free text
 A filter field is located in the top left corner of the interface. You can filter by text strings or by specific criteria from numeric fields. You can further combine criteria by and/or logic e.g.:
 
-Filter by text string "MS" and firing rate > 5Hz: `MS & .firingRate > 5`.
+Filter by text string "MS" and firing rate > 5 Hz: `MS & .firingRate > 5`.
 
 Filter by MS or HIP: `MS | HIP`.
 
-Filter by ab_ratio > 1 and troughToPeak > 0.6ms: `.ab_ratio > 1 & .troughToPeak > 0.6`.
+Filter by ab_ratio > 1 and troughToPeak > 0.6 ms: `.ab_ratio > 1 & .troughToPeak > 0.6`.
 
 ### Metrics table
 The table contains all numeric values for the selected cell and is updated as you navigate the interface. The table can show two types of data: A list of cell metrics and associated values for the selected cell or a list of all cells with selection marker, and two other metrics. Use the menu Table data to customize what is displayed in the table.
