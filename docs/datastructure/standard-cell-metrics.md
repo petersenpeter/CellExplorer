@@ -45,19 +45,19 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
   * `log10` [log-intervals spanning 1 ms : 10 s].
 * `isi`: interspike intervals
   * `log10` [log-intervals spanning 1 ms : 10 s].
-* `thetaModulationIndex` is defined by the difference between the theta modulation trough (mean of autocorrelogram bins 50-70 ms) and the theta modulation peak (mean of autocorrelogram bins 100-140ms) over their sum. Autocorrelogram fits with time constants are fitted with a triple-exponential equation:
+* Autocorrelograms are fitted with a triple-exponential equation:
 $$ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)$$
 ```m
 ACG_fit = 'max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)'
 a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asymptote, f = refrac, g = tau_burst, h = burst_amplitude
  ```
-
-* `synapticEffect`: Synaptic effect
 * `acg_tau_rise` ACG tau rise (ms)
 * `acg_tau_decay` ACG tau decay (ms)
 * `acg_tau_burst` ACG tau bursts (ms)
 * `acg_refrac` ACG refractory period (ms)
 * `acg_fit_rsquare` ACG fit R-square
+* `thetaModulationIndex` is defined by the difference between the theta modulation trough (mean of autocorrelogram bins 50-70 ms) and the theta modulation peak (mean of autocorrelogram bins 100-140ms) over their sum. 
+* `synapticEffect`: Synaptic effect
 * `burstIndex_Royer2012` Burst index (Royer 2012)
 * `burstIndex_Doublets` Burst index doublets.
 * `synapticConnectionsIn`:  Synaptic ingoing connections count.
