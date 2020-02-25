@@ -31,5 +31,5 @@ One of the most common ways to visualize putative cell types is the trough-to-pe
 ## t-SNE plot
 The t-SNE plot takes any number of metrics and projects them to a 2-D t-SNE space. You can define the features to use for the separation from both the settings but also in the Cell Explorer. In the Cell Explorer you can define both single numeric features, as well as waveforms, response curves, ACGs and ISIs and other available single cell features. Further t-SNE settings can be set in the t-SNE dialog as well. Alter the t-SNE metrics from the top menu by going to `View` -> `Change metrics used for t-SNE plot`. This will bring up a dialog allowing you to select features and settings. Besides t-SNE, two other algorithm are also available for dimensionality reduction: PCA and [UMAP](https://umap-learn.readthedocs.io/en/latest/) (Uniform Manifold Approximation and Projection). 
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/tSNE-representation.png){: .mt-4}
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/tSNE-representation-1.png){: .mt-4}
 The figure above shows a t-SNE representation of a population of cells recorded across various subjects. Each neuron is represented by a point. The figure shows three color codings according to: putative cell types (panel A), animal species (panel B) and animal subjects (panel C).
