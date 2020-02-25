@@ -38,6 +38,7 @@ Response curves are generally
 
 ### PSTHs
 PSTHs can be shown for either sessionName.*.psth.mat files or for sessionName.*.events.mat. They are standard aligned to the onset of the event, but can also be aligned to the peak, center or offset.
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png" width="60%">
 ![PSTH](https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png)
 
 ### Spike rasters
