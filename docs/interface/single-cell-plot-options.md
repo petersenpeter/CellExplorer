@@ -38,8 +38,7 @@ Response curves are generally
 
 ### PSTHs
 PSTHs can be shown for either sessionName.*.psth.mat files or for sessionName.*.events.mat. They are standard aligned to the onset of the event, but can also be aligned to the peak, center or offset.
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png" width="60%">
-![PSTH](https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png)
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png" width="70%">
 
 ### Spike rasters
 The raw spiking data can also be loaded. [Click here to learn more about how to generate the spike raster plots]({{"/interface/spike-and-event-data/"|absolute_url}}). Below figures show three raster plot examples 1. Phase vs position, 2. trials vs position and 3. spike ampltude vs time.
