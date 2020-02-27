@@ -4,7 +4,7 @@ title: Use database from terminal
 parent: Tutorials
 nav_order: 8
 ---
-# Database tutorial (draft)
+# Database tutorial
 {: .no_toc}
 The public data in the database can be loaded as reference data, and can be accessed without providing credentials, but login credentials are necessary for full functionality of the database. This tutorial will show you the preparatory steps to use the database and various interactions. If you are using the public data, you can skip step 1-3.
 
