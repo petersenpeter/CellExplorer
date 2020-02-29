@@ -4,7 +4,7 @@ title: Group plots
 parent: Graphical interface
 nav_order: 3
 ---
-# Group plots (draft)
+# Group plots
 {: .no_toc}
 The top panel row in the Cell Explorer interface is dedicated to population level representations of the cells, and consists of three main plots shown below.
 

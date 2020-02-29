@@ -4,7 +4,7 @@ title: Generate metadata struct
 parent: Tutorials
 nav_order: 2
 ---
-# Metadata tutorial (draft)
+# Metadata tutorial
 {: .no_toc}
 This tutorial shows you how to generate the [session metadata struct](https://petersenpeter.github.io/Cell-Explorer/pipeline/data-structure-and-format/#session-metadata) used by the Cell Explorer.
 
