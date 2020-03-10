@@ -56,26 +56,30 @@ saveDeepSuperficial
 
     function plotDeepSuperficial(spikegroup)
         jj = spikegroup;
-        plot((deepSuperficialfromRipple.SWR_diff{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_diff{jj},2)-1]*gain,'-k','linewidth',2), hold on, grid on
-        plot((deepSuperficialfromRipple.SWR_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_amplitude{jj},2)-1]*gain,'k','linewidth',1)
+        plot((deepSuperficialfromRipple.SWR_diff{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_diff{jj},2)-1]*gain,'-k','linewidth',2), hold on, %grid on
+%         plot((deepSuperficialfromRipple.SWR_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_amplitude{jj},2)-1]*gain,'k','linewidth',1)
         % Plotting ripple amplitude along vertical axis
-        plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*gain,'m','linewidth',1)
+%         plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*gain,'m','linewidth',1)
         
         for jjj = 1:size(deepSuperficialfromRipple.ripple_average{jj},2)
             % Plotting depth (µm)
             text(deepSuperficialfromRipple.ripple_time_axis(end)+5,deepSuperficialfromRipple.ripple_average{jj}(1,jjj)-(jjj-1)*gain,[num2str(round(deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{jj}(jjj))))])
             % Plotting channel number (0 indexes)
             text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,-(jjj-1)*gain,num2str(deepSuperficialfromRipple.ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
-            plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain)
+            
             % Plotting assigned channel labels
             if strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Superficial')
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*gain,'or','linewidth',2)
+                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'r')
             elseif strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Deep')
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*gain,'ob','linewidth',2)
+                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'b')
             elseif strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Cortical')
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*gain,'og','linewidth',2)
+                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'g')
             else
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*gain,'ok')
+                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'k')
             end
             % Plotting the channel used for the ripple detection if it is part of current spike group
             if isfield(deepSuperficialfromRipple,'detectorinfo') && deepSuperficialfromRipple.detectorinfo.detectionparms.channel+1==deepSuperficialfromRipple.ripple_channels{jj}(jjj)
@@ -84,11 +88,14 @@ saveDeepSuperficial
         end
         
         title(['Spike group ' num2str(jj),'/', num2str(size(deepSuperficialfromRipple.ripple_amplitude,2))]),xlabel('Time (ms)'), %if jj ==1; ylabel(session.general.name, 'Interpreter', 'none'); end
-        axis tight, ax6 = axis; grid on
+        axis tight, ax6 = axis; % grid on
         plot([-120, -120;-170,-170;120,120], [ax6(3) ax6(4)],'color','k');
         xlim([-220,deepSuperficialfromRipple.ripple_time_axis(end)+45]), xticks([-120:40:120])
-        ht1 = text(0.02,0.03,'Superficial','Units','normalized','FontWeight','Bold','Color','r');
-        ht2 = text(0.02,0.97,'Deep','Units','normalized','FontWeight','Bold','Color','b');
+        ht1 = text(0.01,0.02,'Superficial','Units','normalized','FontWeight','Bold','Color','r');
+        ht2 = text(0.01,0.98,'Deep','Units','normalized','FontWeight','Bold','Color','b');
+        ht2 = text(0.01,1.02,'Cortical','Units','normalized','FontWeight','Bold','Color',[0.2,0.8,0.2],'HorizontalAlignment','left');
+        ht1 = text(0.01,-0.02,'Unknown','Units','normalized','FontWeight','Bold','Color','k','HorizontalAlignment','left');
+        ht1 = text(0.99,1.02,'Depth (µm)','Units','normalized','FontWeight','Bold','Color','k','HorizontalAlignment','Right');
         %         if ceil(session.extracellular.nSpikeGroups/2) == jj || session.extracellular.nSpikeGroups == jj
         %             ht3 = text(1.05,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
         %         end
