@@ -4,7 +4,7 @@ title: Use reference data
 parent: Tutorials
 nav_order: 9
 ---
-# Tutorial on reference data (draft)
+# Tutorial on reference data
 {: .no_toc}
 The Buzsaki lab is sharing a large set of datasets and a large set of these sessions are also shared with cell metrics that can be downloaded and displayed directly in the Cell Explorer. Learn more about our public data [here](https://buzsakilab.com/wp/2018/10/29/public-datasets/). This tutorial will guide you through the process of using reference data in the manual curation process and for comparison with your own data.
 

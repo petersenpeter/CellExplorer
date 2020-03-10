@@ -22,7 +22,7 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
   * `clusteringpath`
   * `cellCount`
   * `ccg`
-* `processinginfo`. The general fields also contains a list of timestamps for timeseries metrics. 
+* `processinginfo`. The general fields also contains a list of timestamps for time-series metrics. 
 * `brainRegion`: Brain region acronyms from [Allan institute Brain atlas](http://atlas.brain-map.org/atlas?atlas=1).
 * `animal`: Unique name of animal.
 * `sex`: Sex of the animal [Male, Female, Unknown]
@@ -35,29 +35,29 @@ The Cell Explorer used a single Matlab struct for handling all cell metrics call
 ## Spike events based metrics
 * `spikeCount`: Spike count of the cell from the entire session.
 * `firingRate`: Firing rate in Hz: Spike count normalized by the interval between the first and the last spike.
-* `cv2`: [Coefficient of variation](https://www.ncbi.nlm.nih.gov/pubmed/8734581) (CV2). 
-* `burstIndex_Mizuseki2012` Burst index: Fraction of spikes with a neighboring ISI < 6ms as defined by [Mizuseki et al. Hippocampus 2012](http://www.buzsakilab.com/content/PDFs/Mizuseki2012.pdf).
+* `cv2`: [Coefficient of variation](https://www.ncbi.nlm.nih.gov/pubmed/8734581) (CV_2). 
+* `burstIndex_Mizuseki2012` Burst index: Fraction of spikes with a neighboring ISI < 6 ms as defined by [Mizuseki et al. Hippocampus 2012](http://www.buzsakilab.com/content/PDFs/Mizuseki2012.pdf).
 
 ## ACG & CCG based metrics
 * `acg`: autocorrelograms. Three types: 
-  * `wide` [-1000ms:1ms:1000ms]
-  * `narrow` [-50:0.5:50] 
-  * `log10` [log-intervals spanning 1ms:10s].
+  * `wide` [-1000 ms : 1 ms: 1000 ms]
+  * `narrow` [-50 ms : 0.5 ms : 50 ms] 
+  * `log10` [log-intervals spanning 1 ms : 10 s].
 * `isi`: interspike intervals
-  * `log10` [log-intervals spanning 1ms:10s].
-* `thetaModulationIndex` is defined by the difference between the theta modulation trough (mean of autocorrelogram bins 50-70 ms) and the theta modulation peak (mean of autocorrelogram bins 100-140ms) over their sum. Autocorrelogram fits with time constants are fitted with a triple-exponential equation:
+  * `log10` [log-intervals spanning 1 ms : 10 s].
+* Autocorrelograms are fitted with a triple-exponential equation:
 $$ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)$$
 ```m
 ACG_fit = 'max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)'
 a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asymptote, f = refrac, g = tau_burst, h = burst_amplitude
  ```
-
-* `synapticEffect`: Synaptic effect
 * `acg_tau_rise` ACG tau rise (ms)
 * `acg_tau_decay` ACG tau decay (ms)
 * `acg_tau_burst` ACG tau bursts (ms)
 * `acg_refrac` ACG refractory period (ms)
 * `acg_fit_rsquare` ACG fit R-square
+* `thetaModulationIndex` is defined by the difference between the theta modulation trough (mean of autocorrelogram bins 50-70 ms) and the theta modulation peak (mean of autocorrelogram bins 100-140ms) over their sum. 
+* `synapticEffect`: Synaptic effect
 * `burstIndex_Royer2012` Burst index (Royer 2012)
 * `burstIndex_Doublets` Burst index doublets.
 * `synapticConnectionsIn`:  Synaptic ingoing connections count.
@@ -65,14 +65,14 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 
 ## Waveform based metrics
 * `waveforms`: spike waveform struct with below fields:
-  * `filt`: Average filtered spike waveform from channel with max amplitude. Highpass filtered above 500Hz to standardize waveforms.
+  * `filt`: Average filtered spike waveform from channel with max amplitude. High-pass filtered above 500Hz to standardize waveforms.
   * `raw`: Average raw spike waveform from channel with max amplitude. 
   * `time`: Time vector for average raw spike waveform from channel with max amplitude.
 * `maxWaveformCh`: Max channel zero-indexed: The channel where the spike has the largest amplitude.
 * `maxWaveformCh1`: Max channel one-indexed: The channel where the spike has the largest amplitude.
 * `troughToPeak`: Trough-to-peak latency is defined from the trough to the following peak of the waveform. 
 * `ab_ratio`: Waveform asymmetry; the ratio between the two positive peaks `(peakB-peakA)/(peakA+peakB)`.
-* `peakVoltage`: Peak voltage (µV) Defined from the channel with the maximum waveform (highpass filtered). `max(waveform)-min(waveform)`.
+* `peakVoltage`: Peak voltage (µV) Defined from the channel with the maximum waveform (high-pass filtered). `max(waveform)-min(waveform)`.
 
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%"></p>
 
@@ -80,12 +80,12 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 * `putativeCellType`: Putative cell types.
   * In the processing pipeline, cells are classified into three putative cell types: **Narrow Interneurons, Wide Interneurons and Pyramidal Cells**.
   * Interneurons are selected by 3 separate criteria:
-  1. acg_tau_decay > 30ms
-  2. acg_tau_rise > 3ms
-  3. troughToPeak <= 0.425ms
+  1. acg_tau_decay > 30 ms
+  2. acg_tau_rise > 3 ms
+  3. troughToPeak <= 0.425 ms
   * Next interneurons are separated into two classes
-  1. Narrow interneuron assigned if troughToPeak <= 0.425ms
-  2. Wide interneuron assigned if troughToPeak > 0.425ms
+  1. Narrow interneuron assigned if troughToPeak <= 0.425 ms
+  2. Wide interneuron assigned if troughToPeak > 0.425 ms
   * Remaining cells are assigned as Pyramidal cells. 
 
 ## Monosynaptic connections
@@ -95,7 +95,7 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscience. 2005.](https://www.ncbi.nlm.nih.gov/pubmed/15680687)
 * `isolationDistance`: Isolation distance.
 * `lRatio`: L-ratio.
-* `refractoryPeriodViolation`: Refractory period violation (‰): Fraction of ISIs less than 2ms.
+* `refractoryPeriodViolation`: Refractory period violation (‰): Fraction of ISIs less than 2 ms.
 
 ## Sharp wave ripple metrics
 * `ripples_modulationIndex`: strength of ripple modulation of the firing rate)
