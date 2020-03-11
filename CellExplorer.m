@@ -417,6 +417,7 @@ UI.menu.display.generateRainCloudsPlot = uimenu(UI.menu.display.topMenu,menuLabe
 UI.menu.display.redefineMetrics = uimenu(UI.menu.display.topMenu,menuLabel,'Change metrics used for t-SNE plot',menuSelectedFcn,@tSNE_redefineMetrics,'Accelerator','T');
 UI.menu.display.sortingMetric = uimenu(UI.menu.display.topMenu,menuLabel,'Change metric used for sorting image data',menuSelectedFcn,@editSortingMetric);
 UI.menu.display.markerSizeMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Adjust marker size for group plots',menuSelectedFcn,@defineMarkerSize,'Separator','on');
+UI.menu.display.flipXY = uimenu(UI.menu.display.topMenu,menuLabel,'Flip x and y in custom plot',menuSelectedFcn,@flipXY,'Separator','on','Accelerator','F');
 
 % ACG
 UI.menu.ACG.topMenu = uimenu(UI.fig,menuLabel,'ACG');
@@ -424,7 +425,7 @@ UI.menu.ACG.window.ops(1) = uimenu(UI.menu.ACG.topMenu,menuLabel,'30 msec',menuS
 UI.menu.ACG.window.ops(2) = uimenu(UI.menu.ACG.topMenu,menuLabel,'100 msec',menuSelectedFcn,@buttonACG);
 UI.menu.ACG.window.ops(3) = uimenu(UI.menu.ACG.topMenu,menuLabel,'1 sec',menuSelectedFcn,@buttonACG);
 UI.menu.ACG.window.ops(4) = uimenu(UI.menu.ACG.topMenu,menuLabel,'Log10',menuSelectedFcn,@buttonACG);
-UI.menu.ACG.showFit = uimenu(UI.menu.ACG.topMenu,menuLabel,'Show ACG fit',menuSelectedFcn,@toggleACGfit,'Separator','on','Accelerator','F');
+UI.menu.ACG.showFit = uimenu(UI.menu.ACG.topMenu,menuLabel,'Show ACG fit',menuSelectedFcn,@toggleACGfit,'Separator','on');
 
 % MonoSyn
 UI.menu.monoSyn.topMenu = uimenu(UI.fig,menuLabel,'MonoSyn');
@@ -679,6 +680,7 @@ for m = 1:length(UI.settings.tags)
 end
 m = length(UI.settings.tags)+1;
 UI.togglebutton.tag(m) = uicontrol('Parent',UI.tabs.tags,'Style','togglebutton','String','+ tag','Position',buttonPosition{m},'Units','normalized','Callback',@(src,evnt)addTag,'KeyPressFcn', {@keyPress});
+
 % % % % % % % % % % % % % % % % % % % %
 % Display settings panel (right side)
 % % % % % % % % % % % % % % % % % % % %
@@ -1385,13 +1387,14 @@ while ii <= cell_metrics.general.cellCount
                 if length(temp1)>1
                     X1 = plotX(temp1);
                     if UI.checkbox.logx.Value
-                        X1 = X1(X1>0);
+                        X1 = X1(X1>0 & ~isinf(X1) & ~isnan(X1));
                         if all(isnan(X1))
                             return
                         end
                         [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
                         Xi = 10.^Xi;
                     else
+                        X1 = X1(~isinf(X1) & ~isnan(X1));
                         [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
                     end
                     area(Xi, f/max(f), 'FaceColor', clr(m,:), 'EdgeColor', clr(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off'); hold on
@@ -1412,7 +1415,7 @@ while ii <= cell_metrics.general.cellCount
                 if length(temp1)>1
                     X1 = plotY(temp1);
                     if UI.checkbox.logy.Value
-                        
+                        X1 = X1(X1>0 & ~isinf(X1) & ~isnan(X1));
                         X1 = X1(X1>0);
                         if all(isnan(X1))
                             return
@@ -1420,6 +1423,7 @@ while ii <= cell_metrics.general.cellCount
                         [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
                         Xi = 10.^Xi;
                     else
+                        X1 = X1(~isinf(X1) & ~isnan(X1));
                         [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
                     end
                     area(Xi,f/max(f), 'FaceColor', clr(m,:), 'EdgeColor', clr(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off'); hold on
@@ -1649,7 +1653,7 @@ while ii <= cell_metrics.general.cellCount
                 
                 line_histograms_X(:,m) = ksdensity(reference_cell_metrics.troughToPeak(idx(idx1)) * 1000,referenceData.x);
                 line_histograms_Y(:,m) = ksdensity(log10(reference_cell_metrics.burstIndex_Royer2012(idx(idx1))),referenceData.y1);
-                line_histograms_Y(:,m) = 10.^line_histograms_Y(:,m);
+%                 line_histograms_Y(:,m) = 10.^line_histograms_Y(:,m);
                 
 %                 [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
 %                         Xi = 10.^Xi;
@@ -5322,7 +5326,7 @@ end
             axes(subfig_ax(1))
             plot(plotX(UI.params.ClickedCells),plotY1(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
         elseif UI.settings.customPlotHistograms == 2
-            axes(h_scatter(1));
+            axes(subfig_ax(1));
             plot(plotX(UI.params.ClickedCells),plotY(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
         end
         
@@ -5345,8 +5349,7 @@ end
             axnum = 1;
         end
         if axnum == 1 && UI.settings.customPlotHistograms == 3
-            if highlight == 1
-                [azimuth,elevation] = view;
+            [azimuth,elevation] = view;
                 r  = 10;
                 y1 = r .* cosd(elevation) .* cosd(azimuth);
                 x1 = -r .* cosd(elevation) .* sind(azimuth);
@@ -5378,6 +5381,7 @@ end
                 distance = point_to_line_distance([plotX11; plotY11; plotZ11]'./[x_scale y_scale z_scale], [u,v,w]./[x_scale y_scale z_scale], ([u,v,w]./[x_scale y_scale z_scale]+[x1,y1,z1]));
                 [~,idx] = min(distance);
                 iii = UI.params.subset(idx);
+                if highlight == 1
                 text(plotX(iii),plotY(iii),plotZ(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
             else
                 return
@@ -6269,6 +6273,29 @@ end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
+    function flipXY(~,~)
+        Xval = UI.popupmenu.yData.Value;
+        Xstr = UI.popupmenu.yData.String;
+        plotX = cell_metrics.(Xstr{Xval});
+        UI.plot.xTitle = Xstr{Xval};
+
+        Yval = UI.popupmenu.xData.Value;
+        Ystr = UI.popupmenu.xData.String;
+        plotY = cell_metrics.(Ystr{Yval});
+        UI.plot.yTitle = Ystr{Yval};
+        
+        UI.popupmenu.xData.Value = Xval;
+        UI.popupmenu.yData.Value = Yval;
+        Xlog = UI.checkbox.logx.Value;
+        Ylog = UI.checkbox.logy.Value;
+        UI.checkbox.logx.Value = Ylog;
+        UI.checkbox.logy.Value = Xlog;
+        uiresume(UI.fig);
+        
+    end
+    
+% % % % % % % % % % % % % % % % % % % % % %
+    
     function buttonPlotX
         Xval = UI.popupmenu.xData.Value;
         Xstr = UI.popupmenu.xData.String;
@@ -6782,8 +6809,8 @@ end
 
     function togglePlotHistograms
         if exist('h_scatter','var') && any(ishandle(h_scatter))
-                delete(h_scatter)
-            end
+        	delete(h_scatter)
+        end
         if UI.popupmenu.metricsPlot.Value == 1
             UI.settings.customPlotHistograms = 1;
             UI.checkbox.logz.Enable = 'Off';
@@ -6815,7 +6842,7 @@ end
             UI.settings.plot3axis = 1;
             axes(UI.panel.subfig_ax1.Children(end));
             view([40 20]);
-            % rotateFig1
+
         elseif UI.popupmenu.metricsPlot.Value == 4
             UI.settings.customPlotHistograms = 4;
             UI.checkbox.logz.Enable = 'Off';
@@ -7798,17 +7825,29 @@ end
     end
     
     function [disallowRotation] = myRotateFilter(obj,~)
-        disallowRotation = false;
-        % if a ButtonDownFcn has been defined for the object, then use that
+        disallowRotation = true;
         axnum = find(ismember(subfig_ax, gca));
-        if strcmp(get(UI.fig, 'selectiontype'),'alt') && axnum == 1 && ~isempty(UI.params.subset)
+        if UI.settings.customPlotHistograms == 3 && axnum == 1 && strcmp(get(UI.fig, 'selectiontype'),'extend') &&  ~isempty(UI.params.subset)
             um_axes = get(gca,'CurrentPoint');
             u = um_axes(1,1);
             v = um_axes(1,2);
             w = um_axes(1,3);
             HighlightFromPlot(u,v,w);
-            disallowRotation = true;
+        elseif UI.settings.customPlotHistograms == 3 && axnum == 1 && strcmp(get(UI.fig, 'selectiontype'),'alt') &&  ~isempty(UI.params.subset)
+            um_axes = get(gca,'CurrentPoint');
+            u = um_axes(1,1);
+            v = um_axes(1,2);
+            w = um_axes(1,3);
+            iii = FromPlot(u,v,0,w);
+            if iii>0
+                ii = iii;
+                UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
+                UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
+                UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
+                uiresume(UI.fig);
+            end
         elseif isfield(get(obj),'ButtonDownFcn')
+            % if a ButtonDownFcn has been defined for the object, then use that
             disallowRotation = ~isempty(get(obj,'ButtonDownFcn'));
         end
     end
