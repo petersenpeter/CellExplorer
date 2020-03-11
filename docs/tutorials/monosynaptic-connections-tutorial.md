@@ -6,7 +6,7 @@ nav_order: 4
 ---
 # Monosynaptic connections tutorial (draft)
 {: .no_toc}
-This tutorial will guide you through the manual curation process of the monosynaptic connections.
+This tutorial will guide you through the manual curation process of the monosynaptic connections. Monosynaptic connections are determined in the pipeline. You can visualize the connections and perform manual curation directly in the graphical interface well. 
 
 There are a few principles you have to follow when doing the manual curation:
 1. The synaptic peak should occur with about 2ms delay.
@@ -14,9 +14,7 @@ There are a few principles you have to follow when doing the manual curation:
 3. If maintained refractory period and asymmetric ACG it is likely the same neuron and connections should be rejected.
 4. Central CCG peak indicates common drive and connections should potentially be rejected. Common drive can also be temporally shifted if the cells are far from each other. This is often seen when comparing two cells located at different shanks.
 
-Monosynaptic connections are determined in the pipeline. You can visualize the connections and perform manual curation directly in the graphical interface well. 
-
-### Using the graphical interface for curating monosynaptic connections
+## Using the graphical interface for curating monosynaptic connections
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/monosyn.png)
 
 1. Launch the monosyn GUI
@@ -30,7 +28,7 @@ gui_MonoSyn('path_to_data')
 4. To reject a connection you simply click the CCG and it will turn red as shown in the screenshot above. You can also use the keypad to select/deselect the CCGs.
 5. when you have completed the curation process, simply close the figure and you will be prompted to save the curation.
 
-### You can launch the Monosyn GUI directly from the Cell Explorer
+## You can launch the Monosyn GUI directly from the Cell Explorer
 1. Launch the Cell Explorer
 ```m
 cell_metrics = CellExplorer('metrics',cell_metrics); 

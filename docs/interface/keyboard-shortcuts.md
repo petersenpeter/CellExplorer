@@ -15,6 +15,8 @@ dl {
     text-align: right;
     color: black;
   }
+  dt::after {
+    content: " ";
   }
   dd {
     margin: 0 0 0 110px;
@@ -28,9 +30,9 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
 
 ### Navigation
 <dl>
-  <dt>< (left arrow)</dt>
+  <dt>< (left)</dt>
   <dd>Navigate to previous cell</dd>
-  <dt>> (right arrow)</dt>
+  <dt>> (right)</dt>
   <dd>Navigate to next cell</dd>
   <dt>.</dt>
   <dd>Navigate to next cell with same class</dd>
