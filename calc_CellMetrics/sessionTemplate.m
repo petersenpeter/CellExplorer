@@ -4,11 +4,9 @@ function session = sessionTemplate(input1,varargin)
 % This script must be called from the basepath of your dataset, or be provided with a basepath as input
 % Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
 
-% Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
-
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 30-01-2020
+% Last edited: 11-3-2020
 
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
@@ -81,7 +79,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Extracellular
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-if isfield(session,'extracellular') && (~isfield(session.extracellular,'leastSignificantBit')  || isempty(session.extracellular.leastSignificantBit))
+if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'leastSignificantBit')) || isempty(session.extracellular.leastSignificantBit)) 
     session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
 end
 session.extracellular.probeDepths = 0;

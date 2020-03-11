@@ -27,7 +27,7 @@ You can do direct classification in the GUI. The following types of classificati
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/gui_deepSuperficial.png){: .mt-4}
 
 ## Monosynaptic connections
-Monosynaptic connections are determined in the pipeline, and you can visualize the connections in the GUI and redo the manual curation directly from the GUI. You can adjust connections from the Cell Explorer by launching the monosyn interface.
+Monosynaptic connections are determined in the pipeline, and you can visualize the connections in the GUI and redo the manual curation directly from the GUI. You can adjust connections from the Cell Explorer by launching the monosyn interface. [Please see the tutorial on manual curation of monosynaptic connections]({{"/tutorials/monosynaptic-connections-tutorial/"|absolute_url}}).
 
 ### Interface for monosynaptic connections curation
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/monosyn.png)

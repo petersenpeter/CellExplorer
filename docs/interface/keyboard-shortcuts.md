@@ -30,10 +30,10 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
 
 ### Navigation
 <dl>
-  <dt><</dt>
-  <dd>Navigate to next cell</dd>
-  <dt>></dt>
+  <dt>< (left)</dt>
   <dd>Navigate to previous cell</dd>
+  <dt>> (right)</dt>
+  <dd>Navigate to next cell</dd>
   <dt>.</dt>
   <dd>Navigate to next cell with same class</dd>
   <dt>,</dt>
