@@ -21,9 +21,9 @@ Monosynaptic connections are determined in the pipeline. You can visualize the c
 
 1. Launch the monosyn GUI
 ```m
-gui_MonoSyn(path-to-data)
+gui_MonoSyn('path_to_data')
 ```
-1. 
+1. The interface is built from...
 2. You can navigate the determined connections using the top two buttons shown in the GUI, or use the left and right arrows.
 2. Following the principles stated above, you can now adjust the connections. 
 3. The primary action you can perform in the GUI is rejecting connections. The pipeline determines the connections that fulfills the statistical test, and the manual process consists of confirming or rejecting these connections.
