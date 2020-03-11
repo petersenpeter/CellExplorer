@@ -12,12 +12,12 @@
 % Display settings - An incomplete list:
 % 'Waveforms (single)','Waveforms (all)','Waveforms (image)','Raw waveforms (single)','Raw waveforms (all)','ACGs (single)',
 % 'ACGs (all)','ACGs (image)','CCGs (image)','Sharp wave-ripple'
-UI.settings.customCellPlotIn1 = 'Waveforms (all)';
-UI.settings.customCellPlotIn2 = 'ACGs (single)'; 
-UI.settings.customCellPlotIn3 = 'responseCurves_firingRateAcrossTime';
-UI.settings.customCellPlotIn4 = 'Waveforms (single)';
-UI.settings.customCellPlotIn5 = 'CCGs (image)';
-UI.settings.customCellPlotIn6 = 'Sharp wave-ripple';
+UI.settings.customCellPlotIn{1} = 'Waveforms (all)';
+UI.settings.customCellPlotIn{2} = 'ACGs (single)'; 
+UI.settings.customCellPlotIn{3} = 'RCs_firingRateAcrossTime';
+UI.settings.customCellPlotIn{4} = 'Waveforms (single)';
+UI.settings.customCellPlotIn{5} = 'CCGs (image)';
+UI.settings.customCellPlotIn{6} = 'Sharp wave-ripple';
 
 UI.settings.acgType = 'Normal';                 % Normal (100ms), Wide (1s), Narrow (30ms), Log10
 UI.settings.isiNormalization = 'Occurance';     % 'Rate', 'Occurance'
@@ -28,6 +28,8 @@ UI.settings.dispLegend = 0;                     % [0,1] Display legends in plots
 UI.settings.plotWaveformMetrics = 0;            % show waveform metrics on the single waveform
 UI.settings.sortingMetric = 'burstIndex_Royer2012'; % metrics used for sorting image data
 UI.settings.markerSize = 15;                    % marker size in the group plots [default: 20]
+UI.settings.plotChannelMap = true;              % boolean. Show a channel map with waveforms.
+UI.settings.plotChannelMapAllChannels = true;   % Boolean. Show a select set of channels or all 
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 6;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
@@ -37,11 +39,12 @@ UI.settings.autoSaveVarName = 'cell_metrics';   % Variable name used in autosave
 UI.settings.plotXdata = 'firingRate';
 UI.settings.plotYdata = 'peakVoltage';
 UI.settings.plotZdata = 'troughToPeak';
+UI.settings.plotMarkerSizedata = 'peakVoltage';
 
 % Cell type classification definitions
 UI.settings.cellTypes = {'Unknown','Pyramidal Cell','Narrow Interneuron','Wide Interneuron'};
 UI.settings.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
-UI.settings.tags = {'Good','Bad','Mua','Noise','InverseSpike','Other'};
+UI.settings.tags = {'Good','Bad','Noise','InverseSpike'};
 UI.settings.groundTruth = {'PV+','NOS1+','GAT1+','SST+','Axoaxonic','Cell type A'};
 UI.settings.groundTruthMarkers = {'om','dg','sm','*k','+k','+p'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
 UI.settings.groundTruthColors = [[.9,.2,.2];[.2,.2,.9];[0.2,0.9,0.9];[0.9,0.2,0.9];[.2,.9,.2];[.5,.5,.5]];

@@ -4,7 +4,7 @@ title: UI elements
 parent: Graphical interface
 nav_order: 1
 ---
-# Details on the graphical interface
+# UI elements
 {: .no_toc}
 ## Table of contents
 {: .no_toc .text-delta }
@@ -14,22 +14,22 @@ nav_order: 1
 
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-Interface-description-1.png)
 
-### Graphical elements
-The interface consists of 4-9 main plots, where the top row is dedicated to population level representations of [cell groups]({{"/interface/group-plots/"|absolute_url}}) and the other plots are selectable and customizable plots for [individual cells]({{"/interface/single-cell-plot-options/"|absolute_url}}) (including variations of waveforms, ACGs, ISIs, CCGs, PSTHs, response curves and firing rate maps). The surrounding interface consists of 7 panels placed on either side of the graphs: On the right side there is a navigation panel, cell assignment panel, display settings panel, and on the left side a plot selection panel, color group panel and a table with cell metrics. The panels are described in details below. Further there is a text field for custom text filter, a message log and figure legends. There are [keyboard shortcuts]({{"/interface/keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in Cell Explorer to learn Keyboard shortcuts.
+### Elements
+The interface consists of 4-9 main plots. The top row is dedicated to population level representations of [cell groups]({{"/interface/group-plots/"|absolute_url}}) and the remaining plots are selectable and customizable plots for [individual cells]({{"/interface/single-cell-plot-options/"|absolute_url}}) (including variations of waveforms, ACGs, ISIs, CCGs, PSTHs, response curves and firing rate maps). The interface surronding the plots, consists of 7 panels placed on either side of the graphs: On the right side there is a navigation panel, a cell assignment panel, a display settings panel, and on the left side a plot selection panel, a color group panel and a table with cell metrics. The panels are described in details below. Further there is a text field for custom text filter in the upper left corner, a message log and figure legends at the bottom. There are [keyboard shortcuts]({{"/interface/keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in Cell Explorer to see the keyboard shortcuts.
 
 ### Navigation and cell selection
 The Navigation panel allows you can navigate and select which cell to display.
-+ `Right arrow`: navigate to the next cell (n+1).
++ `Right arrow`: navigate to the next cell.
 
-+ `Left arrow`: navigate to the previous cell (n-1).
++ `Left arrow`: navigate to the previous cell.
 
-+ `GoTo`: Opens a dialog box that allows you go to a specific cell number or to a specific session, when visualizing a batch of sessions.
++ `GoTo`: Opens a dialog box that allows you go to a specific cell, or session when visualizing a batch of sessions.
 
 *Mouse actions in plots*
 + `Left mouse click`: go to nearest cell. 
 + `Right mouse click`: select nearest cell. Cell point/trace is highlighted and Cell ID is displayed for selected cell(s).
 + `Middle mouse click`: activate a group selection function allowing you to draw a polygon (with left mouse clicks) to select multiple cells (finish with a right mouse click; delete points with middle mouse click).
-+ `Mouse scroll wheel`: zoom in or out at the location of the mouse cursor. When zooming on one of the axis, only that dimension is zoomed. 
++ `Mouse scroll wheel`: zoom in or out at the location of the mouse cursor. When zooming on an axis outs, only that axis will change.
 
 ### Cell Assignment
 The Cell Assignment panel allows you to perform relevant types of cell-assignments such as cell-type, Deep/Superficial, assign brain region or label.

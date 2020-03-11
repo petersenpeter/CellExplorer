@@ -178,7 +178,7 @@ statusExit = 0;
 % % % % % % % % % % % % % % % % % % % %
 
 % Creating figure for the GUI
-UI.fig = figure('units','pixels','position',[50,50,600,560],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','visible','off');
+UI.fig = figure('units','pixels','position',[50,50,620,560],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','visible','off');
 movegui(UI.fig,'center')
 
 % Tabs
@@ -199,11 +199,12 @@ UI.tabs.inputs = uitab(UI.uitabgroup,'Title','Inputs & time series');
 UI.tabs.behaviors = uitab(UI.uitabgroup,'Title','Tracking');
 
 % Buttons
-UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 5, 100, 28],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized');
-UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[120, 5, 100, 28],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized');
-UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[230, 5, 100, 28],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized');
-UI.button.uploadToDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[370, 5, 100, 28],'String','Upload to DB','Callback',@(src,evnt)buttonUploadToDB,'Units','normalized');
-UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[480, 5, 110, 28],'String','Download from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized');
+UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 5, 80, 28],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off');
+UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[100, 5, 80, 28],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized','Interruptible','off');
+UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[190, 5, 80, 28],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized','Interruptible','off');
+UI.button.uploadToDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[280, 5, 100, 28],'String','Upload to DB','Callback',@(src,evnt)buttonUploadToDB,'Units','normalized','Interruptible','off');
+UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[390, 5, 110, 28],'String','Download from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized','Interruptible','off');
+UI.status = uicontrol('Parent',UI.fig,'Style','text','Position',[510, 10, 100, 20],'String','Status: OK','Units','normalized','HorizontalAlignment','center', 'fontweight', 'bold');
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell metrics parameters
@@ -215,8 +216,8 @@ if exist('parameters','var')
     UI.listbox.includeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[10 330 275 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metrics),'Units','normalized');
     
     % Exclude metrics
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Exclude metrics (default: none)', 'Position', [300, 500, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.listbox.excludeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[300 330 290 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.excludeMetrics),'Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Exclude metrics (default: none)', 'Position', [300, 500, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.listbox.excludeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[300 330 310 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.excludeMetrics),'Units','normalized');
     
     % Parameters
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Parameters', 'Position', [10, 305, 288, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
@@ -235,65 +236,65 @@ end
 % % % % % % % % % % % % % % % % % % % %
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Base path', 'Position', [10, 498, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 475, 580, 25],'HorizontalAlignment','left','Units','normalized');
+UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 475, 600, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session name (base name)', 'Position', [10, 448, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 425, 280, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [300, 448, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', sessionTypesList, 'Position', [300, 425, 290, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [300, 448, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', sessionTypesList, 'Position', [300, 425, 310, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Clustering path (relative)', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Duration', 'Position', [300, 398, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.duration = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 375, 290, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Duration', 'Position', [300, 398, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.duration = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 375, 310, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Date', 'Position', [10, 348, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.date = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 325, 280, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Time', 'Position', [300, 348, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.time = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 325, 290, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Time', 'Position', [300, 348, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.time = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 325, 310, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Location', 'Position', [10, 298, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.location = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 275, 280, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Experimenters', 'Position', [300, 298, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.experimenters = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 275, 290, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Experimenters', 'Position', [300, 298, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.experimenters = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 275, 310, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Investigator', 'Position', [10, 253, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.investigator = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 230, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
-UI.edit.investigatorDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[160, 230, 130, 25],'String','View db investigator','Callback',@openInWebDB,'Units','normalized');
+UI.edit.investigatorDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[160, 230, 130, 25],'String','View db investigator','Callback',@openInWebDB,'Units','normalized','Interruptible','off');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Projects', 'Position', [300, 253, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.projects = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 230, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
-UI.edit.projectsDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[450, 230, 140, 25],'String','View db projects','Callback',@openInWebDB,'Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Projects', 'Position', [300, 253, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.projects = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 230, 160, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.projectsDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[470, 230, 140, 25],'String','View db projects','Callback',@openInWebDB,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Repositories', 'Position', [10, 203, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.repositories = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 180, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
-UI.edit.repositoryDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[160, 180, 130, 25],'String','View db repository','Callback',@openInWebDB,'Units','normalized');
+UI.edit.repositoryDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[160, 180, 130, 25],'String','View db repository','Callback',@openInWebDB,'Units','normalized','Interruptible','off');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'DB entry ID', 'Position', [300, 203, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 180, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
-UI.edit.sessionDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[450, 180, 140, 25],'String','View db session','Callback',@openInWebDB,'Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'DB entry ID', 'Position', [300, 203, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 180, 160, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.sessionDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[470, 180, 140, 25],'String','View db session','Callback',@openInWebDB,'Units','normalized','Interruptible','off');
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 580, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 580, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 600, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 600, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
 
 % % % % % % % % % % % % % % % % % % % % %
 % Epochs
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
 % uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 90, 599, 435],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add epoch','Callback',@(src,evnt)addEpoch,'Units','normalized');
+UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 90, 619, 435],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add epoch','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 50, 100, 30],'String','Edit epoch','Callback',@(src,evnt)editEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 10 100, 30],'String','Delete epoch(s)','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 50, 100, 30],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
 UI.button.importEpochsIntervalsFromMergePoints = uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 50, 130, 30],'String','Import merge points','Callback',@importEpochsIntervalsFromMergePoints,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 10 130, 30],'String','Import children','Callback',@importFromFiles,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 50, 90, 30],'String','Move up','Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 10 90, 30],'String','Move down','Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 50, 110, 30],'String','Move up','Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 10 110, 30],'String','Move down','Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -303,13 +304,13 @@ uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Name', 'Position',
 UI.edit.name = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 475, 280, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Sex', 'Position', [300, 500, 230, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.sex = uicontrol('Parent',UI.tabs.animal,'Style', 'popup', 'String', {'Unknown','Male','Female'}, 'Position', [300, 475, 290, 25],'HorizontalAlignment','left','Units','normalized');
+UI.edit.sex = uicontrol('Parent',UI.tabs.animal,'Style', 'popup', 'String', {'Unknown','Male','Female'}, 'Position', [300, 475, 310, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Species', 'Position', [10, 450, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.species = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 425, 280, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Strain', 'Position', [300, 450, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.strain = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [300, 425, 290, 25],'HorizontalAlignment','left','Units','normalized');
+UI.edit.strain = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [300, 425, 310, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Genetic line', 'Position', [10, 400, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.geneticLine = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized');
@@ -325,7 +326,7 @@ uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Sampling ra
 UI.edit.sr = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 475, 190, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nSamples', 'Position', [400, 498, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.nSamples = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 475, 190, 25],'HorizontalAlignment','left','Units','normalized');
+UI.edit.nSamples = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 475, 210, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (e.g. int16)', 'Position', [10, 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 180, 25],'HorizontalAlignment','left','Units','normalized');
@@ -333,48 +334,48 @@ UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'S
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [200, 448, 220, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 425, 190, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Depth (µm)', 'Position', [400, 448, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.probeDepths = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 425, 190, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Depth (µm)', 'Position', [400, 448, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.probeDepths = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 425, 210, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Equipment', 'Position', [10, 398, 290, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Equipment', 'Position', [10, 398, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.equipment = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 375, 380, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'LFP sampling rate (Hz)', 'Position', [400, 398, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 375, 190, 25],'HorizontalAlignment','left','Units','normalized');
+UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 375, 210, 25],'HorizontalAlignment','left','Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Channel groups
 % % % % % % % % % % % % % % % % % % % % % % 
-UI.channelGroups = uitabgroup('units','pixels','Position',[0, 0, 599, 365],'Parent',UI.tabs.extracellular,'Units','normalized');
+UI.channelGroups = uitabgroup('units','pixels','Position',[0, 0, 619, 365],'Parent',UI.tabs.extracellular,'Units','normalized');
 
 % Electrode groups
 UI.tabs.electrodeGroups = uitab(UI.channelGroups,'Title','Electrode groups');
 UI.list.tableData = {false,'','',''};
-UI.table.electrodeGroups = uitable(UI.tabs.electrodeGroups,'Data',UI.list.tableData,'Position',[1, 50, 599, 315],'ColumnWidth',{20 50 370 139},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
+UI.table.electrodeGroups = uitable(UI.tabs.electrodeGroups,'Data',UI.list.tableData,'Position',[0, 50, 620, 315],'ColumnWidth',{20 50 370 115},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[10, 10, 75, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[95, 10, 75, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
-UI.button.importGroupsFromXML1 = uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
+UI.button.importGroupsFromXML1 = uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[495, 10, 115, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
 % Spike groups
 UI.tabs.spikeGroups = uitab(UI.channelGroups,'Title','Spike groups');
 UI.list.tableData = {false,'','',''};
-UI.table.spikeGroups = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 50, 599, 315],'ColumnWidth',{20 50 370 139},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
+UI.table.spikeGroups = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 50, 619, 315],'ColumnWidth',{20 50 370 115},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[10, 10, 75, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[95, 10, 75, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
-UI.button.importGroupsFromXML2 = uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 95, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
+UI.button.importGroupsFromXML2 = uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 115, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
 % Silicon probes from db
 if isfield(session.extracellular,'electrodes')
     UI.tabs.spikeGroups = uitab(UI.channelGroups,'Title','Electrodes');
     UI.list.tableData = {false,'','','','','','',''};
-    UI.table.electrodes = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 1, 599, 364],'ColumnWidth',{20 200 120 70 60 80 60 60 80},'columnname',{'','Probes','Company','nChannels','nShanks','Brain region','AP (mm)','ML (mm)','Depth (mm)'},'RowName',[],'ColumnEditable',[true false false false false false false false],'Units','normalized');
+    UI.table.electrodes = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 1, 619, 364],'ColumnWidth',{20 200 120 70 60 80 60 60 80},'columnname',{'','Probes','Company','nChannels','nShanks','Brain region','AP (mm)','ML (mm)','Depth (mm)'},'RowName',[],'ColumnEditable',[true false false false false false false false],'Units','normalized');
 end
 
 
@@ -382,7 +383,7 @@ end
 % Spike sorting
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.spikeSorting = uitable(UI.tabs.spikeSorting,'Data',tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 58 58 140 75 80 50 50 60},'columnname',{'','Method','Format','Relative path','Channels','Spike sorter','Notes','Metrics','Currated'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
+UI.table.spikeSorting = uitable(UI.tabs.spikeSorting,'Data',tableData,'Position',[1, 50, 619, 475],'ColumnWidth',{20 58 58 140 75 80 50 50 60},'columnname',{'','Method','Format','Relative path','Channels','Spike sorter','Notes','Metrics','Currated'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add sorting','Callback',@(src,evnt)addSpikeSorting,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit sorting','Callback',@(src,evnt)editSpikeSorting,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete sorting(s)','Callback',@(src,evnt)deleteSpikeSorting,'Units','normalized');
@@ -393,7 +394,7 @@ uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[230, 10
 % Brain regions
 % % % % % % % % % % % % % % % % % % % % %
 UI.list.tableData = {false,'','','',''};
-UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 70 280 95 127},'columnname',{'','Region','Channels','Electrode groups','Notes'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
+UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 50, 619, 475],'ColumnWidth',{20 70 280 95 127},'columnname',{'','Region','Channels','Electrode groups','Notes'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add region','Callback',@(src,evnt)addRegion,'Units','normalized');
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit region','Callback',@(src,evnt)editRegion,'Units','normalized');
 uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion,'Units','normalized');
@@ -402,17 +403,17 @@ uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[230, 10
 % Channel tags
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 599, 225],'ColumnWidth',{20 130 315 127},'columnname',{'','Channel tag','Channels','Electrode groups'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
+UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 619, 225],'ColumnWidth',{20 130 315 127},'columnname',{'','Channel tag','Channels','Electrode groups'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 260, 100, 30],'String','Add channel tag','Callback',@(src,evnt)addTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 100, 30],'String','Edit channel tag','Callback',@(src,evnt)editTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 260, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[450, 260, 140, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[470, 260, 140, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Inputs
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 599, 225],'ColumnWidth',{20 120 75 70 120 187},'columnname',{'','Input tag','Channels','Type','Equipment','Description'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
+UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 619, 225],'ColumnWidth',{20 120 75 70 120 187},'columnname',{'','Input tag','Channels','Type','Equipment','Description'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 260, 100, 30],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 100, 30],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 260, 100, 30],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
@@ -421,17 +422,17 @@ uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 260, 100
 % Time series
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 50, 599, 200],'ColumnWidth',{20 90 85 60 70 40 60 90 78},'columnname',{'','Time series tag','File name', 'Precision', 'nChannels', 'sr', 'nSamples', 'summaryFiguresificant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
+UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 50, 619, 200],'ColumnWidth',{20 90 85 60 70 40 60 90 78},'columnname',{'','Time series tag','File name', 'Precision', 'nChannels', 'sr', 'nSamples', 'summaryFiguresificant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
-UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[490, 10, 100, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
+UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[500, 10, 110, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % BehavioralTracking
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.behaviors = uitable(UI.tabs.behaviors,'Data',tableData,'Position',[1, 50, 599, 475],'ColumnWidth',{20 160 100 50 80 75 107},'columnname',{'','Filenames','Equipment','Epoch','Type','Frame rate','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
+UI.table.behaviors = uitable(UI.tabs.behaviors,'Data',tableData,'Position',[1, 50, 619, 475],'ColumnWidth',{20 160 100 50 80 75 107},'columnname',{'','Filenames','Equipment','Epoch','Type','Frame rate','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add tracking','Callback',@(src,evnt)addBehavior,'Units','normalized');
 uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit tracking','Callback',@(src,evnt)editBehavior,'Units','normalized');
 uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete tracking(s)','Callback',@(src,evnt)deleteBehavior,'Units','normalized');
@@ -442,7 +443,7 @@ uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[340, 10, 1
 % Analysis tags
 % % % % % % % % % % % % % % % % % % % % %
 tableData = {false,'','',''};
-UI.table.analysis = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 50, 599, 200],'ColumnWidth',{20 250 322},'columnname',{'','Analysis tag','Value'},'RowName',[],'ColumnEditable',[true false false],'Units','normalized');
+UI.table.analysis = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 50, 619, 200],'ColumnWidth',{20 250 322},'columnname',{'','Analysis tag','Value'},'RowName',[],'ColumnEditable',[true false false],'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add analysis tag','Callback',@(src,evnt)addAnalysis,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit analysis tag','Callback',@(src,evnt)editAnalysis,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized');
@@ -461,11 +462,9 @@ uiwait(UI.fig)
     function importEpochsIntervalsFromMergePoints(~,~)
         % Epochs derived from MergePoints
         if exist(fullfile(UI.edit.basepath.String,[UI.edit.session.String,'.MergePoints.events.mat']),'file')
-            buttonColor = UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor;
-            buttonString = UI.button.importEpochsIntervalsFromMergePoints.String;
-            UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor = [1,0.6,0.0];
-            UI.button.importEpochsIntervalsFromMergePoints.String = 'Uploading...';
-            drawnow
+            UI.status.BackgroundColor = [1,0.6,0.0];
+            UI.status.String = 'Uploading...';
+            
             temp = load(fullfile(UI.edit.basepath.String,[UI.edit.session.String,'.MergePoints.events.mat']));
             for i = 1:size(temp.MergePoints.foldernames,2)
                 session.epochs{i}.name = temp.MergePoints.foldernames{i};
@@ -473,10 +472,8 @@ uiwait(UI.fig)
                 session.epochs{i}.stopTime = temp.MergePoints.timestamps(i,2);
             end
             updateEpochsList
-            UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor = [0.3,0.7,0.3];
-            UI.button.importEpochsIntervalsFromMergePoints.String = 'Updated';
-            UI.button.importEpochsIntervalsFromMergePoints.String = buttonString;
-            UI.button.importEpochsIntervalsFromMergePoints.BackgroundColor = buttonColor;
+            UI.status.BackgroundColor = [0.3,0.7,0.3];
+            UI.status.String = 'Epochs updated';
         else
             msgbox(['No ', UI.edit.session.String,'.MergePoints.events.mat',' exist in basepath'],'Error');
         end
@@ -539,17 +536,13 @@ uiwait(UI.fig)
     end
     
     function importMetaFromIntan(~,~)
-        buttonColor = UI.button.importMetaFromIntan.BackgroundColor;
-        buttonString = UI.button.importMetaFromIntan.String;
-        UI.button.importMetaFromIntan.BackgroundColor = [1,0.6,0.0];
-        UI.button.importMetaFromIntan.String = 'Loading...';
-        drawnow
+        UI.status.BackgroundColor = [1,0.6,0.0];
+        UI.status.String = 'Loading...';
+        
         session = loadIntanMetadata(session);
         updateTimeSeriesList
-        UI.button.importMetaFromIntan.BackgroundColor = [0.3,0.7,0.3];
-        UI.button.importMetaFromIntan.String = 'Updated';
-        UI.button.importMetaFromIntan.String = buttonString;
-        UI.button.importMetaFromIntan.BackgroundColor = buttonColor;
+        UI.status.BackgroundColor = [0.3,0.7,0.3];
+        UI.status.String = 'Updated from intan';
     end
     
     function loadSessionStruct
@@ -644,20 +637,18 @@ uiwait(UI.fig)
         answer = questdlg('Are you sure you want to update the session struct from the database?', 'Update session from DB', 'Yes','Cancel','Cancel');
         % Handle response
         if strcmp(answer,'Yes')
-            buttonColor = UI.button.updateFromDB.BackgroundColor;
-            buttonString = UI.button.updateFromDB.String;
-            UI.button.updateFromDB.BackgroundColor = [1,0.6,0.0];
-            UI.button.updateFromDB.String = 'Updating...';
-            drawnow
+            UI.status.BackgroundColor = [1,0.6,0.0];
+            UI.status.String = 'Updating...';
+            
             success = updateFromDB;
             if success
-                UI.button.updateFromDB.BackgroundColor = [0.3,0.7,0.3];
-                UI.button.updateFromDB.String = 'Updated';
+                UI.status.BackgroundColor = [0.3,0.7,0.3];
+                UI.status.String = 'Updated from db';
             else
                 errordlg('Database tools not available');
+                UI.status.String = 'Update failed';
+                UI.status.BackgroundColor = [1,0.6,0.0];
             end
-            UI.button.updateFromDB.String = buttonString;
-            UI.button.updateFromDB.BackgroundColor = buttonColor;
         end
     end
     
@@ -665,27 +656,30 @@ uiwait(UI.fig)
         listing = fieldnames(session);
         [indx,tf] = listdlg('PromptString',['Select the data types to upload to the database'],'ListString',listing,'SelectionMode','multiple','ListSize',[300,220],'InitialValue',1,'Name','Upload session changes to DB');
         if ~isempty(indx)
-            buttonColor = UI.button.uploadToDB.BackgroundColor;
-            buttonString = UI.button.uploadToDB.String;
-            UI.button.uploadToDB.BackgroundColor = [1,0.6,0.0];
-            UI.button.uploadToDB.String = 'Uploading...';
-            drawnow
+            UI.status.BackgroundColor = [1,0.6,0.0];
+            UI.status.String = 'Uploading...';
+            
             readBackFields;
-            success = db_upload_session(session,'fields',listing(indx));
-            if success
-                UI.button.uploadToDB.BackgroundColor = [0.3,0.7,0.3];
-                UI.button.uploadToDB.String = 'Updated';
-            else
-                errordlg('Database tools not available');
+            try
+                success = db_upload_session(session,'fields',listing(indx));
+                if success
+                    UI.status.BackgroundColor = [0.3,0.7,0.3];
+                    UI.status.String = 'Upload complete';
+                else
+                    errordlg('Database tools not available');
+                end
+            catch
+                UI.status.String = 'Failed upload';
+                errordlg('Database tools not working properly');
             end
-            UI.button.uploadToDB.String = buttonString;
-            UI.button.uploadToDB.BackgroundColor = buttonColor;
+            
         end
     end
     
     function success = updateFromDB
         success = 0;
         if enableDatabase 
+            try
             if isfield(session.general,'entryID') && isnumeric(session.general.entryID)
                 session = db_set_session('sessionId',session.general.entryID,'changeDir',false,'saveMat',true);
             else
@@ -696,6 +690,9 @@ uiwait(UI.fig)
                     loadSessionStruct
                 end
                 success = 1;
+            end
+            catch 
+                errordlg('Database tools not working');
             end
         else
             warning('Database tools not available');
@@ -711,7 +708,7 @@ uiwait(UI.fig)
     end
 
     function saveSessionFile
-        BackgroundColor = UI.button.save.BackgroundColor;
+        BackgroundColor = UI.status.BackgroundColor;
         if ~strcmp(pwd,UI.edit.basepath.String)
             answer = questdlg('Base path is different from current path. Where would you like to save the session struct to','Location','basepath','current path','Select location','basepath');
         else
@@ -733,14 +730,11 @@ uiwait(UI.fig)
         readBackFields;
         try
             save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
-            UI.button.save.BackgroundColor = [0.3,0.7,0.3];
-            UI.button.save.String = 'Saved';
-            UI.button.save.String = 'Save';
-            UI.button.save.BackgroundColor = BackgroundColor;
+            UI.status.BackgroundColor = [0.3,0.7,0.3];
+            UI.status.String = 'File saved';
         catch
             msgbox(['Failed to save ',filename1,'. Location not available'],'Error','error');
-            UI.button.save.String = 'Save';
-            UI.button.save.BackgroundColor = BackgroundColor;
+            UI.status.String = 'Save failed';
         end
         
     end
@@ -1199,14 +1193,14 @@ uiwait(UI.fig)
         % Opens dialog
         UI.dialog.brainRegion = dialog('Position', [300, 300, 600, 400],'Name','Brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 373, 580, 20],'HorizontalAlignment','left');
-        brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 350, 580, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 373, 600, 20],'HorizontalAlignment','left');
+        brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 350, 600, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
         if exist('regionIn','var')
             brainRegionsTextfield.Enable = 'off';
         end
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Selct brain region below', 'Position', [10, 320, 580, 20],'HorizontalAlignment','left');
-        brainRegionsList = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'ListBox', 'String', brainRegions_list, 'Position', [10, 100, 580, 220],'Value',InitBrainRegion);
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Selct brain region below', 'Position', [10, 320, 600, 20],'HorizontalAlignment','left');
+        brainRegionsList = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'ListBox', 'String', brainRegions_list, 'Position', [10, 100, 600, 220],'Value',InitBrainRegion);
         if exist('regionIn','var')
             brainRegionsList.Enable = 'off';
         end
@@ -1214,11 +1208,11 @@ uiwait(UI.fig)
         uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 73, 280, 20],'HorizontalAlignment','left');
         brainRegionsChannels = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 280, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [300, 73, 290, 20],'HorizontalAlignment','left');
-        brainRegionsElectrodeGroups = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [300, 50, 290, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [300, 73, 310, 20],'HorizontalAlignment','left');
+        brainRegionsElectrodeGroups = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [300, 50, 310, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Save region','Callback',@(src,evnt)CloseBrainRegions_dialog);
-        uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[300, 10, 290, 30],'String','Cancel','Callback',@(src,evnt)CancelBrainRegions_dialog);
+        uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[300, 10, 310, 30],'String','Cancel','Callback',@(src,evnt)CancelBrainRegions_dialog);
         
         uicontrol(brainRegionsTextfield);
         uiwait(UI.dialog.brainRegion);
@@ -2367,26 +2361,16 @@ uiwait(UI.fig)
     function importGroupsFromXML
         xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
         if exist(xml_filepath,'file')
-            buttonColor = UI.button.importGroupsFromXML1.BackgroundColor;
-            buttonString = UI.button.importGroupsFromXML1.String;
-            UI.button.importGroupsFromXML1.BackgroundColor = [1,0.6,0.0];
-            UI.button.importGroupsFromXML1.String = 'Importing...';
-            UI.button.importGroupsFromXML2.BackgroundColor = [1,0.6,0.0];
-            UI.button.importGroupsFromXML2.String = 'Importing...';
-            drawnow
+            UI.status.BackgroundColor = [1,0.6,0.0];
+            UI.status.String = 'Importing...';
+            
             session = import_xml2session(xml_filepath,session);
             updateChannelGroupsList
-            UI.button.importGroupsFromXML1.BackgroundColor = [0.3,0.7,0.3];
-            UI.button.importGroupsFromXML1.String = 'Imported';
-            UI.button.importGroupsFromXML2.BackgroundColor = [0.3,0.7,0.3];
-            UI.button.importGroupsFromXML2.String = 'Imported';
+            UI.status.BackgroundColor = [0.3,0.7,0.3];
+            UI.status.String = 'XML imported';
         else
             errordlg(['xml file not accessible: ' xml_filepath],'Error')
         end
-        UI.button.importGroupsFromXML1.String = buttonString;
-        UI.button.importGroupsFromXML1.BackgroundColor = buttonColor;
-        UI.button.importGroupsFromXML2.String = buttonString;
-        UI.button.importGroupsFromXML2.BackgroundColor = buttonColor;
     end
     
     function syncChannelGroups

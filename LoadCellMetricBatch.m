@@ -262,6 +262,8 @@ for iii = 1:length(cell_metrics2)
     end
     h=h+size(cell_metrics.cellID,2);
 end
+cell_metrics_batch.general.cellCount = length(cell_metrics_batch.UID);
+
 if ishandle(f_LoadCellMetrics)
     waitbar(1,f_LoadCellMetrics,'Loading complete');
     if isempty(waitbar_handle)
