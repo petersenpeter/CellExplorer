@@ -21,14 +21,14 @@ There are a few principles you have to follow when doing the manual curation:
 ```m
 gui_MonoSyn('path_to_data')
 ```
-1. The interface is built from...
-2. You can navigate the determined connections using the top two buttons shown in the GUI, or use the left and right arrows.
+1. The interface walks you through the detected connections, displaying the CCGs (shown in blue) between all potential connections related to a reference cell (shown in black). The ACG for each potential cell is shown in a small plot inset for each CCG. A image with all CCGs between the reference cell and the rest of the population is also displayed, including the ACG of the reference cell (highlighted with a black dot). All significant connections are also highlighted in the image with white dots. 
+2. You can navigate the reference cells using the top two buttons shown in the GUI, or use the left and right arrows. Each connection is displayed twice: where the direction of the connection is shown in context with other connections for that reference cell. This provide insight into the CCG patterns, which is relevant for judging connections of hub-like cells and to detect patterns across CCGs.
 2. Following the principles stated above, you can now adjust the connections. 
 3. The primary action you can perform in the GUI is rejecting connections. The pipeline determines the connections that fulfills the statistical test, and the manual process consists of confirming or rejecting these connections.
 4. To reject a connection you simply click the CCG and it will turn red as shown in the screenshot above. You can also use the keypad to select/deselect the CCGs.
 5. when you have completed the curation process, simply close the figure and you will be prompted to save the curation.
 
-## You can launch the Monosyn GUI directly from the Cell Explorer
+## Launch the Monosyn GUI directly from the Cell Explorer
 1. Launch the Cell Explorer
 ```m
 cell_metrics = CellExplorer('metrics',cell_metrics); 
@@ -36,4 +36,4 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 2. From the top menu select `MonoSyn` -> `Adjust monosynaptic connections`. The monoSyn data will now be loaded and the MonoSyn interface will be displayed.
 3. Adjust connections using the mouse or the numeric keypad. 
 3. Once done, simply close the MonoSyn figure. 
-4. You will be prompted to save the curation. If you confirm, it will save the `sessionName.mono_res.cellinfo.mat` to the data folder and update the connections in the `cell_metrics` file as well.
+4. You will be prompted to save the manual curation. If you confirm, it will save the `sessionName.mono_res.cellinfo.mat` to the data folder and update the connections in the `cell_metrics` file as well.
