@@ -15,7 +15,7 @@ dl {
     text-align: right;
     color: black;
   }
-  dt::after {
+  dt {
     content: " ";
   }
   dd {
