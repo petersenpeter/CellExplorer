@@ -691,7 +691,7 @@ UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','list
 
 % Number of plots
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Layout','HorizontalAlignment','left');
-UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[50 61 99 10],'Units','normalized','String',{'GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6'},'max',1,'min',1,'Value',3,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress});
+UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[50 61 99 10],'Units','normalized','String',{'GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6','GUI 1+6'},'max',1,'min',1,'Value',3,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress});
 
 % #1 custom view
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 50 20 10],'Units','normalized','String','1','HorizontalAlignment','left');
@@ -4905,40 +4905,65 @@ end
         if temp4(1)> temp2 && temp4(1) < (temp1(1)-temp3)
             fractionalPositionX = (temp4(1) - temp2 ) / (temp1(1)-temp3-temp2);
             fractionalPositionY = (temp4(2) - 26 ) / (temp1(2)-20-26);
-            if UI.settings.layout == 1 && fractionalPositionX < 0.7
-                axnum = 1;
-            elseif UI.settings.layout == 1 && fractionalPositionX > 0.7
-                axnum = 6-floor(fractionalPositionY*3);
-            elseif UI.settings.layout == 2 && fractionalPositionY > 0.4
-                axnum = ceil(fractionalPositionX*2);
-            elseif UI.settings.layout == 2 && fractionalPositionY < 0.4
-                axnum = ceil(fractionalPositionX*3)+3;
-            elseif UI.settings.layout == 3 && fractionalPositionY > 0.5
-                axnum = ceil(fractionalPositionX*3);
-            elseif UI.settings.layout == 3 && fractionalPositionY < 0.5
-                axnum = ceil(fractionalPositionX*3)+3;
-            elseif UI.settings.layout == 4 && fractionalPositionY > 0.5
-                axnum = ceil(fractionalPositionX*3);
-            elseif UI.settings.layout == 4 && fractionalPositionY < 0.5
-                axnum = ceil(fractionalPositionX*3)+3;
-                if fractionalPositionY < 0.25 && axnum == 6
-                    axnum = axnum + 1;
-                end
-            elseif UI.settings.layout == 5 && fractionalPositionY > 0.5
-                axnum = ceil(fractionalPositionX*3);
-            elseif UI.settings.layout == 5 && fractionalPositionY < 0.5
-                axnum = ceil(fractionalPositionX*3)+3;
-                if fractionalPositionY < 0.25 && axnum >= 5
-                    axnum = axnum + 2;
-                end
-            elseif UI.settings.layout == 6 && fractionalPositionY > 0.66
-                axnum = ceil(fractionalPositionX*3);
-            elseif UI.settings.layout == 6 && fractionalPositionY > 0.33
-                axnum = ceil(fractionalPositionX*3)+3;
-            elseif UI.settings.layout == 6 && fractionalPositionY < 0.33
-                axnum = ceil(fractionalPositionX*3)+6;
-            else
-                axnum = 1;
+            switch UI.settings.layout
+                case 1 % GUI: 1+3
+                    if fractionalPositionX < 0.7
+                        axnum = 1;
+                    elseif fractionalPositionX > 0.7
+                        axnum = 6-floor(fractionalPositionY*3);
+                    end
+                case 2 % GUI: 2+3
+                    if fractionalPositionY > 0.4
+                        if fractionalPositionX<0.5
+                            axnum = 1;
+                        else
+                            axnum = 3;
+                        end
+                    elseif UI.settings.layout == 2 && fractionalPositionY < 0.4
+                        axnum = ceil(fractionalPositionX*3)+3;
+                    end
+                case 3 % GUI: 3+3
+                    if fractionalPositionY > 0.5
+                        axnum = ceil(fractionalPositionX*3);
+                    elseif fractionalPositionY < 0.5
+                        axnum = ceil(fractionalPositionX*3)+3;
+                    end
+                case 4 % GUI: 3+4
+                    if fractionalPositionY > 0.5
+                        axnum = ceil(fractionalPositionX*3);
+                    elseif fractionalPositionY < 0.5
+                        axnum = ceil(fractionalPositionX*3)+3;
+                        if fractionalPositionY < 0.25
+                            axnum = axnum + 1;
+                        end
+                    end
+                case 5 % GUI: 3+5
+                    if fractionalPositionY > 0.5
+                        axnum = ceil(fractionalPositionX*3);
+                    elseif fractionalPositionY < 0.5
+                        axnum = ceil(fractionalPositionX*3)+3;
+                        if fractionalPositionY < 0.25 && axnum >= 5
+                            axnum = axnum + 2;
+                        end
+                    end
+                case 6 % GUI: 3+6
+                    if fractionalPositionY > 0.66
+                        axnum = ceil(fractionalPositionX*3);
+                    elseif fractionalPositionY > 0.33
+                        axnum = ceil(fractionalPositionX*3)+3;
+                    elseif fractionalPositionY < 0.33
+                        axnum = ceil(fractionalPositionX*3)+6;
+                    end
+                case 7 % GUI: 1+6
+                    if fractionalPositionX < 0.5
+                        axnum = 1;
+                    elseif fractionalPositionX > 0.5 && fractionalPositionX < 0.75
+                        axnum = 6-floor(fractionalPositionY*3);
+                    else
+                        axnum = 9-floor(fractionalPositionY*3);
+                    end
+                otherwise
+                    axnum = 1;
             end
         else
             axnum = [];
@@ -8767,23 +8792,14 @@ end
 
     function AdjustGUIbutton
         % Shuffles through the layout options and calls AdjustGUI
-        switch UI.popupmenu.plotCount.Value
-            case 6
-                UI.settings.layout = 1;
-            case 5
-                UI.settings.layout = 6;
-            case 4
-                UI.settings.layout = 5;
-            case 3
-                UI.settings.layout = 4;
-            case 2
-                UI.settings.layout = 3;
-            case 1
-                UI.settings.layout = 2;
-        end
+        UI.settings.layout = UI.popupmenu.plotCount.Value;
         AdjustGUI
     end
-
+    
+    function AdjustGUIkey
+        UI.settings.layout = rem(UI.settings.layout,7)+1;
+        AdjustGUI
+    end
 % % % % % % % % % % % % % % % % % % % % % %
 
     function out = CheckSpikes(batchIDsIn)
@@ -9734,7 +9750,88 @@ end
     function AdjustGUI(~,~)
         % Adjusts the number of subplots. 1-3 general plots can be displayed, 3-6 cell-specific plots can be
         % displayed. The necessary panels are re-sized and toggled for the requested number of plots.
+        UI.popupmenu.plotCount.Value = UI.settings.layout;
         if UI.settings.layout == 1
+            % GUI: 1+3 figures.
+            UI.popupmenu.customplot4.Enable = 'off';
+            UI.popupmenu.customplot5.Enable = 'off';
+            UI.popupmenu.customplot6.Enable = 'off';
+            UI.panel.subfig_ax2.Visible = 'off';
+            UI.panel.subfig_ax3.Visible = 'off';
+            UI.panel.subfig_ax7.Visible = 'off';
+            UI.panel.subfig_ax8.Visible = 'off';
+            UI.panel.subfig_ax9.Visible = 'off';
+            UI.panel.subfig_ax1.Position = [0 0 0.7 1];
+            UI.panel.subfig_ax4.Position = [0.70 0.67 0.3 0.33];
+            UI.panel.subfig_ax5.Position = [0.70 0.33 0.3 0.34];
+            UI.panel.subfig_ax6.Position = [0.70 0 0.3 0.33];
+         elseif UI.settings.layout == 2
+            % GUI: 2+3 figures
+            UI.popupmenu.customplot4.Enable = 'off';
+            UI.popupmenu.customplot5.Enable = 'off';
+            UI.popupmenu.customplot6.Enable = 'off';
+            UI.panel.subfig_ax2.Visible = 'off';
+            UI.panel.subfig_ax3.Visible = 'on';
+            UI.panel.subfig_ax7.Visible = 'off';
+            UI.panel.subfig_ax8.Visible = 'off';
+            UI.panel.subfig_ax9.Visible = 'off';
+            UI.panel.subfig_ax1.Position = [0 0.4 0.5 0.6];
+            UI.panel.subfig_ax3.Position = [0.5 0.4 0.5 0.6];
+            UI.panel.subfig_ax4.Position = [0 0 0.33 0.4];
+            UI.panel.subfig_ax5.Position = [0.33 0 0.34 0.4];
+            UI.panel.subfig_ax6.Position = [0.67 0 0.33 0.4];
+        elseif UI.settings.layout == 3
+            % GUI: 3+3 figures
+            UI.popupmenu.customplot4.Enable = 'off';
+            UI.popupmenu.customplot5.Enable = 'off';
+            UI.popupmenu.customplot6.Enable = 'off';
+            UI.panel.subfig_ax2.Visible = 'on';
+            UI.panel.subfig_ax3.Visible = 'on';
+            UI.panel.subfig_ax7.Visible = 'off';
+            UI.panel.subfig_ax8.Visible = 'off';
+            UI.panel.subfig_ax9.Visible = 'off';
+            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax2.Position = [0.33 0.5 0.34 0.5];
+            UI.panel.subfig_ax3.Position = [0.67 0.5 0.33 0.5];
+            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax5.Position = [0.33 0 0.34 0.5];
+            UI.panel.subfig_ax6.Position = [0.67 0 0.33 0.5];
+        elseif UI.settings.layout == 4
+            % GUI: 3+4 figures
+            UI.popupmenu.customplot4.Enable = 'on';
+            UI.popupmenu.customplot5.Enable = 'off';
+            UI.popupmenu.customplot6.Enable = 'off';
+            UI.panel.subfig_ax2.Visible = 'on';
+            UI.panel.subfig_ax3.Visible = 'on';
+            UI.panel.subfig_ax7.Visible = 'on';
+            UI.panel.subfig_ax8.Visible = 'off';
+            UI.panel.subfig_ax9.Visible = 'off';
+            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax2.Position = [0.33 0.5 0.34 0.5];
+            UI.panel.subfig_ax3.Position = [0.67 0.5 0.33 0.5];
+            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax5.Position = [0.33 0 0.34 0.5];
+            UI.panel.subfig_ax6.Position = [0.67 0.25 0.33 0.25];
+            UI.panel.subfig_ax7.Position = [0.67 0 0.33 0.25];
+        elseif UI.settings.layout == 5
+            % GUI: 3+5 figures
+            UI.popupmenu.customplot4.Enable = 'on';
+            UI.popupmenu.customplot5.Enable = 'on';
+            UI.popupmenu.customplot6.Enable = 'off';
+            UI.panel.subfig_ax2.Visible = 'on';
+            UI.panel.subfig_ax3.Visible = 'on';
+            UI.panel.subfig_ax7.Visible = 'on';
+            UI.panel.subfig_ax8.Visible = 'on';
+            UI.panel.subfig_ax9.Visible = 'off';
+            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax2.Position = [0.33 0.5 0.33 0.5];
+            UI.panel.subfig_ax3.Position = [0.67 0.5 0.33 0.5];
+            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax5.Position = [0.33 0.25 0.34 0.25];
+            UI.panel.subfig_ax6.Position = [0.67 0.25 0.33 0.25];
+            UI.panel.subfig_ax7.Position = [0.33 0 0.34 0.25];
+            UI.panel.subfig_ax8.Position = [0.67 0 0.33 0.25];
+        elseif UI.settings.layout == 6
             % GUI: 3+6 figures
             UI.popupmenu.customplot4.Enable = 'on';
             UI.popupmenu.customplot5.Enable = 'on';
@@ -9753,98 +9850,23 @@ end
             UI.panel.subfig_ax7.Position = [0 0 0.33 0.33];
             UI.panel.subfig_ax8.Position = [0.33 0 0.34 0.33];
             UI.panel.subfig_ax9.Position = [0.67 0 0.33 0.33];
-            UI.popupmenu.plotCount.Value = 6;
-            UI.settings.layout = 6;
-        elseif UI.settings.layout == 6
-            % GUI: 3+5 figures
+        elseif UI.settings.layout == 7
+            % GUI: 1+6 figures.
             UI.popupmenu.customplot4.Enable = 'on';
             UI.popupmenu.customplot5.Enable = 'on';
-            UI.popupmenu.customplot6.Enable = 'off';
-            UI.panel.subfig_ax2.Visible = 'on';
-            UI.panel.subfig_ax3.Visible = 'on';
-            UI.panel.subfig_ax7.Visible = 'on';
-            UI.panel.subfig_ax8.Visible = 'on';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
-            UI.panel.subfig_ax2.Position = [0.33 0.5 0.33 0.5];
-            UI.panel.subfig_ax3.Position = [0.67 0.5 0.33 0.5];
-            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
-            UI.panel.subfig_ax5.Position = [0.33 0.25 0.34 0.25];
-            UI.panel.subfig_ax6.Position = [0.67 0.25 0.33 0.25];
-            UI.panel.subfig_ax7.Position = [0.33 0 0.34 0.25];
-            UI.panel.subfig_ax8.Position = [0.67 0 0.33 0.25];
-            UI.popupmenu.plotCount.Value = 5;
-            UI.settings.layout = 5;
-        elseif UI.settings.layout == 5
-            % GUI: 3+4 figures
-            UI.popupmenu.customplot4.Enable = 'on';
-            UI.popupmenu.customplot5.Enable = 'off';
-            UI.popupmenu.customplot6.Enable = 'off';
-            UI.panel.subfig_ax2.Visible = 'on';
-            UI.panel.subfig_ax3.Visible = 'on';
-            UI.panel.subfig_ax7.Visible = 'on';
-            UI.panel.subfig_ax8.Visible = 'off';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
-            UI.panel.subfig_ax2.Position = [0.33 0.5 0.34 0.5];
-            UI.panel.subfig_ax3.Position = [0.67 0.5 0.33 0.5];
-            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
-            UI.panel.subfig_ax5.Position = [0.33 0 0.34 0.5];
-            UI.panel.subfig_ax6.Position = [0.67 0.25 0.33 0.25];
-            UI.panel.subfig_ax7.Position = [0.67 0 0.33 0.25];
-            UI.popupmenu.plotCount.Value = 4;
-            UI.settings.layout = 4;
-        elseif UI.settings.layout == 4
-            % GUI: 3+3 figures
-            UI.popupmenu.customplot4.Enable = 'off';
-            UI.popupmenu.customplot5.Enable = 'off';
-            UI.popupmenu.customplot6.Enable = 'off';
-            UI.panel.subfig_ax2.Visible = 'on';
-            UI.panel.subfig_ax3.Visible = 'on';
-            UI.panel.subfig_ax7.Visible = 'off';
-            UI.panel.subfig_ax8.Visible = 'off';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
-            UI.panel.subfig_ax2.Position = [0.33 0.5 0.34 0.5];
-            UI.panel.subfig_ax3.Position = [0.67 0.5 0.33 0.5];
-            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
-            UI.panel.subfig_ax5.Position = [0.33 0 0.34 0.5];
-            UI.panel.subfig_ax6.Position = [0.67 0 0.33 0.5];
-            UI.popupmenu.plotCount.Value = 3;
-            UI.settings.layout = 3;
-        elseif UI.settings.layout == 3
-            % GUI: 2+3 figures
-            UI.popupmenu.customplot4.Enable = 'off';
-            UI.popupmenu.customplot5.Enable = 'off';
-            UI.popupmenu.customplot6.Enable = 'off';
-            UI.panel.subfig_ax2.Visible = 'off';
-            UI.panel.subfig_ax3.Visible = 'on';
-            UI.panel.subfig_ax7.Visible = 'off';
-            UI.panel.subfig_ax8.Visible = 'off';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0.4 0.5 0.6];
-            UI.panel.subfig_ax3.Position = [0.5 0.4 0.5 0.6];
-            UI.panel.subfig_ax4.Position = [0 0 0.33 0.4];
-            UI.panel.subfig_ax5.Position = [0.33 0 0.34 0.4];
-            UI.panel.subfig_ax6.Position = [0.67 0 0.33 0.4];
-            UI.popupmenu.plotCount.Value = 2;
-            UI.settings.layout = 2;
-        elseif UI.settings.layout == 2
-            % GUI: 1+3 figures.
-            UI.popupmenu.customplot4.Enable = 'off';
-            UI.popupmenu.customplot5.Enable = 'off';
-            UI.popupmenu.customplot6.Enable = 'off';
+            UI.popupmenu.customplot6.Enable = 'on';
             UI.panel.subfig_ax2.Visible = 'off';
             UI.panel.subfig_ax3.Visible = 'off';
-            UI.panel.subfig_ax7.Visible = 'off';
-            UI.panel.subfig_ax8.Visible = 'off';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0 0.7 1];
-            UI.panel.subfig_ax4.Position = [0.70 0.67 0.3 0.33];
-            UI.panel.subfig_ax5.Position = [0.70 0.33 0.3 0.34];
-            UI.panel.subfig_ax6.Position = [0.70 0 0.3 0.33];
-            UI.popupmenu.plotCount.Value = 1;
-            UI.settings.layout = 1;
+            UI.panel.subfig_ax7.Visible = 'on';
+            UI.panel.subfig_ax8.Visible = 'on';
+            UI.panel.subfig_ax9.Visible = 'on';
+            UI.panel.subfig_ax1.Position = [0 0 0.5 1];
+            UI.panel.subfig_ax4.Position = [0.5 0.67 0.25 0.33];
+            UI.panel.subfig_ax5.Position = [0.5 0.33 0.25 0.34];
+            UI.panel.subfig_ax6.Position = [0.5 0    0.25 0.33];
+            UI.panel.subfig_ax7.Position = [0.75 0.67 0.25 0.33];
+            UI.panel.subfig_ax8.Position = [0.75 0.33 0.25 0.34];
+            UI.panel.subfig_ax9.Position = [0.75 0    0.25 0.33];
         end
         uiresume(UI.fig);
     end
@@ -9861,9 +9883,9 @@ end
                 ShowHideMenu
             case 'n'
                 % Adjusts the number of subplots in the GUI
-                AdjustGUI;
+                AdjustGUIkey;
             case 'z'
-                %                 undoClassification;
+                % undoClassification;
             case 'space'
                 selectCellsForGroupAction
             case 'backspace'
