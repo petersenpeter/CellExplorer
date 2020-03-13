@@ -761,21 +761,21 @@ UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu
 
 % Custom plotting menues
 uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 69 50 10],'Units','normalized','String','X data','HorizontalAlignment','left');
-UI.checkbox.logx = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 72 73 10],'Units','normalized','String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logx = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[90 72 73 10],'Units','normalized','String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress});
 UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 62 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress});
 
 uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 49 50 10],'Units','normalized','String','Y data','HorizontalAlignment','left');
-UI.checkbox.logy = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 52 73 10],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logy = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[90 52 73 10],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress});
 UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 42 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress});
 
 uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 29 72 10],'Units','normalized','String','Z data','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.checkbox.logz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 32 73 10],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logz = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[90 32 73 10],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress});
 UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 22 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress});
 UI.popupmenu.zData.Enable = 'Off';
 UI.checkbox.logz.Enable = 'Off';
 
 uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 9 72 10],'Units','normalized','String','Marker size','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.checkbox.logMarkerSize = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[75 12 73 10],'Units','normalized','String','Log size','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotMarkerSizeLog(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logMarkerSize = uicontrol('Parent',UI.panel.custom,'Style','checkbox','Position',[80 12 73 10],'Units','normalized','String','Log size','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotMarkerSizeLog(),'KeyPressFcn', {@keyPress});
 UI.popupmenu.markerSizeData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotMarkerSizedata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotMarkerSize(),'KeyPressFcn', {@keyPress});
 UI.popupmenu.markerSizeData.Enable = 'Off';
 UI.checkbox.logMarkerSize.Enable = 'Off';
@@ -948,37 +948,68 @@ while ii <= cell_metrics.general.cellCount
         UI.params.outgoing = [];
         UI.params.connections = [];
     end
+    % Inhibitory cells
+    if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory')
+        putativeSubset_inh = find(all(ismember(cell_metrics.putativeConnections.inhibitory,UI.params.subset)'));
+    else
+        putativeSubset_inh=[];
+    end
+    
     if ~isempty(putativeSubset)
         UI.params.a1 = cell_metrics.putativeConnections.excitatory(putativeSubset,1);
         UI.params.a2 = cell_metrics.putativeConnections.excitatory(putativeSubset,2);
-        
+        UI.params.b1 = cell_metrics.putativeConnections.inhibitory(putativeSubset,1);
+        UI.params.b2 = cell_metrics.putativeConnections.inhibitory(putativeSubset,2);
         if any(strcmp(UI.monoSyn.disp, {'Selected','All'}))
             UI.params.inbound = find(UI.params.a2 == ii);
             UI.params.outbound = find(UI.params.a1 == ii);
+            UI.params.inbound_inh = find(UI.params.b2 == ii);
+            UI.params.outbound_inh = find(UI.params.b1 == ii);
         else
             UI.params.inbound = [];
             UI.params.outbound = [];
+            UI.params.inbound_inh = [];
+            UI.params.outbound_inh = [];
         end
         
         if any(strcmp(UI.monoSyn.disp, {'Upstream','Up & downstream'}))
+            % Excitatory
             kkk = 1;
             UI.params.inbound = find(UI.params.a2 == ii);
             while ~isempty(UI.params.inbound) && any(ismember(UI.params.a2, UI.params.incoming)) && kkk < 10
                 UI.params.inbound = [UI.params.inbound;find(ismember(UI.params.a2, UI.params.incoming))];
                 kkk = kkk + 1;
             end
+            % Inhibitory
+            kkk = 1;
+            UI.params.inbound = find(UI.params.b2 == ii);
+            while ~isempty(UI.params.inbound_inh) && any(ismember(UI.params.b2, UI.params.incoming_inh)) && kkk < 10
+                UI.params.inbound_inh = [UI.params.inbound_inh;find(ismember(UI.params.b2, UI.params.incoming_inh))];
+                kkk = kkk + 1;
+            end
         end
         if any(strcmp(UI.monoSyn.disp, {'Downstream','Up & downstream'}))
+            % Excitatory
             kkk = 1;
             UI.params.outbound = find(UI.params.a1 == ii);
             while ~isempty(UI.params.outbound) && any(ismember(UI.params.a1, UI.params.outgoing)) && kkk < 10
                 UI.params.outbound = [UI.params.outbound;find(ismember(UI.params.a1, UI.params.outgoing))];
                 kkk = kkk + 1;
             end
+            % Inhibitory
+            kkk = 1;
+            UI.params.outbound_inh = find(UI.params.b1 == ii);
+            while ~isempty(UI.params.outbound_inh) && any(ismember(UI.params.b1, UI.params.outgoing_inh)) && kkk < 10
+                UI.params.outbound_inh = [UI.params.outbound_inh;find(ismember(UI.params.b1, UI.params.outgoing_inh))];
+                kkk = kkk + 1;
+            end
         end
         UI.params.incoming = UI.params.a1(UI.params.inbound);
         UI.params.outgoing = UI.params.a2(UI.params.outbound);
         UI.params.connections = [UI.params.incoming;UI.params.outgoing];
+        UI.params.incoming_inh = UI.params.b1(UI.params.inbound_inh);
+        UI.params.outgoing_inh = UI.params.b2(UI.params.outbound_inh);
+        UI.params.connections_inh = [UI.params.incoming_inh;UI.params.outgoing_inh];
     end
     
     % Defining synaptically identified projecting cell
@@ -1027,15 +1058,12 @@ while ii <= cell_metrics.general.cellCount
     end
     
     % Updating title
-    if isfield(cell_metrics,'sessionName') & isfield(cell_metrics.general,'batch')
+     if isfield(cell_metrics,'sessionName') && isfield(cell_metrics.general,'batch')
         UI.title.String = ['Cell class: ', UI.settings.cellTypes{clusClas(ii)},', ' , num2str(ii),'/', num2str(cell_metrics.general.cellCount),' (batch ',num2str(batchIDs),'/',num2str(length(cell_metrics.general.batch)),') - UID: ', num2str(cell_metrics.UID(ii)),'/',num2str(general.cellCount),', spike group: ', num2str(cell_metrics.spikeGroup(ii)),', session: ', cell_metrics.sessionName{ii},',  animal: ',cell_metrics.animal{ii}];
-    elseif isfield(cell_metrics,'sessionName')
-        UI.title.String = ['Cell: ', num2str(ii),'/', num2str(cell_metrics.general.cellCount),' from ', cell_metrics.sessionName{ii},',  Class: ', UI.settings.cellTypes{clusClas(ii)}];
     else
-        UI.title.String = ['Cell: ', num2str(ii),'/', num2str(cell_metrics.general.cellCount),'.  Class: ', UI.settings.cellTypes{clusClas(ii)}];
-    end
-    
-    
+        UI.title.String = ['Cell Class: ', UI.settings.cellTypes{clusClas(ii)},', ', num2str(ii),'/', num2str(cell_metrics.general.cellCount),'  - spike group: ', num2str(cell_metrics.spikeGroup(ii))];
+     end
+
     %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 1
     % % % % % % % % % % % % % % % % % % % % % %
@@ -2018,21 +2046,33 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             putativeConnections_subset = all(ismember(cell_metrics.putativeConnections.excitatory,UI.params.subset),2);
             putativeConnections_subset = cell_metrics.putativeConnections.excitatory(putativeConnections_subset,:);
-            [putativeSubset1,~,Y] = unique(putativeConnections_subset);
-            Y = reshape(Y,size(putativeConnections_subset));
+            
+            putativeConnections_subset_inh = all(ismember(cell_metrics.putativeConnections.inhibitory,UI.params.subset),2);
+            putativeConnections_subset_inh = cell_metrics.putativeConnections.inhibitory(putativeConnections_subset_inh,:);
+            [putativeSubset1,~,Y] = unique([putativeConnections_subset;putativeConnections_subset_inh]);
+            
+            Y = reshape(Y,size([putativeConnections_subset;putativeConnections_subset_inh]));
             nNodes = length(putativeSubset1);
             A = zeros(nNodes,nNodes);
-            for i = 1:size(Y,1)
+            for i = 1:size(putativeConnections_subset,1)
                 A(Y(i,1),Y(i,2)) = 1;
             end
+            for i = size(putativeConnections_subset,1)+1:size(Y,1)
+                A(Y(i,1),Y(i,2)) = 2;
+            end
+            
             connectivityGraph = digraph(A);
-            connectivityGraph_plot = plot(connectivityGraph,'Layout','force','Iterations',15,'MarkerSize',3,'NodeCData',plotClas(putativeSubset1)','HitTest','off','EdgeColor',[0.2 0.2 0.2],'NodeColor','k','NodeLabel',{}); %
+            connectivityGraph1 = connectivityGraph;
+            connectivityGraph1 = rmedge(connectivityGraph1,Y(1:size(putativeConnections_subset,1),1),Y(1:size(putativeConnections_subset,1),2));
+            connectivityGraph_plot = plot(connectivityGraph,'Layout','force','Iterations',15,'MarkerSize',3,'NodeCData',plotClas(putativeSubset1)','EdgeCData',connectivityGraph.Edges.Weight,'HitTest','off','EdgeColor',[0.2 0.2 0.2],'NodeColor','k','NodeLabel',{}); %
             subsetPlots.xaxis = connectivityGraph_plot.XData;
             subsetPlots.yaxis = connectivityGraph_plot.YData;
             subsetPlots.subset = putativeSubset1;
             for k = 1:length(classes2plotSubset)
                 highlight(connectivityGraph_plot,find(plotClas(putativeSubset1)==classes2plotSubset(k)),'NodeColor',clr(k,:))
             end
+            highlight(connectivityGraph_plot,connectivityGraph1,'EdgeColor','b')
+%             highlight(connectivityGraph_plot,Y(size(putativeConnections_subset,1)+1:end,:)','EdgeColor',[1,1,0])
             axis tight, title('Connectivity graph')
             set(gca, 'box','off','XTickLabel',[],'XTick',[],'YTickLabel',[],'YTick',[])
             set(gca,'ButtonDownFcn',@ClicktoSelectFromPlot)
@@ -3016,22 +3056,43 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
         end
         
+        % Plots putative inhibitory connections
+        if plotConnections1 == 1 && ~isempty(putativeSubset_inh)
+            switch UI.monoSyn.disp
+                case 'All'
+                    xdata_inh = [plotX1(UI.params.b1);plotX1(UI.params.b2);nan(1,length(UI.params.b2))];
+                    ydata_inh = [plotY1(UI.params.b1);plotY1(UI.params.b2);nan(1,length(UI.params.b2))];
+                    plot(xdata_inh(:),ydata_inh(:),'--','HitTest','off','color',[0.5 0.5 0.5])
+                case {'Selected','Upstream','Downstream','Up & downstream'}
+                    if ~isempty(UI.params.inbound_inh)
+                        xdata_inh = [plotX1(UI.params.incoming_inh);plotX1(UI.params.b2(UI.params.inbound_inh));nan(1,length(UI.params.b2(UI.params.inbound_inh)))];
+                        ydata_inh = [plotY1(UI.params.incoming_inh);plotY1(UI.params.b2(UI.params.inbound_inh));nan(1,length(UI.params.b2(UI.params.inbound_inh)))];
+                        plot(xdata_inh,ydata_inh,'--r','HitTest','off')
+%                         scatter(xdata_inh(:),ydata_inh(:),UI.settings.markerSize,'b','HitTest','off')
+                    end
+                    if ~isempty(UI.params.outbound_inh)
+                        xdata_inh = [plotX1(UI.params.b1(UI.params.outbound_inh));plotX1(UI.params.outgoing_inh);nan(1,length(UI.params.outgoing_inh))];
+                        ydata_inh = [plotY1(UI.params.b1(UI.params.outbound_inh));plotY1(UI.params.outgoing_inh);nan(1,length(UI.params.outgoing_inh))];
+                        plot(xdata_inh(:),ydata_inh(:),'--c','HitTest','off')
+%                         scatter(xdata_inh(:),ydata_inh(:),UI.settings.markerSize,'m','HitTest','off')
+                    end
+            end
+        end
+        
         % Plots X marker for selected cell
         plot(plotX1(ii), plotY1(ii),'xw', 'LineWidth', 3., 'MarkerSize',22,'HitTest','off');
         plot(plotX1(ii), plotY1(ii),'xk', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
         
-        % Plots tagget ground-truth cell types
+        % Plots tagged ground-truth cell types
         if groundTruthSelection
             idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
             for jj = 1:length(idGroundTruth)
                 plot(plotX1(subsetGroundTruth{idGroundTruth(jj)}), plotY1(subsetGroundTruth{idGroundTruth(jj)}),UI.settings.groundTruthMarkers{jj},'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
             end
         end
-        
         if UI.settings.stickySelection
             plot(plotX1(UI.params.ClickedCells),plotY1(UI.params.ClickedCells),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9)
         end
-        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -4667,12 +4728,23 @@ end
             case {'Selected','Upstream','Downstream','Up & downstream'}
                 if ~isempty(UI.params.inbound)
                     plot([-0.1,0.1],nLegends*[1,1],'-b','LineWidth', 2)
-                    text(0.2,nLegends,'Inbound connection')
+                    text(0.2,nLegends,'Inbound excitation')
                     nLegends = nLegends - 1;
                 end
                 if ~isempty(UI.params.outbound)
                     plot([-0.1,0.1],nLegends*[1,1],'-m','LineWidth', 2)
-                    text(0.2,nLegends,'Outbound connection')
+                    text(0.2,nLegends,'Outbound excitation')
+                    nLegends = nLegends - 1;
+                end
+                % Inhibitory connections
+                if ~isempty(UI.params.inbound_inh)
+                    plot([-0.1,0.1],nLegends*[1,1],'--r','LineWidth', 2)
+                    text(0.2,nLegends,'Inbound inhibition')
+                    nLegends = nLegends - 1;
+                end
+                if ~isempty(UI.params.outbound_inh)
+                    plot([-0.1,0.1],nLegends*[1,1],'--c','LineWidth', 2)
+                    text(0.2,nLegends,'Outbound inhibition')
                     nLegends = nLegends - 1;
                 end
         end
@@ -4681,7 +4753,7 @@ end
             idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
             for jj = 1:length(idGroundTruth)
                 plot(0, nLegends,UI.settings.groundTruthMarkers{jj},'LineWidth', 1.5, 'MarkerSize',8);
-                text(0.2,nLegends,UI.settings.groundTruth{idGroundTruth(jj)})
+                text(0.2,nLegends,UI.settings.groundTruth{groundTruthSelection(idGroundTruth(jj))})
                 nLegends = nLegends - 1;
             end
         end
@@ -7898,16 +7970,23 @@ end
         tagsInMetrics = unique([cell_metrics.tags{:}]);
         UI.settings.tags = unique([UI.settings.tags tagsInMetrics]);
         UI.settings.tags(cellfun(@isempty, UI.settings.tags)) = [];
+        
         % Initialize tags
         dispTags = ones(size(UI.settings.tags));
         dispTags2 = zeros(size(UI.settings.tags));
         if isfield(UI,'tabs')
             initTags
         end
+        
         % Initialize ground truth classification
         if ~isfield(cell_metrics, 'groundTruthClassification')
             cell_metrics.groundTruthClassification = repmat({''},1,cell_metrics.general.cellCount);
         end
+        
+        % Init ground truth cell list
+        groundTruthInMetrics = unique([cell_metrics.groundTruthClassification{:}]);
+        UI.settings.groundTruth = unique([UI.settings.groundTruth groundTruthInMetrics]);
+        UI.settings.groundTruth(cellfun(@isempty, UI.settings.groundTruth)) = [];
         
         % Initialize text filter
         idx_textFilter = 1:cell_metrics.general.cellCount;
@@ -9463,9 +9542,11 @@ end
                         waitbar(0.7,f_LoadMonoSyn,['Saving cells to cell_metrics file']);
                     end
                     cell_session = load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
-                    cell_session.cell_metrics.putativeConnections.excitatory = mono_res.sig_con; % Vectors with cell pairs
+                    cell_session.cell_metrics.putativeConnections.excitatory = mono_res.sig_con_excitatory; % Vectors with cell pairs
+                    cell_session.cell_metrics.putativeConnections.inhibitory = mono_res.sig_con_inhibitory; % Vectors with cell pairs
                     cell_session.cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_session.cell_metrics.general.cellCount);
                     cell_session.cell_metrics.synapticEffect(cell_session.cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_session.cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
+                    cell_session.cell_metrics.synapticEffect(cell_session.cell_metrics.putativeConnections.inhibitory(:,1)) = repmat({'Inhibitory'},1,size(cell_session.cell_metrics.putativeConnections.inhibitory,1));
                     cell_session.cell_metrics.synapticConnectionsOut = zeros(1,cell_session.cell_metrics.general.cellCount);
                     cell_session.cell_metrics.synapticConnectionsIn = zeros(1,cell_session.cell_metrics.general.cellCount);
                     [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,1),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,1)));
@@ -9474,7 +9555,7 @@ end
                     cell_session.cell_metrics.synapticConnectionsIn(b) = a; cell_session.cell_metrics.synapticConnectionsIn = cell_session.cell_metrics.synapticConnectionsIn(1:cell_session.cell_metrics.general.cellCount);
                     
                     save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), '-struct', 'cell_session','-v7.3','-nocompression')
-                    %                     MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
+                    % MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
                     
                     if ishandle(f_LoadMonoSyn)
                         waitbar(0.9,f_LoadMonoSyn,'Updating session');
@@ -9485,11 +9566,15 @@ end
                         idx = 1:cell_metrics.general.cellCount;
                     end
                     if length(idx) == cell_session.cell_metrics.general.cellCount
-                        [~,ia,~] = intersect(cell_metrics.putativeConnections.excitatory(:,1), idx);
+                        ia = ismember(cell_metrics.putativeConnections.excitatory(:,1), idx);
                         cell_metrics.putativeConnections.excitatory(ia,:) = [];
-                        cell_metrics.putativeConnections.excitatory = [cell_metrics.putativeConnections.excitatory;idx(mono_res.sig_con)];
+                        cell_metrics.putativeConnections.excitatory = [cell_metrics.putativeConnections.excitatory;idx(mono_res.sig_con_excitatory)];
+                        ia = ismember(cell_metrics.putativeConnections.inhibitory(:,1), idx);
+                        cell_metrics.putativeConnections.inhibitory(ia,:) = [];
+                        cell_metrics.putativeConnections.inhibitory = [cell_metrics.putativeConnections.inhibitory;idx(mono_res.sig_con_inhibitory)];
                         cell_metrics.synapticEffect(idx) = repmat({'Unknown'},1,cell_session.cell_metrics.general.cellCount);
                         cell_metrics.synapticEffect(idx(cell_session.cell_metrics.putativeConnections.excitatory(:,1))) = repmat({'Excitatory'},1,size(cell_session.cell_metrics.putativeConnections.excitatory,1));
+                        cell_metrics.synapticEffect(idx(cell_session.cell_metrics.putativeConnections.inhibitory(:,1))) = repmat({'Inhibitory'},1,size(cell_session.cell_metrics.putativeConnections.inhibitory,1));
                         
                         cell_metrics.synapticConnectionsOut(idx) = cell_session.cell_metrics.synapticConnectionsOut;
                         cell_metrics.synapticConnectionsIn(idx) = cell_session.cell_metrics.synapticConnectionsIn;
@@ -9498,12 +9583,12 @@ end
                             UI.cells.excitatory = find(strcmp(cell_metrics.synapticEffect,'Excitatory'));
                             UI.cells.inhibitory = find(strcmp(cell_metrics.synapticEffect,'Inhibitory'));
                         end
-                        if isfield(cell_metrics,'putativeConnections') & isfield(cell_metrics.putativeConnections,'excitatory') & ~isempty(cell_metrics.putativeConnections.excitatory)
+                        if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatory') && ~isempty(cell_metrics.putativeConnections.excitatory)
                             UI.cells.excitatoryPostsynaptic = unique(cell_metrics.putativeConnections.excitatory(:,2));
                         else
                             UI.cells.excitatoryPostsynaptic = [];
                         end
-                        if isfield(cell_metrics,'putativeConnections') & isfield(cell_metrics.putativeConnections,'inhibitory') & ~isempty(cell_metrics.putativeConnections.inhibitory)
+                        if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory') && ~isempty(cell_metrics.putativeConnections.inhibitory)
                             UI.cells.inhibitoryPostsynaptic = unique(cell_metrics.putativeConnections.inhibitory(:,2));
                         else
                             UI.cells.inhibitoryPostsynaptic = [];
@@ -9518,7 +9603,9 @@ end
                     MsgLog(['Synaptic connections adjusted for: ', basename1]);
                     uiresume(UI.fig);
                 catch
-                    MsgLog(['Synaptic connections adjustment failed.'],4);
+                    MsgLog(['Synaptic connections adjustment failed. mono_res struct saved to workspace'],4);
+                    mono_res_failed_to_save = mono_res;
+                    assignin('base',mono_res_failed_to_save,cell_metrics);
                 end
                 
                 if ishandle(f_LoadMonoSyn)

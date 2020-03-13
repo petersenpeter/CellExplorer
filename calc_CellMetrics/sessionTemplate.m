@@ -45,7 +45,6 @@ elseif ~exist('session','var')
     session = [];
 end
 
-
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Standard parameters below. Please change accordingly to represent your session
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -166,6 +165,7 @@ elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[ses
     session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0);
     session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
 else
+    warning('No sessionInfo.mat or xml file loaded')
     sessionInfo = [];
 end
 

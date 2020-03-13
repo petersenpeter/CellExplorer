@@ -12,9 +12,9 @@ function mono_res = gui_MonoSyn(mono_res_in,UID)
 % Original function (bz_PlotMonoSyn) by: Sam, Gabrielle & ?
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 06-11-2019
+% Last edited: 12-03-2019
 
-if ischar(mono_res_in) & exist(mono_res_in,'file')
+if ischar(mono_res_in) && exist(mono_res_in,'file')
     disp('gui_MonoSyn: Loading mono_res file')
     load(mono_res_in);
 elseif isstruct(mono_res_in)
@@ -26,29 +26,44 @@ end
 
 disp('gui_MonoSyn: Loading GUI')
 ccgR = mono_res.ccgR;
-sig_con = mono_res.sig_con;
+% sig_con = mono_res.sig_con;
 Pred = mono_res.Pred;
 completeIndex = mono_res.completeIndex;
 binSize = mono_res.binSize;
 duration = mono_res.duration;
 
+if isfield(mono_res_in,'sig_con_excitatory') && ~isempty(mono_res_in.sig_con_excitatory)
+    sig_con_excitatory = mono_res_in.sig_con_excitatory;
+elseif isfield(mono_res_in,'sig_con') && ~isempty(mono_res_in.sig_con)
+    sig_con_excitatory = mono_res_in.sig_con;
+else
+    sig_con_excitatory = [];
+end
+
+if isfield(mono_res_in,'sig_con_inhibitory') && ~isempty(mono_res_in.sig_con_inhibitory)
+    sig_con_inhibitory = mono_res_in.sig_con_inhibitory;
+end
+
+connectionsDisplayed = 1;
+sig_con = sig_con_excitatory;
 keep_con = sig_con;
+allcel = unique(sig_con(:));
+
 window  =false(size(ccgR,1),1);
 window(ceil(length(window)/2) - round(.004/binSize): ceil(length(window)/2) + round(.004/binSize)) = true;
 halfBins = round(duration/binSize/2);
-
 t = 1000*(-halfBins:halfBins)'*binSize;
 
-allcel = unique(sig_con(:));
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 h = figure('KeyReleaseFcn', {@keyPress},'Name','MonoSynCon inspector','NumberTitle','off','renderer','opengl');
 % p = uipanel(h,'Position',[0 0 1 .1],'BorderType','none')
 % p2 = uipanel(h,'Position',[0 0 0.01 0.01],'BorderType','none')
-uicontrol('Parent',h,'Style','pushbutton','Position',[5 405 20 15],'Units','normalized','String','<','Callback',@(src,evnt)goBack,'KeyPressFcn', {@keyPress});
-uicontrol('Parent',h,'Style','pushbutton','Position',[540 405 20 15],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',h,'Style','pushbutton','Position',[5 410 20 10],'Units','normalized','String','<','Callback',@(src,evnt)goBack,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',h,'Style','pushbutton','Position',[540 410 20 10],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
 plotTitle = uicontrol('Parent',h,'Style','text','Position',[130 410 350 10],'Units','normalized','String','','HorizontalAlignment','center','FontSize',13);
-
+UI.switchConnectionType = uicontrol('Parent',h,'Style','popupmenu','Position',[30 408 80 10],'Units','normalized','String',{'Excitatory connections','Inhibitory connections'},'Value',1,'Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
+displayAllConnections = uicontrol('Parent',h,'Style','checkbox','Position',[120 410 100 10],'Units','normalized','String','Show all detected connections','HorizontalAlignment','right','Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
 
 if ~verLessThan('matlab', '9.4')
     set(h,'WindowState','maximize','visible','on'), drawnow nocallbacks; 
@@ -61,10 +76,21 @@ if exist('UID','var') && any(UID == allcel)
 else
     i = 1;
 end
-while i > 0 && i <= length(allcel)
+temp444 = 1;
+while temp444 == 1
+    if i < 1 
+        i = 1;
+    end
+    if i > length(allcel)
+        i = length(allcel);
+    end
     if ~ishandle(h)
-        mono_res.sig_con = keep_con;
-        
+        if connectionsDisplayed == 1
+            mono_res.sig_con = keep_con;
+            mono_res.sig_con_excitatory = keep_con;
+        else
+            mono_res.sig_con_inhibitory = keep_con;
+        end
         if ischar(mono_res_in)
             disp('Saving mono_res file')
             save(mono_res_in,'mono_res','-v7.3','-nocompression');
@@ -75,7 +101,6 @@ while i > 0 && i <= length(allcel)
     
     prs = sig_con(any(sig_con==allcel(i),2),:);
     [plotRows,~]= numSubplots(max(2+size(prs,1),4));
-%     ha = tight_subplot(plotRows(1),plotRows(2),[.02 .01]);
     ha = tight_subplot(plotRows(1),plotRows(2),[.03 .03],[.05 .05],[.03 .03]);
     
     prs2 = [];
@@ -89,11 +114,12 @@ while i > 0 && i <= length(allcel)
             prs2(j,:) = prs1;
             exc=ccgR(:,prs1(1),prs1(2));
             exc(exc<mono_res.Bounds(:,prs1(1),prs1(2),1)|~window)=0;
+            exc(ceil(length(exc)/2)) = 0;
             
             inh=ccgR(:,prs1(1),prs1(2));
             inh(inh>mono_res.Bounds(:,prs1(1),prs1(2),2)|~window)=0;
-            bar_from_patch(t,ccgR(:,prs1(1),prs1(2)),'b')
-            % bar(t,ccgR(:,prs1(1),prs1(2)),1,'FaceColor','b','EdgeColor','b');
+            inh(ceil(length(inh)/2)) = 0;
+            bar_from_patch(t,ccgR(:,prs1(1),prs1(2)),'b',0)
             hold on;
             
             % Plot predicted values
@@ -104,25 +130,22 @@ while i > 0 && i <= length(allcel)
             plot(t,mono_res.Bounds(:,prs1(1),prs1(2),2),'r--', 'HitTest','off');
             
             % Plot signif increased bins in red
-            bar_from_patch(t,exc,'r')
-            % bar(t,exc,1,'FaceColor','r','EdgeColor','r');
+            if connectionsDisplayed == 1
+                bar_from_patch(t,exc,'r',0)
+            end
             
             % Plot signif lower bins in blue
-            bar_from_patch(t,inh,'c')
-            % bar(t,inh,1,'FaceColor','c','EdgeColor','c');
-            
-            upL = get(gca,'ylim');
-            plot([0 0],[0 upL(2)],'k', 'HitTest','off')
+            if connectionsDisplayed == 2
+                bar_from_patch(t,inh,'c',0)
+            end
             xlim([min(t) max(t)]);
-            
-%             text(min(t) +.05*abs(min(t)),double(max(ccgR(:,prs(j,1),prs(j,2)))),['max bin spike count: ' num2str(max(ccgR(:,prs(j,1),prs(j,2))))])
-            
-            
-%             set(gca,'yticklabel',[],'xtick',[min(t) 0 max(t)],'xticklabel',[])
-            
+
             tcel = setdiff(prs(j,:),allcel(i,:));
             targ=completeIndex(completeIndex(:,3)==tcel,1:2);
-%             xlabel(['sh: ' num2str(targ(1)) ' cell '  num2str(targ(2))]);
+
+            if connectionsDisplayed == 2
+                ylim([0,2*quantile(Pred(:,prs1(1),prs1(2)),0.9)])
+            end
             temp = ylim;
             text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ(2)) ', spike group '  num2str(targ(1))])
             
@@ -134,12 +157,16 @@ while i > 0 && i <= length(allcel)
             set(gca,'UserData',j,'ButtonDownFcn',@subplotclick);
             
             % Plot an inset with the ACG
+            axhpos = ylim;
+            
             thisacg = ccgR(:,tcel,tcel);
-            
-            axh = AxesInsetBars(gca,.2,[.5 .5 .5],t,thisacg);
-            axhpos = get(axh,'Position');
-            set(axh,'Position',[axhpos(1) axhpos(2)-axhpos(4)*.2 axhpos(3) axhpos(4)],'XTickLabel',[]);
-            
+            thisacg = thisacg./max(thisacg)*axhpos(2)*0.2+axhpos(2)*0.78;
+            t2 = 16*t./max(t)+43; 
+            rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),max(t2)-min(t2),axhpos(2)*0.2],'FaceColor','w','EdgeColor','w', 'HitTest','off')
+            bar_from_patch(t2,thisacg,[.5 .5 .5],min(axhpos(2)*0.8,min(thisacg)))
+            rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),(max(t2)-min(t2))*1.0035,axhpos(2)*0.2], 'HitTest','off')
+            upL = get(gca,'ylim');
+            plot([0 0],[0 upL(2)],'k', 'HitTest','off')
         elseif j<length(ha)-1
             axis off
         elseif j<length(ha)
@@ -151,14 +178,23 @@ while i > 0 && i <= length(allcel)
             plot([0;0],[0;1]*size(zdata,1),'m', 'HitTest','off')
             xlabel('CCGs (black marker: reference cell)')
         else
-            bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k')
-            % bar(t,ccgR(:,allcel(i),allcel(i)),1,'FaceColor','k','EdgeColor','k');
+            bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0)
             xlim([min(t) max(t)]);
             xlabel('Reference Cell ACG');
+%             connection_matrix = ones(size(mono_res_in.TruePositive));
+%             connection_matrix(allcel(i),:) = 0.8;
+%             for iii = 1:size(prs,1)
+%                 connection_matrix(prs(iii,1),prs(iii,2)) = 0.5;
+%             end
+%             for iii = 1:size(keep_con,1)
+%                 connection_matrix(keep_con(iii,1),keep_con(iii,2)) = 0;
+%             end
+%             axh = AxesInsetBars2(gca,.2,connection_matrix);
+%             axhpos = get(axh,'Position');
+%             set(axh,'Position',[axhpos(1) axhpos(2)-axhpos(4)*.2 axhpos(3) axhpos(4)],'XTickLabel',[],'YTickLabel',[]);
+            
             targ=completeIndex(completeIndex(:,3) == allcel(i),1:2);
             plotTitle.String = ['Reference Cell: cell ' num2str(targ(2)) ', spike group '  num2str(targ(1)),' (', num2str(i),'/' num2str(length(allcel)),')'];
-            %             mtit(['Reference Cell sh: ' num2str(targ(1)) ' cell '  num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'])
-            
             uiwait(h);
         end
     end
@@ -169,7 +205,12 @@ if ishandle(h)
     close(h)
 end
 
-mono_res.sig_con = keep_con;
+if connectionsDisplayed == 1
+    mono_res.sig_con = keep_con;
+    mono_res.sig_con_excitatory = keep_con;
+else
+    mono_res.sig_con_inhibitory = keep_con;
+end
 
 if ischar(mono_res_in)
     disp('Saving mono_res file')
@@ -221,6 +262,16 @@ end
         end
     end
 
+    function advance10
+        i = min(i+10,length(allcel));
+        uiresume(h);
+    end
+
+    function goBack10
+        i = max(i-10,1);
+        uiresume(h);
+    end
+
     function keyPress(src,event)
         switch event.Key
             case 'space'
@@ -235,42 +286,67 @@ end
                 numericSelect(str2num(event.Key));
             case {'numpad1','numpad2','numpad3','numpad4','numpad5','numpad6','numpad7','numpad8','numpad9'}
                 numericSelect(str2num(event.Key(end)))
+            case {'0','numpad0'}
+                i=1;
+                uiresume(h);
+            case 'uparrow'
+                advance10
+            case 'downarrow'
+                goBack10
         end
     end
-    
+
+    function switchConnectionType(~,~)
+        if connectionsDisplayed == 1
+            mono_res.sig_con = keep_con;
+            mono_res.sig_con_excitatory = keep_con;
+        else
+            mono_res.sig_con_inhibitory = keep_con;
+        end
+        
+        connectionsDisplayed = UI.switchConnectionType.Value;
+        if connectionsDisplayed == 1 && displayAllConnections.Value == 0
+            sig_con = mono_res.sig_con_excitatory;
+            keep_con = sig_con;
+            allcel = unique(sig_con(:));
+            disp('Excitatory connections')
+        elseif connectionsDisplayed == 1 && displayAllConnections.Value == 1
+            keep_con = mono_res.sig_con_excitatory;
+            if isfield(mono_res,'sig_con_excitatory_all')
+                sig_con = mono_res.sig_con_excitatory_all;
+                allcel = unique(mono_res.sig_con_excitatory_all(:));
+            else
+                sig_con = keep_con;
+            end
+            allcel = unique(sig_con(:));
+            disp('Excitatory connections (all)')
+        elseif connectionsDisplayed == 2 && displayAllConnections.Value == 0
+            sig_con = mono_res.sig_con_inhibitory;
+            keep_con = sig_con;
+            allcel = unique(sig_con(:));
+            disp('Inhibitory connections')
+        elseif connectionsDisplayed == 2 && displayAllConnections.Value == 1
+            keep_con = mono_res.sig_con_inhibitory;
+            if isfield(mono_res,'sig_con_excitatory_all')
+                sig_con = mono_res.sig_con_inhibitory_all;
+            else
+                sig_con = keep_con;
+            end
+            allcel = unique(sig_con(:));
+            disp('Inhibitory connections (all)')
+        end
+        uiresume(h);
+    end
 end
 
-
-function axh = AxesInsetBars(h,ratio,color,xdata,ydata)
-% function axh = AxesInsetBars(h,ratio,color,xdata,ydata)
-% Puts an inset bar plot (axes) into the upper right of the given axes.
-%  INPUTS
-%  h = handle of reference axes
-%  ratio = Size of inset relative to original plot
-%  color = color of bars
-%  data = data to plot
-%
-%  OUTPUTS
-%  axh = handle of inset axes
-
-
-figpos = get(h,'Position');
-newpos = [figpos(1)+(0.99-ratio)*figpos(3) figpos(2)+(1-ratio)*figpos(4) ratio*figpos(3) ratio*figpos(4)];
-axh = axes('Position',newpos, 'HitTest','off');
-
-bar_from_patch(xdata,ydata,color)
-% bar(xdata,ydata,1,'FaceColor',color,'EdgeColor',color)
-axis tight
-end
-
-function bar_from_patch(x_data, y_data,col)
+function bar_from_patch(x_data, y_data,col,y0)
 % Creates a bar graph using the patch plot mode, which is substantial
 % faster than using the regular bar plot.
 % By Peter Petersen
 
 x_step = x_data(2)-x_data(1);
-x_data = [x_data(1),reshape([x_data,x_data+x_step]',1,[]),x_data(end)];
-y_data = [0,reshape([y_data,y_data]',1,[]),0];
+x_data = [x_data(1),reshape([x_data,x_data+x_step]',1,[]),x_data(end)+x_step];
+y_data = [y0,reshape([y_data,y_data]',1,[]),y0];
 patch(x_data, y_data,col,'EdgeColor',col, 'HitTest','off')
 end
 
