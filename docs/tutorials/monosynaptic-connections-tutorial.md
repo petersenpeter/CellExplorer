@@ -11,13 +11,13 @@ This tutorial will guide you through the manual curation process of the monosyna
 There are a few principles you have to follow when doing the manual curation:
 
 __Acceptance criteria__
-1. The synaptic peak should occur with about 2ms delay.
-2. The peak should be asymmetric and shaped as a double exponential function. In the hippocampus the excitatory connections last for about 1.5 ms. Inhibitory connections typically have a slower decay. 
+1. The synaptic peak should occur with about 2ms delay if the cells are located close together.
+2. The monosynaptic peak should be shaped as a double exponential function with a fast rise and a slower decay. In the hippocampus the excitatory connections last for about 2 ms. Inhibitory connections typically have a slower decay.
 
 __Rejection criteria__
-3. Refractory period maintained. The units should have been merged in the spike sorting process.
-2. If peak coincide with ACG peak (typically slower than 2ms), it is likely that the units should have been merged in the spike sorting process, or that they are contaminated with a third unit. This often occurs together with a maintained refractory period, but this will not always be the case for contaminated units
-4. A broad centrally aligned CCG peak indicates common drive and the connection should potentially be rejected. Common drive can also be temporally shifted if the cells are far from each other. This is often seen when comparing two cells located at different shanks. Common drive can be difficult to differentiate from monosynaptic input. Common drive can easily occur together with monosynaptic connections and can be difficult to differentiate.
+1. CCG shows a maintained refractory period. The units should have been merged in the spike sorting process.
+2. If the CCG peak coincide with ACG peak (typically slower than 2ms), it is likely that the units should have been merged in the spike sorting process, or that they are contaminated with a third unit. This often occurs together with a maintained refractory period, but this will not always be the case for contaminated units and is often due to spike bursts.
+3. A broad centrally aligned CCG peak indicates common drive and the connection should potentially be rejected. Common drive can also be temporally shifted if the cells are located far from each other. This is often seen when comparing two cells located at different shanks (hundres of µm apart). Common drive can easily occur together with monosynaptic connections and the two can be difficult to differentiate.
 
 ## Using the graphical interface for curating monosynaptic connections
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/monosyn.png)
