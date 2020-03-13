@@ -3,7 +3,7 @@
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 %  1. Define the basepath of the dataset to run. The dataset should at minimum consist of a basename.dat, a basename.xml and spike sorted data.
-% basepath = '/your/data/path/basename/';
+basepath = '/your/data/path/basename/';
 cd(basepath)
 
 %% 2. Generate session metadata struct using the template function and display the meta data in a gui
