@@ -12,7 +12,7 @@ function mono_res = gui_MonoSyn(mono_res_in,UID)
 % Original function (bz_PlotMonoSyn) by: Sam, Gabrielle & ?
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 12-03-2019
+% Last edited: 13-03-2019
 
 if ischar(mono_res_in) && exist(mono_res_in,'file')
     disp('gui_MonoSyn: Loading mono_res file')
@@ -32,20 +32,25 @@ completeIndex = mono_res.completeIndex;
 binSize = mono_res.binSize;
 duration = mono_res.duration;
 
-if isfield(mono_res_in,'sig_con_excitatory') && ~isempty(mono_res_in.sig_con_excitatory)
-    sig_con_excitatory = mono_res_in.sig_con_excitatory;
-elseif isfield(mono_res_in,'sig_con') && ~isempty(mono_res_in.sig_con)
-    sig_con_excitatory = mono_res_in.sig_con;
+
+if ~isfield(mono_res,'sig_con_excitatory')
+    mono_res.sig_con_excitatory = [];
+end
+
+if ~isfield(mono_res,'sig_con_inhibitory')
+    mono_res.sig_con_inhibitory = [];
+end
+
+if ~isempty(mono_res.sig_con_excitatory) || isfield(mono_res,'sig_con_excitatory_all') 
+    connectionsDisplayed = 1;
+    sig_con = mono_res.sig_con_excitatory;
+elseif ~isempty(mono_res.sig_con_inhibitory) || isfield(mono_res,'sig_con_inhibitory_all') 
+    connectionsDisplayed = 2;
+    sig_con = mono_res.sig_con_inhibitory;
 else
-    sig_con_excitatory = [];
+    connectionsDisplayed = 1;
+    sig_con = mono_res.sig_con;
 end
-
-if isfield(mono_res_in,'sig_con_inhibitory') && ~isempty(mono_res_in.sig_con_inhibitory)
-    sig_con_inhibitory = mono_res_in.sig_con_inhibitory;
-end
-
-connectionsDisplayed = 1;
-sig_con = sig_con_excitatory;
 keep_con = sig_con;
 allcel = unique(sig_con(:));
 
@@ -54,22 +59,21 @@ window(ceil(length(window)/2) - round(.004/binSize): ceil(length(window)/2) + ro
 halfBins = round(duration/binSize/2);
 t = 1000*(-halfBins:halfBins)'*binSize;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-h = figure('KeyReleaseFcn', {@keyPress},'Name','MonoSynCon inspector','NumberTitle','off','renderer','opengl');
-% p = uipanel(h,'Position',[0 0 1 .1],'BorderType','none')
-% p2 = uipanel(h,'Position',[0 0 0.01 0.01],'BorderType','none')
-uicontrol('Parent',h,'Style','pushbutton','Position',[5 410 20 10],'Units','normalized','String','<','Callback',@(src,evnt)goBack,'KeyPressFcn', {@keyPress});
-uicontrol('Parent',h,'Style','pushbutton','Position',[540 410 20 10],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
-plotTitle = uicontrol('Parent',h,'Style','text','Position',[130 410 350 10],'Units','normalized','String','','HorizontalAlignment','center','FontSize',13);
-UI.switchConnectionType = uicontrol('Parent',h,'Style','popupmenu','Position',[30 408 80 10],'Units','normalized','String',{'Excitatory connections','Inhibitory connections'},'Value',1,'Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
-displayAllConnections = uicontrol('Parent',h,'Style','checkbox','Position',[120 410 100 10],'Units','normalized','String','Show all detected connections','HorizontalAlignment','right','Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
-
+UI.fig = figure('KeyReleaseFcn', {@keyPress},'Name','MonoSynCon inspector','NumberTitle','off','renderer','opengl');
+% p = uipanel(UI.fig,'Position',[0 0 1 .1],'BorderType','none')
+% p2 = uipanel(UI.fig,'Position',[0 0 0.01 0.01],'BorderType','none')
+UI.leftbutton = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[5 410 20 10],'Units','normalized','String','<','Callback',@(src,evnt)goBack,'KeyPressFcn', {@keyPress});
+UI.rightbutton = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[540 410 20 10],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
+plotTitle = uicontrol('Parent',UI.fig,'Style','text','Position',[130 410 350 10],'Units','normalized','String','','HorizontalAlignment','center','FontSize',13);
+UI.switchConnectionType = uicontrol('Parent',UI.fig,'Style','popupmenu','Position',[30 408 80 10],'Units','normalized','String',{'Excitatory connections','Inhibitory connections'},'Value',connectionsDisplayed,'Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
+displayAllConnections = uicontrol('Parent',UI.fig,'Style','checkbox','Position',[115 410 100 10],'Units','normalized','String','Show all detected connections','HorizontalAlignment','right','Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
+% align([UI.leftbutton UI.rightbutton UI.switchConnectionType displayAllConnections],'Top','Bottom');
 if ~verLessThan('matlab', '9.4')
-    set(h,'WindowState','maximize','visible','on'), drawnow nocallbacks; 
+    set(UI.fig,'WindowState','maximize','visible','on'), drawnow nocallbacks; 
 else
-    set(h,'visible','on')
-    drawnow nocallbacks; frame_h = get(h,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks; 
+    set(UI.fig,'visible','on')
+    drawnow nocallbacks; frame_h = get(UI.fig,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks; 
 end
 if exist('UID','var') && any(UID == allcel)
     i = find(UID == allcel);
@@ -84,7 +88,7 @@ while temp444 == 1
     if i > length(allcel)
         i = length(allcel);
     end
-    if ~ishandle(h)
+    if ~ishandle(UI.fig)
         if connectionsDisplayed == 1
             mono_res.sig_con = keep_con;
             mono_res.sig_con_excitatory = keep_con;
@@ -97,7 +101,7 @@ while temp444 == 1
         end
         return
     end
-    delete(findobj(h, 'type', 'axes'));
+    delete(findobj(UI.fig, 'type', 'axes'));
     
     prs = sig_con(any(sig_con==allcel(i),2),:);
     [plotRows,~]= numSubplots(max(2+size(prs,1),4));
@@ -142,12 +146,12 @@ while temp444 == 1
 
             tcel = setdiff(prs(j,:),allcel(i,:));
             targ=completeIndex(completeIndex(:,3)==tcel,1:2);
-
+            targ_UID=completeIndex(completeIndex(:,3)==tcel,3);
             if connectionsDisplayed == 2
                 ylim([0,2*quantile(Pred(:,prs1(1),prs1(2)),0.9)])
             end
             temp = ylim;
-            text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ(2)) ', spike group '  num2str(targ(1))])
+            text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group '  num2str(targ(1)),', cluID: ',num2str(targ(2))])
             
             %the bad ones are in pink
             if  ~ismember(prs(j,:),keep_con,'rows')
@@ -194,15 +198,16 @@ while temp444 == 1
 %             set(axh,'Position',[axhpos(1) axhpos(2)-axhpos(4)*.2 axhpos(3) axhpos(4)],'XTickLabel',[],'YTickLabel',[]);
             
             targ=completeIndex(completeIndex(:,3) == allcel(i),1:2);
-            plotTitle.String = ['Reference Cell: cell ' num2str(targ(2)) ', spike group '  num2str(targ(1)),' (', num2str(i),'/' num2str(length(allcel)),')'];
-            uiwait(h);
+            targ_UID=completeIndex(completeIndex(:,3) == allcel(i),3);
+            plotTitle.String = ['Reference Cell: ' num2str(targ_UID) ', spike group: '  num2str(targ(1)),', cluID: ',num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'];
+            uiwait(UI.fig);
         end
     end
     
 end
 
-if ishandle(h)
-    close(h)
+if ishandle(UI.fig)
+    close(UI.fig)
 end
 
 if connectionsDisplayed == 1
@@ -217,16 +222,30 @@ if ischar(mono_res_in)
     save(mono_res_in,'mono_res','-v7.3','-nocompression');
 end
 
-    function subplotclick(obj,ev) %when an axes is clicked
+    function subplotclick(obj,~) 
+        % when an axes is clicked
         figobj = get(obj,'Parent');
         axdata = get(obj,'UserData');
-        clr2 = get(obj,'Color');
-        if sum(clr2 == [1 1 1])==3%if white (ie synapse), set to pink (bad), remember as bad
-            set(obj,'Color',[1 .75 .75])
-            keep_con(ismember(keep_con,prs(axdata,:),'rows'),:)=[];
-        elseif sum(clr2 == [1 .75 .75])==3%if pink, set to white, set to good
-            set(obj,'Color',[1 1 1])
-            keep_con = [keep_con;prs(axdata,:)];
+        switch get(UI.fig, 'selectiontype')
+            case 'normal'
+                clr2 = get(obj,'Color');
+                if sum(clr2 == [1 1 1])==3%if white (ie synapse), set to pink (bad), remember as bad
+                    set(obj,'Color',[1 .75 .75])
+                    keep_con(ismember(keep_con,prs(axdata,:),'rows'),:)=[];
+                elseif sum(clr2 == [1 .75 .75])==3%if pink, set to white, set to good
+                    set(obj,'Color',[1 1 1])
+                    keep_con = [keep_con;prs(axdata,:)];
+                end
+            case 'alt'
+                if prs(1)~=allcel(i)
+                prs1222 = fliplr(prs);
+                else
+                    prs1222 = prs;
+                end
+                i = find(allcel == prs1222(axdata,2));
+                uiresume(UI.fig);
+                % case 'extend'
+                % polygonSelection
         end
     end
     
@@ -247,29 +266,29 @@ end
     
     function goBack
         i = max(i-1,1);
-        uiresume(h);
+        uiresume(UI.fig);
     end
 
     function advance
         if i==length(allcel)
             answer = questdlg('All cells have been currated. Do you want to quit?', 'Monosyn curration complete', 'Yes','No','Yes');
             if strcmp(answer,'Yes')
-                close(h)
+                close(UI.fig)
             end
         else
             i = i+1;
-            uiresume(h);
+            uiresume(UI.fig);
         end
     end
 
     function advance10
         i = min(i+10,length(allcel));
-        uiresume(h);
+        uiresume(UI.fig);
     end
 
     function goBack10
         i = max(i-10,1);
-        uiresume(h);
+        uiresume(UI.fig);
     end
 
     function keyPress(src,event)
@@ -288,7 +307,7 @@ end
                 numericSelect(str2num(event.Key(end)))
             case {'0','numpad0'}
                 i=1;
-                uiresume(h);
+                uiresume(UI.fig);
             case 'uparrow'
                 advance10
             case 'downarrow'
@@ -303,7 +322,6 @@ end
         else
             mono_res.sig_con_inhibitory = keep_con;
         end
-        
         connectionsDisplayed = UI.switchConnectionType.Value;
         if connectionsDisplayed == 1 && displayAllConnections.Value == 0
             sig_con = mono_res.sig_con_excitatory;
@@ -320,12 +338,12 @@ end
             end
             allcel = unique(sig_con(:));
             disp('Excitatory connections (all)')
-        elseif connectionsDisplayed == 2 && displayAllConnections.Value == 0
+        elseif connectionsDisplayed == 2 && displayAllConnections.Value == 0 && ~isempty(mono_res.sig_con_inhibitory)
             sig_con = mono_res.sig_con_inhibitory;
             keep_con = sig_con;
             allcel = unique(sig_con(:));
             disp('Inhibitory connections')
-        elseif connectionsDisplayed == 2 && displayAllConnections.Value == 1
+        elseif connectionsDisplayed == 2 && displayAllConnections.Value == 1 && ~isempty(mono_res.sig_con_inhibitory_all)
             keep_con = mono_res.sig_con_inhibitory;
             if isfield(mono_res,'sig_con_excitatory_all')
                 sig_con = mono_res.sig_con_inhibitory_all;
@@ -334,8 +352,13 @@ end
             end
             allcel = unique(sig_con(:));
             disp('Inhibitory connections (all)')
+        else
+            connectionsDisplayed = 1;
+            UI.switchConnectionType.Value = connectionsDisplayed;
+            warndlg('No inhibitory connections detected');
+            return
         end
-        uiresume(h);
+        uiresume(UI.fig);
     end
 end
 

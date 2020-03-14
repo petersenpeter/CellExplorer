@@ -10,7 +10,13 @@ function cell_metrics_batch = LoadCellMetricBatch(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 10-11-2019
+% Last edited: 13-03-2020
+
+% - Example calls:
+% LoadCellMetricBatch('basepaths',{'path1','[path1'})      % Load batch from a list with paths
+% LoadCellMetricBatch('clusteringpaths',{'path1','path1'}) % Load batch from a list with paths
+% LoadCellMetricBatch('sessions',{'rec1','rec2'})          % Load batch from database
+% LoadCellMetricBatch('sessionIDs',[10985,10985])          % Load session from database session id
 
 p = inputParser;
 addParameter(p,'sessionIDs',{},@isnumeric);     % numeric IDs for the sessions to load
@@ -42,13 +48,13 @@ if ishandle(waitbar_handle)
 else
     f_LoadCellMetrics = waitbar(0,' ','name','Cell-metrics: loading batch');
 end
+
 % disp('Cell-metrics: loading batch')
 if ~isempty(sessionNames)
     count_metricsLoad = 1;
     waitbar(1/(1+count_metricsLoad+length(sessionNames)),f_LoadCellMetrics,['Loading session info from sessionNames']);
    
     % % % % % % % % % % % % %
-    
     options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','get','Timeout',50);
     options.CertificateFilename=('');
     
@@ -91,6 +97,32 @@ elseif ~isempty(clusteringpaths)
     count_metricsLoad = 1;
     waitbar(1/(1+count_metricsLoad+length(clusteringpaths)),f_LoadCellMetrics,['Loading session info from clusteringpaths']);
     clustering_paths = clusteringpaths;
+elseif ~isempty(basepaths)
+    count_metricsLoad = 1;
+    for i = 1:length(basepaths)
+        basepath = basepaths{i};
+        if isempty(basenames) || length(basenames) < i
+            [~,basename,~] = fileparts(basepath);
+            basenames{i} = basename;
+        else
+            basename = basenames{i};
+        end
+        if exist(fullfile(basepath,[basename,'.session.mat']),'file')
+            waitbar(1/(1+count_metricsLoad+length(basepaths)),f_LoadCellMetrics,['Loading session info from basepaths']);
+            disp(['Loading ',basename,'.session.mat']);
+            load(fullfile(basepath,[basename,'.session.mat']));
+            sessionIn = session;
+            if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') && ~isempty(session.spikeSorting{1}.relativePath)
+                clusteringpath = session.spikeSorting{1}.relativePath;
+            else
+                clusteringpath = '';
+            end
+            clustering_paths{i} = fullfile(basepath,clusteringpath);
+        else
+            break
+        end
+    end
+    
 else
     warning('Input not sufficient')
 end
@@ -121,7 +153,6 @@ subfieldssizes = subfieldssizes(ia);
 subfieldstypes(contains(cell_metrics_fieldnames,{'truePositive','falsePositive'})) = [];
 subfieldssizes(contains(cell_metrics_fieldnames,{'truePositive','falsePositive'})) = [];
 cell_metrics_fieldnames(contains(cell_metrics_fieldnames,{'truePositive','falsePositive'})) = [];
-
 
 h = 0;
 cell_metrics_batch = [];
@@ -190,7 +221,6 @@ for iii = 1:length(cell_metrics2)
                             
                         % If field exist
                         else
-                            
                             if isempty(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k})) && length(structFieldsSize{k})==2 && structFieldsSize{k}(1) > 0%% && ~any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
                                 cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(:,h+1:hh+h) = nan(structFieldsSize{k}(1:end-1),hh);
                             elseif isempty(cell_metrics.(cell_metrics_fieldnames{ii})) && length(structFieldsSize{k})==1
