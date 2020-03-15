@@ -1,6 +1,8 @@
-function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
+function mono_res = ce_MonoSynConvClick(spikes,varargin)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%  INPUTS
+    %%%
+    %%%  spikes
     %%%
     %%%  spikeIDs = Nx3 matrix. N = # spikes.
     %%%      col1 = shank ID, col2 = cluID on shanke, col3 = unit ID
@@ -45,13 +47,17 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
     
     %%%  EXAMPLE:
     %%%
-    %%%  mono_res = bz_MonoSynConvClick (spikesIDs,spiketimes,'binsize',.0005,'duration',.2, ...
+    %%%  mono_res = ce_MonoSynConvClick (spikes,'binsize',.0005,'duration',.2, ...
     %%%  'alpha',.05,'conv_w',20,'cells',[1 2;1 3;4 5;8 8],'epoch',[10 3000; 4000 5000]);
     %%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
     %get experimentally validated probabilities
+    
+    spikeIDs = double([spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)]);
+    spiketimes = spikes.spindices(:,1);
+    
     fil = which('ce_MonoSynConvClick');
     if ispc
         sl = regexp(fil,'\');
@@ -65,10 +71,8 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
         foundMat = true;
     else
         foundMat = false;
-        warning('bz_MonoSynConvClick: You do not have the ProbSynMat matrix describing the likelihood of experimentally validated connectivty given excess syncrony')
+        warning('ce_MonoSynConvClick: You do not have the ProbSynMat matrix describing the likelihood of experimentally validated connectivty given excess syncrony')
     end
-    
-    %parse inputs
     
     %set defaults
     binSize = .0004; %.4ms
@@ -80,11 +84,11 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
     alpha = 0.001; %high frequency cut off, must be .001 for causal p-value matrix
     plotit = false;
     sorted = false;
+    includeInhibitoryConnections = false;
     
     if length(varargin) ==1 && iscell(varargin{1})
         varargin = varargin{1};
     end
-    
     
     % Parse options
     for i = 1:2:length(varargin)
@@ -94,42 +98,39 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
         switch(lower(varargin{i}))
             case 'duration'
                 duration = varargin{i+1};
-                if ~isa(duration,'numeric') | length(duration) ~= 1 | duration < 0,
+                if ~isa(duration,'numeric') | length(duration) ~= 1 | duration < 0
                     error('Incorrect value for property ''duration''');
                 end
             case 'binsize'
                 binSize = varargin{i+1};
-                if ~isa(binSize,'numeric') | length(binSize) ~= 1 | binSize <= 0,
+                if ~isa(binSize,'numeric') | length(binSize) ~= 1 | binSize <= 0
                     error('Incorrect value for property ''binsize'' ');
                 end
             case 'epoch'
                 epoch = varargin{i+1};
-                if ~isa(epoch,'numeric') | size(epoch,2) ~= 2,
+                if ~isa(epoch,'numeric') | size(epoch,2) ~= 2
                     error('Incorrect value for property ''epoch'' ');
                 end
-                
             case 'cells'
                 cells = varargin{i+1};
-                
             case 'conv_w'
                 conv_w = varargin{i+1};
-                
             case 'alpha'
                 alpha = varargin{i+1};
-                if ~isa(alpha,'numeric'),
+                if ~isa(alpha,'numeric')
                     error('Incorrect value for property ''alpha''');
                 end
-                
             case 'plot'
                 plotit = varargin{i+1};
                 if ~islogical(plotit)
                     error('Incorrect value for property ''plot''');
                 end
-                
             case 'sorted'
                 sorted = varargin{i+1};
+            case 'includeinhibitoryconnections'
+                includeInhibitoryConnections = varargin{i+1};
             otherwise
-                error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help LoadBinary'' for details).']);
+                error(['Unknown property']);
         end
     end
     
@@ -165,7 +166,7 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
     Pred=zeros(length(tR),nCel,nCel);
     Bounds=zeros(size(ccgR,1),nCel,nCel);
     sig_con = [];
-    sig_con1 = [];
+    sig_con_inh = [];
     
     TruePositive = nan(nCel,nCel);
     FalsePositive = nan(nCel,nCel);
@@ -173,7 +174,10 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
     for refcellID=1:max(IDindex)
         for cell2ID= refcellID+1:max(IDindex)
             
-            cch=ccgR(:,refcellID,cell2ID);			% extract corresponding cross-correlation histogram vector
+            cch=ccgR(:,refcellID,cell2ID); % extract corresponding cross-correlation histogram vector
+            
+            prebins = round(length(cch)/2 - .0032/binSize):round(length(cch)/2);
+            postbins = round(length(cch)/2 + .0008/binSize):round(length(cch)/2 + .004/binSize);
             
             refcellshank=completeIndex(completeIndex(:,3)==refcellID);
             cell2shank=completeIndex(completeIndex(:,3)==cell2ID);
@@ -191,7 +195,6 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
                 pvals=[pvals(1:(centerbins(1)-1));nan(length(centerbins),1);pvals(centerbins(end)-length(centerbins)+1:end)];
             else
                 % calculate predictions using Eran's ce_cch_conv
-                
                 [pvals,pred,qvals]=ce_cch_conv(cch,conv_w);
             end
             
@@ -215,22 +218,31 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
             Bounds(:,cell2ID,refcellID,2)=flipud(loBound(:));
             
             % sig = cch>hiBound | cch < loBound;
-            sig = cch>hiBound;
             
+            % % % % % % % % % % % % % % % % % % % % % % %
+            % EXCITATORY
             % Find if significant periods falls in monosynaptic window +/- 4ms
-            prebins = round(length(cch)/2 - .0032/binSize):round(length(cch)/2);
-            postbins = round(length(cch)/2 + .0008/binSize):round(length(cch)/2 + .004/binSize);
-            cchud  = flipud(cch);
-            sigud  = flipud(sig);
-            sigpost=max(cch(postbins))>poissinv(1-alpha,max(cch(prebins)));
-            sigpre=max(cchud(postbins))>poissinv(1-alpha,max(cchud(prebins)));
+            sig = cch>hiBound;
+            cchud = flipud(cch);
+            sigud = flipud(sig);
+            sigpost = max(cch(postbins))>poissinv(1-alpha,max(cch(prebins)));
+            sigpre = max(cchud(postbins))>poissinv(1-alpha,max(cchud(prebins)));
             
+            % check which is bigger
+            if (any(sigud(postbins)) && sigpre)
+                %test if causal is bigger than anti causal
+                sig_con = [sig_con;cell2ID refcellID];
+            end
             
-            %define likelihood of being a connection
+            if any(sig(postbins)) && sigpost
+                sig_con = [sig_con;refcellID cell2ID];
+            end
+            
+            % define likelihood of being a connection
             pvals_causal = 1 - poisscdf( max(cch(postbins)) - 1, max(cch(prebins) )) - poisspdf( max(cch(postbins)), max(cch(prebins)  )) * 0.5;
             pvals_causalud = 1 - poisscdf( max(cchud(postbins)) - 1, max(cchud(prebins) )) - poisspdf( max(cchud(postbins)), max(cchud(prebins)  )) * 0.5;
             
-            %can go negative for very small p-val - beyond comp. sig. dig
+            % can go negative for very small p-val - beyond comp. sig. dig
             
             if pvals_causalud<0
                 pvals_causalud = 0;
@@ -244,35 +256,41 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
             Pcausal(cell2ID,refcellID) = pvals_causalud;
             if foundMat
                 if any(Pval(postbins,cell2ID,refcellID)<.001)
-                    
-                    FP =  v.ProbSyn.FalsePositive((histc(pvals_causalud,v.ProbSyn.thres))>0);
-                    TP =  v.ProbSyn.TruePositive((histc(pvals_causalud,v.ProbSyn.thres))>0);
+                    FP = v.ProbSyn.FalsePositive((histc(pvals_causalud,v.ProbSyn.thres))>0);
+                    TP = v.ProbSyn.TruePositive((histc(pvals_causalud,v.ProbSyn.thres))>0);
                     TruePositive(cell2ID,refcellID) = TP;
                     FalsePositive(cell2ID,refcellID) = FP;
                 end
-                
-                
                 if any(Pval(postbins,refcellID,cell2ID)<.001)
                     
-                    FP =  v.ProbSyn.FalsePositive((histc(pvals_causal,v.ProbSyn.thres))>0);
-                    TP =  v.ProbSyn.TruePositive((histc(pvals_causal,v.ProbSyn.thres))>0);
+                    FP = v.ProbSyn.FalsePositive((histc(pvals_causal,v.ProbSyn.thres))>0);
+                    TP = v.ProbSyn.TruePositive((histc(pvals_causal,v.ProbSyn.thres))>0);
                     TruePositive(refcellID,cell2ID) = TP;
                     FalsePositive(refcellID,cell2ID) = FP;
                 end
             end
             
-            %check which is bigger
-            if (any(sigud(postbins)) && sigpre)
+            
+            % % % % % % % % % % % % % % % % % % % % % % %
+            % INHIBITORY
+            if includeInhibitoryConnections
+            sig_inh = cch<loBound;
+            cchud = flipud(cch);
+            sigud_inh = flipud(sig_inh);
+            sigpost_inh = min(cch(postbins))<poissinv(alpha,max(cch(prebins)));
+            sigpre_inh = min(cchud(postbins))<poissinv(alpha,max(cchud(prebins)));
+            
+            % check which is bigger
+            if (any(sigud_inh(postbins)) && sigpre_inh)
                 %test if causal is bigger than anti causal
-                sig_con = [sig_con;cell2ID refcellID];
+                sig_con_inh = [sig_con_inh;cell2ID refcellID];
             end
             
-            if any(sig(postbins)) && sigpost
-                sig_con = [sig_con;refcellID cell2ID];
+            if any(sig_inh(postbins)) && sigpost_inh
+                sig_con_inh = [sig_con_inh;refcellID cell2ID];
             end
-            
+            end
         end
-        
     end
     
     nCel = size(completeIndex,1);
@@ -282,18 +300,19 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
     temp = ccgR - Pred;
     prob = temp./permute(repmat(nn2,1,1,size(ccgR,1)),[3 1 2]);
     
-%     %plot
-%     if plotit
-%         sig_con = bz_PlotMonoSyn(ccgR,sig_con,Pred,Bounds,completeIndex,binSize,duration);
-%     end
-    
-    %save outputs
+    % Creating output structure
     mono_res.ccgR = ccgR;
     mono_res.Pval = Pval;
     mono_res.prob = prob;
     mono_res.prob_noncor = ccgR./permute(repmat(nn2,1,1,size(ccgR,1)),[3 1 2]);
     mono_res.n = n;
-    mono_res.sig_con = sig_con;
+    mono_res.sig_con = sig_con; % FOR BACKWARDS COMPATIBILITY
+    mono_res.sig_con_excitatory = sig_con;
+    mono_res.sig_con_excitatory_all = sig_con;
+    if includeInhibitoryConnections
+        mono_res.sig_con_inhibitory = sig_con_inh;
+        mono_res.sig_con_inhibitory_all = sig_con_inh;
+    end
     mono_res.Pred = Pred;
     mono_res.Bounds = Bounds;
     mono_res.completeIndex = completeIndex;
@@ -303,6 +322,11 @@ function mono_res = ce_MonoSynConvClick (spikeIDs,spiketimes,varargin)
     mono_res.conv_w = conv_w;
     mono_res.Pcausal = Pcausal;
     
+    % plot
+%     if plotit
+%         mono_res = gui_MonoSyn(mono_res);
+%     end
+
     if foundMat
         mono_res.FalsePositive = FalsePositive;
         mono_res.TruePositive = TruePositive;

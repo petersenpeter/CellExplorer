@@ -16,9 +16,8 @@ cell_metrics = calc_CellMetrics('session', session);
 cell_metrics = CellExplorer('metrics',cell_metrics); 
 
 %% 5. Open several session from paths
-basenames = {'Rat08-20130708','Rat08-20130709'};
-clusteringpaths = {'/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130709'};
-cell_metrics = LoadCellMetricBatch('clusteringpaths',clusteringpaths,'basenames',basenames);
+basepaths = {'/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130709'};
+cell_metrics = LoadCellMetricBatch('basepaths',basepaths);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 
 %% 6. load a subset of units fullfilling multiple of criterium
