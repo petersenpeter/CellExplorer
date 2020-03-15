@@ -49,6 +49,9 @@ Pred = mono_res.Pred;
 completeIndex = mono_res.completeIndex;
 binSize = mono_res.binSize;
 duration = mono_res.duration;
+xLimit = false;
+x_window = [-30 30];
+xLimState = 1;
 
 if ~isfield(mono_res,'sig_con_excitatory')
     mono_res.sig_con_excitatory = [];
@@ -130,7 +133,11 @@ while temp444 == 1
     prs2 = [];
     for j=1:length(ha)
         axes(ha(j))
+        targ=completeIndex(completeIndex(:,3) == allcel(i),1:2);
+        targ_UID=completeIndex(completeIndex(:,3) == allcel(i),3);
+        plotTitle.String = ['Reference Cell: ' num2str(targ_UID) ', spike group: '  num2str(targ(1)),', cluID: ',num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'];
         if j<=size(prs,1)
+            
             prs1 = prs(j,:);
             if prs1(1)~=allcel(i)
                 prs1 = fliplr(prs1);
@@ -143,6 +150,8 @@ while temp444 == 1
             inh=ccgR(:,prs1(1),prs1(2));
             inh(inh>mono_res.Bounds(:,prs1(1),prs1(2),2)|~window)=0;
             inh(ceil(length(inh)/2)) = 0;
+            
+            
             bar_from_patch(t,ccgR(:,prs1(1),prs1(2)),'b',0)
             hold on;
             
@@ -150,8 +159,8 @@ while temp444 == 1
             plot(t,Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
             
             %Plot upper and lower boundaries
-            plot(t,mono_res.Bounds(:,prs1(1),prs1(2),1),'r--', 'HitTest','off');
-            plot(t,mono_res.Bounds(:,prs1(1),prs1(2),2),'r--', 'HitTest','off');
+            plot(t,mono_res.Bounds(:,prs1(1),prs1(2),1),'r--', 'HitTest','off','linewidth',1.5);
+            plot(t,mono_res.Bounds(:,prs1(1),prs1(2),2),'r--', 'HitTest','off','linewidth',1.5);
             
             % Plot signif increased bins in red
             if connectionsDisplayed == 1
@@ -162,7 +171,11 @@ while temp444 == 1
             if connectionsDisplayed == 2
                 bar_from_patch(t,inh,'c',0)
             end
-            xlim([min(t) max(t)]);
+            if xLimit
+                xlim(x_window)
+            else
+                xlim([min(t) max(t)]);
+            end
 
             tcel = setdiff(prs(j,:),allcel(i,:));
             targ=completeIndex(completeIndex(:,3)==tcel,1:2);
@@ -171,7 +184,12 @@ while temp444 == 1
                 ylim([0,2*quantile(Pred(:,prs1(1),prs1(2)),0.9)])
             end
             temp = ylim;
-            text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group '  num2str(targ(1)),', cluID: ',num2str(targ(2))])
+            if xLimit
+                idx = t > x_window(1) & t < x_window(2);
+                text(min(t(idx)) +.03*abs(min(t(idx))),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group '  num2str(targ(1)),', cluID: ',num2str(targ(2))])
+            else
+                text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group '  num2str(targ(1)),', cluID: ',num2str(targ(2))])
+            end
             
             %the bad ones are in pink
             if  ~ismember(prs(j,:),keep_con,'rows')
@@ -182,13 +200,20 @@ while temp444 == 1
             
             % Plot an inset with the ACG
             axhpos = ylim;
+            axhpos2 = xlim;
+            if xLimit
+                thisacg = ccgR(idx,tcel,tcel);
+                thisacg = thisacg./max(thisacg)*axhpos(2)*0.2+axhpos(2)*0.78;
+                t2 = (16/60)*axhpos2(2)*t(idx)./max(t(idx))+axhpos2(2)*(43/60);
+            else
+                thisacg = ccgR(:,tcel,tcel);
+                thisacg = thisacg./max(thisacg)*axhpos(2)*0.2+axhpos(2)*0.78;
+                t2 = 16*t./max(t)+43; 
+            end
             
-            thisacg = ccgR(:,tcel,tcel);
-            thisacg = thisacg./max(thisacg)*axhpos(2)*0.2+axhpos(2)*0.78;
-            t2 = 16*t./max(t)+43; 
             rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),max(t2)-min(t2),axhpos(2)*0.2],'FaceColor','w','EdgeColor','w', 'HitTest','off')
             bar_from_patch(t2,thisacg,[.5 .5 .5],min(axhpos(2)*0.8,min(thisacg)))
-            rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),(max(t2)-min(t2))*1.0035,axhpos(2)*0.2], 'HitTest','off')
+            rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),(max(t2)-min(t2))+mean(diff(t2)),axhpos(2)*0.2], 'HitTest','off')
             upL = get(gca,'ylim');
             plot([0 0],[0 upL(2)],'k', 'HitTest','off')
         elseif j<length(ha)-1
@@ -203,11 +228,13 @@ while temp444 == 1
             xlabel('CCGs (black marker: reference cell)')
         else
             bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0)
-            xlim([min(t) max(t)]);
+            if xLimit
+                xlim(x_window)
+            else
+                xlim([min(t) max(t)]);
+            end
             xlabel('Reference Cell ACG');        
-            targ=completeIndex(completeIndex(:,3) == allcel(i),1:2);
-            targ_UID=completeIndex(completeIndex(:,3) == allcel(i),3);
-            plotTitle.String = ['Reference Cell: ' num2str(targ_UID) ', spike group: '  num2str(targ(1)),', cluID: ',num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'];
+            
             uiwait(UI.fig);
         end
     end
@@ -245,12 +272,11 @@ end
                     keep_con = [keep_con;prs(axdata,:)];
                 end
             case 'alt'
-                if prs(1)~=allcel(i)
-                prs1222 = fliplr(prs);
+                if prs(axdata,2)==allcel(i)
+                    i = find(allcel == prs(axdata,1));
                 else
-                    prs1222 = prs;
+                    i = find(allcel == prs(axdata,2));
                 end
-                i = find(allcel == prs1222(axdata,2));
                 uiresume(UI.fig);
                 % case 'extend'
                 % polygonSelection
@@ -329,8 +355,26 @@ end
                 goBack10
             case 'h'
                 HelpDialog;
+            case 'x'
+                changeXlim
         end
     end
+    function changeXlim
+        if xLimState == 1
+            xLimState = 2;
+            xLimit = true;
+            x_window = [-30 30];
+        elseif xLimState == 2
+            xLimState = 3;
+            x_window = [-15 15];
+            xLimit = true;
+        elseif xLimState == 3
+            xLimState = 1;
+            xLimit = false;
+        end
+        uiresume(UI.fig);
+    end
+    
     function goToCell
         GoTo_dialog = dialog('Position', [-300, -300, 300, 150],'Name','Go to connection'); movegui(GoTo_dialog,'center')
         uicontrol('Parent',GoTo_dialog,'Style', 'text', 'String', 'Provide the pair number and press enter', 'Position', [10, 125, 280, 20],'HorizontalAlignment','center');
@@ -453,5 +497,5 @@ function HelpDialog(~,~)
     opts.Interpreter = 'tex'; opts.WindowStyle = 'normal';
     msgbox({'\bfNavigation\rm','right-arrow : Next cell', 'left arrow : Previous cell','up-arrow : 10 cells forward','down-arrow : 10 cells backward',...
         'space : Go to a specific cell','Numpad0 : Go to first cell','','\bfConnection assigment\rm', '1-9 : Toggle cell with that subplot number', ...
-        'Numpad1-9 : Toggle cell with that subplot number','','\bfVisit the Cell Explorer''s website for further help\rm',''},'Keyboard shortcuts','help',opts);
+        'Numpad1-9 : Toggle cell with that subplot number','','\bfVisualization\rm','x : change x-limits (60, 30 or 15 ms)','','\bfVisit the Cell Explorer''s website for further help\rm',''},'Keyboard shortcuts','help',opts);
 end
