@@ -1,37 +1,54 @@
-function mono_res = gui_MonoSyn(mono_res_in,UID)
+function mono_res = gui_MonoSyn(mono_res_input,UID)
 % Manual curating detected CCGs
 % Limitation: can only deselect connections at this point. Click the CCG subplot to deselect a connection (turns pink)
 % 
 % INPUT
-% mono_res_in : full path to monosyn mat file or a matlab struct
+% mono_res_input : full path to monosyn mat file or a matlab struct
 % 
 % Example call
 % mono_res = gui_MonoSyn('Z:\peterp03\IntanData\MS13\Peter_MS13_171130_121758_concat\Kilosort_2017-12-14_170737\Peter_MS13_171130_121758_concat.mono_res.cellinfo.mat')
 % mono_res = gui_MonoSyn(mono_res)
+% mono_res = gui_MonoSyn  - determines the mono_res file from the pwd
 
 % Original function (bz_PlotMonoSyn) by: Sam, Gabrielle & ?
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 13-03-2019
+% Last edited: 15-03-2019
 
-if ischar(mono_res_in) && exist(mono_res_in,'file')
+if ~exist('mono_res_input','var')
+    basepath = pwd;
+    [~,basename,~] = fileparts(basepath);
+    if exist(fullfile(basepath,[basename,'.session.mat']),'file')
+        disp(['gui_MonoSyn: Loading ',basename,'.session.mat']);
+        load(fullfile(basepath,[basename,'.session.mat']),'session');
+        sessionIn = session;
+        if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') && ~isempty(session.spikeSorting{1}.relativePath)
+            clusteringpath = session.spikeSorting{1}.relativePath;
+        else
+            clusteringpath = '';
+        end
+        mono_res_input = fullfile(basepath,clusteringpath,[basename,'.mono_res.cellinfo.mat']);
+        if exist(mono_res_input,'file')
+            disp(['gui_MonoSyn: Loading mono_res file: ', mono_res_input])
+            load(mono_res_input,'mono_res');
+        else
+            warning('gui_MonoSyn: Could not locage the mono_res file')
+            return
+        end
+    end
+elseif ischar(mono_res_input) && exist(mono_res_input,'file')
     disp('gui_MonoSyn: Loading mono_res file')
-    load(mono_res_in);
-elseif isstruct(mono_res_in)
-    mono_res = mono_res_in;
-else
-    warning('gui_MonoSyn: Please provide a valid path or a struct to process')
-    return
+    load(mono_res_input);
+elseif isstruct(mono_res_input)
+    mono_res = mono_res_input;
 end
 
 disp('gui_MonoSyn: Loading GUI')
 ccgR = mono_res.ccgR;
-% sig_con = mono_res.sig_con;
 Pred = mono_res.Pred;
 completeIndex = mono_res.completeIndex;
 binSize = mono_res.binSize;
 duration = mono_res.duration;
-
 
 if ~isfield(mono_res,'sig_con_excitatory')
     mono_res.sig_con_excitatory = [];
@@ -58,7 +75,6 @@ window  =false(size(ccgR,1),1);
 window(ceil(length(window)/2) - round(.004/binSize): ceil(length(window)/2) + round(.004/binSize)) = true;
 halfBins = round(duration/binSize/2);
 t = 1000*(-halfBins:halfBins)'*binSize;
-
 
 UI.fig = figure('KeyReleaseFcn', {@keyPress},'Name','MonoSynCon inspector','NumberTitle','off','renderer','opengl');
 % p = uipanel(UI.fig,'Position',[0 0 1 .1],'BorderType','none')
@@ -95,9 +111,13 @@ while temp444 == 1
         else
             mono_res.sig_con_inhibitory = keep_con;
         end
-        if ischar(mono_res_in)
+        if ischar(mono_res_input)
             disp('Saving mono_res file')
-            save(mono_res_in,'mono_res','-v7.3','-nocompression');
+            try 
+                save(mono_res_input,'mono_res','-v7.3','-nocompression');
+            catch
+                warndlg('Failed to save the mono_res file.')
+            end
         end
         return
     end
@@ -184,19 +204,7 @@ while temp444 == 1
         else
             bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0)
             xlim([min(t) max(t)]);
-            xlabel('Reference Cell ACG');
-%             connection_matrix = ones(size(mono_res_in.TruePositive));
-%             connection_matrix(allcel(i),:) = 0.8;
-%             for iii = 1:size(prs,1)
-%                 connection_matrix(prs(iii,1),prs(iii,2)) = 0.5;
-%             end
-%             for iii = 1:size(keep_con,1)
-%                 connection_matrix(keep_con(iii,1),keep_con(iii,2)) = 0;
-%             end
-%             axh = AxesInsetBars2(gca,.2,connection_matrix);
-%             axhpos = get(axh,'Position');
-%             set(axh,'Position',[axhpos(1) axhpos(2)-axhpos(4)*.2 axhpos(3) axhpos(4)],'XTickLabel',[],'YTickLabel',[]);
-            
+            xlabel('Reference Cell ACG');        
             targ=completeIndex(completeIndex(:,3) == allcel(i),1:2);
             targ_UID=completeIndex(completeIndex(:,3) == allcel(i),3);
             plotTitle.String = ['Reference Cell: ' num2str(targ_UID) ', spike group: '  num2str(targ(1)),', cluID: ',num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'];
@@ -217,9 +225,9 @@ else
     mono_res.sig_con_inhibitory = keep_con;
 end
 
-if ischar(mono_res_in)
+if ischar(mono_res_input)
     disp('Saving mono_res file')
-    save(mono_res_in,'mono_res','-v7.3','-nocompression');
+    save(mono_res_input,'mono_res','-v7.3','-nocompression');
 end
 
     function subplotclick(obj,~) 
@@ -265,8 +273,11 @@ end
     end
     
     function goBack
+        ii = i;
         i = max(i-1,1);
-        uiresume(UI.fig);
+        if ii ~= i
+            uiresume(UI.fig);
+        end
     end
 
     function advance
@@ -282,23 +293,27 @@ end
     end
 
     function advance10
+        ii = i;
         i = min(i+10,length(allcel));
-        uiresume(UI.fig);
+        if ii ~= i
+            uiresume(UI.fig);
+        end
     end
 
     function goBack10
+        ii = i;
         i = max(i-10,1);
-        uiresume(UI.fig);
+        if ii ~= i
+            uiresume(UI.fig);
+        end
     end
 
-    function keyPress(src,event)
+    function keyPress(~,event)
         switch event.Key
             case 'space'
-                advance
+                goToCell
             case 'rightarrow'
                 advance
-            case 'leftarrow'
-                goBack
             case 'leftarrow'
                 goBack
             case {'1','2','3','4','5','6','7','8','9'}
@@ -312,9 +327,40 @@ end
                 advance10
             case 'downarrow'
                 goBack10
+            case 'h'
+                HelpDialog;
         end
     end
-
+    function goToCell
+        GoTo_dialog = dialog('Position', [-300, -300, 300, 150],'Name','Go to connection'); movegui(GoTo_dialog,'center')
+        uicontrol('Parent',GoTo_dialog,'Style', 'text', 'String', 'Provide the pair number and press enter', 'Position', [10, 125, 280, 20],'HorizontalAlignment','center');
+        connectionDialogInput = uicontrol('Parent',GoTo_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 100, 280, 25],'Callback',@(src,evnt)UpdateSelectedCell,'HorizontalAlignment','center');
+        uicontrol('Parent',GoTo_dialog,'Style', 'text', 'String', 'Provide the UID and press enter', 'Position', [10, 75, 280, 20],'HorizontalAlignment','center');
+        connectionDialogInput2 = uicontrol('Parent',GoTo_dialog,'Style', 'Edit', 'String', '', 'Position', [10, 50, 280, 25],'Callback',@(src,evnt)UpdateSelectedCell2,'HorizontalAlignment','center');
+        uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Cancel','Callback',@(src,evnt)CancelGoTo_dialog);
+        uicontrol(connectionDialogInput)
+        uiwait(GoTo_dialog);
+        function UpdateSelectedCell
+            answer = str2double(connectionDialogInput.String);
+            if ~isempty(answer) && answer > 0 && answer <= length(allcel)
+                delete(GoTo_dialog);
+                i = answer;
+                uiresume(UI.fig);
+            end
+        end
+        function UpdateSelectedCell2
+            answer = str2double(connectionDialogInput2.String);
+            if ~isempty(answer) && any(answer == allcel)
+                delete(GoTo_dialog);
+                i = find(allcel ==answer);
+                uiresume(UI.fig);
+            end
+        end
+        function  CancelGoTo_dialog
+            delete(GoTo_dialog);
+        end
+    end
+    
     function switchConnectionType(~,~)
         if connectionsDisplayed == 1
             mono_res.sig_con = keep_con;
@@ -363,8 +409,7 @@ end
 end
 
 function bar_from_patch(x_data, y_data,col,y0)
-% Creates a bar graph using the patch plot mode, which is substantial
-% faster than using the regular bar plot.
+% Creates a bar graph using the patch plot mode, which is substantial faster than using the regular bar plot.
 % By Peter Petersen
 
 x_step = x_data(2)-x_data(1);
@@ -374,34 +419,39 @@ patch(x_data, y_data,col,'EdgeColor',col, 'HitTest','off')
 end
 
 function [p,n]=numSubplots(n)
-% Calculate how many rows and columns of sub-plots are needed to
-% neatly display n subplots.
-% Rob Campbell - January 2010
-
-while isprime(n) && n>4
-    n=n+1;
-end
-p=factor(n);
-if length(p)==1
-    p=[1,p];
-    return
-end
-while length(p)>2
-    if length(p)>=4
-        p(1)=p(1)*p(end-1);
-        p(2)=p(2)*p(end);
-        p(end-1:end)=[];
-    else
-        p(1)=p(1)*p(2);
-        p(2)=[];
+    % Calculate how many rows and columns of sub-plots are needed to neatly display n subplots.
+    % Rob Campbell - January 2010
+    
+    while isprime(n) && n>4
+        n=n+1;
     end
-    p=sort(p);
+    p=factor(n);
+    if length(p)==1
+        p=[1,p];
+        return
+    end
+    while length(p)>2
+        if length(p)>=4
+            p(1)=p(1)*p(end-1);
+            p(2)=p(2)*p(end);
+            p(end-1:end)=[];
+        else
+            p(1)=p(1)*p(2);
+            p(2)=[];
+        end
+        p=sort(p);
+    end
+    
+    % Reformat if the column/row ratio is too large: we want a roughly square design
+    while p(2)/p(1)>2.5
+        N=n+1;
+        [p,n]=numSubplots(N); %Recursive!
+    end
 end
 
-% Reformat if the column/row ratio is too large: we want a roughly
-% square design
-while p(2)/p(1)>2.5
-    N=n+1;
-    [p,n]=numSubplots(N); %Recursive!
-end
+function HelpDialog(~,~)
+    opts.Interpreter = 'tex'; opts.WindowStyle = 'normal';
+    msgbox({'\bfNavigation\rm','right-arrow : Next cell', 'left arrow : Previous cell','up-arrow : 10 cells forward','down-arrow : 10 cells backward',...
+        'space : Go to a specific cell','Numpad0 : Go to first cell','','\bfConnection assigment\rm', '1-9 : Toggle cell with that subplot number', ...
+        'Numpad1-9 : Toggle cell with that subplot number','','\bfVisit the Cell Explorer''s website for further help\rm',''},'Keyboard shortcuts','help',opts);
 end

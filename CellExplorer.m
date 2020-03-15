@@ -410,8 +410,8 @@ UI.menu.display.showHeatmap = uimenu(UI.menu.display.topMenu,menuLabel,'Show hea
 if UI.settings.firingRateMap.showHeatmap; UI.menu.display.showHeatmap.Checked = 'on'; end
 UI.menu.display.firingRateMapShowHeatmapColorbar = uimenu(UI.menu.display.topMenu,menuLabel,'Show colorbar in heatmaps in firing rate maps',menuSelectedFcn,@ToggleFiringRateMapShowHeatmapColorbar);
 if UI.settings.firingRateMap.showHeatmapColorbar; UI.menu.display.firingRateMapShowHeatmapColorbar.Checked = 'on'; end
-UI.menu.display.normalization.ops(1) = uimenu(UI.menu.display.topMenu,menuLabel,'Normalize ISIs by rate',menuSelectedFcn,@buttonACG_normalize,'Separator','on','Checked','on');
-UI.menu.display.normalization.ops(2) = uimenu(UI.menu.display.topMenu,menuLabel,'Normalize ISIs by occurence',menuSelectedFcn,@buttonACG_normalize);
+UI.menu.display.normalization.ops(1) = uimenu(UI.menu.display.topMenu,menuLabel,'Normalize ISIs by rate',menuSelectedFcn,@buttonACG_normalize,'Separator','on');
+UI.menu.display.normalization.ops(2) = uimenu(UI.menu.display.topMenu,menuLabel,'Normalize ISIs by occurence',menuSelectedFcn,@buttonACG_normalize,'Checked','on');
 UI.menu.display.normalization.ops(3) = uimenu(UI.menu.display.topMenu,menuLabel,'Normalize ISIs to instantaneous rate',menuSelectedFcn,@buttonACG_normalize);
 UI.menu.display.significanceMetricsMatrix = uimenu(UI.menu.display.topMenu,menuLabel,'Generate significance matrix',menuSelectedFcn,@SignificanceMetricsMatrix,'Accelerator','K','Separator','on');
 UI.menu.display.generateRainCloudsPlot = uimenu(UI.menu.display.topMenu,menuLabel,'Generate rain cloud metrics plots',menuSelectedFcn,@generateRainCloudPlot);
@@ -841,7 +841,6 @@ end
 % Main loop of UI
 % % % % % % % % % % % % % % % % % % % % % %
 
-pause(0.001)
 while ii <= cell_metrics.general.cellCount
     
     % breaking if figure has been closed
@@ -985,6 +984,12 @@ while ii <= cell_metrics.general.cellCount
         UI.params.incoming = UI.params.a1(UI.params.inbound);
         UI.params.outgoing = UI.params.a2(UI.params.outbound);
         UI.params.connections = [UI.params.incoming;UI.params.outgoing];
+    else
+        UI.params.incoming = [];
+        UI.params.outgoing = [];
+        UI.params.inbound = [];
+        UI.params.outbound = [];
+        UI.params.connections = [];
     end
     
     % Inhibitory connections
@@ -1006,16 +1011,14 @@ while ii <= cell_metrics.general.cellCount
             UI.params.outbound_inh = [];
         end
         if any(strcmp(UI.monoSyn.disp, {'Upstream','Up & downstream'}))
-            % Inhibitory
             kkk = 1;
-            UI.params.inbound = find(UI.params.b2 == ii);
+            UI.params.inbound_inh = find(UI.params.b2 == ii);
             while ~isempty(UI.params.inbound_inh) && any(ismember(UI.params.b2, UI.params.incoming_inh)) && kkk < 10
                 UI.params.inbound_inh = [UI.params.inbound_inh;find(ismember(UI.params.b2, UI.params.incoming_inh))];
                 kkk = kkk + 1;
             end
         end
         if any(strcmp(UI.monoSyn.disp, {'Downstream','Up & downstream'}))
-            % Inhibitory
             kkk = 1;
             UI.params.outbound_inh = find(UI.params.b1 == ii);
             while ~isempty(UI.params.outbound_inh) && any(ismember(UI.params.b1, UI.params.outgoing_inh)) && kkk < 10
@@ -1027,8 +1030,11 @@ while ii <= cell_metrics.general.cellCount
         UI.params.outgoing_inh = UI.params.b2(UI.params.outbound_inh);
         UI.params.connections_inh = [UI.params.incoming_inh;UI.params.outgoing_inh];
     else
+        UI.params.incoming_inh = [];
+        UI.params.outgoing_inh = [];
         UI.params.inbound_inh = [];
         UI.params.outbound_inh = [];
+        UI.params.connections_inh = [];
     end
     
     % Defining synaptically identified projecting cell
@@ -2022,8 +2028,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             % selected cell highlighted in white
             if ~isempty(idx)
-                plot([time_waveforms_zscored(1),time_waveforms_zscored(end)],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
+                plot([time_waveforms_zscored(1),time_waveforms_zscored(end)],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5), hold on
             end
+            ploConnectionsHighlights(time_waveforms_zscored,UI.params.subset(troughToPeakSorted))
             
         elseif strcmp(customPlotSelection,'Raw waveforms (single)')
             % Single waveform with std
@@ -2130,10 +2137,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if isfield(general,'ccg') && ~isempty(UI.params.subset)
                 if UI.BatchMode
                     subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                    subset1 = cell_metrics.UID(UI.params.subset(subset1));
                 else
-                    subset1 = 1:general.cellCount;
+                    subset1 = UI.params.subset;
                 end
-                subset1 = cell_metrics.UID(UI.params.subset(subset1));
                 subset1 = [cell_metrics.UID(ii),subset1(subset1~=cell_metrics.UID(ii))];
                 Ydata = [1:length(subset1)];
                 if strcmp(UI.settings.acgType,'Narrow')
@@ -2148,18 +2155,36 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 colormap hot(512), xlabel('Time (ms)'), title('CCGs'), axis tight
                 
                 % Synaptic partners are also displayed
-                switch UI.monoSyn.disp
-                    case {'All','Selected','Upstream','Downstream','Up & downstream'}
-                        if ~isempty(UI.params.outbound)
-                            [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.outgoing));
-                            plot(1.045*Xdata(3)*ones(size(UI.params.outbound)),y_pos,'.m', 'HitTest','off', 'MarkerSize',12)
-                        end
-                        if ~isempty(UI.params.inbound)
-                            [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.incoming));
-                            plot(1.045*Xdata(3)*ones(size(UI.params.inbound)),y_pos,'.b', 'HitTest','off', 'MarkerSize',12)
-                        end
-                        xlim([Xdata(1)*1.05,Xdata(end)])
-                end
+                ploConnectionsHighlights(Xdata,subset1)
+
+%                 if UI.settings.plotExcitatoryConnections
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             if ~isempty(UI.params.outbound)
+%                                 [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.outgoing));
+%                                 plot(1.045*Xdata(3)*ones(size(UI.params.outbound)),y_pos,'.m', 'HitTest','off', 'MarkerSize',12)
+%                             end
+%                             if ~isempty(UI.params.inbound)
+%                                 [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.incoming));
+%                                 plot(1.045*Xdata(3)*ones(size(UI.params.inbound)),y_pos,'.b', 'HitTest','off', 'MarkerSize',12)
+%                             end
+%                             xlim([Xdata(1)*1.05,Xdata(end)])
+%                     end
+%                 end
+%                 if UI.settings.plotInhibitoryConnections
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             if ~isempty(UI.params.outbound_inh)
+%                                 [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.outgoing_inh));
+%                                 plot(1.045*Xdata(3)*ones(size(UI.params.outbound_inh)),y_pos,'.r', 'HitTest','off', 'MarkerSize',12)
+%                             end
+%                             if ~isempty(UI.params.inbound_inh)
+%                                 [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.incoming_inh));
+%                                 plot(1.045*Xdata(3)*ones(size(UI.params.inbound_inh)),y_pos,'.c', 'HitTest','off', 'MarkerSize',12)
+%                             end
+%                             xlim([Xdata(1)*1.05,Xdata(end)])
+%                     end
+%                 end
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
@@ -2170,16 +2195,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             % cell-type. Normalized firing rate. X-axis according to selected option
             if strcmp(UI.settings.acgType,'Normal')
                 bar_from_patch([-100:100]'/2, cell_metrics.acg.narrow(:,ii),col)
-                xticks([-50:10:50]),xlim([-50,50])
+                xticks([-50:10:50]),xlim([-50,50]), xlabel('Time (ms)')
             elseif strcmp(UI.settings.acgType,'Narrow')
                 bar_from_patch([-30:30]'/2, cell_metrics.acg.narrow(41+30:end-40-30,ii),col)
-                xticks([-15:5:15]),xlim([-15,15])
+                xticks([-15:5:15]),xlim([-15,15]), xlabel('Time (ms)')
             elseif strcmp(UI.settings.acgType,'Log10') && isfield(general,'acgs') && isfield(general.acgs,'log10')
                 bar_from_patch(general.acgs.log10, cell_metrics.acg.log10(:,ii),col)
-                set(gca,'xscale','log'),xlim([.001,10])
+                set(gca,'xscale','log'),xlim([.001,10]), xlabel('Time (sec)')
             else
                 bar_from_patch([-500:500]', cell_metrics.acg.wide(:,ii),col)
-                xticks([-500:100:500]),xlim([-500,500])
+                xticks([-500:100:500]),xlim([-500,500]), xlabel('Time (ms)')
             end
             
             % ACG fit with a triple-exponential
@@ -2199,7 +2224,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             ax5 = axis; grid on, set(gca, 'Layer', 'top')
 %             plot([0 0], [ax5(3) ax5(4)],'color',[.1 .1 .3]); 
             plot([ax5(1) ax5(2)],cell_metrics.firingRate(ii)*[1 1],'--k')
-            xlabel('Time (ms)'), ylabel('Rate (Hz)'), title('Autocorrelogram')
+            ylabel('Rate (Hz)'), title('Autocorrelogram')
             
         elseif strcmp(customPlotSelection,'ISIs (single)') % ISIs
             
@@ -2300,7 +2325,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 plot([-500:500],cell_metrics.acg.wide(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
                 xticks([-500:100:500]),xlim([-500,500])
             end
-            xlabel('Time (ms)'), ylabel('Rate (Hz)'), title('All ACGs')
+            ylabel('Rate (Hz)'), title('All ACGs')
             
         elseif strcmp(customPlotSelection,'ISIs (image)')
             
@@ -2308,23 +2333,24 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             [~,idx] = find(UI.params.subset(burstIndexSorted) == ii);
             
             if strcmp(UI.settings.isiNormalization,'Rate')
-                imagesc(general.isis.log10', 1:length(UI.params.subset), cell_metrics.isi.log10_rate(:,UI.params.subset(burstIndexSorted))','HitTest','off')
-                xlabel('Time')
+                imagesc(log10(general.isis.log10)', 1:length(UI.params.subset), cell_metrics.isi.log10_rate(:,UI.params.subset(burstIndexSorted))','HitTest','off')
+                xlabel('Time (sec; log10)')
             elseif strcmp(UI.settings.isiNormalization,'Firing rates')
-                imagesc(1./general.isis.log10', 1:length(UI.params.subset), cell_metrics.isi.log10_occurence(:,UI.params.subset(burstIndexSorted))','HitTest','off')
-                xlabel('Firing rate')
+                imagesc(log10(1./general.isis.log10)', 1:length(UI.params.subset), cell_metrics.isi.log10_occurence(:,UI.params.subset(burstIndexSorted))','HitTest','off')
+                xlabel('Firing rate (log10)')
             else
-                imagesc(general.isis.log10', 1:length(UI.params.subset), cell_metrics.isi.log10_occurence(:,UI.params.subset(burstIndexSorted))','HitTest','off')
-                xlabel('Time')
+                imagesc(log10(general.isis.log10)', 1:length(UI.params.subset), cell_metrics.isi.log10_occurence(:,UI.params.subset(burstIndexSorted))','HitTest','off')
+               xlabel('Time (sec; log10)')
             end
             if ~isempty(idx)
                 if strcmp(UI.settings.isiNormalization,'Firing rates')
-                    plot(1./general.isis.log10([1,end]),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
+                    plot(1./log10(general.isis.log10([1,end])),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
                 else
-                    plot(general.isis.log10([1,end]),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
+                    plot(log10(general.isis.log10([1,end])),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
                 end
             end
             colormap hot(512), title('All ISIs (image)'), axis tight
+            ploConnectionsHighlights(xlim,UI.params.subset(burstIndexSorted))
             
         elseif strcmp(customPlotSelection,'ACGs (image)')
             
@@ -2336,29 +2362,31 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 if ~isempty(idx)
                     plot([-50,50],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
                 end
-                plot([0,0],[0.5,length(UI.params.subset)+0.5],'w','HitTest','off')
+                plot([0,0],[0.5,length(UI.params.subset)+0.5],'w','HitTest','off'), xlabel('Time (ms)')
                 
             elseif strcmp(UI.settings.acgType,'Narrow')
                 imagesc([-30:30]/2, [1:length(UI.params.subset)], cell_metrics.acg.narrow_normalized(41+30:end-40-30,UI.params.subset(burstIndexSorted))','HitTest','off')
                 if ~isempty(idx)
                     plot([-15,15],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off')
                 end
-                plot([0,0],[0.5,length(UI.params.subset)+0.5],'w','HitTest','off','linewidth',1.5)
+                plot([0,0],[0.5,length(UI.params.subset)+0.5],'w','HitTest','off','linewidth',1.5), xlabel('Time (ms)')
                 
             elseif strcmp(UI.settings.acgType,'Log10')
-                imagesc(general.acgs.log10', [1:length(UI.params.subset)], cell_metrics.acg.log10_rate(:,UI.params.subset(burstIndexSorted))','HitTest','off')
+                imagesc(log10(general.acgs.log10)', [1:length(UI.params.subset)], cell_metrics.acg.log10_rate(:,UI.params.subset(burstIndexSorted))','HitTest','off')
                 if ~isempty(idx)
-                    plot(general.acgs.log10([1,end]),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
+                    plot(log10(general.acgs.log10([1,end])),[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
                 end
+                xlabel('Time (sec, log10)')
                 %xlim([0,10]), xticks([1]),xticklabels({'0.001','0.01','0.1','1','10'})
             else
                 imagesc([-500:500], [1:length(UI.params.subset)], cell_metrics.acg.wide_normalized(:,UI.params.subset(burstIndexSorted))','HitTest','off')
                 if ~isempty(idx)
                     plot([-500,500],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
                 end
-                plot([0,0],[0.5,length(UI.params.subset)+0.5],'w','HitTest','off')
+                plot([0,0],[0.5,length(UI.params.subset)+0.5],'w','HitTest','off'), xlabel('Time (ms)')
             end
-            colormap hot(512), xlabel('Time'), title('All ACGs (image)'), axis tight
+            colormap hot(512), title('All ACGs (image)'), axis tight
+            ploConnectionsHighlights(xlim,UI.params.subset(burstIndexSorted))
             
         elseif strcmp(customPlotSelection,'tSNE of narrow ACGs')
             
@@ -2419,18 +2447,36 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 plot(x_bins,firingRateMap,'-','color', 'k','linewidth',2, 'HitTest','off'), xlabel('Position (cm)'), ylabel('Rate (Hz)')
                 
                 % Synaptic partners are also displayed
-                switch UI.monoSyn.disp
-                    case {'All','Selected','Upstream','Downstream','Up & downstream'}
-                        subsetPlots.xaxis = x_bins;
-                        subsetPlots.yaxis = horzcat(cell_metrics.firingRateMaps.(firingRateMapName){[UI.params.outgoing;UI.params.incoming]});
-                        subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
-                        if ~isempty(UI.params.outbound)
-                            plot(x_bins,horzcat(cell_metrics.firingRateMaps.(firingRateMapName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
-                        end
-                        if ~isempty(UI.params.inbound)
-                            plot(x_bins,horzcat(cell_metrics.firingRateMaps.(firingRateMapName){UI.params.incoming}),'color', 'b', 'HitTest','off')
-                        end
-                end
+                subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.firingRateMaps.(firingRateMapName));
+                
+%                 if UI.settings.plotExcitatoryConnections
+%                 switch UI.monoSyn.disp
+%                     case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                         subsetPlots.xaxis = x_bins;
+%                         subsetPlots.yaxis = horzcat(cell_metrics.firingRateMaps.(firingRateMapName){[UI.params.outgoing;UI.params.incoming]});
+%                         subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
+%                         if ~isempty(UI.params.outbound)
+%                             plot(x_bins,horzcat(cell_metrics.firingRateMaps.(firingRateMapName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
+%                         end
+%                         if ~isempty(UI.params.inbound)
+%                             plot(x_bins,horzcat(cell_metrics.firingRateMaps.(firingRateMapName){UI.params.incoming}),'color', 'b', 'HitTest','off')
+%                         end
+%                 end
+%                 end
+%                 if UI.settings.plotInhibitoryConnections
+%                 switch UI.monoSyn.disp
+%                     case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                         subsetPlots.xaxis = x_bins;
+%                         subsetPlots.yaxis = horzcat(cell_metrics.firingRateMaps.(firingRateMapName){[UI.params.outgoing_inh;UI.params.incoming_inh]});
+%                         subsetPlots.subset_inh = [UI.params.outgoing;UI.params.incoming_inh];
+%                         if ~isempty(UI.params.outbound_inh)
+%                             plot(x_bins,horzcat(cell_metrics.firingRateMaps.(firingRateMapName){UI.params.outgoing_inh}),'color', 'r', 'HitTest','off')
+%                         end
+%                         if ~isempty(UI.params.inbound_inh)
+%                             plot(x_bins,horzcat(cell_metrics.firingRateMaps.(firingRateMapName){UI.params.incoming_inh}),'color', 'c', 'HitTest','off')
+%                         end
+%                 end
+%                 end
                 axis tight, ax6 = axis; grid on,
                 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
                 if isfield(general.firingRateMaps,firingRateMapName) & isfield(general.firingRateMaps.(firingRateMapName),'boundaries')
@@ -2505,30 +2551,49 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 end
                 plot(x_bins,psth_response,'color', 'k','linewidth',2, 'HitTest','off')
                 
-                switch UI.monoSyn.disp
-                    case {'All','Selected','Upstream','Downstream','Up & downstream'}
-                        subsetPlots.xaxis = x_bins;
-                        subsetPlots.yaxis = horzcat(cell_metrics.psth.(eventName){[UI.params.outgoing;UI.params.incoming]});
-                        subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
-                        if ~isempty(UI.params.outbound)
-                            plot(x_bins,horzcat(cell_metrics.psth.(eventName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
-                        end
-                        if ~isempty(UI.params.inbound)
-                            plot(x_bins,horzcat(cell_metrics.psth.(eventName){UI.params.incoming}),'color', 'b', 'HitTest','off')
-                        end
-                end
-                axis tight, ax6 = axis; grid on
-                plot([0, 0], [ax6(3) ax6(4)],'color','k', 'HitTest','off');
-                if isfield(general.psth,eventName) & isfield(general.psth.(eventName),'boundaries')
-                    boundaries = general.psth.(eventName).boundaries;
-                    plot([1;1] * boundaries, [ax6(3) ax6(4)],'--','color','k', 'HitTest','off');
-                end
-                if isfield(general.psth,eventName) & isfield(general.psth.(eventName),'boundaries')
-                    boundaries = general.psth.(eventName).boundaries;
-                    plot([1;1] * boundaries, [ax6(3) ax6(4)],'--','color','k', 'HitTest','off');
-                end
-            else
-                text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
+                subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.psth.(eventName));
+                
+%                 if UI.settings.plotExcitatoryConnections
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             subsetPlots.xaxis = x_bins;
+%                             subsetPlots.yaxis = horzcat(cell_metrics.psth.(eventName){[UI.params.outgoing;UI.params.incoming]});
+%                             subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
+%                             if ~isempty(UI.params.outbound)
+%                                 plot(x_bins,horzcat(cell_metrics.psth.(eventName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
+%                             end
+%                             if ~isempty(UI.params.inbound)
+%                                 plot(x_bins,horzcat(cell_metrics.psth.(eventName){UI.params.incoming}),'color', 'b', 'HitTest','off')
+%                             end
+%                     end
+%                 end
+%                 if UI.settings.plotInhibitoryConnections
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             subsetPlots.xaxis = x_bins;
+%                             subsetPlots.yaxis = horzcat(cell_metrics.psth.(eventName){[UI.params.outgoing;UI.params.incoming]});
+%                             subsetPlots.subset_ind = [UI.params.outgoing_ind;UI.params.incoming_ind];
+%                             if ~isempty(UI.params.outbound_ind)
+%                                 plot(x_bins,horzcat(cell_metrics.psth.(eventName){UI.params.outgoing_ind}),'color', 'r', 'HitTest','off')
+%                             end
+%                             if ~isempty(UI.params.inbound_ind)
+%                                 plot(x_bins,horzcat(cell_metrics.psth.(eventName){UI.params.incoming_ind}),'color', 'c', 'HitTest','off')
+%                             end
+%                     end
+%                 end
+                    
+                    axis tight, ax6 = axis; grid on
+                    plot([0, 0], [ax6(3) ax6(4)],'color','k', 'HitTest','off');
+                    if isfield(general.psth,eventName) & isfield(general.psth.(eventName),'boundaries')
+                        boundaries = general.psth.(eventName).boundaries;
+                        plot([1;1] * boundaries, [ax6(3) ax6(4)],'--','color','k', 'HitTest','off');
+                    end
+                    if isfield(general.psth,eventName) & isfield(general.psth.(eventName),'boundaries')
+                        boundaries = general.psth.(eventName).boundaries;
+                        plot([1;1] * boundaries, [ax6(3) ax6(4)],'--','color','k', 'HitTest','off');
+                    end
+                else
+                    text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
             end
             
             title(eventName, 'Interpreter', 'none'), xlabel('Time (s)'),ylabel('Rate (Hz)')
@@ -2539,25 +2604,42 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if isfield(cell_metrics.events,eventName) && length(cell_metrics.events.(eventName))>=ii && ~isempty(cell_metrics.events.(eventName){ii})
                 rippleCorrelogram = cell_metrics.events.(eventName){ii};
                 
-                if isfield(general.events,eventName) & isfield(general.events.(eventName),'x_bins')
+                if isfield(general.events,eventName) && isfield(general.events.(eventName),'x_bins')
                     x_bins = general.events.(eventName).x_bins(:);
                 else
                     x_bins = [1:length(rippleCorrelogram)];
                 end
-                if ~isempty(putativeSubset)
-                    switch UI.monoSyn.disp
-                        case {'All','Selected','Upstream','Downstream','Up & downstream'}
-                            subsetPlots.xaxis = x_bins;
-                            subsetPlots.yaxis = horzcat(cell_metrics.events.(eventName){[UI.params.outgoing;UI.params.incoming]});
-                            subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
-                            if ~isempty(UI.params.outbound)
-                                plot(x_bins,horzcat(cell_metrics.events.(eventName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
-                            end
-                            if ~isempty(UI.params.inbound)
-                                plot(x_bins,horzcat(cell_metrics.events.(eventName){UI.params.incoming}),'color', 'b', 'HitTest','off')
-                            end
-                    end
-                end
+                
+                subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.events.(eventName));
+                
+%                 if ~isempty(putativeSubset) && UI.settings.plotExcitatoryConnections
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             subsetPlots.xaxis = x_bins;
+%                             subsetPlots.yaxis = horzcat(cell_metrics.events.(eventName){[UI.params.outgoing;UI.params.incoming]});
+%                             subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
+%                             if ~isempty(UI.params.outbound)
+%                                 plot(x_bins,horzcat(cell_metrics.events.(eventName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
+%                             end
+%                             if ~isempty(UI.params.inbound)
+%                                 plot(x_bins,horzcat(cell_metrics.events.(eventName){UI.params.incoming}),'color', 'b', 'HitTest','off')
+%                             end
+%                     end
+%                 end
+%                 if ~isempty(putativeSubset_inh) &&  UI.settings.plotInhibitoryConnections
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             subsetPlots.xaxis_inh = x_bins;
+%                             subsetPlots.yaxis_inh = horzcat(cell_metrics.events.(eventName){[UI.params.outgoing_inh;UI.params.incoming_inh]});
+%                             subsetPlots.subset_inh = [UI.params.outgoing_inh;UI.params.incoming_inh];
+%                             if ~isempty(UI.params.outbound_inh)
+%                                 plot(x_bins,horzcat(cell_metrics.events.(eventName){UI.params.outgoing_inh}),'color', 'm', 'HitTest','off')
+%                             end
+%                             if ~isempty(UI.params.inbound_inh)
+%                                 plot(x_bins,horzcat(cell_metrics.events.(eventName){UI.params.incoming_inh}),'color', 'b', 'HitTest','off')
+%                             end
+%                     end
+%                 end
                 plot(x_bins,rippleCorrelogram,'color', col,'linewidth',2, 'HitTest','off'), xlabel('time'),ylabel('')
                 axis tight, ax6 = axis; grid on
                 plot([0, 0], [ax6(3) ax6(4)],'color','k', 'HitTest','off');
@@ -2572,25 +2654,41 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if isfield(cell_metrics.manipulations,eventName) && ~isempty(cell_metrics.manipulations.(eventName){ii})
                 rippleCorrelogram = cell_metrics.manipulations.(eventName){ii};
                 
-                if isfield(general.manipulations,eventName) & isfield(general.manipulations.(eventName),'x_bins')
+                if isfield(general.manipulations,eventName) && isfield(general.manipulations.(eventName),'x_bins')
                     x_bins = general.manipulations.(eventName).x_bins(:);
                 else
                     x_bins = [1:length(rippleCorrelogram)];
                 end
-                if ~isempty(putativeSubset)
-                    switch UI.monoSyn.disp
-                        case {'All','Selected','Upstream','Downstream','Up & downstream'}
-                            subsetPlots.xaxis = x_bins;
-                            subsetPlots.yaxis = horzcat(cell_metrics.manipulations.(eventName){[UI.params.outgoing;UI.params.incoming]});
-                            subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
-                            if ~isempty(UI.params.outbound)
-                                plot(x_bins,horzcat(cell_metrics.manipulations.(eventName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
-                            end
-                            if ~isempty(UI.params.inbound)
-                                plot(x_bins,horzcat(cell_metrics.manipulations.(eventName){UI.params.incoming}),'color', 'b', 'HitTest','off')
-                            end
-                    end
-                end
+                subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.manipulations.(eventName));
+                
+%                 if ~isempty(putativeSubset) && UI.settings.plotExcitatoryConnections
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             subsetPlots.xaxis = x_bins;
+%                             subsetPlots.yaxis = horzcat(cell_metrics.manipulations.(eventName){[UI.params.outgoing;UI.params.incoming]});
+%                             subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
+%                             if ~isempty(UI.params.outbound)
+%                                 plot(x_bins,horzcat(cell_metrics.manipulations.(eventName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
+%                             end
+%                             if ~isempty(UI.params.inbound)
+%                                 plot(x_bins,horzcat(cell_metrics.manipulations.(eventName){UI.params.incoming}),'color', 'b', 'HitTest','off')
+%                             end
+%                     end
+%                 end
+%                 if ~isempty(putativeSubset_inh) &&  UI.settings.plotInhibitoryConnections
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             subsetPlots.xaxis_inh = x_bins;
+%                             subsetPlots.yaxis_inh = horzcat(cell_metrics.manipulations.(eventName){[UI.params.outgoing_inh;UI.params.incoming_inh]});
+%                             subsetPlots.subset_inh = [UI.params.outgoing_inh;UI.params.incoming_inh];
+%                             if ~isempty(UI.params.outbound_inh)
+%                                 plot(x_bins,horzcat(cell_metrics.manipulations.(eventName){UI.params.outgoing_inh}),'color', 'm', 'HitTest','off')
+%                             end
+%                             if ~isempty(UI.params.inbound_inh)
+%                                 plot(x_bins,horzcat(cell_metrics.manipulations.(eventName){UI.params.incoming_inh}),'color', 'b', 'HitTest','off')
+%                             end
+%                     end
+%                 end
                 plot(x_bins,rippleCorrelogram,'color', col,'linewidth',2, 'HitTest','off'), xlabel('time'),ylabel('')
                 axis tight, ax6 = axis; grid on
                 plot([0, 0], [ax6(3) ax6(4)],'color','k', 'HitTest','off');
@@ -2610,21 +2708,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     x_bins = [1:length(firingRateAcrossTime)];
                 end
                 plt1 = plot(x_bins,firingRateAcrossTime,'color', 'k','linewidth',2, 'HitTest','off');
+                subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.responseCurves.(responseCurvesName));
                 
-                if ~isempty(putativeSubset)
-                    switch UI.monoSyn.disp
-                        case {'All','Selected','Upstream','Downstream','Up & downstream'}
-                            subsetPlots.xaxis = x_bins;
-                            subsetPlots.yaxis = horzcat(cell_metrics.responseCurves.(responseCurvesName){[UI.params.outgoing;UI.params.incoming]});
-                            subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
-                            if ~isempty(UI.params.outbound) && ~isempty(UI.params.outgoing)
-                                plot(x_bins,horzcat(cell_metrics.responseCurves.(responseCurvesName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
-                            end
-                            if ~isempty(UI.params.inbound) && ~isempty(UI.params.incoming)
-                                plot(x_bins,horzcat(cell_metrics.responseCurves.(responseCurvesName){UI.params.incoming}),'color', 'b', 'HitTest','off')
-                            end
-                    end
-                end
                 xlabel('Time (s)'), ylabel('Rate (Hz)')
                 axis tight, ax6 = axis; 
                 
@@ -2653,10 +2738,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if isfield(cell_metrics.responseCurves,responseCurvesName) && ~isempty(cell_metrics.responseCurves.(responseCurvesName){ii})
                 if UI.BatchMode
                     subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                    subset222 = UI.params.subset(subset1);
                 else
-                    subset1 = 1:general.cellCount;
+                    subset1 = UI.params.subset;
+                    subset222 = UI.params.subset;
                 end
-                subset222 = UI.params.subset(subset1);
                 Ydata = [1:length(subset1)];
                 if isfield(general.responseCurves,responseCurvesName) && isfield(general.responseCurves.(responseCurvesName),'x_bins')
                     Xdata = general.responseCurves.(responseCurvesName).x_bins;
@@ -2674,21 +2760,24 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 end
                 
                 % Synaptic partners are also displayed
-                if ~isempty(putativeSubset)
-                    subset1 = cell_metrics.UID(subset222);
-                    switch UI.monoSyn.disp
-                        case {'All','Selected','Upstream','Downstream','Up & downstream'}
-                            if ~isempty(UI.params.outbound)
-                                [~,y_pos,~] = intersect(subset1(troughToPeakSorted),cell_metrics.UID(UI.params.outgoing));
-                                plot(Xdata(1)+0.02*(Xdata(end)-Xdata(1))*ones(size(UI.params.outbound)),y_pos,'.w', 'HitTest','off', 'MarkerSize',12)
-                            end
-                            if ~isempty(UI.params.inbound)
-                                [~,y_pos,~] = intersect(subset1(troughToPeakSorted),cell_metrics.UID(UI.params.incoming));
-                                plot(Xdata(1)+0.02*(Xdata(end)-Xdata(1))*ones(size(UI.params.inbound)),y_pos,'.w', 'HitTest','off', 'MarkerSize',12)
-                            end
-                            % xlim([Xdata(1)*1,Xdata(end)])
-                    end
-                end
+                subset1 = cell_metrics.UID(subset222);
+                ploConnectionsHighlights(Xdata,subset1(troughToPeakSorted));
+                
+%                 if ~isempty(putativeSubset)
+%                     subset1 = cell_metrics.UID(subset222);
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             if ~isempty(UI.params.outbound)
+%                                 [~,y_pos,~] = intersect(subset1(troughToPeakSorted),cell_metrics.UID(UI.params.outgoing));
+%                                 plot(Xdata(1)+0.02*(Xdata(end)-Xdata(1))*ones(size(UI.params.outbound)),y_pos,'.w', 'HitTest','off', 'MarkerSize',12)
+%                             end
+%                             if ~isempty(UI.params.inbound)
+%                                 [~,y_pos,~] = intersect(subset1(troughToPeakSorted),cell_metrics.UID(UI.params.incoming));
+%                                 plot(Xdata(1)+0.02*(Xdata(end)-Xdata(1))*ones(size(UI.params.inbound)),y_pos,'.w', 'HitTest','off', 'MarkerSize',12)
+%                             end
+%                             % xlim([Xdata(1)*1,Xdata(end)])
+%                     end
+%                 end
                 ax6 = axis; 
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
@@ -2714,10 +2803,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if isfield(cell_metrics.responseCurves,responseCurvesName) && ~isempty(cell_metrics.responseCurves.(responseCurvesName){ii})
                 if UI.BatchMode
                     subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                    subset222 = UI.params.subset(subset1);
                 else
-                    subset1 = 1:general.cellCount;
+                    subset1 = UI.params.subset;
+                    subset222 = UI.params.subset;
                 end
-                subset222 = UI.params.subset(subset1);
                 if isfield(general.responseCurves,responseCurvesName) && isfield(general.responseCurves.(responseCurvesName),'x_bins')
                     Xdata = general.responseCurves.(responseCurvesName).x_bins;
                 else
@@ -2761,20 +2851,22 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 end
                 plt1 = plot(x_bins,thetaPhaseResponse,'color', 'k','linewidth',2, 'HitTest','off');
                 
-                if ~isempty(putativeSubset)
-                    switch UI.monoSyn.disp
-                        case {'All','Selected','Upstream','Downstream','Up & downstream'}
-                            subsetPlots.xaxis = x_bins;
-                            subsetPlots.yaxis = horzcat(cell_metrics.responseCurves.(responseCurvesName){[UI.params.outgoing;UI.params.incoming]});
-                            subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
-                            if ~isempty(UI.params.outbound)
-                                plot(x_bins,horzcat(cell_metrics.responseCurves.(responseCurvesName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
-                            end
-                            if ~isempty(UI.params.inbound)
-                                plot(x_bins,horzcat(cell_metrics.responseCurves.(responseCurvesName){UI.params.incoming}),'color', 'b', 'HitTest','off')
-                            end
-                    end
-                end
+                subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.responseCurves.(responseCurvesName));
+                
+%                 if ~isempty(putativeSubset)
+%                     switch UI.monoSyn.disp
+%                         case {'All','Selected','Upstream','Downstream','Up & downstream'}
+%                             subsetPlots.xaxis = x_bins;
+%                             subsetPlots.yaxis = horzcat(cell_metrics.responseCurves.(responseCurvesName){[UI.params.outgoing;UI.params.incoming]});
+%                             subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
+%                             if ~isempty(UI.params.outbound)
+%                                 plot(x_bins,horzcat(cell_metrics.responseCurves.(responseCurvesName){UI.params.outgoing}),'color', 'm', 'HitTest','off')
+%                             end
+%                             if ~isempty(UI.params.inbound)
+%                                 plot(x_bins,horzcat(cell_metrics.responseCurves.(responseCurvesName){UI.params.incoming}),'color', 'b', 'HitTest','off')
+%                             end
+%                     end
+%                 end
                 axis tight, ax6 = axis; grid on,
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
@@ -2798,6 +2890,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             if ~isempty(idx)
                 plot([UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','w','HitTest','off','linewidth',1.5)
             end
+            ploConnectionsHighlights(xlim,UI.params.subset(troughToPeakSorted))
             
         elseif contains(customPlotSelection,'RCs_') && contains(customPlotSelection,'(all)')
             
@@ -2999,32 +3092,35 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             else
                 plotData = plotData{ii};
             end
-            if isfield(general,customPlotSelection) & isfield(general.(customPlotSelection),'x_bins')
+            if isfield(general,customPlotSelection) && isfield(general.(customPlotSelection),'x_bins')
                 x_bins = general.(customPlotSelection).x_bins;
             else
                 x_bins = [1:length(plotData)];
             end
             plot(x_bins,plotData,'color', 'k','linewidth',2, 'HitTest','off')
             
-            if isnumeric(cell_metrics.(plotOptions{customCellPlotNum}))
-                switch UI.monoSyn.disp
-                    case {'All'}
-                        subsetPlots.xaxis = x_bins;
-                        subsetPlots.yaxis = cell_metrics.(plotOptions{customCellPlotNum})(:,UI.params.outgoing);
-                        subsetPlots.subset = UI.params.outgoing;
-                        plot(x_bins,cell_metrics.(plotOptions{customCellPlotNum})(:,UI.params.outgoing),'color', [0,0,0,.5])
-                    case {'Selected','Upstream','Downstream','Up & downstream'}
-                        subsetPlots.xaxis = x_bins;
-                        subsetPlots.yaxis = cell_metrics.(plotOptions{customCellPlotNum})(:,[UI.params.outgoing;UI.params.incoming]);
-                        subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
-                        if ~isempty(UI.params.outbound)
-                            plot(x_bins,cell_metrics.(plotOptions{customCellPlotNum})(:,UI.params.outgoing),'color', 'm', 'HitTest','off')
-                        end
-                        if ~isempty(UI.params.inbound)
-                            plot(x_bins,cell_metrics.(plotOptions{customCellPlotNum})(:,UI.params.incoming),'color', 'b', 'HitTest','off')
-                        end
-                end
-            end
+            subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.(plotOptions{customCellPlotNum}));
+            
+%             if isnumeric(cell_metrics.(plotOptions{customCellPlotNum}))
+%                 switch UI.monoSyn.disp
+%                     case {'All'}
+%                         subsetPlots.xaxis = x_bins;
+%                         subsetPlots.yaxis = cell_metrics.(plotOptions{customCellPlotNum})(:,UI.params.outgoing);
+%                         subsetPlots.subset = UI.params.outgoing;
+%                         plot(x_bins,cell_metrics.(plotOptions{customCellPlotNum})(:,UI.params.outgoing),'color', [0,0,0,.5])
+%                     case {'Selected','Upstream','Downstream','Up & downstream'}
+%                         subsetPlots.xaxis = x_bins;
+%                         subsetPlots.yaxis = cell_metrics.(plotOptions{customCellPlotNum})(:,[UI.params.outgoing;UI.params.incoming]);
+%                         subsetPlots.subset = [UI.params.outgoing;UI.params.incoming];
+%                         if ~isempty(UI.params.outbound)
+%                             plot(x_bins,cell_metrics.(plotOptions{customCellPlotNum})(:,UI.params.outgoing),'color', 'm', 'HitTest','off')
+%                         end
+%                         if ~isempty(UI.params.inbound)
+%                             plot(x_bins,cell_metrics.(plotOptions{customCellPlotNum})(:,UI.params.incoming),'color', 'b', 'HitTest','off')
+%                         end
+%                 end
+%             end
+            
             title(plotOptions{customCellPlotNum}, 'Interpreter', 'none'), xlabel(''),ylabel('')
             axis tight, ax6 = axis; grid on
             plot([0, 0], [ax6(3) ax6(4)],'color','k', 'HitTest','off');
@@ -3040,6 +3136,73 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 
             end
             set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
+        end
+        
+        function subsetPlots = plotConnectionsCurves(x_bins,ydata)
+            subsetPlots.xaxis = x_bins;
+            subsetPlots.yaxis = [];
+            subsetPlots.subset = [];
+            if ~isempty(putativeSubset) && UI.settings.plotExcitatoryConnections
+                switch UI.monoSyn.disp
+                    case {'All','Selected','Upstream','Downstream','Up & downstream'}
+                        % subsetPlots.xaxis = x_bins;
+                        subsetPlots.yaxis = [subsetPlots.yaxis,horzcat(ydata{[UI.params.outgoing;UI.params.incoming]})];
+                        subsetPlots.subset = [subsetPlots.subset;[UI.params.outgoing;UI.params.incoming]];
+                        if ~isempty(UI.params.outbound) && ~isempty(UI.params.outgoing)
+                            plot(x_bins,horzcat(ydata{UI.params.outgoing}),'color', 'm', 'HitTest','off')
+                        end
+                        if ~isempty(UI.params.inbound) && ~isempty(UI.params.incoming)
+                            plot(x_bins,horzcat(ydata{UI.params.incoming}),'color', 'b', 'HitTest','off')
+                        end
+                end
+            end
+            if ~isempty(putativeSubset_inh) &&  UI.settings.plotInhibitoryConnections
+                switch UI.monoSyn.disp
+                    case {'All','Selected','Upstream','Downstream','Up & downstream'}
+                        % subsetPlots.xaxis_inh = x_bins;
+                        subsetPlots.yaxis = [subsetPlots.yaxis,horzcat(ydata{[UI.params.outgoing_inh;UI.params.incoming_inh]})];
+                        subsetPlots.subset = [subsetPlots.subset;[UI.params.outgoing_inh;UI.params.incoming_inh]];
+                        if ~isempty(UI.params.outbound_inh) && ~isempty(UI.params.outgoing_inh)
+                            plot(x_bins,horzcat(ydata{UI.params.outgoing_inh}),'color', 'm', 'HitTest','off')
+                        end
+                        if ~isempty(UI.params.inbound_inh) && ~isempty(UI.params.incoming_inh)
+                            plot(x_bins,horzcat(ydata{UI.params.incoming_inh}),'color', 'b', 'HitTest','off')
+                        end
+                end
+            end
+        end
+        
+        function ploConnectionsHighlights(Xdata,subset1)
+            x_range = Xdata(end)-Xdata(1);
+            x1 = (Xdata(1)-0.015*x_range);
+            if UI.settings.plotExcitatoryConnections
+                switch UI.monoSyn.disp
+                    case {'All','Selected','Upstream','Downstream','Up & downstream'}
+                        if ~isempty(UI.params.outbound)
+                            [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.outgoing));
+                            plot(x1*ones(size(UI.params.outbound)),y_pos,'.m', 'HitTest','off', 'MarkerSize',12)
+                        end
+                        if ~isempty(UI.params.inbound)
+                            [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.incoming));
+                            plot(x1*ones(size(UI.params.inbound)),y_pos,'.b', 'HitTest','off', 'MarkerSize',12)
+                        end
+                        xlim([Xdata(1)-x_range*0.025,Xdata(end)])
+                end
+            end
+            if UI.settings.plotInhibitoryConnections
+                switch UI.monoSyn.disp
+                    case {'All','Selected','Upstream','Downstream','Up & downstream'}
+                        if ~isempty(UI.params.outbound_inh)
+                            [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.outgoing_inh));
+                            plot(x1*ones(size(UI.params.outbound_inh)),y_pos,'.c', 'HitTest','off', 'MarkerSize',12)
+                        end
+                        if ~isempty(UI.params.inbound_inh)
+                            [~,y_pos,~] = intersect(subset1,cell_metrics.UID(UI.params.incoming_inh));
+                            plot(x1*ones(size(UI.params.inbound_inh)),y_pos,'.r', 'HitTest','off', 'MarkerSize',12)
+                        end
+                        xlim([Xdata(1)-x_range*0.025,Xdata(end)])
+                end
+            end
         end
     end
 
@@ -3471,7 +3634,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if ~exist('backup_subset','var')
             backup_subset = 1:length(cell_metrics.UID);
         end
-        
         cell_metrics_backup = {};
         cell_metrics_backup.labels = cell_metrics.labels(backup_subset);
         if isfield(cell_metrics,'tags')
@@ -3490,17 +3652,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         S.cell_metrics = cell_metrics_backup;
         if UI.BatchMode && isfield(cell_metrics.general,'saveAs')
             saveAs = cell_metrics.general.saveAs{cell_metrics.batchIDs(ii)};
+            path1 = cell_metrics.general.path{batchIDs};
         elseif isfield(cell_metrics.general,'saveAs')
             saveAs = cell_metrics.general.saveAs;
+            path1 = cell_metrics.general.path;
         else
             saveAs = 'cell_metrics';
-        end
-        
-        if UI.BatchMode
-            path1 = cell_metrics.general.path{batchIDs};
-        else
             path1 = cell_metrics.general.path;
         end
+        
         if ~(exist(fullfile(path1,'revisions_cell_metrics'),'dir'))
             mkdir(fullfile(path1,'revisions_cell_metrics'));
         end
@@ -3581,8 +3741,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 MsgLog(['File path not available:' general.basepath],2)
             end
         else
+            if exist(cell_metrics.general.path,'dir')
+                path_to_open = cell_metrics.general.path;
+            else
+                path_to_open = pwd;
+            end
             if ispc
-                winopen(pwd);
+                winopen(path_to_open);
+            elseif ismac
+                    syscmd = ['open ', path_to_open, ' &'];
+                    system(syscmd);
             else
                 filebrowser;
             end
@@ -9558,7 +9726,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             patch([1:length(temp1),flip(1:length(temp1))], [temp1+temp2,flip(temp1-temp2)],clr2(j,:),'EdgeColor','none','FaceAlpha',.2)
                             plot(1:length(temp1), temp1, 'color', clr(j,:),'linewidth',2)
                         end
-                    else
+                    else g
                         % Ground truth cells
                         title('Ground truth cells')
                         if ~isempty(subsetGroundTruth)
