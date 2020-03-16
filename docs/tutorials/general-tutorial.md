@@ -33,10 +33,8 @@ cell_metrics = LoadCellMetricBatch('clusteringpaths',clusteringpaths,'basenames'
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 
-5. Curate your cells and save the metrics
-
+5. Curate your cells and save the metrics 
 6. load a subset of units fullfilling multiple criteria 
-
 Get cells that are assigned as Interneuron
 ```m
 cell_metrics_idxs1 = loadCellMetrics('cell_metrics',cell_metrics,'putativeCellType',{'Interneuron'});
