@@ -38,7 +38,7 @@ if ~exist('mono_res_input','var')
     end
 elseif ischar(mono_res_input) && exist(mono_res_input,'file')
     disp('gui_MonoSyn: Loading mono_res file')
-    load(mono_res_input);
+    load(mono_res_input,'mono_res');
 elseif isstruct(mono_res_input)
     mono_res = mono_res_input;
 end
@@ -54,26 +54,34 @@ x_window = [-30 30];
 xLimState = 1;
 
 if ~isfield(mono_res,'sig_con_excitatory')
-    mono_res.sig_con_excitatory = [];
+    mono_res.sig_con_excitatory = mono_res.sig_con;
 end
-
+if ~isfield(mono_res,'sig_con_excitatory_all')
+    mono_res.sig_con_excitatory_all = [];
+end
 if ~isfield(mono_res,'sig_con_inhibitory')
     mono_res.sig_con_inhibitory = [];
 end
+if ~isfield(mono_res,'sig_con_inhibitory_all')
+    mono_res.sig_con_inhibitory_all = [];
+end
 
-if ~isempty(mono_res.sig_con_excitatory) || isfield(mono_res,'sig_con_excitatory_all') 
+if ~isempty(mono_res.sig_con_excitatory) || ~isempty(mono_res.sig_con_excitatory_all) 
     connectionsDisplayed = 1;
     sig_con = mono_res.sig_con_excitatory;
-elseif ~isempty(mono_res.sig_con_inhibitory) || isfield(mono_res,'sig_con_inhibitory_all') 
+elseif ~isempty(mono_res.sig_con_inhibitory) || ~isempty(mono_res.sig_con_inhibitory_all) 
     connectionsDisplayed = 2;
     sig_con = mono_res.sig_con_inhibitory;
 else
     connectionsDisplayed = 1;
     sig_con = mono_res.sig_con;
 end
+if isempty(sig_con)
+    warning('No connections detected')
+    return
+end
 keep_con = sig_con;
 allcel = unique(sig_con(:));
-
 window  =false(size(ccgR,1),1);
 window(ceil(length(window)/2) - round(.004/binSize): ceil(length(window)/2) + round(.004/binSize)) = true;
 halfBins = round(duration/binSize/2);
@@ -108,20 +116,7 @@ while temp444 == 1
         i = length(allcel);
     end
     if ~ishandle(UI.fig)
-        if connectionsDisplayed == 1
-            mono_res.sig_con = keep_con;
-            mono_res.sig_con_excitatory = keep_con;
-        else
-            mono_res.sig_con_inhibitory = keep_con;
-        end
-        if ischar(mono_res_input)
-            disp('Saving mono_res file')
-            try 
-                save(mono_res_input,'mono_res','-v7.3','-nocompression');
-            catch
-                warndlg('Failed to save the mono_res file.')
-            end
-        end
+        saveOnExitDialog
         return
     end
     delete(findobj(UI.fig, 'type', 'axes'));
@@ -208,7 +203,7 @@ while temp444 == 1
             else
                 thisacg = ccgR(:,tcel,tcel);
                 thisacg = thisacg./max(thisacg)*axhpos(2)*0.2+axhpos(2)*0.78;
-                t2 = 16*t./max(t)+43; 
+                t2 = (16/60)*axhpos2(2)*t./max(t)+axhpos2(2)*(43/60);
             end
             
             rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),max(t2)-min(t2),axhpos(2)*0.2],'FaceColor','w','EdgeColor','w', 'HitTest','off')
@@ -221,11 +216,13 @@ while temp444 == 1
         elseif j<length(ha)
             zdata = ccgR(:,:,allcel(i))';
             imagesc(flip(t),1:size(ccgR,3),(zdata'./max(zdata'))'), hold on
-            plot(-58*ones(size(prs2,1),1),prs2(:,2),'.w', 'HitTest','off', 'MarkerSize',12)
-            plot(-58*ones(size(prs2,1),1),prs2(:,1),'.k', 'HitTest','off', 'MarkerSize',12)
-            plot(-58*ones(size(prs2,1),1),[prs2(:,2),prs2(:,1)],'ok', 'HitTest','off')
+            axhpos3 = xlim;
+            plot(1.01*axhpos3(1)*ones(size(prs2,1),1),prs2(:,2),'.m', 'HitTest','off', 'MarkerSize',12)
+            plot(1.01*axhpos3(1)*ones(size(prs2,1),1),prs2(:,1),'.k', 'HitTest','off', 'MarkerSize',12)
+            xlim([1.02*axhpos3(1),axhpos3(2)])
             plot([0;0],[0;1]*size(zdata,1),'m', 'HitTest','off')
             xlabel('CCGs (black marker: reference cell)')
+            
         else
             bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0)
             if xLimit
@@ -238,24 +235,33 @@ while temp444 == 1
             uiwait(UI.fig);
         end
     end
-    
 end
 
 if ishandle(UI.fig)
     close(UI.fig)
 end
 
-if connectionsDisplayed == 1
-    mono_res.sig_con = keep_con;
-    mono_res.sig_con_excitatory = keep_con;
-else
-    mono_res.sig_con_inhibitory = keep_con;
-end
+saveOnExitDialog
 
-if ischar(mono_res_input)
-    disp('Saving mono_res file')
-    save(mono_res_input,'mono_res','-v7.3','-nocompression');
-end
+    function saveOnExitDialog
+        if connectionsDisplayed == 1
+            mono_res.sig_con = keep_con;
+            mono_res.sig_con_excitatory = keep_con;
+        else
+            mono_res.sig_con_inhibitory = keep_con;
+        end
+        if ischar(mono_res_input)
+            disp('Saving mono_res file')
+            answer = questdlg('Do you want to save the manual monosynaptic curration?', 'Save monosynaptic curration', 'Yes','No','Yes');
+            if strcmp(answer,'Yes')
+                try
+                    save(mono_res_input,'mono_res','-v7.3','-nocompression');
+                catch
+                    warndlg('Failed to save the mono_res file.')
+                end
+            end
+        end
+    end
 
     function subplotclick(obj,~) 
         % when an axes is clicked
@@ -310,7 +316,9 @@ end
         if i==length(allcel)
             answer = questdlg('All cells have been currated. Do you want to quit?', 'Monosyn curration complete', 'Yes','No','Yes');
             if strcmp(answer,'Yes')
-                close(UI.fig)
+                if ishandle(UI.fig)
+                    close(UI.fig)
+                end
             end
         else
             i = i+1;
@@ -420,7 +428,7 @@ end
             disp('Excitatory connections')
         elseif connectionsDisplayed == 1 && displayAllConnections.Value == 1
             keep_con = mono_res.sig_con_excitatory;
-            if isfield(mono_res,'sig_con_excitatory_all')
+            if ~isempty(mono_res.sig_con_excitatory_all)
                 sig_con = mono_res.sig_con_excitatory_all;
                 allcel = unique(mono_res.sig_con_excitatory_all(:));
             else
@@ -433,9 +441,9 @@ end
             keep_con = sig_con;
             allcel = unique(sig_con(:));
             disp('Inhibitory connections')
-        elseif connectionsDisplayed == 2 && displayAllConnections.Value == 1 && ~isempty(mono_res.sig_con_inhibitory_all)
+        elseif connectionsDisplayed == 2 && displayAllConnections.Value == 1 && ~isempty(mono_res.sig_con_inhibitory)
             keep_con = mono_res.sig_con_inhibitory;
-            if isfield(mono_res,'sig_con_excitatory_all')
+            if ~isempty(mono_res.sig_con_excitatory_all)
                 sig_con = mono_res.sig_con_inhibitory_all;
             else
                 sig_con = keep_con;

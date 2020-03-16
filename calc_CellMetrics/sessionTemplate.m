@@ -68,7 +68,7 @@ session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
 % Limited animal metadata (practical information)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if ~isfield(session,'animal')
-    session.animal.name = pathPieces{end-1}; % Animal name
+    session.animal.name = pathPieces{end-1}; % Animal name 
     session.animal.sex = 'Male'; % Male, Female, Unknown
     session.animal.species = 'Rat'; % Mouse, Rat, ... (http://buzsakilab.com/wp/species/)
     session.animal.strain = 'Long Evans'; % (http://buzsakilab.com/wp/strains/)
@@ -129,7 +129,7 @@ session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between
 
 if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'file')
     load(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']))
-%     sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
+    % sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
     if sessionInfo.spikeGroups.nGroups>0
         session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
         session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
