@@ -584,7 +584,7 @@ subfig_ax(9) = axes('Parent',UI.panel.subfig_ax9);
 % % % % % % % % % % % % % % % % % % %
 
 % Benchmark with display time in seconds for most recent plot call
-UI.benchmark = uicontrol('Style','text','Units','normalized','Position',[0.66 0 0.34 1],'String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3],'Parent',UI.panel.centerBottom);
+UI.benchmark = uicontrol('Style','text','Units','normalized','Position',[0.663 0 0.34 1],'String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3],'Parent',UI.panel.centerBottom);
 
 % Title with details about the selected cell and current session
 UI.title = uicontrol('Style','text','Units','normalized','Position',[0 0 1 1],'String',{'Cell details'},'HorizontalAlignment','center','FontSize',13,'Parent',UI.panel.centerTop);
@@ -674,7 +674,6 @@ UI.pushbutton.labels = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushb
 % % % % % % % % % % % % % % % % % % % %
 
 % Deep/Superficial
-
 UI.listbox.deepSuperficial = uicontrol('Parent',UI.tabs.deepsuperficial,'Style','listbox','Position',getpixelposition(UI.tabs.deepsuperficial),'Units','normalized','String',UI.settings.deepSuperficial,'max',1,'min',1,'Value',cell_metrics.deepSuperficial_num(ii),'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
 
 % Tags
@@ -791,25 +790,6 @@ UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Pos
 UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[0 20 148 54],'Units','normalized','String',{},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Enable','Off');
 UI.checkbox.groups = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 10 144 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Enable','Off','Value',1);
 UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 0 144 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress});
-
-% if Colorval == 1
-%     UI.table.Position = [0 0.003 1 0.48];
-%     UI.panel.group.Position = [0 0.487 1 0.23];
-%     UI.popupmenu.groups.Position = [0.01 0.1 144 0.12];
-%     UI.listbox.groups.Position = [3 80 144 54];
-%     UI.checkbox.groups.Position = [3 20 144 10];
-%     UI.checkbox.compare.Position = [3 10 144 10];
-%     UI.listbox.groups.Visible = 'Off';
-%     UI.checkbox.groups.Visible = 'Off';
-%     UI.checkbox.groups.Value = 0;
-% else
-%     UI.table.Position = [0 0.003 1 0.48];
-%     UI.panel.group.Position = [0 0.487 1 0.23];
-%     UI.popupmenu.groups.Position = [2 73 144 10];
-%     UI.listbox.groups = [3 20 144 54];
-%     UI.checkbox.groups = [3 10 144 10];
-%     UI.checkbox.compare = [3 0 144 10];
-% end
 
 % Creates summary figures and closes the UI
 if summaryFigures
@@ -9584,13 +9564,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
         if exist(MonoSynFile,'file')
-            f_LoadMonoSyn = waitbar(0,' ','name','Cell Explorer: loading MonoSyn file');
-            mono_res1 = load(MonoSynFile);
+            f_LoadMonoSyn = waitbar(0,'Loading MonoSyn file','name','Cell Explorer');
+            load(MonoSynFile,'mono_res');
             if ishandle(f_LoadMonoSyn)
                 waitbar(1,f_LoadMonoSyn,'Complete');
                 close(f_LoadMonoSyn)
             end
-            mono_res = gui_MonoSyn(mono_res1.mono_res,cell_metrics.UID(ii));
+            mono_res = gui_MonoSyn(mono_res,cell_metrics.UID(ii));
             % Saves output to the cell_metrics from the select session
             answer = questdlg('Do you want to save the manual monosynaptic curration?', 'Save monosynaptic curration', 'Yes','No','Yes');
             if strcmp(answer,'Yes')

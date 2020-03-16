@@ -45,10 +45,8 @@ end
 
 disp('gui_MonoSyn: Loading GUI')
 ccgR = mono_res.ccgR;
-Pred = mono_res.Pred;
 completeIndex = mono_res.completeIndex;
 binSize = mono_res.binSize;
-duration = mono_res.duration;
 xLimit = false;
 x_window = [-30 30];
 xLimState = 1;
@@ -84,7 +82,7 @@ keep_con = sig_con;
 allcel = unique(sig_con(:));
 window  =false(size(ccgR,1),1);
 window(ceil(length(window)/2) - round(.004/binSize): ceil(length(window)/2) + round(.004/binSize)) = true;
-halfBins = round(duration/binSize/2);
+halfBins = round(mono_res.duration/binSize/2);
 t = 1000*(-halfBins:halfBins)'*binSize;
 
 UI.fig = figure('KeyReleaseFcn', {@keyPress},'Name','MonoSynCon inspector','NumberTitle','off','renderer','opengl');
@@ -123,7 +121,7 @@ while temp444 == 1
     
     prs = sig_con(any(sig_con==allcel(i),2),:);
     [plotRows,~]= numSubplots(max(2+size(prs,1),4));
-    ha = tight_subplot(plotRows(1),plotRows(2),[.03 .03],[.05 .05],[.03 .03]);
+    ha = tight_subplot(plotRows(1),plotRows(2),[.02 .03],[.05 .05],[.02 .015]); %  tight_subplot(Nh, Nw, gap, marg_h, marg_w)
     
     prs2 = [];
     for j=1:length(ha)
@@ -135,7 +133,10 @@ while temp444 == 1
             
             prs1 = prs(j,:);
             if prs1(1)~=allcel(i)
+                dirArrow = [num2str(prs1(1)),' <- ', num2str(prs1(2))];
                 prs1 = fliplr(prs1);
+            else
+                dirArrow = [num2str(prs1(1)),' -> ', num2str(prs1(2))];
             end
             prs2(j,:) = prs1;
             exc=ccgR(:,prs1(1),prs1(2));
@@ -151,7 +152,7 @@ while temp444 == 1
             hold on;
             
             % Plot predicted values
-            plot(t,Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
+            plot(t,mono_res.Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
             
             %Plot upper and lower boundaries
             plot(t,mono_res.Bounds(:,prs1(1),prs1(2),1),'r--', 'HitTest','off','linewidth',1.5);
@@ -176,14 +177,14 @@ while temp444 == 1
             targ=completeIndex(completeIndex(:,3)==tcel,1:2);
             targ_UID=completeIndex(completeIndex(:,3)==tcel,3);
             if connectionsDisplayed == 2
-                ylim([0,2*quantile(Pred(:,prs1(1),prs1(2)),0.9)])
+                ylim([0,2*quantile(mono_res.Pred(:,prs1(1),prs1(2)),0.9)])
             end
             temp = ylim;
             if xLimit
                 idx = t > x_window(1) & t < x_window(2);
-                text(min(t(idx)) +.03*abs(min(t(idx))),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group '  num2str(targ(1)),', cluID: ',num2str(targ(2))])
+                text(min(t(idx)) +.03*abs(min(t(idx))),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group: '  num2str(targ(1)),' | ',dirArrow])
             else
-                text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group '  num2str(targ(1)),', cluID: ',num2str(targ(2))])
+                text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group: '  num2str(targ(1)),' | ',dirArrow])
             end
             
             %the bad ones are in pink

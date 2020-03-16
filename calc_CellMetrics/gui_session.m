@@ -2415,7 +2415,7 @@ uiwait(UI.fig)
             if isempty(session.channelTags.Bad.channels)
                 session.channelTags.Bad = rmfield(session.channelTags.Bad,'channels');
             end
-            if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'channels') && length(session.channelTags.Bad.channels) > 0
+            if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'channels') && ~isempty(session.channelTags.Bad.channels)
                 msgbox([num2str(length(session.channelTags.Bad.channels)),' bad channels detected (' num2str(session.channelTags.Bad.channels),')'])
             else
                 msgbox('No bad channels detected')

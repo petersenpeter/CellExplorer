@@ -27,8 +27,8 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     %%%     technique. Stark et al, 2009
     %%%
     %%%  calls: CCG, InInterval,FindInInterval (from FMA toolbox)
-    %%%         tight_subplot, mtit (from matlabcentral)
-    %%%         ce_cch_conv, bz_PlotMonoSyn
+    %%%         tight_subplot, gui_MonoSyn
+    %%%         ce_cch_conv
     %%%
     %%%  OUTPUT
     %%%  mono_res.alpha = p-value
@@ -76,7 +76,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     
     %set defaults
     binSize = .0004; %.4ms
-    duration = .12; %120ms
+    duration = .120; %120ms
     epoch = [0 inf]; %whole session
     cells = unique(spikeIDs(:,1:2),'rows');
     nCel = size(cells,1);
@@ -302,9 +302,9 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     
     % Creating output structure
     mono_res.ccgR = ccgR;
-    mono_res.Pval = Pval;
-    mono_res.prob = prob;
-    mono_res.prob_noncor = ccgR./permute(repmat(nn2,1,1,size(ccgR,1)),[3 1 2]);
+%     mono_res.Pval = Pval;
+%     mono_res.prob = prob;
+%     mono_res.prob_noncor = ccgR./permute(repmat(nn2,1,1,size(ccgR,1)),[3 1 2]);
     mono_res.n = n;
     mono_res.sig_con = sig_con; % FOR BACKWARDS COMPATIBILITY
     mono_res.sig_con_excitatory = sig_con;
