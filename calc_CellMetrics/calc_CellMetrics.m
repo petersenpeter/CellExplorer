@@ -16,9 +16,9 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   - Parameters defining the session to process - 
 %   basepath               - 1. Path to session (base directory)
 %   clusteringpath         - 2. Path to cluster data if different from basepath. basepath input required if different
-%   session                - 3. Database sessionName
-%   id                     - 4. Database numeric id
-%   sessionStruct          - 5. Session struct. Must contain a basepath and clusteringpath
+%   sessionName            - 3. Database sessionName
+%   sessionID              - 4. Database numeric id
+%   session                - 5. Session struct. Must contain a basepath and clusteringpath
 %
 %   - Parameters for the processing - parameters.*
 %   showGUI                - Show GUI dialog to adjust settings/parameters
@@ -47,6 +47,13 @@ function cell_metrics = calc_CellMetrics(varargin)
 %   summaryFigures         - logical. Plot summary figures
 %   debugMode              - logical. Activate a debug mode avoiding try/catch 
 %
+% - Example calls:
+% cell_metrics = calc_CellMetrics                             % Load from current path, assumed to be a basepath
+% cell_metrics = calc_CellMetrics('session',session)          % Load session from session struct
+% cell_metrics = calc_CellMetrics('basepath',basepath)        % Load from basepath
+% cell_metrics = calc_CellMetrics('sessionName','rec1')       % Load session from database session name
+% cell_metrics = calc_CellMetrics('sessionID',10985)          % Load session from database session id
+%
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %   OUTPUT
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -55,7 +62,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 
 %   By Peter Petersen
 %   petersen.peter@gmail.com
-%   Last edited: 30-01-2020
+%   Last edited: 16-03-2020
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -63,7 +70,7 @@ function cell_metrics = calc_CellMetrics(varargin)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 p = inputParser;
-addParameter(p,'id',[],@isnumeric);
+addParameter(p,'sessionID',[],@isnumeric);
 addParameter(p,'sessionName',[],@isstr);
 addParameter(p,'session',[],@isstruct);
 addParameter(p,'basepath',pwd,@isstr);
@@ -91,7 +98,7 @@ addParameter(p,'debugMode',false,@islogical);
 
 parse(p,varargin{:})
 
-id = p.Results.id;
+sessionID = p.Results.sessionID;
 sessionin = p.Results.sessionName;
 sessionStruct = p.Results.session;
 basepath = p.Results.basepath;
@@ -105,43 +112,38 @@ timerCalcMetrics = tic;
 % Loading session metadata from DB or sessionStruct
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-if ~isempty(id) || ~isempty(sessionin) || ~isempty(sessionStruct)
-    if ~isempty(id)
-        [session, basename, basepath, clusteringpath] = db_set_session('sessionId',id);
-    elseif ~isempty(sessionin)
-        [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionin);
-    elseif ~isempty(sessionStruct)
-        parameters.showGUI = true;
-        if isfield(sessionStruct.general,'basePath') && isfield(sessionStruct.general,'clusteringPath')
-            session = sessionStruct;
-            basename = session.general.name;
-            basepath = session.general.basePath;
-            clusteringpath = session.general.clusteringPath;
-        else
-            [session, basename, basepath, clusteringpath] = db_set_session('session',sessionStruct);
-            if isempty(session.general.entryID)
-                session.general.entryID = ''; % DB id
-            end
-            if isempty(session.spikeSorting{1}.entryID)
-                session.spikeSorting{1}.entryID = ''; % DB id
-            end
-        end
+if ~isempty(sessionID)
+    [session, basename, basepath, clusteringpath] = db_set_session('sessionId',sessionID);
+elseif ~isempty(sessionin)
+    [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionin);
+elseif ~isempty(sessionStruct)
+    if isfield(sessionStruct.general,'basePath') && isfield(sessionStruct.general,'clusteringPath')
+        session = sessionStruct;
+        basename = session.general.name;
+        basepath = session.general.basePath;
+        clusteringpath = session.general.clusteringPath;
     else
-        warning('Please provide a session struct or a session name/id to load a session from the DB')
+        [session, basename, basepath, clusteringpath] = db_set_session('session',sessionStruct);
+        if isempty(session.general.entryID)
+            session.general.entryID = ''; % DB id
+        end
+        if isempty(session.spikeSorting{1}.entryID)
+            session.spikeSorting{1}.entryID = ''; % DB id
+        end
     end
 end
 
-% If no session struct is provided it will look for a basename.session.mat file in the basepath and otherwise load the template and show the GUI gui_session
+% If no session struct is provided it will look for a basename.session.mat file in the basepath and otherwise load the sessionTemplate and show the GUI gui_session
 if ~exist('session','var')
     [~,basename,~] = fileparts(basepath);
-    if exist([basename,'.session.mat'],'file')
-        dispLog(['Loading ',basename,'.session.mat from current folder']);
-        load([basename,'.session.mat']);
+    if exist(fullfile(basepath,[basename,'.session.mat']),'file')
+        dispLog(['Loading ',basename,'.session.mat from basepath']);
+        load(fullfile(basepath,[basename,'.session.mat']),'session');
         session.general.basePath = basepath;
         clusteringpath = session.general.clusteringPath;
-    elseif exist(['session.mat'],'file')
-        dispLog(['Loading session.mat from current folder']);
-        load(['session.mat']);
+    elseif exist(fullfile(basepath,'session.mat'),'file')
+        dispLog('Loading session.mat from basepath');
+        load(fullfile(basepath,'session.mat'),'session');
         session.general.basePath = basepath;
         clusteringpath = session.general.clusteringPath;
     else

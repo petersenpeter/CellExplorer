@@ -6,6 +6,11 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % sessionIn  : session struct to load into the GUI
 % parameters : specific to the Cell Explorer. Allows you to adjust its parameters from the GUI
 %
+% - Example calls:
+% gui_session             % Tries to load session from current path, assumed to be a basepath. If no session struct exist, it will ask for user input
+% gui_session(session)    % Load gui from session struct
+% gui_session(basepath)   % Load from basepath
+%
 % OUTPUTS
 % session    : session struct
 % parameters : parameters struct
@@ -15,7 +20,7 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % By Peter Petersen 
 % petersen.peter@gmail.com
-% Last edited: 26-12-2019
+% Last edited: 16-03-2020
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
@@ -25,8 +30,9 @@ sessionTypesList = {'Chronic', 'Acute'}; % session types
 
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics','importCellTypeClassification'};
+
 % Parameters in cell metrics pipeline
-UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn'};
+UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections'};
 
 if exist('db_load_settings') == 2
     db_settings = db_load_settings;
@@ -39,26 +45,26 @@ else
     enableDatabase = 0;
 end
 uiLoaded = false;
+
 % % % % % % % % % % % % % % % % % % % %
 % Handling inputs
 % % % % % % % % % % % % % % % % % % % %
 
-if exist('sessionIn') && isstruct(sessionIn)
+if exist('sessionIn','var') && isstruct(sessionIn)
     session = sessionIn;
     if isfield(session.general,'basePath')
         basepath = session.general.basePath;
     else
         basepath = '';
     end
-%     clusteringpath = session.general.clusteringPath;
     if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') & ~isempty(session.spikeSorting{1}.relativePath)
         clusteringpath = session.spikeSorting{1}.relativePath;
     else
         clusteringpath = '';
     end
-elseif exist('sessionIn') & ischar(sessionIn)
+elseif exist('sessionIn','file') && ischar(sessionIn)
     disp(['Loading ' sessionIn]);
-    load(sessionIn);
+    load(sessionIn,'session');
     [filepath,~,~] = fileparts(sessionIn);
     basepath = filepath;
     sessionIn = session;
@@ -70,23 +76,20 @@ elseif exist('sessionIn') & ischar(sessionIn)
 else
     basepath = pwd;
     [~,basename,~] = fileparts(pwd);
-    if exist([basename,'.session.mat'],'file')
+    if exist(fullfile(basepath,[basename,'.session.mat']),'file')
         disp(['Loading ',basename,'.session.mat from current path']);
         
-        load([basename,'.session.mat']);
+        load(fullfile(basepath,[basename,'.session.mat']),'session');
         sessionIn = session;
-        basepath = pwd;
         if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') && ~isempty(session.spikeSorting{1}.relativePath)
             clusteringpath = session.spikeSorting{1}.relativePath;
         else
             clusteringpath = '';
         end
-    elseif exist(['session.mat'],'file')
-        disp(['Loading session.mat from current path']);
-        
-        load(['session.mat']);
+    elseif exist(fullfile(basepath,'session.mat'),'file')
+        disp('Loading session.mat from current path');
+        load(fullfile(basepath,'session.mat'),'session');
         sessionIn = session;
-        basepath = pwd;
         if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') && ~isempty(session.spikeSorting{1}.relativePath)
             clusteringpath = session.spikeSorting{1}.relativePath;
         else
@@ -109,7 +112,7 @@ else
                 [file,basepath] = uigetfile('*.mat','Please select a session.mat file','*.session.mat');
                 if ~isequal(file,0)
                     cd(basepath)
-                    temp = load(file);
+                    temp = load(file,'session');
                     sessionIn = temp.session;
                     session = sessionIn;
                     if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') & ~isempty(session.spikeSorting{1}.relativePath)
@@ -204,7 +207,7 @@ UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[100,
 UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[190, 5, 80, 28],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized','Interruptible','off');
 UI.button.uploadToDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[280, 5, 100, 28],'String','Upload to DB','Callback',@(src,evnt)buttonUploadToDB,'Units','normalized','Interruptible','off');
 UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[390, 5, 110, 28],'String','Download from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized','Interruptible','off');
-UI.status = uicontrol('Parent',UI.fig,'Style','text','Position',[510, 10, 100, 20],'String','Status: OK','Units','normalized','HorizontalAlignment','center', 'fontweight', 'bold');
+UI.status = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[510, 5, 100, 28],'String','Status: OK','Units','normalized','HorizontalAlignment','center', 'fontweight', 'bold','ForegroundColor','k','enable','on','hittest','off');
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell metrics parameters
@@ -2366,6 +2369,9 @@ uiwait(UI.fig)
             
             session = import_xml2session(xml_filepath,session);
             updateChannelGroupsList
+            UI.edit.sr = session.extracellular.sr; % Sampling rate of dat file
+            UI.edit.srLfp = session.extracellular.srLfp; % Sampling rate of lfp file
+            UI.edit.nChannels = session.extracellular.nChannels; % Number of channels
             UI.status.BackgroundColor = [0.3,0.7,0.3];
             UI.status.String = 'XML imported';
         else
@@ -2409,7 +2415,7 @@ uiwait(UI.fig)
             if isempty(session.channelTags.Bad.channels)
                 session.channelTags.Bad = rmfield(session.channelTags.Bad,'channels');
             end
-            if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'channels') && length(session.channelTags.Bad.channels) > 0
+            if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'channels') && ~isempty(session.channelTags.Bad.channels)
                 msgbox([num2str(length(session.channelTags.Bad.channels)),' bad channels detected (' num2str(session.channelTags.Bad.channels),')'])
             else
                 msgbox('No bad channels detected')

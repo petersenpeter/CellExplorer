@@ -3,7 +3,7 @@ function session = import_xml2session(xml_file,session)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 24-01-2020
+% Last edited: 16-03-2020
 
 if nargin<2
     session = [];
@@ -26,4 +26,9 @@ session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}
 % Changing index from 0 to 1:
 session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0);
 session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
+
+% Importing channel counts and sampling rates
+session.extracellular.sr = sessionInfo.SampleRate; % Sampling rate of dat file
+session.extracellular.srLfp = sessionInfo.lfpSampleRate; % Sampling rate of lfp file
+session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
 end
