@@ -20,7 +20,7 @@ __Rejection criteria__
 3. A broad centrally aligned CCG peak indicates common drive and the connection should potentially be rejected. Common drive can also be temporally shifted if the cells are located far from each other. This is often seen when comparing two cells located at different shanks (hundreds of µm apart). Common drive can easily occur together with monosynaptic connections and the two can be difficult to differentiate.
 
 ## Using the graphical interface for curating monosynaptic connections
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/MonoSyn2.png)
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/MonoSyn3.png)
 
 1. Launch the monoSyn GUI providing the path to your data:
 ```m
