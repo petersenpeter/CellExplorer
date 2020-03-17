@@ -1,12 +1,16 @@
 function session = sessionTemplate(input1,varargin)
-% This script can be used to create a session struct (e.g. metadata for the Cell Explorer)
+% This script can be used to create a session struct (metadata structure for the Cell Explorer)
 % Load parameters from a Neurosuite xml file and buzcode sessionInfo file and any other parameters specified in this script.
 % This script must be called from the basepath of your dataset, or be provided with a basepath as input
 % Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
+%
+% - Example calls:
+% session = sessionTemplate(session)    % Load session from session struct
+% session = sessionTemplate(basepath)   % Load from basepath
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 11-3-2020
+% Last edited: 16-3-2020
 
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
