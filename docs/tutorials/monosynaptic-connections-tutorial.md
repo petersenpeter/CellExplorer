@@ -22,14 +22,6 @@ __Rejection criteria__
 ## Using the graphical interface for curating monosynaptic connections
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/MonoSyn3.png)
 
-<style>
- img:hover + .big {
-  background-image: url('https://buzsakilab.com/wp/wp-content/uploads/2020/03/MonoSyn3.png');
-  max-width: 1000px;
- }
-</style>
-<div class="big"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/MonoSyn3.png"></div>
-
 1. Launch the monoSyn GUI providing the path to your data:
 ```m
 gui_MonoSyn('path_to_data')
