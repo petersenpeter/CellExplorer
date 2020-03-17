@@ -976,7 +976,7 @@ while ii <= cell_metrics.general.cellCount
     if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory') && ~isempty(cell_metrics.putativeConnections.inhibitory)
         putativeSubset_inh = find(all(ismember(cell_metrics.putativeConnections.inhibitory,UI.params.subset)'));
     else
-        putativeSubset_inh=[];
+        putativeSubset_inh = [];
     end
     
     % Inhibitory connections
@@ -1402,9 +1402,9 @@ while ii <= cell_metrics.general.cellCount
                 G = findgroups(plotClas(UI.params.subset));
                 if ~isempty(UI.params.subset(G==1)) && length(UI.params.subset(G==2))>0
                     [h,p] = kstest2(plotX(UI.params.subset(G==1)),plotX(UI.params.subset(G==2)));
-                    text(0.97,0.02,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Rotation',90,'Interpreter', 'none','Interpreter', 'none','HitTest','off')
+                    text(0.97,0.02,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Rotation',90,'Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',1)
                     [h,p] = kstest2(plotY(UI.params.subset(G==1)),plotY(UI.params.subset(G==2)));
-                    text(0.02,0.97,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Interpreter', 'none','Interpreter', 'none','HitTest','off')
+                    text(0.02,0.97,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',1)
                 end
             end
             [az,el] = view;
@@ -2109,7 +2109,19 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 plot(subsetPlots.xaxis(idx), subsetPlots.yaxis(idx),'xw', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
                 plot(subsetPlots.xaxis(idx), subsetPlots.yaxis(idx),'xk', 'LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
             end
-
+            
+            % Plots putative connections
+            if ~isempty(putativeSubset) && UI.settings.plotExcitatoryConnections && ismember(UI.monoSyn.disp,{'Selected','Upstream','Downstream','Up & downstream'}) && ~isempty(UI.params.connections)
+                C = ismember(subsetPlots.subset,UI.params.connections);
+                plot(subsetPlots.xaxis(C),subsetPlots.yaxis(C),'ok','HitTest','off')
+            end
+            
+            % Plots putative inhibitory connections
+            if  ~isempty(putativeSubset_inh) && UI.settings.plotInhibitoryConnections && ismember(UI.monoSyn.disp,{'Selected','Upstream','Downstream','Up & downstream'}) && ~isempty(UI.params.connections_inh)
+                C = ismember(subsetPlots.subset,UI.params.connections_inh);
+                plot(subsetPlots.xaxis(C),subsetPlots.yaxis(C),'ok','HitTest','off')
+            end
+            
         elseif strcmp(customPlotSelection,'CCGs (image)')
             
             % CCGs for selected cell with other cell pairs from the same session. The ACG for the selected cell is shown first
@@ -2556,7 +2568,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         if isfield(general.responseCurves.(responseCurvesName),'boundaries_labels')
                             boundaries_labels = general.responseCurves.(responseCurvesName).boundaries_labels;
                             if length(boundaries_labels) == length(boundaries)
-                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none');
+                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',1);
                             end
                         end
                     end
@@ -2607,7 +2619,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         if isfield(general.responseCurves.(responseCurvesName),'boundaries_labels')
                             boundaries_labels = general.responseCurves.(responseCurvesName).boundaries_labels;
                             if length(boundaries_labels) == length(boundaries)
-                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none', 'Color', 'w');
+                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none', 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                             end
                         end
                     end
@@ -2651,7 +2663,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         if isfield(general.responseCurves.(responseCurvesName),'boundaries_labels')
                             boundaries_labels = general.responseCurves.(responseCurvesName).boundaries_labels;
                             if length(boundaries_labels) == length(boundaries)
-                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none', 'Color', 'k');
+                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none', 'Color', 'k','BackgroundColor',[1 1 1 0.7],'margin',1);
                             end
                         end
                     end
@@ -2916,7 +2928,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     plot([1;1] * boundaries, [ax6(3) ax6(4)],'--','color','k', 'HitTest','off');
                     if isfield(general.(customPlotSelection),'boundaries_labels')
                         boundaries_labels = general.(customPlotSelection).boundaries_labels;
-                        text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none');
+                        text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                 end
                 
@@ -5538,7 +5550,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 [~,idx] = min(distance);
                 iii = UI.params.subset(idx);
                 if highlight == 1
-                text(plotX(iii),plotY(iii),plotZ(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                text(plotX(iii),plotY(iii),plotZ(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
             else
                 return
             end
@@ -5562,7 +5574,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             iii = UI.params.subset(idx);
             if highlight
-                text(plotX(iii),plotY(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                text(plotX(iii),plotY(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
             end
             
         elseif axnum == 1 && UI.settings.customPlotHistograms == 4
@@ -5577,7 +5589,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             iii = UI.params.subset(idx);
             if highlight
-                text(plotX(iii),plotY1(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                text(plotX(iii),plotY1(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
             end
             
         elseif axnum == 2
@@ -5587,14 +5599,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             iii = UI.params.subset(idx);
             
             if highlight
-                text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
             end
             
         elseif axnum == 3
             [~,idx] = min(hypot(tSNE_metrics.plot(UI.params.subset,1)-u,tSNE_metrics.plot(UI.params.subset,2)-v));
             iii = UI.params.subset(idx);
             if highlight
-                text(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                text(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
             end
             
         elseif any(axnum == [4,5,6,7,8,9])
@@ -5624,14 +5636,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     [~,idx] = min(hypot(tSNE_metrics.filtWaveform(UI.params.subset,1)-u,tSNE_metrics.filtWaveform(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight
-                        text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'Raw waveforms (tSNE)'
                     [~,idx] = min(hypot(tSNE_metrics.rawWaveform(UI.params.subset,1)-u,tSNE_metrics.rawWaveform(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight
-                        text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'Waveforms (single)'
@@ -5652,7 +5664,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     [~,time_index] = min(abs(time_waveforms_zscored-u));
                     if highlight
                         plot(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off')
-                        text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'Raw waveforms (all)'
@@ -5667,7 +5679,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     [~,time_index] = min(abs(time_waveforms_zscored-u));
                     if highlight
                         plot(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off')
-                        text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'Waveforms (image)'
@@ -5676,7 +5688,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         iii = UI.params.subset(troughToPeakSorted(round(v)));
                         if highlight
                             plot([time_waveforms_zscored(1),time_waveforms_zscored(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
+                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
                         end
                     end
                 case'Waveforms (all channels)'
@@ -5703,35 +5715,35 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     [~,idx] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
                     iii = UI.params.subset(idx);
                     if highlight
-                        text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'tSNE of narrow ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_narrow(UI.params.subset,1)-u,tSNE_metrics.acg_narrow(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight
-                        text(tSNE_metrics.acg_narrow(iii,1),tSNE_metrics.acg_narrow(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(tSNE_metrics.acg_narrow(iii,1),tSNE_metrics.acg_narrow(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'tSNE of wide ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_wide(UI.params.subset,1)-u,tSNE_metrics.acg_wide(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight
-                        text(tSNE_metrics.acg_wide(iii,1),tSNE_metrics.acg_wide(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(tSNE_metrics.acg_wide(iii,1),tSNE_metrics.acg_wide(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'tSNE of log ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_log10(UI.params.subset,1)-u,tSNE_metrics.acg_log10(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight
-                        text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'tSNE of log ISIs'
                     [~,idx] = min(hypot(tSNE_metrics.isi_log10(UI.params.subset,1)-u,tSNE_metrics.isi_log10(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight
-                        text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'CCGs (image)'
@@ -5753,7 +5765,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                                     Xdata = [-100,100]/2;
                                 end
                                 plot(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
-                                text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
+                                text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
                             end
                         end
                     end
@@ -5785,12 +5797,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             elseif strcmp(UI.settings.acgType,'Narrow')
                                 Xdata = [-30,30]/2;
                             elseif strcmp(UI.settings.acgType,'Log10')
-                                Xdata = general.acgs.log10([1,end]);
+                                Xdata = log10(general.acgs.log10([1,end]));
                             else
                                 Xdata = [-500,500];
                             end
                             plot(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
+                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
                         end
                     end
                     
@@ -5825,7 +5837,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     if highlight
                         [~,time_index] = min(abs(x2-u));
                         plot(x2(:),y1(:,In),'linewidth',2, 'HitTest','off')
-                        text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'ISIs (single)'
@@ -5859,7 +5871,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     if highlight
                         [~,time_index] = min(abs(x2-u));
                         plot(x2(:),y1(:,In),'linewidth',2, 'HitTest','off')
-                        text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'ISIs (image)'
@@ -5867,9 +5879,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
                         iii = UI.params.subset(burstIndexSorted(round(v)));
                         if highlight
-                            Xdata = general.isis.log10([1,end]);
+                            Xdata = log10(general.isis.log10([1,end]));
                             plot(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
+                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
                         end
                     end
                     
@@ -5884,7 +5896,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     [~,time_index] = min(abs(UI.x_bins.thetaPhase-u));
                     if highlight
                         plot(UI.x_bins.thetaPhase,y1(:,In),'linewidth',2, 'HitTest','off')
-                        text(UI.x_bins.thetaPhase(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(UI.x_bins.thetaPhase(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'RCs_firingRateAcrossTime (all)'
@@ -5899,7 +5911,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     [~,time_index] = min(abs(subsetPlots.xaxis-u));
                     if highlight
                         plot(subsetPlots.xaxis,y1(:,In),'linewidth',2, 'HitTest','off')
-                        text(subsetPlots.xaxis(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(subsetPlots.xaxis(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 case 'RCs_thetaPhase (image)'
@@ -5908,7 +5920,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         iii = UI.params.subset(troughToPeakSorted(round(v)));
                         if highlight
                             plot([UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
+                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
                         end
                     end
                     
@@ -5925,7 +5937,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         if highlight
                             Xdata = general.responseCurves.firingRateAcrossTime.x_edges([1,end]);
                             plot(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w')
+                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
                         end
                     end
                     
@@ -5933,27 +5945,25 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     [~,idx] = min(hypot(subsetPlots.xaxis-u,subsetPlots.yaxis-v));
                     iii = subsetPlots.subset(idx);
                     if highlight
-                        text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                        text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                     
                 otherwise
-                    if any(strcmp(UI.monoSyn.disp,{'All','Selected','Upstream','Downstream','Up & downstream'})) & ~isempty(subsetPlots)
-                        if ~isempty(UI.params.outbound) || ~isempty(UI.params.inbound)
+                    if any(strcmp(UI.monoSyn.disp,{'All','Selected','Upstream','Downstream','Up & downstream'})) && ~isempty(subsetPlots) && ~isempty(subsetPlots.subset)
                             subset1 = subsetPlots.subset;
                             x1 = subsetPlots.xaxis(:)*ones(1,length(subset1));
                             y1 = subsetPlots.yaxis;
-                            
-                            [~,In] = min(hypot(x1(:)-u,y1(:)-v));
-                            In = unique(floor(In/size(x1,1)))+1;
+                            x_scale = range(subsetPlots.xaxis(:));
+                            y_scale = range(y1(:));
+                            [~,time_index] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
+                            In = unique(floor(time_index/length(subsetPlots.xaxis)))+1;
                             if In>0
                                 iii = subset1(In);
                                 if highlight
-                                    [~,time_index] = min(abs(x1-u));
                                     plot(x1(:,1),y1(:,In),'linewidth',2, 'HitTest','off')
-                                    text(x1(time_index,1),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14)
+                                    text(x1(time_index),y1(time_index),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                                 end
                             end
-                        end
                     end
             end
         end
@@ -9601,7 +9611,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     
                     % Saving new metrics
                     if ishandle(f_LoadMonoSyn)
-                        waitbar(0.7,f_LoadMonoSyn,['Saving cells to cell_metrics file']);
+                        waitbar(0.7,f_LoadMonoSyn,'Saving cells to cell_metrics file');
                     end
                     cell_session = load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
                     cell_session.cell_metrics.putativeConnections.excitatory = mono_res.sig_con_excitatory; % Vectors with cell pairs

@@ -121,16 +121,15 @@ while temp444 == 1
     
     prs = sig_con(any(sig_con==allcel(i),2),:);
     [plotRows,~]= numSubplots(max(2+size(prs,1),4));
-    ha = tight_subplot(plotRows(1),plotRows(2),[.02 .03],[.05 .05],[.02 .015]); %  tight_subplot(Nh, Nw, gap, marg_h, marg_w)
+    ha = tight_subplot(plotRows(1),plotRows(2),[.03 .03],[.05 .05],[.02 .015]); %  tight_subplot(Nh, Nw, gap, marg_h, marg_w)
     
     prs2 = [];
     for j=1:length(ha)
-        axes(ha(j))
+        axes(ha(j));
         targ=completeIndex(completeIndex(:,3) == allcel(i),1:2);
         targ_UID=completeIndex(completeIndex(:,3) == allcel(i),3);
-        plotTitle.String = ['Reference Cell: ' num2str(targ_UID) ', spike group: '  num2str(targ(1)),', cluID: ',num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'];
+        plotTitle.String = ['Reference Cell: ' num2str(targ_UID) ', group: '  num2str(targ(1)),', cluID: ',num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'];
         if j<=size(prs,1)
-            
             prs1 = prs(j,:);
             if prs1(1)~=allcel(i)
                 dirArrow = [num2str(prs1(1)),' <- ', num2str(prs1(2))];
@@ -147,12 +146,11 @@ while temp444 == 1
             inh(inh>mono_res.Bounds(:,prs1(1),prs1(2),2)|~window)=0;
             inh(ceil(length(inh)/2)) = 0;
             
-            
-            bar_from_patch(t,ccgR(:,prs1(1),prs1(2)),'b',0)
+            bar_from_patch(t,ccgR(:,prs1(1),prs1(2)),[0. 0. 0.8],0)
             hold on;
             
             % Plot predicted values
-            plot(t,mono_res.Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
+%             plot(t,mono_res.Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
             
             %Plot upper and lower boundaries
             plot(t,mono_res.Bounds(:,prs1(1),prs1(2),1),'r--', 'HitTest','off','linewidth',1.5);
@@ -160,15 +158,16 @@ while temp444 == 1
             
             % Plot signif increased bins in red
             if connectionsDisplayed == 1
-                bar_from_patch(t,exc,'r',0)
+                bar_from_patch(t,exc,[0.8 0. 0.],0)
             end
             
             % Plot signif lower bins in blue
             if connectionsDisplayed == 2
-                bar_from_patch(t,inh,'c',0)
+                bar_from_patch(t,inh,[0. 0.8 0.8],0)
             end
             if xLimit
                 xlim(x_window)
+                idx = t > x_window(1) & t < x_window(2);
             else
                 xlim([min(t) max(t)]);
             end
@@ -180,19 +179,13 @@ while temp444 == 1
                 ylim([0,2*quantile(mono_res.Pred(:,prs1(1),prs1(2)),0.9)])
             end
             temp = ylim;
-            if xLimit
-                idx = t > x_window(1) & t < x_window(2);
-                text(min(t(idx)) +.03*abs(min(t(idx))),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group: '  num2str(targ(1)),' | ',dirArrow])
-            else
-                text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', spike group: '  num2str(targ(1)),' | ',dirArrow])
-            end
             
-            %the bad ones are in pink
+            % the bad ones are shown in pink
             if  ~ismember(prs(j,:),keep_con,'rows')
                 set(ha(j),'Color',[1 .75 .75])
             end
             
-            set(gca,'UserData',j,'ButtonDownFcn',@subplotclick);
+            set(ha(j),'UserData',j,'ButtonDownFcn',@subplotclick);
             
             % Plot an inset with the ACG
             axhpos = ylim;
@@ -212,6 +205,11 @@ while temp444 == 1
             rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),(max(t2)-min(t2))+mean(diff(t2)),axhpos(2)*0.2], 'HitTest','off')
             upL = get(gca,'ylim');
             plot([0 0],[0 upL(2)],'k', 'HitTest','off')
+            if xLimit
+                text(min(t(idx)) +.03*abs(min(t(idx))),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', group: '  num2str(targ(1)),' | ',dirArrow])
+            else
+                text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', group: '  num2str(targ(1)),' | ',dirArrow])
+            end
         elseif j<length(ha)-1
             axis off
         elseif j<length(ha)
@@ -223,7 +221,6 @@ while temp444 == 1
             xlim([1.02*axhpos3(1),axhpos3(2)])
             plot([0;0],[0;1]*size(zdata,1),'m', 'HitTest','off')
             xlabel('CCGs (black marker: reference cell)')
-            
         else
             bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0)
             if xLimit
@@ -231,8 +228,7 @@ while temp444 == 1
             else
                 xlim([min(t) max(t)]);
             end
-            xlabel('Reference Cell ACG');        
-            
+            xlabel('Reference Cell ACG');
             uiwait(UI.fig);
         end
     end

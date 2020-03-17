@@ -62,7 +62,7 @@ end
 if nargs < 3 || isempty( WINTYPE ), WINTYPE = 'gaussian'; end
 WINTYPE = lower( WINTYPE );
 
-if nargs < 4 || isempty( HF ),
+if nargs < 4 || isempty( HF )
     switch WINTYPE
         case { 'gauss', 'gaussian' }, HF = 0.6;
         case 'rect', HF = 0.42;
@@ -74,7 +74,7 @@ else
     end    
 end
 
-if nargs < 5 || isempty( CALCP ),
+if nargs < 5 || isempty( CALCP )
     CALCP = 1;
 end
 
