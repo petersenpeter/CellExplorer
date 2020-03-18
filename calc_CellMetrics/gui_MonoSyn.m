@@ -362,6 +362,8 @@ saveOnExitDialog
                 HelpDialog;
             case 'x'
                 changeXlim
+            case 'w'
+                 web('https://petersenpeter.github.io/Cell-Explorer/tutorials/monosynaptic-connections-tutorial/','-new','-browser')
         end
     end
     function changeXlim
@@ -500,7 +502,7 @@ end
 
 function HelpDialog(~,~)
     opts.Interpreter = 'tex'; opts.WindowStyle = 'normal';
-    msgbox({'\bfNavigation\rm','right-arrow : Next cell', 'left arrow : Previous cell','up-arrow : 10 cells forward','down-arrow : 10 cells backward',...
+    msgbox({'\bfMouse interaction\rm','Left click on CCG subplots: accep/reject connection (turns red)','Right click on CCG subplots: switch to select cell','','\bfNavigation\rm','right-arrow : Next cell', 'left arrow : Previous cell','up-arrow : 10 cells forward','down-arrow : 10 cells backward',...
         'space : Go to a specific cell','Numpad0 : Go to first cell','','\bfConnection assigment\rm', '1-9 : Toggle cell with that subplot number', ...
-        'Numpad1-9 : Toggle cell with that subplot number','','\bfVisualization\rm','x : change x-limits (60, 30 or 15 ms)','','\bfVisit the Cell Explorer''s website for further help\rm',''},'Keyboard shortcuts','help',opts);
+        'Numpad1-9 : Toggle cell with that subplot number','','\bfVisualization\rm','x : change x-limits (60, 30 or 15 ms)','','\bfw: Visit the Cell Explorer''s website for further help\rm',''},'Help','help',opts);
 end
