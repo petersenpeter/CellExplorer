@@ -1504,9 +1504,9 @@ while ii <= cell_metrics.general.cellCount
         end
         
         if UI.settings.logMarkerSize == 1
-            markerSize = 10+ceil(rescale_vector(log10(plotMarkerSize(UI.params.subset)))*80);
+            markerSize = 10+ceil(rescale_vector(log10(plotMarkerSize(UI.params.subset)))*80*UI.settings.markerSize/15);
         else
-            markerSize = 10+ceil(rescale_vector(plotMarkerSize(UI.params.subset))*80);
+            markerSize = 10+ceil(rescale_vector(plotMarkerSize(UI.params.subset))*80*UI.settings.markerSize/15);
         end
         [~, ~,ic] = unique(plotClas(UI.params.subset));
 
@@ -1626,7 +1626,7 @@ while ii <= cell_metrics.general.cellCount
                     else
                         drops_idx{m} = UI.params.subset(idx((~isnan(plotX(temp1)) & plotX(temp1) > 0 & ~isinf(plotX(temp1)))));
                     end
-                    drops_y_pos{m} = ce_raincloud_plot(plotX(temp1),'randomNumbers',UI.params.randomNumbers(temp1),'box_on',1,'box_dodge',1,'line_width',1,'color',clr(m,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',clr(m,:),'box_col_match',1,'log_axis',UI.checkbox.logx.Value);
+                    drops_y_pos{m} = ce_raincloud_plot(plotX(temp1),'randomNumbers',UI.params.randomNumbers(temp1),'box_on',1,'box_dodge',1,'line_width',1,'color',clr(m,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',clr(m,:),'box_col_match',1,'log_axis',UI.checkbox.logx.Value,'markerSize',UI.settings.markerSize);
                     counter = counter + 1;
                 end
             end
@@ -3139,12 +3139,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     if ~isempty(UI.params.inbound)
                         xdata = [plotX1(UI.params.incoming);plotX1(UI.params.a2(UI.params.inbound));nan(1,length(UI.params.a2(UI.params.inbound)))];
                         ydata = [plotY1(UI.params.incoming);plotY1(UI.params.a2(UI.params.inbound));nan(1,length(UI.params.a2(UI.params.inbound)))];
-                        plot(xdata,ydata,'-ob','HitTest','off')
+                        plot(xdata,ydata,'-b','HitTest','off')
                     end
                     if ~isempty(UI.params.outbound)
                         xdata = [plotX1(UI.params.a1(UI.params.outbound));plotX1(UI.params.outgoing);nan(1,length(UI.params.outgoing))];
                         ydata = [plotY1(UI.params.a1(UI.params.outbound));plotY1(UI.params.outgoing);nan(1,length(UI.params.outgoing))];
-                        plot(xdata(:),ydata(:),'-om','HitTest','off')
+                        plot(xdata(:),ydata(:),'-m','HitTest','off')
                     end
             end
         end

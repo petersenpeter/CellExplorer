@@ -68,6 +68,7 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     addOptional(p, 'cloud_edge_col', [0 0 0], @isnumeric)
     addOptional(p, 'log_axis', 0, @isnumeric)
     addOptional(p, 'randomNumbers', [], @isnumeric)
+    addOptional(p, 'markerSize', 14, @isnumeric)
     
     % parse the input
     parse(p,X,varargin{:});
@@ -90,6 +91,7 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     band_width          = p.Results.band_width;
     log_axis            = p.Results.log_axis;
     randomNumbers       = p.Results.randomNumbers;
+    markerSize          = p.Results.markerSize;
     
     % calculate kernel density
     X = X(~isnan(X) & ~isinf(X));
@@ -149,7 +151,7 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     else
         drops_pos = jit - yl(2) / 2;
     end
-    h{2} = scatter(X, drops_pos,'HitTest','off','SizeData',14,'MarkerFaceColor',color,'MarkerEdgeColor','none');
+    h{2} = scatter(X, drops_pos,'HitTest','off','SizeData',markerSize,'MarkerFaceColor',color,'MarkerEdgeColor','none');
     
     if box_on
         if box_col_match

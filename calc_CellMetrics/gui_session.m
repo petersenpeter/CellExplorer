@@ -266,15 +266,15 @@ uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Experimenters', '
 UI.edit.experimenters = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 275, 310, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Investigator', 'Position', [10, 253, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.investigator = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 230, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.investigator = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 230, 140, 25],'HorizontalAlignment','left','Units','normalized');
 UI.edit.investigatorDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[160, 230, 130, 25],'String','View db investigator','Callback',@openInWebDB,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Projects', 'Position', [300, 253, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.projects = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 230, 160, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.projects = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 230, 160, 25],'HorizontalAlignment','left','Units','normalized');
 UI.edit.projectsDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[470, 230, 140, 25],'String','View db projects','Callback',@openInWebDB,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Repositories', 'Position', [10, 203, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.repositories = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 180, 140, 25],'HorizontalAlignment','left','Units','normalized','enable','off');
+UI.edit.repositories = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 180, 140, 25],'HorizontalAlignment','left','Units','normalized');
 UI.edit.repositoryDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[160, 180, 130, 25],'String','View db repository','Callback',@openInWebDB,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'DB entry ID', 'Position', [300, 203, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
@@ -283,6 +283,7 @@ UI.edit.sessionDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 600, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 600, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
+
 
 % % % % % % % % % % % % % % % % % % % % %
 % Epochs
@@ -452,7 +453,6 @@ uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 10,
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 10, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized');
 % uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[340, 10, 110, 30],'String','Duplicate tag','Callback',@(src,evnt)duplicateAnalysis,'Units','normalized');
 
-
 loadSessionStruct
 UI.fig.Visible = 'on';
 uiLoaded = true;
@@ -582,12 +582,12 @@ uiwait(UI.fig)
             UI.edit.sessionDBbutton.Enable = 'on';
             UI.edit.projectsDBbutton.Enable = 'on';
             UI.edit.investigatorDBbutton.Enable = 'on';
-            UI.edit.repositoriesDBbutton.Enable = 'on';
+            UI.edit.repositoryDBbutton.Enable = 'on';
         else
             UI.edit.sessionDBbutton.Enable = 'off';
             UI.edit.projectsDBbutton.Enable = 'off';
             UI.edit.investigatorDBbutton.Enable = 'off';
-            UI.edit.repositoriesDBbutton.Enable = 'off';
+            UI.edit.repositoryDBbutton.Enable = 'off';
         end
         
         if isfield(session.general,'sessionType') && ~isempty(session.general.sessionType)
@@ -790,13 +790,17 @@ uiwait(UI.fig)
         session.general.experimenters = UI.edit.experimenters.String;
         session.general.notes = UI.edit.notes.String;
         session.general.sessionType = sessionTypesList{UI.edit.sessionType.Value};
+        if ~isfield(session.general,'entryID') || isempty(session.general.entryID)
+            session.general.investigator = UI.edit.investigator.String;
+            session.general.repositories = UI.edit.repositories.String;
+            session.general.projects = UI.edit.projects.String;
+        end
         
         session.animal.name = UI.edit.name.String;
         session.animal.sex = UI.edit.sex.String{UI.edit.sex.Value};
         session.animal.species = UI.edit.species.String;
         session.animal.strain = UI.edit.strain.String;
         session.animal.geneticLine = UI.edit.geneticLine.String;
-        
         % Extracellular
         if ~strcmp(UI.edit.leastSignificantBit.String,'')
             session.extracellular.leastSignificantBit = str2double(UI.edit.leastSignificantBit.String);
