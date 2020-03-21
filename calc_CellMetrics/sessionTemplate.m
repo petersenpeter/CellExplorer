@@ -10,7 +10,7 @@ function session = sessionTemplate(input1,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 16-3-2020
+% Last edited: 21-3-2020
 
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
@@ -85,8 +85,12 @@ end
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'leastSignificantBit')) || isempty(session.extracellular.leastSignificantBit)) 
     session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
 end
-session.extracellular.probeDepths = 0;
-session.extracellular.precision = 'int16';
+if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'probeDepths')) || isempty(session.extracellular.probeDepths)) 
+    session.extracellular.probeDepths = 0;
+end
+if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'precision')) || isempty(session.extracellular.precision)) 
+    session.extracellular.precision = 'int16';
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
@@ -119,18 +123,17 @@ end
 % session.channelTags.Bad.channels = 1; % Bad channels
 % session.channelTags.Bad.electrodeGroups = 1; % Bad spike groups (broken shanks)
 
-
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Analysis tags
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-session.analysisTags.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
-session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
-
+if ~isfield(session,'analysisTags') || (isfield(session,'analysisTags') && (~isfield(session.analysisTags,'probesLayout')) || isempty(session.analysisTags.probesLayout)) 
+    session.analysisTags.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
+    session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Loading parameters from sessionInfo and xml (including skipped and dead channels)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
 if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'file')
     load(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']))
     % sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
@@ -199,7 +202,6 @@ if isfield(sessionInfo,'channelTags')
     end
 end
 
-
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Importing brain regions
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -234,13 +236,11 @@ if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'fi
     end
 end
 
-
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Importing time series
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Loading info about time series from Intan metadatafile info.rhd
 session = loadIntanMetadata(session);
-
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Importing skipped and dead channels
