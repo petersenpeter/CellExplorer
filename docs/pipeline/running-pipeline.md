@@ -13,9 +13,9 @@ nav_order: 1
 {:toc}
 
 ### Processing flowcharts
-Below three flow charts shows the three main processing steps, 1. Gathering metadata, 2. Running the pipeline and 3. Running Cell Explorer. The boxes are color coded according to external files (blue), database (purple), script (green), Cell Explorer mat files (yellow).
+Below three flow charts shows the three main processing steps, 1. Gathering metadata, 2. Running the pipeline and 3. Running Cell Explorer. The boxes are color coded according to external files (blue), database (purple), script (green), Cell Explorer structs and .mat files (yellow).
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/AlgorithmFlowchart-1.png)
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowchartExample.png)
 
 ### Running pipeline from a data path
 The pipeline follows the data standards [described here]({{"/datastructure/data-structure-and-format/"|absolute_url}}). Saving your data in the specified data formats, integrates your data better with the Cell Explorer, allowing you to plot spike rasters and event histograms among other things.
