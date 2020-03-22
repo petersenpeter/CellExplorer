@@ -31,4 +31,5 @@ session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellula
 session.extracellular.sr = sessionInfo.SampleRate; % Sampling rate of dat file
 session.extracellular.srLfp = sessionInfo.lfpSampleRate; % Sampling rate of lfp file
 session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
+
 end

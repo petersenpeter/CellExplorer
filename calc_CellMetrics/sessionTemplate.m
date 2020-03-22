@@ -110,7 +110,6 @@ end
 % Brain regions  must be defined as index 1. Can be specified on a channel or spike group basis (below example for CA1 across all channels)
 % session.brainRegions.CA1.channels = 1:128; % Brain region acronyms from Allan institute: http://atlas.brain-map.org/atlas?atlas=1)
 
-
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Channel tags
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -135,7 +134,7 @@ end
 % Loading parameters from sessionInfo and xml (including skipped and dead channels)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'file')
-    load(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']))
+    load(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'sessionInfo')
     % sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
     if sessionInfo.spikeGroups.nGroups>0
         session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
@@ -178,6 +177,14 @@ end
 
 if (~isfield(session.general,'date') || isempty(session.general.date)) && isfield(sessionInfo,'Date')
     session.general.date = sessionInfo.Date;
+end
+if isfield(session,'extracellular') && isfield(session.extracellular,'nChannels')
+    fullpath = fullfile(session.general.basePath,[session.general.name,'.dat']);
+    if exist(fullpath,'file')
+        temp2_ = dir(fullpath);
+        session.extracellular.nSamples = temp2_.bytes/session.extracellular.nChannels/2;
+        session.general.duration = session.extracellular.nSamples/session.extracellular.sr;
+    end
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -228,7 +235,7 @@ end
 
 % Epochs derived from MergePoints
 if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'file')
-    load(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']))
+    load(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'MergePoints')
     for i = 1:size(MergePoints.foldernames,2)
         session.epochs{i}.name =  MergePoints.foldernames{i};
         session.epochs{i}.startTime =  MergePoints.timestamps(i,1);
