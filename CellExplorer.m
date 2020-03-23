@@ -4601,7 +4601,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         classNumbers = cellstr(num2str([1:length(UI.settings.cellTypes)]'))';
         colored_string = strcat('<html>',classNumbers, '.&nbsp;','<BODY bgcolor="white"><font color="', classColorsHex' ,'">&nbsp;', UI.settings.cellTypes, '&nbsp;</font></BODY></html>');
         colored_string = [colored_string,'+   New Cell-type'];
-        
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -5217,7 +5216,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             if axnum == 2 && (strcmp(UI.settings.referenceData, 'Image') || strcmp(UI.settings.groundTruthData, 'Image'))
                 UI.zoom.twoAxes = 1;
-            elseif axnum == 1 && UI.checkbox.logy.Value == 1 && UI.checkbox.logx.Value == 0 && (strcmp(UI.settings.referenceData, 'Image') || strcmp(UI.settings.groundTruthData, 'Image'))
+            elseif axnum == 1  && UI.settings.customPlotHistograms < 3 && UI.checkbox.logy.Value == 1 && UI.checkbox.logx.Value == 0 && (strcmp(UI.settings.referenceData, 'Image') || strcmp(UI.settings.groundTruthData, 'Image'))
                 UI.zoom.twoAxes = 1;
             end
             zoomInFactor = 0.85;
