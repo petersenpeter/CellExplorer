@@ -411,8 +411,9 @@ saveOnExitDialog
             delete(GoTo_dialog);
         end
     end
-    
+
     function switchConnectionType(~,~)
+        currentCell = allcel(i);
         if connectionsDisplayed == 1
             mono_res.sig_con = keep_con;
             mono_res.sig_con_excitatory = keep_con;
@@ -436,6 +437,7 @@ saveOnExitDialog
             allcel = unique(sig_con(:));
             disp('Excitatory connections (all)')
         elseif connectionsDisplayed == 2 && displayAllConnections.Value == 0 && ~isempty(mono_res.sig_con_inhibitory)
+            
             sig_con = mono_res.sig_con_inhibitory;
             keep_con = sig_con;
             allcel = unique(sig_con(:));
@@ -454,6 +456,9 @@ saveOnExitDialog
             UI.switchConnectionType.Value = connectionsDisplayed;
             warndlg('No inhibitory connections detected');
             return
+        end
+        if any(currentCell == allcel)
+            i = find(currentCell == allcel);
         end
         uiresume(UI.fig);
     end
