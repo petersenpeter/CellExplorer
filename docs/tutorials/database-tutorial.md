@@ -2,7 +2,7 @@
 layout: default
 title: Use database from terminal
 parent: Tutorials
-nav_order: 8
+nav_order: 9
 ---
 # Database tutorial
 {: .no_toc}
