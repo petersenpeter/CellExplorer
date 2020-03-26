@@ -2,7 +2,7 @@
 layout: default
 title: Ground truth data
 parent: Tutorials
-nav_order: 5
+nav_order: 7
 ---
 # Ground truth data tutorial
 {: .no_toc}

@@ -4,7 +4,7 @@ title: Monosynaptic connections
 parent: Tutorials
 nav_order: 4
 ---
-# Monosynaptic connections tutorial (draft)
+# Monosynaptic connections tutorial
 {: .no_toc}
 This tutorial will guide you through the manual curation process of the monosynaptic connections. Monosynaptic connections, both excitatory and inhibitory connections, are determined in the pipeline. You can visualize the connections and perform manual curation in a graphical interface. 
 

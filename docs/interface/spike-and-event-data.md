@@ -2,12 +2,12 @@
 layout: default
 title: Spike and event data
 parent: Graphical interface
-nav_order: 6
+nav_order: 5
 ---
 # Spike and event data
 The Cell Explorer is capable of loading the raw spike and event data which allows for creating custom raster plots and histograms from the raw spike and events.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-spike-dialog.png)
-You can define spike raster plots directly in the Cell Explorer using above dialog, or you can save custom plots that are loaded automatically in the Cell Explorer every time. Custom spikes plots are located at `+customSpikesPlots/`. There is a spikes_template available to get you started: 
+You can define spike raster plots directly in the Cell Explorer using above dialog, or you can save custom plots that are loaded automatically in the Cell Explorer every time. Custom spikes plots are located at `+customSpikesPlots/`. There is a spikes_template available to get you started:
 
 ```m
 function spikePlot = spikes_template
@@ -28,7 +28,7 @@ spikePlot.filterValue = 20;                 % filter value
 
 % Event related parameters (if applicable)
 spikePlot.event = '';
-spikePlot.eventType = 'event';              % [event,manipulation,state]
+spikePlot.eventType = 'events';              % [events,manipulation,states]
 spikePlot.eventAlignment = 'peak';          % [onset, offset, center, peak]
 spikePlot.eventSorting = 'amplitude';       % [none, time, amplitude, duration]
 spikePlot.eventSecBefore = 0.2;             % in seconds
@@ -41,5 +41,5 @@ spikePlot.plotCount = 0;                    % [binary] show spike count for each
 end
 ```
 
-Below figure shows three raster plot examples 1. Phase vs position, 2. trials vs position and 3. spike ampltude vs time. 
+Below figure shows three raster plot examples 1. Phase vs position, 2. trials vs position and 3. spike amplitude vs time. 
 ![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRaster.png)
