@@ -173,7 +173,7 @@ A Matlab struct `manipulationName` stored in a .mat file: `sessionName.eventName
 * `duration`: duration of event (in seconds; calculated from timestamps; Px1).
 * `detectorinfo`: info about how the events were detected.
 
-The `*.manipulation.mat` files should be stored in the basepath.
+The `*.manipulation.mat` files should be stored in the basepath. `events` and `manipulation` files are similar in content, but only manipulation intervals are excluded in the pipeline.
 
 ### Channels
 A matlab struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following fields:
