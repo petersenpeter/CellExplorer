@@ -5,7 +5,7 @@ parent: Graphical interface
 nav_order: 5
 ---
 # Spike and event data
-The Cell Explorer is capable of loading the raw spike and event data which allows for creating custom raster plots and histograms from the raw spike and events.
+The Cell Explorer is capable of loading the raw spike and event data which allows for creating custom raster plots and histograms from the raw spike and events. Please see the [tutorial on spike data]({{"/tutorials/plotting-spike-data/"|absolute_url}}) to learn more.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-spike-dialog.png)
 You can define spike raster plots directly in the Cell Explorer using above dialog, or you can save custom plots that are loaded automatically in the Cell Explorer every time. Custom spikes plots are located at `+customSpikesPlots/`. There is a spikes_template available to get you started:
 
