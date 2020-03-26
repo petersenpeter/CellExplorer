@@ -22,8 +22,9 @@ addParameter(p,'binDistribution',[0.25,0.5,0.25],@isnumeric);  % How the bins sh
 addParameter(p,'duration',0,@isnumeric);        % duration of PSTH (for half the window - used in CCG) [in seconds]
 addParameter(p,'smoothing',0,@isnumeric);       % any gaussian smoothing to apply? units of bins.
 addParameter(p,'percentile',99,@isnumeric);     % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
-addParameter(p,'eventName','',@ischar); 
-addParameter(p,'plots',true,@islogical);
+addParameter(p,'plots',true,@islogical);        % Show plots?
+addParameter(p,'eventName','',@ischar);         % Title used for plots
+addParameter(p,'maxWindow',10,@isnumeric);      % Maximum window size in seconds
 
 parse(p,varargin{:})
 
@@ -35,12 +36,13 @@ smoothing = p.Results.smoothing;
 percentile = p.Results.percentile;
 eventName = p.Results.eventName;
 plots = p.Results.plots;
+maxWindow = p.Results.maxWindow;
 
 % If no duration is given, an optimal duration is determined
 if duration == 0
     durations = diff(event.timestamps');
     stim_duration = prctile(sort(durations),percentile);
-    duration = min(max(round(stim_duration*1000),50)/1000,10);
+    duration = min(max(round(stim_duration*1000),50)/1000,maxWindow);
 end
 
 binSize = max(round(duration/binCount*1000),1)/1000; % minimum binsize is 0.5ms.

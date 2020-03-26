@@ -500,8 +500,8 @@ UI.menu.tableData.sortingList(find(strcmp(UI.tableData.SortBy,UI.settings.tableD
 
 % Spikes
 UI.menu.spikeData.topMenu = uimenu(UI.fig,menuLabel,'Spikes');
-uimenu(UI.menu.spikeData.topMenu,menuLabel,'Load spike data',menuSelectedFcn,@defineSpikesPlots,'Accelerator','A');
-uimenu(UI.menu.spikeData.topMenu,menuLabel,'Edit spike plot',menuSelectedFcn,@editSelectedSpikePlot,'Accelerator','J');
+uimenu(UI.menu.spikeData.topMenu,menuLabel,'Spike data menu',menuSelectedFcn,@defineSpikesPlots,'Accelerator','A');
+uimenu(UI.menu.spikeData.topMenu,menuLabel,'Hover to edit spike plot',menuSelectedFcn,@editSelectedSpikePlot,'Accelerator','J');
 
 % Session
 UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
@@ -514,6 +514,7 @@ uimenu(UI.menu.session.topMenu,menuLabel,'Show current animal in the Buzsaki lab
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
 uimenu(UI.menu.help.topMenu,menuLabel,'Show keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','H');
 uimenu(UI.menu.help.topMenu,menuLabel,'Open the Cell Explorer website',menuSelectedFcn,@openWebsite,'Accelerator','V');
+uimenu(UI.menu.help.topMenu,menuLabel,'Tutorials',menuSelectedFcn,@openWebsite);
 
 if UI.settings.plotWaveformMetrics; UI.menu.display.showMetrics.Checked = 'on'; end
 
@@ -797,7 +798,7 @@ UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Posi
 if summaryFigures
     disp('Creating summary figures')
     plotSummaryFigures
-    if ishandle(fig)
+    if ishandle(fig) && plotCellIDs ~= -1
         close(fig)
     end
     if ishandle(UI.fig)
@@ -3572,11 +3573,17 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         uiresume(UI.fig);
     end
+
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function openWebsite(~,~)
+    function openWebsite(src,~)
         % Opens the Cell Explorer website in your browser
-        web('https://petersenpeter.github.io/Cell-Explorer/','-new','-browser')
+        switch src.Text
+            case 'Tutorials'
+                web('https://petersenpeter.github.io/Cell-Explorer/tutorials/tutorials/','-new','-browser')
+            otherwise
+                web('https://petersenpeter.github.io/Cell-Explorer/','-new','-browser')
+        end
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -5183,9 +5190,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         % Called when scrolling/zooming in the cell inspector.
         % Checks first, if a plot is underneath the curser
         axnum = getAxisBelowCursor;
+        
         if isfield(UI,'panel') && ~isempty(axnum)
             handle34 = subfig_ax(axnum);
-            
             um_axes = get(handle34,'CurrentPoint');
             UI.zoom.twoAxes = 0;
             
@@ -6515,7 +6522,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             [~,burstIndexSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(subset23));
                             subset2 = subset23(burstIndexSorted);
                             In = subset2(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2))));
-                            
+                        case 'Connectivity graph'
+                            In1 = find(inpolygon(subsetPlots.xaxis, subsetPlots.yaxis, polygon_coords(:,1)',polygon_coords(:,2)'));
+                            In = subsetPlots.subset(In1);
+                            if ~isempty(In)
+                                plot(subsetPlots.xaxis(In1),subsetPlots.yaxis(In1),'sk','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9,'HitTest','off')
+                            end
                         otherwise
                             if any(strcmp(UI.monoSyn.disp,{'All','Selected','Upstream','Downstream','Up & downstream'}))
                                 if (~isempty(UI.params.outbound) || ~isempty(UI.params.inbound)) && ~isempty(subsetPlots)
@@ -6811,6 +6823,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function plotSummaryFigures
         if isempty(plotCellIDs)
             cellIDs = 1:length(cell_metrics.cellID);
+        elseif plotCellIDs==-1
+            cellIDs = 1;
         else
             ids = ismember(plotCellIDs,1:length(cell_metrics.cellID));
             cellIDs = plotCellIDs(ids);
@@ -6821,9 +6835,22 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         else
             putativeSubset=[];
         end
+        if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory')
+            putativeSubset_inh = find(sum(ismember(cell_metrics.putativeConnections.inhibitory,UI.params.subset)')==2);
+        else
+            putativeSubset_inh=[];
+        end
         clr = UI.settings.cellTypeColors(intersect(classes2plot,plotClas(UI.params.subset)),:);
         classes2plotSubset = unique(plotClas);
-        [plotRows,~]= numSubplots(length(plotOptions)+3);
+        if plotCellIDs==-1
+            plotOptions_all = {'Trilaterated position','Waveforms (all)','Waveforms (image)','Raw waveforms (all)','ACGs (all)','ACGs (image)','ISIs (all)','ISIs (image)','RCs_firingRateAcrossTime (image)','RCs_firingRateAcrossTime (all)','Connectivity graph'};
+            plotOptions = plotOptions(ismember(plotOptions,plotOptions_all));
+            plotCount = 3;
+        else
+            plotCount = 4;
+        end
+        
+        [plotRows,~]= numSubplots(length(plotOptions)+plotCount);
         
         fig = figure('Name','Cell Explorer','NumberTitle','off','pos',UI.settings.figureSize);
         for j = 1:length(cellIDs)
@@ -6831,7 +6858,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 warning(['Summary figures canceled by user']);
                 break
             end
-            set(fig,'Name',['Cell Explorer summary figures ',num2str(j),'/',num2str(length(cellIDs))]);
+            if plotCellIDs~=-1
+                set(fig,'Name',['Cell Explorer summary figures ',num2str(j),'/',num2str(length(cellIDs))]);
+            else
+                set(fig,'Name',['Cell Explorer summary figure']);
+            end
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
                 general1 = cell_metrics.general.batch{batchIDs1};
@@ -6839,7 +6870,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             else
                 general1 = cell_metrics.general;
                 batchIDs1 = 1;
-                savePath1 = cell_metrics.general.path;
+                if isfield(cell_metrics.general,'path')
+                    savePath1 = cell_metrics.general.path;
+                elseif isfield(cell_metrics.general,'basepath')
+                    savePath1 = cell_metrics.general.basepath;
+                end
             end
             if ~isempty(putativeSubset)
                 UI.params.a1 = cell_metrics.putativeConnections.excitatory(putativeSubset,1);
@@ -6850,48 +6885,57 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 UI.params.outgoing = UI.params.a2(UI.params.outbound);
                 UI.params.connections = [UI.params.incoming;UI.params.outgoing];
             end
+            if ~isempty(putativeSubset_inh) 
+                UI.params.b1 = cell_metrics.putativeConnections.inhibitory(putativeSubset,1);
+                UI.params.b2 = cell_metrics.putativeConnections.inhibitory(putativeSubset,2);
+                UI.params.inbound_inh = find(UI.params.b2 == cellIDs(j));
+                UI.params.outbound_inh = find(UI.params.b1 == cellIDs(j));
+                UI.params.incoming_inh = UI.params.b1(UI.params.inbound_inh);
+                UI.params.outgoing_inh = UI.params.b2(UI.params.outbound_inh);
+                UI.params.connections_inh = [UI.params.incoming_inh;UI.params.outgoing_inh];
+            else
+                UI.params.inbound_inh = [];
+                UI.params.outbound_inh = [];
+                UI.params.incoming_inh = [];
+                UI.params.outgoing_inh = [];
+                UI.params.connections_inh = [];
+            end
             if ispc
                 ha = tight_subplot(plotRows(1),plotRows(2),[.1 .05],[.05 .07],[.05 .05]);
             else
                 ha = tight_subplot(plotRows(1),plotRows(2),[.06 .03],[.12 .06],[.06 .05]);
             end
             axes(ha(1)), hold on
-            
+            plotGroupData(cell_metrics.troughToPeak * 1000,cell_metrics.burstIndex_Royer2012,plotConnections(2))
+            ylabel('Burst Index (Royer 2012)'); xlabel('Trough-to-Peak (µs)'), title('Population')
+            set(ha(1),'YScale', 'log');
+            axes(ha(2)), hold on
+
             % Scatter plot with t-SNE metrics
-            plotGroupScatter(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2)), axis tight
-            xlabel('t-SNE'), ylabel('t-SNE')
-            
-            % Plots: putative connections
-            if plotConnections(3) == 1
-                plotPutativeConnections(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)')
-            end
-            % Plots: X marker for selected cell
-            plotMarker(tSNE_metrics.plot(cellIDs(j),1),tSNE_metrics.plot(cellIDs(j),2))
-            
-            % Plots: tagget ground-truth cell types
-            plotGroudhTruthCells(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2))
+            plotGroupData(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2),plotConnections(2))
+            xlabel('t-SNE'), ylabel('t-SNE'), title('t-SNE')
             
             for jj = 1:length(plotOptions)
-                axes(ha(jj+1)); hold on
+                axes(ha(jj+2)); hold on
                 customPlot(plotOptions{jj},cellIDs(j),general1,batchIDs1);
                 if jj == 1
                     ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
                 end
             end
-            axes(ha(end-1))
+            if plotCellIDs~=-1
+                axes(ha(end-1))
+                set(gca,'Visible','off'); hold on
+                plotCharacteristics(cellIDs(j)), title('Characteristics')
+            end
+            axes(ha(end))
             set(gca,'Visible','off');  hold on
             plotLegends, title('Characteristics')
-            
-            axes(ha(end))
-            set(gca,'Visible','off'); hold on
-            plotCharacteristics(cellIDs(j)), title('Characteristics')
-            
             % Saving figure
             if ishandle(fig)
                 try 
                     savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
                 catch 
-                    disp('action canceled by user')
+                    disp('figure not saved (action canceled by user or directory not available for writing)')
                 end
             end
         end
@@ -6902,7 +6946,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 mkdir(savePathIn,'summaryFigures')
             end
             saveas(fig,fullfile(savePath,[fileNameIn,'.png']))
-            clf(fig)
+            if plotCellIDs~=-1
+                clf(fig)
+            end
         end
     end
 
@@ -8009,7 +8055,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 for i = 1:length(unique(plotClas(UI.params.subset)))
                     temp1 = UI.params.subset(find(plotClas_subset==ids(i)));
                     if length(temp1)>1
-                        ce_raincloud_plot(cell_metrics.(fieldName)(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',clr(i,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',clr(i,:),'box_col_match',1);
+                        ce_raincloud_plot(cell_metrics.(fieldName)(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',clr(i,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',clr(i,:),'box_col_match',1,'randomNumbers',UI.params.randomNumbers(temp1));
                         counter = counter + 1;
                     end
                 end
@@ -9116,10 +9162,6 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             eventfile = fullfile(basepath1,[basename1,'.' (eventName) '.',eventType,'.mat']);
             if exist(eventfile,'file')
-%                 eventsfilesize = dir(eventfile);
-%                 if eventsfilesize.bytes/1000000>10 % Show waitbar if filesize exceeds 10MB
-%                     waitbar_events = waitbar(0,['Loading events from ', basename1 , ' (', num2str(ceil(eventsfilesize.bytes/1000000)), 'MB)'],'Name','Loading events','WindowStyle','modal');
-%                 end
                 temp = load(eventfile);
                 if isfield(temp.(eventName),'timestamps')
                     events.(eventName){batchIDs} = temp.(eventName);
@@ -9166,7 +9208,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         spikePlotList_dialog = dialog('Position', [300, 300, 670, 400],'Name','Spike plot types','WindowStyle','modal'); movegui(spikePlotList_dialog,'center')
         
         tableData = updateTableData(spikesPlots);
-        spikePlot = uitable(spikePlotList_dialog,'Data',tableData,'Position',[10, 50, 650, 340],'ColumnWidth',{20 125 90 90 90 90 70 70},'columnname',{'','Plot name','X data','Y data','X label','Y label','State','Event'},'RowName',[],'ColumnEditable',[true false false false false false false false]);
+        spikePlot = uitable(spikePlotList_dialog,'Data',tableData,'Position',[10, 50, 650, 340],'ColumnWidth',{20 125 90 90 90 90 70 70},'columnname',{'','Plot name','X data','Y data','X label','Y label','State','Events'},'RowName',[],'ColumnEditable',[true false false false false false false false]);
         uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Add plot','Callback',@(src,evnt)addPlotToTable);
         uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[100, 10, 90, 30],'String','Edit plot','Callback',@(src,evnt)editPlotToTable);
         uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[190, 10, 90, 30],'String','Delete plot','Callback',@(src,evnt)DeletePlot);
@@ -9188,7 +9230,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         function LoadAllSpikeData
             % Loads all spikes data
-            out = CheckSpikes([1:length(cell_metrics.general.batch)]);
+            if UI.BatchMode
+                out = CheckSpikes([1:length(cell_metrics.general.batch)]);
+            else
+                out = CheckSpikes(1);
+                MsgLog('Spike data loaded',2);
+            end
         end
         
         function tableData = updateTableData(spikesPlots)
@@ -9312,15 +9359,15 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         % Filter/Threshold
         uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Filter', 'Position', [10, 169, 210, 20],'HorizontalAlignment','left');
-        spikePlotFilterData = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', ['Select field';spikesField], 'Value',1,'Position', [10, 155, 210, 20],'HorizontalAlignment','left');
+        spikePlotFilterData = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', ['Select field';spikesField], 'Value',1,'Position', [10, 155, 210, 20],'HorizontalAlignment','left','Callback',@(src,evnt)toggleFilterFields);
         uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Type', 'Position', [230, 169, 210, 20],'HorizontalAlignment','left');
         spikePlotFilterType = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', {'none','equal to','less than','greater than'}, 'Value',1,'Position', [230, 155, 130, 20],'HorizontalAlignment','left');
         uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Value', 'Position', [370, 169, 70, 20],'HorizontalAlignment','left');
         spikePlotFilterValue = uicontrol('Parent',spikePlots_dialog,'Style', 'Edit', 'String', '', 'Position', [370, 155, 70, 20],'HorizontalAlignment','left');
         
         % Event data
-        uicontrol('Parent', spikePlots_dialog, 'Style', 'text', 'String', 'Event', 'Position', [10, 121, 210, 20],'HorizontalAlignment','left');
-        spikePlotEventType = uicontrol('Parent', spikePlots_dialog, 'Style', 'popupmenu', 'String', {'none','event', 'manipulation','state'}, 'Value',1,'Position', [10, 105, 210, 20],'HorizontalAlignment','left');
+        uicontrol('Parent', spikePlots_dialog, 'Style', 'text', 'String', 'Event type', 'Position', [10, 121, 210, 20],'HorizontalAlignment','left');
+        spikePlotEventType = uicontrol('Parent', spikePlots_dialog, 'Style', 'popupmenu', 'String', {'none','events', 'manipulation','states'}, 'Value',1,'Position', [10, 105, 210, 20],'HorizontalAlignment','left','Callback',@(src,evnt)toggleEventFields);
         uicontrol('Parent', spikePlots_dialog, 'Style', 'text', 'String', 'Event name', 'Position', [230, 121, 210, 20],'HorizontalAlignment','left');
         spikePlotEvent = uicontrol('Parent', spikePlots_dialog, 'Style', 'Edit', 'String', '', 'Position', [230, 105, 210, 20],'HorizontalAlignment','left');
         uicontrol('Parent', spikePlots_dialog,'Style', 'text', 'String', 'sec before', 'Position', [450, 121, 100, 20],'HorizontalAlignment','left');
@@ -9333,12 +9380,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         spikePlotEventSorting = uicontrol('Parent', spikePlots_dialog, 'Style', 'popupmenu', 'String', {'none','time', 'amplitude', 'duration','eventID'}, 'Value',1,'Position', [230, 55, 210, 20],'HorizontalAlignment','center');
         
         % Check boxes
-        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Event settings', 'Position', [450, 71, 120, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Event plots', 'Position', [450, 71, 120, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Event trialwise curves', 'Position', [550, 71, 120, 20],'HorizontalAlignment','left');
         spikePlotEventPlotRaster = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[450 55 70 20],'Units','normalized','String','Raster','HorizontalAlignment','left');
-        spikePlotEventPlotAverage = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[450 35 70 20],'Units','normalized','String','Histogram','HorizontalAlignment','left');
-        spikePlotEventPlotAmplitude = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[450 15 70 20],'Units','normalized','String','Amplitude','HorizontalAlignment','left');
-        spikePlotEventPlotDuration = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[530 55 70 20],'Units','normalized','String','Duration','HorizontalAlignment','left');
-        spikePlotEventPlotCount = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[530 35 70 20],'Units','normalized','String','Count','HorizontalAlignment','left');
+        spikePlotEventPlotAverage = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[450 35 90 20],'Units','normalized','String','Average PSTH','HorizontalAlignment','left');
+        spikePlotEventPlotAmplitude = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[550 15 70 20],'Units','normalized','String','Amplitude','HorizontalAlignment','left');
+        spikePlotEventPlotDuration = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[550 55 70 20],'Units','normalized','String','Duration','HorizontalAlignment','left');
+        spikePlotEventPlotCount = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[550 35 70 20],'Units','normalized','String','Count','HorizontalAlignment','left');
         
         uicontrol('Parent',spikePlots_dialog,'Style','pushbutton','Position',[10, 10, 210, 30],'String','OK','Callback',@(src,evnt)CloseSpikePlots_dialog);
         uicontrol('Parent',spikePlots_dialog,'Style','pushbutton','Position',[230, 10, 210, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikePlots_dialog);
@@ -9385,6 +9433,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             spikePlotFilterValue.String = spikesPlots.(fieldtoedit).filterValue;
             
+            
             % Event
             if find(strcmp(spikesPlots.(fieldtoedit).event,spikePlotEvent.String))
                 spikePlotEvent.Value = find(strcmp(spikesPlots.(fieldtoedit).event,spikePlotEvent.String));
@@ -9399,9 +9448,47 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 spikePlotEventSorting.Value = find(strcmp(spikesPlots.(fieldtoedit).eventSorting,spikePlotEventSorting.String));
             end
         end
+        toggleEventFields
+        toggleFilterFields
+
         
         uicontrol(spikePlotName);
         uiwait(spikePlots_dialog);
+        
+        function toggleFilterFields
+            if spikePlotFilterData.Value == 1
+                spikePlotFilterType.Enable = 'off';
+                spikePlotFilterValue.Enable = 'off';
+            else
+                spikePlotFilterType.Enable = 'on';
+                spikePlotFilterValue.Enable = 'on';
+            end
+        end
+        function toggleEventFields
+            if spikePlotEventType.Value == 1
+                spikePlotEvent.Enable = 'off';
+                spikePlotEventAlignment.Enable = 'off';
+                spikePlotEventSorting.Enable = 'off';
+                spikePlotEventPlotRaster.Enable = 'off';
+                spikePlotEventPlotAverage.Enable = 'off';
+                spikePlotEventPlotAmplitude.Enable = 'off';
+                spikePlotEventPlotDuration.Enable = 'off';
+                spikePlotEventPlotCount.Enable = 'off';
+                spikePlotEventSecBefore.Enable = 'off';
+                spikePlotEventSecAfter.Enable = 'off';
+            else
+                spikePlotEvent.Enable = 'on';
+                spikePlotEventAlignment.Enable = 'on';
+                spikePlotEventSorting.Enable = 'on';
+                spikePlotEventPlotRaster.Enable = 'on';
+                spikePlotEventPlotAverage.Enable = 'on';
+                spikePlotEventPlotAmplitude.Enable = 'on';
+                spikePlotEventPlotDuration.Enable = 'on';
+                spikePlotEventPlotCount.Enable = 'on';
+                spikePlotEventSecBefore.Enable = 'on';
+                spikePlotEventSecAfter.Enable = 'on';
+            end
+        end
         
         function CloseSpikePlots_dialog
             % Checks the inputs for correct format then closes the dialog and parses the inputs to spikesPlotsOut structure
@@ -9489,20 +9576,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 % % % % % % % % % % % % % % % % % % % % % %
 
     function editSelectedSpikePlot(~,~)
-        % Called when scrolling/zooming in the cell inspector.
-        % Checks first, if a plot is underneath the curser
-        
         axnum = getAxisBelowCursor;
         if isfield(UI,'panel') && ~isempty(axnum)
             handle34 = subfig_ax(axnum);
-            handle34 = h2.Children(end);
             um_axes = get(handle34,'CurrentPoint');
-            if any(ismember(subfig_ax, h2.Children)) && any(find(ismember(subfig_ax, h2.Children)) == [4:9])
-                axnum = find(ismember(subfig_ax, h2.Children));
-            else
-                axnum = 1;
-            end
-            if strcmp(UI.settings.customPlot{axnum-3}(1:7),'spikes_')
+            
+            if axnum>3 && strcmp(UI.settings.customPlot{axnum-3}(1:7),'spikes_')
                 spikesPlotsOut = spikePlotsDlg(UI.settings.customPlot{axnum-3});
                 if ~isempty(spikesPlotsOut)
                     for fn = fieldnames(spikesPlotsOut)'
@@ -9510,6 +9589,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     end
                     uiresume(UI.fig);
                 end
+            else
+                MsgLog('Hover over a spike plot and press the shortcut to edit the plot parameters',2);
             end
         end
     end
@@ -10237,7 +10318,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         msgbox({'\bfNavigation\rm','<    : Next cell', '>    : Previous cell','.     : Next cell with same class',',     : Previous cell with same class','+G   : Go to a specific cell','Page Up      : Next session in batch (only in batch mode)','Page Down  : Previous session in batch (only in batch mode)','Numpad0     : First cell', 'Numpad1-9 : Next cell with that numeric class','Backspace   : Previously selected cell','Numeric + / - / *          : Zoom in / out / reset plots','   ',...
             '\bfCell assigments\rm','1-9 : Cell-types','+B    : Brain region','+L    : Label','Plus   : Add Cell-type','+Z    : Undo assignment', '+R    : Reclassify cell types','   ',...
             '\bfDisplay shortcuts\rm','M    : Show/Hide menubar','N    : Change layout [6, 5 or 4 subplots]','+E     : Highlight excitatory cells (triangles)','+I      : Highlight inhibitory cells (circles)','+F     : Display ACG fit', 'K    : Calculate and display significance matrix for all metrics (KS-test)','+T     : Calculate tSNE space from a selection of metrics','W    : Display waveform metrics','+Y    : Perform ground truth cell type classification','+U    : Load ground truth cell types','Space  : Show action dialog for selected cells','     ',...
-            '\bfOther shortcuts\rm', '+P    : Open preferences for the Cell Explorer','+C    : Open the file directory of the selected cell','+D    : Opens sessions from the Buzsaki lab database','+A    : Load spike data','+J     : Adjust monosynaptic connections','+V    : Visit the Cell Explorer website in your browser','',...
+            '\bfOther shortcuts\rm', '+P    : Open preferences for the Cell Explorer','+C    : Open the file directory of the selected cell','+D    : Opens sessions from the Buzsaki lab database','+A    : Open spike data menu','+J     : Modify parameters for a spike plot','+V    : Visit the Cell Explorer website in your browser','',...
             '+ sign indicatea that the key must be combined with command/control (Mac/Windows)','','\bfVisit the Cell Explorer''s website for further help\rm',''},'Keyboard shortcuts','help',opts);
     end
 
