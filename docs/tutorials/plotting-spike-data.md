@@ -13,7 +13,7 @@ nav_order: 6
 1. TOC
 {:toc}
 
-## Show spikes plots in the Cell Explorer
+## Show spike raster data in the Cell Explorer
 The Cell Explorer can show spike raster data using the `sessionName.spikes.cellinfo.mat` and related structures (`sessionName.*.events.mat` and `sessionName.*.manipulation.mat`). See the [file definitions here]({{"/datastructure/data-structure-and-format/"|absolute_url}}). Any `events` or `manipulation` files located in the basepath will be detected in the pipeline and PSTHs will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline. 
 
 1. Launch the Cell Explorer
@@ -24,9 +24,9 @@ The Cell Explorer can show spike raster data using the `sessionName.spikes.celli
 5. This will add the spike plot options to the display settings dropdowns 
 6. Select the sessions you want to load. You can apply filters, change the sorting for easier selection.
 7. Select a spike plot options to display it.
-8. If there are no spiking data available for the current session or selected cell the plot will be empty. This is also the case for sesisons without event files for event aligned raster plots. 
+8. If there are no spiking data available for the current session or the selected cell, the plot will be empty. This is also the case for datasets without specific events files for plots with event aligned raster plots. 
 
-### Define spikes plots in the Cell Explorer
+### Create and modify spikes plots in the Cell Explorer
 1. From the spike data dialog you can add, edit and delete spike plots. To add a new press the add button
 2. Below dialog will be shown allowing you to create a spike plot defined by the parameters displayd. Simple raster plots are defined by the upper half of the fields. 
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/addSpikePlot.png)
@@ -38,7 +38,7 @@ The Cell Explorer can show spike raster data using the `sessionName.spikes.celli
     4. You can also define a data field to use as a filter. E.g. amplitude or speed. Select the field you want to use a filter, define the filter type (equal to, less than, greater than) and the threshold-value for the filter.
     5. You can also create PSTH-rasters using separate event data. Define the type of the event (events, manipulations, states files), the name of the events, .e.g. ripples, and the duration of the PSTH window (time before/after alignment). Next, define how to align the events (by onset, offset, center or peak). Each option must be available in the evnets files to be plotable, e.g. peak and offset, or be derivable from other fields, e.g. center (which can be determined from start and stop of intervals). 
 
-## Predefine spikes plots
+### Predefine spikes plots
 You can define spike raster plots directly in the Cell Explorer using above dialog, or you can save custom plots that are loaded automatically in the Cell Explorer every time. Custom spikes plots are located at `+customSpikesPlots/`. There is a spikes_template available to get you started: 
 ```m
 function spikePlot = spikes_template
@@ -72,7 +72,7 @@ spikePlot.plotCount = 0;                    % [binary] show spike count for each
 end
 ```
 
-## Examples of spikes plots
+### Plot examples
 Below figure shows three raster plot examples 1. Phase vs position, 2. trials vs position and 3. spike amplitude vs time. 
 ![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRaster.png)
 
