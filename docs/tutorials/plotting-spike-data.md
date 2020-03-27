@@ -73,8 +73,5 @@ end
 ```
 
 ### Plot examples
-Below figure shows three raster plot examples 1. Phase vs position, 2. trials vs position and 3. spike amplitude vs time. 
+Below figure shows three raster plot examples for an interneuron in CA1: 1. Theta phase vs linear position, 2. trials number vs position, with 4 state colors and 3. spike amplitude (from KiloSort) vs time. 
 ![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRaster.png)
-
-
-
