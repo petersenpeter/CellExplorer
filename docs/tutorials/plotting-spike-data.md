@@ -8,8 +8,6 @@ nav_order: 6
 {: .no_toc}
 This tutorial will show you how to generate raster plots using spike data. The spike data is not saved with the metrics and will be loaded separately. Events or manipulation files can also be loaded separately allowing you to generate two-dimensional rasters and PSTH raster plots. Any events or manipulation files located in the basepath will be detected in the pipeline and PSTHs will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline by default. 
 
-
-
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -24,10 +22,10 @@ The Cell Explorer can show spike raster data using the `sessionName.spikes.celli
 3. The spike data will be loaded and below dialog will be shown in the Cell Explorer.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-spike-dialog.png)
 4. Now, if the listed spike plotting options are sufficient. Press OK to close the dialog.
-5. This will add the spike plotting options to the display settings dropdowns as shown in below image.
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/plotOptionsWithSpikes_2.png" width="60%"></p>{: .mt-4}
+5. This will add the spike plotting options to the display settings drop-down menus as shown in below image.
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/plotOptionsWithSpikes_3.png" width="60%"></p>{: .mt-4}
 7. Select one of the spike plot option to display it. This will generate a raster plot similar to the image below.
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/spikes_time_amplitude-01.png" width="70%"></p>{: .mt-4}
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/spikes_time_amplitude-01.png" width="80%"></p>{: .mt-4}
 8. If there are no spiking data available for the current session or the selected cell, the plot will be empty. This is also the case for datasets without specific events files for plots with event aligned PSTH raster plots. 
 
 ### Create and modify spike plots in the Cell Explorer
@@ -40,8 +38,8 @@ The Cell Explorer can show spike raster data using the `sessionName.spikes.celli
     As an example, lets say you want to plot the spike amplitude across time (shown in the example above). In the x-data selection column, select times. In the y-data column, select amplitudes.
     3. __axis labels :__ Provide labels (e.g. Time (s) and Amplitude as x and y labels) and press OK. This will create a new plot looking like the raster example above.
     4. __filter :__ You can also define a data field to use as a filter. E.g. amplitude or speed. Select the field you want to use a filter, define the filter type (options: equal to, less than, greater than) and the threshold-value for the filter.
-    5. __events :__ You can also create PSTH-rasters using separate event data. Define the type of the event (options: events, manipulations, states files), the name of the events, .e.g. ripples (e.g. `sessionName.ripples.events.mat`)), and the duration of the PSTH window (time before/after alignment in seconds). Next, define how to align the events (options: by onset, offset, center or peak). Each option must be available in the events files to be plotable, e.g. peak and offset, or be determined from other fields, e.g. center (which can be determined from the start and stop times of intervals). Using the event checkboxes you can select to display the average response and/or the raster, together with trial-wise curves. Below figure shows a PSTH for a opto-stimulated interneuron with 1200 trials and a stimulation window of 0.5sec. 
-    <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/PSTH-raster-01.png" width="=70%"></p>{: .mt-4}
+    5. __events :__ You can also create PSTH-rasters using separate event data. Define the type of the event (options: events, manipulations, states files), the name of the events, .e.g. ripples (e.g. `sessionName.ripples.events.mat`)), and the duration of the PSTH window (time before/after alignment in seconds). Next, define how to align the events (options: by onset, offset, center or peak). Each option must be available in the events files to be plotable, e.g. peak and offset, or be determined from other fields, e.g. center (which can be determined from the start and stop times of intervals). Using the event checkboxes you can select to display the average response and/or the raster, together with event-wise curves. Below figure shows a PSTH for a opto-stimulated interneuron with 1200 events and a stimulation window of 0.5sec. 
+    <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/PSTH-raster-02.png" width="=70%"></p>{: .mt-4}
 
 ### Predefine spike plots
 You can predefine custom plots that are loaded automatically in the Cell Explorer every time. Custom spike plots are located in the folder `+customSpikesPlots/`. There is a `spikes_template.m` file available in the folder to get you started:
@@ -66,7 +64,7 @@ spikePlot.filterValue = 20;                 % filter value
 spikePlot.event = '';
 spikePlot.eventType = 'events';             % [events,manipulation,states]
 spikePlot.eventAlignment = 'peak';          % [onset, offset, center, peak] alignment of the PSTH
-spikePlot.eventSorting = 'amplitude';       % [none, time, amplitude, duration] Trial soorting metric
+spikePlot.eventSorting = 'amplitude';       % [none, time, amplitude, duration] event sorting metric
 spikePlot.eventSecBefore = 0.2;             % in seconds
 spikePlot.eventSecAfter = 0.2;              % in seconds
 spikePlot.plotRaster = 0;                   % [binary] show raster
