@@ -79,4 +79,4 @@ end
 
 ### Raster plot examples
 Below figure shows two raster plot examples for a pyramidal cell in CA1: 1. Theta phase vs position (the animal runs along a track), 2. Trial vs position, colored according to 3 states. The parameters used for the two examples are available in the folder `+customSpikesPlots/` (an average firing rate curve is added to the left figure for easier interpretation and is not part of the defined plot). 
-![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2020/03/rasters_placefield-03.png)
+![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2020/03/rasters_placefield-03.png) {: .mt-4} 
