@@ -41,8 +41,10 @@ The Cell Explorer can show spike raster data using the `sessionName.spikes.celli
     5. __events :__ You can also create PSTH-rasters using separate event data. Define the type of the event (options: events, manipulations, states files), the name of the events, .e.g. ripples (e.g. `sessionName.ripples.events.mat`)), and the duration of the PSTH window (time before/after alignment in seconds). Next, define how to align the events (options: by onset, offset, center or peak). Each option must be available in the events files to be plot-able, e.g. peak and offset, or be determined from other fields, e.g. center (which can be determined from the start and stop times of intervals). Using the event check-boxes you can select to display the average response and/or the raster, together with event-wise curves. Below figure shows a PSTH for a opto-stimulated interneuron with 1200 events and a stimulation window of 0.5 seconds. 
     <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/PSTH-raster-02.png" width="=70%"></p> {: .mt-4} 
 
+The spike raster plots created in the Cell Explorer is not saved across sessions. To do this you have to follow the next section on predefined spike plots.
+
 ### Predefine spike plots
-You can predefine custom plots that are loaded automatically in the Cell Explorer every time. Custom spike plots are located in the folder `+customSpikesPlots/`. There is a `spikes_template.m` file available in the folder to get you started:
+You can predefine custom plots that are loaded automatically in the Cell Explorer every time. Custom spike plots are located in the folder `+customSpikesPlots/`. The parameters that must be defined follows the logic explained in the previous section. There is a `spikes_template.m` file available in the folder to get you started:
 ```m
 function spikePlot = spikes_template
 % This is a example template for creating your own custom spike raster plots
@@ -76,5 +78,5 @@ end
 ```
 
 ### Raster plot examples
-Below figure shows three raster plot examples for an interneuron in CA1: 1. Theta phase vs linear position, 2. trial number vs position, colored according to 4 states and 3. spike amplitude (from KiloSort) vs time.
-![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRaster.png)
+Below figure shows two raster plot examples for a pyramidal cell in CA1: 1. Theta phase vs position (the animal runs along a track), 2. Trial vs position, colored according to 3 states. The parameters used for the two examples are available in the folder `+customSpikesPlots/` (an average firing rate curve is added to the left figure for easier interpretation and is not part of the defined plot). 
+![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2020/03/rasters_placefield-01.png)
