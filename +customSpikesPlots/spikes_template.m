@@ -19,8 +19,8 @@ spikePlot.filterType = 'greater than';      % [none, equal to, less than, greate
 spikePlot.filterValue = 20;                 % filter value
 
 % Event related parameters (if applicable)
-spikePlot.event = '';
-spikePlot.eventType = 'event';              % [event,manipulation,state]
+spikePlot.event = '';                       % Name of events
+spikePlot.eventType = '';                   % [events,manipulation,states]
 spikePlot.eventAlignment = 'peak';          % [onset, offset, center, peak]
 spikePlot.eventSorting = 'amplitude';       % [none, time, amplitude, duration]
 spikePlot.eventSecBefore = 0.2;             % in seconds

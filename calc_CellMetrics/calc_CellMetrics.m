@@ -289,9 +289,7 @@ if parameters.saveBackup && ~isempty(cell_metrics)
     backupDirectory = 'revisions_cell_metrics';
     dispLog(['Creating backup of existing user adjustable metrics ''',backupDirectory,'''']);
     
-    if ~(exist(fullfile(clusteringpath_full,backupDirectory),'dir'))
-        mkdir(fullfile(clusteringpath_full,backupDirectory));
-    end
+    
     backupFields = {'labels','tags','deepSuperficial','deepSuperficialDistance','brainRegion','putativeCellType','groundTruthClassification'};
     temp = {};
     for i = 1:length(backupFields)
@@ -299,7 +297,14 @@ if parameters.saveBackup && ~isempty(cell_metrics)
             temp.cell_metrics.(backupFields{i}) = cell_metrics.(backupFields{i});
         end
     end
-    save(fullfile(clusteringpath_full, backupDirectory, [parameters.saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat',]),'cell_metrics','-v7.3','-nocompression', '-struct', 'temp')
+    try
+        if ~(exist(fullfile(clusteringpath_full,backupDirectory),'dir'))
+            mkdir(fullfile(clusteringpath_full,backupDirectory));
+        end
+        save(fullfile(clusteringpath_full, backupDirectory, [parameters.saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat',]),'cell_metrics','-v7.3','-nocompression', '-struct', 'temp')
+    catch
+        warning('Failed to save backup data in the Cell Explorer pipeline')
+    end
 end
 
 cell_metrics.general.basepath = basepath;
@@ -313,7 +318,7 @@ cell_metrics.general.cellCount = length(spikes.total);
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'waveform_metrics'}))
-    if ~all(isfield(cell_metrics,{'waveforms123','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || parameters.forceReload == true
+    if ~all(isfield(cell_metrics,{'waveforms','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || ~all(isfield(cell_metrics.waveforms,{'raw','filt','filt_all','raw_all'})) || parameters.forceReload == true
         dispLog('Getting waveforms');
         if all(isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % 'filtWaveform_std'
             waveforms.filtWaveform = spikes.filtWaveform;
@@ -970,74 +975,78 @@ if any(contains(parameters.metrics,{'importCellTypeClassification','all'})) && ~
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Channel coordinates map, trilateration and length constant
+% Channel coordinates map, trilateration and length constant determined from waveforms across channels
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-switch session.spikeSorting{1}.method
-    case 'KiloSort'
-        if exist(fullfile(basepath,'chanMap.mat'),'file')
-            chanMap = load(fullfile(basepath,'chanMap.mat'));
-        else
-            if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
-                disp('  Using default probesLayout: poly2')
-                session.analysisTags.probesLayout = 'poly2';
+if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'waveform_metrics'}))
+    if ~all(isfield(cell_metrics,{'trilat_x','trilat_y','peakVoltage_expFit'})) || parameters.forceReload == true
+        switch session.spikeSorting{1}.method
+            case 'KiloSort'
+                if exist(fullfile(basepath,'chanMap.mat'),'file')
+                    chanMap = load(fullfile(basepath,'chanMap.mat'));
+                else
+                    if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
+                        disp('  Using default probesLayout: poly2')
+                        session.analysisTags.probesLayout = 'poly2';
+                    end
+                    disp('  Creating channelmap')
+                    chanMap = createChannelMap(basepath,basename,session.analysisTags.probesLayout);
+                end
+                cell_metrics.general.chanCoords.x = chanMap.xcoords(:);
+                cell_metrics.general.chanCoords.y = chanMap.ycoords(:);
+                % case {'klustakwik', 'neurosuite'}
+            otherwise
+                if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
+                    disp('  Using default probesLayout: poly2')
+                    session.analysisTags.probesLayout = 'poly2';
+                end
+                chanMap = createChannelMap(basepath,basename,session.analysisTags.probesLayout);
+                cell_metrics.general.chanCoords.x = chanMap.xcoords(:);
+                cell_metrics.general.chanCoords.y = chanMap.ycoords(:);
+        end
+        
+        % Fit exponential
+        fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
+        fig1 = figure('Name', ['Length constant and Trilateration'],'NumberTitle', 'off','position',[100,100,1000,800]);
+        for j = 1:cell_metrics.general.cellCount
+            % Trilateration
+            bestChannels = (cell_metrics.waveforms.bestChannels{j});
+            beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
+            trilat_pos = trilat([cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels)],cell_metrics.waveforms.peakVoltage_all{j}(bestChannels),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
+            cell_metrics.trilat_x(j) = trilat_pos(1);
+            cell_metrics.trilat_y(j) = trilat_pos(2);
+            
+            % Length constant
+            x1 = cell_metrics.general.chanCoords.x;
+            y1 = cell_metrics.general.chanCoords.y;
+            u = cell_metrics.trilat_x(j);
+            v = cell_metrics.trilat_y(j);
+            [channel_distance,idx] = sort(hypot((x1(:)-u),(y1(:)-v)));
+            
+            nChannelFit = min([16,length(session.extracellular.electrodeGroups.channels{spikes.shankID(j)})]);
+            x = 1:nChannelFit;
+            y = cell_metrics.waveforms.peakVoltage_all{j}(idx(x));
+            x2 = channel_distance(1:nChannelFit)';
+            f0 = fit(x2',y',fit_eqn,'StartPoint',[cell_metrics.peakVoltage(j), 30, 5],'Lower',[1, 0.001, 0],'Upper',[5000, 200, 1000]);
+            fitCoeffValues = coeffvalues(f0);
+            cell_metrics.peakVoltage_expFit(j) = fitCoeffValues(2);
+            
+            if ishandle(fig1)
+                figure(fig1)
+                subplot(2,2,1), hold off
+                plot(x2,y,'.-b'), hold on
+                plot(x2,fitCoeffValues(1)*exp(-x2/fitCoeffValues(2))+fitCoeffValues(3),'r'),
+                title(['Spike amplitude (lambda=',num2str(cell_metrics.peakVoltage_expFit(j),2) ,')']), xlabel('Distance (µm)'), ylabel('µV'), %xlim([0,nChannelFit])
+                subplot(2,2,2), hold on
+                plot(x2,y), title('Spike amplitude (all)'), xlabel('Distance (µm)'), ylabel('µV'), % xlim([0,nChannelFit])
+                subplot(2,2,3), hold off,
+                histogram(cell_metrics.peakVoltage_expFit,20), xlabel('Length constant (µm)')
+                subplot(2,2,4), hold on
+                plot(cell_metrics.peakVoltage(j),cell_metrics.peakVoltage_expFit(j),'ok')
+                ylabel('Length constant (µm)'), xlabel('Peak voltage (µV)')
+                %     pause(0.5)
             end
-            disp('  Creating channelmap')
-            chanMap = createChannelMap(basepath,basename,session.analysisTags.probesLayout);
         end
-        cell_metrics.general.chanCoords.x = chanMap.xcoords(:);
-        cell_metrics.general.chanCoords.y = chanMap.ycoords(:);
-        % case {'klustakwik', 'neurosuite'}
-    otherwise
-        if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
-            disp('  Using default probesLayout: poly2')
-            session.analysisTags.probesLayout = 'poly2';
-        end
-        chanMap = createChannelMap(basepath,basename,session.analysisTags.probesLayout);
-        cell_metrics.general.chanCoords.x = chanMap.xcoords(:);
-        cell_metrics.general.chanCoords.y = chanMap.ycoords(:);
-end
-
-% Fit exponential
-fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
-fig1 = figure('Name', ['Length constant and Trilateration'],'NumberTitle', 'off','position',[100,100,1000,800]);
-for j = 1:cell_metrics.general.cellCount
-    % Trilateration
-    bestChannels = (cell_metrics.waveforms.bestChannels{j});
-    beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
-    trilat_pos = trilat([cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels)],cell_metrics.waveforms.peakVoltage_all{j}(bestChannels),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
-    cell_metrics.trilat_x(j) = trilat_pos(1);
-    cell_metrics.trilat_y(j) = trilat_pos(2);
-    
-    % Length constant
-    x1 = cell_metrics.general.chanCoords.x;
-    y1 = cell_metrics.general.chanCoords.y;
-    u = cell_metrics.trilat_x(j);
-    v = cell_metrics.trilat_y(j);
-    [channel_distance,idx] = sort(hypot((x1(:)-u),(y1(:)-v)));
-    
-    nChannelFit = min([16,length(session.extracellular.electrodeGroups.channels{spikes.shankID(j)})]);
-    x = 1:nChannelFit;
-    y = cell_metrics.waveforms.peakVoltage_all{j}(idx(x));
-    x2 = channel_distance(1:nChannelFit)';
-    f0 = fit(x2',y',fit_eqn,'StartPoint',[cell_metrics.peakVoltage(j), 30, 5],'Lower',[1, 0.001, 0],'Upper',[5000, 200, 1000]);
-    fitCoeffValues = coeffvalues(f0);
-    cell_metrics.peakVoltage_expFit(j) = fitCoeffValues(2);
-    
-    if ishandle(fig1)
-        figure(fig1)
-        subplot(2,2,1), hold off
-        plot(x2,y,'.-b'), hold on
-        plot(x2,fitCoeffValues(1)*exp(-x2/fitCoeffValues(2))+fitCoeffValues(3),'r'),
-        title(['Spike amplitude (lambda=',num2str(cell_metrics.peakVoltage_expFit(j),2) ,')']), xlabel('Distance (µm)'), ylabel('µV'), %xlim([0,nChannelFit])
-        subplot(2,2,2), hold on
-        plot(x2,y), title('Spike amplitude (all)'), xlabel('Distance (µm)'), ylabel('µV'), % xlim([0,nChannelFit])
-        subplot(2,2,3), hold off,
-        histogram(cell_metrics.peakVoltage_expFit,20), xlabel('Length constant (µm)')
-        subplot(2,2,4), hold on
-        plot(cell_metrics.peakVoltage(j),cell_metrics.peakVoltage_expFit(j),'ok')
-        ylabel('Length constant (µm)'), xlabel('Peak voltage (µV)')
-        %     pause(0.5)
     end
 end
 
@@ -1333,15 +1342,21 @@ end
 
 if parameters.saveMat
     dispLog(['Saving cells to: ',saveAsFullfile]);
+    try
     save(saveAsFullfile,'cell_metrics','-v7.3','-nocompression')
     dispLog(['Saving session struct: ' fullfile(basepath,[basename,'.session.mat'])]);
     save(fullfile(basepath,[basename,'.session.mat']),'session','-v7.3','-nocompression')
+    catch
+        warning('Failed to save data in the Cell Explorer pipeline')
+    end
 end
 
 
-%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %%
 % Summary figures
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+
+CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Creates group plots only
 
 if parameters.summaryFigures
     cell_metrics.general.path = clusteringpath_full;
