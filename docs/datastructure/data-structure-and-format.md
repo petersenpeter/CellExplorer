@@ -88,7 +88,7 @@ A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The 
   * `framerate` : frame rate of the tracking
   * `notes`
 * `inputs`
-  * `inputTag` : unique name, e.g. temperature, stimPulses,OptitrackTTL
+  * `inputTag` : unique name, e.g. temperature, stimPulses, OptitrackTTL
     * `equipment` : hardware used to acquire the data
     * `inputType` : adc, aux, dat, dig ...
     * `channels` : list of channels (1-indexed)
@@ -158,7 +158,7 @@ A Matlab struct `eventName` stored in a .mat file: `sessionName.eventName.events
 * `duration`: duration of event (in seconds; calculated from timestamps; Px1).
 * `detectorinfo`: info about how the events were detected.
 
-The `*.events.mat` files should be stored in the basepath.
+The `*.events.mat` files should be stored in the basepath. Any `events` files located in the basepath will be detected in the pipeline (calc_CellMetrics) and an average PSTHs will be generated.
 
 ### Manipulations
 A Matlab struct `manipulationName` stored in a .mat file: `sessionName.eventName.manipulation.mat` with the following fields:
@@ -173,7 +173,7 @@ A Matlab struct `manipulationName` stored in a .mat file: `sessionName.eventName
 * `duration`: duration of event (in seconds; calculated from timestamps; Px1).
 * `detectorinfo`: info about how the events were detected.
 
-The `*.manipulation.mat` files should be stored in the basepath. `events` and `manipulation` files are similar in content, but only manipulation intervals are excluded in the pipeline.
+The `*.manipulation.mat` files should be stored in the basepath. `events` and `manipulation` files are similar in content, but only manipulation intervals are excluded in the pipeline. Any `manipulation` files located in the basepath will be detected in the pipeline (calc_CellMetrics) and an average PSTH will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline.
 
 ### Channels
 A matlab struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following fields:

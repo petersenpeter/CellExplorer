@@ -8,7 +8,7 @@ nav_order: 5
 {: .no_toc}
 The Cell Explorer pipeline has a subfolder for calculations to exist outside the main pipeline, such that updates can be applied without affecting your own additions to the pipeline. Please save your scripts to the folder `calc_CellMetrics/+customCalculations/` and follow the template already in that folder to integrate your own calculations into the regular pipeline.
 
-Your metrics has to follow the Cell Explorer [cell_metrics standard]({{"/datastructure/your-own-metrics/"|absolute_url}}).
+Your metrics has to follow the Cell Explorer [cell_metrics standard]({{"/datastructure/your-own-metrics/"|absolute_url}}). Any `events` or `manipulation` files located in the basepath will be detected in the pipeline and PSTHs will be generated automatically. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline. 
 
 ```m
 function cell_metrics = template(cell_metrics,session,spikes,spikes_all)
@@ -24,3 +24,5 @@ function cell_metrics = template(cell_metrics,session,spikes,spikes_all)
     % cell_metrics      updated cell_metrics struct
 end
 ```
+
+Any of the standard file types (e.g. `events` or `manipulation` files) located in the basepath will be detected in the pipeline and an average PSTHs will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline.
