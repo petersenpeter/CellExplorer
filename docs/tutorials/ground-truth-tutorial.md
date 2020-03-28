@@ -6,6 +6,13 @@ nav_order: 7
 ---
 # Ground truth data tutorial
 {: .no_toc}
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
 The Cell Explorer contains a select set of ground truth data located in `groundTruthData/`. This tutorial will guide you through using the ground truth data included with the Cell Explorer.
 
 1. Launch the Cell Explorer
@@ -19,3 +26,4 @@ Once a selection has been made, you can skip step 2 and 3. If you have data that
 <video width="100%" height="auto" controls="controls">
   <source src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/GroundTruthTutorial.mp4" type="video/mp4">
 </video>
+

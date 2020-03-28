@@ -1,8 +1,8 @@
 ---
 layout: default
-title: Plotting spike data
+title: Spike data plots
 parent: Tutorials
-nav_order: 6
+nav_order: 4
 ---
 
 # Tutorial on plotting spike raster data in the Cell Explorer

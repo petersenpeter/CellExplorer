@@ -2,7 +2,7 @@
 layout: default
 title: Perform opto-tagging
 parent: Tutorials
-nav_order: 4
+nav_order: 6
 ---
 # Opto-tagging tutorial
 {: .no_toc}
@@ -18,3 +18,7 @@ This tutorial will guide you through the process of tagging your cells by assign
 Opto-tagged/ground truth cells have one or more labels in `cell_metrics.groundTruthClassification`. If you have data that you are interested in sharing please contact us. You can push ground truth cells back the the Cell Explorer GitHub repository, or you can send your data by email to us.
 
 ![Optotagging interface](https://buzsakilab.com/wp/wp-content/uploads/2020/01/Cell-Explorer-optotagged-cells-2.png)
+
+## Saving ground truth data / optotagged data to the cell_metrics
+
+## Updating the ground truth data
