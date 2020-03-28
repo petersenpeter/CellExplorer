@@ -5,6 +5,8 @@ parent: Processing pipeline
 nav_order: 1
 ---
 # Running pipeline
+The pipeline has three main processing steps: 1. Gathering metadata, 2. Processing cell_metrics and 3. Running Cell Explorer. 
+
 {: .no_toc}
 ## Table of contents
 {: .no_toc .text-delta }
@@ -12,10 +14,19 @@ nav_order: 1
 1. TOC
 {:toc}
 
-### Flowcharts
-Below three flow charts shows the three main processing steps, 1. Gathering metadata, 2. Running the pipeline and 3. Running Cell Explorer. The boxes are color coded according to external files (blue), database (purple), script (green), Cell Explorer structs and .mat files (yellow).
+## Flowcharts
+The flowcharts below shows the processes in details. The boxes are color coded according to external files (blue), database (purple), script (green), Cell Explorer structs and .mat files (yellow).
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowchartExample.png)
+### Gathering metadata
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowChart_sessionStruct.png)
+
+### Running pipeline
+
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowChart_pipeline.png)
+
+### Running Cell Explorer
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowChart_CellExplorer.png)
+
 
 ### Running pipeline from a data path
 The pipeline follows the data standards [described here]({{"/datastructure/data-structure-and-format/"|absolute_url}}). Saving your data in the specified data formats, integrates your data better with the Cell Explorer, allowing you to plot spike rasters and event histograms among other things.
