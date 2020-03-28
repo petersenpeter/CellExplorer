@@ -4,9 +4,15 @@ title: Plotting spike data
 parent: Tutorials
 nav_order: 6
 ---
+
 # Tutorial on plotting spike raster data in the Cell Explorer
 {: .no_toc}
-This tutorial will show you how to generate raster plots using spike data. The spike data is not saved with the metrics and will be loaded separately. Events or manipulation files can also be loaded separately allowing you to generate two-dimensional rasters and PSTH raster plots. Any events or manipulation files located in the basepath will be detected in the pipeline and PSTHs will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline by default. 
+This tutorial will show you how to generate raster plots using spike data. The spike data is not saved with the metrics but will be loaded separately. Events or manipulation files can also be loaded separately allowing you to generate two-dimensional rasters and PSTH raster plots. 
+![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2020/03/rasters_placefield-04.png){: .mt-4}
+
+Above figure shows two raster plot examples for a pyramidal cell in CA1: 1. Theta phase vs position (the animal runs along a track), 2. Trial vs position, colored according to 3 states. The parameters used for the two examples are available in the folder `+customSpikesPlots/` (further details below). 
+
+Any events or manipulation files located in the basepath will be detected in the pipeline and PSTHs will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline by default. 
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -24,9 +30,9 @@ The Cell Explorer can show spike raster data using the `sessionName.spikes.celli
 4. Now, if the listed spike plotting options are sufficient. Press OK to close the dialog.
 5. This will add the spike plotting options to the display settings drop-down menus as shown in below image.
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/plotOptionsWithSpikes_3.png" width="50%"></p> {: .mt-4}
-7. Select one of the spike plot options to display it. This will generate a raster plot similar to the image below.
+6. Select one of the spike plot options to display it. This will generate a raster plot similar to the image below.
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/spikes_time_amplitude-01.png" width="80%"></p> {: .mt-4}
-8. If there are no spiking data available for the current session or the selected cell, the plot will be empty. This is also the case for datasets missing specific events files, when generating PSTH raster plots. 
+7. If there are no spiking data available for the current session or the selected cell, the plot will be empty. This is also the case for datasets missing specific events files, when generating PSTH raster plots. 
 
 ### Create and modify spike plots in the Cell Explorer
 1. From the spike data dialog you can add, edit and delete spike plots. To add a new plot, press the `Add plot` button (to modify an existing plot, select one of the listed plots and click the `Edit plot` button).
@@ -77,8 +83,3 @@ spikePlot.plotCount = 0;               % [binary] show spike count for each even
 
 end
 ```
-
-### Raster plot examples
-Below figure shows two raster plot examples for a pyramidal cell in CA1: 1. Theta phase vs position (the animal runs along a track), 2. Trial vs position, colored according to 3 states. The parameters used for the two examples are available in the folder `+customSpikesPlots/`. 
-![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2020/03/rasters_placefield-04.png){: .mt-4}
-
