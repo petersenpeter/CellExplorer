@@ -15,10 +15,12 @@ This tutorial will guide you through the process of tagging your cells by assign
 {:toc}
 
 ### Add your own tags to your cell_metrics
-Opto-tagged/ground truth cells have one or more labels in `cell_metrics.groundTruthClassification`. If you already have determined the identity of your cells you can simply add them to the `groundTruthClassification` field.
+Opto-tagged/ground truth cells have one or more labels in `cell_metrics.groundTruthClassification`. If you already have determined the identity of your cells you can simply add them to the `groundTruthClassification` field:
 ```m
-cell_metrics.groundTruthClassification = temp;
-```m
+cellIDs_optoTagged = [1,5,10]; % IDs (UIDs) of the opto-tagged cells
+name_optoTagged = 'PV+';       % Cell line name
+cell_metrics.groundTruthClassification(cellIDs_optoTagged) = repmat({{name_optoTagged}},length(cellIDs_optoTagged),1);
+```
 
 ### Tagging your cells in the Cell Explorer
 1. Launch the Cell Explorer.
