@@ -7,12 +7,6 @@ nav_order: 7
 # Ground truth data tutorial
 {: .no_toc}
 
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
 The Cell Explorer contains a select set of ground truth data located in `groundTruthData/`. This tutorial will guide you through using the ground truth data included with the Cell Explorer.
 
 1. Launch the Cell Explorer
@@ -21,9 +15,8 @@ The Cell Explorer contains a select set of ground truth data located in `groundT
 4. From the `Ground truth` menu, you can select how to display the ground truth data: as scatter points, as a density map (image), or double histograms.
 5. You can select which of the ground truth cell types to display in the Display Settings tab group `GroundTruth`
 
-Once a selection has been made, you can skip step 2 and 3. If you have data that you are interested in sharing please contact us. See the [opto-tagging tutorial](/Cell-Explorer/tutorials/optotagging-tutorial/) for how to add your own data to the ground truth selection. The ground truth cells have a label in `cell_metrics.groundTruthClassification`.  The video below shows the steps in the Cell Explorer:
+Once a selection has been made, you can skip step 2 and 3. If you have data that you are interested in sharing please contact us. See the [opto-tagging tutorial](/Cell-Explorer/tutorials/optotagging-tutorial/) for how to analyse and add your own data to the ground truth selection. The ground truth cells have a label in `cell_metrics.groundTruthClassification`.  The video below shows the above steps in the Cell Explorer:
 
 <video width="100%" height="auto" controls="controls">
   <source src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/GroundTruthTutorial.mp4" type="video/mp4">
 </video>
-

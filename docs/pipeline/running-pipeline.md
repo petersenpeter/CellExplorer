@@ -12,7 +12,7 @@ nav_order: 1
 1. TOC
 {:toc}
 
-### Processing flowcharts
+### Flowcharts
 Below three flow charts shows the three main processing steps, 1. Gathering metadata, 2. Running the pipeline and 3. Running Cell Explorer. The boxes are color coded according to external files (blue), database (purple), script (green), Cell Explorer structs and .mat files (yellow).
 
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowchartExample.png)

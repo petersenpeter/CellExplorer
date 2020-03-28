@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Spike data plots
+title: Spike raster plots
 parent: Tutorials
 nav_order: 4
 ---
