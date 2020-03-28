@@ -19,7 +19,7 @@ Opto-tagged/ground truth cells have one or more labels in `cell_metrics.groundTr
 ```m
 cellIDs_optoTagged = [1,5,10]; % IDs (UIDs) of the opto-tagged cells
 name_optoTagged = 'PV+';       % Cell line name
-cell_metrics.groundTruthClassification(cellIDs_optoTagged) = repmat({{name_optoTagged}},length(cellIDs_optoTagged),1);
+cell_metrics.groundTruthClassification(cellIDs_optoTagged) = repmat({ { name_optoTagged } },length(cellIDs_optoTagged),1);
 ```
 
 ### Tagging your cells in the Cell Explorer
