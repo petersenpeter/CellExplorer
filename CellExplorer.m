@@ -122,7 +122,8 @@ UI.cells.excitatoryPostsynaptic = []; UI.cells.inhibitoryPostsynaptic = []; UI.p
 UI.zoom.global = cell(1,9); UI.zoom.globalLog = cell(1,9); UI.settings.logMarkerSize = 0;
 UI.params.chanCoords.x_factor = 40; UI.params.chanCoords.y_factor = 10;
 UI.settings.plotExcitatoryConnections = true; UI.settings.plotInhibitoryConnections = true;
-groups_ids = []; clusClas = []; plotX = []; plotY = []; plotY1 = []; plotZ = []; timerVal = tic; plotMarkerSize = [];
+
+groups_ids = []; clusClas = []; plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = [];
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
 brainRegions_list = []; brainRegions_acronym = []; cell_class_count = [];  plotOptions = '';
 plotAcgFit = 0; clasLegend = 0; Colorval = 1; plotClas = []; plotClas11 = [];
@@ -130,16 +131,16 @@ colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; conne
 plotClasGroups = [];  plotClas2 = []; general = []; plotAverage_nbins = 40; table_fieldsNames = {};
 subsetPlots1 = []; subsetPlots2 = []; subsetPlots3 = []; subsetPlots4 = []; subsetPlots5 = []; subsetPlots6 = [];
 tSNE_metrics = [];  classificationTrackChanges = []; time_waveforms_zscored = []; spikesPlots = {};
-tableDataOrder = []; dispTags = []; dispTags2 = []; groundTruthSelection = []; subsetGroundTruth = []; 
-idx_textFilter = []; groundTruthCelltypesList = {''}; db = {}; plotConnections = [1 1 1];  
-clickPlotRegular = true;
-fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = []; 
+tableDataOrder = []; dispTags = []; dispTags2 = []; groundTruthSelection = []; subsetGroundTruth = [];
+idx_textFilter = []; groundTruthCelltypesList = {''}; db = {}; gt = {}; plotConnections = [1 1 1];
+clickPlotRegular = true; fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];
 fig2_axislimit_x_reference = []; fig2_axislimit_y_reference = []; fig2_axislimit_x_groundTruth = []; fig2_axislimit_y_groundTruth = [];
 referenceData=[]; reference_cell_metrics = [];
 groundTruth_cell_metrics = []; groundTruthData=[]; K = gausswin(10)*gausswin(10)'; K = 1.*K/sum(K(:)); customPlotOptions = {};
 
+timerVal = tic;
 spikes = []; events = [];
-createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal'; 
+createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal';
 polygon1.handle = gobjects(0); fig = 1;
 set(groot, 'DefaultFigureVisible', 'on'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1200,maxFigureSize(3)-50), min(800,maxFigureSize(4)-50)];
 
@@ -148,7 +149,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.59;
+CellExplorerVersion = 1.60;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback);
 hManager = uigetmodemanager(UI.fig);
@@ -338,7 +339,6 @@ else
             if ishandle(UI.fig)
                 close(UI.fig)
             end
-            cell_metrics = [];
             return
         end
     end
@@ -469,7 +469,7 @@ UI.menu.groundTruth.ops(2) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Image
 UI.menu.groundTruth.ops(3) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Scatter data',menuSelectedFcn,@showGroundTruthData);
 UI.menu.groundTruth.ops(4) = uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Histogram data',menuSelectedFcn,@showGroundTruthData);
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Define ground truth data',menuSelectedFcn,@defineGroundTruthData,'Separator','on');
-uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Compare cell groups to ground truth cell types',menuSelectedFcn,@compareToReference,'Separator','on');
+% uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Compare cell groups to ground truth cell types',menuSelectedFcn,@compareToReference,'Separator','on');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Perform ground truth cell type classification in current session(s)',menuSelectedFcn,@performGroundTruthClassification,'Accelerator','Y','Separator','on');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Show ground truth cell types in current session(s)',menuSelectedFcn,@loadGroundTruth,'Accelerator','U');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Save manual classification to groundTruth folder',menuSelectedFcn,@importGroundTruth);
@@ -1146,7 +1146,9 @@ while ii <= cell_metrics.general.cellCount
             AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
             fig1_axislimit_x = [nanmin(AA),max(AA)];
         else
-            fig1_axislimit_x = [min(cell_metrics.(UI.plot.xTitle)(UI.params.subset)),max(cell_metrics.(UI.plot.xTitle)(UI.params.subset))];
+            AA = cell_metrics.(UI.plot.xTitle)(UI.params.subset);
+            AA = AA( ~isnan(AA) & ~isinf(AA));
+            fig1_axislimit_x = [nanmin(AA),max(AA)];
         end
         if isempty(fig1_axislimit_x)
             fig1_axislimit_x = [0 1];
@@ -1158,13 +1160,16 @@ while ii <= cell_metrics.general.cellCount
             AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
             fig1_axislimit_y = [nanmin(AA),max(AA)];
         else
-            fig1_axislimit_y = [min(cell_metrics.(UI.plot.yTitle)(UI.params.subset)),max(cell_metrics.(UI.plot.yTitle)(UI.params.subset))];
+            AA = cell_metrics.(UI.plot.yTitle)(UI.params.subset);
+            AA = AA( ~isnan(AA) & ~isinf(AA));
+            fig1_axislimit_y = [nanmin(AA),max(AA)];
         end
         if isempty(fig1_axislimit_y)
             fig1_axislimit_y = [0 1];
         elseif diff(fig1_axislimit_y) == 0
             fig1_axislimit_y = fig1_axislimit_y + [-1 1];
         end
+        
         % Reference data
         if strcmp(UI.settings.referenceData, 'Points') && ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,UI.plot.xTitle) && isfield(reference_cell_metrics,UI.plot.yTitle)
             idx = find(ismember(referenceData.clusClas,referenceData.selection));
@@ -3974,6 +3979,168 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 % % % % % % % % % % % % % % % % % % % % % %
 
     function defineGroundTruthData(~,~)
+        if isempty(groundTruth_cell_metrics)
+            out = loadGroundTruthData;
+        end
+        [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
+        referenceData_path = fullfile(referenceData_path,'groundTruthData');
+        listing = dir(fullfile(referenceData_path,'*.cell_metrics.cellinfo.mat'));
+        listing = {listing.name};
+        listing = cellfun(@(x) x(1:end-26), listing(:),'uni',0);
+        if isempty(groundTruth_cell_metrics) && any(ismember(listing',groundTruth_cell_metrics.sessionName)==0)
+            ReloadSessionlist;
+        elseif isempty(gt) && exist(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'file')
+            load(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'gt');
+        elseif isempty(gt)
+            ReloadSessionlist;
+        end
+%         if isempty(gt) && exist(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'file')
+%             load(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'gt');
+%         else
+%             ReloadSessionlist;
+%         end
+        drawnow nocallbacks;
+        loadDB.dialog = dialog('Position', [300, 300, 840, 565],'Name','Cell Explorer: ground truth data','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
+        loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 );
+        loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
+        loadDB.sessionList = uitable(loadDB.VBox,'Data',gt.dataTable,'Position',[10, 50, 740, 457],'ColumnWidth',{20 30 120 120 120 120 120 170},'columnname',{'','#','Ground truth','Session','Brain region','Animal','Genetic line','Species'},'RowName',[],'ColumnEditable',[true false false false false false false false],'Units','normalized');
+        loadDB.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
+        set(loadDB.VBox, 'Heights', [50 -1 35]);
+        uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[10, 25, 150, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
+        uicontrol('Parent',loadDB.panel.top,'Style','text','Position',[580, 25, 150, 20],'Units','normalized','String','Sort by','HorizontalAlignment','center','Units','normalized');
+        loadDB.popupmenu.filter = uicontrol('Parent',loadDB.panel.top,'Style', 'Edit', 'String', '', 'Position', [10, 5, 560, 25],'Callback',@(src,evnt)Button_DB_filterList,'HorizontalAlignment','left','Units','normalized');
+        loadDB.popupmenu.sorting = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[580, 5, 150, 22],'Units','normalized','String',{'Ground truth','Session','Brain region','Animal','Genetic line','Species'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+%         loadDB.popupmenu.repositories = uicontrol('Parent',loadDB.panel.top,'Style','popupmenu','Position',[740, 5, 150, 22],'Units','normalized','String',{'All repositories','Your repositories'},'HorizontalAlignment','left','Callback',@(src,evnt)Button_DB_filterList,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.top,'Style','pushbutton','Position',[740, 5, 90, 30],'String','Update list','Callback',@(src,evnt)ReloadSessionlist,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[10, 5, 90, 30],'String','Select all','Callback',@(src,evnt)button_DB_selectAll,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[110, 5, 90, 30],'String','Select none','Callback',@(src,evnt)button_DB_deselectAll,'Units','normalized');
+        loadDB.summaryText = uicontrol('Parent',loadDB.panel.bottom,'Style','text','Position',[210, 5, 420, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[640, 5, 90, 30],'String','OK','Callback',@(src,evnt)CloseDB_dialog,'Units','normalized');
+        uicontrol('Parent',loadDB.panel.bottom,'Style','pushbutton','Position',[740, 5, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelDB_dialog,'Units','normalized');
+        
+        UpdateSummaryText
+        Button_DB_filterList
+        if ~isempty(groundTruth_cell_metrics)
+            loadDB.sessionList.Data(find(ismember(loadDB.sessionList.Data(:,4),unique(groundTruth_cell_metrics.sessionName))),1) = {true};
+        end
+        uicontrol(loadDB.popupmenu.filter)
+        uiwait(loadDB.dialog)
+        
+        function ReloadSessionlist
+            [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
+            referenceData_path = fullfile(referenceData_path,'groundTruthData');
+            listing = dir(fullfile(referenceData_path,'*.cell_metrics.cellinfo.mat'));
+            listing = {listing.name};
+            listing = cellfun(@(x) x(1:end-26), listing(:),'uni',0);
+            referenceData_path1 = cell(1,length(listing));
+            referenceData_path1(:) = {referenceData_path};
+            % Loading metrics
+            gt_cell_metrics = LoadCellMetricBatch('clusteringpaths', referenceData_path1,'basenames',listing,'basepaths',referenceData_path1); % 'waitbar_handle',f_LoadCellMetrics
+            gt.refreshTime = datetime('now','Format','HH:mm:ss, d MMMM, yyyy');
+            
+            % Generating list of sessions
+            gt.menu_name = gt_cell_metrics.sessionName;
+            gt.menu_geneticLine = gt_cell_metrics.geneticLine;
+            
+            gt.menu_groundTruth = cellfun(@(x) x{:},gt_cell_metrics.groundTruthClassification,'UniformOutput',false);
+            gt.menu_animals = gt_cell_metrics.animal;
+            gt.menu_species = gt_cell_metrics.species;
+            gt.menu_brainRegion = gt_cell_metrics.brainRegion;
+            gt.menu_UID = gt_cell_metrics.UID;
+            sessionEnumerator = cellstr(num2str([1:length(gt.menu_name)]'))';
+            gt.sessionList = strcat(sessionEnumerator,{' '},gt.menu_name,{' '},gt.menu_groundTruth,{' '},gt.menu_geneticLine,{' '},gt.menu_animals,{' '},gt.menu_species,{' '},gt.menu_brainRegion);
+            
+            gt.dataTable = {};
+            gt.dataTable(:,2:8) = [sessionEnumerator;gt.menu_groundTruth;gt.menu_name;gt.menu_brainRegion;gt.menu_animals;gt.menu_geneticLine;gt.menu_species]';
+            gt.dataTable(:,1) = {false};
+            gt.listing = listing;
+            try
+                save(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'gt','-v7.3','-nocompression');
+            catch
+                warning('failed to save session list with metrics');
+            end
+            UpdateSummaryText
+        end
+        
+        function UpdateSummaryText
+            loadDB.summaryText.String = [num2str(size(loadDB.sessionList.Data,1)),' cell(s) from ', num2str(length(unique(loadDB.sessionList.Data(:,4)))),' sessions from ',num2str(length(unique(loadDB.sessionList.Data(:,6)))),' animal(s). Updated at: ', datestr(gt.refreshTime)];
+        end
+        
+        function Button_DB_filterList
+%             dataTable1 = gt.dataTable;
+            if ~isempty(loadDB.popupmenu.filter.String) && ~strcmp(loadDB.popupmenu.filter.String,'Filter')
+                newStr2 = split(loadDB.popupmenu.filter.String,' & ');
+                idx_textFilter2 = zeros(length(newStr2),size(gt.dataTable,1));
+                for i = 1:length(newStr2)
+                    newStr3 = split(newStr2{i},' | ');
+                    idx_textFilter2(i,:) = contains(gt.sessionList,newStr3,'IgnoreCase',true);
+                end
+                idx1 = find(sum(idx_textFilter2,1)==length(newStr2));
+            else
+                idx1 = 1:size(gt.dataTable,1);
+            end
+            
+            [~,idx2] = sort(gt.dataTable(:,loadDB.popupmenu.sorting.Value+1));
+            idx2 = intersect(idx2,idx1,'stable');
+            loadDB.sessionList.Data = gt.dataTable(idx2,:);
+            UpdateSummaryText
+        end
+        
+        function button_DB_selectAll
+            loadDB.sessionList.Data(:,1) = {true};
+        end
+        
+        function button_DB_deselectAll
+            loadDB.sessionList.Data(:,1) = {false};
+        end
+        
+        function CloseDB_dialog
+            indx = cell2mat(cellfun(@str2double,loadDB.sessionList.Data(find([loadDB.sessionList.Data{:,1}])',2),'un',0));
+            if ~isempty(indx)
+                list_Session = gt.menu_name(indx);
+                list_UID = gt.menu_UID(indx);
+                delete(loadDB.dialog);
+                listSession2 = unique(list_Session);
+                referenceData_path1 = cell(1,length(listSession2));
+                referenceData_path1(:) = {referenceData_path};
+                % Loading metrics
+                groundTruth_cell_metrics = LoadCellMetricBatch('clusteringpaths', referenceData_path1,'basenames',listSession2,'basepaths',referenceData_path1); % 'waitbar_handle',f_LoadCellMetrics
+                
+                % Saving batch metrics
+                save(fullfile(referenceData_path,'groundTruth_cell_metrics.cellinfo.mat'),'groundTruth_cell_metrics','-v7.3','-nocompression');
+                
+                % Initializing
+                [groundTruth_cell_metrics,groundTruthData] = initializeReferenceData(groundTruth_cell_metrics,'groundTruth');
+                if isfield(UI.tabs,'groundTruthData')
+                    delete(UI.tabs.groundTruthData);
+                    UI.tabs = rmfield(UI.tabs,'groundTruthData');
+                end
+                if isfield(UI.listbox,'groundTruthData')
+                    delete(UI.listbox.groundTruthData);
+                    UI.listbox = rmfield(UI.listbox,'groundTruthData');
+                end
+                UI.tabs.groundTruthData = uitab(UI.panel.tabgroup2,'Title','GroundTruth');
+                UI.listbox.groundTruthData = uicontrol('Parent',UI.tabs.groundTruthData,'Style','listbox','Position',getpixelposition(UI.tabs.groundTruthData),'Units','normalized','String',groundTruthData.groundTruthTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)groundTruthDataSelection,'KeyPressFcn', {@keyPress});
+                UI.panel.tabgroup2.SelectedTab = UI.tabs.groundTruthData;
+                initGroundTruthTab
+                uiresume(UI.fig);
+            else
+                delete(loadDB.dialog);
+            end
+            if ishandle(UI.fig)
+                uiresume(UI.fig);
+            end
+        end
+        
+        function  CancelDB_dialog
+            % Closes the dialog
+            delete(loadDB.dialog);
+        end
+    end
+
+% % %
+
+    function defineGroundTruthData_old(~,~)
         [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
         referenceData_path = fullfile(referenceData_path,'groundTruthData');
         listing = dir(fullfile(referenceData_path,'*.cell_metrics.cellinfo.mat'));
@@ -4003,6 +4170,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end
 
+    
 % % % % % % % % % % % % % % % % % % % % % %
 
     function defineReferenceData(~,~)
@@ -4020,7 +4188,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             LoadDB_sessionlist
         end
         
-        loadDB.dialog = dialog('Position', [300, 300, 1000, 565],'Name','Cell Explorer: Load reference data','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
+        loadDB.dialog = dialog('Position', [300, 300, 1000, 565],'Name','Cell Explorer: reference data','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
         loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 );
         loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
         loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110 100},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository','Brain regions'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
@@ -4192,6 +4360,17 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 save(fullfile(referenceData_path,'reference_cell_metrics.cellinfo.mat'),'reference_cell_metrics','-v7.3','-nocompression');
                 
                 [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
+                if isfield(UI.tabs,'referenceData')
+                    delete(UI.tabs.referenceData);
+                    UI.tabs = rmfield(UI.tabs,'referenceData');
+                end
+                if isfield(UI.listbox,'referenceData')
+                    delete(UI.listbox.referenceData);
+                    UI.listbox = rmfield(UI.listbox,'referenceData');
+                end
+                UI.tabs.referenceData = uitab(UI.panel.tabgroup2,'Title','Reference');
+                UI.listbox.referenceData = uicontrol('Parent',UI.tabs.referenceData,'Style','listbox','Position',getpixelposition(UI.tabs.referenceData),'Units','normalized','String',referenceData.cellTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)referenceDataSelection,'KeyPressFcn', {@keyPress});
+                UI.panel.tabgroup2.SelectedTab = UI.tabs.referenceData;
                 initReferenceDataTab
                 
                 if ishandle(f_LoadCellMetrics)
@@ -5250,13 +5429,29 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     direction = -1; % Negative scroll direction (zoom in)
                 end
             end
-            if UI.zoom.twoAxes == 1
+            if UI.zoom.twoAxes == 1 && ~(axnum == 1 && (UI.settings.customPlotHistograms == 2 || strcmp(UI.settings.referenceData, 'Histogram') || strcmp(UI.settings.groundTruthData, 'Histogram')))
                 applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
                 yyaxis left
                 globalZoom1(2,:) = globalZoom1(2,:);
                 axesLimits(2,:) = axesLimits(2,:);
                 applyZoom(globalZoom1,cursorPosition,axesLimits,[0 0 0],direction);
                 yyaxis right
+            elseif axnum == 1 && (UI.settings.customPlotHistograms == 2 || strcmp(UI.settings.referenceData, 'Histogram') || strcmp(UI.settings.groundTruthData, 'Histogram'))
+                if UI.zoom.twoAxes == 1
+                    applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
+                    yyaxis left
+                    globalZoom1(2,:) = globalZoom1(2,:);
+                    axesLimits(2,:) = axesLimits(2,:);
+                    applyZoom(globalZoom1,cursorPosition,axesLimits,[0 0 0],direction);
+                    yyaxis right
+                else
+                    applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
+                end
+                % Double kernel-histograms
+                axes(h_scatter(2)) % x axis
+                applyZoom([globalZoom1(1,:);0,1;0,1],[cursorPosition(1),inf,0],[axesLimits(1,:);0,1;0,1],[globalZoomLog1(1),0,0],direction);
+                axes(h_scatter(3))% y axis
+                applyZoom([globalZoom1(2,:);0,1;0,1],[cursorPosition(2),inf,0],[axesLimits(2,:);0,1;0,1],[globalZoomLog1(2),0,0],direction);
             else
                 applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
             end
@@ -8760,9 +8955,9 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             load('db_cell_metrics_session_list.mat')
         elseif isempty(db)
             LoadDB_sessionlist
-        end
+        end   
         
-        loadDB.dialog = dialog('Position', [300, 300, 1000, 565],'Name','Cell Explorer: Load sessions from DB','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
+        loadDB.dialog = dialog('Position', [300, 300, 1000, 565],'Name','Cell Explorer: database sessions','WindowStyle','modal', 'resize', 'on' ); movegui(loadDB.dialog,'center')
         loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 );
         loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
         loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110 100},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository','Brain regions'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
@@ -9205,21 +9400,32 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     function spikePlotListDlg
         % Displays a dialog with the spike plots as defined in the
         % spikesPlots structure
-        spikePlotList_dialog = dialog('Position', [300, 300, 670, 400],'Name','Spike plot types','WindowStyle','modal'); movegui(spikePlotList_dialog,'center')
+        spikePlotList_dialog = dialog('Position', [300, 300, 750, 400],'Name','Spike plot types','WindowStyle','modal'); movegui(spikePlotList_dialog,'center')
         
         tableData = updateTableData(spikesPlots);
-        spikePlot = uitable(spikePlotList_dialog,'Data',tableData,'Position',[10, 50, 650, 340],'ColumnWidth',{20 125 90 90 90 90 70 70},'columnname',{'','Plot name','X data','Y data','X label','Y label','State','Events'},'RowName',[],'ColumnEditable',[true false false false false false false false]);
+        spikePlot = uitable(spikePlotList_dialog,'Data',tableData,'Position',[10, 50, 730, 340],'ColumnWidth',{20 125 90 90 90 90 70 70 80},'columnname',{'','Plot name','X data','Y data','X label','Y label','State','Events','Event data'},'RowName',[],'ColumnEditable',[true false false false false false false false false]);
         uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[10, 10, 90, 30],'String','Add plot','Callback',@(src,evnt)addPlotToTable);
         uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[100, 10, 90, 30],'String','Edit plot','Callback',@(src,evnt)editPlotToTable);
         uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[190, 10, 90, 30],'String','Delete plot','Callback',@(src,evnt)DeletePlot);
         uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[280, 10, 90, 30],'String','Reset spike data','Callback',@(src,evnt)ResetSpikeData);
         uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[370, 10, 100, 30],'String','Load all spike data','Callback',@(src,evnt)LoadAllSpikeData);
-        OK_button = uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[480, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseSpikePlotList_dialog);
-        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[570, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikePlotList_dialog);
+        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[470, 10, 90, 30],'String','Predefine','Callback',@(src,evnt)viewPredefinedCustomSpikesPlots);
+        OK_button = uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[560, 10, 90, 30],'String','OK','Callback',@(src,evnt)CloseSpikePlotList_dialog);
+        uicontrol('Parent',spikePlotList_dialog,'Style','pushbutton','Position',[650, 10, 90, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikePlotList_dialog);
         
         uicontrol(OK_button)
         uiwait(spikePlotList_dialog);
-        
+        function viewPredefinedCustomSpikesPlots
+            temp = what('customSpikesPlots');
+            if ispc
+                winopen(temp.path);
+            elseif ismac
+                syscmd = ['open "', temp.path, '" &'];
+                system(syscmd);
+            else
+                filebrowser;
+            end
+        end
         function  ResetSpikeData
             % Resets spikes and event data and closes the dialog
             spikes = [];
@@ -9359,7 +9565,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         % Filter/Threshold
         uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Filter', 'Position', [10, 169, 210, 20],'HorizontalAlignment','left');
-        spikePlotFilterData = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', ['Select field';spikesField], 'Value',1,'Position', [10, 155, 210, 20],'HorizontalAlignment','left','Callback',@(src,evnt)toggleFilterFields);
+        spikePlotFilterData = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', ['none';spikesField], 'Value',1,'Position', [10, 155, 210, 20],'HorizontalAlignment','left','Callback',@(src,evnt)toggleFilterFields);
         uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Type', 'Position', [230, 169, 210, 20],'HorizontalAlignment','left');
         spikePlotFilterType = uicontrol('Parent',spikePlots_dialog,'Style', 'popupmenu', 'String', {'none','equal to','less than','greater than'}, 'Value',1,'Position', [230, 155, 130, 20],'HorizontalAlignment','left');
         uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Value', 'Position', [370, 169, 70, 20],'HorizontalAlignment','left');
@@ -10313,13 +10519,28 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 % % % % % % % % % % % % % % % % % % % % % %
 
     function HelpDialog(~,~)
-        opts.Interpreter = 'tex';
-        opts.WindowStyle = 'normal';
-        msgbox({'\bfNavigation\rm','<    : Next cell', '>    : Previous cell','.     : Next cell with same class',',     : Previous cell with same class','+G   : Go to a specific cell','Page Up      : Next session in batch (only in batch mode)','Page Down  : Previous session in batch (only in batch mode)','Numpad0     : First cell', 'Numpad1-9 : Next cell with that numeric class','Backspace   : Previously selected cell','Numeric + / - / *          : Zoom in / out / reset plots','   ',...
-            '\bfCell assigments\rm','1-9 : Cell-types','+B    : Brain region','+L    : Label','Plus   : Add Cell-type','+Z    : Undo assignment', '+R    : Reclassify cell types','   ',...
-            '\bfDisplay shortcuts\rm','M    : Show/Hide menubar','N    : Change layout [6, 5 or 4 subplots]','+E     : Highlight excitatory cells (triangles)','+I      : Highlight inhibitory cells (circles)','+F     : Display ACG fit', 'K    : Calculate and display significance matrix for all metrics (KS-test)','+T     : Calculate tSNE space from a selection of metrics','W    : Display waveform metrics','+Y    : Perform ground truth cell type classification','+U    : Load ground truth cell types','Space  : Show action dialog for selected cells','     ',...
-            '\bfOther shortcuts\rm', '+P    : Open preferences for the Cell Explorer','+C    : Open the file directory of the selected cell','+D    : Opens sessions from the Buzsaki lab database','+A    : Open spike data menu','+J     : Modify parameters for a spike plot','+V    : Visit the Cell Explorer website in your browser','',...
-            '+ sign indicatea that the key must be combined with command/control (Mac/Windows)','','\bfVisit the Cell Explorer''s website for further help\rm',''},'Keyboard shortcuts','help',opts);
+        if ismac; scs  = 'Cmd + '; else; scs  = 'Ctrl + '; end
+        shortcutList = { '','<html><b>Navigation</b></html>';
+            '> (right arrow)','Next cell'; '< (left arrow)','Previous cell'; '. (dot)','Next cell with same class'; ', (comma) ','Previous cell with same class';
+            [scs,'G '],'Go to a specific cell'; 'Page Up ','Next session in batch (only in batch mode)'; 'Page Down','Previous session in batch (only in batch mode)';
+            'Numpad0','First cell'; 'Numpad1-9 ','Next cell with that numeric class'; 'Backspace','Previously selected cell'; 'Numeric + / - / *','Zoom in / zoom out / reset plots'; '   ',''; 
+            '','<html><b>Cell assigments</b></html>';
+            '1-9 ','Cell-types'; [scs,'B'],'Brain region'; [scs,'L'],'Label'; 'Plus','Add Cell-type'; [scs,'Z'],'Undo assignment'; [scs,'R'],'Reclassify cell types'; ' ',' ';
+            '','<html><b>Display shortcuts</b></html>';
+            'M','Show/Hide menubar'; 'N','Change layout [6; 5 or 4 subplots]'; [scs,'E'],'Highlight excitatory cells (triangles)'; [scs,'I'],'Highlight inhibitory cells (circles)';
+            [scs,'F'],'Display ACG fit'; 'K','Calculate and display significance matrix for all metrics (KS-test)'; [scs,'T'],'Calculate tSNE space from a selection of metrics';
+            'W','Display waveform metrics'; [scs,'Y'],'Perform ground truth cell type classification'; [scs,'U'],'Load ground truth cell types'; 'Space','Show action dialog for selected cells'; '  ','';
+            '','<html><b>Other shortcuts</b></html>';
+            [scs,'P'],'Open preferences for the Cell Explorer'; [scs,'C'],'Open the file directory of the selected cell'; [scs,'D'],'Opens sessions from the Buzsaki lab database';
+            [scs,'A'],'Open spike data menu'; [scs,'J'],'Modify parameters for a spike plot'; [scs,'V'],'Visit the Cell Explorer website in your browser';
+            '',''; '','<html><b>Visit the Cell Explorer website for further help and documentation</html></b>'; };
+        if ismac
+            dimensions = [450,(size(shortcutList,1)+1)*17.5];
+        else
+            dimensions = [450,(size(shortcutList,1)+1)*18.5];
+        end
+        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','Cell Explorer: keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off'); movegui(HelpWindow.dialog,'center') % ,'WindowStyle','modal', 'resize', 'on'
+        HelpWindow.sessionList = uitable(HelpWindow.dialog,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{100 345},'columnname',{'Shortcut','Action'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');
     end
 
 % % % % % % % % % % % % % % % % % % % % % %
