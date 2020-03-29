@@ -1196,7 +1196,6 @@ if ~isfield(cell_metrics,'putativeCellType') || ~ parameters.keepCellClassificat
     cell_metrics.putativeCellType(cell_metrics.troughToPeak>0.425  & ismember(cell_metrics.putativeCellType, 'Interneuron')) = repmat({'Wide Interneuron'},sum(cell_metrics.troughToPeak>0.425  & (ismember(cell_metrics.putativeCellType, 'Interneuron'))),1);
 end
 
-
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Cleaning metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -1238,7 +1237,7 @@ cell_metrics.general = rmfield(cell_metrics.general,field2remove(test));
 % Submitting to database
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-% Checks weather db credentials exist
+% Checks if db credentials have been set
 if exist('db_load_settings','file')
     db_settings = db_load_settings;
     if ~strcmp(db_settings.credentials.username,'user')
@@ -1481,8 +1480,6 @@ if parameters.summaryFigures
 end
 
 dispLog(['Cell metrics calculations complete. Elapsed time is ', num2str(toc(timerCalcMetrics),5),' seconds.'])
-
-
 end
 
 function dispLog(message)

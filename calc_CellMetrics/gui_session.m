@@ -96,7 +96,7 @@ else
             clusteringpath = '';
         end
     else
-        answer = questdlg('basename.session.mat does not exist. Would you like to create one from a template or locate an existing session file?','No basename.session.mat file found','Create from template', 'Load from database','Locate file','Create from template');
+        answer = questdlg([basename,'.session.mat does not exist. Would you like to create one from a template or locate an existing session file?'],'No basename.session.mat file found','Create from template', 'Load from database','Locate file','Create from template');
         % Handle response
         switch answer
             case 'Create from template'
