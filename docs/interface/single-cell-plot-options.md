@@ -41,9 +41,8 @@ PSTHs can be shown for either sessionName.*.psth.mat files or for sessionName.*.
 <img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png" width="70%">
 
 ### Spike rasters
-The raw spiking data can also be loaded. [Click here to learn more about how to generate the spike raster plots]({{"/interface/spike-and-event-data/"|absolute_url}}). Below figures show three raster plot examples 1. Phase vs position, 2. trials vs position and 3. spike ampltude vs time.
-![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRaster.png)
-![Rasters in the Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/12/spikeRasterCellExplorer.png)
+The spiking data can also be loaded to generate raster plots using spike data. Please see the [tutorial on spike data]({{"/tutorials/plotting-spike-data/"|absolute_url}}) to learn more. The figure below shows two raster plot examples for a pyramidal cell in CA1: 1. Theta phase vs position (the animal runs along a track), 2. Trial vs position, colored according to 3 states.
+![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2020/03/rasters_placefield-04.png){: .mt-4}
 
 ## Group action plots
 All plots presented on this page are single cell plots that can be selected for the 3-6 single cell subplots in the Cell Explorer but can also be plotted separately using the group action plots menu. Select a few select and press `space`. Below menu will be shown and you can create various plot combinations from above plot options. 

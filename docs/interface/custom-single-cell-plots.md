@@ -19,7 +19,8 @@ function subsetPlots = template(cell_metrics,UI,ii,col)
     % col               color of the current cell
     %
     % OUTPUT
-    % subsetPlots       a struct with any extra single cell plots from synaptic partner cells
+    % subsetPlots       a struct with plotted data. This struct allows the curves to 
+                        be selected in the UI with the mouse cursor.
     %   .xaxis          x axis data (Nx1), where N is the number of samples 
     %   .yaxis          y axis data (NxM), where M is the number of cells
     %   .subset         list of cellIDs (Mx1)
