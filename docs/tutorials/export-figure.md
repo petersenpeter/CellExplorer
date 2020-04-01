@@ -21,4 +21,7 @@ If the export figure dialog is not sufficient for your need, you can bring up th
 When applying the settings to the figure (`Apply to Figure`), the figure sometimes resizes to a smaller initial size. Just resize the figure back to the full size before clicking `Export`. 
 
 Any other figures produced by the Cell Explorer can be saved in similar fashion using the File menu options `Save As` or `Export Setup...`.
-https://www.mathworks.com/help/matlab/ref/exportsetupdlg.html
+
+Following the tutorial should provide you with a .pdf figure as shown below:
+
+![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)
