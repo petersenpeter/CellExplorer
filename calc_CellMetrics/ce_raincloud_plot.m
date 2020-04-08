@@ -151,8 +151,8 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     else
         drops_pos = jit - yl(2) / 2;
     end
-    h{2} = scatter(X, drops_pos,'HitTest','off','SizeData',markerSize,'MarkerFaceColor',color,'MarkerEdgeColor','none');
-    
+%      h{2} = scatter(X, drops_pos,'HitTest','off','SizeData',markerSize,'MarkerFaceColor',color,'MarkerEdgeColor','none');
+     h{2} = line(X, drops_pos,'HitTest','off','markersize',markerSize-5,'MarkerFaceColor',color,'LineStyle','none','Marker','.','color',color);
     if box_on
         if box_col_match
             bxcl = color;

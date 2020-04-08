@@ -1,10 +1,10 @@
 function mono_res = gui_MonoSyn(mono_res_input,UID)
 % Manual curating detected CCGs
 % Limitation: can only deselect connections at this point. Click the CCG subplot to deselect a connection (turns pink)
-% 
+%
 % INPUT
 % mono_res_input : full path to monosyn mat file or a matlab struct
-% 
+%
 % Example call
 % mono_res = gui_MonoSyn('Z:\peterp03\IntanData\MS13\Peter_MS13_171130_121758_concat\Kilosort_2017-12-14_170737\Peter_MS13_171130_121758_concat.mono_res.cellinfo.mat')
 % mono_res = gui_MonoSyn(mono_res)
@@ -64,10 +64,10 @@ if ~isfield(mono_res,'sig_con_inhibitory_all')
     mono_res.sig_con_inhibitory_all = [];
 end
 
-if ~isempty(mono_res.sig_con_excitatory) || ~isempty(mono_res.sig_con_excitatory_all) 
+if ~isempty(mono_res.sig_con_excitatory) || ~isempty(mono_res.sig_con_excitatory_all)
     connectionsDisplayed = 1;
     sig_con = mono_res.sig_con_excitatory;
-elseif ~isempty(mono_res.sig_con_inhibitory) || ~isempty(mono_res.sig_con_inhibitory_all) 
+elseif ~isempty(mono_res.sig_con_inhibitory) || ~isempty(mono_res.sig_con_inhibitory_all)
     connectionsDisplayed = 2;
     sig_con = mono_res.sig_con_inhibitory;
 else
@@ -95,10 +95,10 @@ UI.switchConnectionType = uicontrol('Parent',UI.fig,'Style','popupmenu','Positio
 displayAllConnections = uicontrol('Parent',UI.fig,'Style','checkbox','Position',[115 410 100 10],'Units','normalized','String','Show all detected connections','HorizontalAlignment','right','Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
 % align([UI.leftbutton UI.rightbutton UI.switchConnectionType displayAllConnections],'Top','Bottom');
 if ~verLessThan('matlab', '9.4')
-    set(UI.fig,'WindowState','maximize','visible','on'), drawnow nocallbacks; 
+    set(UI.fig,'WindowState','maximize','visible','on'), drawnow nocallbacks;
 else
     set(UI.fig,'visible','on')
-    drawnow nocallbacks; frame_h = get(UI.fig,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks; 
+    drawnow nocallbacks; frame_h = get(UI.fig,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks;
 end
 if exist('UID','var') && any(UID == allcel)
     i = find(UID == allcel);
@@ -107,7 +107,7 @@ else
 end
 temp444 = 1;
 while temp444 == 1
-    if i < 1 
+    if i < 1
         i = 1;
     end
     if i > length(allcel)
@@ -125,7 +125,7 @@ while temp444 == 1
     
     prs2 = [];
     for j=1:length(ha)
-        axes(ha(j));
+        set(UI.fig,'CurrentAxes',ha(j)), hold on
         targ=completeIndex(completeIndex(:,3) == allcel(i),1:2);
         targ_UID=completeIndex(completeIndex(:,3) == allcel(i),3);
         plotTitle.String = ['Reference Cell: ' num2str(targ_UID) ', group: '  num2str(targ(1)),', cluID: ',num2str(targ(2)),' (', num2str(i),'/' num2str(length(allcel)),')'];
@@ -150,7 +150,7 @@ while temp444 == 1
             hold on;
             
             % Plot predicted values
-%             plot(t,mono_res.Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
+            %             plot(t,mono_res.Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
             
             %Plot upper and lower boundaries
             plot(t,mono_res.Bounds(:,prs1(1),prs1(2),1),'r--', 'HitTest','off','linewidth',1.5);
@@ -171,7 +171,7 @@ while temp444 == 1
             else
                 xlim([min(t) max(t)]);
             end
-
+            
             tcel = setdiff(prs(j,:),allcel(i,:));
             targ=completeIndex(completeIndex(:,3)==tcel,1:2);
             targ_UID=completeIndex(completeIndex(:,3)==tcel,3);
@@ -214,7 +214,13 @@ while temp444 == 1
             axis off
         elseif j<length(ha)
             zdata = ccgR(:,:,allcel(i))';
-            imagesc(flip(t),1:size(ccgR,3),(zdata'./max(zdata'))'), hold on
+            imagesc(flip(t),1:size(ccgR,3),(zdata'./max(zdata'))'), hold on, axis tight
+            if xLimit
+                xlim(x_window)
+                idx = t > x_window(1) & t < x_window(2);
+            else
+                xlim([min(t) max(t)]);
+            end
             axhpos3 = xlim;
             plot(1.01*axhpos3(1)*ones(size(prs2,1),1),prs2(:,2),'.m', 'HitTest','off', 'MarkerSize',12)
             plot(1.01*axhpos3(1)*ones(size(prs2,1),1),prs2(:,1),'.k', 'HitTest','off', 'MarkerSize',12)
@@ -237,7 +243,6 @@ end
 if ishandle(UI.fig)
     close(UI.fig)
 end
-
 saveOnExitDialog
 
     function saveOnExitDialog
@@ -260,7 +265,7 @@ saveOnExitDialog
         end
     end
 
-    function subplotclick(obj,~) 
+    function subplotclick(obj,~)
         % when an axes is clicked
         figobj = get(obj,'Parent');
         axdata = get(obj,'UserData');
@@ -275,6 +280,7 @@ saveOnExitDialog
                     keep_con = [keep_con;prs(axdata,:)];
                 end
             case 'alt'
+                %                 set(obj,'Color',[1 0.65 0])
                 if prs(axdata,2)==allcel(i)
                     i = find(allcel == prs(axdata,1));
                 else
@@ -285,7 +291,7 @@ saveOnExitDialog
                 % polygonSelection
         end
     end
-    
+
     function numericSelect(subplotNum) %when an axes is clicked
         if subplotNum<length(ha)-1
             obj = ha(subplotNum);
@@ -300,7 +306,7 @@ saveOnExitDialog
             end
         end
     end
-    
+
     function goBack
         ii = i;
         i = max(i-1,1);
@@ -363,7 +369,7 @@ saveOnExitDialog
             case 'x'
                 changeXlim
             case 'w'
-                 web('https://petersenpeter.github.io/Cell-Explorer/tutorials/monosynaptic-connections-tutorial/','-new','-browser')
+                web('https://petersenpeter.github.io/Cell-Explorer/tutorials/monosynaptic-connections-tutorial/','-new','-browser')
         end
     end
     function changeXlim
@@ -381,7 +387,7 @@ saveOnExitDialog
         end
         uiresume(UI.fig);
     end
-    
+
     function goToCell
         GoTo_dialog = dialog('Position', [-300, -300, 300, 150],'Name','Go to connection'); movegui(GoTo_dialog,'center')
         uicontrol('Parent',GoTo_dialog,'Style', 'text', 'String', 'Provide the pair number and press enter', 'Position', [10, 125, 280, 20],'HorizontalAlignment','center');
@@ -475,39 +481,39 @@ patch(x_data, y_data,col,'EdgeColor',col, 'HitTest','off')
 end
 
 function [p,n]=numSubplots(n)
-    % Calculate how many rows and columns of sub-plots are needed to neatly display n subplots.
-    % Rob Campbell - January 2010
-    
-    while isprime(n) && n>4
-        n=n+1;
+% Calculate how many rows and columns of sub-plots are needed to neatly display n subplots.
+% Rob Campbell - January 2010
+
+while isprime(n) && n>4
+    n=n+1;
+end
+p=factor(n);
+if length(p)==1
+    p=[1,p];
+    return
+end
+while length(p)>2
+    if length(p)>=4
+        p(1)=p(1)*p(end-1);
+        p(2)=p(2)*p(end);
+        p(end-1:end)=[];
+    else
+        p(1)=p(1)*p(2);
+        p(2)=[];
     end
-    p=factor(n);
-    if length(p)==1
-        p=[1,p];
-        return
-    end
-    while length(p)>2
-        if length(p)>=4
-            p(1)=p(1)*p(end-1);
-            p(2)=p(2)*p(end);
-            p(end-1:end)=[];
-        else
-            p(1)=p(1)*p(2);
-            p(2)=[];
-        end
-        p=sort(p);
-    end
-    
-    % Reformat if the column/row ratio is too large: we want a roughly square design
-    while p(2)/p(1)>2.5
-        N=n+1;
-        [p,n]=numSubplots(N); %Recursive!
-    end
+    p=sort(p);
+end
+
+% Reformat if the column/row ratio is too large: we want a roughly square design
+while p(2)/p(1)>2.5
+    N=n+1;
+    [p,n]=numSubplots(N); %Recursive!
+end
 end
 
 function HelpDialog(~,~)
-    opts.Interpreter = 'tex'; opts.WindowStyle = 'normal';
-    msgbox({'\bfMouse interaction\rm','Left click on CCG subplots: accep/reject connection (turns red)','Right click on CCG subplots: switch to select cell','','\bfNavigation\rm','right-arrow : Next cell', 'left arrow : Previous cell','up-arrow : 10 cells forward','down-arrow : 10 cells backward',...
-        'space : Go to a specific cell','Numpad0 : Go to first cell','','\bfConnection assigment\rm', '1-9 : Toggle cell with that subplot number', ...
-        'Numpad1-9 : Toggle cell with that subplot number','','\bfVisualization\rm','x : change x-limits (60, 30 or 15 ms)','','\bfw: Visit the Cell Explorer''s website for further help\rm',''},'Help','help',opts);
+opts.Interpreter = 'tex'; opts.WindowStyle = 'normal';
+msgbox({'\bfMouse interaction\rm','Left click on CCG subplots: accep/reject connection (turns red)','Right click on CCG subplots: switch to select cell','','\bfNavigation\rm','right-arrow : Next cell', 'left arrow : Previous cell','up-arrow : 10 cells forward','down-arrow : 10 cells backward',...
+    'space : Go to a specific cell','Numpad0 : Go to first cell','','\bfConnection assigment\rm', '1-9 : Toggle cell with that subplot number', ...
+    'Numpad1-9 : Toggle cell with that subplot number','','\bfVisualization\rm','x : change x-limits (60, 30 or 15 ms)','','\bfw: Visit the Cell Explorer''s website for further help\rm',''},'Help','help',opts);
 end

@@ -1,9 +1,6 @@
-function [cell_metrics_idxs, cell_metrics] = loadCellMetrics(varargin)
-%   This function calculates cell metrics for a given recording/session
-%   Most metrics are single value per cell, either numeric or string type, but
-%   certain metrics are vectors like the autocorrelograms or cell with double content like waveforms.
-%   The metrics are based on a number of features: Spikes, Waveforms, PCA features,
-%   the ACG and CCGs, LFP, theta, ripples and so fourth
+function [cell_metrics_idxs, cell_metrics] = LoadCellMetrics(varargin)
+%   This function loads cell metrics for a given session
+
 %
 %   Check the wiki of the Cell Explorer for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
 %
@@ -12,15 +9,8 @@ function [cell_metrics_idxs, cell_metrics] = loadCellMetrics(varargin)
 %   session                - takes a database sessionName as input
 %   basepath               - path to session (base directory)
 %   clusteringpath         - path to cluster data if different from basepath
-%   metrics                - which metrics should be calculated. A cell with strings
-%   Examples:                'waveform_metrics','PCA_features','acg_metrics','deepSuperficial',
-%                            'ripple_metrics','monoSynaptic_connections','spatial_metrics'
-%                            'perturbation_metrics','theta_metrics','psth_metrics'
-%   excludeMetrics         - Any metrics to exclude
-%   removeMetrics          - Any metrics to remove (supports only deepSuperficial at this point)
-%   useNeurosuiteWaveforms - Use Neurosuite files to get waveforms and PCAs
-%   forceReload            - logical. Recalculate existing metrics
-%   saveMat                - save metrics to cell_metrics.mat
+%   Filters:
+%       brainRegion, synapticEffect, putativeCellType, labels, deepSuperficial, animal, tags, groups, groundTruthClassification
 %
 %   OUTPUT
 %   cell_metrics_idxs       - indexes of cells fulfilling filters*
@@ -28,7 +18,7 @@ function [cell_metrics_idxs, cell_metrics] = loadCellMetrics(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 24-05-2019
+% Last edited: 5-04-2020
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -53,8 +43,6 @@ addParameter(p,'basepaths',{},@iscell);
 addParameter(p,'clusteringpaths',{},@iscell);
 
 % Extra inputs
-addParameter(p,'metrics','all',@iscellstr);
-addParameter(p,'excludeMetrics','none',@iscellstr);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 
 % Filters
@@ -66,6 +54,7 @@ addParameter(p,'labels',[],@iscell);
 addParameter(p,'deepSuperficial',[],@iscell);
 addParameter(p,'animal',[],@iscell);
 addParameter(p,'tags',[],@iscell);
+addParameter(p,'groups',[],@iscell);
 addParameter(p,'groundTruthClassification',[],@iscell);
 
 parse(p,varargin{:})
@@ -81,8 +70,6 @@ basename = p.Results.basename;
 clusteringpath = p.Results.clusteringpath;
 
 % Extra inputs
-metrics = p.Results.metrics;
-excludeMetrics = p.Results.excludeMetrics;
 saveAs = p.Results.saveAs;
 
 % Batch input
@@ -100,6 +87,7 @@ labels = p.Results.labels;
 deepSuperficial = p.Results.deepSuperficial;
 animal = p.Results.animal;
 tags = p.Results.tags;
+groups = p.Results.groups;
 groundTruthClassification = p.Results.groundTruthClassification;
 
 if isempty(basename)
@@ -122,10 +110,10 @@ elseif ~isempty(id) || ~isempty(sessionin)
         warning(['Error loading metrics: ' fullfile(basepath,clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
     end
 elseif ~isempty(sessions)
-    cell_metrics = LoadCellMetricBatch('sessions',sessions);
+    cell_metrics = LoadCellMetricsBatch('sessions',sessions);
 end
 
-filterIndx = ones(length(cell_metrics.UID),7);
+filterIndx = ones(length(cell_metrics.UID),9);
 if ~isempty(brainRegion)
     filterIndx(:,1) = strcmp(cell_metrics.brainRegion,brainRegion);
 end
@@ -141,23 +129,32 @@ end
 if ~isempty(animal)
     filterIndx(:,5) = strcmp(cell_metrics.animal,animal);
 end
+if ~isempty(labels)
+    filterIndx(:,6) = strcmp(cell_metrics.labels,labels);
+end
 if ~isempty(tags)
-    for i = 1:length(cell_metrics.UID)
-        if ~isempty(cell_metrics.tags{i})
-            filterIndx(i,6) = any(strcmp(cell_metrics.tags{i},tags));
-        else
-            filterIndx(i,6) = 0;
-        end
+    filterIndx(:,7) = 0;
+    for i = 1:numel(tags)
+         if isfield(cell_metrics.tags,tags{i})
+             filterIndx(cell_metrics.tags.(tags{i}),7) = 1;
+         end
+    end
+end
+if ~isempty(groups)
+    filterIndx(:,8) = 0;
+    for i = 1:numel(groups)
+         if isfield(cell_metrics.groups,groups{i})
+             filterIndx(cell_metrics.groups.(groups{i}),8) = 1;
+         end
     end
 end
 if ~isempty(groundTruthClassification)
-    for i = 1:length(cell_metrics.UID)
-        if ~isempty(cell_metrics.groundTruthClassification{i})
-            filterIndx(i,7) = any(strcmp(cell_metrics.groundTruthClassification{i},groundTruthClassification));
-        else
-            filterIndx(i,7) = 0;
-        end
+    filterIndx(:,9) = 0;
+    for i = 1:numel(groundTruthClassification)
+         if isfield(cell_metrics.tags,groundTruthClassification{i})
+             filterIndx(cell_metrics.groundTruthClassification.(groundTruthClassification{i}),9) = 1;
+         end
     end
 end
-cell_metrics_idxs = find(sum(filterIndx')==7);
+cell_metrics_idxs = find(sum(filterIndx')==9);
 

@@ -30,6 +30,7 @@ UI.settings.sortingMetric = 'burstIndex_Royer2012'; % metrics used for sorting i
 UI.settings.markerSize = 15;                    % marker size in the group plots [default: 20]
 UI.settings.plotChannelMap = true;              % boolean. Show a channel map with waveforms.
 UI.settings.plotChannelMapAllChannels = true;   % Boolean. Show a select set of channels or all 
+UI.settings.colormap = hot(512);               % default colormap
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 6;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
@@ -45,8 +46,10 @@ UI.settings.plotMarkerSizedata = 'peakVoltage';
 UI.settings.cellTypes = {'Unknown','Pyramidal Cell','Narrow Interneuron','Wide Interneuron'};
 UI.settings.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
 UI.settings.tags = {'Good','Bad','Noise','InverseSpike'};
-UI.settings.groundTruth = {'PV+','NOS1+','GAT1+','SST+','Axoaxonic','Cell type A'};
-UI.settings.groundTruthMarkers = {'om','dg','sm','*k','+k','+p'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
+UI.settings.groundTruth = {'PV','NOS1','GAT1','SST','Axoaxonic','CellType_A'};
+UI.settings.groupDataMarkers = ce_append(["o","d","s","*","+"],["m","k","g"]'); 
+
+UI.settings.groundTruthMarkers = {'om','d','sm','*k','+k','+m','om','dm','sg','*m'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
 UI.settings.groundTruthColors = [[.9,.2,.2];[.2,.2,.9];[0.2,0.9,0.9];[0.9,0.2,0.9];[.2,.9,.2];[.5,.5,.5]];
 UI.settings.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
 
