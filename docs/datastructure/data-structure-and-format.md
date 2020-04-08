@@ -115,7 +115,7 @@ A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `equipment` : hardware used to acquire the data
 
 ### Spikes
-A Matlab struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `calc_CellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
+A Matlab struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
 * `ts`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in samples.
 * `times`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in seconds.
 * `cluID`: a 1xN vector with inherited IDs from the applied clustering algorithm.
@@ -158,7 +158,7 @@ A Matlab struct `eventName` stored in a .mat file: `sessionName.eventName.events
 * `duration`: duration of event (in seconds; calculated from timestamps; Px1).
 * `detectorinfo`: info about how the events were detected.
 
-The `*.events.mat` files should be stored in the basepath. Any `events` files located in the basepath will be detected in the pipeline (calc_CellMetrics) and an average PSTHs will be generated.
+The `*.events.mat` files should be stored in the basepath. Any `events` files located in the basepath will be detected in the pipeline (ProcessCellMetrics.m) and an average PSTHs will be generated.
 
 ### Manipulations
 A Matlab struct `manipulationName` stored in a .mat file: `sessionName.eventName.manipulation.mat` with the following fields:
@@ -173,7 +173,7 @@ A Matlab struct `manipulationName` stored in a .mat file: `sessionName.eventName
 * `duration`: duration of event (in seconds; calculated from timestamps; Px1).
 * `detectorinfo`: info about how the events were detected.
 
-The `*.manipulation.mat` files should be stored in the basepath. `events` and `manipulation` files are similar in content, but only manipulation intervals are excluded in the pipeline. Any `manipulation` files located in the basepath will be detected in the pipeline (calc_CellMetrics) and an average PSTH will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline.
+The `*.manipulation.mat` files should be stored in the basepath. `events` and `manipulation` files are similar in content, but only manipulation intervals are excluded in the pipeline. Any `manipulation` files located in the basepath will be detected in the pipeline (ProcessCellMetrics.m) and an average PSTH will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline.
 
 ### Channels
 A matlab struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following fields:

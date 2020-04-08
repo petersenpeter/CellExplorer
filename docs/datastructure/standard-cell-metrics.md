@@ -135,6 +135,7 @@ The spatial metrics are all based on average firing rate map.
 ## Response curve metrics
 * `responseCurves`: response curves.
 
-## Ground truth metrics
-* `groundTruthClassification`: Opto-tagged/ground truth cell tags. More than one tag can be assigned to each cell. 
-
+## Group data
+* `groups`: Cell groups. Each cell can be assigned to one or more groups.
+* `tags`: Each cell can be assigned to one or more tags.
+* `groundTruthClassification`: Opto-tagged/ground truth cell groups. Each cell can be assigned to one or more groups.

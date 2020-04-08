@@ -44,7 +44,7 @@ spikes = loadSpikes('session',session);
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Running the Cell Explorer pipeline via the db
 
-cell_metrics = calc_CellMetrics('sessionName',sessionName);
+cell_metrics = ProcessCellMetrics('sessionName',sessionName);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
