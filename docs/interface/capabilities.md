@@ -20,7 +20,8 @@ You can do direct classification in the GUI. The following types of classificati
 * **Brain region**: Allen institute atlas.
 * **Deep-superficial**: Deep superficial assignment can be done in the Cell Explorer cell-wise and in a separate gui channel-wise.
 * **Labels**: You can assign your own labels to any cell.
-* **Tags**: A selection of predetermined tags can also be assigned. 
+* **Tags**: Tags can be assigned.
+* **Groups**: Groups can be created.
 * **Ground truth cell types**: Ground truth data can be analysed directly in the GUI.
 
 ### Interface for deep-superfial classification curation
@@ -63,7 +64,7 @@ You can save your combined cell metrics from a study into a single mat file that
 
 ### Export figures
 There are two ways to export figures. 
-1. You can export the whole interface from the top menu from the top menu `File` -> `Export figure`. This will open the Matlab Figure Export Setup dialog box (`exportsetupdlg`). 
+1. You can export the whole interface from the top menu from the top menu `File` -> `Export figure`. This will open the Matlab Figure Export Setup dialog box `exportsetupdlg`. 
 2. Single cell figures
    1. Select a number of cells, using the mouse and press `space`, this opens the action dialog. If no selection is done before pressing `space` a selection dialog will be shown.
    <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%"></p>
@@ -72,7 +73,7 @@ There are two ways to export figures.
    <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%"></p>
 
 ### Work in batch-mode while handling metrics on a single session level
-Using the Cell Explorer on a batch of sessions, will load metrics into one struct allowing you to visualize and classify your data across recordings and classify cells across sessions, while still maintaining the data handling on a single session level, writing your changes back to the original files. You can save metrics from a batch of sessions, and still load the data back into the Cell Explorer.
+The Cell Explorer can handle batches of sessions. It will load metrics into one struct allowing you to visualize and classify your data across recordings and classify cells across sessions, while still maintaining the data handling on a single session level, writing your changes back to the original files. You can save metrics from a batch of sessions, and still load the data back into the Cell Explorer.
 
-### Autosave
-The Cell Explorer automatically saves your manual curation every 6 classification action (actions include changes to cell-type, deep-superficial assignment and brain region). You can turn this feature off or adjust the autosave-interval in preferences. The autosave only saves your progress to the workspace and you have to save your changes to the original cell_metrics file through the Cell Explorer interface.
+### Track changes and autosave
+The Cell Explorer tracks your actions, which includes cell-type classifications, deep-superficial assignment, brain regions, labels, tags, groups and ground truth classifications. Reverse an action by pressing `ctrl+Z`. Further it autosaves your actions to your workspace every 6th action (You can turn the autosave feature off or adjust the autosave-interval in preferences). You still have to save your changes to the original cell_metrics file through the Cell Explorer interface.

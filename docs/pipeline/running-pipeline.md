@@ -22,8 +22,8 @@ First step is creating the session struct. This struct contains all metadata nec
 
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowChart_sessionStruct.png)
 
-### Running pipeline
-Following the definition of metadata, the cell metrics calculation process can be performed. A single script processes all default cell_metrics (which can be customized and expanded). The process is fully automatic, except for the detection of monosynaptic connections, which displays a graphical interface for further manual curation (manual curation can be turned off). See the [full list of default cell_metrics here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). Below follows two flowcharts: a simple with the minimal inputs and an advanced flowchart. The advanced chart shows all relevant files that is loaded by the cell_metrics calculation process. 
+### Processing cell_metrics
+Following the definition of metadata, the cell metrics calculation process can be performed. A single script processes all default cell_metrics (which can be customized and expanded). The process is fully automatic, except for the detection of monosynaptic connections, in which a graphical interface is shown for further manual curation (the manual step can be turned off). See the [full list of default cell_metrics here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). Below follows two flowcharts: a simple with the minimal inputs and an advanced flowchart. The advanced chart shows all relevant files that is loaded by the cell_metrics calculation process. 
 
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowChart_pipeline.png)
 
