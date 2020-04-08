@@ -33,10 +33,10 @@ Following the tutorial should provide you with a .pdf figure, looking like the f
 ![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)
 
 ## Exporting figures using the action dialog
-1. Select a set of cells, using the mouse and open the actions dialog (press `space` or the `Actions` button in the right panel). If no cell selection is done beforehand, a cell selection dialog will be shown first:
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%"></p>
-2. Select one of the three `MULTI PLOT OPTIONS` in the actions dialog.
-3. In the multi plot dialog shown below, select the plots to generate, check the `Save figures` toggle, and define file format (.png or .pdf) and file path (Save to the clustering paths, to a Cell Explorer or a user defined path). :
+1. Select a set of cells, using the mouse and open the actions dialog (press `space` or the `Actions` button in the right panel). If no cell selection is done beforehand, a cell selection dialog will be shown first: 
+    <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%"></p>
+2. Select one of the three `MULTI PLOT OPTIONS` in the actions dialog and press OK.
+3. In the multi plot dialog shown below, select the plots to generate, check the `Save figures` toggle, and define file format (.png or .pdf) and file path (Save to the clustering paths, to the Cell Explorer path or a user defined path). :
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%"></p>
 
 When you select to save your figures to the Cell Explorer path or Clustering path, they will be saved to a subfolder named `summaryFigures`. 

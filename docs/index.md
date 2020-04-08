@@ -58,8 +58,8 @@ We have created a few tutorials to get you started, covering the pipeline and th
 Please use the [GitHub issues system](https://github.com/petersenpeter/Cell-Explorer/issues) for reporting bugs, enhancement requests or geneal questions.
 
 ## Citing the Cell Explorer in your research and publications
+Petersen, Peter C, & Buzsáki, György. (2020, April 8). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.2). Zenodo. [http://doi.org/10.5281/zenodo.3604172](http://doi.org/10.5281/zenodo.3604172)
 
-Petersen, Peter Christian, & Buzsáki, György. (2020, January 10). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.1). Zenodo. [http://doi.org/10.5281/zenodo.3604173](http://doi.org/10.5281/zenodo.3604173)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604172.svg)](https://doi.org/10.5281/zenodo.3604172)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604173.svg)](https://doi.org/10.5281/zenodo.3604173)
 
