@@ -5,7 +5,10 @@ parent: Processing pipeline
 nav_order: 1
 ---
 # Running pipeline
-The pipeline has three main processing steps: 1. Gathering metadata, 2. Processing cell_metrics and 3. Running Cell Explorer. 
+The pipeline has three main processing steps: 
+1. Gathering metadata
+2. Processing cell_metrics
+3. Running Cell Explorer
 
 {: .no_toc}
 ## Table of contents
@@ -15,10 +18,10 @@ The pipeline has three main processing steps: 1. Gathering metadata, 2. Processi
 {:toc}
 
 ## Flowcharts
-The flowcharts below shows the processes in details. The boxes are color coded according to external files (blue), database (purple), script (green), Cell Explorer structs and .mat files (yellow).
+The flowcharts below show the processes in details. The boxes are color coded according to external files (blue), database (purple), script (green), Cell Explorer structs and .mat files (yellow).
 
 ### Gathering metadata
-First step is creating the session struct. This struct contains all metadata necessary for calculating the cell metrics. You can use the sessionTemplate to extract and define the parameters and visualize it with the graphical interface gui_session. The templates will scan the basepath for specific files to minimize the manual entry. You can customize the template script to fit and extract information relevant to your data. [The session struct is defined here]({{"/datastructure/data-structure-and-format/#session-metadata"|absolute_url}}). The session struct follows the database structure of the Buzsaki lab and all metadata can be loaded directly from the database for database sessions. See the example code below on how perform the actions in Matlab.
+First step is creating the session struct. This struct contains all metadata necessary for calculating the cell metrics. You can use the `sessionTemplate` to extract and define the parameters and visualize them with the graphical interface `gui_session`. The templates will scan the basepath for specific files to minimize the manual entry. You can customize the template script to fit and extract information relevant to your data. [The session struct is defined here]({{"/datastructure/data-structure-and-format/#session-metadata"|absolute_url}}). The session struct follows the database structure of the Buzsaki Lab and all metadata can be loaded directly from the database for database sessions. See the example code below on how perform the actions in Matlab.
 
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowChart_sessionStruct.png)
 
@@ -28,7 +31,7 @@ Following the definition of metadata, the cell metrics calculation process can b
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowChart_pipeline.png)
 
 ### Running Cell Explorer
-The Cell Explorer can be used to display single cell_metrics files as well as batches. Batch loading is performed with the script LoadCellMetricsBatch. The advanced flowchart below further details the capabilities of loading various GUIs from the Cell Explorer (gui_session, gui_MonoSyn and gui_DeelSuperficial) as well as do spike raster plots, that requires access to the local spikes struct and potentially also manipulation and events files if plotting PSTHs.
+The Cell Explorer can be used to display single cell_metrics files as well as batches. Batch loading is performed with the script LoadCellMetricsBatch. The advanced flowchart below further details the capabilities of loading various GUIs from the Cell Explorer (`gui_session`, `gui_MonoSyn` and `gui_DeelSuperficial`) as well as do spike raster plots, that requires access to the local spikes struct and potentially also manipulation and events files when plotting PSTHs.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowChart_CellExplorer.png)
 
 ## Running pipeline from a data path
@@ -44,7 +47,7 @@ You can also view the session struct in a GUI:
 session = gui_session(session);
 ```
 
-To run the pipeline from the Matlab Command Window from the session struct type:
+To run the processing script from the Matlab Command Window from the session struct type:
 ```m
 cell_metrics = ProcessCellMetrics('session', session);
 ```
@@ -52,7 +55,7 @@ You can also run it directly from a basepath and generate the session struct dir
 ```m
 cell_metrics = ProcessCellMetrics;
 ```
-When calling the pipeline with the sessionTemplate, a GUI will be shown allowing you to edit the metadata both for the input parameters and the session struct. 
+When calling the processing script with the sessionTemplate, a GUI will be shown allowing you to edit  metadata, both input parameters and the session struct. 
 
 Once complete, view the result in the Cell Explorer by typing:
 ```m
@@ -85,4 +88,4 @@ sessionNames = {'sessionName1','sessionName2','sessionName3'};
 cell_metrics = LoadCellMetricsBatch('sessions',sessionNames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
-As you perform classifications in the Cell Explorer, you may save back to the original cell metrics stored with the sessions defined above. You can perform the batch mode from a list of paths as well.
+As you perform classifications in the Cell Explorer in batch mode, you can save your progress to the original sessions. You can work in batch mode from a list of paths as well.
