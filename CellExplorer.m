@@ -8093,13 +8093,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 elseif any(choice == [12,13,14])
                     % Multiple plots
                     % Creates summary figures and saves them to '/summaryFigures' or a custom path
-                    exportPlots.dialog = dialog('Position', [300, 300, 300, 370],'Name','Multiple plots','WindowStyle','modal', 'resize', 'on', 'visible','off'); movegui(exportPlots.dialog,'center'), set(exportPlots.dialog,'visible','on')
-                    uicontrol('Parent',exportPlots.dialog,'Style','text','Position',[5, 350, 290, 20],'Units','normalized','String','Select plots to export','HorizontalAlignment','center','Units','normalized');
+                    exportPlots.dialog = dialog('Position', [300, 300, 300, 370],'Name','Multi plot','WindowStyle','modal', 'resize', 'on', 'visible','off'); movegui(exportPlots.dialog,'center'), set(exportPlots.dialog,'visible','on')
+                    uicontrol('Parent',exportPlots.dialog,'Style','text','Position',[5, 350, 290, 20],'Units','normalized','String','Select plots','HorizontalAlignment','center','Units','normalized');
                     % [selectedActions,tf] = listdlg('PromptString',['Plot actions to perform on ' num2str(length(cellIDs)) ' cells'],'ListString',plotOptions','SelectionMode','Multiple','ListSize',[300,350]);
                     exportPlots.popupmenu.plotList = uicontrol('Parent',exportPlots.dialog,'Style','listbox','Position',[5, 110, 290, 245],'Units','normalized','String',plotOptions,'HorizontalAlignment','left','Units','normalized','min',1,'max',100);
                     exportPlots.popupmenu.saveFigures = uicontrol('Parent',exportPlots.dialog,'Style','checkbox','Position',[5, 80, 240, 25],'Units','normalized','String','Save figures','HorizontalAlignment','left','Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','text','Position',[5, 62, 140, 20],'Units','normalized','String','File format','HorizontalAlignment','center','Units','normalized');
-                    exportPlots.popupmenu.fileFormat = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[5, 40, 140, 25],'Units','normalized','String',{'png','pdf'},'HorizontalAlignment','left','Units','normalized');
+                    exportPlots.popupmenu.fileFormat = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[5, 40, 140, 25],'Units','normalized','String',{'png','pdf (slower but vector graphics)'},'HorizontalAlignment','left','Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','text','Position',[155, 62, 140, 20],'Units','normalized','String','File path','HorizontalAlignment','center','Units','normalized');
                     exportPlots.popupmenu.savePath = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[155, 40, 140, 25],'Units','normalized','String',{'Clustering path','Cell Explorer','Define path'},'HorizontalAlignment','left','Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[5, 5, 140, 30],'String','OK','Callback',@ClosePlot_dialog,'Units','normalized');
@@ -8147,11 +8147,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 selectedActions = exportPlots.popupmenu.plotList.Value;
                 
                 if exportPlots.popupmenu.saveFigures.Value == 0
-                    delete(exportPlots.dialog);
-                    saveFig = false;
+                    saveFig.save = false;
                 else
-                    saveFig = true;
+                    saveFig.save = true;
+                    saveFig.path = exportPlots.popupmenu.savePath.Value;
+                    saveFig.fileFormat = exportPlots.popupmenu.fileFormat.Value;
+                    if saveFig.path == 3 &&  ~exist('dirNameCustom','var')
+                    	dirNameCustom = uigetdir;
+                    end
                 end
+                delete(exportPlots.dialog);
                 if choice == 12 && ~isempty(selectedActions)
                     % Displayes a new dialog where a number of plot can be combined and plotted for the highlighted cells
                     plot_columns = min([length(cellIDs),5]);
@@ -8289,37 +8294,34 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         
                         % Saving figure
                         savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
-                        
                     end
                 end
-                if saveFig
-                    delete(exportPlots.dialog);
-                end
+
                 function savefigure(fig,savePathIn,fileNameIn)
-                    if saveFig
-                        if exportPlots.popupmenu.savePath.Value == 1
+                    if saveFig.save
+                        if saveFig.path == 1
                             savePath = fullfile(savePathIn,'summaryFigures');
                             if ~exist(savePath,'dir')
                                 mkdir(savePathIn,'summaryFigures')
                             end
-                        elseif exportPlots.popupmenu.savePath.Value == 2
+                        elseif saveFig.path == 2
                             [dirName,~,~] = fileparts(which('CellExplorer.m'));
                             savePath = fullfile(dirName,'summaryFigures');
                             if ~exist(savePath,'dir')
                                 mkdir(dirName,'summaryFigures')
                             end
-                        elseif exportPlots.popupmenu.savePath.Value == 3
-                            if ~exist('dirName','var')
-                                dirName = uigetdir;
+                        elseif saveFig.path == 3
+                            if ~exist('dirNameCustom','var')
+                                dirNameCustom = uigetdir;
                             end
-                            savePath = dirName;
+                            savePath = dirNameCustom;
                         end
-                        if exportPlots.popupmenu.fileFormat.Value == 1
+                        if saveFig.fileFormat == 1
                             saveas(fig,fullfile(savePath,[fileNameIn,'.png']))
                         else
-                            set(fig,'Units','Inches');
+                            set(fig,'Units','Inches','Renderer','painters');
                             pos = get(fig,'Position');
-                            set(fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+                            set(fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]) 
                             print(fig, fullfile(savePath,[fileNameIn,'.pdf']),'-dpdf');
                         end
                     end
