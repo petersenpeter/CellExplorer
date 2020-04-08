@@ -17,9 +17,9 @@ cd(basepath)
 ```m
 session = sessionTemplate(basepath,'showGUI',true);
 ```
-3. Run the cell metrics pipeline `calc_CellMetrics` using the session struct as input
+3. Run the cell metrics pipeline `ProcessCellMetrics` using the session struct as input
 ```m
-cell_metrics = calc_CellMetrics('session', session);
+cell_metrics = ProcessCellMetrics('session', session);
 ```
 4. Visualize the cell metrics in the Cell Explorer
 ```m
@@ -29,7 +29,7 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 ```m
 basenames = {'Rat08-20130708','Rat08-20130709'};
 clusteringpaths = {'/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130709'};
-cell_metrics = LoadCellMetricBatch('clusteringpaths',clusteringpaths,'basenames',basenames);
+cell_metrics = LoadCellMetricsBatch('clusteringpaths',clusteringpaths,'basenames',basenames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 

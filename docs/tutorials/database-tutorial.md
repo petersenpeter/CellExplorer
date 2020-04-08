@@ -45,7 +45,7 @@ spikes = loadSpikes('session',session);
 7. Loading via database/metadata
    1. Run the processing pipeline and CellExplorer from `sessionName`
 ```m
-cell_metrics = calc_CellMetrics('sessionName',sessionName);
+cell_metrics = ProcessCellMetrics('sessionName',sessionName);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
    1. Run Cell Explorer directly from `sessionName`
@@ -55,7 +55,7 @@ cell_metrics = CellExplorer('sessionName',sessionName);
    1. Run Cell Explorer from list of `sessionNames`
 ```m
 sessionNames = {'ham11_27-29_amp','ham11_34-36_amp'};
-cell_metrics = LoadCellMetricBatch('sessions',sessionNames);
+cell_metrics = LoadCellMetricsBatch('sessions',sessionNames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 

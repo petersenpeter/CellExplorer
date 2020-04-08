@@ -44,7 +44,7 @@ mex -O CCGHeart.c
 5. That's it! Now you can explore the software with below example data or try one of the tutorials.
 
 ### Try the Cell Explorer with example data
-There is an example dataset included in the repository for trying the Cell Explorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/blob/master/LoadCellMetricBatch.m) into Matlab and type:
+There is an example dataset included in the repository for trying the Cell Explorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/Cell-Explorer/blob/master/LoadCellMetricsBatch.m) into Matlab and type:
 ```m
 CellExplorer('metrics',cell_metrics)
 ```
