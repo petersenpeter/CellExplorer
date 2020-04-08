@@ -25,16 +25,14 @@ You can do direct classification in the GUI. The following types of classificati
 * **Groups**: Groups can be created.
 * **Ground truth cell types**: Ground truth data can be analysed directly in the GUI.
 
-## Monosynaptic connections
+### Monosynaptic connections
 Monosynaptic connections are determined in the pipeline, and you can visualize the connections in the GUI and redo the manual curation directly from the GUI. You can adjust connections from the Cell Explorer by launching the monosyn interface. [Please see the tutorial on manual curation of monosynaptic connections]({{"/tutorials/monosynaptic-connections-tutorial/"|absolute_url}}).
-
-### Interface for monosynaptic connections curation
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/monosyn.png)
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/monosyn.png){: .mt-4}
 
 ### Interface for deep-superfial classification curation
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/gui_deepSuperficial.png){: .mt-4}
 
-## Database capabilities
+### Database capabilities
 The Cell Explorer is capable of loading datasets from and writing to the Buzsaki lab database. Please setup your credentials and local paths as [described here]({{"/database/preparation/"|absolute_url}}).
 
 ### Reference data

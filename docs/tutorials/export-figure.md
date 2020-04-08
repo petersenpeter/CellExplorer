@@ -8,6 +8,12 @@ nav_order: 11
 {: .no_toc}
 Exporting figures in Matlab can be a headache, so here are two small tutorials to help with this: exporting the main interface and individual actions plots.
 
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
 ## Exporting the Cell Explorer interface
 The steps below shows how to save a PDF file of the main interface of the Cell Explorer. Saving a PNG (image file) is more straight forward. 
 
@@ -38,4 +44,4 @@ When you select to save your figures to the Cell Explorer path or Clustering pat
 Be aware that saving pdf files, is substantial slower than saving png files, but the figures will be saved with vector graphics.
 
 ## Exporting remaining figures
-Any other figures produced by the Cell Explorer can be saved in similar fashion using the File menu options `Save As` or `Export Setup...`.
+Any other figures produced by the Cell Explorer can be saved using the File menu options `Save As` or `Export Setup...`.
