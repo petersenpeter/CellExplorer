@@ -150,7 +150,7 @@ while temp444 == 1
             hold on;
             
             % Plot predicted values
-            %             plot(t,mono_res.Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
+            % plot(t,mono_res.Pred(:,prs1(1),prs1(2)),'g', 'HitTest','off');
             
             %Plot upper and lower boundaries
             plot(t,mono_res.Bounds(:,prs1(1),prs1(2),1),'r--', 'HitTest','off','linewidth',1.5);
@@ -226,7 +226,8 @@ while temp444 == 1
             plot(1.01*axhpos3(1)*ones(size(prs2,1),1),prs2(:,1),'.k', 'HitTest','off', 'MarkerSize',12)
             xlim([1.02*axhpos3(1),axhpos3(2)])
             plot([0;0],[0;1]*size(zdata,1),'m', 'HitTest','off')
-            xlabel('CCGs (black marker: reference cell)')
+%             xlabel('CCGs (black marker: reference cell)')
+            ha(j).XLabel.String = 'CCGs (black marker: reference cell)';
         else
             bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0)
             if xLimit
@@ -234,7 +235,8 @@ while temp444 == 1
             else
                 xlim([min(t) max(t)]);
             end
-            xlabel('Reference Cell ACG');
+%             xlabel('Reference Cell ACG');
+            ha(j).XLabel.String = 'Reference Cell ACG';
             uiwait(UI.fig);
         end
     end

@@ -28,9 +28,9 @@ UI.settings.dispLegend = 0;                     % [0,1] Display legends in plots
 UI.settings.plotWaveformMetrics = 0;            % show waveform metrics on the single waveform
 UI.settings.sortingMetric = 'burstIndex_Royer2012'; % metrics used for sorting image data
 UI.settings.markerSize = 15;                    % marker size in the group plots [default: 20]
-UI.settings.plotChannelMap = true;              % boolean. Show a channel map with waveforms.
+UI.settings.plotChannelMap = 3;                 % Show a channel map with waveforms.
 UI.settings.plotChannelMapAllChannels = true;   % Boolean. Show a select set of channels or all 
-UI.settings.colormap = hot(512);               % default colormap
+UI.settings.colormap = hot(512);                % default colormap
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 6;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
