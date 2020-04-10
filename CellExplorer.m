@@ -1752,7 +1752,7 @@ while ii <= cell_metrics.general.cellCount
             
             % Plot putative connections
             if plotConnections(1) == 1
-                plotPutativeConnections(plotX,plotY1)
+                plotPutativeConnections(plotX,plotY1,UI.monoSyn.disp)
             end
             % Plots X marker for selected cell
             plotMarker(plotX(ii),plotY1(ii))
@@ -2102,7 +2102,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 %             plot(cell_metrics.trilat_x(ii),cell_metrics.trilat_y(ii),'.', 'color', 'k','markersize',14,'HitTest','off')
             
             % Plots putative connections
-            plotPutativeConnections(cell_metrics.trilat_x,cell_metrics.trilat_y)
+            plotPutativeConnections(cell_metrics.trilat_x,cell_metrics.trilat_y,UI.monoSyn.disp)
             
             % Plots X marker for selected cell
             plotMarker(cell_metrics.trilat_x(ii),cell_metrics.trilat_y(ii))
@@ -3315,10 +3315,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function plotPutativeConnections(plotX1,plotY1)
+    function plotPutativeConnections(plotX1,plotY1,monoSynDisp)
         % Plots putative excitatory connections
         if ~isempty(putativeSubset) && UI.settings.plotExcitatoryConnections
-            switch UI.monoSyn.disp
+            switch monoSynDisp
                 case 'All'
                     xdata = [plotX1(UI.params.a1);plotX1(UI.params.a2);nan(1,length(UI.params.a2))];
                     ydata = [plotY1(UI.params.a1);plotY1(UI.params.a2);nan(1,length(UI.params.a2))];
@@ -3338,7 +3338,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         % Plots putative inhibitory connections
         if ~isempty(putativeSubset_inh) && UI.settings.plotInhibitoryConnections
-            switch UI.monoSyn.disp
+            switch monoSynDisp
                 case 'All'
                     xdata_inh = [plotX1(UI.params.b1);plotX1(UI.params.b2);nan(1,length(UI.params.b2))];
                     ydata_inh = [plotY1(UI.params.b1);plotY1(UI.params.b2);nan(1,length(UI.params.b2))];
@@ -3399,7 +3399,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         if plots
             line(chanCoords.x,chanCoords.y,'Marker','.','LineStyle','none','color','k','markersize',4,'HitTest','off')
             line(chanCoords.x1(cellIds),chanCoords.y1(cellIds),'Marker','.','LineStyle','none','color',[0.5 0.5 0.5],'markersize',10,'HitTest','off')
-            plotPutativeConnections(chanCoords.x1,chanCoords.y1)
+            plotPutativeConnections(chanCoords.x1,chanCoords.y1,'Selected')
             line(chanCoords.x1(cellID),chanCoords.y1(cellID),'Marker','.','LineStyle','none','color',col,'markersize',17,'HitTest','off')
         end
         
@@ -7770,7 +7770,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             set(fig,'CurrentAxes',ha(2)), hold on
 %             axes(ha(2)), hold on
             % Scatter plot with t-SNE metrics
-            plotGroupData(tSNE_metrics.plot(:,1),tSNE_metrics.plot(:,2),plotConnections(2))
+            plotGroupData(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)',plotConnections(2))
             ha(2).XLabel.String = 't-SNE';
             ha(2).YLabel.String = 't-SNE';
             ha(2).Title.String = 't-SNE';
@@ -8279,7 +8279,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             plot_cells = [ii,UI.params.ClickedCells];
                         end
                         plot_cells = unique(plot_cells,'stable');
-                        fig = figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize)
+                        fig = figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize);
                         
                         plot_cells2 = cell_metrics.UID(plot_cells);
                         k = 1;
@@ -8496,7 +8496,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         
                         % Plots: putative connections
                         if plotConnections(3) == 1
-                            plotPutativeConnections(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)')
+                            plotPutativeConnections(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)',UI.monoSyn.disp)
                         end
                         
                         % Plots: X marker for selected cell

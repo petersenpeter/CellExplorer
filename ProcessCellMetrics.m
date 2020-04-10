@@ -320,7 +320,7 @@ cell_metrics.general.cellCount = length(spikes.total);
 if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'waveform_metrics'}))
     if ~all(isfield(cell_metrics,{'waveforms','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || ~all(isfield(cell_metrics.waveforms,{'raw','filt','filt_all','raw_all'})) || parameters.forceReload == true
         dispLog('Getting waveforms');
-        if all(isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % 'filtWaveform_std'
+        if all(isfield(spikes,{'filtWaveform','peakVoltage','cluID','peakVoltage_expFitLengthConstant'})) && parameters.forceReload == false 
             waveforms.filtWaveform = spikes.filtWaveform;
             if isfield(spikes,'timeWaveform')
                 waveforms.timeWaveform = spikes.timeWaveform;
@@ -332,9 +332,9 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             end
             waveforms.peakVoltage = spikes.peakVoltage;
             waveforms.UID = spikes.UID;
-        elseif any(~isfield(spikes,{'filtWaveform','peakVoltage','cluID'})) % ,'filtWaveform_std'
+        elseif any(~isfield(spikes,{'filtWaveform','peakVoltage','cluID','peakVoltage_expFitLengthConstant'})) || parameters.forceReload == true 
             spikes = loadSpikes('basename',basename,'clusteringformat',session.spikeSorting{1}.format,'clusteringpath',clusteringpath,'forceReload',true,'spikes',spikes_all,'basepath',basepath);
-            %             spikes = GetWaveformsFromDat(spikes,sessionInfo);
+            %  spikes = GetWaveformsFromDat(spikes,sessionInfo);
             waveforms.filtWaveform = spikes.filtWaveform;
             if ~isfield(spikes,'timeWaveform')
                 waveforms.timeWaveform = spikes.timeWaveform;
@@ -381,13 +381,15 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             if isfield(spikes,'channels_all')
                 cell_metrics.waveforms.channels_all{j} =  spikes.channels_all{j};
             end
-            
+            if isfield(spikes,'peakVoltage_expFitLengthConstant')
+               cell_metrics.peakVoltage_expFitLengthConstant(j) = spikes.peakVoltage_expFitLengthConstant(j);
+            end
             cell_metrics.peakVoltage(j) = waveforms.peakVoltage(j);
             cell_metrics.troughToPeak(j) = waveform_metrics.troughtoPeak(j);
             cell_metrics.troughtoPeakDerivative(j) = waveform_metrics.derivative_TroughtoPeak(j);
             cell_metrics.ab_ratio(j) = waveform_metrics.ab_ratio(j);
             cell_metrics.polarity(j) = waveform_metrics.polarity(j);
-            cell_metrics.peakVoltage_expFitLengthConstant(j) = spikes.peakVoltage_expFitLengthConstant(j);
+            
             
             nChannelFit = min([16,length(spikes.maxWaveform_all{j}),length(session.extracellular.electrodeGroups.channels{spikes.shankID(j)})]);
             cell_metrics.waveforms.bestChannels{j} = spikes.maxWaveform_all{j}(1:nChannelFit);
