@@ -41,7 +41,7 @@ Response curves includes firing rate across time, phase distribution. There are 
 
 ### PSTHs
 PSTHs can be shown for either sessionName.*.psth.mat files or for sessionName.*.events.mat. They are by default aligned to the onset of the event, but can also be aligned to the peak, center or offset. 
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png" width="70%">
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png" width="60%"></p>{: .mt-4}
 
 ### Spike rasters
 The spiking data can also be loaded to generate raster plots using spike data. Please see the [tutorial on spike data]({{"/tutorials/plotting-spike-data/"|absolute_url}}) to learn more. The figure below shows two raster plot examples for a pyramidal cell in CA1: 1. Theta phase vs position (the animal runs along a track), 2. Trial vs position, colored according to 3 states.
@@ -68,9 +68,11 @@ You can create your own custom plots to display in the Cell Explorer that also b
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/sharpwave.png" width="60%"></p>{: .mt-4}
 
 ## Group action plots
-All plots presented on this page are single cell plots that can be selected for the 3-6 single cell subplots in the Cell Explorer but can also be plotted separately using the group actions menu. Select a few select cells and press `space`. Below menu will be shown and you can create various plot combinations from above plot options.
+All plots presented on this page are single cell plots that can be selected for the 3-6 single cell subplots in the Cell Explorer but can also be plotted separately using the group actions menu. Select a few select cells and press `space`. Below menu will be shown and you can create various plot combinations from above plot options. 
 
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="60%"></p>
 
 ### Multi plot options and figure exporting
+Please see the [tutorial on  exporting figures]({{"/tutorials/export-figure/"|absolute_url}}). 
+
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%"></p>
