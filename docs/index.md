@@ -13,7 +13,7 @@ Cell Explorer is a graphical user interface (GUI), standardized pipeline and dat
 
 [Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [View code on GitHub](https://github.com/petersenpeter/Cell-Explorer){: .btn .fs-5 .mb-4 .mb-md-0 }
 
-![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)
+![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2020/04/CellExplorerInterface-1024x623.png)
 
 ## Introduction
 {: .no_toc}
