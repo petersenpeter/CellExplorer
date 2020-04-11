@@ -6,7 +6,7 @@ nav_order: 3
 ---
 # Single cell plot options
 {: .no_toc}
-The single cells can be plotted with various plot options. You can further create [your own custom plots]({{"/interface/custom-single-cell-plots/"|absolute_url}}), which can be loaded and displayed in the Cell Explorer, by saving plot function in the customPlots folder.
+The single cells can be plotted with various plot options. You can further create [your own custom plots]({{"/interface/custom-single-cell-plots/"|absolute_url}}), which can be loaded and displayed in the Cell Explorer, by saving plot function in the customPlots folder. Most data has three plotting styles: single cell, population and a normalized image.
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -33,19 +33,38 @@ Three types of log10 ISI distributions: single ISI distribution with the additio
 ![Firing rate maps](https://buzsakilab.com/wp/wp-content/uploads/2020/02/firingRateMaps.png){: .mt-4}
 
 ### Response curves
-Response curves are generally 
+Response curves includes firing rate across time, phase distribution. There are three plotting styles: 
+1. Single response curve with monosynaptic cells' response curves. 
+2. Population response curves.
+3. Image with normalized response curves.
 ![ResponseCurves](https://buzsakilab.com/wp/wp-content/uploads/2020/02/responseCurve_theta.png){: .mt-4}
 
 ### PSTHs
-PSTHs can be shown for either sessionName.*.psth.mat files or for sessionName.*.events.mat. They are standard aligned to the onset of the event, but can also be aligned to the peak, center or offset.
+PSTHs can be shown for either sessionName.*.psth.mat files or for sessionName.*.events.mat. They are by default aligned to the onset of the event, but can also be aligned to the peak, center or offset. 
 <img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/psth_ripples.png" width="70%">
 
 ### Spike rasters
 The spiking data can also be loaded to generate raster plots using spike data. Please see the [tutorial on spike data]({{"/tutorials/plotting-spike-data/"|absolute_url}}) to learn more. The figure below shows two raster plot examples for a pyramidal cell in CA1: 1. Theta phase vs position (the animal runs along a track), 2. Trial vs position, colored according to 3 states.
 ![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2020/03/rasters_placefield-04.png){: .mt-4}
 
+### Waveforms across channels
+Average waveform across all channels.
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/waveformsAcrossChannels-01.png" width="70%">
+
+## Trilaterated position
+A trilaterated estimated position for all cells. The squares indicate electrode sites. 
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/trilat-01.png" width="70%">
+
+## Connectivity graphs
+The connectivity graphs shows all connections detected in a dataset. Selected cell is highlighted together with its synaptic partners. You can select and highlight cells from the plot.
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/connectivityGraph-01.png" width="70%">
+
+## Custom plots
+You can create your own custom plots to display in the Cell Explorer that also becomes interactive. Image below shows a ripple triggered average across an electrode with the current selected cell highlighted. 
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/sharpwave.png" width="70%">
+
 ## Group action plots
-All plots presented on this page are single cell plots that can be selected for the 3-6 single cell subplots in the Cell Explorer but can also be plotted separately using the group action plots menu. Select a few select and press `space`. Below menu will be shown and you can create various plot combinations from above plot options. 
+All plots presented on this page are single cell plots that can be selected for the 3-6 single cell subplots in the Cell Explorer but can also be plotted separately using the group actions menu. Select a few select cells and press `space`. Below menu will be shown and you can create various plot combinations from above plot options.
 
 <img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%">
 
