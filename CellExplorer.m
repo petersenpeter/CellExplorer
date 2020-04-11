@@ -150,7 +150,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.62;
+CellExplorerVersion = 1.621;
 
 UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback);
 hManager = uigetmodemanager(UI.fig);
@@ -3390,7 +3390,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             chan_width = 0.20;
         end
         if UI.BatchMode
-            cellIds = intersect(find(cell_metrics.batchIDs == cell_metrics.batchIDs(ii)),UI.params.subset);
+            cellIds = intersect(find(cell_metrics.batchIDs == cell_metrics.batchIDs(cellID)),UI.params.subset);
         else
             cellIds = UI.params.subset;
         end
@@ -3404,11 +3404,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
         
         function chanCoords = reallign(chanCoords_x,chanCoords_y)
-            chanCoords.x = rescale_vector(chanCoords_x,chanCoords_x) * xlim2 * chan_width + xlim1(1) + xlim2*(1-chan_width-padding);
-            chanCoords.y = rescale_vector(chanCoords_y,chanCoords_y) * ylim2 * chan_height + ylim1(1) + ylim2*padding;
+            chanCoords.x = rescale_vector2(chanCoords_x,chanCoords_x) * xlim2 * chan_width + xlim1(1) + xlim2*(1-chan_width-padding);
+            chanCoords.y = rescale_vector2(chanCoords_y,chanCoords_y) * ylim2 * chan_height + ylim1(1) + ylim2*padding;
             if isfield(cell_metrics,'trilat_x') &&  UI.settings.plotChannelMap > 2
-                chanCoords.x1 = rescale_vector(cell_metrics.trilat_x,chanCoords_x) * xlim2 * chan_width + xlim1(1) + xlim2*(1-chan_width-padding);
-                chanCoords.y1 = rescale_vector(cell_metrics.trilat_y,chanCoords_y) * ylim2 * chan_height + ylim1(1) + ylim2*padding;
+                chanCoords.x1 = rescale_vector2(cell_metrics.trilat_x,chanCoords_x) * xlim2 * chan_width + xlim1(1) + xlim2*(1-chan_width-padding);
+                chanCoords.y1 = rescale_vector2(cell_metrics.trilat_y,chanCoords_y) * ylim2 * chan_height + ylim1(1) + ylim2*padding;
             else
                 chanCoords.x1 = nan(size(cell_metrics.maxWaveformCh1));
                 chanCoords.y1 = nan(size(cell_metrics.maxWaveformCh1));
@@ -3420,7 +3420,11 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function norm_data = rescale_vector(bla,blb)
+    function norm_data = rescale_vector(bla)
+        norm_data = (bla - min(bla)) / ( max(bla) - min(bla) );
+    end
+
+    function norm_data = rescale_vector2(bla,blb)
         norm_data = (bla - min(blb)) / ( max(blb) - min(blb) );
     end
 
@@ -8357,7 +8361,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             UI.params.connections = [UI.params.incoming;UI.params.outgoing];
                         end
                         set(fig,'CurrentAxes',ha(j)), hold on
-                        customPlot(actionList{choice},cellIDs(j),general1,batchIDs1); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))],ha(j))
+                        customPlot(actionList{choice},cellIDs(j),general1,batchIDs1,ha(j)); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
                     end
                 else
                     uiresume(UI.fig);
