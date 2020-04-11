@@ -49,24 +49,24 @@ The spiking data can also be loaded to generate raster plots using spike data. P
 
 ### Waveforms across channels
 Average waveform across all channels.
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/waveformsAcrossChannels-01.png" width="70%">
+<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/waveformsAcrossChannels-01.png" width="70%"></p>{: .mt-4}
 
 ## Trilaterated position
 A trilaterated estimated position for all cells. The squares indicate electrode sites. 
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/trilat-01.png" width="70%">
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/trilat-01.png" width="70%"></p>{: .mt-4}
 
 ## Connectivity graphs
 The connectivity graphs shows all connections detected in a dataset. Selected cell is highlighted together with its synaptic partners. You can select and highlight cells from the plot.
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/connectivityGraph-01.png" width="70%">
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/connectivityGraph-01.png" width="70%"></p>{: .mt-4}
 
 ## Custom plots
 You can create your own custom plots to display in the Cell Explorer that also becomes interactive. Image below shows a ripple triggered average across an electrode with the current selected cell highlighted. 
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/sharpwave.png" width="70%">
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/sharpwave.png" width="70%"></p>{: .mt-4}
 
 ## Group action plots
 All plots presented on this page are single cell plots that can be selected for the 3-6 single cell subplots in the Cell Explorer but can also be plotted separately using the group actions menu. Select a few select cells and press `space`. Below menu will be shown and you can create various plot combinations from above plot options.
 
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%">
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%"></p>
 
-### Multiplot options and figure exporting
-<img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%">
+### Multi plot options and figure exporting
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%"></p>
