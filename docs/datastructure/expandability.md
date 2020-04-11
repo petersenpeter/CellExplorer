@@ -4,6 +4,7 @@ title: Expandability
 parent: Data structure
 nav_order: 6
 ---
+
 # Expandability
 Add your own metrics, groups, plots and opto-tagging
 {: .no_toc}
@@ -16,6 +17,9 @@ Add your own metrics, groups, plots and opto-tagging
 
 ### Your own numeric or string metrics
 You can add your own metrics either as numeric values or string arrays. String arrays allow you to group your data by the unique strings set within features, and can be plotted in discrete values. All features in the cell metrics are automatically available in the cell inspector if they contain N values (N: number of cells).
+
+### Use the data containers
+The cell mentrics processing script `ProcessCellMetrics` will automatically detect container files: `*.events.mat`, `*.manipulation.mat`, `*.cellinfo.mat`
 
 ### Custom plot (e.g. spike triggered average response)
 Response curves, event histograms, firing rate maps, manipulations and other plots should be saved into predefined subfields. To categorize, a few field names (plot types) are available:

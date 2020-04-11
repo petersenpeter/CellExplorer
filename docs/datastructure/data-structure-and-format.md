@@ -6,6 +6,7 @@ nav_order: 2
 ---
 # Data structure and format
 {: .no_toc}
+
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -15,10 +16,10 @@ nav_order: 2
 ## Data paths
 For each session there are two main paths that the Cell Explorer uses, a basepath and a clusteringpath (relative to basepath). 
 
-The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: `sessionName.*`, e.g. `sessionName.dat` and `sessionName.lfp` (low-pass filtered and down-sampled. The lfp file is automatically generated in the pipeline if necessary). The clusteringpath contains the spike data, including cell metrics.
+The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: `sessionName.*`, e.g. `sessionName.dat` and `sessionName.lfp` (low-pass filtered and down-sampled. The lfp file is automatically generated in the pipeline if necessary). The clusteringpath contains the spike data, including cell metrics, and can be the same as the basepath (empty clusteringpath).
 
 ## Data structures
-Each type of data is saved in its own Matlab structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode). The Cell Explorer is fully compatible with buzcode.
+Each type of data is saved in its own Matlab structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode). Plesase see the list of data containers in the next section.
 
 ### Cell metrics
 The cell metrics are kept in a `cell_metrics` struct as [described here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat` in the clustering path.
@@ -193,15 +194,16 @@ A Matlab struct `timeserieName` stored in a .mat file: `sessionName.timeserieNam
 Any other field can be added to the struct containing time series data. The `*.timeseries.mat` files should be stored in the basepath.
 
 ## Data containers
-The data is organized into data-type containers, a concept introduced by [buzcode](https://github.com/buzsakilab/buzcode), where subset of the containers described here are inherited from it.
+The data is organized into data-type specific containers, a concept introduced by [buzcode](https://github.com/buzsakilab/buzcode):
 
-* `sessionName.session.mat`: session level metadata
+* `sessionName.session.mat`: session level metadata.
 * `sessionName.*.lfp.mat`: derived ephys signals including theta-band filtered lfp.
 * `sessionName.*.cellinfo.mat`: Spike derived data including`spikes`, `cell_metrics`, `mono_res`
+* `sessionName.*.firingRateMap.mat`: firing rate maps. Derived from behavior and spikes, e.g. `ratemap`.
 * `sessionName.*.events.mat`: events data, including `ripples`, `SWR`,
 * `sessionName.*.manipulation.mat`: manipulation data: 
 * `sessionName.*.channelinfo.mat`: channel-wise data, including impedance
 * `sessionName.*.timeseries.mat`
-* `sessionName.*.firingRateMap.mat`: firing rate maps. Derived from behavior and spikes.
 * `sessionName.*.behavior.mat`
 * `sessionName.*.states.mat`: brain states derived data including SWS/REM/awake and up/down states.
+
