@@ -403,11 +403,13 @@ UI.menu.edit.adjustDeepSuperficial = uimenu(UI.menu.edit.topMenu,menuLabel,'Adju
 UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'View');
 UI.menu.display.showHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menubar',menuSelectedFcn,@ShowHideMenu,'Accelerator','M');
 UI.menu.display.showMetrics = uimenu(UI.menu.display.topMenu,menuLabel,'Show waveform metrics',menuSelectedFcn,@showWaveformMetrics,'Separator','on');
-UI.menu.display.showChannelMapMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Channel map with waveforms');
+UI.menu.display.showChannelMapMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Channel map inset with waveforms');
 UI.menu.display.showChannelMap.ops(1) = uimenu(UI.menu.display.showChannelMapMenu,menuLabel,'No channelmap',menuSelectedFcn,@showChannelMap);
 UI.menu.display.showChannelMap.ops(2) = uimenu(UI.menu.display.showChannelMapMenu,menuLabel,'Show single unit on map with waveforms',menuSelectedFcn,@showChannelMap);
 UI.menu.display.showChannelMap.ops(3) = uimenu(UI.menu.display.showChannelMapMenu,menuLabel,'Show trilat units on map with waveforms',menuSelectedFcn,@showChannelMap);
-if UI.settings.plotChannelMap; UI.menu.display.showChannelMap.ops(UI.settings.plotChannelMap).Checked = 'on'; end
+if UI.settings.plotInsetChannelMap; UI.menu.display.showChannelMap.ops(UI.settings.plotInsetChannelMap).Checked = 'on'; end
+UI.menu.display.showInsetACG = uimenu(UI.menu.display.topMenu,menuLabel,'Show ACG inset with waveforms',menuSelectedFcn,@showInsetACG);
+if UI.settings.plotInsetACG; UI.menu.display.showInsetACG.Checked = 'on'; end
 UI.menu.display.dispLegend = uimenu(UI.menu.display.topMenu,menuLabel,'Show legend in spikes plot',menuSelectedFcn,@showLegends);
 if UI.settings.dispLegend; UI.menu.display.dispLegend.Checked = 'on'; end
 UI.menu.display.firingRateMapShowLegend = uimenu(UI.menu.display.topMenu,menuLabel,'Show legend in firing rate maps',menuSelectedFcn,@ToggleFiringRateMapShowLegend,'Separator','on');
@@ -2047,10 +2049,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 text(cell_metrics.waveforms.time{ii}(temp3),cell_metrics.waveforms.filt{ii}(temp3),'Trough-to-peak (derivative)','HorizontalAlignment','left','VerticalAlignment','bottom')
                 text(cell_metrics.waveforms.time{ii}(temp5),temp6,'AB-ratio','HorizontalAlignment','left','VerticalAlignment','bottom')
             end
-            if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                plotChannelMap(ii,col,general,1);
+            if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                plotInsetChannelMap(ii,col,general,1);
             end
-            
+            if UI.settings.plotInsetACG > 1
+                plotInsetACG(ii,col,general,1)
+            end
         elseif strcmp(customPlotSelection,'Waveforms (all)')
             % All waveforms (z-scored) colored according to cell type
             plotAxes.XLabel.String = 'Time (ms)';
@@ -2065,10 +2069,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             
             % selected cell in black
             line(time_waveforms_zscored, cell_metrics.waveforms.filt_zscored(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
-            if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                plotChannelMap(ii,col,general,1);
+            if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                plotInsetChannelMap(ii,col,general,1);
             end
-            
+            if UI.settings.plotInsetACG > 1
+                plotInsetACG(ii,col,general,1)
+            end
         elseif strcmp(customPlotSelection,'Waveforms (all channels)')
             % All waveforms across channels with largest ampitude colored according to cell type
             plotAxes.XLabel.String = ['Time (ms) / Position (µm*',num2str(UI.params.chanCoords.x_factor),')'];
@@ -2141,8 +2147,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
-            if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                plotChannelMap(ii,col,general,1);
+            if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                plotInsetChannelMap(ii,col,general,1);
             end
             
         elseif strcmp(customPlotSelection,'Raw waveforms (all)')
@@ -2158,8 +2164,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             % selected cell in black
             line(time_waveforms_zscored, cell_metrics.waveforms.raw_zscored(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
-            if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                plotChannelMap(ii,col,general,1);
+            if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                plotInsetChannelMap(ii,col,general,1);
             end
             
         elseif strcmp(customPlotSelection,'Waveforms (tSNE)')
@@ -3360,7 +3366,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
     
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function out = plotChannelMap(cellID,col,general,plots)
+    function out = plotInsetChannelMap(cellID,col,general,plots)
         % Displays a map of the channel configuration and highlights current cell
         padding = 0.03;
         
@@ -3406,7 +3412,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         function chanCoords = reallign(chanCoords_x,chanCoords_y)
             chanCoords.x = rescale_vector2(chanCoords_x,chanCoords_x) * xlim2 * chan_width + xlim1(1) + xlim2*(1-chan_width-padding);
             chanCoords.y = rescale_vector2(chanCoords_y,chanCoords_y) * ylim2 * chan_height + ylim1(1) + ylim2*padding;
-            if isfield(cell_metrics,'trilat_x') &&  UI.settings.plotChannelMap > 2
+            if isfield(cell_metrics,'trilat_x') &&  UI.settings.plotInsetChannelMap > 2
                 chanCoords.x1 = rescale_vector2(cell_metrics.trilat_x,chanCoords_x) * xlim2 * chan_width + xlim1(1) + xlim2*(1-chan_width-padding);
                 chanCoords.y1 = rescale_vector2(cell_metrics.trilat_y,chanCoords_y) * ylim2 * chan_height + ylim1(1) + ylim2*padding;
             else
@@ -3418,6 +3424,48 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         end
     end 
 
+% % % % % % % % % % % % % % % % % % % % % %
+
+    function out = plotInsetACG(cellID,col,general,plots)
+        % Displays a map of the channel configuration and highlights current cell
+        padding = 0.03;
+        
+        if plots
+            xlim1 = xlim;
+            ylim1 = ylim;
+        else
+            axnum = getAxisBelowCursor;
+            if isempty(axnum) || isempty(UI.zoom.global{axnum})
+                xlim1 = xlim;
+                ylim1 = ylim;
+            else
+                globalZoom = UI.zoom.global{axnum};
+                xlim1 = globalZoom(1,:);
+                ylim1 = globalZoom(2,:);
+            end
+        end
+        xlim2 = diff(xlim1);
+        ylim2 = diff(ylim1);
+
+        chan_width = 0.30;
+        chan_height = 0.15;
+        
+        if strcmp(UI.settings.acgType,'Normal')
+            chanCoords = reallign([-100:100]', normalize_range(cell_metrics.acg.narrow(:,cellID)));
+        elseif strcmp(UI.settings.acgType,'Narrow')
+            chanCoords = reallign([-30:30]', normalize_range(cell_metrics.acg.narrow(71:71+60,cellID)));
+        elseif strcmp(UI.settings.acgType,'Log10') && isfield(general,'acgs') && isfield(general.acgs,'log10')
+            chanCoords = reallign(log10(general.acgs.log10), normalize_range(cell_metrics.acg.log10(:,cellID)));
+        else
+            chanCoords = reallign([-500:500]', normalize_range(cell_metrics.acg.wide(:,cellID)));
+        end
+        bar_from_patch2(chanCoords.x, chanCoords.y,col,ylim1(1) + ylim2*padding)
+        function chanCoords = reallign(chanCoords_x,chanCoords_y)
+            chanCoords.x = rescale_vector2(chanCoords_x,chanCoords_x) * xlim2 * chan_width + xlim1(1) + xlim2*padding;
+            chanCoords.y = rescale_vector2(chanCoords_y,chanCoords_y) * ylim2 * chan_height + ylim1(1) + ylim2*padding;
+        end
+    end 
+    
 % % % % % % % % % % % % % % % % % % % % % %
 
     function norm_data = rescale_vector(bla)
@@ -3761,21 +3809,31 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             UI.menu.display.showChannelMap.ops(1).Checked = 'on';
             UI.menu.display.showChannelMap.ops(2).Checked = 'off';
             UI.menu.display.showChannelMap.ops(3).Checked = 'off';
-            UI.settings.plotChannelMap = 1;
+            UI.settings.plotInsetChannelMap = 1;
         elseif src.Position == 2
             UI.menu.display.showChannelMap.ops(1).Checked = 'off';
             UI.menu.display.showChannelMap.ops(2).Checked = 'on';
             UI.menu.display.showChannelMap.ops(3).Checked = 'off';
-            UI.settings.plotChannelMap = 2;
+            UI.settings.plotInsetChannelMap = 2;
         elseif src.Position == 3
             UI.menu.display.showChannelMap.ops(1).Checked = 'off';
             UI.menu.display.showChannelMap.ops(2).Checked = 'off';
             UI.menu.display.showChannelMap.ops(3).Checked = 'on';
-            UI.settings.plotChannelMap = 3;
+            UI.settings.plotInsetChannelMap = 3;
         end
         uiresume(UI.fig);
     end
 
+    function showInsetACG(src,~)
+        if strcmp(UI.menu.display.showInsetACG.Checked,'off')
+            UI.menu.display.showInsetACG.Checked = 'on';
+            UI.settings.plotInsetACG = 2;
+        else
+            UI.menu.display.showInsetACG.Checked = 'off';
+            UI.settings.plotInsetACG = 1;
+        end
+        uiresume(UI.fig);
+    end
 % % % % % % % % % % % % % % % % % % % % % %
 
     function openWebsite(src,~)
@@ -5786,17 +5844,17 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 % % % % % % % % % % % % % % % % % % % % % %
 
     function buttonACG_normalize(src,~)
-        if src.Position == 8
+        if src.Position == 9
             UI.settings.isiNormalization = 'Rate';
             UI.menu.display.normalization.ops(1).Checked = 'on';
             UI.menu.display.normalization.ops(2).Checked = 'off';
             UI.menu.display.normalization.ops(3).Checked = 'off';
-        elseif src.Position == 9
+        elseif src.Position == 10
             UI.settings.isiNormalization = 'occurence';
             UI.menu.display.normalization.ops(1).Checked = 'off';
             UI.menu.display.normalization.ops(2).Checked = 'on';
             UI.menu.display.normalization.ops(3).Checked = 'off';
-        elseif src.Position == 10
+        elseif src.Position == 11
             UI.settings.isiNormalization = 'Firing rates';
             UI.menu.display.normalization.ops(1).Checked = 'off';
             UI.menu.display.normalization.ops(2).Checked = 'off';
@@ -6542,8 +6600,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     end
                     
                 case 'Waveforms (single)'
-                    if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                        out = plotChannelMap(ii,[],general,0);
+                    if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                        out = plotInsetChannelMap(ii,[],general,0);
                         x_scale = range(out(1,:));
                         y_scale = range(out(2,:));
                         [~,In] = min(hypot((out(1,:)-u)/x_scale,(out(2,:)-v)/y_scale));
@@ -6563,8 +6621,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     x_scale = range(x1(:));
                     y_scale = range(y1(:));
                     
-                    if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                        out = plotChannelMap(ii,[],general,0);
+                    if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                        out = plotInsetChannelMap(ii,[],general,0);
                         x2 = [x1(:);out(1,:)'];
                         y2 = y1(:);
                         y3 = [y2;out(2,:)'];
@@ -6593,8 +6651,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                         text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
                     end
                 case 'Raw waveforms (single)'    
-                    if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                        out = plotChannelMap(ii,[],general,0);
+                    if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                        out = plotInsetChannelMap(ii,[],general,0);
                         x_scale = range(out(1,:));
                         y_scale = range(out(2,:));
                         [~,In] = min(hypot((out(1,:)-u)/x_scale,(out(2,:)-v)/y_scale));
@@ -6616,8 +6674,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 %                     [~,time_index] = min(abs(time_waveforms_zscored-u));
                     
                     
-                    if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                        out = plotChannelMap(ii,[],general,0);
+                    if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                        out = plotInsetChannelMap(ii,[],general,0);
                         x2 = [x1(:);out(1,:)'];
                         y2 = y1(:);
                         y3 = [y2;out(2,:)'];
@@ -6953,6 +7011,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
         y_data = [0,reshape([y_data,y_data]',1,[]),0];
         patch(x_data, y_data,col,'EdgeColor','none','FaceAlpha',.8,'HitTest','off')
     end
+    
+    function bar_from_patch2(x_data, y_data,col,y0)
+        % Creates a bar graph using the patch plot mode, which is substantial faster than using the regular bar plot.
+        % By Peter Petersen
+        
+        x_step = x_data(2)-x_data(1);
+        x_data = [x_data(1),reshape([x_data,x_data+x_step]',1,[]),x_data(end)+x_step];
+        y_data = [y0,reshape([y_data,y_data]',1,[]),y0];
+        patch(x_data, y_data,col,'EdgeColor',col, 'HitTest','off')
+    end
 
 % % % % % % % % % % % % % % % % % % % % % %
 
@@ -7240,16 +7308,16 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     
                     switch selectedOption
                         case 'Waveforms (single)'
-                            if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                                out = plotChannelMap(ii,[],general,0);                                
+                            if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                                out = plotInsetChannelMap(ii,[],general,0);                                
                                 In1 = find(inpolygon(out(1,:), out(2,:), polygon_coords(:,1)',polygon_coords(:,2)'));
                                 In = out(3,In1);
                                 line(out(1,In1),out(2,In1),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
                             end
                             
                         case 'Raw waveforms (single)'
-                            if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                                out = plotChannelMap(ii,[],general,0);                                
+                            if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                                out = plotInsetChannelMap(ii,[],general,0);                                
                                 In1 = find(inpolygon(out(1,:), out(2,:), polygon_coords(:,1)',polygon_coords(:,2)'));
                                 In = out(3,In1);
                                 line(out(1,In1),out(2,In1),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
@@ -7261,8 +7329,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             In = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
                             In = unique(floor(In/length(time_waveforms_zscored)))+1;
                             In = UI.params.subset(In);
-                            if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                                out = plotChannelMap(ii,[],general,0);                                
+                            if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                                out = plotInsetChannelMap(ii,[],general,0);                                
                                 In1 = find(inpolygon(out(1,:), out(2,:), polygon_coords(:,1)',polygon_coords(:,2)'));
                                 In2 = out(3,In1);
                                 line(out(1,In1),out(2,In1),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
@@ -7275,8 +7343,8 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             In = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
                             In = unique(floor(In/length(time_waveforms_zscored)))+1;
                             In = UI.params.subset(In);    
-                            if UI.settings.plotChannelMap > 1 && isfield(general,'chanCoords')
-                                out = plotChannelMap(ii,[],general,0);                                
+                            if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                                out = plotInsetChannelMap(ii,[],general,0);                                
                                 In1 = find(inpolygon(out(1,:), out(2,:), polygon_coords(:,1)',polygon_coords(:,2)'));
                                 In2 = out(3,In1);
                                 line(out(1,In1),out(2,In1),'Marker','o','LineStyle','none','color','k', 'HitTest','off')

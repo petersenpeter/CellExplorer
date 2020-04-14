@@ -27,7 +27,9 @@ function spikes = loadSpikes(varargin)
 %
 % DEPENDENCIES:
 %
-% LoadXml.m & xmltools.m (default) or bz_getSessionInfo.m
+% LoadXml.m & xmltools.m (required: https://github.com/petersenpeter/Cell-Explorer/tree/master/calc_CellMetrics/private)
+% or bz_getSessionInfo.m (optional. From buzcode: https://github.com/buzsakilab/buzcode)
+% npy-matlb toolbox (required for reading phy data: https://github.com/kwikteam/npy-matlab)
 %
 % EXAMPLE CALLS
 % spikes = loadSpikes('basepath',pwd,'clusteringpath',KilosortOutputPath); % Run from basepath, assumes Phy format. Requires xml file and dat file in basepath
@@ -35,7 +37,7 @@ function spikes = loadSpikes(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 04-02-2020
+% Last edited: 14-04-2020
 
 % Version history
 % 3.2 waveforms for phy data extracted from the raw dat
@@ -47,7 +49,7 @@ function spikes = loadSpikes(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
 addParameter(p,'clusteringpath','',@ischar); % clustering path to spike data
-addParameter(p,'clusteringformat','Phy',@ischar); % clustering format: [Current options: Phy, Klustakwik/Neurosuite,klustaViewa]
+addParameter(p,'clusteringformat','Phy',@ischar); % clustering format: [current options: phy, klustakwik/neurosuite,klustaviewa]
 addParameter(p,'basename','',@ischar); % The basename file naming convention
 addParameter(p,'shanks',nan,@isnumeric); % shanks: Loading only a subset of shanks (only applicable to Klustakwik)
 addParameter(p,'raw_clusters',false,@islogical); % raw_clusters: Load only a subset of clusters (might not work anymore as it has not been tested for a long time)
@@ -179,7 +181,7 @@ if forceReload
                         spikes.maxWaveformCh(unit_nb) = xml.ElecGp{shank}(index1); % index 0;
                         spikes.maxWaveformCh1(unit_nb) = xml.ElecGp{shank}(index1)+1; % index 1;
                         spikes.filtWaveform{unit_nb} = spikes.filtWaveform_all{unit_nb}(index1,:);
-                        spikes.filtWaveform_std{unit_nb} = spikes.filtWaveform_all_std{unit_nb}(index1,:);
+%                         spikes.filtWaveform_std{unit_nb} = spikes.filtWaveform_all_std{unit_nb}(index1,:);
                         spikes.peakVoltage(unit_nb) = max(spikes.filtWaveform{unit_nb}) - min(spikes.filtWaveform{unit_nb});
                     end
                 end
@@ -197,6 +199,9 @@ if forceReload
             
             % Loading phy
         case 'phy'
+            if ~exist('readNPY.m','file')
+                error('''readNPY.m'' is not in your path and is required to load the python data. Please download it here: https://github.com/kwikteam/npy-matlab.')
+            end
             disp('loadSpikes: Loading Phy/Kilosort data')
             spike_cluster_index = readNPY(fullfile(clusteringpath_full, 'spike_clusters.npy'));
             spike_times = readNPY(fullfile(clusteringpath_full, 'spike_times.npy'));
@@ -368,7 +373,10 @@ if forceReload
     % Saving output to a buzcode compatible spikes file.
     if saveMat
         disp('loadSpikes: Saving spikes')
-        save(fullfile(clusteringpath,[basename,'.spikes.cellinfo.mat']),'spikes')
+        try save(fullfile(clusteringpath,[basename,'.spikes.cellinfo.mat']),'spikes')
+        catch
+            warning('Spikes could not be saved')
+        end
     end
 end
 
