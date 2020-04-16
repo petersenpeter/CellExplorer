@@ -60,7 +60,7 @@ addParameter(p,'getAllWaveforms',true,@islogical); % Gets up to 16 largest wavef
 addParameter(p,'useNeurosuiteWaveforms',false,@islogical); % Use Waveform features from spk files. Alternatively it loads waveforms from dat file (Klustakwik specific)
 addParameter(p,'spikes',[],@isstruct); % Load existing spikes structure to append new spike info
 addParameter(p,'LSB',0.195,@isnumeric); % Least significant bit (LSB in uV) Intan = 0.195, Amplipex = 0.3815. (range/precision)
-addParameter(p,'session',[],@isstruct); % A buzsaki lab db session struct
+addParameter(p,'session',[],@isstruct); % A buzsaki lab session struct
 addParameter(p,'buzcode',false,@islogical); % If true, uses bz_getSessionInfo. Otherwise uses LoadXml
 
 parse(p,varargin{:})
@@ -141,7 +141,7 @@ if forceReload
                 fileList = {fileList.name};
                 for i = 1:length(fileList)
                     temp = strsplit(fileList{i},'.res.');
-                    shanks_new = [shanks_new,str2num(temp{2})];
+                    shanks_new = [shanks_new,str2double(temp{2})];
                 end
                 shanks = sort(shanks_new);
             end
@@ -277,10 +277,6 @@ if forceReload
             elseif getWaveforms % gets waveforms from dat file
                 spikes = GetWaveformsFromDat(spikes,xml,basepath,basename,LSB,session);
             end
-            
-            %             if getWaveforms % gets waveforms from dat file
-            %                 spikes = GetWaveformsFromDat(spikes,xml,basepath,basename,LSB,session);
-            %             end
             
             % Loading klustaViewa - Kwik format (Klustasuite 0.3.0.beta4)
         case 'klustaviewa'
@@ -536,7 +532,7 @@ end
 
 function spikes = GetAllWaveformsFromDat(spikes,xml,basepath,basename,LSB,session)
 % Requires a neurosuite xml structure.
-% Bad channels must be deselected in the spike groups, or skipped beforehand
+% Bad channels must be deselected in the spike groups, skipped before hand or defind in the session struct
 timerVal = tic;
 nPull = 600; % number of spikes to pull out (default: 600)
 wfWin_sec = 0.004; % Larger size of waveform windows for filterning. total width in ms

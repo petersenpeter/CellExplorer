@@ -206,9 +206,9 @@ end
 
 dispLog('Getting spikes')
 sr = session.extracellular.sr;
-spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting{1}.format,'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
+spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting{1}.format,'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit,'session',session);
 if ~isfield(spikes,'processinginfo') || ~isfield(spikes.processinginfo.params,'WaveformsSource') || ~strcmp(spikes.processinginfo.params.WaveformsSource,'dat file') || spikes.processinginfo.version<3.5
-    spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting{1}.format,'basepath',basepath,'basename',basename,'forceReload',true,'spikes',spikes,'LSB',session.extracellular.leastSignificantBit);
+    spikes = loadSpikes('clusteringpath',clusteringpath,'clusteringformat',session.spikeSorting{1}.format,'basepath',basepath,'basename',basename,'forceReload',true,'spikes',spikes,'LSB',session.extracellular.leastSignificantBit,'session',session);
 end
 
 if parameters.excludeManipulationIntervals
@@ -333,7 +333,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             waveforms.peakVoltage = spikes.peakVoltage;
             waveforms.UID = spikes.UID;
         elseif any(~isfield(spikes,{'filtWaveform','peakVoltage','cluID','peakVoltage_expFitLengthConstant'})) || parameters.forceReload == true 
-            spikes = loadSpikes('basename',basename,'clusteringformat',session.spikeSorting{1}.format,'clusteringpath',clusteringpath,'forceReload',true,'spikes',spikes_all,'basepath',basepath);
+            spikes = loadSpikes('basename',basename,'clusteringformat',session.spikeSorting{1}.format,'clusteringpath',clusteringpath,'forceReload',true,'spikes',spikes_all,'basepath',basepath,'session',session);
             %  spikes = GetWaveformsFromDat(spikes,sessionInfo);
             waveforms.filtWaveform = spikes.filtWaveform;
             if ~isfield(spikes,'timeWaveform')
