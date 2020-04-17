@@ -653,6 +653,7 @@ UI.tabs.dispTags_minus = uitab(UI.panel.tabgroup2,'Title','-Tags');
 UI.tabs.dispTags_plus = uitab(UI.panel.tabgroup2,'Title','+Tags');
 
 UI.axis.legends = axes(UI.tabs.legends,'Position',[0 0 1 1]);
+
 % % % % % % % % % % % % % % % % % % % %
 % Message log
 % % % % % % % % % % % % % % % % % % % %
@@ -1774,8 +1775,19 @@ while ii <= cell_metrics.general.cellCount
     % % % % % % % % % % % % % % % % % % % % % %
     
     if strcmp(UI.panel.subfig_ax2.Visible,'on')
+
         delete(subfig_ax(2).Children)
-        set(UI.fig,'CurrentAxes',subfig_ax(2))
+        ax23=findobj(UI.panel.subfig_ax2,'YAxisLocation','right');
+        ax24=findobj(UI.panel.subfig_ax2,'YAxisLocation','left');
+        if ~isempty(ax23) || ~isempty(ax24)
+            delete(UI.panel.subfig_ax2.Children)
+            % Creating new chield
+            subfig_ax(2) = axes('Parent',UI.panel.subfig_ax2);
+        else
+            delete(subfig_ax(2).Children)
+            set(UI.fig,'CurrentAxes',subfig_ax(2))
+        end
+        
         set(subfig_ax(2),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
         if (strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics)) || (strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics))
             yyaxis right
@@ -2194,11 +2206,14 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             plotAxes.XLabel.String = '';
             plotAxes.YLabel.String = '';
             plotAxes.Title.String = customPlotSelection;
+
             putativeConnections_subset = all(ismember(cell_metrics.putativeConnections.excitatory,UI.params.subset),2);
             putativeConnections_subset = cell_metrics.putativeConnections.excitatory(putativeConnections_subset,:);
             
             putativeConnections_subset_inh = all(ismember(cell_metrics.putativeConnections.inhibitory,UI.params.subset),2);
             putativeConnections_subset_inh = cell_metrics.putativeConnections.inhibitory(putativeConnections_subset_inh,:);
+            
+            if ~isempty(putativeConnections_subset) || ~isempty(putativeConnections_subset_inh)
             [putativeSubset1,~,Y] = unique([putativeConnections_subset;putativeConnections_subset_inh]);
             
             Y = reshape(Y,size([putativeConnections_subset;putativeConnections_subset_inh]));
@@ -2217,7 +2232,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             end
             if ~UI.settings.plotInhibitoryConnections
                 connectivityGraph = rmedge(connectivityGraph,Y(size(putativeConnections_subset,1)+1:end,1),Y(size(putativeConnections_subset,1)+1:end,2));
-            else
+            elseif ~isempty(putativeConnections_subset)
                 connectivityGraph1 = connectivityGraph;
                 connectivityGraph1 = rmedge(connectivityGraph1,Y(1:size(putativeConnections_subset,1),1),Y(1:size(putativeConnections_subset,1),2));
             end
@@ -2228,7 +2243,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
             for k = 1:length(classes2plotSubset)
                 highlight(connectivityGraph_plot,find(plotClas(putativeSubset1)==classes2plotSubset(k)),'NodeColor',clr(k,:))
             end
-            if UI.settings.plotInhibitoryConnections
+            if UI.settings.plotInhibitoryConnections && ~isempty(putativeConnections_subset)
                 highlight(connectivityGraph_plot,connectivityGraph1,'EdgeColor','b')
             end
             axis tight, %title('Connectivity graph')
@@ -2252,7 +2267,10 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                 C = ismember(subsetPlots.subset,UI.params.connections_inh);
                 line(subsetPlots.xaxis(C),subsetPlots.yaxis(C),'Marker','o','LineStyle','none','color','k','HitTest','off')
             end
-            
+            else
+%                 title('ISI distribution')
+                text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
+            end
         elseif strcmp(customPlotSelection,'CCGs (image)')
             % CCGs for selected cell with other cell pairs from the same session. The ACG for the selected cell is shown first
             plotAxes.XLabel.String = 'Time (ms)';
@@ -6971,12 +6989,13 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                     end
                     
                 case 'Connectivity graph'
-                    [~,idx] = min(hypot(subsetPlots.xaxis-u,subsetPlots.yaxis-v));
-                    iii = subsetPlots.subset(idx);
-                    if highlight
-                        text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if ~isempty(subsetPlots)
+                        [~,idx] = min(hypot(subsetPlots.xaxis-u,subsetPlots.yaxis-v));
+                        iii = subsetPlots.subset(idx);
+                        if highlight
+                            text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                        end
                     end
-                    
                 otherwise
                     if any(strcmp(UI.monoSyn.disp,{'All','Selected','Upstream','Downstream','Up & downstream'})) && ~isempty(subsetPlots) && ~isempty(subsetPlots.subset)
                             subset1 = subsetPlots.subset;
@@ -7451,10 +7470,12 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
                             subset2 = subset23(burstIndexSorted);
                             In = subset2(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2))));
                         case 'Connectivity graph'
-                            In1 = find(inpolygon(subsetPlots.xaxis, subsetPlots.yaxis, polygon_coords(:,1)',polygon_coords(:,2)'));
-                            In = subsetPlots.subset(In1);
-                            if ~isempty(In)
-                                line(subsetPlots.xaxis(In1),subsetPlots.yaxis(In1),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9,'HitTest','off')
+                            if ~isempty(subsetPlots)
+                                In1 = find(inpolygon(subsetPlots.xaxis, subsetPlots.yaxis, polygon_coords(:,1)',polygon_coords(:,2)'));
+                                In = subsetPlots.subset(In1);
+                                if ~isempty(In)
+                                    line(subsetPlots.xaxis(In1),subsetPlots.yaxis(In1),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9,'HitTest','off')
+                                end
                             end
                         otherwise
                             if any(strcmp(UI.monoSyn.disp,{'All','Selected','Upstream','Downstream','Up & downstream'}))
