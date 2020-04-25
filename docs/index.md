@@ -36,7 +36,7 @@ To leverage this, we built the Cell Explorer, a framework for analyzing and char
 ```m
 mex -O CCGHeart.c
 ```
-4. The Cell Explorer GUI and pipeline uses additional toolboxes, of which one Matlab toolboxes must be installed manually.
+4. The Cell Explorer GUI and pipeline uses additional toolboxes, of which one Matlab toolbox must be installed manually.
   * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline)
 
 5. That's it! Now you can explore the software with below example data or try one of the tutorials.
