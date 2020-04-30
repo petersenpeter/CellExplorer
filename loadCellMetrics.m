@@ -2,7 +2,7 @@ function [cell_metrics_idxs, cell_metrics] = LoadCellMetrics(varargin)
 %   This function loads cell metrics for a given session
 
 %
-%   Check the wiki of the Cell Explorer for more details: https://github.com/petersenpeter/Cell-Explorer/wiki
+%   Check the wiki of the CellExplorer for more details: https://github.com/petersenpeter/CellExplorer/wiki
 %
 %   INPUTS
 %   id                     - takes a database id as input
