@@ -23,8 +23,8 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % Last edited: 16-03-2020
 
 % Lists
-sortingMethodList = {'KiloSort', 'SpikingCircus', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
-sortingFormatList = {'Phy', 'KiloSort', 'SpikingCircus', 'Klustakwik', 'KlustaViewer', 'Neurosuite'}; % Spike sorting formats
+sortingMethodList = {'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
+sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewer', 'Neurosuite','MountainSort','IronClust'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
 

@@ -52,7 +52,7 @@ if ~exist(saveAsFullfile,'file') || forceReload
     ThetaInstantFreq = (srLfp)./diff(find(diff(signal_phase>0)==1));
     ThetaInstantTime = cumsum(diff(find(diff(signal_phase>0)==1)))/srLfp;
     ThetaInstantFreq(find(ThetaInstantFreq>11)) = nan;
-    ThetaInstantFreq = nanconv(ThetaInstantFreq,gausswin(7,1)/sum(gausswin(7,1)),'edge');
+    ThetaInstantFreq = nanconv(ThetaInstantFreq,ce_gausswin(7)/sum(ce_gausswin(7)),'edge');
     
     % Theta frequency
     freqlist = [4:0.1:10];

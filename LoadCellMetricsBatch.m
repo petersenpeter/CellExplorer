@@ -46,11 +46,12 @@ cell_metrics2 = [];
 subfields2 = [];
 subfieldstypes = [];
 subfieldssizes = [];
+batch_timer = tic;
 
 if ishandle(waitbar_handle)
-    f_LoadCellMetrics = waitbar_handle;
+    ce_waitbar = waitbar_handle;
 else
-    f_LoadCellMetrics = waitbar(0,' ','name','Cell-metrics: loading batch');
+    ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
 end
 
 cell_metrics_type_struct = {'general','acg','isi','waveforms','putativeConnections','firingRateMaps','responseCurves','events','manipulations','tags','groups','groundTruthClassification'};
@@ -58,7 +59,7 @@ cell_metrics_type_struct = {'general','acg','isi','waveforms','putativeConnectio
 % disp('Cell-metrics: loading batch')
 if ~isempty(sessionNames)
     count_metricsLoad = 1;
-    waitbar(1/(1+count_metricsLoad+length(sessionNames)),f_LoadCellMetrics,['Loading session info from sessionNames']);
+    waitbar(1/(1+count_metricsLoad+length(sessionNames)),ce_waitbar,['Loading session info from sessionNames']);
    
     % % % % % % % % % % % % %
     options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','get','Timeout',50);
@@ -97,11 +98,11 @@ if ~isempty(sessionNames)
     
 elseif ~isempty(sessionIDs)
     count_metricsLoad = 1;
-    waitbar(1/(1+count_metricsLoad+length(sessionIDs)),f_LoadCellMetrics,['Loading session info from sessionIDs']);
+    waitbar(1/(1+count_metricsLoad+length(sessionIDs)),ce_waitbar,['Loading session info from sessionIDs']);
     [sessions, basenames, basepaths, clustering_paths] = db_set_session('sessionId',sessionIDs,'changeDir',false);
 elseif ~isempty(clusteringpaths)
     count_metricsLoad = 1;
-    waitbar(1/(1+count_metricsLoad+length(clusteringpaths)),f_LoadCellMetrics,['Loading session info from clusteringpaths']);
+    waitbar(1/(1+count_metricsLoad+length(clusteringpaths)),ce_waitbar,['Loading session info from clusteringpaths']);
     clustering_paths = clusteringpaths;
 elseif ~isempty(basepaths)
     count_metricsLoad = 1;
@@ -114,7 +115,7 @@ elseif ~isempty(basepaths)
             basename = basenames{i};
         end
         if exist(fullfile(basepath,[basename,'.session.mat']),'file')
-            waitbar(1/(1+count_metricsLoad+length(basepaths)),f_LoadCellMetrics,['Loading session info from basepaths']);
+            waitbar(1/(1+count_metricsLoad+length(basepaths)),ce_waitbar,['Loading session info from basepaths']);
             disp(['Loading ',basename,'.session.mat']);
             load(fullfile(basepath,[basename,'.session.mat']));
             sessionIn = session;
@@ -132,13 +133,15 @@ elseif ~isempty(basepaths)
 else
     warning('Input not sufficient')
 end
+batch_benchmark.clock(1) = toc(batch_timer);
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 % Loading cell_metircs file batch
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 for iii = 1:length(clustering_paths)
-    if ~isempty(basenames) && ishandle(f_LoadCellMetrics)
-        waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),f_LoadCellMetrics,[num2str(iii), '/', num2str(length(basenames)),': ', basenames{iii}]);
+    file_load_timer = tic;
+    if ~isempty(basenames) && ishandle(ce_waitbar)
+        waitbar((iii+count_metricsLoad)/(1+count_metricsLoad+length(clustering_paths)),ce_waitbar,[num2str(iii), '/', num2str(length(basenames)),': ', basenames{iii}]);
     else
         break
     end
@@ -154,6 +157,8 @@ for iii = 1:length(clustering_paths)
     subfieldstypes = [subfieldstypes(:);temp(:)];
     temp2 = struct2cell(structfun(@size,cell_metrics2{iii}.cell_metrics,'UniformOutput',false));
     subfieldssizes = [subfieldssizes(:);temp2(:)];
+    batch_benchmark.file_load(iii) = toc(file_load_timer);
+    batch_benchmark.file_cell_count(iii) = cell_metrics2{iii}.cell_metrics.general.cellCount;
 end
 
 [cell_metrics_fieldnames,ia,~] = unique(subfields2);
@@ -166,16 +171,17 @@ cell_metrics_fieldnames(contains(cell_metrics_fieldnames,{'truePositive','falseP
 subfieldstypes(ismember(cell_metrics_fieldnames,cell_metrics_type_struct)) = {'struct'};
 h = 0;
 cell_metrics_batch = [];
+batch_benchmark.clock(2) = toc(batch_timer);
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 % Creating cell_metrics_batch from individual session cell_metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-if ishandle(f_LoadCellMetrics)
-    waitbar((count_metricsLoad+length(cell_metrics2))/(1+count_metricsLoad+length(cell_metrics2)),f_LoadCellMetrics,['Concatenating files']);
+if ishandle(ce_waitbar)
+    waitbar((count_metricsLoad+length(cell_metrics2))/(1+count_metricsLoad+length(cell_metrics2)),ce_waitbar,['Concatenating files']);
 end
 for iii = 1:length(cell_metrics2)
-    if ishandle(f_LoadCellMetrics)
-        waitbar((count_metricsLoad+length(cell_metrics2))/(1+count_metricsLoad+length(cell_metrics2)),f_LoadCellMetrics,['Concatenating files: ', basenames{iii}  ,' (',num2str(iii),'/' num2str(length(cell_metrics2)),')']);
+    if ishandle(ce_waitbar)
+        waitbar((count_metricsLoad+length(cell_metrics2))/(1+count_metricsLoad+length(cell_metrics2)),ce_waitbar,['Concatenating files: ', basenames{iii}  ,' (',num2str(iii),'/' num2str(length(cell_metrics2)),')']);
     else
         break
     end
@@ -324,11 +330,13 @@ for iii = 1:length(cell_metrics2)
 end
 if ~isempty(cell_metrics_batch)
     cell_metrics_batch.general.cellCount = length(cell_metrics_batch.UID);
+    batch_benchmark.clock(3) = toc(batch_timer);
+    cell_metrics_batch.general.batch_benchmark = batch_benchmark;
 end
 
-if ishandle(f_LoadCellMetrics)
-    waitbar(1,f_LoadCellMetrics,'Loading complete');
+if ishandle(ce_waitbar)
+    waitbar(1,ce_waitbar,'Loading complete');
     if isempty(waitbar_handle)
-        close(f_LoadCellMetrics)
+        close(ce_waitbar)
     end
 end

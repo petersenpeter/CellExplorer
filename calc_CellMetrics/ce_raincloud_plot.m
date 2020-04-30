@@ -61,7 +61,7 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     addOptional(p, 'alpha', 1, validScalarPosNum)
     addOptional(p, 'dot_dodge_amount', 0.4, @isnumeric)
     addOptional(p, 'box_col_match', 0, @isnumeric)
-    addOptional(p, 'line_width', 2, validScalarPosNum)
+    addOptional(p, 'line_width', 1, validScalarPosNum)
     addOptional(p, 'lwr_bnd', 1, @isnumeric)
     addOptional(p, 'bxcl', [0 0 0], @isnumeric)
     addOptional(p, 'bxfacecl', [1 1 1], @isnumeric)
@@ -69,6 +69,9 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     addOptional(p, 'log_axis', 0, @isnumeric)
     addOptional(p, 'randomNumbers', [], @isnumeric)
     addOptional(p, 'markerSize', 14, @isnumeric)
+    addOptional(p, 'normalization', 'Peak', @ischar)
+    addOptional(p, 'norm_value', 1, @isnumeric)
+    addOptional(p, 'scatter_on', 1, @isnumeric)
     
     % parse the input
     parse(p,X,varargin{:});
@@ -92,6 +95,9 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     log_axis            = p.Results.log_axis;
     randomNumbers       = p.Results.randomNumbers;
     markerSize          = p.Results.markerSize;
+    normalization       = p.Results.normalization;
+    norm_value          = p.Results.norm_value;
+    scatter_on          = p.Results.scatter_on;
     
     % calculate kernel density
     X = X(~isnan(X) & ~isinf(X));
@@ -113,8 +119,14 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     end
     
     % density plot
-    h{1} = area(Xi, f/max(f), 'FaceColor', color, 'EdgeColor', cloud_edge_col, 'LineWidth', line_width, 'FaceAlpha', alpha); hold on
-    
+    if strcmp(normalization,'Peak')
+        f = f/max(f);
+    elseif strcmp(normalization,'Count')
+        f = f*length(X)/norm_value;
+    else
+        f = f/100*length(Xi);
+    end
+    h{1} = area(Xi, f, 'FaceColor', color, 'EdgeColor', cloud_edge_col, 'LineWidth', line_width, 'FaceAlpha', alpha); hold on
     % make some space under the density plot for the boxplot and raindrops
     yl = get(gca, 'YLim');
     set(gca, 'YLim', [-yl(2)*lwr_bnd yl(2)]);
@@ -122,6 +134,9 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     % width of boxplot
     wdth = yl(2) * 0.25;
     wdth_box = yl(2) * 0.05;
+    if isempty(randomNumbers)
+        randomNumbers = rand(1,length(X));
+    end
     jit = (randomNumbers(1:length(X)) - 0.5) * wdth;
     
     % info for making boxplot
@@ -152,7 +167,9 @@ function drops_pos = ce_raincloud_plot(X, varargin)
         drops_pos = jit - yl(2) / 2;
     end
 %      h{2} = scatter(X, drops_pos,'HitTest','off','SizeData',markerSize,'MarkerFaceColor',color,'MarkerEdgeColor','none');
-     h{2} = line(X, drops_pos,'HitTest','off','markersize',markerSize-5,'MarkerFaceColor',color,'LineStyle','none','Marker','.','color',color);
+    if scatter_on
+        h{2} = line(X, drops_pos,'HitTest','off','markersize',markerSize-5,'MarkerFaceColor',color,'LineStyle','none','Marker','.','color',color);
+    end
     if box_on
         if box_col_match
             bxcl = color;

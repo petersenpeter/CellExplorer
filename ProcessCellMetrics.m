@@ -312,7 +312,6 @@ cell_metrics.general.basename = basename;
 cell_metrics.general.clusteringpath = clusteringpath;
 cell_metrics.general.cellCount = length(spikes.total);
 
-
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Waveform based calculations
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -571,7 +570,7 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
         end
         cell_metrics.synapticConnectionsOut = zeros(1,cell_metrics.general.cellCount);
         cell_metrics.synapticConnectionsIn = zeros(1,cell_metrics.general.cellCount);
-%         keyboard
+
         [a,b]=hist(cell_metrics.putativeConnections.excitatory(:,1),unique(cell_metrics.putativeConnections.excitatory(:,1)));
         cell_metrics.synapticConnectionsOut(b) = a; 
         cell_metrics.synapticConnectionsOut = cell_metrics.synapticConnectionsOut(1:cell_metrics.general.cellCount);

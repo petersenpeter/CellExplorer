@@ -3,7 +3,7 @@
   
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 30-01-2020
+% Last edited: 24-04-2020
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Cell Explorer Preferences  
@@ -11,16 +11,17 @@
 
 % Display settings - An incomplete list:
 % 'Waveforms (single)','Waveforms (all)','Waveforms (image)','Raw waveforms (single)','Raw waveforms (all)','ACGs (single)',
-% 'ACGs (all)','ACGs (image)','CCGs (image)','Sharp wave-ripple'
+% 'ACGs (all)','ACGs (image)','CCGs (image)','sharpWaveRipple'
 UI.settings.customCellPlotIn{1} = 'Waveforms (all)';
-UI.settings.customCellPlotIn{2} = 'ACGs (single)'; 
+UI.settings.customCellPlotIn{2} = 'ISIs (all)'; 
 UI.settings.customCellPlotIn{3} = 'RCs_firingRateAcrossTime';
 UI.settings.customCellPlotIn{4} = 'Waveforms (single)';
 UI.settings.customCellPlotIn{5} = 'CCGs (image)';
-UI.settings.customCellPlotIn{6} = 'Sharp wave-ripple';
+UI.settings.customCellPlotIn{6} = 'sharpWaveRipple';
 
 UI.settings.acgType = 'Normal';                 % Normal (100ms), Wide (1s), Narrow (30ms), Log10
 UI.settings.isiNormalization = 'Occurance';     % 'Rate', 'Occurance'
+UI.settings.rainCloudNormalization = 'Peak';    % 'Probability'
 UI.settings.monoSynDispIn = 'Selected';         % 'All', 'Upstream', 'Downstream', 'Up & downstream', 'Selected', 'None'
 UI.settings.metricsTableType = 'Metrics';       % ['Metrics','Cells','None']
 UI.settings.plotCountIn = 'GUI 3+3';            % ['GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6']
@@ -31,10 +32,13 @@ UI.settings.markerSize = 15;                    % marker size in the group plots
 UI.settings.plotInsetChannelMap = 3;            % Show a channel map inset with waveforms.
 UI.settings.plotInsetACG = 2;                   % Show a ACG plot inset with waveforms.
 UI.settings.plotChannelMapAllChannels = true;   % Boolean. Show a select set of channels or all 
+UI.settings.waveformsAcrossChannelsAlignment = 'Probe layout'; % 'Probe layout', 'Electrode groups'
 UI.settings.colormap = hot(512);                % default colormap
+UI.settings.showAllWaveforms = 0;               % Show all traces or a random subset (maxi 2000; faster UI)
+UI.settings.zscoreWaveforms = 1;                % Show zscored or full amplitude waveforms
 
 % Autosave settings
-UI.settings.autoSaveFrequency = 6;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
+UI.settings.autoSaveFrequency = 5;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
 UI.settings.autoSaveVarName = 'cell_metrics';   % Variable name used in autosave
 
 % Initial data displayed in the customPlot

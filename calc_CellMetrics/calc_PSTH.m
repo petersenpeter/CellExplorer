@@ -96,7 +96,7 @@ for i = 1:size(PSTH_out,2)
 end
 
 if smoothing>0
-    PSTH_out = nanconv(PSTH_out,gausswin(smoothing)/sum(gausswin(smoothing)),'edge');
+    PSTH_out = nanconv(PSTH_out,ce_gausswin(smoothing)/sum(ce_gausswin(smoothing)),'edge');
 end
 
 [~,modulationPeakResponseTime] = max(PSTH_out);
