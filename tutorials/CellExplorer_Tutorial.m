@@ -1,5 +1,5 @@
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Tutorial for running the Cell Explorer on your own data from a basepath
+% Tutorial for running the CellExplorer on your own data from a basepath
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 %  1. Define the basepath of the dataset to run. The dataset should at minimum consist of a basename.dat, a basename.xml and spike sorted data.
@@ -12,7 +12,7 @@ session = sessionTemplate(pwd,'showGUI',true);
 %% 3. Run the cell metrics pipeline 'ProcessCellMetrics' using the session struct as input
 cell_metrics = ProcessCellMetrics('session', session);
 
-%% 4. Visualize the cell metrics in the Cell Explorer
+%% 4. Visualize the cell metrics in the CellExplorer
 cell_metrics = CellExplorer('metrics',cell_metrics); 
 
 %% 5. Open several session from basepaths
@@ -29,7 +29,7 @@ cell_metrics_idxs1 = LoadCellMetrics('cell_metrics',cell_metrics,'putativeCellTy
 cell_metrics_idxs2 = LoadCellMetrics('cell_metrics',cell_metrics,'tags',{'InverseSpike','Good'},'putativeCellType',{'Interneuron'});
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Tutorial for running the Cell Explorer from the Buzsaki lab database
+% Tutorial for running the CellExplorer from the Buzsaki lab database
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 %  1. Define your credentials and local repositories by editing the two files:
@@ -42,6 +42,6 @@ sessionName = 'Rat08-20130708';
 %% 3. Run the cell metrics pipeline using the session name as input
 cell_metrics = ProcessCellMetrics('sessionName', sessionName);
 
-%% 4. Visualize the cell metrics in the Cell Explorer
+%% 4. Visualize the cell metrics in the CellExplorer
 cell_metrics = CellExplorer('metrics',cell_metrics);
 
