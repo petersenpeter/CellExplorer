@@ -15,7 +15,7 @@ nav_order: 1
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/CellExplorer-Interface-description-1.png)
 
 ### Elements
-The interface consists of 4-9 main plots. The top row is dedicated to population level representations of [cell groups]({{"/interface/group-plots/"|absolute_url}}) and the remaining plots are selectable and customizable plots for [individual cells]({{"/interface/single-cell-plot-options/"|absolute_url}}) (including variations of waveforms, ACGs, ISIs, CCGs, PSTHs, response curves and firing rate maps). The interface surronding the plots, consists of 7 panels placed on either side of the graphs: On the right side there is a navigation panel, a cell assignment panel, a display settings panel, and on the left side a plot selection panel, a color group panel and a table with cell metrics. The panels are described in details below. Further there is a text field for custom text filter in the upper left corner, a message log and figure legends at the bottom. There are [keyboard shortcuts]({{"/interface/keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in Cell Explorer to see the keyboard shortcuts.
+The interface consists of 4-9 main plots. The top row is dedicated to population level representations of [cell groups]({{"/interface/group-plots/"|absolute_url}}) and the remaining plots are selectable and customizable plots for [individual cells]({{"/interface/single-cell-plot-options/"|absolute_url}}) (including variations of waveforms, ACGs, ISIs, CCGs, PSTHs, response curves and firing rate maps). The interface surronding the plots, consists of 7 panels placed on either side of the graphs: On the right side there is a navigation panel, a cell assignment panel, a display settings panel, and on the left side a plot selection panel, a color group panel and a table with cell metrics. The panels are described in details below. Further there is a text field for custom text filter in the upper left corner, a message log and figure legends at the bottom. There are [keyboard shortcuts]({{"/interface/keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in CellExplorer to see the keyboard shortcuts.
 
 ### Navigation and cell selection
 The Navigation panel allows you can navigate and select which cell to display.
@@ -47,7 +47,7 @@ The Cell Assignment panel allows you to perform relevant types of cell-assignmen
 + `Label`: Assign a label to the selected cell. Labels are saved to the cell_metrics structure.
 
 ### Display Settings
-The Display Settings panel allows you to customize the plots in Cell Explorer. 
+The Display Settings panel allows you to customize the plots in CellExplorer. 
 Cell-type list: Defines the displayed cell-types. 
 Layout: Adjust the layout and number of cell specific plots to display: `1+3` -> `3+6`
 1.-6. view: A drop-down menu for each of the cell plots containing available options like the *Firing rate map*, *tSNE plots*, *Sharp wave-ripple*, *Autocorrelograms*, *waveforms*,  all plots associated with the selected cell.

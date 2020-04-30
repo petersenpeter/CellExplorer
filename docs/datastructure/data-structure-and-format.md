@@ -14,7 +14,7 @@ nav_order: 2
 {:toc}
 
 ## Data paths
-For each session there are two main paths that the Cell Explorer uses, a basepath and a clusteringpath (relative to basepath). 
+For each session there are two main paths that the CellExplorer uses, a basepath and a clusteringpath (relative to basepath). 
 
 The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: `sessionName.*`, e.g. `sessionName.dat` and `sessionName.lfp` (low-pass filtered and down-sampled. The lfp file is automatically generated in the pipeline if necessary). The clusteringpath contains the spike data, including cell metrics, and can be the same as the basepath (empty clusteringpath).
 

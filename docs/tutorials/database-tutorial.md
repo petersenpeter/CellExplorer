@@ -48,15 +48,15 @@ spikes = loadSpikes('session',session);
 cell_metrics = ProcessCellMetrics('sessionName',sessionName);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
-   1. Run Cell Explorer directly from `sessionName`
+   1. Run CellExplorer directly from `sessionName`
 ```m
 cell_metrics = CellExplorer('sessionName',sessionName);
 ```
-   1. Run Cell Explorer from list of `sessionNames`
+   1. Run CellExplorer from list of `sessionNames`
 ```m
 sessionNames = {'ham11_27-29_amp','ham11_34-36_amp'};
 cell_metrics = LoadCellMetricsBatch('sessions',sessionNames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 
-Please see the tutorial for [how to interact with the database from the Cell Explorer]({{"/tutorials/database-sessions-dialog/"|absolute_url}}) as well.
+Please see the tutorial for [how to interact with the database from the CellExplorer]({{"/tutorials/database-sessions-dialog/"|absolute_url}}) as well.

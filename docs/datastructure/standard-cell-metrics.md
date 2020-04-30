@@ -6,7 +6,7 @@ nav_order: 3
 ---
 # Standard cell metrics
 {: .no_toc}
-The Cell Explorer used a single Matlab struct for handling all cell metrics called `cell_metrics`. The `cell_metrics` struct consists of four types of fields for handling different types of data: double, char cells and structs. Fields must be defined for all cells in the session (1xnCells). Single numeric values are saved to numeric fields with double precision, and character/string fields are saved in char cells. Time series data like waveforms and session parameters are stored in standard struct fields.
+The CellExplorer used a single Matlab struct for handling all cell metrics called `cell_metrics`. The `cell_metrics` struct consists of four types of fields for handling different types of data: double, char cells and structs. Fields must be defined for all cells in the session (1xnCells). Single numeric values are saved to numeric fields with double precision, and character/string fields are saved in char cells. Time series data like waveforms and session parameters are stored in standard struct fields.
 
 ## Table of contents
 {: .no_toc .text-delta }

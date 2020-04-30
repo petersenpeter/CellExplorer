@@ -6,7 +6,7 @@ nav_order: 6
 ---
 # Opto-tagging tutorial
 {: .no_toc}
-This tutorial will guide you through the process of tagging your cells by assigning groundTruthClassification-tags to your data in the Cell Explorer. If you have data that you are interested in sharing please contact us. You can push ground truth cells back the the Cell Explorer GitHub repository, or you can send your data by email to us, see instructions below. Cells assigned as ground truth will have a classification label in `cell_metrics.groundTruthClassification`. Opto-tagged/ground truth cells can be assigned to one or more groups. 
+This tutorial will guide you through the process of tagging your cells by assigning groundTruthClassification-tags to your data in the CellExplorer. If you have data that you are interested in sharing please contact us. You can push ground truth cells back the the CellExplorer GitHub repository, or you can send your data by email to us, see instructions below. Cells assigned as ground truth will have a classification label in `cell_metrics.groundTruthClassification`. Opto-tagged/ground truth cells can be assigned to one or more groups. 
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -24,22 +24,22 @@ cell_metrics.groundTruthClassification.(name_optoTagged) = cellIDs_optoTagged;
 cell_metrics.groundTruthClassification.PV_pos = [1,5,10];
 ```
 
-### Tagging your cells in the Cell Explorer
-1. Launch the Cell Explorer.
+### Tagging your cells in the CellExplorer
+1. Launch the CellExplorer.
 2. Activate the manual curation of ground truth classification from the top menu `Ground truth` -> `Perform ground truth cell type classification in current session(s)`. This opens a tab group in the Cell Assignment tab menu titled `G/T` in the right side-panel. 
 3. Adjust the highlighted cells using the menu option `Group data` -> `Open group data dialog`. This dialog allows you to define how to visualize your tagged cells.
-4. Assign the ground truth tag label to your cells. You can add more tags in the Cell Explorer and in the preference file `CellExplorer_Preferences.m`. Each cell can have one or more ground truth classification tags assigned.
+4. Assign the ground truth tag label to your cells. You can add more tags in the CellExplorer and in the preference file `CellExplorer_Preferences.m`. Each cell can have one or more ground truth classification tags assigned.
 5. Once complete, save the session using the top menu `File` -> `Save classification`.
 
 ![Optotagging interface](https://buzsakilab.com/wp/wp-content/uploads/2020/01/CellExplorer-optotagged-cells-2.png)
 
 ### Saving opto-tagged/ground truth cells to groundTruth folder
-Following the process described in the previous sections on tagging your cells, you can submit your opto-tagged cells to the `groundTruth` folder through the Cell Explorer UI, allowing you to share your cells and use them across sessions.
+Following the process described in the previous sections on tagging your cells, you can submit your opto-tagged cells to the `groundTruth` folder through the CellExplorer UI, allowing you to share your cells and use them across sessions.
 
-1. Launch the Cell Explorer.
+1. Launch the CellExplorer.
 1. From the `Ground truth` top menu select `Save tagging to groundTruthData folder` to submit your ground truth cells to the `+groundTruthData/` data folder (centralized ground truth data). The files in the `+groundTruthData/` folder is organized by sessions.
 
-### Submit your cells to the Cell Explorer repository
-You can submit your cells to the Cell Explorer repository such that other people can take advantage of your ground truth cells. This allows the community to share their tagged cells such that others can researchers can benefit.
-1. __Push metrics back to main branch of the Cell Explorer Github repository__: If you cloned or forked the Cell Explorer Github repository, you can submit a pull-request to the main Cell Explorer branch. We will verify your data and submit then to the main branch of the Cell Explorer. 
-2. __Email metrics to us__: You can email your ground truth cells to us at <a href="mailto:petersen.peter@gmail.com">petersen.peter@gmail.com</a>. Provide the `cell_metrics` files saved to `+groundTruthData/`. The ground truth cells are organized by sessions, where the files in `+groundTruthData/` only contains cells with groundTruthClassification from the original session. We will verify your data and submit them to the main branch of the Cell Explorer.
+### Submit your cells to the CellExplorer repository
+You can submit your cells to the CellExplorer repository such that other people can take advantage of your ground truth cells. This allows the community to share their tagged cells such that others can researchers can benefit.
+1. __Push metrics back to main branch of the CellExplorer Github repository__: If you cloned or forked the CellExplorer Github repository, you can submit a pull-request to the main CellExplorer branch. We will verify your data and submit then to the main branch of the CellExplorer. 
+2. __Email metrics to us__: You can email your ground truth cells to us at <a href="mailto:petersen.peter@gmail.com">petersen.peter@gmail.com</a>. Provide the `cell_metrics` files saved to `+groundTruthData/`. The ground truth cells are organized by sessions, where the files in `+groundTruthData/` only contains cells with groundTruthClassification from the original session. We will verify your data and submit them to the main branch of the CellExplorer.

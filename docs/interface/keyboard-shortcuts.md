@@ -26,7 +26,7 @@ dl {
 
 # Keyboard shortcuts
 {: .no_toc}
-Keyboard shortcuts allow you to quickly interact with your data in the Cell Explorer. Pressing `H` in the cell Explorer will show available shortcuts. A `+` sign indicate that the key must be combined with command/control (Mac/Windows).
+Keyboard shortcuts allow you to quickly interact with your data in the CellExplorer. Pressing `H` in the CellExplorer will show available shortcuts. A `+` sign indicate that the key must be combined with command/control (Mac/Windows).
 
 ### Navigation
 <dl>
@@ -97,7 +97,7 @@ Keyboard shortcuts allow you to quickly interact with your data in the Cell Expl
   <dt>H</dt>
   <dd>Open list of keyboard shortcuts</dd>
   <dt>+P</dt>
-  <dd>Open preferences for the Cell Explorer</dd>
+  <dd>Open preferences for the CellExplorer</dd>
   <dt>+C</dt>
   <dd>Open file directory of the selected cell</dd>
   <dt>+D</dt>

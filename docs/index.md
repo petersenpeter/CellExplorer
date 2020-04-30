@@ -8,20 +8,20 @@ has_children: false
 {: .no_toc}
 {: .fs-9 }
 
-Cell Explorer is a graphical user interface (GUI), standardized pipeline and data structure for exploring and classifying spike sorted single units acquired using extracellular electrodes.
+CellExplorer is a graphical user interface (GUI), standardized pipeline and data structure for exploring and classifying spike sorted single units acquired using extracellular electrodes.
 {: .fs-6 .fw-300 }
 
 [Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [View code on GitHub](https://github.com/petersenpeter/CellExplorer){: .btn .fs-5 .mb-4 .mb-md-0 }
 
-![Cell Explorer](https://buzsakilab.com/wp/wp-content/uploads/2020/04/CellExplorerInterface-1024x623.png)
+![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/04/CellExplorerInterface-1024x623.png)
 
 ## Introduction
 {: .no_toc}
 The large diversity of cell-types of the brain, provides the means by which circuits perform complex operations. Understanding such diversity is one of the key challenges of modern neuroscience. Neurons have many unique electrophysiological and behavioral features from which parallel cell-type classification can be inferred. 
 
-To leverage this, we built the Cell Explorer, a framework for analyzing and characterizing single cells recorded using extracellular electrodes. It can be separated into three components: a standardized yet flexible data structure, a single yet extensive processing script, and a powerful graphical interface. Through the processing, a high dimensional representation is built from electrophysiological and functional features including the spike waveform, spiking statistics, monosynaptic connections, and behavioral spiking dynamics. The user-friendly interactive graphical interface allows for classification and exploration of those features, through a rich set of built-in plots, interaction modes, cell grouping, and filters. Powerful figures can be created for publications. Opto-tagged cells and public access to reference data have been incorporated to help you characterize your data better. The framework is built entirely in MATLAB making it fast and intuitive to implement and incorporate the Cell Explorer into your pipelines and analysis scripts. You can expand it with your metrics, plots, and opto-tagged data.
+To leverage this, we built the CellExplorer, a framework for analyzing and characterizing single cells recorded using extracellular electrodes. It can be separated into three components: a standardized yet flexible data structure, a single yet extensive processing script, and a powerful graphical interface. Through the processing, a high dimensional representation is built from electrophysiological and functional features including the spike waveform, spiking statistics, monosynaptic connections, and behavioral spiking dynamics. The user-friendly interactive graphical interface allows for classification and exploration of those features, through a rich set of built-in plots, interaction modes, cell grouping, and filters. Powerful figures can be created for publications. Opto-tagged cells and public access to reference data have been incorporated to help you characterize your data better. The framework is built entirely in MATLAB making it fast and intuitive to implement and incorporate the CellExplorer into your pipelines and analysis scripts. You can expand it with your metrics, plots, and opto-tagged data.
 
-[Data structure]({{"/datastructure/data-structure/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Processing pipeline]({{"/pipeline/pipeline/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Database]({{"/database/database/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
+[Data structure]({{"/datastructure/data-structure/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Processing module]({{"/pipeline/pipeline/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -36,13 +36,13 @@ To leverage this, we built the Cell Explorer, a framework for analyzing and char
 ```m
 mex -O CCGHeart.c
 ```
-4. The Cell Explorer GUI and pipeline uses additional toolboxes, of which one Matlab toolbox must be installed manually.
+4. The CellExplorer GUI and pipeline uses additional toolboxes, of which one Matlab toolbox must be installed manually.
   * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline)
 
 5. That's it! Now you can explore the software with below example data or try one of the tutorials.
 
-### Try the Cell Explorer with example data
-There is an example dataset included in the repository for trying the Cell Explorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/LoadCellMetricsBatch.m) into Matlab and type:
+### Try the CellExplorer with example data
+There is an example dataset included in the repository for trying the CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/LoadCellMetricsBatch.m) into Matlab and type:
 ```m
 CellExplorer('metrics',cell_metrics)
 ```
@@ -55,8 +55,8 @@ We have created a few tutorials to get you started, covering the pipeline and th
 ## Reporting bugs, enhancements or questions
 Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues) for reporting bugs, enhancement requests or geneal questions.
 
-## Citing the Cell Explorer in your research and publications
-Petersen, Peter C, & Buzsáki, György. (2020, April 8). The Cell Explorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.2). Zenodo. [http://doi.org/10.5281/zenodo.3604172](http://doi.org/10.5281/zenodo.3604172)
+## Citing the CellExplorer in your research and publications
+Petersen, Peter C, & Buzsáki, György. (2020, April 8). The CellExplorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.2). Zenodo. [http://doi.org/10.5281/zenodo.3604172](http://doi.org/10.5281/zenodo.3604172)
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604172.svg)](https://doi.org/10.5281/zenodo.3604172)
 

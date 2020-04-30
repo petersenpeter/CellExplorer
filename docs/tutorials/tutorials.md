@@ -6,4 +6,4 @@ has_children: true
 ---
 # Tutorials
 {: .no_toc}
-We have created a few tutorials to get you started using the Cell Explorer.
+We have created a few tutorials to get you started using the CellExplorer.
