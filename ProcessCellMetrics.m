@@ -5,7 +5,7 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   The metrics are based on a number of features: spikes, waveforms, PCA features,
 %   the ACG and CCGs, LFP, theta, ripples and so fourth
 %
-%   Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
+%   Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/CellExplorer/
 %
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %   INPUTS
@@ -58,7 +58,7 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   OUTPUT
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %
-%   Cell_metrics : structure described in details at: https://petersenpeter.github.io/Cell-Explorer/datastructure/standard-cell-metrics/
+%   Cell_metrics : structure described in details at: https://petersenpeter.github.io/CellExplorer/datastructure/standard-cell-metrics/
 
 %   By Peter Petersen
 %   petersen.peter@gmail.com

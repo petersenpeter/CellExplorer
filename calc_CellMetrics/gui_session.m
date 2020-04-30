@@ -16,7 +16,7 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % parameters : parameters struct
 % statusExit : Whether the GUI was closed via the OK button or canceled
 
-% gui_session is part of the Cell Explorer: https://petersenpeter.github.io/Cell-Explorer/
+% gui_session is part of the Cell Explorer: https://petersenpeter.github.io/CellExplorer/
 
 % By Peter Petersen 
 % petersen.peter@gmail.com
@@ -655,7 +655,7 @@ uiwait(UI.fig)
     end
     
     function buttonHelp
-        web('https://petersenpeter.github.io/Cell-Explorer/tutorials/metadata-tutorial/','-new','-browser')
+        web('https://petersenpeter.github.io/CellExplorer/tutorials/metadata-tutorial/','-new','-browser')
     end
     
     function buttonUploadToDB

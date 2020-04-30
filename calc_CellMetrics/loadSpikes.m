@@ -27,7 +27,7 @@ function spikes = loadSpikes(varargin)
 %
 % DEPENDENCIES:
 %
-% LoadXml.m & xmltools.m (required: https://github.com/petersenpeter/Cell-Explorer/tree/master/calc_CellMetrics/private)
+% LoadXml.m & xmltools.m (required: https://github.com/petersenpeter/CellExplorer/tree/master/calc_CellMetrics/private)
 % or bz_getSessionInfo.m (optional. From buzcode: https://github.com/buzsakilab/buzcode)
 % npy-matlb toolbox (required for reading phy data: https://github.com/kwikteam/npy-matlab)
 %
