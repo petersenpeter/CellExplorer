@@ -4,13 +4,13 @@ remote_theme: pmarsceill/just-the-docs
 search_tokenizer_separator: /[\s/]+/
 # Aux links for the upper right navigation
 aux_links:
-  "Cell Explorer on GitHub":
-    - "//github.com/petersenpeter/Cell-Explorer"
+  "CellExplorer on GitHub":
+    - "//github.com/petersenpeter/CellExplorer"
 
 
-title: Cell Explorer
+title: CellExplorer
 description: "Matlab GUI and standardized pipeline for exploring and classifying spike sorted single units acquired using extracellular electrodes."
-baseurl: "/Cell-Explorer" # the subpath of your site, e.g. /blog
+baseurl: "/CellExplorer" # the subpath of your site, e.g. /blog
 url: "https://petersenpeter.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 
 permalink: pretty

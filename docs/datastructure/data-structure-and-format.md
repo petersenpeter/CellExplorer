@@ -25,7 +25,7 @@ Each type of data is saved in its own Matlab structure, where a subset of the st
 The cell metrics are kept in a `cell_metrics` struct as [described here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat` in the clustering path.
 
 ### Session metadata
-A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/sessionTemplate.m) and visualized with [gui_session.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/gui_session.m). The `sessionName.session.mat` files should be stored in the basepath. It is structured as defined below:
+A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/sessionTemplate.m) and visualized with [gui_session.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/gui_session.m). The `sessionName.session.mat` files should be stored in the basepath. It is structured as defined below:
 
 * `general`
   * `name` : name of session
@@ -116,7 +116,7 @@ A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `equipment` : hardware used to acquire the data
 
 ### Spikes
-A Matlab struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/Cell-Explorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
+A Matlab struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
 * `ts`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in samples.
 * `times`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in seconds.
 * `cluID`: a 1xN vector with inherited IDs from the applied clustering algorithm.

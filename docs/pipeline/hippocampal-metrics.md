@@ -15,7 +15,7 @@ Hippocampal and spatial metrics depends on specific files and metadata to be pro
 {:toc}
 
 ## Theta metrics
-A theta-band filtered time series is generated from the lfp file. Continues theta power and phase is then calculated from the generated time series. For each unit the average theta firing profile is calculated together with the theta phase peak/trough and the strength of the theta entrainment. [Learn more about theta oscillation metrics](/Cell-Explorer/datastructure/standard-cell-metrics/#theta-oscillation-metrics). The tracking file is used for filtering by a minimum running speed.
+A theta-band filtered time series is generated from the lfp file. Continues theta power and phase is then calculated from the generated time series. For each unit the average theta firing profile is calculated together with the theta phase peak/trough and the strength of the theta entrainment. [Learn more about theta oscillation metrics](/CellExplorer/datastructure/standard-cell-metrics/#theta-oscillation-metrics). The tracking file is used for filtering by a minimum running speed.
 
 | Files        | Description  |
 |:-------------|:-------------|
@@ -28,7 +28,7 @@ A theta-band filtered time series is generated from the lfp file. Continues thet
 | `session.channelTags.Theta.channels`| Theta channel tag (required) |
 
 ## Spatial metrics
-All spatial metrics are generated from an existing 1D firing rate map. [Learn more about spatial metrics](/Cell-Explorer/pipeline/standard-cell-metrics/#spatial-metrics) and the [firing rate map Matlab struct](/Cell-Explorer/datastructure/data-structure-and-format/#firing-rate-maps). 
+All spatial metrics are generated from an existing 1D firing rate map. [Learn more about spatial metrics](/CellExplorer/pipeline/standard-cell-metrics/#spatial-metrics) and the [firing rate map Matlab struct](/CellExplorer/datastructure/data-structure-and-format/#firing-rate-maps). 
 
 | Files        | Description |
 |:-------------|:------------|
@@ -37,7 +37,7 @@ All spatial metrics are generated from an existing 1D firing rate map. [Learn mo
 ## Deep-superficial metrics
 Deep-superficial metrics are calculated from ripple timestamps and the average ripple is extracted from a channel from the lfp file. A reveral point for the polarity of the sharp wave is derived from a time interval before the average ripple, aligned to their peaks. Deep-superficial distance is estimmated from the reversal point by assigning a numeric value determined from the channel offset to the reversal point.
 
-[Learn more about deep-superficial metrics](https://petersenpeter.github.io/Cell-Explorer/datastructure/standard-cell-metrics/#sharp-wave-ripple-metrics).
+[Learn more about deep-superficial metrics](https://petersenpeter.github.io/CellExplorer/datastructure/standard-cell-metrics/#sharp-wave-ripple-metrics).
 
 | Files        | Description |
 |:-------------|:------------|

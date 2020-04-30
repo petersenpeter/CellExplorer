@@ -1,10 +1,10 @@
 function cell_metrics = CellExplorer(varargin)
-% The Cell Explorer is a Matlab GUI and standardized pipeline for exploring and
+% The CellExplorer is a Matlab GUI and standardized pipeline for exploring and
 % classifying spike sorted single units acquired using extracellular electrodes.
 %
-% Check out the website for extensive documentation and tutorials: https://petersenpeter.github.io/Cell-Explorer/
+% Check out the website for extensive documentation and tutorials: https://petersenpeter.github.io/CellExplorer/
 %
-% Below follows a detailed description of how to call the Cell Explorer
+% Below follows a detailed description of how to call the CellExplorer
 %
 % INPUTS
 % varargin (Variable-length input argument list)
@@ -151,11 +151,11 @@ end
 
 CellExplorerVersion = 1.63;
 
-UI.fig = figure('Name',['Cell Explorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800]);
+UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800]);
 hManager = uigetmodemanager(UI.fig);
 
 % % % % % % % % % % % % % % % % % % % % % %
-% User preferences for the Cell Explorer
+% User preferences for the CellExplorer
 % % % % % % % % % % % % % % % % % % % % % %
 
 CellExplorer_Preferences
@@ -165,7 +165,7 @@ CellExplorer_Preferences
 % % % % % % % % % % % % % % % % % % % % % %
 
 if verLessThan('matlab', '9.2')
-    warning('The Cell Explorer is only fully compatible and tested with Matlab version 9.2 and forward (Matlab R2017a)')
+    warning('The CellExplorer is only fully compatible and tested with Matlab version 9.2 and forward (Matlab R2017a)')
     return
 end
 
@@ -289,7 +289,7 @@ else
     end
     [~,basename,~] = fileparts(basepath);
     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
-        disp(['Cell-Explorer: Loading ',basename,'.session.mat'])
+        disp(['CellExplorer: Loading ',basename,'.session.mat'])
         load(fullfile(basepath,[basename,'.session.mat']))
         if isempty(session.spikeSorting{1}.relativePath)
             clusteringpath = '';
@@ -303,11 +303,11 @@ else
             initializeSession;
         else
             cell_metrics = [];
-            disp('Cell-Explorer: No cell_metrics exist in base folder. Loading from database')
+            disp('CellExplorer: No cell_metrics exist in base folder. Loading from database')
             if enableDatabase
                 DatabaseSessionDialog;
                 if ~exist('cell_metrics','var') || isempty(cell_metrics)
-                    disp('No dataset selected - closing the Cell Explorer')
+                    disp('No dataset selected - closing the CellExplorer')
                     if ishandle(UI.fig)
                         close(UI.fig)
                     end
@@ -335,7 +335,7 @@ else
             loadFromFile
         end
         if ~exist('cell_metrics','var') || isempty(cell_metrics)
-            disp('No dataset selected - closing the Cell Explorer')
+            disp('No dataset selected - closing the CellExplorer')
             if ishandle(UI.fig)
                 close(UI.fig)
             end
@@ -357,8 +357,8 @@ else
 end
 
 % Cell explorer
-UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'Cell Explorer');
-uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'About Cell Explorer',menuSelectedFcn,@AboutDialog);
+UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
+uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'About CellExplorer',menuSelectedFcn,@AboutDialog);
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit preferences',menuSelectedFcn,@LoadPreferences,'Separator','on');
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit DB credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit DB repository paths',menuSelectedFcn,@editDBrepositories);
@@ -540,7 +540,7 @@ uimenu(UI.menu.session.topMenu,menuLabel,'Show current animal in the Buzsaki lab
 % Help
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
 uimenu(UI.menu.help.topMenu,menuLabel,'Keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','H');
-uimenu(UI.menu.help.topMenu,menuLabel,'Cell Explorer website',menuSelectedFcn,@openWebsite,'Accelerator','V');
+uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Accelerator','V');
 uimenu(UI.menu.help.topMenu,menuLabel,'Tutorials',menuSelectedFcn,@openWebsite);
 
 if UI.settings.plotWaveformMetrics; UI.menu.display.showMetrics.Checked = 'on'; end
@@ -658,7 +658,7 @@ end
 % Message log and Benchmark
 % % % % % % % % % % % % % % % % % % % %
 set( UI.VBox, 'Heights', [25 -1 25]);
-UI.popupmenu.log = uicontrol('Style','popupmenu','Units','normalized','String',{'Welcome to the Cell Explorer. Please check the Help menu to learn keyboard shortcuts or visit the website'},'HorizontalAlignment','left','FontSize',10,'Parent',UI.panel.centerBottom);
+UI.popupmenu.log = uicontrol('Style','popupmenu','Units','normalized','String',{'Welcome to the CellExplorer. Please check the Help menu to learn keyboard shortcuts or visit the website'},'HorizontalAlignment','left','FontSize',10,'Parent',UI.panel.centerBottom);
 % Benchmark with display time in seconds for most recent plot call
 UI.benchmark = uicontrol('Style','text','Units','normalized','String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3],'Parent',UI.panel.centerBottom);
 set(UI.panel.centerBottom, 'Widths', [-600 -300], 'Spacing', 5);
@@ -3902,7 +3902,7 @@ end
     end
 
     function openWebsite(src,~)
-        % Opens the Cell Explorer website in your browser
+        % Opens the CellExplorer website in your browser
         if isprop(src,'Text')
             source = src.Text;
         else
@@ -3910,9 +3910,9 @@ end
         end
         switch source
             case 'Tutorials'
-                web('https://petersenpeter.github.io/Cell-Explorer/tutorials/tutorials/','-new','-browser')
+                web('https://petersenpeter.github.io/CellExplorer/tutorials/tutorials/','-new','-browser')
             otherwise
-                web('https://petersenpeter.github.io/Cell-Explorer/','-new','-browser')
+                web('https://petersenpeter.github.io/CellExplorer/','-new','-browser')
         end
     end
 
@@ -4283,7 +4283,7 @@ end
         
         updateGroupList
         drawnow nocallbacks;
-        groupData.dialog = dialog('Position', [300, 300, 840, 465],'Name','Cell Explorer: group data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(groupData.dialog,'center'), set(groupData.dialog,'visible','on') % 'MenuBar', 'None','NumberTitle','off'
+        groupData.dialog = dialog('Position', [300, 300, 840, 465],'Name','CellExplorer: group data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(groupData.dialog,'center'), set(groupData.dialog,'visible','on') % 'MenuBar', 'None','NumberTitle','off'
         groupData.VBox = uix.VBox( 'Parent', groupData.dialog, 'Spacing', 5, 'Padding', 0 );
         groupData.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',groupData.VBox);
         groupData.sessionList = uitable(groupData.VBox,'Data',UI.groupData.dataTable,'Position',[10, 50, 740, 457],'ColumnWidth',{65,45,45,100,460 75,45},'columnname',{'Highlight','+filter','-filter','Group name','List of cells','Cell count','Select'},'RowName',[],'ColumnEditable',[true true true true true false true],'Units','normalized','CellEditCallback',@editTable);
@@ -4628,7 +4628,7 @@ end
             ReloadSessionlist;
         end
         drawnow nocallbacks;
-        loadDB.dialog = dialog('Position', [300, 300, 840, 565],'Name','Cell Explorer: ground truth data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(loadDB.dialog,'center'), set(loadDB.dialog,'visible','on')
+        loadDB.dialog = dialog('Position', [300, 300, 840, 565],'Name','CellExplorer: ground truth data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(loadDB.dialog,'center'), set(loadDB.dialog,'visible','on')
         loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 );
         loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
         loadDB.sessionList = uitable(loadDB.VBox,'Data',gt.dataTable,'Position',[10, 50, 740, 457],'ColumnWidth',{20 30 120 120 120 120 120 170},'columnname',{'','#','Ground truth','Session','Brain region','Animal','Genetic line','Species'},'RowName',[],'ColumnEditable',[true false false false false false false false],'Units','normalized');
@@ -4786,7 +4786,7 @@ end
             LoadDB_sessionlist
         end
         
-        loadDB.dialog = dialog('Position', [300, 300, 1000, 565],'Name','Cell Explorer: reference data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(loadDB.dialog,'center'), set(loadDB.dialog,'visible','on')
+        loadDB.dialog = dialog('Position', [300, 300, 1000, 565],'Name','CellExplorer: reference data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(loadDB.dialog,'center'), set(loadDB.dialog,'visible','on')
         loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 );
         loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
         loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110 100},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository','Brain regions'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
@@ -7712,7 +7712,7 @@ end
             defaultAxesFontSize = 12;
             fig_pos = [0,0,1200,600];
         end
-        fig = figure('Name','Cell Explorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','off'); movegui(fig,'center'), set(fig,'visible','on')
+        fig = figure('Name','CellExplorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','off'); movegui(fig,'center'), set(fig,'visible','on')
         % Scatter plot with trough to peak vs burst index
         ax1 = subplot('Position',[0.06 0.1 0.41 .87]); % Trough to peak vs burstiness
         ce_gscatter(cell_metrics.troughToPeak(UI.params.subset), cell_metrics.burstIndex_Royer2012(UI.params.subset), plotClas(UI.params.subset), clr_groups,UI.settings.markerSize,'.'); axis tight
@@ -7800,16 +7800,16 @@ end
         
         [plotRows,~]= numSubplots(length(plotOptions)+plotCount);
         
-        fig = figure('Name','Cell Explorer','NumberTitle','off','pos',UI.settings.figureSize);
+        fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.settings.figureSize);
         for j = 1:length(cellIDs)
             if ~ishandle(fig)
                 warning(['Summary figures canceled by user']);
                 break
             end
             if plotCellIDs~=-1
-                set(fig,'Name',['Cell Explorer summary figures ',num2str(j),'/',num2str(length(cellIDs))]);
+                set(fig,'Name',['CellExplorer summary figures ',num2str(j),'/',num2str(length(cellIDs))]);
             else
-                set(fig,'Name',['Cell Explorer summary figure']);
+                set(fig,'Name',['CellExplorer summary figure']);
             end
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
@@ -8273,7 +8273,7 @@ end
                             plot_cells = [ii,UI.params.ClickedCells];
                         end
                         plot_cells = unique(plot_cells,'stable');
-                        ccgFigure = figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize,'visible','off');
+                        ccgFigure = figure('Name',['CellExplorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize,'visible','off');
                         
                         plot_cells2 = cell_metrics.UID(plot_cells);
                         k = 1;
@@ -8323,7 +8323,7 @@ end
                             plot_cells = [ii,UI.params.ClickedCells];
                         end
                         plot_cells = unique(plot_cells,'stable');
-                        fig = figure('Name',['Cell Explorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize);
+                        fig = figure('Name',['CellExplorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize);
                         
                         plot_cells2 = cell_metrics.UID(plot_cells);
                         k = 1;
@@ -8370,13 +8370,13 @@ end
                     uicontrol('Parent',exportPlots.dialog,'Style','text','Position',[5, 62, 140, 20],'Units','normalized','String','File format','HorizontalAlignment','center','Units','normalized');
                     exportPlots.popupmenu.fileFormat = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[5, 40, 140, 25],'Units','normalized','String',{'png','pdf (slower but vector graphics)'},'HorizontalAlignment','left','Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','text','Position',[155, 62, 140, 20],'Units','normalized','String','File path','HorizontalAlignment','center','Units','normalized');
-                    exportPlots.popupmenu.savePath = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[155, 40, 140, 25],'Units','normalized','String',{'Clustering path','Cell Explorer','Define path'},'HorizontalAlignment','left','Units','normalized');
+                    exportPlots.popupmenu.savePath = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[155, 40, 140, 25],'Units','normalized','String',{'Clustering path','CellExplorer','Define path'},'HorizontalAlignment','left','Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[5, 5, 140, 30],'String','OK','Callback',@ClosePlot_dialog,'Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[155, 5, 140, 30],'String','Cancel','Callback',@(src,evnt)CancelPlot_dialog,'Units','normalized');
                     
                 elseif choice > 15
                     % Plots any custom plot for selected cells in a single new figure with subplots
-                    fig = figure('Name',['Cell Explorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off','pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
+                    fig = figure('Name',['CellExplorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off','pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
                     [plotRows,~]= numSubplots(length(cellIDs));
                     if ispc
                         ha = tight_subplot(plotRows(1),plotRows(2),[.08 .04],[.05 .05],[.05 .05]);
@@ -8452,7 +8452,7 @@ end
                         
                         for jj = 1:length(selectedActions)
                             if mod(j,5)==1 && jj == 1
-                                fig = figure('name',['Cell Explorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
+                                fig = figure('name',['CellExplorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
                                 ha = tight_subplot(plot_columns,length(selectedActions),[.06 .03],[.08 .06],[.06 .05]); 
                                 subPlotNum = 1;
                             else
@@ -8472,7 +8472,7 @@ end
                     
                 elseif choice == 13 && ~isempty(selectedActions)
                     
-                    fig = figure('name',['Cell Explorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
+                    fig = figure('name',['CellExplorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
                     [plotRows,~]= numSubplots(length(selectedActions));
                     ha = tight_subplot(plotRows(1),plotRows(2),[.06 .03],[.08 .06],[.06 .05]);
                     for j = 1:length(cellIDs)
@@ -8525,7 +8525,7 @@ end
                             UI.params.outgoing = UI.params.a2(UI.params.outbound);
                             UI.params.connections = [UI.params.incoming;UI.params.outgoing];
                         end
-                        fig = figure('Name',['Cell Explorer: cell ', num2str(cellIDs(j))],'NumberTitle','off','pos',UI.settings.figureSize);
+                        fig = figure('Name',['CellExplorer: cell ', num2str(cellIDs(j))],'NumberTitle','off','pos',UI.settings.figureSize);
                         if ispc
                             ha = tight_subplot(plotRows(1),plotRows(2),[.08 .04],[.05 .05],[.05 .05]);
                         else
@@ -8961,7 +8961,7 @@ end
                 stats_offset = 0.03;
             end
             [plotRows,~]= numSubplots(length(indx)); % Determining optimal number of subplots
-            fig = figure('Name','Cell Explorer: Raincloud plot','NumberTitle','off','pos',UI.settings.figureSize);
+            fig = figure('Name','CellExplorer: Raincloud plot','NumberTitle','off','pos',UI.settings.figureSize);
             ha = tight_subplot(plotRows(1),plotRows(2),[.05 .02],[.03 .04],[.03 .03]);
             plotClas_subset = plotClas(UI.params.subset);
             for j = 1:length(indx)
@@ -9543,7 +9543,7 @@ end
         
         subsetGroundTruth = [];
         % Updating figure name
-        UI.fig.Name = ['Cell Explorer v' num2str(CellExplorerVersion), ': ',cell_metrics.general.basename];
+        UI.fig.Name = ['CellExplorer v' num2str(CellExplorerVersion), ': ',cell_metrics.general.basename];
         
         % Initialize spike plot options
         customSpikePlotOptions = what('customSpikesPlots');
@@ -9695,7 +9695,7 @@ end
             LoadDB_sessionlist
         end   
         
-        loadDB.dialog = dialog('Position', [300, 300, 1000, 565],'Name','Cell Explorer: database sessions','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(loadDB.dialog,'center'), set(loadDB.dialog,'visible','on')
+        loadDB.dialog = dialog('Position', [300, 300, 1000, 565],'Name','CellExplorer: database sessions','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(loadDB.dialog,'center'), set(loadDB.dialog,'visible','on')
         loadDB.VBox = uix.VBox( 'Parent', loadDB.dialog, 'Spacing', 5, 'Padding', 0 );
         loadDB.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',loadDB.VBox);
         loadDB.sessionList = uitable(loadDB.VBox,'Data',db.dataTable,'Position',[10, 50, 880, 457],'ColumnWidth',{20 30 210 50 120 70 160 110 110 100},'columnname',{'','#','Session','Cells','Animal','Species','Behaviors','Investigator','Repository','Brain regions'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized'); % ,'CellSelectionCallback',@ClicktoSelectFromTable
@@ -9962,7 +9962,7 @@ end
             end
         else
             MsgLog('Database tools not installed');
-            msgbox({'Database tools not installed. To install, follow the steps below: ','1. Go to the Cell Explorer Github webpage','2. Download the database tools', '3. Add the db directory to your Matlab path', '4. Optionally provide your credentials in db\_credentials.m and try again.'},createStruct);
+            msgbox({'Database tools not installed. To install, follow the steps below: ','1. Go to the CellExplorer GitHub webpage','2. Download the database tools', '3. Add the db directory to your Matlab path', '4. Optionally provide your credentials in db\_credentials.m and try again.'},createStruct);
         end
     end
 
@@ -10651,7 +10651,7 @@ end
         
         MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
         if exist(MonoSynFile,'file')
-            ce_waitbar = waitbar(0,'Loading MonoSyn file','name','Cell Explorer');
+            ce_waitbar = waitbar(0,'Loading MonoSyn file','name','CellExplorer');
             load(MonoSynFile,'mono_res');
             if ishandle(ce_waitbar)
                 waitbar(1,ce_waitbar,'Complete');
@@ -10661,7 +10661,7 @@ end
             % Saves output to the cell_metrics from the select session
             answer = questdlg('Do you want to save the manual monosynaptic curration?', 'Save monosynaptic curration', 'Yes','No','Yes');
             if strcmp(answer,'Yes')
-                ce_waitbar = waitbar(0,' ','name','Cell Explorer: Updating MonoSyn');
+                ce_waitbar = waitbar(0,' ','name','CellExplorer: Updating MonoSyn');
                 if isfield(general,'saveAs')
                     saveAs = general.saveAs;
                 else
@@ -10969,13 +10969,13 @@ end
                 disp(message)
             end
             if any(priority == 2)
-                msgbox(message,'Cell Explorer message',createStruct);
+                msgbox(message,'CellExplorer message',createStruct);
             end
             if any(priority == 3)
                 warning(message)
             end
             if any(priority == 4)
-                warndlg(message,'Cell Explorer warning')
+                warndlg(message,'CellExplorer warning')
             end
         end
     end
@@ -11400,14 +11400,14 @@ end
             
         [logog_path,~,~] = fileparts(which('CellExplorer.m'));
         logo = imread(fullfile(logog_path,'logoCellExplorer.png'));
-        AboutWindow.dialog = figure('Position', fig_size,'Name','About Cell Explorer', 'MenuBar', 'None','NumberTitle','off','visible','off', 'resize', 'off'); movegui(AboutWindow.dialog,'center'), set(AboutWindow.dialog,'visible','on')
+        AboutWindow.dialog = figure('Position', fig_size,'Name','About CellExplorer', 'MenuBar', 'None','NumberTitle','off','visible','off', 'resize', 'off'); movegui(AboutWindow.dialog,'center'), set(AboutWindow.dialog,'visible','on')
         [img, map, alphachannel] = imread(fullfile(logog_path,'logoCellExplorer.png'));
         image(img, 'AlphaData', alphachannel,'ButtonDownFcn',@openWebsite);
         AboutWindow.image = gca;
         set(AboutWindow.image,'Color','none','Units','Pixels') , hold on, axis off
         AboutWindow.image.Position = pos_image;
         
-        text(0,pos_text,{['\bfCell Explorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\it\color[rgb]{0. 0.2 0.5}https://petersenpeter.github.io/Cell-Explorer/\rm'},'HorizontalAlignment','left','VerticalAlignment','top','ButtonDownFcn',@openWebsite)
+        text(0,pos_text,{['\bfCellExplorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\it\color[rgb]{0. 0.2 0.5}https://petersenpeter.github.io/CellExplorer/\rm'},'HorizontalAlignment','left','VerticalAlignment','top','ButtonDownFcn',@openWebsite)
     end
 
     function HelpDialog(~,~)
@@ -11423,15 +11423,15 @@ end
             [scs,'F'],'Display ACG fit'; 'K','Calculate and display significance matrix for all metrics (KS-test)'; [scs,'T'],'Calculate tSNE space from a selection of metrics';
             'W','Display waveform metrics'; [scs,'Y'],'Perform ground truth cell type classification'; [scs,'U'],'Load ground truth cell types'; 'Space','Show action dialog for selected cells'; '  ','';
             '','<html><b>Other shortcuts</b></html>';
-            [scs,'P'],'Open preferences for the Cell Explorer'; [scs,'C'],'Open the file directory of the selected cell'; [scs,'D'],'Opens sessions from the Buzsaki lab database';
-            [scs,'A'],'Open spike data menu'; [scs,'J'],'Modify parameters for a spike plot'; [scs,'V'],'Visit the Cell Explorer website in your browser';
-            '',''; '','<html><b>Visit the Cell Explorer website for further help and documentation</html></b>'; };
+            [scs,'P'],'Open preferences for the CellExplorer'; [scs,'C'],'Open the file directory of the selected cell'; [scs,'D'],'Opens sessions from the Buzsaki lab database';
+            [scs,'A'],'Open spike data menu'; [scs,'J'],'Modify parameters for a spike plot'; [scs,'V'],'Visit the CellExplorer website in your browser';
+            '',''; '','<html><b>Visit the CellExplorer website for further help and documentation</html></b>'; };
         if ismac
             dimensions = [450,(size(shortcutList,1)+1)*17.5];
         else
             dimensions = [450,(size(shortcutList,1)+1)*18.5];
         end
-        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','Cell Explorer: keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(HelpWindow.dialog,'center'), set(HelpWindow.dialog,'visible','on')
+        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','CellExplorer: keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(HelpWindow.dialog,'center'), set(HelpWindow.dialog,'visible','on')
         HelpWindow.sessionList = uitable(HelpWindow.dialog,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{100 345},'columnname',{'Shortcut','Action'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');
     end
 end

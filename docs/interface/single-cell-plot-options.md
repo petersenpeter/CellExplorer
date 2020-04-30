@@ -70,9 +70,9 @@ You can create your own custom plots to display in the Cell Explorer that also b
 ## Group action plots
 All plots presented on this page are single cell plots that can be selected for the 3-6 single cell subplots in the Cell Explorer but can also be plotted separately using the group actions menu. Select a few select cells and press `space`. Below menu will be shown and you can create various plot combinations from above plot options. 
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="60%"></p>
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/CellExplorer-group-action-dialog.png" width="60%"></p>
 
 ### Multi plot options and figure exporting
 Please see the [tutorial on  exporting figures]({{"/tutorials/export-figure/"|absolute_url}}). 
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%"></p>
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/CellExplorer-group-action-multiplot-dialog.png" width="70%"></p>

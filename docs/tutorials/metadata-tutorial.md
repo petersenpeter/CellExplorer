@@ -6,7 +6,7 @@ nav_order: 2
 ---
 # Metadata tutorial
 {: .no_toc}
-This tutorial shows you how to generate the [session metadata struct](https://petersenpeter.github.io/Cell-Explorer/datastructure/data-structure-and-format/#session-metadata) used by the Cell Explorer. 
+This tutorial shows you how to generate the [session metadata struct](https://petersenpeter.github.io/CellExplorer/datastructure/data-structure-and-format/#session-metadata) used by the Cell Explorer. 
 ![Flow chart](https://buzsakilab.com/wp/wp-content/uploads/2020/03/FlowchartSessionStruct.png)
 
 1. Define the basepath of the dataset to run. A valid dataset consists of a `basename.dat`, a `basename.xml` (not required) and spike sorted data.
@@ -25,7 +25,7 @@ session = sessionTemplate(basepath);
 session = gui_session(session);
 ```
 Below is a screenshot of the metadata interface and a short video showing the various tabs.
-![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_session-general.png)
+![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2019/11/CellExplorer-gui_session-general.png)
 
 
 <p align="center"><video max-width="100%" height="auto" controls="controls">
