@@ -356,7 +356,7 @@ else
     menuSelectedFcn = 'Callback';
 end
 
-% Cell explorer
+% CellExplorer
 UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'About CellExplorer',menuSelectedFcn,@AboutDialog);
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit preferences',menuSelectedFcn,@LoadPreferences,'Separator','on');
@@ -855,7 +855,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
 if ishandle(UI.fig)
-    % Closing cell explorer figure if still open
+    % Closing CellExplorer figure if still open
     close(UI.fig);
 end
 cell_metrics = saveCellMetricsStruct(cell_metrics);

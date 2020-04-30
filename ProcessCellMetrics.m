@@ -5,7 +5,7 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   The metrics are based on a number of features: spikes, waveforms, PCA features,
 %   the ACG and CCGs, LFP, theta, ripples and so fourth
 %
-%   Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/CellExplorer/
+%   Check the website of the CellExplorer for more details: https://petersenpeter.github.io/CellExplorer/
 %
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %   INPUTS
@@ -303,7 +303,7 @@ if parameters.saveBackup && ~isempty(cell_metrics)
         end
         save(fullfile(clusteringpath_full, backupDirectory, [parameters.saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat',]),'cell_metrics','-v7.3','-nocompression', '-struct', 'temp')
     catch
-        warning('Failed to save backup data in the Cell Explorer pipeline')
+        warning('Failed to save backup data in the CellExplorer pipeline')
     end
 end
 
@@ -1303,7 +1303,7 @@ if parameters.saveMat
     dispLog(['Saving session struct: ' fullfile(basepath,[basename,'.session.mat'])]);
     save(fullfile(basepath,[basename,'.session.mat']),'session','-v7.3','-nocompression')
     catch
-        warning('Failed to save data in the Cell Explorer pipeline')
+        warning('Failed to save data in the CellExplorer pipeline')
     end
 end
 

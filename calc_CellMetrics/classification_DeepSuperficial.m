@@ -29,11 +29,11 @@ function classification_deepSuperficial(session,varargin)
 % downsampled (and lowpass filtered) basename.lfp file in basepath
 %
 % Dependencies:
-% nanconv (included with the Cell Explorer)
+% nanconv (included with the CellExplorer)
 % LoadBinary (loading lfp)
 % ce_FindRipples / bz_FindRipples (find ripples)
 
-% Part of the Cell Explorer: https://github.com/petersenpeter/Cell-Explorer
+% Part of the CellExplorer: https://github.com/petersenpeter/CellExplorer
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 12-11-2019

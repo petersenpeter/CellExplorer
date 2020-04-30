@@ -2,8 +2,8 @@ function PSTH = calc_PSTH(event,spikes,varargin)
 % This is a generalized way for creating a PSTH for units for various events
 % 
 % INPUTS
-% event  : event times formatted according to the Cell Explorer's convention
-% spikes : spikes formatted according to the Cell Explorer's convention
+% event  : event times formatted according to the CellExplorer's convention
+% spikes : spikes formatted according to the CellExplorer's convention
 % 
 % OUTPUT
 % psth

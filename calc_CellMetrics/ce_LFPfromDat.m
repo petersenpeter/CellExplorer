@@ -40,7 +40,7 @@ function ce_LFPfromDat(session,varargin)
 % Dependency: iosr tool box https://github.com/IoSR-Surrey/MatlabToolbox
 %
 % SMckenzie, BWatson, DLevenstein 2018, 
-% 12-11-2019: Peter Petersen: remamed script and made it compatible with the Cell Explorer (and independent of buzcode)
+% 12-11-2019: Peter Petersen: remamed script and made it compatible with the CellExplorer (and independent of buzcode)
 
 %% Input handling
 basepath = session.general.basePath;
