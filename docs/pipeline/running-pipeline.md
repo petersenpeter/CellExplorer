@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Running pipeline
-parent: Processing pipeline
+parent: Processing module
 nav_order: 1
 ---
 # Running pipeline
