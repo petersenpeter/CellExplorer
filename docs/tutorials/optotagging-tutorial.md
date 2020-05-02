@@ -31,7 +31,7 @@ cell_metrics.groundTruthClassification.PV_pos = [1,5,10];
 4. Assign the ground truth tag label to your cells. You can add more tags in the CellExplorer and in the preference file `CellExplorer_Preferences.m`. Each cell can have one or more ground truth classification tags assigned.
 5. Once complete, save the session using the top menu `File` -> `Save classification`.
 
-![Optotagging interface](https://buzsakilab.com/wp/wp-content/uploads/2020/01/CellExplorer-optotagged-cells-2.png)
+![Optotagging interface](https://buzsakilab.com/wp/wp-content/uploads/2020/01/Cell-Explorer-optotagged-cells-2.png)
 
 ### Saving opto-tagged/ground truth cells to groundTruth folder
 Following the process described in the previous sections on tagging your cells, you can submit your opto-tagged cells to the `groundTruth` folder through the CellExplorer UI, allowing you to share your cells and use them across sessions.
