@@ -19,7 +19,7 @@ For each session there are two main paths that the CellExplorer uses, a basepath
 The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: `sessionName.*`, e.g. `sessionName.dat` and `sessionName.lfp` (low-pass filtered and down-sampled. The lfp file is automatically generated in the pipeline if necessary). The clusteringpath contains the spike data, including cell metrics, and can be the same as the basepath (empty clusteringpath).
 
 ## Data structures
-Each type of data is saved in its own Matlab structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode). Plesase see the list of data containers in the next section.
+Each type of data is saved in its own Matlab structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode). Please see the list of data containers in the next section.
 
 ### Cell metrics
 The cell metrics are kept in a `cell_metrics` struct as [described here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat` in the clustering path.
