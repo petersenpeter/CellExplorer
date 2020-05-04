@@ -1,5 +1,5 @@
 # CellExplorer
-CellExplorer is a graphical user interface (GUI) and standardized pipeline for exploring and classifying spike sorted single units acquired using extracellular electrodes. Visit [petersenpeter.github.io/CellExplorer/](https://petersenpeter.github.io/CellExplorer/) to learn more about features, installation instructions, tutorials and general documentation.
+CellExplorer is a graphical user interface (GUI) and standardized pipeline for exploring and characterizing single cells acquired using extracellular electrodes. Visit [petersenpeter.github.io/CellExplorer/](https://petersenpeter.github.io/CellExplorer/) to learn more about features, installation instructions, tutorials and general documentation.
 
 <a href="https://petersenpeter.github.io/CellExplorer/">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/04/CellExplorerInterface-1024x623.png)</a>
 ### Please use below DOI for citing the CellExplorer
