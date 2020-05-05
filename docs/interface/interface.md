@@ -7,4 +7,4 @@ has_children: true
 # Graphical interface
 {: .no_toc}
 The CellExplorer is a graphical user interface that allow you to explore your data on a single cell level.
-![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/04/CellExplorerInterface-1024x623.png)
+<a href="https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorerInterface3.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorerInterface-1200x730-1.jpg)</a>

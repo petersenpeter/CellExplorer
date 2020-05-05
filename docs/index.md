@@ -13,7 +13,7 @@ CellExplorer is a graphical user interface (GUI), a standardized processing modu
 
 [Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [View code on GitHub](https://github.com/petersenpeter/CellExplorer){: .btn .fs-5 .mb-4 .mb-md-0 }
 
-![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/04/CellExplorerInterface-1024x623.png)
+<a href="https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorerInterface3.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorerInterface-1200x730-1.jpg)</a>
 
 ## Introduction
 {: .no_toc}

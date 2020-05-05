@@ -12,7 +12,7 @@ nav_order: 1
 1. TOC
 {:toc}
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/CellExplorer-Interface-description-1.png)
+<a href="https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorer_Figure3.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorer_Figure3_panelA.jpg)</a>
 
 ### Elements
 The interface consists of 4-9 main plots. The top row is dedicated to population level representations of [cell groups]({{"/interface/group-plots/"|absolute_url}}) and the remaining plots are selectable and customizable plots for [individual cells]({{"/interface/single-cell-plot-options/"|absolute_url}}) (including variations of waveforms, ACGs, ISIs, CCGs, PSTHs, response curves and firing rate maps). The interface surronding the plots, consists of 7 panels placed on either side of the graphs: On the right side there is a navigation panel, a cell assignment panel, a display settings panel, and on the left side a plot selection panel, a color group panel and a table with cell metrics. The panels are described in details below. Further there is a text field for custom text filter in the upper left corner, a message log and figure legends at the bottom. There are [keyboard shortcuts]({{"/interface/keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in CellExplorer to see the keyboard shortcuts.
