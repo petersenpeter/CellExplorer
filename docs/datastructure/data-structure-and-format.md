@@ -209,13 +209,13 @@ Any other field can be added to the struct containing states data. The `*.states
 A Matlab struct `behaviorName` stored in a .mat file: `sessionName.behaviorName.behavior.mat` with the following fields:
 * `timestamps`:  array of timestamps that match the data subfields (in seconds).
 * `sr`: sampling rate (Hz).
-* SpatialSeries: many options as defined below. Each with optional subfields:
-  * `units`: defines the units of the data (default?).
+* SpatialSeries: several options as defined below, each with optional subfields:
+  * `units`: defines the units of the data.
   * `resolution`: The smallest meaningful difference (in specified unit) between values in data.
   * `referenceFrame`: description defining what the zero-position is.
   * `coordinateSystem`: position: cartesian[default] or polar. orientation: euler or quaternion[default].
-* `position`: spatial position defined by: x, x/y or x/y/z axis.
-* `speed`: a 1D representation of the animals behavior.
+* `position`: spatial position defined by: x, x/y or x/y/z axis default units: meters).
+* `speed`: a 1D representation of the running speed (cm/s).
 * `orientation`: .x, .y, .z, and .w (default units: radians)
 * `pupil`: pupil-tracking data: .x, .y, .diameter.
 * `linearized`: a projection of spatial parameters into a 1 dimensional representation:
@@ -223,20 +223,20 @@ A Matlab struct `behaviorName` stored in a .mat file: `sessionName.behaviorName.
   * `speed`: behavioral speed of the linearized behavior. 
   * `acceleration`: behavioral acceleration of the linearized behavior.
 * `events`: behaviorally derived events, .e.g. as an animal passed a specific position or consumes reward. 
-* `epochs`: behaviorally derived epochs 
-* `trials`: behavioral trials defined as intervals or continuous vector.
+* `epochs`: behaviorally derived epochs.
+* `trials`: behavioral trials defined as intervals or continuous vector with numeric trial numbers.
 * `states`: e.g. spatially defined regions like central arm or waiting area in a maze. Can be binary or numeric.
 * `stateNames`: names of the states.
 * `timeSeries`: can contain any derived time traces projected into the behavioral timestamps e.g. temperature, oscillation frequency, power etc.
-* `processinginfo`: a struct with information about how the .mat file was generated including
+* `processinginfo`: a struct with information about how the .mat file was generated including.
   * `name` of the function, `version`, `date`, `parameters`.
-  * `comments`: Human-readable comments about this TimeSeries dataset
-  * `description`: Description of this TimeSeries dataset
+  * `comments`: Human-readable comments about this TimeSeries dataset.
+  * `description`: Description of this TimeSeries dataset.
 
 Any other field can be added to the struct containing behavior data. The `*.behavior.mat` files should be stored in the basepath.
 
 ### Trials (being implemented)
-A Matlab struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat`. The trials struct is centered around behavioral trials and has that as its single unit. `trials` has the following fields:
+A Matlab struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat`. The trials struct is a special behavior struct centered around behavioral trials. `trials` has the following fields:
 * `start`: trial start times in seconds.
 * `end`: trial end times in seconds.
 * `nTrials`: number of trials.
@@ -245,7 +245,7 @@ A Matlab struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat
 * `timeSeries`: can contain any derived time traces averaged onto trial e.g. temperature. Use nan values for undefined trials.
 * `processinginfo`: a struct with information about how the .mat file was generated including the name of the function, version, date and parameters.
 
-Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath.
+Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath. Trialwise data should live in this container, while trial-intervals can be stored in other behavior structs.
 
 ## Data containers
 The data is organized into data-type specific containers, a concept introduced by [buzcode](https://github.com/buzsakilab/buzcode):
