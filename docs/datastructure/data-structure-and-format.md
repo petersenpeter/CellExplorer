@@ -55,7 +55,7 @@ A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The 
 * `extracellular`
   * `equipment` : hardware used to acquire the data
   * `fileFormat` : format of the raw data
-  * `sr` : sample rate
+  * `sr` : sampling rate
   * `nChannels` : number of channels
   * `nSamples` : number of samples
   * `nElectrodeGroups` : number of electrode groups
@@ -64,7 +64,7 @@ A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The 
   * `spikeGroups` (struct) : struct with definition of spike groups (1-indexed)
   * `precision` : e.g. signed int16.
   * `leastSignificantBit` : range/precision in µV. Intan system: 0.195µV/bit
-  * `srLFP` : sample rate of the LFP file
+  * `srLFP` : sampling rate of the LFP file
   * `electrode` : struct with implanted electrodes
     * `siliconProbes` : name of the probe
     * `company` : company producing the probe
@@ -110,7 +110,7 @@ A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `fileName` : file name
     * `precision` : e.g. int16
     * `nChannels` : number of channels
-    * `sr` : sample rate
+    * `sr` : sampling rate
     * `nSamples` : number of samples
     * `leastSignificantBit` : range/precision in µV. [Intan system](http://intantech.com/): 0.195µV/bit
     * `equipment` : hardware used to acquire the data
@@ -191,7 +191,7 @@ A Matlab struct `timeserieName` stored in a .mat file: `sessionName.timeserieNam
 
 Any other field can be added to the struct containing time series data. The `*.timeseries.mat` files should be stored in the basepath.
 
-### States series (being implemented)
+### States (being implemented)
 A Matlab struct `states` stored in a .mat file: `sessionName.statesName.states.mat`. States can contain multiple temporal states defined by intervals, .e.g sleep/wake-states (awake/nonREM and/REM) and cortical states (Up/Down). It has the following fields:
 * `ints`: a struct containing intervals (start and stop times) for each state (required).
   * `.stateName`: start/stop time for each instance of state stateName (required).
@@ -199,8 +199,53 @@ A Matlab struct `states` stored in a .mat file: `sessionName.statesName.states.m
 * `detectorinfo`: a struct with information about how the states were detected.
 
 _Optional fields_
-* `idx`: a struct containing intervals (start and stop times) for each state (required).
+* `idx`: a struct containing timestamps for each state.
+  * `.states`: a [t x 1] vector giving the state at each point in time (t: number of timestamps).
+  * `.timestamps`: a [t x 1] vector with timestamps.
+  * `.statenames`: {Nstates} cell array for the name of each state.
 Any other field can be added to the struct containing states data. The `*.states.mat` files should be stored in the basepath.
+
+### Behavior (being implemented)
+A Matlab struct `behaviorName` stored in a .mat file: `sessionName.behaviorName.behavior.mat` with the following fields:
+* `timestamps`:  array of timestamps that match the data subfields (in seconds).
+* `sr`: sampling rate (Hz).
+* SpatialSeries: many options as defined below. Each with optional subfields:
+  * `units`: defines the units of the data (default?).
+  * `resolution`: The smallest meaningful difference (in specified unit) between values in data.
+  * `referenceFrame`: description defining what the zero-position is.
+  * `coordinateSystem`: position: cartesian[default] or polar. orientation: euler or quaternion[default].
+* `position`: spatial position defined by: x, x/y or x/y/z axis.
+* `speed`: a 1D representation of the animals behavior.
+* `orientation`: .x, .y, .z, and .w (default units: radians)
+* `pupil`: pupil-tracking data: .x, .y, .diameter.
+* `linearized`: a projection of spatial parameters into a 1 dimensional representation:
+  * `position`: a 1D linearized version of the position data. 
+  * `speed`: behavioral speed of the linearized behavior. 
+  * `acceleration`: behavioral acceleration of the linearized behavior.
+* `events`: behaviorally derived events, .e.g. as an animal passed a specific position or consumes reward. 
+* `epochs`: behaviorally derived epochs 
+* `trials`: behavioral trials defined as intervals or continuous vector.
+* `states`: e.g. spatially defined regions like central arm or waiting area in a maze. Can be binary or numeric.
+* `stateNames`: names of the states.
+* `timeSeries`: can contain any derived time traces projected into the behavioral timestamps e.g. temperature, oscillation frequency, power etc.
+* `processinginfo`: a struct with information about how the .mat file was generated including
+  * `name` of the function, `version`, `date`, `parameters`.
+  * `comments`: Human-readable comments about this TimeSeries dataset
+  * `description`: Description of this TimeSeries dataset
+
+Any other field can be added to the struct containing behavior data. The `*.behavior.mat` files should be stored in the basepath.
+
+### Trials (being implemented)
+A Matlab struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat`. The trials struct is centered around behavioral trials and has that as its single unit. `trials` has the following fields:
+* `start`: trial start times in seconds.
+* `end`: trial end times in seconds.
+* `nTrials`: number of trials.
+* `states`: e.g. spatially defined regions like central arm or waiting area in a maze, stimulation trials, error trials. Must be binary or numeric.
+* `stateNames`: names of the states.
+* `timeSeries`: can contain any derived time traces averaged onto trial e.g. temperature. Use nan values for undefined trials.
+* `processinginfo`: a struct with information about how the .mat file was generated including the name of the function, version, date and parameters.
+
+Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath.
 
 ## Data containers
 The data is organized into data-type specific containers, a concept introduced by [buzcode](https://github.com/buzsakilab/buzcode):
@@ -212,7 +257,7 @@ The data is organized into data-type specific containers, a concept introduced b
 * `sessionName.*.events.mat`: events data, including `ripples`, `SWR`,
 * `sessionName.*.manipulation.mat`: manipulation data: 
 * `sessionName.*.channelinfo.mat`: channel-wise data, including impedance
-* `sessionName.*.timeseries.mat`
-* `sessionName.*.behavior.mat`
+* `sessionName.*.timeseries.mat`: 
+* `sessionName.*.behavior.mat`: behavior data, including position tracking.
 * `sessionName.*.states.mat`: brain states derived data including SWS/REM/awake and up/down states.
 
