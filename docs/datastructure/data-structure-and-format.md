@@ -184,10 +184,21 @@ A matlab struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.ch
 The `*.channelinfo.mat` files should be stored in the basepath.
 
 ### Time series
-A Matlab struct `timeserieName` stored in a .mat file: `sessionName.timeserieName.timeseries.mat` with the following fields:
-* `channel`: a 1xQ vector containing a list of Q channel indexes (0-indexed).
-* `timestamps`: a 1xQ cell with classification assigned to each channel (char).
-* `processinginfo`: a struct with information about how the .mat file was generated including the name of the function, version, date and parameters.
+A Matlab struct `timeserieName` stored in a .mat file: `sessionName.timeserieName.timeSeries.mat` with the following fields:
+* `data` : a [nSamples x nChannels] vector with time series data.
+* `timestamps` : a [nSamples x 1] vector with timestamps.
+* `precision` : e.g. int16.
+* `units` : e.g. mV.
+* `nChannels` : number of channels.
+* `channelNames` : struct with names of channels.
+* `sr` : sampling rate.
+* `nSamples` : number of samples.
+* `leastSignificantBit` : range/precision in µV. [Intan system](http://intantech.com/): 0.195µV/bit.
+* `equipment` : hardware used to acquire the data.
+* `comments` : Human-readable comments about this time series data.
+* `description` : Description of this time series data.
+* `processinginfo` : a struct with information about how the .mat file was generated including the name of the function, version, date, source file, and parameters.
+  * `sourceFileName` : file name.
 
 Any other field can be added to the struct containing time series data. The `*.timeseries.mat` files should be stored in the basepath.
 
@@ -228,10 +239,11 @@ A Matlab struct `behaviorName` stored in a .mat file: `sessionName.behaviorName.
 * `states`: e.g. spatially defined regions like central arm or waiting area in a maze. Can be binary or numeric.
 * `stateNames`: names of the states.
 * `timeSeries`: can contain any derived time traces projected into the behavioral timestamps e.g. temperature, oscillation frequency, power etc.
+* `comments`: Human-readable comments about this TimeSeries dataset.
+* `description`: Description of this TimeSeries dataset.
 * `processinginfo`: a struct with information about how the .mat file was generated including.
   * `name` of the function, `version`, `date`, `parameters`.
-  * `comments`: Human-readable comments about this TimeSeries dataset.
-  * `description`: Description of this TimeSeries dataset.
+
 
 Any other field can be added to the struct containing behavior data. The `*.behavior.mat` files should be stored in the basepath.
 
