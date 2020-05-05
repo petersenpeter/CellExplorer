@@ -20,7 +20,7 @@ The pipeline consists of three steps:
 ## Flowcharts
 The flowcharts below show the processes in details. The boxes are color coded according to external files (grey), data structures (yellow), CellExplorer functions (green), and database (purple).
 
-### Gathering metadata
+### Preparing experimental metadata
 First step is gathering metadata in the session struct. This struct can contain all metadata necessary for calculating the cell metrics. You can use the `sessionTemplate` to extract and define the parameters and visualize them with the graphical interface `gui_session` for further manual entry. The templates will scan the basepath for specific files, and import existing metadata to minimize the manual entry. You can customize the template script to fit and extract information relevant to your data. [The session struct is defined here]({{"/datastructure/data-structure-and-format/#session-metadata"|absolute_url}}). The session struct follows the database structure of the Buzsaki Lab and all metadata can be loaded directly from the database for database sessions. See the example code below on how perform the actions in Matlab.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/05/Flowcharts_Metadata.png){: .mt-4}
 
