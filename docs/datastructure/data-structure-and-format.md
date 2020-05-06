@@ -258,7 +258,7 @@ A Matlab struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat
 
 Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath. Trialwise data should live in this container, while trial-intervals can be stored in other behavior structs.
 
-### Intracellular time series
+### Intracellular time series (being implemented)
 A Matlab struct `intracellularName` stored in a .mat file: `sessionName.intracellularName.intracellular.mat`. This container is for intracellular recordings. It contains fields inherited from timeSeries with the following fields:
 * `data` : a [nSamples x nChannels] vector with time series data.
 * `timestamps` : a [nSamples x 1] vector with timestamps.
@@ -272,20 +272,23 @@ A Matlab struct `intracellularName` stored in a .mat file: `sessionName.intracel
 * `equipment` : hardware used to acquire the data.
 * `notes` : Human-readable notes about this time series data.
 * `description` : Description of this time series data.
-* `processinginfo` : a struct with information about how the .mat file was generated including the name of the function, version, date, source file, and parameters.
+* `intracellular` : __Intracellular specific fields__
+  * `clamping` : clamping method: `current`,`voltage`.
+  * `type` : recording type (`Patch` or `Sharp`).
+  * `solution` : Glass pipette solution (string describing the solution).
+  * `bridgeBalance` : bridge balance (M ohm).
+  * `seriesResistance` : series resistance (M ohm).
+  * `inputResistance` : input resistance (M ohm).
+  * `membraneCaparitance` : Description of this time series data.
+  * `electrodeMaterial` : `glass`,`tungsten`, etc.
+  * `groundElectrode` : description of ground electrode.
+  * `referenceElectrode` : description of reference electrode.
+* `processinginfo` : a struct with information about how the .mat file was generated including:
+  * `function` : which function was used to generate the struct.
+  * `version` : version of function if any.
+  * `date` : date of processing.
+  * `parameters` : input parameters when the struct was created.
   * `sourceFileName` : file name of the original source file.
-_Intracellular specific fields_
-* `clamping` : clamping method: `current`,`voltage`.
-* `type` : recording type (`Patch` or `Sharp`).
-* `solution` : Glass pipette solution (string describing the solution).
-* `bridgeBalance` : bridge balance (M ohm).
-* `seriesResistance` : series resistance (M ohm).
-* `inputResistance` : input resistance (M ohm).
-* `membraneCaparitance` : Description of this time series data.
-* `electrodeMaterial` : `glass`,`tungsten`, etc.
-* `groundElectrode` : description of ground electrode.
-* `referenceElectrode` : description of reference electrode.
-
 Any other field can be added to the struct containing intracellular time series data. The `*.intracellular.mat` files should be stored in the basepath.
 
 ## Data containers
