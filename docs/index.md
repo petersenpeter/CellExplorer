@@ -31,18 +31,19 @@ To address this, we built the CellExplorer, a framework for analyzing and charac
 
 ## Getting started
 1. [Clone](x-github-client://openRepo/https://github.com/petersenpeter/CellExplorer), fork, or [download](https://github.com/petersenpeter/CellExplorer/archive/master.zip) the repository (cloning is recommended).
-2. Add the local repository to your Matlab setpath. 
-3. The pipeline uses `CCGHeart.c`. to calculate the CCGs. Compiled versions are included for Windows and Mac. __If you are using Linux__ you have to compile the script. In Matlab, go to `CellExplorer/calc_CellMetrics/CCG/` and run this line:
+2. Add the local repository to your MATLAB setpath. 
+3. The pipeline uses two c-code files that must be compiled `CCGHeart.c` and `FindInInterval.c` (originally part of the FMA toolbox). Compiled versions are included for Windows and Mac. __If you are using Linux__ you have to compile the scripts. In MATLAB, go to `CellExplorer/calc_CellMetrics/mex/` and run these line:
 ```m
 mex -O CCGHeart.c
+mex -O FindInInterval.c
 ```
-4. The CellExplorer GUI and pipeline uses additional toolboxes, of which one Matlab toolbox must be installed manually.
-  * [Curvefit Matlab toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline)
+4. The CellExplorer GUI and pipeline uses additional toolboxes, of which one MATLAB toolbox must be installed manually.
+  * [Curvefit MATLAB toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline)
 
 5. That's it! Now you can explore the software with below example data or try one of the tutorials.
 
 ### Try the CellExplorer with example data
-There is an example dataset included in the repository for trying the CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/LoadCellMetricsBatch.m) into Matlab and type:
+There is an example dataset included in the repository for trying the CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/LoadCellMetricsBatch.m) into MATLAB and type:
 ```m
 CellExplorer('metrics',cell_metrics)
 ```

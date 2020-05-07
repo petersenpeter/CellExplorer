@@ -19,13 +19,13 @@ For each session there are two main paths that the CellExplorer uses, a basepath
 The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: `sessionName.*`, e.g. `sessionName.dat` and `sessionName.lfp` (low-pass filtered and down-sampled. The lfp file is automatically generated in the pipeline if necessary). The clusteringpath contains the spike data, including cell metrics, and can be the same as the basepath (empty clusteringpath field).
 
 ## Data structures
-Each type of data is saved in its own Matlab structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode). Please see the list of data containers in the next section. 
+Each type of data is saved in its own MATLAB structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode). Please see the list of data containers in the next section. 
 
 ### Cell metrics
 The cell metrics are kept in a `cell_metrics` struct as [described here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat` in the clustering path.
 
 ### Session metadata
-A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/sessionTemplate.m) and inspected with [gui_session.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/gui_session.m). The `sessionName.session.mat` files should be stored in the basepath. It is structured as defined below:
+A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/sessionTemplate.m) and inspected with [gui_session.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/gui_session.m). The `sessionName.session.mat` files should be stored in the basepath. It is structured as defined below:
 
 * `general`
   * `name` : name of session
@@ -116,7 +116,7 @@ A Matlab struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `equipment` : hardware used to acquire the data
 
 ### Spikes
-A Matlab struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
+A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
 * `ts`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in samples.
 * `times`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in seconds.
 * `cluID`: a 1xN vector with inherited IDs from the applied clustering algorithm.
@@ -139,13 +139,13 @@ A Matlab struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat
 Any extra field can be added with info about the units, e.g. the theta phase of each spike for the units, or the position/speed of the animal for each spike.
 
 ### Firing rate maps
-This is a data container for firing rate map data. A Matlab struct `ratemap` containing 1D or linearized firing rat maps, stored in a .mat file: `sessionName.ratemap.firingRateMap.mat`. The firing rate maps should be stored in the clusteringpath and has the following fields:
+This is a data container for firing rate map data. A MATLAB struct `ratemap` containing 1D or linearized firing rat maps, stored in a .mat file: `sessionName.ratemap.firingRateMap.mat`. The firing rate maps should be stored in the clusteringpath and has the following fields:
 * `map`: a 1xN cell-struct for N units each containing a KxL matrix, where K corresponds to the bin count and L to the number of states. States can be trials, manipulation states, left-right states, etc.
 * `x_bins`: a 1xK vector with K bin values used to generate the firing rate map.
 * `state_labels`: a 1xL vector with char labels describing the states.
 
 ### Events
-This is a data container for event data. A Matlab struct `eventName` stored in a .mat file: `sessionName.eventName.events.mat` with the following fields:
+This is a data container for event data. A MATLAB struct `eventName` stored in a .mat file: `sessionName.eventName.events.mat` with the following fields:
 * `timestamps`: Px2 matrix with intervals for the P events in seconds.
 * `peaks`: Event time for the peak of each events in seconds (Px1).
 * `amplitude`: amplitude of each event (Px1).
@@ -160,7 +160,7 @@ This is a data container for event data. A Matlab struct `eventName` stored in a
 The `*.events.mat` files should be stored in the basepath. Any `events` files located in the basepath will be detected in the pipeline `ProcessCellMetrics.m` and an average PSTHs will be generated.
 
 ### Manipulations
-This is a data container for manipulation data. A Matlab struct `manipulationName` stored in a .mat file: `sessionName.eventName.manipulation.mat` with the following fields:
+This is a data container for manipulation data. A MATLAB struct `manipulationName` stored in a .mat file: `sessionName.eventName.manipulation.mat` with the following fields:
 * `timestamps`: Px2 matrix with intervals for the P events in seconds.
 * `peaks`: Event time for the peak of each events in seconds (Px1).
 * `amplitude`: amplitude of each event (Px1).
@@ -175,7 +175,7 @@ This is a data container for manipulation data. A Matlab struct `manipulationNam
 The `*.manipulation.mat` files should be stored in the basepath. `events` and `manipulation` files are similar in content, but only manipulation intervals are excluded in the pipeline. Any `manipulation` files located in the basepath will be detected in the pipeline (ProcessCellMetrics.m) and an average PSTH will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline.
 
 ### Channels
-This is a data container for channel-wise data. A matlab struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following fields:
+This is a data container for channel-wise data. A MATLAB struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following fields:
 * `channel`: a 1xQ vector containing a list of Q channel indexes (0-indexed).
 * `channelClass`: a 1xQ cell with classification assigned to each channel (char).
 * `processinginfo`: a struct with information about how the mat file was generated including the name of the function, version, date and parameters.
@@ -184,7 +184,7 @@ This is a data container for channel-wise data. A matlab struct `ChannelName` st
 The `*.channelinfo.mat` files should be stored in the basepath.
 
 ### Time series
-This is a data container for other time series data (check other containers for specific formats like intracellular). A Matlab struct `timeserieName` stored in a .mat file: `sessionName.timeserieName.timeSeries.mat` with the following fields:
+This is a data container for other time series data (check other containers for specific formats like intracellular). A MATLAB struct `timeserieName` stored in a .mat file: `sessionName.timeserieName.timeSeries.mat` with the following fields:
 * `data` : a [nSamples x nChannels] vector with time series data.
 * `timestamps` : a [nSamples x 1] vector with timestamps.
 * `precision` : e.g. int16.
@@ -203,7 +203,7 @@ This is a data container for other time series data (check other containers for 
 Any other field can be added to the struct containing time series data. The `*.timeseries.mat` files should be stored in the basepath.
 
 ### States (being implemented)
-This is a data container for brain states data. A Matlab struct `states` stored in a .mat file: `sessionName.statesName.states.mat`. States can contain multiple temporal states defined by intervals, .e.g sleep/wake-states (awake/nonREM and/REM) and cortical states (Up/Down). It has the following fields:
+This is a data container for brain states data. A MATLAB struct `states` stored in a .mat file: `sessionName.statesName.states.mat`. States can contain multiple temporal states defined by intervals, .e.g sleep/wake-states (awake/nonREM and/REM) and cortical states (Up/Down). It has the following fields:
 * `ints`: a struct containing intervals (start and stop times) for each state (required).
   * `.stateName`: start/stop time for each instance of state stateName (required).
 * `processinginfo`: a struct with information about how the .mat file was generated including the name of the function, version, date and parameters.
@@ -217,7 +217,7 @@ _Optional fields_
 Any other field can be added to the struct containing states data. The `*.states.mat` files should be stored in the basepath.
 
 ### Behavior (being implemented)
-This is a data container for behavioral tracking data. A Matlab struct `behaviorName` stored in a .mat file: `sessionName.behaviorName.behavior.mat` with the following fields:
+This is a data container for behavioral tracking data. A MATLAB struct `behaviorName` stored in a .mat file: `sessionName.behaviorName.behavior.mat` with the following fields:
 * `timestamps`:  array of timestamps that match the data subfields (in seconds).
 * `sr`: sampling rate (Hz).
 * SpatialSeries: several options as defined below, each with optional subfields:
@@ -247,7 +247,7 @@ This is a data container for behavioral tracking data. A Matlab struct `behavior
 Any other field can be added to the struct containing behavior data. The `*.behavior.mat` files should be stored in the basepath.
 
 ### Trials (being implemented)
-A Matlab struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat`. The trials struct is a special behavior struct centered around behavioral trials. `trials` has the following fields:
+A MATLAB struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat`. The trials struct is a special behavior struct centered around behavioral trials. `trials` has the following fields:
 * `start`: trial start times in seconds.
 * `end`: trial end times in seconds.
 * `nTrials`: number of trials.
@@ -259,7 +259,7 @@ A Matlab struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat
 Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath. Trialwise data should live in this container, while trial-intervals can be stored in other behavior structs.
 
 ### Intracellular time series (being implemented)
-This is a data container for intracellular recordings. Any Matlab struct `intracellularName` containing intracellular data would be stored in a .mat file: `sessionName.intracellularName.intracellular.mat`. It contains fields inherited from timeSeries with the following fields:
+This is a data container for intracellular recordings. Any MATLAB struct `intracellularName` containing intracellular data would be stored in a .mat file: `sessionName.intracellularName.intracellular.mat`. It contains fields inherited from timeSeries with the following fields:
 * `data` : a [nSamples x nChannels] vector with time series data.
 * `timestamps` : a [nSamples x 1] vector with timestamps.
 * `precision` : e.g. int16.
