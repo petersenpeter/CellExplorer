@@ -20,7 +20,7 @@ UI.settings.customCellPlotIn{5} = 'CCGs (image)';
 UI.settings.customCellPlotIn{6} = 'sharpWaveRipple';
 
 UI.settings.acgType = 'Normal';                 % Normal (100ms), Wide (1s), Narrow (30ms), Log10
-UI.settings.isiNormalization = 'Occurance';     % 'Rate', 'Occurance'
+UI.settings.isiNormalization = 'Occurrence';     % 'Rate', 'Occurrence'
 UI.settings.rainCloudNormalization = 'Peak';    % 'Probability'
 UI.settings.monoSynDispIn = 'Selected';         % 'All', 'Upstream', 'Downstream', 'Up & downstream', 'Selected', 'None'
 UI.settings.metricsTableType = 'Metrics';       % ['Metrics','Cells','None']
@@ -36,6 +36,7 @@ UI.settings.waveformsAcrossChannelsAlignment = 'Probe layout'; % 'Probe layout',
 UI.settings.colormap = hot(512);                % default colormap
 UI.settings.showAllWaveforms = 0;               % Show all traces or a random subset (maxi 2000; faster UI)
 UI.settings.zscoreWaveforms = 1;                % Show zscored or full amplitude waveforms
+UI.settings.trilatGroupData = 'session';        % 'session','animal','all'
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 5;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off

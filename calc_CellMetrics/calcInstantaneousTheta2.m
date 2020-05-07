@@ -37,11 +37,12 @@ if ~exist(saveAsFullfile,'file') || forceReload
     if ~exist(fullfile(session.general.basePath,[session.general.name, '.lfp']),'file')
         disp('Creating lfp file')
         ce_LFPfromDat(session)
+%         bz_LFPfromDat(session.general.basePath)
     end
     srLfp = session.extracellular.srLfp;
     disp('Calculating the instantaneous theta frequency')
     signal = session.extracellular.leastSignificantBit * double(LoadBinary(fullfile(session.general.basePath,[session.general.name '.lfp']),'nChannels',session.extracellular.nChannels,'channels',ch_theta,'precision','int16','frequency',srLfp)); % ,'start',start,'duration',duration
-    Fpass = [4,10];
+    Fpass = [4,11];
     Wn_theta = [Fpass(1)/(srLfp/2) Fpass(2)/(srLfp/2)]; % normalized by the nyquist frequency
     [btheta,atheta] = butter(3,Wn_theta);
     signal_filtered = filtfilt(btheta,atheta,signal)';
@@ -51,11 +52,11 @@ if ~exist(saveAsFullfile,'file') || forceReload
 %     ThetaInstantFreq = 1250/(2*pi)*diff(signal_phase2);
     ThetaInstantFreq = (srLfp)./diff(find(diff(signal_phase>0)==1));
     ThetaInstantTime = cumsum(diff(find(diff(signal_phase>0)==1)))/srLfp;
-    ThetaInstantFreq(find(ThetaInstantFreq>11)) = nan;
+    ThetaInstantFreq(ThetaInstantFreq>12) = nan;
     ThetaInstantFreq = nanconv(ThetaInstantFreq,ce_gausswin(7)/sum(ce_gausswin(7)),'edge');
     
     % Theta frequency
-    freqlist = [4:0.1:10];
+    freqlist = [4:0.1:11];
     [wt,w,wt_t] = spectrogram(signal_filtered,srLfp,2*srLfp/10,freqlist,srLfp);
     wt = medfilt2(abs(wt),[2,10]);
     h = 1/10*ones(10,1);

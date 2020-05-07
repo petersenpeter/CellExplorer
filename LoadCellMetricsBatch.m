@@ -56,7 +56,7 @@ end
 
 cell_metrics_type_struct = {'general','acg','isi','waveforms','putativeConnections','firingRateMaps','responseCurves','events','manipulations','tags','groups','groundTruthClassification'};
 
-% disp('Cell-metrics: loading batch')
+% disp('Cell-metrics: $')
 if ~isempty(sessionNames)
     count_metricsLoad = 1;
     waitbar(1/(1+count_metricsLoad+length(sessionNames)),ce_waitbar,['Loading session info from sessionNames']);
@@ -151,6 +151,21 @@ for iii = 1:length(clustering_paths)
         warning(['session not found: ', fullfile(clustering_paths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat'])])
         cell_metrics_batch = [];
         return
+    end
+    
+    % Generating session level metrics
+    if isfield(cell_metrics2{iii}.cell_metrics.general,'session')
+        sessionMetrics = fieldnames(cell_metrics2{iii}.cell_metrics.general.session);
+        for i = 1:numel(sessionMetrics)
+            cell_metrics2{iii}.cell_metrics.(['session_',sessionMetrics{i}]) = repmat({cell_metrics2{iii}.cell_metrics.general.session.(sessionMetrics{i})},1,cell_metrics2{iii}.cell_metrics.general.cellCount);
+        end
+    end
+    % Generating animal level metrics
+    if isfield(cell_metrics2{iii}.cell_metrics.general,'animal')
+        sessionMetrics = fieldnames(cell_metrics2{iii}.cell_metrics.general.animal);
+        for i = 1:numel(sessionMetrics)
+            cell_metrics2{iii}.cell_metrics.(['animal_',sessionMetrics{i}]) = repmat({cell_metrics2{iii}.cell_metrics.general.animal.(sessionMetrics{i})},1,cell_metrics2{iii}.cell_metrics.general.cellCount);
+        end
     end
     subfields2 = [subfields2(:);fieldnames(cell_metrics2{iii}.cell_metrics)];
     temp = struct2cell(structfun(@class,cell_metrics2{iii}.cell_metrics,'UniformOutput',false));

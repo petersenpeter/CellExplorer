@@ -30,6 +30,12 @@ function verifyCellMetricsStruct(cell_metrics)
     end
     % Verifying field sizes
     if any(cell_metrics_sizes(cell_metrics_numeric_cell,1) ~= 1) || any(cell_metrics_sizes(cell_metrics_numeric_cell,2) ~= cell_metrics.general.cellCount)
+        if any(cell_metrics_sizes(cell_metrics_numeric_cell,1) ~= 1)
+            cell_metrics_fieldnames(cell_metrics_sizes(cell_metrics_numeric_cell,1) ~= 1)
+        end
+        if any(cell_metrics_sizes(cell_metrics_numeric_cell,2) ~= cell_metrics.general.cellCount)
+            cell_metrics_fieldnames(cell_metrics_sizes(cell_metrics_numeric_cell,2) ~= cell_metrics.general.cellCount)
+        end
         error(['cell_metrics field not formatted correctly: field sizes not correct'])
     end
     % Verifying struct fields

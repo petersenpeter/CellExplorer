@@ -45,11 +45,11 @@ function spikes = loadSpikes(varargin)
 % 3.4 bug fix which gave misaligned waveform extraction from raw dat. Plot improvements of waveforms
 % 3.5 new name and better handling of inputs
 % 3.6 All waveforms across channels extracted from raw dat file
-
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
 addParameter(p,'clusteringpath','',@ischar); % clustering path to spike data
-addParameter(p,'clusteringformat','Phy',@ischar); % clustering format: [current options: phy, klustakwik/neurosuite,klustaviewa]
+addParameter(p,'clusteringformat','Phy',@ischar); % clustering format: [current options: phy, klustakwik/neurosuite,KlustaViewa ]
+% 'Phy', 'KlustaViewa', 'Klustakwik', 'Neurosuite', 'KiloSort', 'SpyKING CIRCUS','MountainSort','IronClust'
 addParameter(p,'basename','',@ischar); % The basename file naming convention
 addParameter(p,'shanks',nan,@isnumeric); % shanks: Loading only a subset of shanks (only applicable to Klustakwik)
 addParameter(p,'raw_clusters',false,@islogical); % raw_clusters: Load only a subset of clusters (might not work anymore as it has not been tested for a long time)
@@ -131,7 +131,14 @@ if forceReload
         end
     end
     switch lower(clusteringFormat)
-        % Loading klustakwik
+        case {'kilosort'} % 'KiloSort'
+            
+        case {'spyking circus'} % 
+
+        case {'mountainsort'} % MountainSort
+
+        case {'ironclust'} % 'IronClust'
+
         case {'klustakwik', 'neurosuite'}
             disp('loadSpikes: Loading Klustakwik data')
             unit_nb = 0;
@@ -202,7 +209,7 @@ if forceReload
             if ~exist('readNPY.m','file')
                 error('''readNPY.m'' is not in your path and is required to load the python data. Please download it here: https://github.com/kwikteam/npy-matlab.')
             end
-            disp('loadSpikes: Loading Phy/Kilosort data')
+            disp('loadSpikes: Loading Phy data')
             spike_cluster_index = readNPY(fullfile(clusteringpath_full, 'spike_clusters.npy'));
             spike_times = readNPY(fullfile(clusteringpath_full, 'spike_times.npy'));
             spike_amplitudes = readNPY(fullfile(clusteringpath_full, 'amplitudes.npy'));
@@ -544,7 +551,9 @@ badChannels = [];
 
 % Removing channels marked as Bad in session struct
 if ~isempty(session) && isfield(session.channelTags,'Bad')
-    badChannels = session.channelTags.Bad.channels;
+    if isfield(session.channelTags.Bad,'channels') && ~isempty(session.channelTags.Bad.channels)
+        badChannels = [badChannels,session.channelTags.Bad.channels];
+    end
     if isfield(session.channelTags.Bad,'spikeGroups') && ~isempty(session.channelTags.Bad.spikeGroups)
         badChannels = [badChannels,session.extracellular.electrodeGroups(session.channelTags.Bad.spikeGroups)];
     end
@@ -562,7 +571,11 @@ if isfield(xml.AnatGrps,'Skip')
     skip = find([xml.AnatGrps.Skip]);
     badChannels = [badChannels, channelOrder(skip)];
 end
-goodChannels = setdiff(1:xml.nChannels,badChannels);
+if isempty(badChannels)
+    goodChannels = 1:xml.nChannels;
+else
+    goodChannels = setdiff(1:xml.nChannels,badChannels);
+end
 nGoodChannels = length(goodChannels);
 
 [b1, a1] = butter(3, filtFreq/xml.SampleRate*2, 'bandpass');

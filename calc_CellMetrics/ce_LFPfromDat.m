@@ -7,26 +7,13 @@ function ce_LFPfromDat(session,varargin)
 % note that sincFilter was altered to accomodate GPU filtering
 %
 %INPUTS
-%   basePath    path where the recording files are located
-%               where basePath is a folder of the form: 
-%                   whateverPath/baseName/
+%   session     CellExplorer session meta data struct
 %
 %               Assumes presence of the following files:
 %                   basePath/baseName.dat
 %
-%                   (optional parameters files)
-%                   basePath/baseName.xml
-%                   basePath/baseName.sessionInfo.mat
-%
-%               If basePath not specified, tries the current working directory.
-%
 %   (options)
-%       'outFs'         (default: 1250) downsampled frequency of the .lfp
-%                       output file. if no user input and not specified in
-%                       the xml, use default
 %       'lopass'        (default: 450) low pass filter frequency 
-%       'noPrompts'     (default: true) prevents prompts about
-%                       saving/adding metadata
 %
 %
 % OUTPUT
@@ -40,28 +27,31 @@ function ce_LFPfromDat(session,varargin)
 % Dependency: iosr tool box https://github.com/IoSR-Surrey/MatlabToolbox
 %
 % SMckenzie, BWatson, DLevenstein 2018, 
-% 12-11-2019: Peter Petersen: remamed script and made it compatible with the Cell Explorer (and independent of buzcode)
+% 12-11-2019: Peter Petersen: remamed script and made it compatible with the CellExplorer (and independent of buzcode)
 
 %% Input handling
 basepath = session.general.basePath;
 basename = session.general.name;
 
 p = inputParser;
-addParameter(p,'noPrompts',true,@islogical);
 addParameter(p,'outFs',[],@isnumeric);
 addParameter(p,'lopass',450,@isnumeric);
 
 parse(p,varargin{:})
-noPrompts = p.Results.noPrompts;
 srLfp = p.Results.outFs;
 lopass = p.Results.lopass;
+
+%Get the metadata
+srLfp = session.extracellular.srLfp;
+sr = session.extracellular.sr;
+nChannels = session.extracellular.nChannels;
 
 import iosr.dsp.*
 
 useGPU = false;
-if gpuDeviceCount>0
-    useGPU = true;
-end
+% if gpuDeviceCount>0
+%     useGPU = true;
+% end
 sizeInBytes = 2; %
 timerVal = tic;
 
@@ -77,21 +67,14 @@ fInfo = dir(fullfile(basepath, [basename '.dat']));
 
 %If there's already a .lfp file, make sure the user wants to overwrite it
 if exist(flfp,'file')
-    overwrite = input([basename,'.lfp already exists. Overwrite? [Y/N]']);
-    switch overwrite
-        case {'y','Y'}
+    answer = questdlg('.lfp file already exist. Do you want to overwrite it?', 'Overwrite existing file', 'Yes','Cancel','Cancel');
+    switch answer
+        case 'Yes'
             delete(flfp)
-        case {'n','N'}
-            return
         otherwise
-            error('Y or N please...')
+            return
     end
 end
-
-%Get the metadata
-srLfp = session.extracellular.srLfp;
-sr = session.extracellular.sr;
-nChannels = session.extracellular.nChannels;
 
 if lopass> srLfp/2
     warning('low pass cutoff beyond Nyquist')
