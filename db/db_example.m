@@ -42,12 +42,12 @@ session = db_upload_session(session);
 spikes = loadSpikes('session',session);
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Running the Cell Explorer pipeline via the db
+% Running the CellExplorer pipeline via the db
 
 cell_metrics = ProcessCellMetrics('sessionName',sessionName);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Running the Cell Explorer directly via the db
+% Running the CellExplorer directly via the db
 
 cell_metrics = CellExplorer('sessionName',sessionName);

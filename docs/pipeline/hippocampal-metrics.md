@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Hippocampal metrics
-parent: Processing pipeline
+parent: Processing module
 nav_order: 7
 ---
 # Hippocampal and spatial metrics (draft)

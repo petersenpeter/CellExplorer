@@ -6,7 +6,7 @@ nav_order: 1
 ---
 # General tutorial
 {: .no_toc}
-This tutorial shows you the full processing pipeline, from generating the necessary session metadata from the template, running the processing pipeline, opening multiple sessions for manual curation in the Cell Explorer, and finally using the cell_metrics for filtering cells, by two different criteria. The tutorial is also available as a Matlab script: (`tutorials/CellExplorer_Tutorial.m`).
+This tutorial shows you the full processing pipeline, from generating the necessary session metadata from the template, running the processing pipeline, opening multiple sessions for manual curation in the CellExplorer, and finally using the cell_metrics for filtering cells, by two different criteria. The tutorial is also available as a Matlab script: (`tutorials/CellExplorer_Tutorial.m`).
 
 1. Define the basepath of the dataset to run. The dataset should at minimum consist of a `basename.dat`, a `basename.xml` and spike sorted data.
 ```m
@@ -21,7 +21,7 @@ session = sessionTemplate(basepath,'showGUI',true);
 ```m
 cell_metrics = ProcessCellMetrics('session', session);
 ```
-4. Visualize the cell metrics in the Cell Explorer
+4. Visualize the cell metrics in the CellExplorer
 ```m
 cell_metrics = CellExplorer('metrics',cell_metrics); 
 ```

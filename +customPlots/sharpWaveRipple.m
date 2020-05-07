@@ -1,5 +1,5 @@
 function subsetPlots = sharpWaveRipple(cell_metrics,UI,ii,col)
-    % A custom single cell plot for the Cell Explorer
+    % A custom single cell plot for the CellExplorer
     % Displays the average sharp wave-ripple for the spike group of the
     % selected cell. The peak channel of the selected cell (ii) is highlighted
     

@@ -6,7 +6,7 @@ nav_order: 3
 ---
 # Single cell plot options
 {: .no_toc}
-The single cells can be plotted with various plot options. You can further create [your own custom plots]({{"/interface/custom-single-cell-plots/"|absolute_url}}), which can be loaded and displayed in the Cell Explorer, by saving plot function in the customPlots folder. Most data has three plotting styles: single cell, population and a normalized image.
+The single cells can be plotted with various plot options. You can further create [your own custom plots]({{"/interface/custom-single-cell-plots/"|absolute_url}}), which can be loaded and displayed in the CellExplorer, by saving plot function in the customPlots folder. Most data has three plotting styles: single cell, population and a normalized image.
 ## Table of contents
 {: .no_toc .text-delta }
 
@@ -63,16 +63,16 @@ The connectivity graphs shows all connections detected in a dataset. Selected ce
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/connectivityGraph-01.png" width="60%"></p>{: .mt-4}
 
 ## Custom plots
-You can create your own custom plots to display in the Cell Explorer that also becomes interactive. Image below shows a ripple triggered average across an electrode with the current selected cell highlighted. 
+You can create your own custom plots to display in the CellExplorer that also becomes interactive. Image below shows a ripple triggered average across an electrode with the current selected cell highlighted. 
 
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/04/sharpwave.png" width="60%"></p>{: .mt-4}
 
 ## Group action plots
-All plots presented on this page are single cell plots that can be selected for the 3-6 single cell subplots in the Cell Explorer but can also be plotted separately using the group actions menu. Select a few select cells and press `space`. Below menu will be shown and you can create various plot combinations from above plot options. 
+All plots presented on this page are single cell plots that can be selected for the 3-6 single cell subplots in the CellExplorer but can also be plotted separately using the group actions menu. Select a few select cells and press `space`. Below menu will be shown and you can create various plot combinations from above plot options. 
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/CellExplorer-group-action-dialog.png" width="60%"></p>
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="60%"></p>
 
 ### Multi plot options and figure exporting
 Please see the [tutorial on  exporting figures]({{"/tutorials/export-figure/"|absolute_url}}). 
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/CellExplorer-group-action-multiplot-dialog.png" width="70%"></p>
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%"></p>

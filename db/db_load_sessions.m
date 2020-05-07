@@ -1,7 +1,7 @@
 function sessions_out = db_load_sessions(varargin)
 % Loads session metadata from the buzsakilab database
 
-% Check the website of the Cell Explorer for more details: https://petersenpeter.github.io/Cell-Explorer/
+% Check the website of the CellExplorer for more details: https://petersenpeter.github.io/CellExplorer/
 
 % By Peter Petersen
 % petersen.peter@gmail.com
