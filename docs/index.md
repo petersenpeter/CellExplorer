@@ -62,7 +62,7 @@ Petersen, Peter C, & Buzsáki, György. (2020, April 8). The CellExplorer: a gra
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604172.svg)](https://doi.org/10.5281/zenodo.3604172)
 
 ## Movie
-A [promotional movie (60MB)](http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4) showing the capabilities of the graphical interface is available for download. 
+[__A promotional movie (60MB)__](http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4) showing the capabilities of the graphical interface is available for download. 
 
-The movie can also be streamed from youtube in 4K. For best viewing experience, select highest resolution and maximize the video.
+The movie can alse be streamed from YouTube in 4K. For best viewing experience, select highest resolution and maximize the video.
 <iframe width="900" height="550" src="https://www.youtube.com/embed/GR1glNhcGIY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
