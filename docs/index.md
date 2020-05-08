@@ -65,4 +65,4 @@ Petersen, Peter C, & Buzsáki, György. (2020, April 8). The CellExplorer: a gra
 [__A promotional movie (60MB)__](http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4) showing the capabilities of the graphical interface is available for download. 
 
 The movie can alse be streamed from YouTube in 4K. For best viewing experience, select highest resolution and maximize the video.
-<iframe width="900" height="550" src="https://www.youtube.com/embed/GR1glNhcGIY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="100%" height="450" src="https://www.youtube.com/embed/GR1glNhcGIY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
