@@ -68,6 +68,4 @@ The video shows the capabilities of the graphical interface:
   <source src="http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4" type="video/mp4">
 </video>
 
-The video is available for [__download (60MB)__](http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4). The movie can also be [__streamed on YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY).
-
-For best viewing experience, select highest resolution and maximize the video.
+The video is [__available for download (60MB)__](http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4), and be streamet on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY). For best viewing experience, select highest resolution and maximize the video.
