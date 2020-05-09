@@ -64,7 +64,7 @@ Petersen, Peter C, & Buzsáki, György. (2020, April 8). The CellExplorer: a gra
 ## CellExplorer movie
 The video shows the capabilities of the graphical interface:
 
-<video max-width="100%" height="auto" controls="controls">
+<video width="100%" height="auto" controls="controls">
   <source src="http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4" type="video/mp4">
 </video>
 
