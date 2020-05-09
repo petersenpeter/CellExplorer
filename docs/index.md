@@ -61,8 +61,8 @@ Petersen, Peter C, & Buzsáki, György. (2020, April 8). The CellExplorer: a gra
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604172.svg)](https://doi.org/10.5281/zenodo.3604172)
 
-## CellExplorer movie
-The video shows the capabilities of the graphical interface:
+## Video
+The video demonstrates the capabilities of the graphical interface:
 
 <video width="100%" height="auto" controls="controls">
   <source src="http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4" type="video/mp4">
