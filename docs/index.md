@@ -57,9 +57,7 @@ We have created a few tutorials to get you started, covering the pipeline and th
 Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues) for reporting bugs, enhancement requests or general questions.
 
 ## Citing the CellExplorer in your research and publications
-Petersen, Peter C, & Buzsáki, György. (2020, April 8). The CellExplorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.2). Zenodo. [http://doi.org/10.5281/zenodo.3604172](http://doi.org/10.5281/zenodo.3604172)
-
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604172.svg)](https://doi.org/10.5281/zenodo.3604172)
+Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical user interface and standardized pipeline for visualizing and characterizing single neuron features. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1). [__pdf__](http://buzsakilab.com/CellExplorer/Petersen_Buzsaki_CellExplorer_bioRxiv_2020.pdf) [__bioRxiv Link__](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1).
 
 ## Video
 The video demonstrates the user-friendly capabilities of the graphical interface:
