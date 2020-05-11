@@ -4,9 +4,10 @@ remote_theme: pmarsceill/just-the-docs
 search_tokenizer_separator: /[\s/]+/
 # Aux links for the upper right navigation
 aux_links:
-  "CellExplorer on GitHub":
+  "Code on GitHub":
     - "//github.com/petersenpeter/CellExplorer"
-
+  "bioRxiv manuscript":
+    - "https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1"
 
 title: CellExplorer
 description: "Matlab GUI and standardized pipeline for exploring and classifying spike sorted single units acquired using extracellular electrodes."
