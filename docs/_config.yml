@@ -6,13 +6,13 @@ search_tokenizer_separator: /[\s/]+/
 aux_links:
   "Code on GitHub":
     - "//github.com/petersenpeter/CellExplorer"
-  "bioRxiv manuscript":
+  "Manuscript on bioRxiv":
     - "https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1"
 
 title: CellExplorer
 description: "Matlab GUI and standardized pipeline for exploring and classifying spike sorted single units acquired using extracellular electrodes."
-baseurl: "/CellExplorer" # the subpath of your site, e.g. /blog
-url: "https://petersenpeter.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "http://cellexplorer.org/" # the base hostname & protocol for your site, e.g. http://example.com
 
 permalink: pretty
 exclude: ["node_modules/", "*.gemspec", "*.gem", "Gemfile", "Gemfile.lock", "package.json", "package-lock.json",  "script/", "LICENSE.txt", "lib/", "bin/", "README.md", "Rakefile"]
