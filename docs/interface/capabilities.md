@@ -63,6 +63,10 @@ You can save your combined cell metrics from a study into a single mat file that
 ### Export figures
 Figures can be exported using the GUI, either the main CellExplorer window or through cell selection actions dialog. For more information please see the [figure export tutorial]({{"/tutorials/export-figure/"|absolute_url}}).
 
+### Export summary figure
+A summary/supplementary figure can be created for publications as shown below (no further edits required). From the menu select `View` -> `Generate supplementary figure`.
+![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2020/05/UnitsSummaryLowRess.png)
+
 ### Work in batch-mode while handling metrics on a single session level
 The CellExplorer can handle batches of sessions. It will load metrics into one struct allowing you to visualize and classify your data across recordings and classify cells across sessions, while still maintaining the data handling on a single session level, writing your changes back to the original files. You can save metrics from a batch of sessions, and still load the data back into the CellExplorer.
 
