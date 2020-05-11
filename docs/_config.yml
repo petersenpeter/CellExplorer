@@ -11,7 +11,7 @@ aux_links:
 title: CellExplorer
 description: "Matlab GUI and standardized pipeline for exploring and classifying spike sorted single units acquired using extracellular electrodes."
 baseurl: "/CellExplorer" # the subpath of your site, e.g. /blog
-url: "https://cellexplorer.org/" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://petersenpeter.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 
 permalink: pretty
 exclude: ["node_modules/", "*.gemspec", "*.gem", "Gemfile", "Gemfile.lock", "package.json", "package-lock.json",  "script/", "LICENSE.txt", "lib/", "bin/", "README.md", "Rakefile"]
