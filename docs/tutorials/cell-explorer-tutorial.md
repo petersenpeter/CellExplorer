@@ -23,4 +23,4 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 
 All your classification actions are tracked, shown in the message log, and can be reversed step-wise by pressing `ctrl+z`. The pre-defined list of cell-types shown in CellExplorer is defined in `CellExplorer_Preferences.m`. Putative cell-types are stored in `cell_metrics.putativeCellType`. Cell types present in `cell_metrics.putativeCellType` will be added to the selection-list in CellExplorer. Default cell-type colors are defined in `CellExplorer_Preferences.m`. Learn more about preferences and the interface below.
 
-[Preferences](/CellExplorer/interface/preferences/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/description/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
+[Preferences](/interface/preferences/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/description/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
