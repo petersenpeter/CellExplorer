@@ -1,8 +1,6 @@
 # CellExplorer
-CellExplorer is a graphical user interface (GUI) and standardized pipeline for exploring and characterizing single cells acquired with extracellular electrodes. Visit [petersenpeter.github.io/CellExplorer/](https://petersenpeter.github.io/CellExplorer/) to learn more about features, installation instructions, tutorials and general documentation.
+CellExplorer is a graphical user interface (GUI) and standardized pipeline for exploring and characterizing single cells acquired with extracellular electrodes. Visit [cellexplorer.org](https://cellexplorer.org/) to learn more about features, installation instructions, tutorials and general documentation.
 
-<a href="https://petersenpeter.github.io/CellExplorer/">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorerInterface-1200x730-1.jpg)</a>
-### Please use below DOI for citing the CellExplorer
-Petersen, Peter C, & Buzsáki, György. (2020, April 8). The CellExplorer: a graphical user interface and a standardized pipeline for exploring and classifying single cells (Version 1.2). Zenodo. [http://doi.org/10.5281/zenodo.3604172](http://doi.org/10.5281/zenodo.3604172)
-
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3604172.svg)](https://doi.org/10.5281/zenodo.3604172)
+<a href="https://cellexplorer.org/">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorerInterface-1200x730-1.jpg)</a>
+### Please use below boiRxiv paper for citing the CellExplorer
+Peter C Petersen, György Buzsáki (2020). CellExplorer: a graphical user interface and standardized pipeline for visualizing and characterizing single neuron features. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://doi.org/10.1101/2020.05.07.083436).
