@@ -34,7 +34,7 @@ color_scheme: nil
 
 # Google Analytics Tracking (optional)
 # e.g, UA-1234567-89
-ga_tracking: UA-103069701-1
+ga_tracking: UA-166238697-1
 
 compress_html:
   clippings: all
