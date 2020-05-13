@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+
+
+<url>
+  <loc>https://cellexplorer.org/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>1.00</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/tutorials/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/general-tutorial/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/metadata-tutorial/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/cell-explorer-tutorial/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/plotting-spike-data/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/monosynaptic-connections-tutorial/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/optotagging-tutorial/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/ground-truth-tutorial/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/reference-data-tutorial/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/database-tutorial/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/database-sessions-dialog/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/export-figure/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/datastructure/data-structure/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/datastructure/data-structure-and-format/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/datastructure/standard-cell-metrics/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/datastructure/expandability/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/pipeline/pipeline/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/pipeline/running-pipeline/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/pipeline/custom-calculations/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/pipeline/hippocampal-metrics/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/interface/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/description/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/capabilities/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/group-plots/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/single-cell-plot-options/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/preferences/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/keyboard-shortcuts/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/spike-and-event-data/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/ground-truth-data/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/interface/custom-single-cell-plots/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/database/database/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/database/preparation/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/database/public-data/</loc>
+  <lastmod>2020-05-13T00:08:48+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+
+
+</urlset>
