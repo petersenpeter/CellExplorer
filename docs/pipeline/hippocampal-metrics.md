@@ -28,7 +28,7 @@ A theta-band filtered time series is generated from the lfp file. Continues thet
 | `session.channelTags.Theta.channels`| Theta channel tag (required) |
 
 ## Spatial metrics
-All spatial metrics are generated from an existing 1D firing rate map. [Learn more about spatial metrics](/pipeline/standard-cell-metrics/#spatial-metrics) and the [firing rate map Matlab struct](/datastructure/data-structure-and-format/#firing-rate-maps). 
+All spatial metrics are generated from an existing 1D firing rate map. [Learn more about spatial metrics](/datastructure/standard-cell-metrics/#spatial-metrics) and the [firing rate map Matlab struct](/datastructure/data-structure-and-format/#firing-rate-maps). 
 
 | Files        | Description |
 |:-------------|:------------|

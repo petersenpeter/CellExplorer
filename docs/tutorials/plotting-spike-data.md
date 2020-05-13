@@ -26,7 +26,7 @@ The CellExplorer can show spike raster data using the `sessionName.spikes.cellin
 1. Launch the CellExplorer
 2. Select `Spikes`-> `Spike data menu` from the top menu (keyboard shortcut: `ctrl+a`). 
 3. The spike data will be loaded and below dialog will be shown in the CellExplorer.
-![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/CellExplorer-spike-dialog.png)
+![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-spike-dialog.png)
 4. Now, if the listed spike plotting options are sufficient. Press OK to close the dialog.
 5. This will add the spike plotting options to the display settings drop-down menus as shown in below image.
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/plotOptionsWithSpikes_3.png" width="50%"></p> {: .mt-4}
