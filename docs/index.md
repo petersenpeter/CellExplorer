@@ -60,7 +60,7 @@ Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplo
 ## Citing the CellExplorer in your research and publications
 Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical user interface and standardized pipeline for visualizing and characterizing single neuron features. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1). [Download pdf](http://buzsakilab.com/CellExplorer/Petersen_Buzsaki_CellExplorer_bioRxiv_2020.pdf).
 
-## Video demonstrating the user-friendly capabilities
+## Video demonstrating the user-friendly capabilities of CellExplorer
 <video width="100%" height="auto" controls="controls">
   <source src="http://buzsakilab.com/CellExplorer/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
 </video>
