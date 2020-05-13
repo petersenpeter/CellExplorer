@@ -24,13 +24,6 @@ To address this, we built the CellExplorer, a framework for analyzing and charac
 
 [Data structure]({{"/datastructure/data-structure/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Processing module]({{"/pipeline/pipeline/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
 
-### Video demonstrating the user-friendly capabilities of CellExplorer
-<video width="100%" height="auto" controls="controls">
-  <source src="http://buzsakilab.com/CellExplorer/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
-</video>
-
-The video is [__available for download (60MB)__](http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4), and can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY). For best viewing experience on YouTube, select highest resolution and maximize the video.
-
 ## Getting started
 1. [Clone](x-github-client://openRepo/https://github.com/petersenpeter/CellExplorer), fork, or [download](https://github.com/petersenpeter/CellExplorer/archive/master.zip) the repository (cloning is recommended).
 2. Add the local repository to your MATLAB setpath. 
@@ -61,3 +54,9 @@ Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplo
 ## Citing the CellExplorer in your research and publications
 Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical user interface and standardized pipeline for visualizing and characterizing single neuron features. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1). [Download pdf](http://buzsakilab.com/CellExplorer/Petersen_Buzsaki_CellExplorer_bioRxiv_2020.pdf).
 
+## Video demonstrating the user-friendly capabilities of CellExplorer
+<video width="100%" height="auto" controls="controls">
+  <source src="http://buzsakilab.com/CellExplorer/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
+</video>
+
+The video is [__available for download (60MB)__](http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4), and can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY). For best viewing experience on YouTube, select highest resolution and maximize the video.
