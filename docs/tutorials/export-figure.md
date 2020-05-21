@@ -15,9 +15,9 @@ Exporting figures in Matlab can be a headache, so CellExplorer have two built-in
 {:toc}
 
 ## Exporting the CellExplorer interface
-The steps below shows how to save a PDF file of the main interface of the CellExplorer. Saving a PNG (image file) is more straight forward, but the same steps can be applied. 
+The steps below shows how to save a PDF file of the main interface of CellExplorer. Saving a PNG (image file) is more straight forward, but the same steps can be applied. 
 
-1. Launch the CellExplorer
+1. Launch CellExplorer
 2. Select `File`-> `Export figure` from the top menu. This will open a [Export Setup dialog](https://www.mathworks.com/help/matlab/ref/exportsetupdlg.html). Before the dialog is shown the paper size is set to the current figure size and the renderer is set to painter.
 3. Use the left side _Properties_ menu to navigate the exporting dialog to apply further optional settings:
   * __Fonts__: We recommend a minimum font size of 14 to minimize further editing.
@@ -44,4 +44,4 @@ When you select to save your figures to the CellExplorer path or Clustering path
 Be aware that saving to a pdf file, is substantial slower than saving a .png file, but the figure will be saved with vector graphics.
 
 ## Exporting other figures
-Any other figures produced by the CellExplorer can be saved using the File menu options `Save As` or `Export Setup...`.
+Any other figures produced by CellExplorer can be saved using the File menu options `Save As` or `Export Setup...`.

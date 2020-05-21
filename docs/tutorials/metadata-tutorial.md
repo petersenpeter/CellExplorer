@@ -6,7 +6,7 @@ nav_order: 2
 ---
 # Metadata tutorial
 {: .no_toc}
-This tutorial shows you how to generate the [session metadata struct](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) used by the CellExplorer. 
+This tutorial shows you how to generate the [session metadata struct](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) used by CellExplorer. 
 ![Flow chart](https://buzsakilab.com/wp/wp-content/uploads/2020/05/Flowcharts_Metadata.png){: .mt-4}
 
 1. Define the basepath of the dataset to run. A valid dataset consists of a `basename.dat`, a `basename.xml` (not required) and spike sorted data.

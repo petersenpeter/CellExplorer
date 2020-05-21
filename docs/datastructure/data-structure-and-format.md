@@ -14,7 +14,7 @@ nav_order: 2
 {:toc}
 
 ## Data paths
-For each session there are two main paths that the CellExplorer uses, a basepath and a clusteringpath (relative to basepath). 
+For each session there are two main paths that CellExplorer uses, a basepath and a clusteringpath (relative to basepath). 
 
 The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: `sessionName.*`, e.g. `sessionName.dat` and `sessionName.lfp` (low-pass filtered and down-sampled. The lfp file is automatically generated in the pipeline if necessary). The clusteringpath contains the spike data, including cell metrics, and can be the same as the basepath (empty clusteringpath field).
 
@@ -116,7 +116,7 @@ A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `equipment` : hardware used to acquire the data
 
 ### Spikes
-A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
+A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The processing module `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
 * `ts`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in samples.
 * `times`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in seconds.
 * `cluID`: a 1xN vector with inherited IDs from the applied clustering algorithm.

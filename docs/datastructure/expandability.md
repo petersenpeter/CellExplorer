@@ -16,7 +16,7 @@ Add your own metrics, groups, plots and opto-tagging
 {:toc}
 
 ### Your own numeric or string metrics
-You can add your own metrics either as numeric values or string arrays. String arrays allow you to group your data by the unique strings set within features, and can be plotted in discrete values. All features in the cell metrics are automatically available in the cell inspector if they contain N values (N: number of cells).
+You can add your own metrics either as numeric values or string arrays. String arrays allow you to group your data by the unique strings set within features, and can be plotted in discrete values. All features in the cell metrics are automatically available in CellExplorer if they contain N values (N: number of cells).
 
 ### Use the data containers
 The cell mentrics processing script `ProcessCellMetrics` will automatically detect container files: `*.events.mat`, `*.manipulation.mat`, `*.cellinfo.mat`
@@ -35,7 +35,7 @@ This schema allows you to easily add a PSTH or a histogram to better characteriz
 The x-axis (the x-bins) can be specified by including a vector with M values in a subfield named after the metric in the structure `cell_metrics.general.plotType.plotName.x_bins`. State labels ´state_label´ and axis labels: ´x_label´ and ´y_label´, can also be defined in the ´general´ field. See the [example dataset](https://github.com/petersenpeter/CellExplorer/tree/master/exampleData) for how to format this properly.
 
 ### Spike data
-CellExplorer is also capable of loading raw spike data from a ´sessionName.spikes.cellInfo.mat´ file. This is useful for creating a raster PSTH, see the spike times across trials or time, or plot a phase precession map. [Use the spikes menu in the CellExplorer]({{"/interface/spike-and-event-data/"|absolute_url}}), and if the current selected cell has spiking data in the data folder, the CellExplorer will load the data and show you plotting options. After this initial step the spikes plotting options will appear with the other cell-specific plotting options in the 6 drop-downs in the Display Settings panel. Please see the [tutorial on spike raster plots]({{"/tutorials/plotting-spike-data/"|absolute_url}}) for more information.
+CellExplorer is also capable of loading raw spike data from a ´sessionName.spikes.cellInfo.mat´ file. This is useful for creating a raster PSTH, see the spike times across trials or time, or plot a phase precession map. [Use the spikes menu in CellExplorer]({{"/interface/spike-and-event-data/"|absolute_url}}), and if the current selected cell has spiking data in the data folder, CellExplorer will load the data and show you plotting options. After this initial step the spikes plotting options will appear with the other cell-specific plotting options in the 6 drop-downs in the Display Settings panel. Please see the [tutorial on spike raster plots]({{"/tutorials/plotting-spike-data/"|absolute_url}}) for more information.
 
 ### Opto-tagging
-Incorporate opto-tagged data into the CellExplorer. Please see the [tutorial opto-tagged data]({{"/tutorials/optotagging-tutorial/"|absolute_url}}) for more information.
+Incorporate opto-tagged data into CellExplorer. Please see the [tutorial opto-tagged data]({{"/tutorials/optotagging-tutorial/"|absolute_url}}) for more information.

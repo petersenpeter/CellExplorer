@@ -8,7 +8,7 @@ nav_order: 3
 {: .no_toc}
 This tutorial will guide you through the manual cell-type curation process in CellExplorer.
 
-1. Launch the CellExplorer
+1. Launch CellExplorer
 ```m
 cell_metrics = CellExplorer('metrics',cell_metrics); 
 ```
