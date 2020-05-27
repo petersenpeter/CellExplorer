@@ -1,6 +1,5 @@
 function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % Displays a GUI allowing you to edit parameters for the CellExplorer and metadata for a session
-% Can be run from a basepath as well (if no inputs are provided).
 %
 % INPUTS
 % sessionIn  : session struct to load into the GUI
@@ -16,11 +15,11 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % parameters : parameters struct
 % statusExit : Whether the GUI was closed via the OK button or canceled
 
-% gui_session is part of the CellExplorer: https://petersenpeter.github.io/CellExplorer/
+% gui_session is part of CellExplorer: https://cellexplorer.org/
 
 % By Peter Petersen 
 % petersen.peter@gmail.com
-% Last edited: 16-03-2020
+% Last edited: 19-05-2020
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
@@ -184,8 +183,57 @@ statusExit = 0;
 UI.fig = figure('units','pixels','position',[50,50,620,560],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','visible','off');
 movegui(UI.fig,'center')
 
-% Tabs
-% tempPosition = UI.fig.InnerPosition;
+%% % % % % % % % % % % % % % % % % % % % % %
+% Menu
+% % % % % % % % % % % % % % % % % % % % % %
+
+if ~verLessThan('matlab', '9.3')
+    menuLabel = 'Text';
+    menuSelectedFcn = 'MenuSelectedFcn';
+else
+    menuLabel = 'Label';
+    menuSelectedFcn = 'Callback';
+end
+
+% File
+UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
+UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save session file',menuSelectedFcn,@(~,~)saveSessionFile,'Accelerator','S');
+uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI with changes',menuSelectedFcn,@(~,~)CloseMetricsWindow,'Accelerator','W');
+uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn,@(~,~)cancelMetricsWindow,'Accelerator','W');
+
+% Epochs
+UI.menu.epochs.topMenu = uimenu(UI.fig,menuLabel,'Epochs');
+uimenu(UI.menu.epochs.topMenu,menuLabel,'Import merge points (*.mergePoints.events.mat)',menuSelectedFcn,@importEpochsIntervalsFromMergePoints);
+uimenu(UI.menu.epochs.topMenu,menuLabel,'Import epoch info from parent sessions',menuSelectedFcn,@importFromFiles);
+
+% Extracellular
+UI.menu.extracellular.topMenu = uimenu(UI.fig,menuLabel,'Extracellular');
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML);
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Verify electrode group(s)',menuSelectedFcn,@verifySpikeGroup);
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Sync electrode groups',menuSelectedFcn,@(~,~)syncChannelGroups);
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Import bad channels from xml file',menuSelectedFcn,@importBadChannelsFromXML);
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Import time series from Intan info.rhd',menuSelectedFcn,@importMetaFromIntan);
+
+
+% CellExplorer
+% UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
+% uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Verify metadata',menuSelectedFcn,@(~,~)verifyMetadata);
+
+% Database
+UI.menu.buzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
+uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Upload metadata to DB',menuSelectedFcn,@(~,~)buttonUploadToDB,'Accelerator','U');
+uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Download metadata from DB',menuSelectedFcn,@(~,~)buttonUpdateFromDB,'Accelerator','D');
+
+% Help
+UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
+uimenu(UI.menu.help.topMenu,menuLabel,'Tutorial at CellExplorer.org',menuSelectedFcn,@buttonHelp);
+uimenu(UI.menu.help.topMenu,menuLabel,'Documentation at CellExplorer.org',menuSelectedFcn,@buttonHelp,'Accelerator','H');
+uimenu(UI.menu.help.topMenu,menuLabel,'Verify fields in session struct',menuSelectedFcn,@performStructVerification);
+    
+%% % % % % % % % % % % % % % % % % % % %
+% Initializing tabs
+% % % % % % % % % % % % % % % % % % % %
+
 UI.uitabgroup = uitabgroup('Units','normalized','Position',[0 0.06 1 0.94],'Parent',UI.fig,'Units','normalized');
 if exist('parameters','var')
     UI.tabs.parameters = uitab(UI.uitabgroup,'Title','Cell metrics');
@@ -205,8 +253,6 @@ UI.tabs.behaviors = uitab(UI.uitabgroup,'Title','Tracking');
 UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 5, 80, 28],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off');
 UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[100, 5, 80, 28],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized','Interruptible','off');
 UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[190, 5, 80, 28],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized','Interruptible','off');
-UI.button.uploadToDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[280, 5, 100, 28],'String','Upload to DB','Callback',@(src,evnt)buttonUploadToDB,'Units','normalized','Interruptible','off');
-UI.button.updateFromDB = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[390, 5, 110, 28],'String','Download from DB','Callback',@(src,evnt)buttonUpdateFromDB,'Units','normalized','Interruptible','off');
 UI.status = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[510, 5, 100, 28],'String','Help','Units','normalized','Callback',@(src,evnt)buttonHelp,'HorizontalAlignment','center', 'fontweight', 'bold','ForegroundColor','k','enable','on','hittest','off');
 
 % % % % % % % % % % % % % % % % % % % %
@@ -293,8 +339,8 @@ uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 10, 100, 
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 50, 100, 30],'String','Edit epoch','Callback',@(src,evnt)editEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 10 100, 30],'String','Delete epoch(s)','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 50, 100, 30],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
-UI.button.importEpochsIntervalsFromMergePoints = uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 50, 130, 30],'String','Import merge points','Callback',@importEpochsIntervalsFromMergePoints,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 10 130, 30],'String','Import children','Callback',@importFromFiles,'Units','normalized');
+% UI.button.importEpochsIntervalsFromMergePoints = uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 50, 130, 30],'String','Import merge points','Callback',@importEpochsIntervalsFromMergePoints,'Units','normalized');
+% uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 10 130, 30],'String','Import children','Callback',@importFromFiles,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 50, 110, 30],'String','Move up','Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 10 110, 30],'String','Move down','Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
 
@@ -330,21 +376,20 @@ UI.edit.sr = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String',
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nSamples', 'Position', [400, 498, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.nSamples = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 475, 210, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (e.g. int16)', 'Position', [10, 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 180, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'File name', 'Position', [10, 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.fileName = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 180, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [200, 448, 220, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 425, 190, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Depth (µm)', 'Position', [400, 448, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.probeDepths = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 425, 210, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (e.g. int16)', 'Position', [400 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 425, 210, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Equipment', 'Position', [10, 398, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.equipment = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 375, 380, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'LFP sampling rate (Hz)', 'Position', [400, 398, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 375, 210, 25],'HorizontalAlignment','left','Units','normalized');
-
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Channel groups
@@ -358,9 +403,9 @@ UI.table.electrodeGroups = uitable(UI.tabs.electrodeGroups,'Data',UI.list.tableD
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[10, 10, 75, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[95, 10, 75, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
-UI.button.importGroupsFromXML1 = uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[495, 10, 115, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
+% uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
+% uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
+% UI.button.importGroupsFromXML1 = uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[495, 10, 115, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
 % Spike groups
 UI.tabs.spikeGroups = uitab(UI.channelGroups,'Title','Spike groups');
@@ -369,9 +414,9 @@ UI.table.spikeGroups = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Pos
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[10, 10, 75, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[95, 10, 75, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
-UI.button.importGroupsFromXML2 = uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 115, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
+% uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
+% uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
+% UI.button.importGroupsFromXML2 = uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 115, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
 % Silicon probes from db
 if isfield(session.extracellular,'electrodes')
@@ -409,7 +454,7 @@ UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300,
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 260, 100, 30],'String','Add channel tag','Callback',@(src,evnt)addTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 100, 30],'String','Edit channel tag','Callback',@(src,evnt)editTag,'Units','normalized');
 uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 260, 100, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[470, 260, 140, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
+% uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[470, 260, 140, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Inputs
@@ -428,7 +473,7 @@ UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 50,
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 10, 100, 30],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 10, 100, 30],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[230, 10, 110, 30],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
-UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[500, 10, 110, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
+% UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[500, 10, 110, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % BehavioralTracking
@@ -619,7 +664,7 @@ uiwait(UI.fig)
         UIsetString(session.extracellular,'nSamples');
         UIsetString(session.extracellular,'precision');
         UIsetString(session.extracellular,'leastSignificantBit');
-        UIsetString(session.extracellular,'probeDepths');
+        UIsetString(session.extracellular,'fileName');
         UIsetString(session.extracellular,'equipment');
         UIsetString(session.extracellular,'srLfp');
         updateChannelGroupsList
@@ -654,8 +699,17 @@ uiwait(UI.fig)
         end
     end
     
-    function buttonHelp
-        web('https://petersenpeter.github.io/CellExplorer/tutorials/metadata-tutorial/','-new','-browser')
+    function buttonHelp(src,evnt)
+        if strcmp(src.(menuLabel),'Tutorial at CellExplorer.org')
+            web('https://cellexplorer.org/tutorials/metadata-tutorial/','-new','-browser')
+        else
+            web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
+        end
+    end
+    
+    function performStructVerification(src,evnt)
+        readBackFields;
+        verifySessionStruct(session);
     end
     
     function buttonUploadToDB
@@ -820,11 +874,7 @@ uiwait(UI.fig)
         if ~strcmp(UI.edit.nChannels.String,'')
             session.extracellular.nChannels = str2double(UI.edit.nChannels.String);
         end
-        if ~strcmp(UI.edit.probeDepths.String,'') 
-            session.extracellular.probeDepths = str2double(UI.edit.probeDepths.String);
-        else
-            session.extracellular.probeDepths = 0;
-        end
+        session.extracellular.fileName = UI.edit.fileName.String;
         session.extracellular.precision = UI.edit.precision.String;
         session.extracellular.equipment = UI.edit.equipment.String;
     end
@@ -955,13 +1005,13 @@ uiwait(UI.fig)
                 tableData{fn,4} = session.extracellular.electrodes.nChannels(fn);
                 tableData{fn,5} = session.extracellular.electrodes.nShanks(fn);
                 tableData{fn,6} = session.extracellular.electrodes.brainRegions{fn};
-                if isfield(session.extracellular.electrodes,'AP_coordinates') && ~isempty(session.extracellular.electrodes.AP_coordinates)
+                if isfield(session.extracellular.electrodes,'AP_coordinates') && ~isempty(session.extracellular.electrodes.AP_coordinates)  && length(session.extracellular.electrodes.AP_coordinates)>= fn
                     tableData{fn,7} = session.extracellular.electrodes.AP_coordinates(fn);
                 end
-                if isfield(session.extracellular.electrodes,'ML_coordinates') && ~isempty(session.extracellular.electrodes.ML_coordinates)
+                if isfield(session.extracellular.electrodes,'ML_coordinates') && ~isempty(session.extracellular.electrodes.ML_coordinates)  && length(session.extracellular.electrodes.ML_coordinates)>= fn
                     tableData{fn,8} = session.extracellular.electrodes.ML_coordinates(fn);
                 end
-                if isfield(session.extracellular.electrodes,'depth') && ~isempty(session.extracellular.electrodes.depth)
+                if isfield(session.extracellular.electrodes,'') && ~isempty(session.extracellular.electrodes.depth)  && length(session.extracellular.electrodes.depth)>= fn
                     tableData{fn,9} = session.extracellular.electrodes.depth(fn);
                 end
             end
@@ -2396,7 +2446,7 @@ uiwait(UI.fig)
         updateChannelGroupsList
     end
 
-    function importBadChannelsFromXML
+    function importBadChannelsFromXML(~,~)
         xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
         if exist(xml_filepath,'file')
             sessionInfo = LoadXml(xml_filepath);

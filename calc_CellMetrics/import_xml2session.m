@@ -11,7 +11,11 @@ end
 if isempty(xml_file)
     xml_file = fullfile(session.general.basePath,[session.general.name,'.xml']);
 end
+if ~exist(xml_file,'file')
+    return
+end
 sessionInfo = LoadXml(xml_file);
+
 if isfield(sessionInfo,'SpkGrps')
     session.extracellular.nSpikeGroups = length(sessionInfo.SpkGrps); % Number of spike groups
     session.extracellular.spikeGroups.channels = {sessionInfo.SpkGrps.Channels}; % Spike groups

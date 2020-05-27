@@ -157,85 +157,34 @@ hist(waveform_metrics.ab_ratio,30);
 title('AB ratio (markers: red/green))'), axis tight
 
 
-[pc,score,latent,tsquare] = pca(wave_align);
-
+% [pc,score,latent,tsquare] = pca(wave_align);
+% 
+% 
+% % Waveforms
+% [pc,score1,latent,tsquare] = pca(wave_align);
 % figure
-% scatter3(score(:,1),score(:,2),score(:,3),10,[0,0,0])
+% subplot(2,3,1)
+% plot(wave_align','Color',[0,0,0,0.1],'linewidth',2), title('Waveforms'), axis tight
+% subplot(2,3,4)
+% scatter3(score1(:,1),score1(:,2),score1(:,3),10,[0,0,0])
 % xlabel('X'),ylabel('Y'),zlabel('Z')
-
-% K-mean clustering
-opts = statset('Display','final');
-klusters = 3;
-colors = {'r','b','g'};
-colors2 = [1,0,0,0.1;0,1,0,0.1;0,0,1,0.1]';
-[idx,C] = kmeans(score(:,1:3),klusters,'Distance','cityblock',...
-    'Replicates',5,'Options',opts);
-waveform_metrics.klusters = idx';
-
-figure
-subplot(2,2,1:2)
-for i = 1:klusters
-    plot(wave_align(idx==i,:)','Color',colors2(:,i),'linewidth',2), hold on
-end
-xlabel('Time (ms)'),ylabel('Z-scored amplitude'),title 'Average Waveforms', axis tight
-
-subplot(2,2,3)
-for i = 1:klusters
-    scatter3(score(idx==i,1)',score(idx==i,2)',score(idx==i,3)',20,colors{i}), hold on
-end
-plot3(C(:,1),C(:,2),C(:,3),'kx','MarkerSize',15,'LineWidth',3), title 'PCA Analysis', hold off
-xlabel('PC1'),ylabel('PC2'),zlabel('PC3'),axis tight
-
-subplot(2,2,4)
-for i = 1:klusters
-    scatter3(t_after(idx==i),t_after_diff(idx==i),abs(peakA(idx==i)./trough(idx==i)),20,colors{i}), hold on
-end
-title 'Waveform feature space', xlabel('t_{after}'),ylabel('t_{after diff}'),zlabel('peak/trough'),axis tight
-
-% plots_datasets = [t_before;t_after;(t_before+t_after);t_after_diff;10*abs(peakA./trough)];
-% plot_labels = {'t before';'t after';'t before + t after';'t_{after diff}';'peak/trough'};
-% plots_sets = [1,2;2,3;2,4;2,5];
-% figure
-% for i = 1:4
-%     X1 = plots_datasets(plots_sets(i,1),:);
-%     Y1 = plots_datasets(plots_sets(i,2),:);
-%     Bx = [min(X1):1:max(X1)+1]-0.5;
-%     By = [min(Y1):1:max(Y1)+1]-0.5;
-%     N = hist2d([X1;Y1]',Bx,By);
-%     subplot(2,2,i)
-%     surf(Bx(1:end-1)/sr*1000,By(1:end-1)/sr*1000,N','EdgeColor','None'), hold on
-%     view(0,90)
-%     axis tight
-%     caxis([0 max(max(N))])
-%     xlabel([plot_labels{plots_sets(i,1)} ' (ms)'])
-%     ylabel([plot_labels{plots_sets(i,2)} ' (ms)'])
-% end
-
-% Waveforms
-[pc,score1,latent,tsquare] = pca(wave_align);
-figure
-subplot(2,3,1)
-plot(wave_align','Color',[0,0,0,0.1],'linewidth',2), title('Waveforms'), axis tight
-subplot(2,3,4)
-scatter3(score1(:,1),score1(:,2),score1(:,3),10,[0,0,0])
-xlabel('X'),ylabel('Y'),zlabel('Z')
-
-% 1. derivative
-[pc,score2,latent,tsquare] = pca(diff(wave_align')');
-subplot(2,3,2)
-plot(diff(wave_align'),'Color',[0,0,0,0.1],'linewidth',2), title('First derivative'), axis tight
-subplot(2,3,5)
-scatter3(score2(:,1),score2(:,2),score2(:,3),10,[0,0,0])
-xlabel('X'),ylabel('Y'),zlabel('Z')
-
-% 2. derivative
-[pc,score3,latent,tsquare] = pca(diff(wave_align',2)');
-subplot(2,3,3)
-plot(diff(wave_align',2),'Color',[0,0,0,0.1],'linewidth',2), title('Second derivative'), axis tight
-subplot(2,3,6)
-scatter3(score3(:,1),score3(:,2),score3(:,3),10,[0,0,0])
-xlabel('X'),ylabel('Y'),zlabel('Z')
-
-waveform_metrics.score1 = score1(:,1:3)';
-waveform_metrics.score2 = score2(:,1:3)';
-waveform_metrics.score3 = score3(:,1:3)';
+% 
+% % 1. derivative
+% [pc,score2,latent,tsquare] = pca(diff(wave_align')');
+% subplot(2,3,2)
+% plot(diff(wave_align'),'Color',[0,0,0,0.1],'linewidth',2), title('First derivative'), axis tight
+% subplot(2,3,5)
+% scatter3(score2(:,1),score2(:,2),score2(:,3),10,[0,0,0])
+% xlabel('X'),ylabel('Y'),zlabel('Z')
+% 
+% % 2. derivative
+% [pc,score3,latent,tsquare] = pca(diff(wave_align',2)');
+% subplot(2,3,3)
+% plot(diff(wave_align',2),'Color',[0,0,0,0.1],'linewidth',2), title('Second derivative'), axis tight
+% subplot(2,3,6)
+% scatter3(score3(:,1),score3(:,2),score3(:,3),10,[0,0,0])
+% xlabel('X'),ylabel('Y'),zlabel('Z')
+% 
+% waveform_metrics.score1 = score1(:,1:3)';
+% waveform_metrics.score2 = score2(:,1:3)';
+% waveform_metrics.score3 = score3(:,1:3)';

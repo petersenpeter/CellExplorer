@@ -87,7 +87,7 @@ saveDeepSuperficial
             end
         end
         
-        title(['Spike group ' num2str(jj),'/', num2str(size(deepSuperficialfromRipple.ripple_amplitude,2))]),xlabel('Time (ms)'), %if jj ==1; ylabel(session.general.name, 'Interpreter', 'none'); end
+        title(['Electrode group ' num2str(jj),'/', num2str(size(deepSuperficialfromRipple.ripple_amplitude,2))]),xlabel('Time (ms)'), %if jj ==1; ylabel(session.general.name, 'Interpreter', 'none'); end
         axis tight, ax6 = axis; % grid on
         plot([-120, -120;-170,-170;120,120], [ax6(3) ax6(4)],'color','k');
         xlim([-220,deepSuperficialfromRipple.ripple_time_axis(end)+45]), xticks([-120:40:120])

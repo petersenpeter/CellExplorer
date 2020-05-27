@@ -19,6 +19,14 @@ success = false;
 db_settings = db_load_settings;
 db_settings.web_address = [db_settings.address, 'entries/' num2str(session.general.entryID)];
 
+% Checking if session already exist
+options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password);
+db_session = webread([db_settings.address,'views/15356/'],options,'page_size','5000','Timeout',30,'entryid',session.general.entryID); 
+if strcmp(db_session.renderedHtml, '<div class="frm_no_entries">No Entries Found</div>')
+   warning('Session does not exist.')
+   return 
+end
+        
 % General
 if any(contains(fields,{'general','all'}))
     % Updating fields
@@ -41,13 +49,6 @@ if any(contains(fields,{'general','all'}))
     if RESPONSE.success==1
         disp('General metadata successfully submitted to db')
     end
-%     % Updating fields
-%     options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'CertificateFilename','','Timeout',30);
-%     RESPONSE = webwrite(db_settings.web_address,options,'form_id','143','ngvax',session.general.duration,'l6piv',session.general.location,'10227a',session.general.time,...
-%         '5qos5',session.general.date,'mxph',session.general.sessionType,'e253q',session.general.notes);
-%     if RESPONSE.success==1
-%         disp('General meta data successfully submitted to db')
-%     end
 end
 
 % Extracellular
@@ -63,7 +64,9 @@ if any(contains(fields,{'extracellular','all'}))
     end
     jsonStructure.fiElD_1910 = session.extracellular.precision;
     jsonStructure.fiElD_2010 = session.extracellular.fileFormat;
-    jsonStructure.fiElD_1915 = session.extracellular.probeDepths;
+    if isfield(session.extracellular,'probeDepths')
+        jsonStructure.fiElD_1915 = session.extracellular.probeDepths;
+    end
     jsonStructure.fiElD_2930 = session.extracellular.leastSignificantBit;
     if isfield(session.extracellular,'srLfp')
         jsonStructure.fiElD_1971 = session.extracellular.srLfp;

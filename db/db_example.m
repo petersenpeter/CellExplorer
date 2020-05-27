@@ -29,10 +29,10 @@ animals = db_load_table('animals');
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Load all silicon probes
 
-siliconprobes = db_load_table('siliconprobes'); % Examples: siliconprobes, projects
+siliconprobes = db_load_table('species'); % Examples: siliconprobes, projects
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Save meta data from data to database
+% Save session metadata from data to database
 
 session = db_upload_session(session);
 
@@ -51,3 +51,8 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 % Running the CellExplorer directly via the db
 
 cell_metrics = CellExplorer('sessionName',sessionName);
+
+%% Crete session in database
+session.general.name
+session = db_create_session(session);
+success = db_upload_session(session);

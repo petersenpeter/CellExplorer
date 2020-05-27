@@ -2,7 +2,7 @@ function cell_metrics = CellExplorer(varargin)
 % CellExplorer is a Matlab GUI and standardized pipeline for exploring and
 % classifying spike sorted single units acquired using extracellular electrodes.
 %
-% Check out the website for extensive documentation and tutorials: https://petersenpeter.github.io/CellExplorer/
+% Check out the website for extensive documentation and tutorials: https://CellExplorer.org/
 %
 % Below follows a detailed description of how to call CellExplorer
 %
@@ -3934,9 +3934,9 @@ end
         end
         switch source
             case 'Tutorials'
-                web('https://petersenpeter.github.io/CellExplorer/tutorials/tutorials/','-new','-browser')
+                web('https://CellExplorer.org/tutorials/tutorials/','-new','-browser')
             otherwise
-                web('https://petersenpeter.github.io/CellExplorer/','-new','-browser')
+                web('https://CellExplorer.org/','-new','-browser')
         end
     end
 
@@ -4325,7 +4325,7 @@ end
 %         groupData.summaryText = uicontrol('Parent',groupData.panel.bottom,'Style','text','Position',[270, 5, 300, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
         uicontrol('Parent',groupData.panel.top,'Style','pushbutton','Position',[620, 5, 100, 30],'String','+ New','Callback',@(src,evnt)newGroup,'Units','normalized');
         uicontrol('Parent',groupData.panel.top,'Style','pushbutton','Position',[730, 5, 100, 30],'String','Delete','Callback',@(src,evnt)deleteGroup,'Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[620, 5, 100, 30],'String','Action','Callback',@(src,evnt)CreateGroupAction,'Units','normalized');
+        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[620, 5, 100, 30],'String','Actions','Callback',@(src,evnt)CreateGroupAction,'Units','normalized');
         uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[730, 5, 100, 30],'String','Close','Callback',@(src,evnt)CloseDialog,'Units','normalized');
         groupData.popupmenu.performGroundTruthClassification = uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[270, 5, 110, 30],'String','Show GT panel','Callback',@(src,evnt)performGroundTruthClassification,'Units','normalized','visible','Off');
         groupData.popupmenu.importGroundTruth = uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[390, 5, 110, 30],'String','Export GT','Callback',@(src,evnt)importGroundTruth,'Units','normalized','visible','Off');
@@ -7883,7 +7883,7 @@ end
         
         [plotRows,~]= numSubplots(length(plotOptions)+plotCount);
         
-        fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.settings.figureSize);
+        fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.settings.figureSize,'visible','off'); movegui(fig,'center'), set(fig,'visible','on')
         for j = 1:length(cellIDs)
             if ~ishandle(fig)
                 warning(['Summary figures canceled by user']);
@@ -8915,12 +8915,13 @@ end
                     
                     cell_metrics = matFileCell_metrics.cell_metrics;
                     if length(cellSubset) == size(cell_metrics.putativeCellType,2)
+                        % String fields
                         cell_metrics.labels = cell_metricsTemp.labels(cellSubset);
                         cell_metrics.deepSuperficial = cell_metricsTemp.deepSuperficial(cellSubset);
                         cell_metrics.deepSuperficialDistance = cell_metricsTemp.deepSuperficialDistance(cellSubset);
                         cell_metrics.brainRegion = cell_metricsTemp.brainRegion(cellSubset);
                         cell_metrics.putativeCellType = cell_metricsTemp.putativeCellType(cellSubset);
-                        
+                        % Struct/group fields
                         cell_metrics.groups = getSubsetCellMetrics(cell_metricsTemp.groups,cellSubset);
                         cell_metrics.tags = getSubsetCellMetrics(cell_metricsTemp.tags,cellSubset);
                         cell_metrics.groundTruthClassification = getSubsetCellMetrics(cell_metricsTemp.groundTruthClassification,cellSubset);
@@ -11543,7 +11544,7 @@ end
         set(AboutWindow.image,'Color','none','Units','Pixels') , hold on, axis off
         AboutWindow.image.Position = pos_image;
         
-        text(0,pos_text,{['\bfCellExplorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\it\color[rgb]{0. 0.2 0.5}https://petersenpeter.github.io/CellExplorer/\rm'},'HorizontalAlignment','left','VerticalAlignment','top','ButtonDownFcn',@openWebsite)
+        text(0,pos_text,{['\bfCellExplorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\it\color[rgb]{0. 0.2 0.5}https://CellExplorer.org/\rm'},'HorizontalAlignment','left','VerticalAlignment','top','ButtonDownFcn',@openWebsite)
     end
 
     function HelpDialog(~,~)

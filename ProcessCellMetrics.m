@@ -240,7 +240,7 @@ if ~isempty(parameters.excludeIntervals)
     else
         disp(['  Excluding ',num2str(size(parameters.excludeIntervals,1)),' intervals in spikes (' num2str(sum(diff(parameters.excludeIntervals'))),' seconds)'])
         spikes_all = spikes;
-        spikes_indices = cellfun(@(X) ~InIntervals(X,double(parameters.excludeIntervals)),spikes_all.times,'UniformOutput',false);
+        spikes_indices = cellfun(@(X) ~ce_InIntervals(X,double(parameters.excludeIntervals)),spikes_all.times,'UniformOutput',false);
         spikes.times = cellfun(@(X,Y) X(Y),spikes_all.times,spikes_indices,'UniformOutput',false);
         if isfield(spikes_all,'ts')
             spikes.ts = cellfun(@(X,Y) X(Y),spikes_all.ts,spikes_indices,'UniformOutput',false);
@@ -960,7 +960,7 @@ if any(contains(parameters.metrics,{'state_metrics','all'})) && ~any(contains(pa
                 statenames =  fieldnames(states);
                 for iStates = 1:numel(statenames)
                     %Find which spikes are during state of interest
-                    statespikes = cellfun(@(X) InIntervals(X,double(states.(statenames{iStates}))),allspikes.times,'UniformOutput',false);
+                    statespikes = cellfun(@(X) ce_InIntervals(X,double(states.(statenames{iStates}))),allspikes.times,'UniformOutput',false);
                     
                     % firing rate in state (nSpikes/duration)
                     cell_metrics.(['firingRate_' statenames{iStates}]) = cellfun(@(X) sum(X),statespikes) / sum(diff(states.(statenames{iStates})'));

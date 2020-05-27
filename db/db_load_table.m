@@ -84,25 +84,21 @@ if ~isempty(bz_db)
             bz_db.(entrylist{j}).meta = rmfield(bz_db.(entrylist{j}).meta,oldField);
             
         end
-        if isfield(bz_db.(entrylist{j}).meta,'Name') && isvarname(bz_db.(entrylist{j}).meta.Name)
             if strcmp(lower(table),'animals')
                 db_out.(bz_db.(entrylist{j}).meta.Name).General = bz_db.(entrylist{j}).meta;
                 db_out.(bz_db.(entrylist{j}).meta.Name).General.Id = bz_db.(entrylist{j}).id;
                 db_out.(bz_db.(entrylist{j}).meta.Name).General.EntryKey = entrylist{j};
-            else
+            elseif any(strcmp(lower(table),{'surgeries','probeimplants','manipulationimplants','opticfiberimplants','virusinjections','histology','impedancemeasures','weightings'}))
+                db_out.(bz_db.(entrylist{j}).meta.Animal).((table)) = bz_db.(entrylist{j}).meta;
+                db_out.(bz_db.(entrylist{j}).meta.Animal).((table)).Id = bz_db.(entrylist{j}).id;
+                db_out.(bz_db.(entrylist{j}).meta.Animal).((table)).EntryKey = entrylist{j};
+            else %if any(strcmp(lower(table),{'species','strains','siliconprobes','projects'}))
                 label = ['id_', bz_db.(entrylist{j}).id];
                 db_out.(label) = bz_db.(entrylist{j}).meta;
                 db_out.(label).Id = bz_db.(entrylist{j}).id;
-                db_out.(label).EntryKey = entrylist{j};
+                db_out.(label).EntryKey = entrylist{j};                
+
             end
-        else
-            try 
-                warning(['Failed to entry as name is not a valid varname: ', bz_db.(entrylist{j}).meta.Name])
-            catch
-                warning('Failed to entry as name is not a valid varname')
-            end
-        end
-        
     end
     disp([num2str(size(entrylist,1)),' entries in ', table])
     
@@ -117,11 +113,11 @@ if ~isempty(bz_db)
                 db_out2 = db_load_table(sublist{ii},search_term);
             end
             if ~isempty(db_out2)
-                fieldlist2 = fieldnames(db_out2);
+                animalNames = fieldnames(db_out2);
                 for iiii = 1:size(animallist,1)
                     for iii = 1:size(fieldnames(db_out2),1)
-                        if strcmp(db_out2.(fieldlist2{iii}).Animal,animallist{iiii})
-                            db_out.(animallist{iiii}).(sublist{ii}) = db_out2.(fieldlist2{iii});
+                        if strcmp(db_out2.(animalNames{iii}).(sublist{ii}).Animal,animallist{iiii})
+                            db_out.(animallist{iiii}).(sublist{ii}) = db_out2.(animalNames{iii}).(sublist{ii});
                         end
                     end
                 end

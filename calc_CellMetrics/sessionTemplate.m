@@ -10,7 +10,7 @@ function session = sessionTemplate(input1,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 21-3-2020
+% Last edited: 25-5-2020
 
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct

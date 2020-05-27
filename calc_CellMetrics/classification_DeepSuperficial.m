@@ -33,10 +33,10 @@ function classification_deepSuperficial(session,varargin)
 % LoadBinary (loading lfp)
 % ce_FindRipples / bz_FindRipples (find ripples)
 
-% Part of the CellExplorer: https://github.com/petersenpeter/CellExplorer
+% Part of the CellExplorer: https://CellExplorer.org
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 12-11-2019
+% Last edited: 25-05-2020
 
 p = inputParser;
 addParameter(p,'buzcode',false,@islogical); % Defines whether bz_FindRipples or ce_FindRipples is called
