@@ -875,7 +875,7 @@ else
 end
 
 % Removing channels marked with skip parameter
-if isfield(sessionInfo.AnatGrps,'Skip')
+if isfield(sessionInfo,'AnatGrps') && isfield(sessionInfo.AnatGrps,'Skip')
     channelOrder = [sessionInfo.AnatGrps.Channels]+1;
     skip = find([sessionInfo.AnatGrps.Skip]);
     if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'Channels')
