@@ -146,7 +146,7 @@ end
 % Analysis tags
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if ~isfield(session,'analysisTags') || (isfield(session,'analysisTags') && (~isfield(session.analysisTags,'probesLayout')) || isempty(session.analysisTags.probesLayout)) 
-    session.analysisTags.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
+    session.analysisTags.probesLayout = 'poly2'; % Probe layout: linear,staggered,poly2,edge,poly3,poly5
     session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
 end
 

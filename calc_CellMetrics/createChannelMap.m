@@ -1,41 +1,20 @@
-function chanMap = createChannelMap(basepath,basename,electrode_type)
-% Creates a channemap 
-% electrode_type: Two options at this point: 'staggered' or 'neurogrid'
-% create a channel map file
-
-% Original function by Brendon and Sam
+function chanMap = createChannelMap(session)
+% Creates a channelmap compatible with KiloSort. 
+% Original custom function by Brendon Watson and Sam McKenzie
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 08-02-2020
+% Last edited: 27-05-2020
 
+basepath = session.general.basePath;
+basename = session.general.name;
+electrode_type = session.analysisTags.probesLayout;
+inter_shanks_distance = 200;
 
-if ~exist('basepath','var')
-    basepath = cd;
-end
-if ~exist('basename','var')
-    [~,basename] = fileparts(basepath);
-end
-
-[par,rxml] = LoadXml(fullfile(basepath,[basename,'.xml']));
-xml_electrode_type = rxml.child(1).child(4).value;
-switch(xml_electrode_type)
-    case 'staggered'
-        electrode_type = 'staggered';
-    case 'neurogrid'
-        electrode_type = 'neurogrid';
-    case 'grid'
-        electrode_type = 'neurogrid';
-    case 'poly3'
-        electrode_type = 'poly3';
-    case 'poly5'
-        electrode_type = 'poly5';
-    case 'poly2'
-        electrode_type = 'poly2';
-    case 'twohundred'
-        electrode_type = 'twohundred';
-    otherwise
-        electrode_type = 'poly2'; %Default
+electrodeTypes = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
+if ~any(strcmp(electrode_type,electrodeTypes))
+    disp('Applying default prove layout: poly2')
+    electrode_type = 'poly2';
 end
 
 
@@ -43,15 +22,14 @@ end
 xcoords = [];%eventual output arrays
 ycoords = [];
 
-ngroups = length(par.AnatGrps);
-for g = 1:ngroups
-    groups{g} = par.AnatGrps(g).Channels;
-end
+ngroups = session.extracellular.nElectrodeGroups;
+groups = session.extracellular.electrodeGroups.channels;
 
 switch(electrode_type)
     case 'staggered'
-        horz_offset = flip(cumsum([0,-8.5,17,-21,+25,-29,33,-37,41,-45,49,-53,57,-61,65,-69]));
-        for a= 1:ngroups %being super lazy and making this map with loops
+        horz_offset = flip([0,8.5,17:4:520]);
+        horz_offset(1:2:end) = -horz_offset(1:2:end);
+        for a= 1:ngroups % being super lazy and making this map with loops
             x = [];
             y = [];
             tchannels  = groups{a};
@@ -59,13 +37,13 @@ switch(electrode_type)
                 x(i) = horz_offset(end-length(tchannels)+i);
                 y(i) = -i*20;
             end
-            x = x+(a-1)*200;
+            x = x+(a-1)*inter_shanks_distance;
             xcoords = cat(1,xcoords,x(:));
             ycoords = cat(1,ycoords,y(:));
         end
     case 'poly2'
         disp('poly2 probe layout')
-        for a= 1:ngroups %being super lazy and making this map with loops
+        for a= 1:ngroups % being super lazy and making this map with loops
             tchannels  = groups{a};
             x = nan(1,length(tchannels));
             y = nan(1,length(tchannels));
@@ -78,7 +56,7 @@ switch(electrode_type)
             y(find(x == 18)) = [1:length(find(x == 18))]*-20;
             y(find(x == 0)) = [1:length(find(x == 0))]*-20-10+extrachannels*20;
             y(find(x == -18)) = [1:length(find(x == -18))]*-20;
-            x = x+(a-1)*200;
+            x = x+(a-1)*inter_shanks_distance;
             xcoords = cat(1,xcoords,x(:));
             ycoords = cat(1,ycoords,y(:));
         end
@@ -103,7 +81,7 @@ switch(electrode_type)
             y(find(x == -18)) =   [1:length(find(x == -18))]*-28-14;
             y(find(x == 2*-18)) = [1:length(find(x == 2*-18))]*-28;
             
-            x = x+(a-1)*200;
+            x = x+(a-1)*inter_shanks_distance;
             xcoords = cat(1,xcoords,x(:));
             ycoords = cat(1,ycoords,y(:));
         end
@@ -130,10 +108,10 @@ switch(electrode_type)
                 if mod(i,2)
                     y(i) = 0;%odds
                 else
-                    y(i) = 200;%evens
+                    y(i) = inter_shanks_distance;%evens
                 end
             end
-            x = x+(a-1)*200;
+            x = x+(a-1)*inter_shanks_distance;
             xcoords = cat(1,xcoords,x(:));
             ycoords = cat(1,ycoords,y(:));
         end

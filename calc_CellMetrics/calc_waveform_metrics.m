@@ -92,28 +92,28 @@ for m = 1:length(filtWaveform)
     plot([-(I2_diff2+idx_6)+1:1:0,1:1:(length(wave_diff2{m})-(I2_diff2+idx_6))]/sr*1000,wave_diff2{m},'Color',[0,0,0,0.05],'linewidth',2), axis tight
     title('Waveforms (2nd derivative'),xlabel('Time (ms)'),ylabel('Z-scored')
     
-    if timeWaveform_span>1.599
-            n = n+1;
-            wave_cut(n,:) = wave(idx_3:idx_end2);
-            wave_diff_cut(n,:) = wave_diff{m}(idx_3:idx_end2);
-            if I2+idx_45-length(wave)>0
-                temp = I2+idx_45-length(wave);
-                wave_align(n,:) = wave(I2+idx_3-temp:I2+idx_45-temp);
-                
-            else
-                wave_align(n,:) = wave(I2+idx_3:I2+idx_45);
-            end
-%     elseif timeWaveform_span>1.601 % 1.6 ms
+%     if timeWaveform_span>1.599
 %             n = n+1;
 %             wave_cut(n,:) = wave(idx_3:idx_end2);
-%             wave_diff_cut(n,:) = wave_diff{m}(idx_9:idx_end4);
-%             wave_align(n,:) = wave(I2+idx_9:I2+idx_49);
-    else
-            n = n+1;
-            wave_cut(n,:) = wave;
-            wave_diff_cut(n,:) = wave_diff{m};
-            wave_align(n,:) = wave(I2+idx_9:I2+idx_49-1);
-    end
+%             wave_diff_cut(n,:) = wave_diff{m}(idx_3:idx_end2);
+%             if I2+idx_45-length(wave)>0
+%                 temp = I2+idx_45-length(wave);
+%                 wave_align(n,:) = wave(I2+idx_3-temp:I2+idx_45-temp);
+%                 
+%             else
+%                 wave_align(n,:) = wave(I2+idx_3:I2+idx_45);
+%             end
+% %     elseif timeWaveform_span>1.601 % 1.6 ms
+% %             n = n+1;
+% %             wave_cut(n,:) = wave(idx_3:idx_end2);
+% %             wave_diff_cut(n,:) = wave_diff{m}(idx_9:idx_end4);
+% %             wave_align(n,:) = wave(I2+idx_9:I2+idx_49);
+%     else
+%             n = n+1;
+%             wave_cut(n,:) = wave;
+%             wave_diff_cut(n,:) = wave_diff{m};
+%             wave_align(n,:) = wave(I2+idx_9:I2+idx_49-1);
+%     end
 end
 waveform_metrics.peaktoTrough = t_before/sr*1000;
 waveform_metrics.troughtoPeak = t_after/sr*1000;

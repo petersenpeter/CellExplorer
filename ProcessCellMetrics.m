@@ -390,30 +390,22 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     
     % Channel coordinates map, trilateration and length constant determined from waveforms across channels
     if ~all(isfield(cell_metrics,{'trilat_x','trilat_y','peakVoltage_expFit'})) || parameters.forceReload == true
-        switch session.spikeSorting{1}.method
-            case 'KiloSort'
-                if exist(fullfile(basepath,'chanMap.mat'),'file')
-                    chanMap = load(fullfile(basepath,'chanMap.mat'));
-                else
-                    if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
-                        disp('  Using default probesLayout: poly2')
-                        session.analysisTags.probesLayout = 'poly2';
-                    end
-                    disp('  Creating channelmap')
-                    chanMap = createChannelMap(basepath,basename,session.analysisTags.probesLayout);
-                end
-                cell_metrics.general.chanCoords.x = chanMap.xcoords(:);
-                cell_metrics.general.chanCoords.y = chanMap.ycoords(:);
-                % case {'klustakwik', 'neurosuite'}
-            otherwise
-                if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
-                    disp('  Using default probesLayout: poly2')
-                    session.analysisTags.probesLayout = 'poly2';
-                end
-                chanMap = createChannelMap(basepath,basename,session.analysisTags.probesLayout);
-                cell_metrics.general.chanCoords.x = chanMap.xcoords(:);
-                cell_metrics.general.chanCoords.y = chanMap.ycoords(:);
+        if exist(fullfile(basepath,'chanMap.mat'),'file') % Will look for a chanMap file with default name (compatible with KiloSort)
+            chanMap = load(fullfile(basepath,'chanMap.mat'));
+        elseif isfield(session,'analysisTags') && isfield(session.analysisTags,'chanMapFile') 
+            % You can use a different filename that must be specified in: session.analysisTags.chanMapFile
+            chanMap = load(fullfile(basepath,session.analysisTags.chanMapFile));
+        else
+            if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
+                disp('  Using default probesLayout: poly2')
+                session.analysisTags.probesLayout = 'poly2';
+            end
+            disp('  Creating channelmap')
+            chanMap = createChannelMap(session);
         end
+        cell_metrics.general.chanCoords.x = chanMap.xcoords(:);
+        cell_metrics.general.chanCoords.y = chanMap.ycoords(:);
+        
         
         % Fit exponential
         fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});

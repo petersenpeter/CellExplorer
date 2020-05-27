@@ -157,11 +157,13 @@ if exist(fullfile(session.general.basePath,session.general.clusteringPath),'dir'
 else
     shortcutList = [shortcutList;{'session.general.clusteringPath','<html><b><font color="red">clustering data path does not exist</font></b></html>'}];
 end
+% Verifying raw data file exist
 if isfield(session.extracellular,'fileName') && ~isempty(session.extracellular.fileName)
     fileNameRaw = session.extracellular.fileName;
 else
     fileNameRaw = [session.general.name '.dat'];
 end
+
 if exist(fullfile(session.general.basePath,fileNameRaw),'file')
     shortcutList = [shortcutList;{['Raw data file: ', fileNameRaw],'raw data exists'}];
 else
