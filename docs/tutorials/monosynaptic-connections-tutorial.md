@@ -35,8 +35,8 @@ gui_MonoSyn('path_to_data')
 5. You can switch between showing all significant connections, and the subset accepted during the manual curation process.
 5. when you have completed the curation process, simply close the figure and you will be prompted to save the curation.
 
-## Launch the Monosyn GUI directly from the CellExplorer
-1. Launch the CellExplorer
+## Launch the Monosyn GUI directly from CellExplorer
+1. Launch CellExplorer
 ```m
 cell_metrics = CellExplorer('metrics',cell_metrics); 
 ```

@@ -5,7 +5,7 @@ parent: Tutorials
 nav_order: 4
 ---
 
-# Tutorial on plotting spike raster data in the CellExplorer
+# Tutorial on plotting spike raster data in CellExplorer
 {: .no_toc}
 This tutorial will show you how to generate raster plots using spike data. The spike data is not saved with the metrics but will be loaded separately. Events or manipulation files can also be loaded separately allowing you to generate two-dimensional rasters and PSTH raster plots. 
 ![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2020/03/rasters_placefield-04.png){: .mt-4}
@@ -20,12 +20,12 @@ Any events or manipulation files located in the basepath will be detected in the
 1. TOC
 {:toc}
 
-## Show spike raster data in the CellExplorer
-The CellExplorer can show spike raster data using the `sessionName.spikes.cellinfo.mat` and related structures (`sessionName.*.events.mat` and `sessionName.*.manipulation.mat`). See the [file definitions here]({{"/datastructure/data-structure-and-format/"|absolute_url}}).
+## Show spike raster data in CellExplorer
+CellExplorer can show spike raster data using the `sessionName.spikes.cellinfo.mat` and related structures (`sessionName.*.events.mat` and `sessionName.*.manipulation.mat`). See the [file definitions here]({{"/datastructure/data-structure-and-format/"|absolute_url}}).
 
-1. Launch the CellExplorer
+1. Launch CellExplorer
 2. Select `Spikes`-> `Spike data menu` from the top menu (keyboard shortcut: `ctrl+a`). 
-3. The spike data will be loaded and below dialog will be shown in the CellExplorer.
+3. The spike data will be loaded and below dialog will be shown in CellExplorer.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-spike-dialog.png)
 4. Now, if the listed spike plotting options are sufficient. Press OK to close the dialog.
 5. This will add the spike plotting options to the display settings drop-down menus as shown in below image.
@@ -34,7 +34,7 @@ The CellExplorer can show spike raster data using the `sessionName.spikes.cellin
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/spikes_time_amplitude-01.png" width="80%"></p> {: .mt-4}
 7. If there are no spiking data available for the current session or the selected cell, the plot will be empty. This is also the case for datasets missing specific events files, when generating PSTH raster plots. 
 
-### Create and modify spike plots in the CellExplorer
+### Create and modify spike plots in CellExplorer
 1. From the spike data dialog you can add, edit and delete spike plots. To add a new plot, press the `Add plot` button (to modify an existing plot, select one of the listed plots and click the `Edit plot` button).
 2. Below dialog will be shown allowing you to create a custom spike plot defined by the parameters displayed.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/ModifySpikePlot.png)
@@ -47,10 +47,10 @@ The CellExplorer can show spike raster data using the `sessionName.spikes.cellin
     5. __Events :__ You can also create PSTH-rasters using separate event data. Define the type of the event (options: events, manipulations, states files), the name of the events, .e.g. ripples (`sessionName.ripples.events.mat`)), and the duration of the PSTH window (time before/after alignment in seconds). Next, define how to align the events (options: by onset, offset, center or peak). Each option must be available in the events file to be plot-able, e.g. peak and offset, or be determined from other fields, e.g. center (which can be determined from the start and stop times of intervals). Using the event check-boxes you can select to display the average response and/or the raster, together with event-wise curves. Below figure shows a PSTH for an opto-stimulated interneuron with 1200 events and a stimulation window of 0.5 seconds. 
     <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/PSTH-raster-03.png" width="=70%"></p> {: .mt-4} 
 
-The spike raster plots created in the CellExplorer is not saved across sessions. To do this you have to follow the next section about predefining spike plots.
+The spike raster plots created in CellExplorer is not saved across sessions. To do this you have to follow the next section about predefining spike plots.
 
 ### Predefine spike plots
-You can predefine custom plots that are loaded automatically in the CellExplorer every time. Custom spike plots are located in the folder `+customSpikesPlots/`. The parameters that must be defined follows the logic described in the previous section. There is a template file (`spikes_template.m`) available in the folder to get you started:
+You can predefine custom plots that are loaded automatically in CellExplorer every time. Custom spike plots are located in the folder `+customSpikesPlots/`. The parameters that must be defined follows the logic described in the previous section. There is a template file (`spikes_template.m`) available in the folder to get you started:
 ```m
 function spikePlot = spikes_template
 % This is an template for creating your own custom spike raster plots

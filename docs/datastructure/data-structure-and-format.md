@@ -14,7 +14,7 @@ nav_order: 2
 {:toc}
 
 ## Data paths
-For each session there are two main paths that the CellExplorer uses, a basepath and a clusteringpath (relative to basepath). 
+For each session there are two main paths that CellExplorer uses, a basepath and a clusteringpath (relative to basepath). 
 
 The basepath contains the raw data and session level files. The data in the basepath should follow this naming convention: `sessionName.*`, e.g. `sessionName.dat` and `sessionName.lfp` (low-pass filtered and down-sampled. The lfp file is automatically generated in the pipeline if necessary). The clusteringpath contains the spike data, including cell metrics, and can be the same as the basepath (empty clusteringpath field).
 
@@ -116,7 +116,7 @@ A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `equipment` : hardware used to acquire the data
 
 ### Spikes
-A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The Cell Inspector's pipeline `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
+A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The processing module `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `sessionName.spikes.cellinfo.mat` should be located in the clustering path. The struct has the following fields:
 * `ts`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in samples.
 * `times`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in seconds.
 * `cluID`: a 1xN vector with inherited IDs from the applied clustering algorithm.
@@ -202,7 +202,7 @@ This is a data container for other time series data (check other containers for 
 
 Any other field can be added to the struct containing time series data. The `*.timeseries.mat` files should be stored in the basepath.
 
-### States (being implemented)
+### States
 This is a data container for brain states data. A MATLAB struct `states` stored in a .mat file: `sessionName.statesName.states.mat`. States can contain multiple temporal states defined by intervals, .e.g sleep/wake-states (awake/nonREM and/REM) and cortical states (Up/Down). It has the following fields:
 * `ints`: a struct containing intervals (start and stop times) for each state (required).
   * `.stateName`: start/stop time for each instance of state stateName (required).
@@ -216,7 +216,7 @@ _Optional fields_
   * `.statenames`: {Nstates} cell array for the name of each state.
 Any other field can be added to the struct containing states data. The `*.states.mat` files should be stored in the basepath.
 
-### Behavior (being implemented)
+### Behavior
 This is a data container for behavioral tracking data. A MATLAB struct `behaviorName` stored in a .mat file: `sessionName.behaviorName.behavior.mat` with the following fields:
 * `timestamps`:  array of timestamps that match the data subfields (in seconds).
 * `sr`: sampling rate (Hz).
@@ -246,7 +246,7 @@ This is a data container for behavioral tracking data. A MATLAB struct `behavior
 
 Any other field can be added to the struct containing behavior data. The `*.behavior.mat` files should be stored in the basepath.
 
-### Trials (being implemented)
+### Trials
 A MATLAB struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat`. The trials struct is a special behavior struct centered around behavioral trials. `trials` has the following fields:
 * `start`: trial start times in seconds.
 * `end`: trial end times in seconds.
@@ -258,7 +258,7 @@ A MATLAB struct `trials` stored in a .mat file: `sessionName.trials.behavior.mat
 
 Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath. Trialwise data should live in this container, while trial-intervals can be stored in other behavior structs.
 
-### Intracellular time series (being implemented)
+### Intracellular time series
 This is a data container for intracellular recordings. Any MATLAB struct `intracellularName` containing intracellular data would be stored in a .mat file: `sessionName.intracellularName.intracellular.mat`. It contains fields inherited from timeSeries with the following fields:
 * `data` : a [nSamples x nChannels] vector with time series data.
 * `timestamps` : a [nSamples x 1] vector with timestamps.
@@ -305,4 +305,3 @@ The data is organized into data-type specific containers, a concept introduced b
 * `sessionName.*.behavior.mat`: behavior data, including position tracking.
 * `sessionName.*.states.mat`: brain states derived data including SWS/REM/awake and up/down states.
 * `sessionName.*.intracellular.mat`: intracellular data.
-

@@ -59,4 +59,4 @@ cell_metrics = LoadCellMetricsBatch('sessions',sessionNames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 
-Please see the tutorial for [how to interact with the database from the CellExplorer]({{"/tutorials/database-sessions-dialog/"|absolute_url}}) as well.
+Please see the tutorial for [how to interact with the database from CellExplorer]({{"/tutorials/database-sessions-dialog/"|absolute_url}}) as well.

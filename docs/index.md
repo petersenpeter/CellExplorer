@@ -19,7 +19,7 @@ CellExplorer is a graphical user interface (GUI), a standardized processing modu
 {: .no_toc}
 The large diversity of cell-types of the brain, provides the means by which circuits perform complex operations. Understanding such diversity is one of the key challenges of modern neuroscience. Neurons have many unique electrophysiological and behavioral features from which parallel cell-type classification can be inferred.
 
-To address this, we built the CellExplorer, a framework for analyzing and characterizing single cells recorded using extracellular electrodes. It can be separated into three components: a standardized yet flexible data structure, a single yet extensive processing module, and a powerful graphical interface. Through the processing module, a high dimensional representation is built from electrophysiological and functional features including the spike waveform, spiking statistics, monosynaptic connections, and behavioral spiking dynamics. The user-friendly interactive graphical interface allows for classification and exploration of those features, through a rich set of built-in plots, interaction modes, cell grouping, and filters. Powerful figures can be created for publications. Opto-tagged cells and public access to reference data have been incorporated to help you characterize your data better. The framework is built entirely in MATLAB making it fast and intuitive to implement and incorporate the CellExplorer into your pipelines and analysis scripts. You can expand it with your metrics, plots, and opto-tagged data. The paper is now available on bioRxiv: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1).
+To address this, we built CellExplorer, a framework for analyzing and characterizing single cells recorded using extracellular electrodes. It can be separated into three components: a standardized yet flexible data structure, a single yet extensive processing module, and a powerful graphical interface. Through the processing module, a high dimensional representation is built from electrophysiological and functional features including the spike waveform, spiking statistics, monosynaptic connections, and behavioral spiking dynamics. The user-friendly interactive graphical interface allows for classification and exploration of those features, through a rich set of built-in plots, interaction modes, cell grouping, and filters. Powerful figures can be created for publications. Opto-tagged cells and public access to reference data have been incorporated to help you characterize your data better. The framework is built entirely in MATLAB making it fast and intuitive to implement and incorporate CellExplorer into your pipelines and analysis scripts. You can expand it with your metrics, plots, and opto-tagged data. The paper is now available on bioRxiv: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1).
 
 
 [Data structure]({{"/datastructure/data-structure/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Processing module]({{"/pipeline/pipeline/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
@@ -32,13 +32,13 @@ To address this, we built the CellExplorer, a framework for analyzing and charac
 mex -O CCGHeart.c
 mex -O FindInInterval.c
 ```
-4. The CellExplorer GUI and pipeline uses additional toolboxes, of which one MATLAB toolbox must be installed manually.
+4. CellExplorer uses additional toolboxes, of which one MATLAB toolbox must be installed manually.
   * [Curvefit MATLAB toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline)
 
 5. That's it! Now you can explore the software with below example data or try one of the tutorials.
 
-### Try the CellExplorer with example data
-There is an example dataset included in the repository for trying the CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/LoadCellMetricsBatch.m) into MATLAB and type:
+### Try CellExplorer with example data
+There is an example dataset included in the repository for trying CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/LoadCellMetricsBatch.m) into MATLAB and type:
 ```m
 CellExplorer('metrics',cell_metrics)
 ```
@@ -51,7 +51,7 @@ We have created a few tutorials to get you started, covering the pipeline and th
 ## Reporting bugs, enhancements or questions
 Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues) for reporting bugs, enhancement requests or general questions.
 
-## Citing the CellExplorer in your research and publications
+## Citing CellExplorer in your research and publications
 Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical user interface and standardized pipeline for visualizing and characterizing single neuron features. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1). [Download pdf](http://buzsakilab.com/CellExplorer/Petersen_Buzsaki_CellExplorer_bioRxiv_2020.pdf).
 
 ## Video demonstrating the user-friendly capabilities of CellExplorer
