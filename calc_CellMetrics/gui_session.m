@@ -209,7 +209,7 @@ uimenu(UI.menu.epochs.topMenu,menuLabel,'Import epoch info from parent sessions'
 % Extracellular
 UI.menu.extracellular.topMenu = uimenu(UI.fig,menuLabel,'Extracellular');
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML);
-uimenu(UI.menu.extracellular.topMenu,menuLabel,'Verify electrode group(s)',menuSelectedFcn,@verifySpikeGroup);
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Verify electrode group(s)',menuSelectedFcn,@verifyElectrodeGroup);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Sync electrode groups',menuSelectedFcn,@(~,~)syncChannelGroups);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Import bad channels from xml file',menuSelectedFcn,@importBadChannelsFromXML);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Import time series from Intan info.rhd',menuSelectedFcn,@importMetaFromIntan);
@@ -253,7 +253,7 @@ UI.tabs.behaviors = uitab(UI.uitabgroup,'Title','Tracking');
 UI.button.ok = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[10, 5, 80, 28],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off');
 UI.button.save = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[100, 5, 80, 28],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized','Interruptible','off');
 UI.button.cancel = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[190, 5, 80, 28],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized','Interruptible','off');
-UI.status = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[510, 5, 100, 28],'String','Help','Units','normalized','Callback',@(src,evnt)buttonHelp,'HorizontalAlignment','center', 'fontweight', 'bold','ForegroundColor','k','enable','on','hittest','off');
+UI.status = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[510, 5, 100, 28],'String','Help','Units','normalized','HorizontalAlignment','center', 'fontweight', 'bold','ForegroundColor','k','enable','on','hittest','off'); % ,'Callback',@(src,evnt)buttonHelp
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell metrics parameters
@@ -400,10 +400,10 @@ UI.channelGroups = uitabgroup('units','pixels','Position',[0, 0, 619, 365],'Pare
 UI.tabs.electrodeGroups = uitab(UI.channelGroups,'Title','Electrode groups');
 UI.list.tableData = {false,'','',''};
 UI.table.electrodeGroups = uitable(UI.tabs.electrodeGroups,'Data',UI.list.tableData,'Position',[0, 50, 620, 315],'ColumnWidth',{20 50 370 115},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[10, 10, 75, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[95, 10, 75, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
-% uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[10, 10, 75, 30],'String','Add group','Callback',@(src,evnt)addElectrodeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[95, 10, 75, 30],'String','Edit group','Callback',@(src,evnt)editElectrodeGroup,'Units','normalized');
+uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteElectrodeGroup,'Units','normalized');
+% uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifyElectrodeGroup,'Units','normalized');
 % uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
 % UI.button.importGroupsFromXML1 = uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[495, 10, 115, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
@@ -414,7 +414,7 @@ UI.table.spikeGroups = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Pos
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[10, 10, 75, 30],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[95, 10, 75, 30],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
 uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[180, 10, 100, 30],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
-% uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifySpikeGroup,'Units','normalized');
+% uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[290, 10, 95, 30],'String','Verify group(s)','Callback',@(src,evnt)verifyElectrodeGroup,'Units','normalized');
 % uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[395, 10, 90, 30],'String','Sync groups','Callback',@(src,evnt)syncChannelGroups,'Units','normalized');
 % UI.button.importGroupsFromXML2 = uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[495, 10, 115, 30],'String','Import from xml','Callback',@(src,evnt)importGroupsFromXML,'Units','normalized');
 
@@ -2314,6 +2314,85 @@ uiwait(UI.fig)
     end
 
 %% Extracellular spike groups
+    
+    function deleteElectrodeGroup
+        % Deletes any electrode groups
+        if ~isempty(UI.table.electrodeGroups.Data) && ~isempty(find([UI.table.electrodeGroups.Data{:,1}], 1))
+            session.extracellular.electrodeGroups.channels([UI.table.electrodeGroups.Data{:,1}]) = [];
+            session.extracellular.nElectrodeGroups = size(session.extracellular.electrodeGroups.channels,2);
+            updateChannelGroupsList
+        else
+            errordlg(['Please select the electrode group(s) to delete'],'Error')
+        end
+    end
+
+    function addElectrodeGroup(regionIn)
+        % Add new electrode group
+        if exist('regionIn','var')
+            initElectrodeGroups = num2str(regionIn);
+            if isnumeric(session.extracellular.electrodeGroups.channels)
+                initChannels = num2str(session.extracellular.electrodeGroups.channels(regionIn,:));
+            else
+                initChannels = num2str(session.extracellular.electrodeGroups.channels{regionIn});
+            end
+            if isfield(session.extracellular.electrodeGroups,'label') & size(session.extracellular.electrodeGroups.label,2)>=regionIn & ~isempty(session.extracellular.electrodeGroups.label{regionIn})
+                initLabel = session.extracellular.electrodeGroups.label{regionIn};
+            else
+                initLabel = '';
+            end
+        else
+            if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.electrodeGroups,'channels') 
+                initElectrodeGroups = num2str(size(session.extracellular.electrodeGroups.channels,2)+1);
+            else
+                initElectrodeGroups = 1;
+                session.extracellular.nElectrodeGroups = 0;
+            end
+            initChannels = '';
+            initLabel = '';
+        end
+        
+        % Opens dialog
+        UI.dialog.electrodeGroups = dialog('Position', [300, 300, 500, 200],'Name','Electrode group','WindowStyle','modal'); movegui(UI.dialog.electrodeGroups,'center')
+        
+        uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'text', 'String', ['Electrode group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 173, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 150, 480, 25],'HorizontalAlignment','left','enable', 'off');
+        
+        uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsChannels = uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
+        
+        uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'text', 'String', 'Label', 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsLabel = uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'Edit', 'String', initLabel, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
+        
+        uicontrol('Parent',UI.dialog.electrodeGroups,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save electrode group','Callback',@(src,evnt)CloseSpikeGroups_dialog);
+        uicontrol('Parent',UI.dialog.electrodeGroups,'Style','pushbutton','Position',[250, 10, 240, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikeGroups_dialog);
+        
+        uicontrol(spikeGroupsChannels);
+        uiwait(UI.dialog.electrodeGroups);
+        
+        function CloseSpikeGroups_dialog
+            spikeGroup = str2double(spikeGroupsSpikeGroups.String);
+            if ~isempty(spikeGroupsChannels.String)
+                try
+                    session.extracellular.electrodeGroups.channels{spikeGroup} = eval(['[',spikeGroupsChannels.String,']']);
+                catch
+                    errordlg(['Channels not not formatted correctly'],'Error')
+                    uicontrol(spikeGroupsChannels);
+                    return
+                end
+            end
+            session.extracellular.electrodeGroups.label{spikeGroup} = spikeGroupsLabel.String;
+            delete(UI.dialog.electrodeGroups);
+            session.extracellular.nElectrodeGroups = size(session.extracellular.electrodeGroups,2);
+            updateChannelGroupsList;
+        end
+        function CancelSpikeGroups_dialog
+            delete(UI.dialog.electrodeGroups);
+        end
+    end
+
+
+
+
 
     function deleteSpikeGroup
         % Deletes any selected tags
@@ -2341,11 +2420,20 @@ uiwait(UI.fig)
                 initLabel = '';
             end
         else
-            initSpikeGroups = num2str(size(session.extracellular.spikeGroups.channels,2)+1);
+            if isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels') 
+                initSpikeGroups = num2str(size(session.extracellular.spikeGroups.channels,2)+1);
+            else
+                initSpikeGroups = 1;
+                session.extracellular.nSpikeGroups = 0;
+            end
             initChannels = '';
             initLabel = '';
         end
-        
+        if ~isfield(session.extracellular,'nSpikeGroups') && isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels')
+            session.extracellular.nSpikeGroups = numel(session.extracellular.spikeGroups.channels)
+        elseif ~isfield(session.extracellular,'nSpikeGroups') 
+            session.extracellular.nSpikeGroups = 0;
+        end
         % Opens dialog
         UI.dialog.spikeGroups = dialog('Position', [300, 300, 500, 200],'Name','Spike group','WindowStyle','modal'); movegui(UI.dialog.spikeGroups,'center')
         
@@ -2385,6 +2473,16 @@ uiwait(UI.fig)
         end
     end
 
+    function editElectrodeGroup
+        % Selected electrode group is parsed to the addElectrodeGroup dialog for edits
+        if ~isempty(UI.table.electrodeGroups.Data) && ~isempty(find([UI.table.electrodeGroups.Data{:,1}], 1)) && sum([UI.table.electrodeGroups.Data{:,1}]) == 1
+            fieldtoedit = find([UI.table.electrodeGroups.Data{:,1}]);
+            addElectrodeGroup(fieldtoedit)
+        else
+            errordlg(['Please select the electrode group to edit'],'Error')
+        end
+    end
+
     function editSpikeGroup
         % Selected spike group is parsed to the addSpikeGroup dialog for edits
         if ~isempty(UI.table.spikeGroups.Data) && ~isempty(find([UI.table.spikeGroups.Data{:,1}], 1)) && sum([UI.table.spikeGroups.Data{:,1}]) == 1
@@ -2394,8 +2492,8 @@ uiwait(UI.fig)
             errordlg(['Please select the spike group to edit'],'Error')
         end
     end
-
-    function verifySpikeGroup(~,~)
+    
+    function verifyElectrodeGroup(~,~)
         if isfield(session.extracellular,'electrodeGroups')
             if isnumeric(session.extracellular.electrodeGroups.channels)
                 channels = session.extracellular.electrodeGroups.channels(:);

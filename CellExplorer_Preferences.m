@@ -12,8 +12,8 @@
 % Display settings - An incomplete list:
 % 'Waveforms (single)','Waveforms (all)','Waveforms (image)','Raw waveforms (single)','Raw waveforms (all)','ACGs (single)',
 % 'ACGs (all)','ACGs (image)','CCGs (image)','sharpWaveRipple'
-UI.settings.customCellPlotIn{1} = 'Waveforms (all)';
-UI.settings.customCellPlotIn{2} = 'ISIs (all)'; 
+UI.settings.customCellPlotIn{1} = 'Waveforms (single)';
+UI.settings.customCellPlotIn{2} = 'ACGs (single)'; 
 UI.settings.customCellPlotIn{3} = 'RCs_firingRateAcrossTime';
 UI.settings.customCellPlotIn{4} = 'Waveforms (single)';
 UI.settings.customCellPlotIn{5} = 'CCGs (image)';
@@ -30,7 +30,7 @@ UI.settings.plotWaveformMetrics = 0;            % show waveform metrics on the s
 UI.settings.sortingMetric = 'burstIndex_Royer2012'; % metrics used for sorting image data
 UI.settings.markerSize = 15;                    % marker size in the group plots [default: 20]
 UI.settings.plotInsetChannelMap = 3;            % Show a channel map inset with waveforms.
-UI.settings.plotInsetACG = 2;                   % Show a ACG plot inset with waveforms.
+UI.settings.plotInsetACG = 0;                   % Show a ACG plot inset with waveforms.
 UI.settings.plotChannelMapAllChannels = true;   % Boolean. Show a select set of channels or all 
 UI.settings.waveformsAcrossChannelsAlignment = 'Probe layout'; % 'Probe layout', 'Electrode groups'
 UI.settings.colormap = hot(512);                % default colormap

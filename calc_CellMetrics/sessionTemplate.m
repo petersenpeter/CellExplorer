@@ -57,8 +57,10 @@ pathPieces = regexp(basepath, filesep, 'split'); % Assumes file structure: anima
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % General metadata
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% From the provided path, the session name, clustering path will be implied
 session.general.basePath =  basepath; % Full path
-temp = dir('Kilosort_*');
+
+temp = dir('Kilosort_*'); % Looks for a Kilosort output folder (KiloSortWrapper)
 if ~isempty(temp)
     session.general.clusteringPath = temp.name; % clusteringPath assumed from Kilosort
 else
@@ -71,33 +73,48 @@ session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Limited animal metadata (practical information)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% The animal data is relevant for filtering across datasets in CellExplorer
 if ~isfield(session,'animal')
-    session.animal.name = pathPieces{end-1}; % Animal name 
+    session.animal.name = pathPieces{end-1}; % Animal name is inferred from the data path
     session.animal.sex = 'Male'; % Male, Female, Unknown
-    session.animal.species = 'Rat'; % Mouse, Rat, ... (http://buzsakilab.com/wp/species/)
-    session.animal.strain = 'Long Evans'; % (http://buzsakilab.com/wp/strains/)
+    session.animal.species = 'Rat'; % Mouse, Rat
+    session.animal.strain = 'Long Evans';
     session.animal.geneticLine = 'Wild type';
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Extracellular
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'leastSignificantBit')) || isempty(session.extracellular.leastSignificantBit)) 
+% This section will set some default extracellular parameters. You can comment this out 
+% if you are importing these parameters another way. 
+% Extracellular parameters from a Neuroscope xml and buzcode sessionInfo file will be imported as well
+if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'sr')) || isempty(session.extracellular.sr))
+    session.extracellular.sr = 20000;           % Sampling rate
+    session.extracellular.nChannels = 64;       % number of channels
+    session.extracellular.fileName = '';        % (optional) file name of raw data
+    session.extracellular.electrodeGroups = num2cell(reshape(session.extracellular.nChannels,[8,8]),1);
+    session.extracellular.nElectrodeGroups = numel(session.extracellular.electrodeGroups);
+    session.extracellular.spikeGroups = session.extracellular.electrodeGroups;
+    session.extracellular.nSpikeGroups = session.extracellular.nElectrodeGroups;
+end
+if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'leastSignificantBit')) || isempty(session.extracellular.leastSignificantBit))
     session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
 end
-if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'probeDepths')) || isempty(session.extracellular.probeDepths)) 
+if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'probeDepths')) || isempty(session.extracellular.probeDepths))
     session.extracellular.probeDepths = 0;
 end
-if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'precision')) || isempty(session.extracellular.precision)) 
+if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'precision')) || isempty(session.extracellular.precision))
     session.extracellular.precision = 'int16';
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% You can have multiple sets of spike sorted data. 
+% The first set is loaded by default
 if ~isfield(session,'spikeSorting')
-    session.spikeSorting{1}.format = 'Phy'; % Sorting data-format: Phy, Kilosort, Klustakwik, KlustaViewer, SpikingCircus, Neurosuite
-    session.spikeSorting{1}.method = 'KiloSort'; % Sorting algorith: KiloSort, Klustakwik, MaskedKlustakwik, SpikingCircus
+    session.spikeSorting{1}.format = 'Phy'; % Sorting data-format: 'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust'
+    session.spikeSorting{1}.method = 'KiloSort'; % Sorting algorith: 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik'
     session.spikeSorting{1}.relativePath = session.general.clusteringPath;
     session.spikeSorting{1}.channels = [];
     session.spikeSorting{1}.manuallyCurated = 1;
@@ -107,20 +124,23 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Brain regions 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Brain regions  must be defined as index 1. Can be specified on a channel or spike group basis (below example for CA1 across all channels)
+% Brain regions  must be defined as index 1. Can be specified on a channel or electrode group basis (below example for CA1 across all channels)
 % session.brainRegions.CA1.channels = 1:128; % Brain region acronyms from Allan institute: http://atlas.brain-map.org/atlas?atlas=1)
+% session.brainRegions.CA1.electrodeGroups = 1:8; 
+
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Channel tags
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Channel tags must be defined as index 1. Each tag is a fieldname with the channels or spike groups as subfields.
 % Below examples shows 5 tags (Theta, Ripple, RippleNoise, Cortical, Bad)
-% session.channelTags.Theta.channels = 64; % Theta channel
-% session.channelTags.Ripple.channels = 64; % Ripple channel
-% session.channelTags.RippleNoise.channels = 1; % Ripple Noise reference channel
-% session.channelTags.Cortical.electrodeGroups = 3; % Cortical spike groups
-% session.channelTags.Bad.channels = 1; % Bad channels
-% session.channelTags.Bad.electrodeGroups = 1; % Bad spike groups (broken shanks)
+% session.channelTags.Theta.channels = 64;              % Theta channel
+% session.channelTags.Ripple.channels = 64;             % Ripple channel
+% session.channelTags.RippleNoise.channels = 1;         % Ripple Noise reference channel
+% session.channelTags.Cortical.electrodeGroups = 3;     % Cortical spike groups
+% session.channelTags.Bad.channels = 1;                 % Bad channels
+% session.channelTags.Bad.electrodeGroups = 1;          % Bad spike groups (broken shanks)
+
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Analysis tags
@@ -129,6 +149,10 @@ if ~isfield(session,'analysisTags') || (isfield(session,'analysisTags') && (~isf
     session.analysisTags.probesLayout = 'staggered'; % Probe layout: linear,staggered,poly2,poly 2,edge,poly3,poly 3,poly5,poly 5
     session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
 end
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Loading metadata from Kilosort
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Loading parameters from sessionInfo and xml (including skipped and dead channels)
@@ -187,9 +211,8 @@ if isfield(session,'extracellular') && isfield(session.extracellular,'nChannels'
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Importing channel tags
-% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+
+% Importing channel tags from sessionInfo
 if isfield(sessionInfo,'badchannels')
     if isfield(session.channelTags,'Bad')
         session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,sessionInfo.badchannels+1]);
@@ -209,9 +232,7 @@ if isfield(sessionInfo,'channelTags')
     end
 end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Importing brain regions
-% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Importing brain regions from sessionInfo
 if isfield(sessionInfo,'region')
     load BrainRegions.mat
     regionNames = unique(cellfun(@num2str,sessionInfo.region,'uni',0));
@@ -244,14 +265,13 @@ if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'fi
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Importing time series
+% Importing time series from intan metadatafile info.rhd
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Loading info about time series from Intan metadatafile info.rhd
 session = loadIntanMetadata(session);
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Importing skipped and dead channels
-% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Importing Neuroscope xml parameters (skipped channels, dead channels, notes and experimenters)
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if (importSkippedChannels || importSyncedChannels) && exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
     [sessionInfo, rxml] = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
     
