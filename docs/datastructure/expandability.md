@@ -18,23 +18,20 @@ Add your own metrics, groups, plots and opto-tagging
 ### Your own numeric or string metrics
 You can add your own metrics either as numeric values or string arrays. String arrays allow you to group your data by the unique strings set within features, and can be plotted in discrete values. All features in the cell metrics are automatically available in CellExplorer if they contain N values (N: number of cells). Make sure to not use a [fieldname already in use](https://cellexplorer.org/datastructure/standard-cell-metrics/).
 
-__Add string/char fields to your cell_metrics__
-Lets say you want to add a string metric to your cell metrics called cortical layers (describing the cortical layer for each of your cells, by predefined labels). This will be stored as a char cell array with a value for each cell, e.g.:
+__Add a string metrics to your cell_metrics.__
+Let's say you want to add a cell metric describing cortical layers for each cell, using predefined labels (Layer 1 to Layer 6). This can be stored as a char cell array, e.g.:
 ```m
 cell_metrics.corticalLayer = {'layer 5','layer 4','layer 2','layer 2/3','layer 1'}; % For nCells = 5
 ```
 
-__Add numeric value to your cell metrics__
-Numeric values are as straigh forward to implement. Lets say you want to add the preferred orientation of a drifting grating presented to cells in the [visual cortex](https://allensdk.readthedocs.io/en/latest/visual_coding_neuropixels.html#precomputed-stimulus-metrics). This will be stored as a char cell array with a value for each cell, e.g.:
+__Add numeric values to your cell metrics.__
+Let's say you want to add the preferred orientation of a drifting grating presented to cells in the [visual cortex](https://allensdk.readthedocs.io/en/latest/visual_coding_neuropixels.html#precomputed-stimulus-metrics). This will be stored as a char cell array with a value for each cell, e.g.:
 ```m
 cell_metrics.pref_ori_dg = [90,25,45,80,30]; % For nCells = 5
 ```
-Now these values can be added on a session level. If you open multiple sessions in CellExplorer, the custom metrics will automatically be imported. Cells without numeric values will have NaN values assigned and empty strings for char fields. The fields will automatically also appear in the dropdowns for the custom plot.
+Now these values can be added on a session level. If you open multiple sessions in CellExplorer, the custom metrics will automatically be imported. Cells without numeric values will have NaN values assigned and empty strings for char fields. The fields will also appear in the dropdowns for the custom group plot.
 
-You can also incorporate the calculation/import of metrics into the ProcessCellMetrics script by using the [custom calculation implementation](https://cellexplorer.org/pipeline/custom-calculations/).
-
-### Use the data containers
-The cell mentrics processing script `ProcessCellMetrics` will automatically detect container files: `*.events.mat`, `*.manipulation.mat`, `*.cellinfo.mat`
+You can also incorporate calculations/import of metrics into the `ProcessCellMetrics` script by using the [custom calculation implementation](https://cellexplorer.org/pipeline/custom-calculations/).
 
 ### Custom plot (e.g. spike triggered average response)
 Response curves, event histograms, firing rate maps, manipulations and other plots should be saved into predefined subfields. To categorize, a few field names (plot types) are available:
