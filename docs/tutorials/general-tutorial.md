@@ -8,7 +8,7 @@ nav_order: 1
 {: .no_toc}
 This tutorial shows you the full processing pipeline, from generating the necessary session metadata from the template, running the processing pipeline, opening multiple sessions for manual curation in CellExplorer, and finally using the cell_metrics for filtering cells, by two different criteria. The tutorial is also available as a Matlab script: (`tutorials/CellExplorer_Tutorial.m`).
 
-1. Define the basepath of the dataset to run. The dataset should at minimum consist of a `basename.dat`, a `basename.xml` and spike sorted data.
+1. Define the basepath of the dataset to run. The dataset should at minimum consist of the raw data `basename.dat`, and spike sorted data. An optional Neuroscope compatible `basename.xml` can also be used.
 ```m
 basepath = '/your/data/path/basename/';
 cd(basepath)
