@@ -54,7 +54,7 @@ else
     ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
 end
 
-cell_metrics_type_struct = {'general','acg','isi','waveforms','putativeConnections','firingRateMaps','responseCurves','events','manipulations','tags','groups','groundTruthClassification'};
+cell_metrics_type_struct = {'general','acg','isi','waveforms','putativeConnections','firingRateMaps','responseCurves','events','manipulations','tags','groups','groundTruthClassification','spikes'};
 
 % disp('Cell-metrics: $')
 if ~isempty(sessionNames)

@@ -49,7 +49,10 @@ defined_repositories = fieldnames(db_settings.repositories);
 
 for i = 1:length(sessions)
     session = sessions{i};
-    if ~contains(defined_repositories,{session.general.repositories{1}})
+    if ~isfield(session.general,'repositories') 
+        warning('The repository has not been defined for the session.');
+        return
+    elseif ~contains(defined_repositories,{session.general.repositories{1}})
         warning(['The repository has not been defined. Please specify the path for ' session.general.repositories{1},' in db_local_repositories.m']);
         edit db_local_repositories.m
         return

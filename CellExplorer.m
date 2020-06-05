@@ -10,20 +10,20 @@ function cell_metrics = CellExplorer(varargin)
 % varargin (Variable-length input argument list)
 %
 % - Single session struct with cell_metrics from one or more sessions
-% metrics                - cell_metrics struct
+% metrics                - cell_metrics struc
 %
 % - Single session inputs
 % basepath               - Path to session (base directory)
 % clusteringpath         - Path to cluster data
 % basename               - basename (database session name)
-% id                     - Database numeric id
+% id                     - BuzLabDB numeric id
 % session                - Session struct
 %
 % - Batch session inputs (when loading multiple session)
 % basepaths              - Paths to sessions (base directory)
 % clusteringpaths        - Paths to cluster data
-% sessionIDs             - Database numeric id
-% sessions               - basenames (database session names)
+% sessionIDs             - BuzLabDB numeric ids
+% sessions               - session names (basenames)
 %
 % - Example calls:
 % cell_metrics = CellExplorer                             % Load from current path, assumed to be a basepath
@@ -31,7 +31,7 @@ function cell_metrics = CellExplorer(varargin)
 % cell_metrics = CellExplorer('metrics',cell_metrics)     % Load from cell_metrics
 % cell_metrics = CellExplorer('session',session)          % Load session from session struct
 % cell_metrics = CellExplorer('sessionName','rec1')       % Load session from database session name
-% cell_metrics = CellExplorer('sessionID',10985)          % Load session from database session id
+% cell_metrics = CellExplorer('sessionID',10985)          % Load session from BuzLabDB session id
 % cell_metrics = CellExplorer('sessions',{'rec1','rec2'})          % Load batch from database
 % cell_metrics = CellExplorer('clusteringpaths',{'path1','path1'}) % Load batch from a list with paths
 % cell_metrics = CellExplorer('basepaths',{'path1','[path1'})      % Load batch from a list with paths
@@ -108,10 +108,10 @@ UI.settings.tSNE.calcNarrowAcg = true; UI.settings.tSNE.calcFiltWaveform = true;
 UI.settings.tSNE.calcWideAcg = true; UI.settings.dispLegend = 1; UI.settings.tags = {'good','bad','mua','noise','inverseSpike','Other'};
 UI.settings.groundTruthMarkers = {'d','o','s','*','+','p'}; UI.settings.groundTruth = {'PV+','NOS1+','GAT1+'};
 UI.settings.plotWaveformMetrics = 1; UI.settings.metricsTable = 1; synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'};
-UI.settings.stickySelection = false; UI.settings.fieldsMenuMetricsToExlude  = {'tags','groundTruthClassification','groups'};
-UI.settings.plotOptionsToExlude = {'acg_','waveforms_','isi_','responseCurves_thetaPhase','responseCurves_thetaPhase_zscored','responseCurves_firingRateAcrossTime','groups','tags','groundTruthClassification'}; UI.settings.tSNE.dDistanceMetric = 'euclidean';
-UI.settings.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','groups'}; UI.params.inbound = [];
-UI.settings.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial','groups'};
+UI.settings.stickySelection = false; UI.settings.fieldsMenuMetricsToExlude  = {'tags','groundTruthClassification','groups','spikes'};
+UI.settings.plotOptionsToExlude = {'acg_','waveforms_','isi_','responseCurves_thetaPhase','responseCurves_thetaPhase_zscored','responseCurves_firingRateAcrossTime','groups','tags','groundTruthClassification','spikes'}; UI.settings.tSNE.dDistanceMetric = 'euclidean';
+UI.settings.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','groups','spikes'}; UI.params.inbound = [];
+UI.settings.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial','groups','spikes'};
 UI.settings.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','spikeGroup'});
 UI.settings.firingRateMap.showHeatmap = false; UI.settings.firingRateMap.showLegend = false; UI.settings.firingRateMap.showHeatmapColorbar = false;
 UI.settings.referenceData = 'None'; UI.settings.groundTruthData = 'None'; UI.BatchMode = false; UI.params.ii_history = 1; UI.params.ClickedCells = [];
@@ -126,6 +126,7 @@ UI.settings.plotExcitatoryConnections = true; UI.settings.plotInhibitoryConnecti
 UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;0.4940, 0.1840, 0.5560;0.4660, 0.6740, 0.1880;0.3010, 0.7450, 0.9330;0.6350, 0.0780, 0.1840];
 
 groups_ids = []; clusClas = []; plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = [];
+hover2highlight.handle1 = []; hover2highlight.handle2 = []; hover2highlight.handle3 = []; hover2highlight.handle4 = [];
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
 brainRegions_list = []; brainRegions_acronym = []; cell_class_count = [];  plotOptions = '';
 plotAcgFit = 0; clasLegend = 0; Colorval = 1; plotClas = []; plotClas11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
@@ -149,7 +150,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.64;
+CellExplorerVersion = 1.65;
 
 UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800]);
 hManager = uigetmodemanager(UI.fig);
@@ -234,7 +235,7 @@ elseif ~isempty(id) || ~isempty(sessionName) || ~isempty(session)
             return
         end
     else
-        warning('Database tools not available');
+        warning('BuzLabDB tools not available');
         return
     end
 elseif ~isempty(sessionIDs)
@@ -247,7 +248,7 @@ elseif ~isempty(sessionIDs)
             return
         end
     else
-        warning('Database tools not available');
+        warning('BuzLabDB tools not available');
         return
     end
 elseif ~isempty(sessionsin)
@@ -260,7 +261,7 @@ elseif ~isempty(sessionsin)
             return
         end
     else
-        warning('Database tools not available');
+        warning('BuzLabDB tools not available');
         return
     end
 elseif ~isempty(clusteringpaths)
@@ -360,15 +361,15 @@ end
 UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'About CellExplorer',menuSelectedFcn,@AboutDialog);
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit preferences',menuSelectedFcn,@LoadPreferences,'Separator','on');
-uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit DB credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
-uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit DB repository paths',menuSelectedFcn,@editDBrepositories);
+uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit BuzLabDB credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
+uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit BuzLabDB repository paths',menuSelectedFcn,@editDBrepositories);
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Benchmarking',menuSelectedFcn,@runBenchMark,'Separator','on');
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Quit',menuSelectedFcn,@exitCellExplorer,'Separator','on','Accelerator','W');
 
 % File
 UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
 uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
-uimenu(UI.menu.file.topMenu,menuLabel,'Load session(s) from database',menuSelectedFcn,@DatabaseSessionDialog,'Accelerator','D');
+uimenu(UI.menu.file.topMenu,menuLabel,'Load session(s) from BuzLabDB',menuSelectedFcn,@DatabaseSessionDialog,'Accelerator','D');
 UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save classification',menuSelectedFcn,@saveDialog,'Separator','on','Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Restore classification from backup',menuSelectedFcn,@restoreBackup);
 uimenu(UI.menu.file.topMenu,menuLabel,'Reload cell metrics',menuSelectedFcn,@reloadCellMetrics,'Separator','on');
@@ -379,11 +380,14 @@ UI.menu.navigation.topMenu = uimenu(UI.fig,menuLabel,'Navigation');
 UI.menu.navigation.goToCell = uimenu(UI.menu.navigation.topMenu,menuLabel,'Go to cell',menuSelectedFcn,@goToCell,'Accelerator','F');
 UI.menu.navigation.previousSelectedCell = uimenu(UI.menu.navigation.topMenu,menuLabel,'Go to previous select cell [backspace]',menuSelectedFcn,@ii_history_reverse);
 
+% Cell selection
 UI.menu.cellSelection.topMenu = uimenu(UI.fig,menuLabel,'Cell selection');
 uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Polygon selection of cells from plot',menuSelectedFcn,@polygonSelection,'Accelerator','P');
 uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Perform group action [space]',menuSelectedFcn,@selectCellsForGroupAction);
 UI.menu.cellSelection.stickySelection = uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Sticky cell selection',menuSelectedFcn,@toggleStickySelection,'Separator','on');
 UI.menu.cellSelection.stickySelectionReset = uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Reset sticky selection',menuSelectedFcn,@toggleStickySelectionReset);
+UI.menu.cellSelection.hoverEffect = uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Highlight cells by mouse hover',menuSelectedFcn,@adjustHoverEffect,'Separator','on');
+if UI.settings.hoverEffect; UI.menu.cellSelection.hoverEffect.Checked = 'on'; end 
 
 % Classification
 UI.menu.edit.topMenu = uimenu(UI.fig,menuLabel,'Classification');
@@ -543,8 +547,8 @@ uimenu(UI.menu.spikeData.topMenu,menuLabel,'Hover to edit spike plot',menuSelect
 UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
 uimenu(UI.menu.session.topMenu,menuLabel,'View metadata for current session',menuSelectedFcn,@viewSessionMetaData);
 uimenu(UI.menu.session.topMenu,menuLabel,'Open directory of current session',menuSelectedFcn,@openSessionDirectory,'Accelerator','C','Separator','on');
-uimenu(UI.menu.session.topMenu,menuLabel,'Show current session in the Buzsaki lab web DB',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
-uimenu(UI.menu.session.topMenu,menuLabel,'Show current animal in the Buzsaki lab web DB',menuSelectedFcn,@showAnimalInWebDB);
+uimenu(UI.menu.session.topMenu,menuLabel,'Show current session in the BuzLabDB',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
+uimenu(UI.menu.session.topMenu,menuLabel,'Show current animal in the BuzLabDB',menuSelectedFcn,@showAnimalInWebDB);
 
 % Help
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
@@ -569,6 +573,7 @@ if ~isempty(classificationTrackChanges)
     UI.menu.file.save.ForegroundColor = [0.6350 0.0780 0.1840];
 end
 
+
 %% % % % % % % % % % % % % % % % % % % % % %
 % UI panels
 % % % % % % % % % % % % % % % % % % % % % %
@@ -580,7 +585,7 @@ UI.HBox = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0);
 UI.panel.left = uix.VBoxFlex('Parent',UI.HBox,'position',[0 0.66 0.26 0.31]);
 
 % Elements in left panel
-UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText);
+UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText,'tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with and // or operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nMake sure to include  spaces between fields and operators' ));
 UI.panel.custom = uix.VBox('Position',[0 0.717 1 0.255],'Parent',UI.panel.left);
 UI.panel.group = uix.VBox('Parent',UI.panel.left);
 UI.panel.displaySettings = uix.VBox('Parent',UI.panel.left);
@@ -591,7 +596,9 @@ set(UI.panel.left, 'Heights', [25 230 -100 -180 -90], 'Spacing', 8);
 UI.VBox = uix.VBox( 'Parent', UI.HBox, 'Spacing', 0, 'Padding', 0 );
 
 % Title box
-UI.panel.centerTop = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.VBox);
+% UI.panel.centerTop = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.VBox);
+% Title with details about the selected cell and current session
+UI.title = uicontrol('Style','text','Units','normalized','Position',[0 0 1 1],'String',{'Cell details'},'HorizontalAlignment','center','FontSize',13,'Parent',UI.VBox);
 
 % Grid Flex with plots
 UI.panel.GridFlex = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.VBox);
@@ -635,24 +642,31 @@ subfig_ax(8) = axes('Parent',UI.panel.subfig_ax8);
 subfig_ax(9) = axes('Parent',UI.panel.subfig_ax9);
 
 
-% Title with details about the selected cell and current session
-UI.title = uicontrol('Style','text','Units','normalized','Position',[0 0 1 1],'String',{'Cell details'},'HorizontalAlignment','center','FontSize',13,'Parent',UI.panel.centerTop);
+
 
 % % % % % % % % % % % % % % % % % % %
 % Metrics table
 % % % % % % % % % % % % % % % % % % %
 
+if verLessThan('matlab', '9.5')
+    tooltip = 'TooltipString';
+else
+    tooltip = 'Tooltip';
+end
+
 % Table with metrics for selected cell
-UI.table = uitable('Parent',UI.panel.right,'Data',[table_fieldsNames,table_metrics(:,1)],'Units','normalized','Position',[0 0.003 1 0.485],'ColumnWidth',{100,  100},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn', {@keyPress});
+UI.table = uitable('Parent',UI.panel.right,'Data',[table_fieldsNames,table_metrics(:,1)],'Units','normalized','Position',[0 0.003 1 0.485],'ColumnWidth',{100,  100},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn', {@keyPress},'tooltip',sprintf('Metrics for current cell. \nClick left column to select metric in custom group plot on x axis. \nClick right column to select metric in custom group plot on y axis  \nChange table data in Table data menu'));
 
 set(UI.panel.right, 'Heights', [50 250 180 -1], 'Spacing', 8);
 
 if strcmp(UI.settings.metricsTableType,'Metrics')
     UI.settings.metricsTable=1;
     UI.menu.tableData.ops(1).Checked = 'On';
+    UI.table.(tooltip) = sprintf('Metrics for current cell. \nClick left column to select metric in custom group plot on x axis. \nClick right column to select metric in custom group plot on y axis. \nChange table data in Table data menu');
 elseif strcmp(UI.settings.metricsTableType,'Cells')
     UI.settings.metricsTable=2; UI.table.ColumnName = {'','#',UI.tableData.Column1,UI.tableData.Column2};
     UI.table.ColumnEditable = [true false false false];
+    UI.table.(tooltip) = sprintf('List of filtered cells. \nClick any row to go to that cell. \nChange table data in Table data menu. \nYou can customize the order, and data shown in the two columns from the menu.');
     UI.menu.tableData.ops(2).Checked = 'On';
 else
     UI.settings.metricsTable=3; UI.table.Visible='Off';
@@ -677,9 +691,9 @@ set(UI.panel.centerBottom, 'Widths', [-600 -300], 'Spacing', 5);
 % % % % % % % % % % % % % % % % % % % %
 
 % Navigation buttons
-uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0 0 0.33 1],'String','<','Callback',@(src,evnt)back,'KeyPressFcn', {@keyPress});
-uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0 0.33 1],'String','GoTo','Callback',@(src,evnt)goToCell,'KeyPressFcn', {@keyPress});
-UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0 0.33 1],'String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0 0 0.33 1],'String','<','Callback',@(src,evnt)back,'KeyPressFcn', {@keyPress},'tooltip','Go to previous cell (i-1)');
+uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0 0.33 1],'String','GoTo','Callback',@(src,evnt)goToCell,'KeyPressFcn', {@keyPress},'tooltip','Open a dialog to provide specific cell id');
+UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0 0.33 1],'String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress},'tooltip','Go to next cell (i+1)');
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell assignments panel (right side)
@@ -688,18 +702,18 @@ UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton'
 % Cell classification
 colored_string = DefineCellTypeList;
 uicontrol('Parent',UI.panel.cellAssignment,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Cell classification','HorizontalAlignment','center');
-UI.listbox.cellClassification = uicontrol('Parent',UI.panel.cellAssignment,'Style','listbox','Position',[0 54 148 48],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType,'KeyPressFcn', {@keyPress});
+UI.listbox.cellClassification = uicontrol('Parent',UI.panel.cellAssignment,'Style','listbox','Position',[0 54 148 48],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType,'KeyPressFcn', {@keyPress},'tooltip','Cell type of current cell. Click to assign');
 
 % Poly-select and adding new cell type
 UI.panel.buttonGroup0 = uix.HBox('Parent',UI.panel.cellAssignment);
-uicontrol('Parent',UI.panel.buttonGroup0,'Style','pushbutton','Units','normalized','Position',[0 0 0.5 1],'String','O Polygon','Callback',@(src,evnt)polygonSelection,'KeyPressFcn', {@keyPress});
-uicontrol('Parent',UI.panel.buttonGroup0,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.5 1],'String','Actions','Callback',@(src,evnt)selectCellsForGroupAction,'KeyPressFcn', {@keyPress}); % AddNewCellType
+uicontrol('Parent',UI.panel.buttonGroup0,'Style','pushbutton','Units','normalized','Position',[0 0 0.5 1],'String','O Polygon','Callback',@(src,evnt)polygonSelection,'KeyPressFcn', {@keyPress},'tooltip','Draw a polygon around cells to select them');
+uicontrol('Parent',UI.panel.buttonGroup0,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.5 1],'String','Actions','Callback',@(src,evnt)selectCellsForGroupAction,'KeyPressFcn', {@keyPress},'tooltip','Perform group action on selected cells');
 
 % Brain region
-UI.pushbutton.brainRegion = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 20 145 15],'Units','normalized','String',['Region: ', cell_metrics.brainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyPressFcn', {@keyPress});
+UI.pushbutton.brainRegion = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 20 145 15],'Units','normalized','String',['Region: ', cell_metrics.brainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyPressFcn', {@keyPress},'tooltip','Brain region of current cell. Click to assign');
 
 % Custom labels
-UI.pushbutton.labels = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 3 145 15],'Units','normalized','String',['Label: ', cell_metrics.labels{ii}],'Callback',@(src,evnt)buttonLabel,'KeyPressFcn', {@keyPress});
+UI.pushbutton.labels = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 3 145 15],'Units','normalized','String',['Label: ', cell_metrics.labels{ii}],'Callback',@(src,evnt)buttonLabel,'KeyPressFcn', {@keyPress},'tooltip','Label of current cell. Click to assign');
 
 set(UI.panel.cellAssignment, 'Heights', [15 -1 30 30 30], 'Spacing', 5);
 
@@ -712,7 +726,7 @@ UI.tabs.tags = uitab(UI.panel.tabgroup1,'Title','Tags');
 UI.tabs.deepsuperficial = uitab(UI.panel.tabgroup1,'Title','D/S');
 
 % Deep/Superficial
-UI.listbox.deepSuperficial = uicontrol('Parent',UI.tabs.deepsuperficial,'Style','listbox','Position',getpixelposition(UI.tabs.deepsuperficial),'Units','normalized','String',UI.settings.deepSuperficial,'max',1,'min',1,'Value',cell_metrics.deepSuperficial_num(ii),'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress});
+UI.listbox.deepSuperficial = uicontrol('Parent',UI.tabs.deepsuperficial,'Style','listbox','Position',getpixelposition(UI.tabs.deepsuperficial),'Units','normalized','String',UI.settings.deepSuperficial,'max',1,'min',1,'Value',cell_metrics.deepSuperficial_num(ii),'Callback',@(src,evnt)buttonDeepSuperficial,'KeyPressFcn', {@keyPress},'tooltip','Deep superficial assignment of current cell. Click to assign');
 
 % Tags
 buttonPosition = getButtonLayout(UI.tabs.tags,UI.settings.tags,1);
@@ -728,32 +742,32 @@ UI.togglebutton.tag(m) = uicontrol('Parent',UI.tabs.tags,'Style','togglebutton',
 
 % Custom plot
 uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 10 45 10],'Units','normalized','String','Custom plot style','HorizontalAlignment','center');
-UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 82 144 10],'Units','normalized','String',{'2D scatter plot','+ Histograms','3D scatter plot','Raincloud plot'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)customPlotStyle,'KeyPressFcn', {@keyPress});
+UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 82 144 10],'Units','normalized','String',{'2D scatter plot','+ Histograms','3D scatter plot','Raincloud plot'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)customPlotStyle,'KeyPressFcn', {@keyPress},'tooltip','Plot style of custom group plot');
 
 % Custom plotting menues
 UI.panel.buttonGroup1 = uix.HBox('Parent',UI.panel.custom);
 uicontrol('Parent',UI.panel.buttonGroup1,'Style','text','Units','normalized','Position',[0.2 0 0.5 1],'String','  X data','HorizontalAlignment','left');
-UI.checkbox.logx = uicontrol('Parent',UI.panel.buttonGroup1,'Style','checkbox','Units','normalized','Position',[0.5 0 0.5 1],'String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 62 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logx = uicontrol('Parent',UI.panel.buttonGroup1,'Style','checkbox','Units','normalized','Position',[0.5 0 0.5 1],'String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle x axis linear/log');
+UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 62 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on x axis');
 set(UI.panel.buttonGroup1, 'Widths', [-1 70], 'Spacing', 5);
 
 UI.panel.buttonGroup2 = uix.HBox('Parent',UI.panel.custom);
 uicontrol('Parent',UI.panel.buttonGroup2,'Style','text','Position',[0.2 0 0.5 1],'Units','normalized','String','  Y data','HorizontalAlignment','left');
-UI.checkbox.logy = uicontrol('Parent',UI.panel.buttonGroup2,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 42 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logy = uicontrol('Parent',UI.panel.buttonGroup2,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle y axis linear/log');
+UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 42 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on y axis');
 set(UI.panel.buttonGroup2, 'Widths', [-1 70], 'Spacing', 5);
 
 UI.panel.buttonGroup3 = uix.HBox('Parent',UI.panel.custom);
 uicontrol('Parent',UI.panel.buttonGroup3,'Style','text','Position',[0.2 0 0.5 1],'Units','normalized','String','  Z data','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.checkbox.logz = uicontrol('Parent',UI.panel.buttonGroup3,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 22 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logz = uicontrol('Parent',UI.panel.buttonGroup3,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle z axis linear/log');
+UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 22 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on z axis');
 UI.popupmenu.zData.Enable = 'Off'; UI.checkbox.logz.Enable = 'Off';
 set(UI.panel.buttonGroup3, 'Widths', [-1 70], 'Spacing', 5);
 
 UI.panel.buttonGroup4 = uix.HBox('Parent',UI.panel.custom);
 uicontrol('Parent',UI.panel.buttonGroup4,'Style','text','Position',[0.2 0 0.5 1],'Units','normalized','String','  Marker size','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
-UI.checkbox.logMarkerSize = uicontrol('Parent',UI.panel.buttonGroup4,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log size','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotMarkerSizeLog(),'KeyPressFcn', {@keyPress});
-UI.popupmenu.markerSizeData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotMarkerSizedata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotMarkerSize(),'KeyPressFcn', {@keyPress});
+UI.checkbox.logMarkerSize = uicontrol('Parent',UI.panel.buttonGroup4,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log size','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotMarkerSizeLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle marker size linear/log');
+UI.popupmenu.markerSizeData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotMarkerSizedata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotMarkerSize(),'KeyPressFcn', {@keyPress},'tooltip','Metric data for marker size');
 UI.popupmenu.markerSizeData.Enable = 'Off'; UI.checkbox.logMarkerSize.Enable = 'Off';
 set(UI.panel.buttonGroup4, 'Widths', [-1 70], 'Spacing', 5);
 set(UI.panel.custom, 'Heights', [15 20 15 20 15 20 15 20 15 25], 'Spacing', 5);
@@ -762,11 +776,11 @@ set(UI.panel.custom, 'Heights', [15 20 15 20 15 20 15 20 15 25], 'Spacing', 5);
 % Custom colors
 % % % % % % % % % % % % % % % % % % % %'
 uicontrol('Parent',UI.panel.group,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Color groups & filter','HorizontalAlignment','center');
-UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 73 144 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress});
+UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 73 144 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress},'tooltip','Filter and select group data');
 updateColorMenuCount
-UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[0 20 148 54],'Units','normalized','String',{},'max',10,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Enable','Off');
-UI.checkbox.groups = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 10 144 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Enable','Off','Value',1);
-UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 0 144 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress});
+UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[0 20 148 54],'Units','normalized','String',{},'max',100,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Enable','Off','tooltip','Group data');
+UI.checkbox.groups = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 10 144 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Enable','Off','Value',1,'tooltip','Group data by cell type');
+UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 0 144 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'tooltip','Compare filtered cells to the rest of the population');
 
 set(UI.panel.group, 'Heights', [15 20 -1 20 20], 'Spacing', 5);
 
@@ -776,18 +790,18 @@ set(UI.panel.group, 'Heights', [15 20 -1 20 20], 'Spacing', 5);
 % Select subset of cell type
 updateCellCount
 uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Display settings','HorizontalAlignment','center');
-UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[0 73 148 48],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.settings.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress});
+UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[0 73 148 48],'Units','normalized','String',strcat(UI.settings.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.settings.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress},'tooltip','Displayed putative cell types. Select to filter');
 
 % Number of plots
 UI.panel.buttonGroup5 = uix.HBox('Parent',UI.panel.displaySettings);
 uicontrol('Parent',UI.panel.buttonGroup5,'Style','text','Position',[0 0 0.3 1],'Units','normalized','String','Layout','HorizontalAlignment','center');
-UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.buttonGroup5,'Style','popupmenu','Position',[0.3 0 0.7 1],'Units','normalized','String',{'GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6','GUI 1+6'},'max',1,'min',1,'Value',3,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress});
+UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.buttonGroup5,'Style','popupmenu','Position',[0.3 0 0.7 1],'Units','normalized','String',{'GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6','GUI 1+6'},'max',1,'min',1,'Value',3,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress},'tooltip','Select the GUI layout');
 set(UI.panel.buttonGroup5, 'Widths', [45 -1], 'Spacing', 5);
 
 for i_disp = 1:6
     UI.panel.buttonGroupView{i_disp} = uix.HBox('Parent',UI.panel.displaySettings);
     uicontrol('Parent',UI.panel.buttonGroupView{i_disp},'Style','text','String',num2str(i_disp),'HorizontalAlignment','center');
-    UI.popupmenu.customplot{i_disp} = uicontrol('Parent',UI.panel.buttonGroupView{i_disp},'Style','popupmenu','String',plotOptions,'max',1,'min',1,'Value',1,'Callback',@toggleWaveformsPlot,'KeyPressFcn', {@keyPress});
+    UI.popupmenu.customplot{i_disp} = uicontrol('Parent',UI.panel.buttonGroupView{i_disp},'Style','popupmenu','String',plotOptions,'max',1,'min',1,'Value',1,'Callback',@toggleWaveformsPlot,'KeyPressFcn', {@keyPress},'tooltip','Single cell plot');
     set(UI.panel.buttonGroupView{i_disp}, 'Widths', [15 -1], 'Spacing', 2);
     if any(strcmp(UI.settings.customCellPlotIn{i_disp},UI.popupmenu.customplot{i_disp}.String)); UI.popupmenu.customplot{i_disp}.Value = find(strcmp(UI.settings.customCellPlotIn{i_disp},UI.popupmenu.customplot{i_disp}.String)); else; UI.popupmenu.customplot{i_disp}.Value = 1; end
     UI.settings.customPlot{i_disp} = plotOptions{UI.popupmenu.customplot{i_disp}.Value};
@@ -800,9 +814,9 @@ if find(strcmp(UI.settings.plotCountIn,UI.popupmenu.plotCount.String)); UI.popup
 % % % % % % % % % % % % % % % % % % % %
 
 % UI display settings tabs
-UI.tabs.legends = uitab(UI.panel.tabgroup2,'Title','Legend');
-UI.tabs.dispTags_minus = uitab(UI.panel.tabgroup2,'Title','-Tags');
-UI.tabs.dispTags_plus = uitab(UI.panel.tabgroup2,'Title','+Tags');
+UI.tabs.legends = uitab(UI.panel.tabgroup2,'Title','Legend','tooltip',sprintf('Legend for plots. \nClick to show legends in separate figure'));
+UI.tabs.dispTags_minus = uitab(UI.panel.tabgroup2,'Title','-Tags','tooltip',sprintf('Cell tags. \nHide cells with one or more specific tags'));
+UI.tabs.dispTags_plus = uitab(UI.panel.tabgroup2,'Title','+Tags','tooltip',sprintf('Cell tags. \nFilter cells with one or more specific tags'));
 UI.axis.legends = axes(UI.tabs.legends,'Position',[0 0 1 1]);
 set(UI.axis.legends,'ButtonDownFcn',@createLegend)
 
@@ -1162,9 +1176,9 @@ function updateUI
             h_scatter(2) = subplot(4,4,16); hold on % x axis
             h_scatter(2).Position = [0.30 0 0.685 0.21];
             h_scatter(3) = subplot(4,4,1); hold on % y axis
-            h_scatter(3).Position = [0 0.30 0.21 0.685];
+            h_scatter(3).Position = [0 0.30 0.21 0.675];
             subfig_ax(1) = subplot(4,4,4); hold on
-            subfig_ax(1).Position = [0.30 0.30 0.685 0.685];
+            subfig_ax(1).Position = [0.30 0.30 0.685 0.675];
             view(h_scatter(3),[90 -90])
             set(h_scatter(2), 'visible', 'off');
             set(h_scatter(3), 'visible', 'off');
@@ -1816,6 +1830,7 @@ function updateUI
             end
         end
     end
+    subfig_ax(1).Title.String = 'Custom group plot';
     
     %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 2
@@ -1845,6 +1860,7 @@ function updateUI
         end
         subfig_ax(2).YLabel.String = 'Burst Index (Royer 2012)';
         subfig_ax(2).XLabel.String = ['Trough-to-Peak (',char(181),'s)'];
+        subfig_ax(2).Title.String = 'Classic separation plot';
         set(subfig_ax(2), 'YScale', 'log');
         
         % Reference data
@@ -1958,6 +1974,7 @@ function updateUI
         xlim(fig3_axislimit_x); ylim(fig3_axislimit_y);
         subfig_ax(3).YLabel.String = 't-SNE';
         subfig_ax(3).XLabel.String = 't-SNE';
+        subfig_ax(3).Title.String = 't-SNE';
         plotGroupData(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)',plotConnections(3))
     end
     
@@ -2062,6 +2079,7 @@ end
             plotAxes.XLabel.String = 'Time (ms)';
             plotAxes.YLabel.String = ['Voltage (',char(181),'V)'];
             plotAxes.Title.String = customPlotSelection;
+%             plotAxes.ContextMenu = cm;
             % Single waveform with std
             if isfield(cell_metrics.waveforms,'filt_std')
                 patch([cell_metrics.waveforms.time{ii},flip(cell_metrics.waveforms.time{ii})], [cell_metrics.waveforms.filt{ii}+cell_metrics.waveforms.filt_std{ii},flip(cell_metrics.waveforms.filt{ii}-cell_metrics.waveforms.filt_std{ii})],'black','EdgeColor','none','FaceAlpha',.2,'HitTest','off')
@@ -2360,15 +2378,20 @@ end
             plotAxes.XLabel.String = 'Time (ms)';
             plotAxes.YLabel.String = 'Cells';
             plotAxes.Title.String = customPlotSelection;
+            
+            general = generateCCGs(batchIDs,general); % Generates CCGs from spikes
             if isfield(general,'ccg') && ~isempty(UI.params.subset)
                 if UI.BatchMode
                     subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                    subset222 = UI.params.subset(subset1);
                     subset1 = cell_metrics.UID(UI.params.subset(subset1));
                 else
                     subset1 = UI.params.subset;
+                    subset222 = UI.params.subset;
                 end
                 subset1 = [cell_metrics.UID(ii),subset1(subset1~=cell_metrics.UID(ii))];
                 Ydata = [1:length(subset1)];
+
                 if strcmp(UI.settings.acgType,'Narrow')
                     Xdata = [-30:30]/2;
                     Zdata = general.ccg(41+30:end-40-30,cell_metrics.UID(ii),subset1)./max(general.ccg(41+30:end-40-30,cell_metrics.UID(ii),subset1));
@@ -2381,7 +2404,8 @@ end
                 colormap(UI.settings.colormap), axis tight
                 
                 % Synaptic partners are also displayed
-                ploConnectionsHighlights(Xdata,subset1)
+%                 subset2 = cell_metrics.UID(subset222);
+                ploConnectionsHighlights([Xdata(1),Xdata(end)],subset222)
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
@@ -2824,6 +2848,29 @@ end
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
             end
             
+        elseif contains(customPlotSelection,'raster_')
+            if isfield(cell_metrics,'spikes') && numel(cell_metrics.spikes.times)>=ii && ~isempty(cell_metrics.spikes.times{ii})
+                % ii,general,batchIDs,plotAxes
+                line(cell_metrics.spikes.times{ii},spikes2cv2(cell_metrics.spikes.times{ii}),'HitTest','off','Marker','.','LineStyle','none','color', [0.5 0.5 0.5]), axis tight
+                axis tight, ax6 = axis; 
+                if isfield(general,'states')
+                    plotTemporalStates
+                    ax6 = axis;
+                end
+                if isfield(general.responseCurves.firingRateAcrossTime,'boundaries')
+                    boundaries = general.responseCurves.firingRateAcrossTime.boundaries;
+                    if isfield(general.responseCurves.firingRateAcrossTime,'boundaries_labels')
+                        boundaries_labels = general.responseCurves.firingRateAcrossTime.boundaries_labels;
+                        if length(boundaries_labels) == length(boundaries)
+                            text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',1);
+                        end
+                    end
+                    line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off');
+                end
+            else
+                text(0.5,0.5,'No spike data','FontWeight','bold','HorizontalAlignment','center')
+            end
+            
         elseif contains(customPlotSelection,'RCs_') && ~contains(customPlotSelection,'Phase') && ~contains(customPlotSelection,'(image)') && ~contains(customPlotSelection,'(all)')
             responseCurvesName = customPlotSelection(5:end);
             plotAxes.XLabel.String = 'Time (s)';
@@ -2840,7 +2887,10 @@ end
                 subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.responseCurves.(responseCurvesName));
 
                 axis tight, ax6 = axis; 
-                
+                if contains(customPlotSelection,'RCs_firingRateAcrossTime') && isfield(general,'states')
+                    plotTemporalStates
+                    ax6 = axis;
+                end
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
                         boundaries = general.responseCurves.(responseCurvesName).boundaries;
@@ -2893,6 +2943,10 @@ end
                 ploConnectionsHighlights(Xdata,subset1(troughToPeakSorted));
                 
                 ax6 = axis; 
+                if contains(customPlotSelection,'RCs_firingRateAcrossTime') && isfield(general,'states')
+                    plotTemporalStates
+                    ax6 = axis;
+                end
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
                         boundaries = general.responseCurves.(responseCurvesName).boundaries;
@@ -2939,6 +2993,10 @@ end
                 subsetPlots.subset = subset222;
 
                 ax6 = axis; 
+                if contains(customPlotSelection,'RCs_firingRateAcrossTime') && isfield(general,'states')
+                    plotTemporalStates
+                    ax6 = axis;
+                end
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
                         boundaries = general.responseCurves.(responseCurvesName).boundaries;
@@ -3265,7 +3323,7 @@ end
                             [~,y_pos,~] = intersect(subset1,(UI.params.outgoing));
                             line(x1*ones(size(y_pos)),y_pos,'Marker','.','LineStyle','none','color','m','HitTest','off', 'MarkerSize',12)
                         end
-                        if ~isempty(UI.params.inbound) && any(ismember(subset1,(UI.params.inbound)))
+                        if ~isempty(UI.params.inbound) && any(ismember(subset1,(UI.params.incoming)))
                             [~,y_pos,~] = intersect(subset1,(UI.params.incoming));
                             line(x1*ones(size(y_pos)),y_pos,'Marker','.','LineStyle','none','color','b','HitTest','off', 'MarkerSize',12)
                         end
@@ -3286,6 +3344,39 @@ end
                         xlim([Xdata(1)-x_range*0.025,Xdata(end)])
                 end
             end
+        end
+        
+        function plotTemporalStates
+            stateData = fieldnames(general.states);
+            k_states = 0;
+%             clr_states = hsv(max(structfun(@(X) numel(fields(X)),general.states)))*0.8;
+            clr_states = eval([UI.settings.colormap,'(',num2str(1+max(structfun(@(X) numel(fields(X)),general.states))),')']);
+            for j = 1:numel(stateData)
+                states1  = general.states.(stateData{j});
+                stateNames = fieldnames(states1); 
+                for jj = 1:numel(stateNames)
+                    if size(states1.(stateNames{jj}),2) == 2 && size(states1.(stateNames{jj}),1) > 0
+                    patch(double([states1.(stateNames{jj}),flip(states1.(stateNames{jj}),2)])',k_states*ax6(4)+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1.(stateNames{jj}),1)),clr_states(jj,:),'EdgeColor',clr_states(jj,:),'HitTest','off')
+                    end
+                end
+                k_states = k_states - .1;
+                text(ax6(1),k_states*ax6(4),[stateData{j}, ' (',num2str(numel(stateNames)),')'],'VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+                ylim([k_states*ax6(4),ax6(4)])
+            end
+        end
+        
+        function raster = spikes2isi(spikes_times)
+            if ~isempty(spikes_times)
+                raster = [1./diff(spikes_times);nan];
+                raster(raster>800) = nan;
+            else
+                raster = [];
+            end
+            
+        end
+        function raster = spikes2cv2(spikes_times)
+            ISIs = diff(spikes_times);
+            raster = [nan;2.*abs(ISIs(2:end)-ISIs(1:end-1))./(ISIs(2:end)+ISIs(1:end-1));nan];
         end
     end
 
@@ -3837,7 +3928,7 @@ end
         if ~(exist(fullfile(path1,'revisions_cell_metrics'),'dir'))
             mkdir(fullfile(path1,'revisions_cell_metrics'));
         end
-        save(fullfile(path1, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'-struct', 'S','-v7.3','-nocompression');
+        save(fullfile(path1, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'-struct', 'S');
     end
 
     function toggleHollowGauss(~,~)
@@ -3882,6 +3973,14 @@ end
         end
         uiresume(UI.fig);
     end
+    function adjustHoverEffect(~,~)
+        UI.settings.hoverEffect = 1-UI.settings.hoverEffect; 
+        if UI.settings.hoverEffect
+            UI.menu.cellSelection.hoverEffect.Checked = 'on';
+        else
+            UI.menu.cellSelection.hoverEffect.Checked = 'off';
+        end
+    end
     
     function adjustZscoreWaveforms(~,~)
         if UI.settings.zscoreWaveforms==0
@@ -3913,7 +4012,7 @@ end
         end
         uiresume(UI.fig);
     end
-
+    
     function showInsetACG(src,~)
         if strcmp(UI.menu.display.showInsetACG.Checked,'off')
             UI.menu.display.showInsetACG.Checked = 'on';
@@ -4286,7 +4385,7 @@ end
                     file = fullfile(referenceData_path,[cell_metrics.general.basename, '.cell_metrics.cellinfo.mat']);
                 end
                 S.cell_metrics = cell_metrics_groundTruthSubset;
-                save(file,'-struct', 'S','-v7.3','-nocompression');
+                save(file,'-struct', 'S');
             end
             if ishandle(ce_waitbar)
                 close(ce_waitbar)
@@ -4710,7 +4809,7 @@ end
             gt.dataTable(:,1) = {false};
             gt.listing = listing;
             try
-                save(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'gt','-v7.3','-nocompression');
+                save(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'gt');
             catch
                 warning('failed to save session list with metrics');
             end
@@ -4764,7 +4863,7 @@ end
                 groundTruth_cell_metrics = LoadCellMetricsBatch('clusteringpaths', referenceData_path1,'basenames',listSession2,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
                 
                 % Saving batch metrics
-                save(fullfile(referenceData_path,'groundTruth_cell_metrics.cellinfo.mat'),'groundTruth_cell_metrics','-v7.3','-nocompression');
+                save(fullfile(referenceData_path,'groundTruth_cell_metrics.cellinfo.mat'),'groundTruth_cell_metrics');
                 
                 % Initializing
                 [groundTruth_cell_metrics,groundTruthData] = initializeReferenceData(groundTruth_cell_metrics,'groundTruth');
@@ -4979,7 +5078,7 @@ end
                 else
                     disp(['Initializing session(s)']);
                 end
-                save(fullfile(referenceData_path,'reference_cell_metrics.cellinfo.mat'),'reference_cell_metrics','-v7.3','-nocompression');
+                save(fullfile(referenceData_path,'reference_cell_metrics.cellinfo.mat'),'reference_cell_metrics');
                 
                 [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
                 if isfield(UI.tabs,'referenceData')
@@ -5986,6 +6085,7 @@ end
     end
 
     function axnum = getAxisBelowCursor
+        axnum = [];
         temp1 = UI.fig.Position([3,4]);
         temp2 = UI.panel.left.Position(3);
         temp3 = UI.panel.right.Position(3);
@@ -6068,7 +6168,7 @@ end
         % Called when scrolling/zooming
         % Checks first, if a plot is underneath the curser
         axnum = getAxisBelowCursor;
-        
+        clickPlotRegular = false;
         if isfield(UI,'panel') && ~isempty(axnum)
             if axnum == 10
                 handle34 = UI.axis.legends;
@@ -6077,17 +6177,13 @@ end
             end
             um_axes = get(handle34,'CurrentPoint');
             UI.zoom.twoAxes = 0;
-            
-            % If ScrolltoZoomInPlot is called by a keypress, the underlying
-            % mouse position must be determined by the WindowButtonMotionFcn
-            if exist('direction','var')
-                set(gcf,'WindowButtonMotionFcn', @hoverCallback);
-            end
+
             u = um_axes(1,1);
             v = um_axes(1,2);
             w = um_axes(1,2);
-            
-            set(UI.fig,'CurrentAxes',handle34)
+%             if UI.settings.hoverEffect == 0
+                set(UI.fig,'CurrentAxes',handle34)
+%             end
             b = get(handle34,'Xlim');
             c = get(handle34,'Ylim');
             d = get(handle34,'Zlim');
@@ -6161,6 +6257,7 @@ end
                 applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
             end
         end
+        clickPlotRegular = true;
         
         function applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction)
             u = cursorPosition(1);
@@ -6297,9 +6394,32 @@ end
             end
         end
     end
-
+    
     function hoverCallback(~,~)
-        
+        if UI.fig == get(groot,'CurrentFigure') && clickPlotRegular && UI.settings.hoverEffect == 1 
+            axnum = getAxisBelowCursor;
+            if ~isempty(axnum) && axnum < 10
+                handle34 = subfig_ax(axnum);
+                set(UI.fig,'CurrentAxes',handle34)
+                if ishandle(hover2highlight.handle1)
+                    set(hover2highlight.handle1,'Visible','off');
+                end
+                if ishandle(hover2highlight.handle2)
+                    set(hover2highlight.handle2,'Visible','off');
+                end
+                if ishandle(hover2highlight.handle3)
+                    set(hover2highlight.handle3,'Visible','off');
+                end
+                if ishandle(hover2highlight.handle4)
+                    set(hover2highlight.handle4,'Visible','off');
+                end
+                um_axes = get(handle34,'CurrentPoint');
+                u = um_axes(1,1);
+                v = um_axes(1,2);
+                w = um_axes(1,3);
+                FromPlot(u,v,0,w,1);
+            end
+        end
     end
 
     function [u,v] = ClicktoSelectFromPlot(~,~)
@@ -6363,9 +6483,6 @@ end
     function polygonSelection(~,~)
         clickPlotRegular = false;
         MsgLog('Select cells by drawing a polygon with your mouse. Complete with a right click, cancel last point with middle click.');
-        %         if UI.settings.plot3axis
-        %             rotate3d(subfig_ax(1),'off')
-        %         end
         ax = get(UI.fig,'CurrentAxes');
         hold(ax, 'on');
         polygon1.counter = 0;
@@ -6536,14 +6653,24 @@ end
         end
     end
 
-    function iii = FromPlot(u,v,highlight,w)
+    function iii = FromPlot(u,v,highlight,w,hover)
+        hover2highlight.handle1 = [];
+        hover2highlight.handle2 = [];
+        hover2highlight.handle3 = [];
+        hover2highlight.handle4 = [];
         iii = 0;
         if ~exist('highlight','var')
             highlight = 0;
         end
+        if ~exist('hover','var')
+            hover = 0;
+        end
         if highlight
             iLine = mod(iLine,7)+1;
             colorLine = UI.colorLine(iLine,:);
+        end
+        if hover
+            colorLine = [0.8,0,0.8];
         end
         axnum = find(ismember(subfig_ax, gca));
         if isempty(axnum)
@@ -6582,12 +6709,15 @@ end
                 distance = point_to_line_distance([plotX11; plotY11; plotZ11]'./[x_scale y_scale z_scale], [u,v,w]./[x_scale y_scale z_scale], ([u,v,w]./[x_scale y_scale z_scale]+[x1,y1,z1]));
                 [~,idx] = min(distance);
                 iii = UI.params.subset(idx);
-                if highlight == 1
-                    text(plotX(iii),plotY(iii),plotZ(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
-                    line(plotX(iii),plotY(iii),plotZ(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+                if highlight
+                    line(plotX(iii),plotY(iii),plotZ(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+                elseif hover
+                    hover2highlight.handle1 = text(plotX(iii),plotY(iii),plotZ(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                    hover2highlight.handle2 = line(plotX(iii),plotY(iii),plotZ(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                 else
                     return
                 end
+                
         elseif axnum == 1 && UI.settings.customPlotHistograms < 4
             if UI.checkbox.logx.Value == 1 && UI.checkbox.logy.Value == 1
                 x_scale = range(log10(plotX(plotX>0 & ~isinf(plotX))));
@@ -6608,8 +6738,10 @@ end
             end
             iii = UI.params.subset(idx);
             if highlight
-                text(plotX(iii),plotY(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
-                line(plotX(iii),plotY(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+                line(plotX(iii),plotY(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+            elseif hover
+                hover2highlight.handle1 = text(plotX(iii),plotY(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                hover2highlight.handle2 = line(plotX(iii),plotY(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
             end
             
         elseif axnum == 1 && UI.settings.customPlotHistograms == 4
@@ -6624,8 +6756,10 @@ end
             end
             iii = UI.params.subset(idx);
             if highlight
-                text(plotX(iii),plotY1(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
-                line(plotX(iii),plotY1(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+                line(plotX(iii),plotY(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+            elseif hover
+                hover2highlight.handle1 = text(plotX(iii),plotY1(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                hover2highlight.handle2 = line(plotX(iii),plotY1(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
             end
             
         elseif axnum == 2
@@ -6635,16 +6769,20 @@ end
             iii = UI.params.subset(idx);
             
             if highlight
-                text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
-                line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+                line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+            elseif hover
+                hover2highlight.handle1 = text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                hover2highlight.handle2 = line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
             end
             
         elseif axnum == 3
             [~,idx] = min(hypot(tSNE_metrics.plot(UI.params.subset,1)-u,tSNE_metrics.plot(UI.params.subset,2)-v));
             iii = UI.params.subset(idx);
             if highlight
-                text(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
-                line(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+                line(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+            elseif hover
+                hover2highlight.handle1 = text(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                hover2highlight.handle2 = line(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
             end
             
         elseif any(axnum == [4,5,6,7,8,9])
@@ -6656,15 +6794,15 @@ end
                 case 'Waveforms (tSNE)'
                     [~,idx] = min(hypot(tSNE_metrics.filtWaveform(UI.params.subset,1)-u,tSNE_metrics.filtWaveform(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
-                    if highlight
-                        text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle1 = text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'Raw waveforms (tSNE)'
                     [~,idx] = min(hypot(tSNE_metrics.rawWaveform(UI.params.subset,1)-u,tSNE_metrics.rawWaveform(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
-                    if highlight
-                        text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle1 = text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'Waveforms (single)'
@@ -6674,11 +6812,11 @@ end
                         y_scale = range(out(2,:));
                         [~,In] = min(hypot((out(1,:)-u)/x_scale,(out(2,:)-v)/y_scale));
                         iii = out(3,In);
-                        if highlight
-                            text(out(1,In),out(2,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
-                            line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+                        if highlight || hover
+                            hover2highlight.handle1 = text(out(1,In),out(2,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                            hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                         end
-                    else
+                    elseif hover==0
                         showWaveformMetrics;
                     end
                     
@@ -6703,9 +6841,9 @@ end
                         [~,In] = min(hypot((x2-u)/x_scale,(y3-v)/y_scale));
                         if In > length(y2)
                             iii = out(3,In-length(y2));
-                            if highlight
-                            text(out(1,In-length(y2)),out(2,In-length(y2)),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
-                            line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+                            if highlight || hover
+                                hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2)),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                hover2highlight.handle4 = line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                             end
                             In = find(UI.params.subset==iii);
                         else
@@ -6719,9 +6857,9 @@ end
                         iii = UI.params.subset(In);
                         [~,time_index] = min(abs(time_waveforms_zscored-u));
                     end
-                    if highlight
-                        line(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine)
-                        text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle2 = line(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                 case 'Raw waveforms (single)'    
                     if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
@@ -6730,9 +6868,9 @@ end
                         y_scale = range(out(2,:));
                         [~,In] = min(hypot((out(1,:)-u)/x_scale,(out(2,:)-v)/y_scale));
                         iii = out(3,In);
-                        if highlight
-                            text(out(1,In),out(2,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
-                            line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+                        if highlight || hover
+                            hover2highlight.handle1 = text(out(1,In),out(2,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                            hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                         end
                     end
                 case 'Raw waveforms (all)'
@@ -6755,9 +6893,9 @@ end
                         [~,In] = min(hypot((x2-u)/x_scale,(y3-v)/y_scale));
                         if In > length(y2)
                             iii = out(3,In-length(y2));
-                            if highlight
-                            text(out(1,In-length(y2)),out(2,In-length(y2)),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
-                            line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+                            if highlight || hover
+                            hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2)),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                            hover2highlight.handle4 = line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                             end
                             In = find(UI.params.subset==iii);
                         else
@@ -6772,37 +6910,38 @@ end
                         [~,time_index] = min(abs(time_waveforms_zscored-u));
                     end
                     
-                    if highlight
-                        line(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine)
-                        text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle2 = line(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'Waveforms (image)'
                     [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
                         iii = UI.params.subset(troughToPeakSorted(round(v)));
-                        if highlight
-                            line([time_waveforms_zscored(1),time_waveforms_zscored(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
+                        if highlight || hover
+                            hover2highlight.handle2 = line([time_waveforms_zscored(1),time_waveforms_zscored(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
+                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
                 case 'Waveforms (across channels)'
                     % All waveforms across channels with largest ampitude colored according to cell type
-                    if highlight
+                    if highlight && ~hover
                         factors = [90,60,40,25,15,10,6,4];
                         idx5 = find(UI.params.chanCoords.y_factor == factors);
                         idx5 = rem(idx5,length(factors))+1;
                         UI.params.chanCoords.y_factor = factors(idx5);
                         MsgLog(['Waveform y-factor altered: ' num2str(UI.params.chanCoords.y_factor)]);
-                    else
+                        uiresume(UI.fig);
+                    elseif ~hover
                         factors = [4,6,10,16,25,40,60,90];
                         idx5 = find(UI.params.chanCoords.x_factor==factors);
                         idx5 = rem(idx5,length(factors))+1;
                         UI.params.chanCoords.x_factor = factors(idx5);
                         MsgLog(['Waveform x-factor altered: ' num2str(UI.params.chanCoords.x_factor)]);
+                        uiresume(UI.fig);
                     end
-                    uiresume(UI.fig);
                     
                 case 'Trilaterated position'
                     switch UI.settings.trilatGroupData
@@ -6821,36 +6960,36 @@ end
                     y_scale = range(y1(:));
                     [~,idx] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
                     iii = subset1(idx);
-                    if highlight
-                        text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle1 = text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'tSNE of narrow ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_narrow(UI.params.subset,1)-u,tSNE_metrics.acg_narrow(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
-                    if highlight
-                        text(tSNE_metrics.acg_narrow(iii,1),tSNE_metrics.acg_narrow(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle1 = text(tSNE_metrics.acg_narrow(iii,1),tSNE_metrics.acg_narrow(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'tSNE of wide ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_wide(UI.params.subset,1)-u,tSNE_metrics.acg_wide(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
-                    if highlight
-                        text(tSNE_metrics.acg_wide(iii,1),tSNE_metrics.acg_wide(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle1 = text(tSNE_metrics.acg_wide(iii,1),tSNE_metrics.acg_wide(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'tSNE of log ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_log10(UI.params.subset,1)-u,tSNE_metrics.acg_log10(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
-                    if highlight
-                        text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle1 = text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'tSNE of log ISIs'
                     [~,idx] = min(hypot(tSNE_metrics.isi_log10(UI.params.subset,1)-u,tSNE_metrics.isi_log10(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
-                    if highlight
-                        text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle1 = text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'CCGs (image)'
@@ -6863,42 +7002,43 @@ end
                         subset1 = cell_metrics.UID(subset2);
                         subset1 = [cell_metrics.UID(ii),subset1(subset1~=cell_metrics.UID(ii))];
                         subset2 = [ii,subset2(subset2~=ii)];
-                        if round(v) > 0 && round(v) <= max(subset2)
+                        if round(v) > 0 && round(v) <= length(subset2)
                             iii = subset2(round(v));
-                            if highlight
+                            if highlight || hover
                                 if strcmp(UI.settings.acgType,'Narrow')
                                     Xdata = [-30,30]/2;
                                 else
                                     Xdata = [-100,100]/2;
                                 end
-                                line(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off')
-                                text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
+                                hover2highlight.handle2 = line(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
+                                hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                             end
                         end
                     end
                     
                 case 'ACGs (single)'
-                    if highlight
-                        toggleACGfit
-                    else
-                        switch UI.settings.acgType
-                            case 'Normal'
-                                src.Position = 3;
-                            case 'Narrow'
-                                src.Position = 2;
-                            case 'Wide'
-                                src.Position = 4;
-                            case 'Log10'
-                                src.Position = 1;
+                    if ~hover
+                        if highlight
+                            toggleACGfit
+                        else
+                            switch UI.settings.acgType
+                                case 'Normal'
+                                    src.Position = 3;
+                                case 'Narrow'
+                                    src.Position = 2;
+                                case 'Wide'
+                                    src.Position = 4;
+                                case 'Log10'
+                                    src.Position = 1;
+                            end
+                            buttonACG(src);
                         end
-                        buttonACG(src);
                     end
-        
                 case 'ACGs (image)'
                     [~,burstIndexSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
                         iii = UI.params.subset(burstIndexSorted(round(v)));
-                        if highlight
+                        if highlight || hover
                             if strcmp(UI.settings.acgType,'Normal')
                                 Xdata = [-100,100]/2;
                             elseif strcmp(UI.settings.acgType,'Narrow')
@@ -6908,8 +7048,8 @@ end
                             else
                                 Xdata = [-500,500];
                             end
-                            line(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
+                            hover2highlight.handle2 = line(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
+                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
@@ -6941,13 +7081,14 @@ end
                     end
                     In = unique(floor(In/size(x1,1)))+1;
                     iii = UI.params.subset(In);
-                    if highlight
+                    if highlight || hover
                         [~,time_index] = min(abs(x2-u));
-                        line(x2(:),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine)
-                        text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                        hover2highlight.handle2 = line(x2(:),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'ISIs (single)'
+                    if ~hover
                         switch UI.settings.isiNormalization
                             case 'Rate'
                                 src.Position = 9;
@@ -6957,7 +7098,7 @@ end
                                 src.Position = 8;
                         end
                         buttonACG_normalize(src)
-                    
+                    end
                 case 'ISIs (all)'
                     x2 = general.isis.log10;
                     x1 = (general.isis.log10)*ones(1,length(UI.params.subset));
@@ -6975,24 +7116,24 @@ end
                     [~,In] = min(hypot((log10(x1(:))-log10(u))/x_scale,(y1(:)-v)/y_scale));
                     In = unique(floor(In/size(x1,1)))+1;
                     iii = UI.params.subset(In);
-                    if highlight
+                    if highlight || hover
                         [~,time_index] = min(abs(x2-u));
-                        line(x2(:),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine)
-                        text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                        hover2highlight.handle2 = line(x2(:),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'ISIs (image)'
                     [~,burstIndexSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
                         iii = UI.params.subset(burstIndexSorted(round(v)));
-                        if highlight
+                        if highlight || hover
                             if strcmp(UI.settings.isiNormalization,'Firing rates')
-                                line(1./log10(1./general.isis.log10([1,end])),[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','HitTest','off','linewidth',2)
+                                hover2highlight.handle2 = line(1./log10(1./general.isis.log10([1,end])),[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','HitTest','off','linewidth',2);
                             else
-                                line(log10(general.isis.log10([1,end])),[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','HitTest','off','linewidth',2)
+                                hover2highlight.handle2 = line(log10(general.isis.log10([1,end])),[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','HitTest','off','linewidth',2);
                             end
 %                             line(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
+                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
@@ -7005,9 +7146,9 @@ end
                     In = unique(floor(In/length(UI.x_bins.thetaPhase)))+1;
                     iii = UI.params.subset(In);
                     [~,time_index] = min(abs(UI.x_bins.thetaPhase-u));
-                    if highlight
-                        line(UI.x_bins.thetaPhase,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine)
-                        text(UI.x_bins.thetaPhase(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle2 = line(UI.x_bins.thetaPhase,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(UI.x_bins.thetaPhase(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'RCs_firingRateAcrossTime (all)'
@@ -7020,18 +7161,18 @@ end
                     In = unique(floor(In/length(subsetPlots.xaxis)))+1;
                     iii = subset1(In);
                     [~,time_index] = min(abs(subsetPlots.xaxis-u));
-                    if highlight
-                        line(subsetPlots.xaxis,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine)
-                        text(subsetPlots.xaxis(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                    if highlight || hover
+                        hover2highlight.handle2 = line(subsetPlots.xaxis,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'RCs_thetaPhase (image)'
                     [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
                         iii = UI.params.subset(troughToPeakSorted(round(v)));
-                        if highlight
-                            line([UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
+                        if highlight || hover
+                            hover2highlight.handle2 = line([UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
+                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
@@ -7042,13 +7183,15 @@ end
                         else
                             subset23 = 1:general.cellCount;
                         end
+                        if round(v) <= length(subset23)
                         [~,burstIndexSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(subset23));
                         iii = subset23((burstIndexSorted((round(v)))));
                         
-                        if highlight
+                        if highlight || hover
                             Xdata = general.responseCurves.firingRateAcrossTime.x_edges([1,end]);
-                            line(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off')
-                            text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1)
+                            hover2highlight.handle2 = line(Xdata,[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
+                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                        end
                         end
                     end
                     
@@ -7056,8 +7199,8 @@ end
                     if ~isempty(subsetPlots)
                         [~,idx] = min(hypot(subsetPlots.xaxis-u,subsetPlots.yaxis-v));
                         iii = subsetPlots.subset(idx);
-                        if highlight
-                            text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                        if highlight || hover
+                            hover2highlight.handle1 = text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                         end
                     end
                 otherwise
@@ -7071,13 +7214,19 @@ end
                             In = unique(floor(time_index/length(subsetPlots.xaxis)))+1;
                             if In>0
                                 iii = subset1(In);
-                                if highlight
-                                    line(x1(:,1),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine)
-                                    text(x1(time_index),y1(time_index),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1)
+                                if highlight || hover
+                                    hover2highlight.handle2 = line(x1(:,1),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                                    hover2highlight.handle1 = text(x1(time_index),y1(time_index),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                                 end
                             end
                     end
             end
+        end
+        if ~hover
+            hover2highlight.handle1 = [];
+            hover2highlight.handle2 = [];
+            hover2highlight.handle3 = [];
+            hover2highlight.handle4 = [];
         end
     end
 
@@ -7795,7 +7944,7 @@ end
             defaultAxesFontSize = 12;
             fig_pos = [0,0,1200,600];
         end
-        fig = figure('Name','CellExplorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','off'); movegui(fig,'center'), set(fig,'visible','on')
+        fig = figure('Name','CellExplorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','off');
         % Scatter plot with trough to peak vs burst index
         ax1 = subplot('Position',[0.06 0.1 0.41 .87]); % Trough to peak vs burstiness
         ce_gscatter(cell_metrics.troughToPeak(UI.params.subset), cell_metrics.burstIndex_Royer2012(UI.params.subset), plotClas(UI.params.subset), clr_groups,UI.settings.markerSize,'.'); axis tight
@@ -7839,6 +7988,8 @@ end
         ce_raincloud_plot(cell_metrics.refractoryPeriodViolation,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]); 
         axis tight, xticks(10.^(-2:2:2)); xlabel(['Refractory period violation (',char(8240),')']),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
+        
+        movegui(fig,'center'), set(fig,'visible','on')
 %         classes2plotSubset = unique(plotClas);
 %         cell_class_count = histc(plotClas,1:length(UI.settings.cellTypes));
 %         figure
@@ -7892,7 +8043,7 @@ end
             if plotCellIDs~=-1
                 set(fig,'Name',['CellExplorer summary figures ',num2str(j),'/',num2str(length(cellIDs))]);
             else
-                set(fig,'Name',['CellExplorer summary figure']);
+                set(fig,'Name',['CellExplorer summary figure, session = ', basename]);
             end
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
@@ -8070,7 +8221,7 @@ end
             UI.table.Data = [table_fieldsNames,table_metrics(:,ii)];
             UI.table.Visible = 'on';
             UI.table.ColumnEditable = [false false];
-            
+            UI.table.Tooltip = sprintf('Metrics for current cell. \nClick left column to select metric in custom group plot on x axis. \nClick right column to select metric in custom group plot on y axis. \nChange table data in Table data menu');
         elseif UI.settings.metricsTable==2
             UI.menu.tableData.ops(1).Checked = 'off';
             UI.menu.tableData.ops(2).Checked = 'on';
@@ -8080,8 +8231,8 @@ end
             UI.table.ColumnEditable = [true false false false];
             updateCellTableData
             UI.table.Visible = 'on';
-            %             updateCellTableData
             updateTableClickedCells
+            UI.table.Tooltip = sprintf('List of filtered cells. \nClick any row to go to that cell. \nChange table data in Table data menu. \nYou can customize the order, and data shown in the two columns from the menu.');
         elseif UI.settings.metricsTable==3
             UI.table.Visible = 'off';
             UI.menu.tableData.ops(1).Checked = 'off';
@@ -8159,7 +8310,7 @@ end
             UI.popupmenu.markerSizeData.Enable = 'On';
             UI.checkbox.logMarkerSize.Enable = 'On';
             UI.settings.plot3axis = 1;
-             set(UI.fig,'CurrentAxes',UI.panel.subfig_ax1.Children(end))
+             set(UI.fig,'CurrentAxes',UI.panel.subfig_ax1.Children(end)) % Peter
             view([40 20]);
 
         elseif UI.popupmenu.metricsPlot.Value == 4
@@ -8345,6 +8496,7 @@ end
                     % All CCGs for all combinations of selected cell with highlighted cells
                     UI.params.ClickedCells = cellIDs(:)';
                     updateTableClickedCells
+                    general = generateCCGs(cell_metrics.batchIDs(ii),general); % Generates CCGs from spikes
                     if isfield(general,'ccg') && ~isempty(UI.params.ClickedCells)
                         if UI.BatchMode
                             ClickedCells_inBatch = find(cell_metrics.batchIDs(ii) == cell_metrics.batchIDs(UI.params.ClickedCells));
@@ -8386,7 +8538,7 @@ end
                                 k = k+1;
                             end
                         end
-                        set(ccgFigure,'visible','on')
+                        movegui(ccgFigure,'center'), set(ccgFigure,'visible','on')
                     else
                         MsgLog('There is no cross- and auto-correlograms matrix structure found for this dataset (Location general.ccg).',2)
                     end
@@ -8395,6 +8547,7 @@ end
                     % CCGs with selected cell
                     UI.params.ClickedCells = cellIDs(:)';
                     updateTableClickedCells
+                    general = generateCCGs(cell_metrics.batchIDs(ii),general); % Generates CCGs from spikes
                     if isfield(general,'ccg') && ~isempty(UI.params.ClickedCells)
                         if UI.BatchMode
                             ClickedCells_inBatch = find(cell_metrics.batchIDs(ii) == cell_metrics.batchIDs(UI.params.ClickedCells));
@@ -8406,7 +8559,7 @@ end
                             plot_cells = [ii,UI.params.ClickedCells];
                         end
                         plot_cells = unique(plot_cells,'stable');
-                        fig = figure('Name',['CellExplorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize);
+                        fig = figure('Name',['CellExplorer: CCGs for cell ', num2str(ii), ' with cell-pairs ', num2str(plot_cells(2:end))],'NumberTitle','off','pos',UI.settings.figureSize,'visible','off'); 
                         
                         plot_cells2 = cell_metrics.UID(plot_cells);
                         k = 1;
@@ -8439,6 +8592,8 @@ end
                             set(ha(k), 'Layer', 'top')
                             k = k+1;
                         end
+                        movegui(fig,'center'), set(fig,'visible','on')
+
                     else
                         MsgLog('There is no cross- and auto-correlograms matrix structure found for this dataset (Location general.ccg).',2)
                     end
@@ -8459,7 +8614,7 @@ end
                     
                 elseif choice > 15
                     % Plots any custom plot for selected cells in a single new figure with subplots
-                    fig = figure('Name',['CellExplorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off','pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
+                    fig = figure('Name',['CellExplorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off','pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off');
                     [plotRows,~]= numSubplots(length(cellIDs));
                     if ispc
                         ha = tight_subplot(plotRows(1),plotRows(2),[.08 .04],[.05 .05],[.05 .05]);
@@ -8486,6 +8641,7 @@ end
                         set(fig,'CurrentAxes',ha(j)), hold on
                         customPlot(actionList{choice},cellIDs(j),general1,batchIDs1,ha(j)); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
                     end
+                    movegui(fig,'center'), set(fig,'visible','on')
                 else
                     uiresume(UI.fig);
                 end
@@ -8870,7 +9026,7 @@ end
         
         if nargin > 1
             try
-                save(file,'cell_metrics','-v7.3','-nocompression');
+                save(file,'cell_metrics');
                 MsgLog(['Classification saved to ', file],[1,2]);
             catch
                 MsgLog(['Error saving metrics: ' file],4);
@@ -8951,7 +9107,7 @@ end
                 try
                     createBackup(cell_metrics)
                     file = fullfile(cell_metrics.general.path,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
-                    save(file,'cell_metrics','-v7.3','-nocompression');
+                    save(file,'cell_metrics');
                     classificationTrackChanges = [];
                     UI.menu.file.save.ForegroundColor = 'k';
                     MsgLog(['Classification saved to ', file],[1,2]);
@@ -9045,7 +9201,7 @@ end
                 stats_offset = 0.03;
             end
             [plotRows,~]= numSubplots(length(indx)); % Determining optimal number of subplots
-            fig = figure('Name','CellExplorer: Raincloud plot','NumberTitle','off','pos',UI.settings.figureSize);
+            fig = figure('Name','CellExplorer: Raincloud plot','NumberTitle','off','pos',UI.settings.figureSize,'visible','off');
             ha = tight_subplot(plotRows(1),plotRows(2),[.05 .02],[.03 .04],[.03 .03]);
             plotClas_subset = plotClas(UI.params.subset);
             for j = 1:length(indx)
@@ -9070,6 +9226,7 @@ end
                     set(ha(j),'Visible','off')
                 end
             end
+            movegui(fig,'center'), set(fig,'visible','on')
         end
     end
 
@@ -9184,6 +9341,10 @@ end
 
     function initializeSession
         ii = 1;
+        hover2highlight.handle1 = [];
+        hover2highlight.handle2 = [];
+        hover2highlight.handle3 = [];
+        hover2highlight.handle4 = [];
         UI.params.ii_history = 1;
         if ~isfield(cell_metrics.general,'cellCount')
             cell_metrics.general.cellCount = size(cell_metrics.UID,2);
@@ -9545,6 +9706,9 @@ end
         end
         if isfield(cell_metrics.responseCurves,'firingRateAcrossTime')
             responseCurvesOptions = [responseCurvesOptions;'RCs_firingRateAcrossTime' ;'RCs_firingRateAcrossTime (image)' ;'RCs_firingRateAcrossTime (all)'];
+        end
+        if isfield(cell_metrics,'spikes')
+            responseCurvesOptions = [responseCurvesOptions;'raster_'];
         end
         % Custom plot options
         customPlotOptions = what('customPlots');
@@ -9997,7 +10161,7 @@ end
                 % DB settings for public access
                 options = weboptions('RequestMethod','get','Timeout',50,'CertificateFilename','');
                 db_settings.address_full = [db_settings.address,'views/16777/'];
-                MsgLog(['Loading public list. Please provide your database credentials in ''db\_credentials.m'' ']);
+                MsgLog(['Loading public list. Please provide your BuzLabDB credentials in ''db\_credentials.m'' ']);
             end
             
             % Show waitbar while loading DB
@@ -10050,7 +10214,7 @@ end
                 db.dataTable(:,1) = {false};
                 [db_path,~,~] = fileparts(which('db_load_sessions.m'));
                 try
-                    save(fullfile(db_path,'db_cell_metrics_session_list.mat'),'db','-v7.3','-nocompression');
+                    save(fullfile(db_path,'db_cell_metrics_session_list.mat'),'db');
                 catch
                     warning('failed to save session list with metrics');
                 end
@@ -10058,8 +10222,8 @@ end
                 MsgLog('Failed to load sessions from database',4);
             end
         else
-            MsgLog('Database tools not installed');
-            msgbox({'Database tools not installed. To install, follow the steps below: ','1. Go to the CellExplorer GitHub webpage','2. Download the database tools', '3. Add the db directory to your Matlab path', '4. Optionally provide your credentials in db\_credentials.m and try again.'},createStruct);
+            MsgLog('BuzLabDB tools not installed');
+            msgbox({'BuzLabDB tools not installed. To install, follow the steps below: ','1. Go to the CellExplorer GitHub webpage','2. Download the BuzLabDB tools', '3. Add the db directory to your Matlab path', '4. Optionally provide your credentials in db\_credentials.m and try again.'},createStruct);
         end
     end
 
@@ -10110,6 +10274,33 @@ end
     function AdjustGUIkey
         UI.settings.layout = rem(UI.settings.layout,7)+1;
         AdjustGUI
+    end
+    
+    function general = generateCCGs(batchIDsIn,general)
+        if ~isfield(general,'ccg') && isfield(cell_metrics,'spikes') && isfield(cell_metrics.spikes,'times')
+            if UI.BatchMode
+                subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                if numel(cell_metrics.spikes.times) < max(subset1)
+                   return 
+                end
+                spindices = generateSpinDices(cell_metrics.spikes.times(subset1));
+            else
+                spindices = generateSpinDices(cell_metrics.spikes.times);
+            end
+            spike_times = spindices(:,1);
+            spike_cluster_index = spindices(:,2);
+            [~, ~, spike_cluster_index] = unique(spike_cluster_index);
+            [ccg2,time2] = CCG(spike_times,spike_cluster_index,'binSize',0.0005,'duration',0.100,'norm','rate');
+            if UI.BatchMode
+                cell_metrics.general.batch{batchIDsIn}.ccg = ccg2;
+                cell_metrics.general.batch{batchIDsIn}.ccg_time = time2;
+            else
+                cell_metrics.general.ccg = ccg2;
+                cell_metrics.general.ccg_time = time2;
+            end
+            general.ccg = ccg2;
+            general.ccg_time = time2;
+        end
     end
 
     function out = CheckSpikes(batchIDsIn)
@@ -10790,7 +10981,7 @@ end
             end
             mono_res = gui_MonoSyn(mono_res,cell_metrics.UID(ii));
             % Saves output to the cell_metrics from the select session
-            answer = questdlg('Do you want to save the manual monosynaptic curration?', 'Save monosynaptic curration', 'Yes','No','Yes');
+            answer = questdlg('Do you want to save the manual monosynaptic curation?', 'Save monosynaptic curation', 'Yes','No','Yes');
             if strcmp(answer,'Yes')
                 ce_waitbar = waitbar(0,' ','name','CellExplorer: Updating MonoSyn');
                 if isfield(general,'saveAs')
@@ -10803,7 +10994,7 @@ end
                     if ishandle(ce_waitbar)
                         waitbar(0.05,ce_waitbar,'Saving MonoSyn file');
                     end
-                    save(MonoSynFile,'mono_res','-v7.3','-nocompression');
+                    save(MonoSynFile,'mono_res');
                     
                     % Creating backup of existing metrics
                     if ishandle(ce_waitbar)
@@ -10834,7 +11025,7 @@ end
                     [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,2),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,2)));
                     cell_session.cell_metrics.synapticConnectionsIn(b) = a; cell_session.cell_metrics.synapticConnectionsIn = cell_session.cell_metrics.synapticConnectionsIn(1:cell_session.cell_metrics.general.cellCount);
                     
-                    save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), '-struct', 'cell_session','-v7.3','-nocompression')
+                    save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), '-struct', 'cell_session')
                     % MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
                     
                     if ishandle(ce_waitbar)
@@ -11094,7 +11285,7 @@ end
         
         timestamp = datestr(now, 'dd-mm-yyyy HH:MM:SS');
         message2 = sprintf('[%s] %s', timestamp, message);
-        if ~exist('priority','var') || (exist('priority','var') && any(priority > 0))
+        if ~exist('priority','var') || (exist('priority','var') && any(priority >= 0))
             UI.popupmenu.log.String = [UI.popupmenu.log.String;message2];
             UI.popupmenu.log.Value = length(UI.popupmenu.log.String);
         end
@@ -11560,7 +11751,7 @@ end
             [scs,'F'],'Display ACG fit'; 'K','Calculate and display significance matrix for all metrics (KS-test)'; [scs,'T'],'Calculate tSNE space from a selection of metrics';
             'W','Display waveform metrics'; [scs,'Y'],'Perform ground truth cell type classification'; [scs,'U'],'Load ground truth cell types'; 'Space','Show action dialog for selected cells'; '  ','';
             '','<html><b>Other shortcuts</b></html>';
-            [scs,'P'],'Open preferences for CellExplorer'; [scs,'C'],'Open the file directory of the selected cell'; [scs,'D'],'Opens sessions from the Buzsaki lab database';
+            [scs,'P'],'Open preferences for CellExplorer'; [scs,'C'],'Open the file directory of the selected cell'; [scs,'D'],'Opens sessions from BuzLabDB';
             [scs,'A'],'Open spike data menu'; [scs,'J'],'Modify parameters for a spike plot'; [scs,'V'],'Visit the CellExplorer website in your browser';
             '',''; '','<html><b>Visit the CellExplorer website for further help and documentation</html></b>'; };
         if ismac

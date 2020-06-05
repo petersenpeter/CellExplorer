@@ -33,8 +33,12 @@ if any(contains(fields,{'general','all'}))
     jsonStructure = [];
     jsonStructure.form_id = 143;
     jsonStructure.user_id = 3;
-    jsonStructure.fiElD_2556 = session.general.duration;
-    jsonStructure.fiElD_1901 = session.general.location;
+    if isfield(session.general,'duration')
+        jsonStructure.fiElD_2556 = session.general.duration;
+    end
+    if isfield(session.general,'location')
+        jsonStructure.fiElD_1901 = session.general.location;
+    end
     jsonStructure.fiElD_2013 = session.general.time;
     jsonStructure.fiElD_1903 = session.general.sessionType;
     jsonStructure.fiElD_1902 = session.general.notes;
@@ -62,7 +66,9 @@ if any(contains(fields,{'extracellular','all'}))
     if isfield(session.extracellular,'nSamples')
         jsonStructure.fiElD_1911 = session.extracellular.nSamples;
     end
-    jsonStructure.fiElD_1910 = session.extracellular.precision;
+    if isfield(session.extracellular,'precision')
+        jsonStructure.fiElD_1910 = session.extracellular.precision;
+    end
     jsonStructure.fiElD_2010 = session.extracellular.fileFormat;
     if isfield(session.extracellular,'probeDepths')
         jsonStructure.fiElD_1915 = session.extracellular.probeDepths;
@@ -87,39 +93,39 @@ if any(contains(fields,{'extracellular','all'}))
 end
 
 % Epochs
-if any(contains(fields,{'epochs','all'}))
+if any(contains(fields,{'epochs','all'})) && isfield(session,'epochs') && ~isempty(session.epochs)
     db_update_epochs(session,db_settings)
 end
 
 % Channel tags
-if any(contains(fields,{'channelTags','all'}))
+if any(contains(fields,{'channelTags','all'})) && isfield(session,'channelTags') && ~isempty(session.channelTags)
     db_update_channelTags(session,db_settings)
 end
 
 % Brain regions
-if any(contains(fields,{'brainRegions','all'}))
+if any(contains(fields,{'brainRegions','all'})) && isfield(session,'brainRegions') && ~isempty(session.brainRegions)
     db_update_brainRegions(session,db_settings)
 end
 % Time series
-if any(contains(fields,{'timeSeries','all'}))
+if any(contains(fields,{'timeSeries','all'})) && isfield(session,'timeSeries') && ~isempty(session.timeSeries)
     db_update_timeSeries(session,db_settings)
 end
 % Inputs  (formid=147,)
-if any(contains(fields,{'inputs','all'}))
+if any(contains(fields,{'inputs','all'})) && isfield(session,'inputs') && ~isempty(session.inputs)
     db_update_inputs(session,db_settings)
 end
 % analysisTags (formid=198, formd_key 1j1h0)
-if any(contains(fields,{'analysisTags','all'}))
+if any(contains(fields,{'analysisTags','all'})) && isfield(session,'analysisTags') && ~isempty(session.analysisTags)
     db_update_analysisTags(session,db_settings)
 end
 
 % spikeSorting (formid=146, formd_key siurq)
-if any(contains(fields,{'spikeSorting','all'}))
+if any(contains(fields,{'spikeSorting','all'})) && isfield(session,'spikeSorting') && ~isempty(session.spikeSorting)
     db_update_spikeSorting(session,db_settings)
 end
 
 % behavioralTracking (formid=150)
-if any(contains(fields,{'behavioralTracking','all'}))
+if any(contains(fields,{'behavioralTracking','all'})) && isfield(session,'behavioralTracking') && ~isempty(session.behavioralTracking)
     db_update_behavioralTracking(session,db_settings)
 end
 
@@ -262,7 +268,8 @@ success = true;
         jsonStructure = [];
         jsonStructure.form_id = 143; % Form id of sessions
         jsonStructure.vc5ra.form = 223; % Form id of time series repeatable section
-        if ~isempty(session.timeSeries)
+        
+        if isfield(session,'timeSeries') && ~isempty(session.timeSeries)
         nameTags = fieldnames(session.timeSeries);
         for iTag = 1:length(nameTags)
             if isfield(session.timeSeries.(nameTags{iTag}),'entryID') && session.timeSeries.(nameTags{iTag}).entryID>0
@@ -305,40 +312,42 @@ success = true;
         jsonStructure = [];
         jsonStructure.form_id = 143; % Form id of sessions
         jsonStructure.r0g5h.form = 193; % Form id of epochs repeatable section
-        for i = 1:length(session.epochs)
-            if isfield(session.epochs{i},'entryID') && session.epochs{i}.entryID>0
-                idx = ['fiElD_', num2str(session.epochs{i}.entryID)];
-            else
-                idx = ['shank' num2str(i)];
+        if isfield(session,'epochs')
+            for i = 1:length(session.epochs)
+                if isfield(session.epochs{i},'entryID') && session.epochs{i}.entryID>0
+                    idx = ['fiElD_', num2str(session.epochs{i}.entryID)];
+                else
+                    idx = ['shank' num2str(i)];
+                end
+                jsonStructure.r0g5h.(idx).fiElD_2311 = session.epochs{i}.name;
+                if isfield(session.epochs{i},'entryID') && session.epochs{i}.entryID>0
+                    if isfield(session.epochs{i},'behavioralParadigmID') && ~isempty(session.epochs{i}.behavioralParadigmID)
+                        jsonStructure.r0g5h.(idx).fiElD_2598 = session.epochs{i}.behavioralParadigmID;
+                    end
+                    if isfield(session.epochs{i},'environmentID') && ~isempty(session.epochs{i}.environmentID)
+                        jsonStructure.r0g5h.(idx).fiElD_2495 = session.epochs{i}.environmentID;
+                    end
+                    if isfield(session.epochs{i},'manipulationID') && ~isempty(session.epochs{i}.manipulationID)
+                        jsonStructure.r0g5h.(idx).fiElD_2506 = session.epochs{i}.manipulationID;
+                    end
+                    if isfield(session.epochs{i},'startTime') && ~isempty(session.epochs{i}.startTime)
+                        jsonStructure.r0g5h.(idx).fiElD_2971 = session.epochs{i}.startTime;
+                    end
+                    if isfield(session.epochs{i},'stopTime') && ~isempty(session.epochs{i}.stopTime)
+                        jsonStructure.r0g5h.(idx).fiElD_2309 = session.epochs{i}.stopTime;
+                    end
+                    if isfield(session.epochs{i},'notes') && ~isempty(session.epochs{i}.notes)
+                        jsonStructure.r0g5h.(idx).fiElD_2314 = session.epochs{i}.notes;
+                    end
+                end
             end
-            jsonStructure.r0g5h.(idx).fiElD_2311 = session.epochs{i}.name;
-            if isfield(session.epochs{i},'entryID') && session.epochs{i}.entryID>0
-                if isfield(session.epochs{i},'behavioralParadigmID') && ~isempty(session.epochs{i}.behavioralParadigmID)
-                    jsonStructure.r0g5h.(idx).fiElD_2598 = session.epochs{i}.behavioralParadigmID;
-                end
-                if isfield(session.epochs{i},'environmentID') && ~isempty(session.epochs{i}.environmentID)
-                    jsonStructure.r0g5h.(idx).fiElD_2495 = session.epochs{i}.environmentID;
-                end
-                if isfield(session.epochs{i},'manipulationID') && ~isempty(session.epochs{i}.manipulationID)
-                    jsonStructure.r0g5h.(idx).fiElD_2506 = session.epochs{i}.manipulationID;
-                end
-                if isfield(session.epochs{i},'startTime') && ~isempty(session.epochs{i}.startTime)
-                    jsonStructure.r0g5h.(idx).fiElD_2971 = session.epochs{i}.startTime;
-                end
-                if isfield(session.epochs{i},'stopTime') && ~isempty(session.epochs{i}.stopTime)
-                    jsonStructure.r0g5h.(idx).fiElD_2309 = session.epochs{i}.stopTime;
-                end
-                if isfield(session.epochs{i},'notes') && ~isempty(session.epochs{i}.notes)
-                    jsonStructure.r0g5h.(idx).fiElD_2314 = session.epochs{i}.notes;
-                end
+            jsonStructure = jsonencode(jsonStructure);
+            jsonStructure = strrep(jsonStructure,'fiElD_','');
+            options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
+            RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
+            if RESPONSE.success==1
+                disp('Epochs successfully submitted to db')
             end
-        end
-        jsonStructure = jsonencode(jsonStructure);
-        jsonStructure = strrep(jsonStructure,'fiElD_','');
-        options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
-        RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
-        if RESPONSE.success==1
-            disp('Epochs successfully submitted to db')
         end
     end
     

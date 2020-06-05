@@ -1,18 +1,18 @@
-function spikes = generateSpinDices(spikes)
+function spindices = generateSpinDices(spike_times)
 % Generates spindices matrics
 % By Peter Petersen
 % petersen.peter@gmail.com
-% 29-03-2019
+% 28-05-2020
 
-spikes.numcells = length(spikes.UID);
-for cc = 1:spikes.numcells
-    groups{cc}=spikes.UID(cc).*ones(size(spikes.times{cc}));
+numcells = numel(spike_times);
+for cc = 1:numcells
+    groups{cc}=cc*ones(size(spike_times{cc}));
 end
 
-if spikes.numcells>0
-    alltimes = cat(1,spikes.times{:}); 
-    groups = cat(1,groups{:}); %from cell to array
+if numcells>0
+    alltimes = cat(1,spike_times{:}); 
+    groups = cat(1,groups{:}); % from cell to array
     [alltimes,sortidx] = sort(alltimes); 
-    groups = groups(sortidx); %sort both
-    spikes.spindices = [alltimes groups];
+    groups = groups(sortidx); % sort both
+    spindices = [alltimes groups];
 end

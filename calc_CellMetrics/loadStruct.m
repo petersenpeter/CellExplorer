@@ -2,8 +2,8 @@ function output = loadStruct(dataName,datatype,varargin)
 % Load event, manipulation, behavior data to appropiate .mat files
 %
 % Example calls
-% loadStruct('trials','behavior','session',session)
-% loadStruct('spikes','cellinfo','session',session)
+% trials = loadStruct('trials','behavior','session',session);
+% spikes = loadStruct('spikes','cellinfo','session',session);
 
 % By Peter Petersen
 % petersen.peter@gmail.com

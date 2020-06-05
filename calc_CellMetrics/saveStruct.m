@@ -1,10 +1,13 @@
 function success = saveStruct(data,datatype,varargin)
 % Saves event, manipulation, behavior data to appropiate .mat files
 % Performs validation of the content before saving (not yet implemented)
+%
+% Example calls:
+% 
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last updated: 27-08-2019
+% Last updated: 03-06-2020
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@isstr); 
@@ -20,6 +23,9 @@ session = p.Results.session;
 
 success = false;
 
+if strcmp(inputname(1),'session')
+    session = data;
+end
 % Importing parameters from session struct
 if ~isempty(session)
     basename = session.general.name;
@@ -27,7 +33,7 @@ if ~isempty(session)
     if isfield(session.general,'clusteringPath')
         clusteringpath = session.general.clusteringPath;
     else
-        clusteringpath = basepath;
+        clusteringpath = '';
     end
 elseif isempty(basename)
     s = regexp(basepath, filesep, 'split');
@@ -50,9 +56,16 @@ if any(strcmp(datatype,supportedDataTypes))
         otherwise
             filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.mat']);
     end
-    save(filename, '-struct', 'S','-v7.3','-nocompression')
-    disp(['Saved variable ''',dataName, ''' to ', filename])
+    structSize = whos('S');
+    if structSize.bytes/1000000000 > 2
+        save(filename, '-struct', 'S','-v7.3')
+        disp(['Saved variable ''',dataName, ''' to ', filename,' (v7.3)'])
+    else
+        save(filename, '-struct', 'S')
+        disp(['Saved variable ''',dataName, ''' to ', filename])
+    end
+    
     success = true;
 else
-    error(['Not a valid datatype: ', datatype,', filename: ' filename])
+    error(['Not a valid datatype: ', datatype,', basename: ' basename])
 end

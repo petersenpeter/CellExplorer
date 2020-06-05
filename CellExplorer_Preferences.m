@@ -33,10 +33,11 @@ UI.settings.plotInsetChannelMap = 3;            % Show a channel map inset with 
 UI.settings.plotInsetACG = 0;                   % Show a ACG plot inset with waveforms.
 UI.settings.plotChannelMapAllChannels = true;   % Boolean. Show a select set of channels or all 
 UI.settings.waveformsAcrossChannelsAlignment = 'Probe layout'; % 'Probe layout', 'Electrode groups'
-UI.settings.colormap = hot(512);                % default colormap
+UI.settings.colormap = 'hot';                   % colormap of image plots
 UI.settings.showAllWaveforms = 0;               % Show all traces or a random subset (maxi 2000; faster UI)
 UI.settings.zscoreWaveforms = 1;                % Show zscored or full amplitude waveforms
 UI.settings.trilatGroupData = 'session';        % 'session','animal','all'
+UI.settings.hoverEffect = 1;                    % Highlights cells by hovering the mouse
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 5;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off

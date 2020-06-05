@@ -143,94 +143,13 @@ if forceReload
     
     switch lower(clusteringFormat)
         case {'kilosort'}
-            if ~exist('readNPY.m','file')
-                error('''readNPY.m'' is not in your path and is required to load the python data. Please download it here: https://github.com/kwikteam/npy-matlab.')
-            end
-            disp('loadSpikes: Loading Phy data')
-            spike_cluster_index = readNPY(fullfile(clusteringpath_full, 'spike_clusters.npy'));
-            spike_times = readNPY(fullfile(clusteringpath_full, 'spike_times.npy'));
-            spike_amplitudes = readNPY(fullfile(clusteringpath_full, 'amplitudes.npy'));
-            spike_clusters = unique(spike_cluster_index);
-            filename1 = fullfile(clusteringpath_full,'cluster_group.tsv');
-            filename2 = fullfile(clusteringpath_full,'cluster_groups.csv');
-            if exist(fullfile(clusteringpath_full, 'cluster_ids.npy')) && exist(fullfile(clusteringpath_full, 'shanks.npy')) && exist(fullfile(clusteringpath_full, 'peak_channel.npy'))
-                cluster_ids = readNPY(fullfile(clusteringpath_full, 'cluster_ids.npy'));
-                unit_shanks = readNPY(fullfile(clusteringpath_full, 'shanks.npy'));
-                peak_channel = readNPY(fullfile(clusteringpath_full, 'peak_channel.npy'))+1;
-                if exist(fullfile(clusteringpath_full, 'rez.mat'))
-                    load(fullfile(clusteringpath_full, 'rez.mat'))
-                    temp = find(rez.connected);
-                    peak_channel = temp(peak_channel);
-                    clear rez temp
-                end
-            end
-            
-            if exist(filename1,'file')
-                filename = filename1;
-            elseif exist(filename2,'file')
-                filename = filename2;
-            else
-                error('Phy: No cluster group file found')
-            end
-            delimiter = '\t';
-            startRow = 2;
-            formatSpec = '%f%s%[^\n\r]';
-            fileID = fopen(filename,'r');
-            dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
-            fclose(fileID);
-            j = 1;
-            for i = 1:length(dataArray{1})
-                if raw_clusters == 0
-                    if strcmp(dataArray{2}{i},'good')
-                        if sum(spike_cluster_index == dataArray{1}(i))>0
-                            spikes.ids{j} = find(spike_cluster_index == dataArray{1}(i));
-                            spikes.ts{j} = double(spike_times(spikes.ids{j}));
-                            spikes.times{j} = spikes.ts{j}/session.extracellular.sr;
-                            spikes.cluID(j) = dataArray{1}(i);
-                            spikes.UID(j) = j;
-                            if exist('cluster_ids')
-                                cluster_id = find(cluster_ids == spikes.cluID(j));
-                                spikes.maxWaveformCh1(j) = double(peak_channel(cluster_id)); % index 1;
-                                spikes.maxWaveformCh(j) = double(peak_channel(cluster_id))-1; % index 0;
-                                
-                                % Assigning shankID to the unit
-                                
-                                for jj = 1:session.extracellular.nElectrodeGroups
-                                    if any(session.extracellular.electrodeGroups.channels{jj} == spikes.maxWaveformCh1(j))
-                                        spikes.shankID(j) = jj;
-                                    end
-                                end
-                            end
-                            spikes.total(j) = length(spikes.ts{j});
-                            spikes.amplitudes{j} = double(spike_amplitudes(spikes.ids{j}));
-                            j = j+1;
-                        end
-                    end
-                else
-                    spikes.ids{j} = find(spike_cluster_index == dataArray{1}(i));
-                    spikes.ts{j} = double(spike_times(spikes.ids{j}));
-                    spikes.times{j} = spikes.ts{j}/session.extracellular.sr;
-                    spikes.cluID(j) = dataArray{1}(i);
-                    spikes.UID(j) = j;
-                    spikes.amplitudes{j} = double(spike_amplitudes(spikes.ids{j}))';
-                    j = j+1;
-                end
-            end
-            
-            if getAllWaveforms
-                spikes = GetAllWaveformsFromDat(spikes,session);
-            elseif getWaveforms % gets waveforms from dat file (only from peak channel)
-                spikes = GetWaveformsFromDat(spikes,session);
-            end
             error('KiloSort output format not implemented yet')
         case {'spyking circus'} 
             error('spyking circus output format not implemented yet')
         case {'mountainsort'}
             error('mountainsort output format not implemented yet')
-
         case {'ironclust'}
             error('ironclust output format not implemented yet')
-
         case {'klustakwik', 'neurosuite'}
             disp('loadSpikes: Loading Klustakwik data')
             unit_nb = 0;
@@ -302,6 +221,7 @@ if forceReload
                 error('''readNPY.m'' is not in your path and is required to load the python data. Please download it here: https://github.com/kwikteam/npy-matlab.')
             end
             disp('loadSpikes: Loading Phy data')
+            labelsToRead = {'Good'};
             spike_cluster_index = readNPY(fullfile(clusteringpath_full, 'spike_clusters.npy'));
             spike_times = readNPY(fullfile(clusteringpath_full, 'spike_times.npy'));
             spike_amplitudes = readNPY(fullfile(clusteringpath_full, 'amplitudes.npy'));
@@ -336,7 +256,7 @@ if forceReload
             j = 1;
             for i = 1:length(dataArray{1})
                 if raw_clusters == 0
-                    if strcmp(dataArray{2}{i},'good')
+                    if any(strcmp(dataArray{2}{i},labelsToRead))
                         if sum(spike_cluster_index == dataArray{1}(i))>0
                             spikes.ids{j} = find(spike_cluster_index == dataArray{1}(i));
                             spikes.ts{j} = double(spike_times(spikes.ids{j}));

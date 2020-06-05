@@ -1,4 +1,4 @@
-function db_out = db_load_table(table,search_term)
+function db_out = db_load_table(table,search_term,loadAdditionalAnimalInfo)
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 17-06-2019
@@ -50,6 +50,9 @@ switch lower(table)
     case 'opticfibers';             formidable_id = 106;
     case 'microdrives';             formidable_id = 196;
     case 'microdriveadjustments';   formidable_id = 197;
+    otherwise
+        warning('Please specify an existing tables as input table. See ''edit db_load_table'' for more info')
+        return
 end
 
 db_out = [];
@@ -62,8 +65,10 @@ if nargin==1
 else
     bz_db = webread([db_settings.address,'forms/', num2str(formidable_id), '/entries'],options,'page_size','5000','search',search_term);
 end
-
-bz_db_names = webread([db_settings.address,'forms/', num2str(formidable_id), '/fields'],options);
+if nargin<3
+loadAdditionalAnimalInfo = true;
+end
+    bz_db_names = webread([db_settings.address,'forms/', num2str(formidable_id), '/fields'],options);
 
 if ~isempty(bz_db)
     entrylist = fields(bz_db);
@@ -85,13 +90,15 @@ if ~isempty(bz_db)
             
         end
             if strcmp(lower(table),'animals')
-                db_out.(bz_db.(entrylist{j}).meta.Name).General = bz_db.(entrylist{j}).meta;
-                db_out.(bz_db.(entrylist{j}).meta.Name).General.Id = bz_db.(entrylist{j}).id;
-                db_out.(bz_db.(entrylist{j}).meta.Name).General.EntryKey = entrylist{j};
+                fieldname12 = ['animal_',bz_db.(entrylist{j}).meta.Name];
+                db_out.(fieldname12).General = bz_db.(entrylist{j}).meta;
+                db_out.(fieldname12).General.Id = bz_db.(entrylist{j}).id;
+                db_out.(fieldname12).General.EntryKey = entrylist{j};
             elseif any(strcmp(lower(table),{'surgeries','probeimplants','manipulationimplants','opticfiberimplants','virusinjections','histology','impedancemeasures','weightings'}))
-                db_out.(bz_db.(entrylist{j}).meta.Animal).((table)) = bz_db.(entrylist{j}).meta;
-                db_out.(bz_db.(entrylist{j}).meta.Animal).((table)).Id = bz_db.(entrylist{j}).id;
-                db_out.(bz_db.(entrylist{j}).meta.Animal).((table)).EntryKey = entrylist{j};
+                fieldname12 = ['animal_',bz_db.(entrylist{j}).meta.Animal];
+                db_out.(fieldname12).((table)) = bz_db.(entrylist{j}).meta;
+                db_out.(fieldname12).((table)).Id = bz_db.(entrylist{j}).id;
+                db_out.(fieldname12).((table)).EntryKey = entrylist{j};
             else %if any(strcmp(lower(table),{'species','strains','siliconprobes','projects'}))
                 label = ['id_', bz_db.(entrylist{j}).id];
                 db_out.(label) = bz_db.(entrylist{j}).meta;
@@ -102,7 +109,7 @@ if ~isempty(bz_db)
     end
     disp([num2str(size(entrylist,1)),' entries in ', table])
     
-    if strcmp(lower(table),'animals')
+    if strcmp(lower(table),'animals') && loadAdditionalAnimalInfo
         disp('Loading additional info for animals')
         sublist = {'Surgeries', 'ProbeImplants','VirusInjections','OpticFiberImplants','Weightings','ImpedanceMeasures','Histology'};
         animallist = fieldnames(db_out);
@@ -117,7 +124,7 @@ if ~isempty(bz_db)
                 for iiii = 1:size(animallist,1)
                     for iii = 1:size(fieldnames(db_out2),1)
                         if strcmp(db_out2.(animalNames{iii}).(sublist{ii}).Animal,animallist{iiii})
-                            db_out.(animallist{iiii}).(sublist{ii}) = db_out2.(animalNames{iii}).(sublist{ii});
+                            db_out.(['animal_',animallist{iiii}]).(sublist{ii}) = db_out2.(animalNames{iii}).(sublist{ii});
                         end
                     end
                 end

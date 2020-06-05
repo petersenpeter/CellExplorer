@@ -1,6 +1,6 @@
 function verifyCellMetricsStruct(cell_metrics)
     % Defining field types of standard metrics
-    cell_metrics_type_struct = {'general','acg','isi','waveforms','putativeConnections','firingRateMaps','responseCurves','events','manipulations','tags','groups','groundTruthClassification'};
+    cell_metrics_type_struct = {'general','acg','isi','waveforms','putativeConnections','firingRateMaps','responseCurves','events','manipulations','tags','groups','groundTruthClassification','spikes'};
     cell_metrics_type_cell = {'brainRegion','animal','sex','species','strain','geneticLine','labels','putativeCellType','deepSuperficial','synapticEffect'};
     cell_metrics_type_numeric = {'spikeGroup','spikeCount','firingRate','cv2','refractoryPeriodViolation','burstIndex_Mizuseki2012','thetaModulationIndex','acg_tau_rise',...
         'acg_tau_decay','acg_tau_burst','acg_refrac','acg_fit_rsquare','burstIndex_Royer2012','burstIndex_Doublets','synapticConnectionsIn','synapticConnectionsOut','maxWaveformCh',...
