@@ -17,9 +17,8 @@ CellExplorer used a single Matlab struct for handling all cell metrics called `c
 
 ## General metrics
 * `general`
-  * `basename`
+  * `basename` 
   * `basepath`
-  * `clusteringpath`
   * `cellCount`
   * `ccg`
 * `processinginfo`. The general fields also contains a list of timestamps for time-series metrics. 

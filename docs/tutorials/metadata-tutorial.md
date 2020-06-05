@@ -14,7 +14,7 @@ This tutorial shows you how to generate the [session metadata struct](https://ce
 basepath = '/your/data/path/basename/';
 cd(basepath)
 ```
-CellExplorer operates with two paths for a dataset: a `basepath` and a `clusteringpath`. The `basepath` defines the local path to the dataset, while the `clusteringpath` defines the relative path to the spike sorted data (optional). The session name, also referred to as `basename`, is assumed to be the same as the directory of the session. Each of these fields are defined in the `session.general` struct. The raw data file should be located in the `basepath`. 
+CellExplorer operates with one main path for a dataset: the `basepath`. The `basepath` defines the local path to the dataset. The session name, also referred to as `basename`, is assumed to be the same as the directory of the session. Each of these fields are defined in the `session.general` struct. The raw data file should be located in the `basepath`. 
 2. You can generate the session metadata struct from the template function
 ```m
 session = sessionTemplate(basepath);

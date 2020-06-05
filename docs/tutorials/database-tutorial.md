@@ -32,7 +32,7 @@ session = sessions{1};
    1. Load and set session parameters
 ```m
 sessionName = 'Peter_MS13_171129_105507_concat';
-[session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionName);
+[session, basename, basepath] = db_set_session('sessionName',sessionName);
 ```
 5. Inspect and edit the session metadata if necessary
 ```m

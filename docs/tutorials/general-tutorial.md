@@ -28,8 +28,8 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 4. Open several session from paths
 ```m
 basenames = {'Rat08-20130708','Rat08-20130709'};
-clusteringpaths = {'/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130709'};
-cell_metrics = LoadCellMetricsBatch('clusteringpaths',clusteringpaths,'basenames',basenames);
+basepaths = {'/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130709'};
+cell_metrics = LoadCellMetricsBatch('basepaths',basepaths,'basenames',basenames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 

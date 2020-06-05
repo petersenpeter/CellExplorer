@@ -36,10 +36,10 @@ By following above tutorial you should end up with an exported figure like shown
 1. Select a set of cells, using the mouse and open the actions dialog (press `space` or the `Actions` button in the right panel). If no cell selection is done before opening the action dialog, a cell selection dialog will be shown first: 
     <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%"></p>
 2. Select one of the three `MULTI PLOT OPTIONS` in the actions dialog and press OK.
-3. In the multi plot dialog shown below, select the plots to generate, check the `Save figures` toggle, and define file format (.png or .pdf) and file path (Save to the clustering paths, to the CellExplorer path or a user defined path):
+3. In the multi plot dialog shown below, select the plots to generate, check the `Save figures` toggle, and define file format (.png or .pdf) and file path (Save to the basepaths, to the CellExplorer path or a user defined path):
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%"></p>
 
-When you select to save your figures to the CellExplorer path or Clustering path, they will be saved to a subfolder named `summaryFigures`.
+When you select to save your figures to the CellExplorer path or basepath, they will be saved to a subfolder named `summaryFigures`.
 
 Be aware that saving to a pdf file, is substantial slower than saving a .png file, but the figure will be saved with vector graphics.
 
