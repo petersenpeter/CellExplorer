@@ -11,14 +11,12 @@ function success = saveStruct(data,datatype,varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@isstr); 
-addParameter(p,'clusteringpath',pwd,@isstr);
 addParameter(p,'basename','',@isstr);
 addParameter(p,'session',{},@isstruct);
 parse(p,varargin{:})
 
 basepath = p.Results.basepath;
 basename = p.Results.basename;
-clusteringpath = p.Results.clusteringpath;
 session = p.Results.session;
 
 success = false;
@@ -30,11 +28,6 @@ end
 if ~isempty(session)
     basename = session.general.name;
     basepath = session.general.basePath;
-    if isfield(session.general,'clusteringPath')
-        clusteringpath = session.general.clusteringPath;
-    else
-        clusteringpath = '';
-    end
 elseif isempty(basename)
     s = regexp(basepath, filesep, 'split');
     basename = s{end};
@@ -43,7 +36,7 @@ end
 % Validation
 % No validation implemented yet
 
-% Saving data to basepath/clusteringpath
+% Saving data to basepath
 supportedDataTypes = {'timeseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap','lfp','session'};
 if any(strcmp(datatype,supportedDataTypes))
     dataName = inputname(1);
@@ -51,11 +44,11 @@ if any(strcmp(datatype,supportedDataTypes))
     switch datatype
         case {'sessionInfo','session'}
             filename = fullfile(basepath,[basename,'.',datatype,'.mat']);
-        case {'cellinfo','firingRateMap'}
-            filename = fullfile(basepath,clusteringpath,[basename,'.',dataName,'.',datatype,'.mat']);
         otherwise
             filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.mat']);
     end
+    % Saving struct. 
+    % Checks byte size of struct to determine optimal mat format
     structSize = whos('S');
     if structSize.bytes/1000000000 > 2
         save(filename, '-struct', 'S','-v7.3')
@@ -64,7 +57,6 @@ if any(strcmp(datatype,supportedDataTypes))
         save(filename, '-struct', 'S')
         disp(['Saved variable ''',dataName, ''' to ', filename])
     end
-    
     success = true;
 else
     error(['Not a valid datatype: ', datatype,', basename: ' basename])

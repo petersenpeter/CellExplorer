@@ -17,6 +17,7 @@ function b = trilat(X,A,beta0,plots,waveforms_in)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
+
 if nargin < 2
         plots = 0;
         waveforms_in = [];
@@ -25,9 +26,11 @@ d = 1000*A.^(-2);
 tbl = table(X, d');
 weights = d.^(-1);
 % beta0 = [20, -100]; % initial position
+
 modelfun = @(b,X)(abs(b(1)-X(:,1)).^2+abs(b(2)-X(:,2)).^2).^(1/2);
 mdl = fitnlm(tbl,modelfun,beta0, 'Weights', weights.');
 b = mdl.Coefficients{1:2,{'Estimate'}};
+
 if plots
     figure
     subplot(1,2,1)

@@ -134,7 +134,7 @@ for i = 1:numel(fields_1stLevel)
         end
         if strcmp(fields_1stLevel{i},{'extracellular'})
             if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.electrodeGroups,'channels') && numel([session.extracellular.electrodeGroups.channels{:}]) == session.extracellular.nChannels
-                shortcutList = [shortcutList;{'electrodeGroups channel count','OK '}];
+                shortcutList = [shortcutList;{['electrodeGroups channel count: ' numel([session.extracellular.electrodeGroups.channels{:}])],'OK '}];
             elseif isempty(session.extracellular.electrodeGroups.channels)
                 shortcutList = [shortcutList;{'electrodeGroups not defined','<html><b><font color="red">electrodeGroups empty</font></b></html>'}];
             else
@@ -152,10 +152,15 @@ if exist(session.general.basePath,'dir')
 else
     shortcutList = [shortcutList;{'session.general.basePath','<html><b><font color="red">path does not exist</font></b></html>'}];
 end
-if exist(fullfile(session.general.basePath,session.general.clusteringPath),'dir')
-    shortcutList = [shortcutList;{'session.general.clusteringPath','clustering data path exist'}];
+if isfield(session,'spikeSorting') && ~isempty(session.spikeSorting{1}) && isfield(session.spikeSorting{1},'relativePath')
+    clusteringpath = session.spikeSorting{1}.relativePath;
 else
-    shortcutList = [shortcutList;{'session.general.clusteringPath','<html><b><font color="red">clustering data path does not exist</font></b></html>'}];
+    clusteringpath = '';
+end 
+if exist(fullfile(session.general.basePath,clusteringpath),'dir')
+    shortcutList = [shortcutList;{'session.spikeSorting{1}.relativePath','clustering data path exist'}];
+else
+    shortcutList = [shortcutList;{'session.spikeSorting{1}.relativePath','<html><b><font color="red">clustering data path does not exist</font></b></html>'}];
 end
 % Verifying raw data file exist
 if isfield(session.extracellular,'fileName') && ~isempty(session.extracellular.fileName)

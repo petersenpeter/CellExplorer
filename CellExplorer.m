@@ -14,14 +14,12 @@ function cell_metrics = CellExplorer(varargin)
 %
 % - Single session inputs
 % basepath               - Path to session (base directory)
-% clusteringpath         - Path to cluster data
 % basename               - basename (database session name)
 % id                     - BuzLabDB numeric id
 % session                - Session struct
 %
 % - Batch session inputs (when loading multiple session)
 % basepaths              - Paths to sessions (base directory)
-% clusteringpaths        - Paths to cluster data
 % sessionIDs             - BuzLabDB numeric ids
 % sessions               - session names (basenames)
 %
@@ -33,7 +31,6 @@ function cell_metrics = CellExplorer(varargin)
 % cell_metrics = CellExplorer('sessionName','rec1')       % Load session from database session name
 % cell_metrics = CellExplorer('sessionID',10985)          % Load session from BuzLabDB session id
 % cell_metrics = CellExplorer('sessions',{'rec1','rec2'})          % Load batch from database
-% cell_metrics = CellExplorer('clusteringpaths',{'path1','path1'}) % Load batch from a list with paths
 % cell_metrics = CellExplorer('basepaths',{'path1','[path1'})      % Load batch from a list with paths
 %
 % - Summary figure calls:
@@ -55,7 +52,6 @@ p = inputParser;
 
 addParameter(p,'metrics',[],@isstruct);         % cell_metrics struct
 addParameter(p,'basepath',pwd,@isstr);          % Path to session (base directory)
-addParameter(p,'clusteringpath',pwd,@isstr);
 addParameter(p,'session',[],@isstruct);
 addParameter(p,'basename','',@isstr);
 addParameter(p,'sessionID',[],@isnumeric);
@@ -65,7 +61,6 @@ addParameter(p,'sessionName',[],@isstr);
 addParameter(p,'sessionIDs',{},@iscell);
 addParameter(p,'sessions',{},@iscell);
 addParameter(p,'basepaths',{},@iscell);
-addParameter(p,'clusteringpaths',{},@iscell);
 
 % Extra inputs
 addParameter(p,'SWR',{},@iscell);
@@ -80,13 +75,11 @@ sessionName = p.Results.sessionName;
 session = p.Results.session;
 basepath = p.Results.basepath;
 basename = p.Results.basepaths;
-clusteringpath = p.Results.clusteringpath;
 
 % Batch inputs
 sessionIDs = p.Results.sessionIDs;
 sessionsin = p.Results.sessions;
 basepaths = p.Results.basepaths;
-clusteringpaths = p.Results.clusteringpaths;
 
 % Extra inputs
 SWR_in = p.Results.SWR;
@@ -102,7 +95,7 @@ UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.metricsTableType 
 UI.settings.deepSuperficial = ''; UI.settings.acgType = 'Normal'; UI.settings.cellTypeColors = []; UI.settings.monoSynDispIn = 'None';
 UI.settings.layout = 3; UI.settings.displayMenu = 0; UI.settings.displayInhibitory = false; UI.settings.displayExcitatory = false;
 UI.settings.customCellPlotIn{1} = 'Waveforms (single)'; UI.settings.customCellPlotIn{2} = 'ACGs (single)';
-UI.settings.customCellPlotIn{3} = 'thetaPhaseResponse'; UI.settings.customCellPlotIn{4} = 'firingRateMap';
+UI.settings.customCellPlotIn{3} = 'thetaPhaseResponse'; UI.settings.customCellPlotIn{4} = 'firingRateMap'; UI.settings.raster = 'cv2';
 UI.settings.customCellPlotIn{5} = 'firingRateMap'; UI.settings.customCellPlotIn{6} = 'firingRateMap'; UI.settings.plotCountIn = 'GUI 3+3';
 UI.settings.tSNE.calcNarrowAcg = true; UI.settings.tSNE.calcFiltWaveform = true; UI.settings.tSNE.metrics = '';
 UI.settings.tSNE.calcWideAcg = true; UI.settings.dispLegend = 1; UI.settings.tags = {'good','bad','mua','noise','inverseSpike','Other'};
@@ -205,21 +198,21 @@ elseif ~isempty(id) || ~isempty(sessionName) || ~isempty(session)
         disp('Loading session from database')
         if ~isempty(id)
             try
-                [session, basename, basepath, clusteringpath] = db_set_session('sessionId',id,'saveMat',false);
+                [session, basename, basepath] = db_set_session('sessionId',id,'saveMat',false);
             catch
                 warning('Failed to load dataset');
                 return
             end
         elseif ~isempty(sessionName)
             try
-                [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionName,'saveMat',false);
+                [session, basename, basepath] = db_set_session('sessionName',sessionName,'saveMat',false);
             catch
                 warning('Failed to load dataset');
                 return
             end
         else
             try
-                [session, basename, basepath, clusteringpath] = db_set_session('session',session,'saveMat',false);
+                [session, basename, basepath] = db_set_session('session',session,'saveMat',false);
             catch
                 warning('Failed to load session');
                 return
@@ -264,14 +257,6 @@ elseif ~isempty(sessionsin)
         warning('BuzLabDB tools not available');
         return
     end
-elseif ~isempty(clusteringpaths)
-    try
-        cell_metrics = LoadCellMetricsBatch('clusteringpaths',clusteringpaths);
-        initializeSession
-    catch
-        warning('Failed to load dataset from clustering paths');
-        return
-    end
 elseif ~isempty(basepaths)
     try
         cell_metrics = LoadCellMetricsBatch('basepaths',basepaths);
@@ -292,14 +277,9 @@ else
     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
         disp(['CellExplorer: Loading ',basename,'.session.mat'])
         load(fullfile(basepath,[basename,'.session.mat']))
-        if isempty(session.spikeSorting{1}.relativePath)
-            clusteringpath = '';
-        else
-            clusteringpath = session.spikeSorting{1}.relativePath;
-        end
-        if exist(fullfile(basepath,clusteringpath,[basename,'.cell_metrics.cellinfo.mat']),'file')
-            load(fullfile(basepath,clusteringpath,[basename,'.cell_metrics.cellinfo.mat']));
-            cell_metrics.general.path = fullfile(basepath,clusteringpath);
+        if exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
+            load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
+            cell_metrics.general.path = fullfile(basepath);
             cell_metrics.general.saveAs = 'cell_metrics';
             initializeSession;
         else
@@ -324,10 +304,10 @@ else
             end
         end
         
-    elseif exist(fullfile(basepath,clusteringpath,[basename,'.cell_metrics.cellinfo.mat']),'file')
+    elseif exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
         disp('Loading local cell_metrics')
-        load(fullfile(basepath,clusteringpath,[basename,'.cell_metrics.cellinfo.mat']));
-        cell_metrics.general.path = fullfile(basepath,clusteringpath);
+        load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
+        cell_metrics.general.path = basepath;
         initializeSession
     else
         if enableDatabase
@@ -361,15 +341,12 @@ end
 UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'About CellExplorer',menuSelectedFcn,@AboutDialog);
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit preferences',menuSelectedFcn,@LoadPreferences,'Separator','on');
-uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit BuzLabDB credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
-uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit BuzLabDB repository paths',menuSelectedFcn,@editDBrepositories);
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Benchmarking',menuSelectedFcn,@runBenchMark,'Separator','on');
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Quit',menuSelectedFcn,@exitCellExplorer,'Separator','on','Accelerator','W');
 
 % File
 UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
 uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
-uimenu(UI.menu.file.topMenu,menuLabel,'Load session(s) from BuzLabDB',menuSelectedFcn,@DatabaseSessionDialog,'Accelerator','D');
 UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save classification',menuSelectedFcn,@saveDialog,'Separator','on','Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Restore classification from backup',menuSelectedFcn,@restoreBackup);
 uimenu(UI.menu.file.topMenu,menuLabel,'Reload cell metrics',menuSelectedFcn,@reloadCellMetrics,'Separator','on');
@@ -396,7 +373,6 @@ UI.menu.edit.buttonBrainRegion = uimenu(UI.menu.edit.topMenu,menuLabel,'Assign b
 UI.menu.edit.buttonLabel = uimenu(UI.menu.edit.topMenu,menuLabel,'Assign label',menuSelectedFcn,@buttonLabel,'Accelerator','L');
 UI.menu.edit.addCellType = uimenu(UI.menu.edit.topMenu,menuLabel,'Add new cell-type',menuSelectedFcn,@AddNewCellType,'Separator','on');
 UI.menu.edit.addTag = uimenu(UI.menu.edit.topMenu,menuLabel,'Add new tag',menuSelectedFcn,@addTag);
-
 
 UI.menu.edit.reclassify_celltypes = uimenu(UI.menu.edit.topMenu,menuLabel,'Reclassify cells',menuSelectedFcn,@reclassify_celltypes,'Accelerator','R','Separator','on');
 UI.menu.edit.performClassification = uimenu(UI.menu.edit.topMenu,menuLabel,'Agglomerative hierarchical cluster tree classification',menuSelectedFcn,@performClassification);
@@ -547,8 +523,14 @@ uimenu(UI.menu.spikeData.topMenu,menuLabel,'Hover to edit spike plot',menuSelect
 UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
 uimenu(UI.menu.session.topMenu,menuLabel,'View metadata for current session',menuSelectedFcn,@viewSessionMetaData);
 uimenu(UI.menu.session.topMenu,menuLabel,'Open directory of current session',menuSelectedFcn,@openSessionDirectory,'Accelerator','C','Separator','on');
-uimenu(UI.menu.session.topMenu,menuLabel,'Show current session in the BuzLabDB',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
-uimenu(UI.menu.session.topMenu,menuLabel,'Show current animal in the BuzLabDB',menuSelectedFcn,@showAnimalInWebDB);
+
+% BuzLabDB
+UI.menu.BuzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
+uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Load session(s) from BuzLabDB',menuSelectedFcn,@DatabaseSessionDialog,'Accelerator','D');
+uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Edit credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
+uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Edit repository paths',menuSelectedFcn,@editDBrepositories);
+uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current session on website',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
+uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current animal subject on website',menuSelectedFcn,@showAnimalInWebDB);
 
 % Help
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
@@ -681,7 +663,7 @@ end
 % Message log and Benchmark
 % % % % % % % % % % % % % % % % % % % %
 set( UI.VBox, 'Heights', [25 -1 25]);
-UI.popupmenu.log = uicontrol('Style','popupmenu','Units','normalized','String',{'Welcome to CellExplorer. Please check the Help menu to learn keyboard shortcuts or visit the website'},'HorizontalAlignment','left','FontSize',10,'Parent',UI.panel.centerBottom);
+UI.popupmenu.log = uicontrol('Style','popupmenu','Units','normalized','String',{'Welcome to CellExplorer. Press H for keyboard shortcuts and visit the website for tutorials and documentation.'},'HorizontalAlignment','left','FontSize',10,'Parent',UI.panel.centerBottom);
 % Benchmark with display time in seconds for most recent plot call
 UI.benchmark = uicontrol('Style','text','Units','normalized','String','Benchmark','HorizontalAlignment','left','FontSize',13,'ForegroundColor',[0.3 0.3 0.3],'Parent',UI.panel.centerBottom);
 set(UI.panel.centerBottom, 'Widths', [-600 -300], 'Spacing', 5);
@@ -1159,9 +1141,6 @@ function updateUI
         % Saving current view activated for previous cell
         [az,el] = view;
     end
-    
-%     delete(subfig_ax(1).Children)
-%     set(UI.fig,'CurrentAxes',subfig_ax(1))
 
     % Deletes all children from the panel
     delete(UI.panel.subfig_ax1.Children)
@@ -1253,8 +1232,6 @@ function updateUI
         if strcmp(UI.settings.referenceData, 'Points') && ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,UI.plot.xTitle) && isfield(reference_cell_metrics,UI.plot.yTitle)
             idx = find(ismember(referenceData.clusClas,referenceData.selection));
             ce_gscatter(reference_cell_metrics.(UI.plot.xTitle)(idx), reference_cell_metrics.(UI.plot.yTitle)(idx), referenceData.clusClas(idx), clr_groups2,8,'x');
-%             legendScatter2 = gscatter(reference_cell_metrics.(UI.plot.xTitle)(idx), reference_cell_metrics.(UI.plot.yTitle)(idx), referenceData.clusClas(idx), clr_groups2,'x',8,'off');
-%             set(legendScatter2,'HitTest','off')
         elseif strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(reference_cell_metrics,UI.plot.xTitle) && isfield(reference_cell_metrics,UI.plot.yTitle)
             if ~exist('referenceData1','var') || ~isfield(referenceData1,'z') || ~strcmp(referenceData1.x_field,UI.plot.xTitle) || ~strcmp(referenceData1.y_field,UI.plot.yTitle) || referenceData1.x_log ~= UI.checkbox.logx.Value || referenceData1.y_log ~= UI.checkbox.logy.Value || ~strcmp(referenceData1.plotType, 'Image')
                 if UI.checkbox.logx.Value == 1
@@ -1310,8 +1287,6 @@ function updateUI
             if strcmp(UI.settings.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
                 ce_gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), clr_groups3,8,'x');
-%                 legendScatter2 = gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), clr_groups3,'x',8,'off');
-%                 set(legendScatter2,'HitTest','off')
             elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 if ~exist('groundTruthData1','var') || ~isfield(groundTruthData1,'z') || ~strcmp(groundTruthData1.x_field,UI.plot.xTitle) || ~strcmp(groundTruthData1.y_field,UI.plot.yTitle) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
                     
@@ -1627,11 +1602,6 @@ function updateUI
         subfig_ax(1).XLabel.String = UI.plot.xTitle;subfig_ax(1).XLabel.Interpreter = 'none';
         set(subfig_ax(1), 'Clipping','off','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
         xlim auto, ylim auto, zlim auto, axis tight
-        % set(subfig_ax(1),'ButtonDownFcn',@ClicktoSelectFromPlot)
-%         hZoom = zoom;
-%         zoom('off') % cannot change context if zoom on !
-%         set(hZoom,'RightClickAction',@ClicktoSelectFromPlot);
-%         zoom('on')
         
         % Setting linear/log scale
         if UI.checkbox.logx.Value == 1
@@ -1846,11 +1816,6 @@ function updateUI
         delete(d)
         set(UI.fig,'CurrentAxes',subfig_ax(2))
         set(subfig_ax(2),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), hold on
-%         delete(UI.panel.subfig_ax2.Children)
-%         % Creating new chield
-%         subfig_ax(2) = axes('Parent',UI.panel.subfig_ax2);
-        
-%         set(subfig_ax(2),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
         if (strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics)) || (strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics))
             set(subfig_ax(2), 'YScale', 'linear');
             yyaxis right
@@ -1867,8 +1832,6 @@ function updateUI
         if strcmp(UI.settings.referenceData, 'Points') && ~isempty(reference_cell_metrics)
             idx = find(ismember(referenceData.clusClas,referenceData.selection));
             ce_gscatter(reference_cell_metrics.troughToPeak(idx) * 1000, reference_cell_metrics.burstIndex_Royer2012(idx), referenceData.clusClas(idx), clr_groups2,8,'x');
-%             legendScatter2 = gscatter(reference_cell_metrics.troughToPeak(idx) * 1000, reference_cell_metrics.burstIndex_Royer2012(idx), referenceData.clusClas(idx), clr_groups2,'x',8,'off');
-%             set(legendScatter2,'HitTest','off')
         elseif strcmp(UI.settings.referenceData, 'Image') && ~isempty(reference_cell_metrics)
             yyaxis left
             set(subfig_ax(2), 'YScale', 'linear');
@@ -1882,8 +1845,6 @@ function updateUI
         if strcmp(UI.settings.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics)
             idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
             ce_gscatter(groundTruth_cell_metrics.troughToPeak(idx) * 1000, groundTruth_cell_metrics.burstIndex_Royer2012(idx), groundTruthData.clusClas(idx), clr_groups3,8,'x');
-%             legendScatter3 = gscatter(groundTruth_cell_metrics.troughToPeak(idx) * 1000, groundTruth_cell_metrics.burstIndex_Royer2012(idx), groundTruthData.clusClas(idx), clr_groups3,'x',8,'off');
-%             set(legendScatter3,'HitTest','off')
         elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics)
             yyaxis left
             groundTruthData.image = 1-sum(groundTruthData.z(:,:,:,groundTruthData.selection),4);
@@ -2084,7 +2045,8 @@ end
             if isfield(cell_metrics.waveforms,'filt_std')
                 patch([cell_metrics.waveforms.time{ii},flip(cell_metrics.waveforms.time{ii})], [cell_metrics.waveforms.filt{ii}+cell_metrics.waveforms.filt_std{ii},flip(cell_metrics.waveforms.filt{ii}-cell_metrics.waveforms.filt_std{ii})],'black','EdgeColor','none','FaceAlpha',.2,'HitTest','off')
             end
-            line(cell_metrics.waveforms.time{ii}, cell_metrics.waveforms.filt{ii}, 'color', col,'linewidth',2,'HitTest','off')            
+            line(cell_metrics.waveforms.time{ii}, cell_metrics.waveforms.filt{ii}, 'color', col,'linewidth',2,'HitTest','off')    
+            
             % Waveform metrics
             if UI.settings.plotWaveformMetrics
                 if isfield(cell_metrics,'polarity') && cell_metrics.polarity(ii) > 0
@@ -2143,6 +2105,15 @@ end
                 line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
             end
             
+%             % Reference data
+%             if ~strcmp(UI.settings.referenceData, 'None') && ~isempty(reference_cell_metrics)
+%                 patch([reference_cell_metrics.waveforms.time{ii},flip(reference_cell_metrics.waveforms.time{ii})], [reference_cell_metrics.waveforms.filt{ii}+cell_metrics.waveforms.filt_std{ii},flip(cell_metrics.waveforms.filt{ii}-cell_metrics.waveforms.filt_std{ii})],'black','EdgeColor','none','FaceAlpha',.2,'HitTest','off')
+%                 reference_cell_metrics.waveforms.filt_zscored
+%             end
+%             if ~strcmp(UI.settings.groundTruthData, 'None') && ~isempty(groundTruth_cell_metrics)
+%                 1                
+%             end
+
             % selected cell in black
             line(time_waveforms_zscored, cell_metrics.waveforms.(zscoreWaveforms1)(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
             if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
@@ -2851,12 +2822,20 @@ end
         elseif contains(customPlotSelection,'raster_')
             if isfield(cell_metrics,'spikes') && numel(cell_metrics.spikes.times)>=ii && ~isempty(cell_metrics.spikes.times{ii})
                 % ii,general,batchIDs,plotAxes
-                line(cell_metrics.spikes.times{ii},spikes2cv2(cell_metrics.spikes.times{ii}),'HitTest','off','Marker','.','LineStyle','none','color', [0.5 0.5 0.5]), axis tight
-                axis tight, ax6 = axis; 
-                if isfield(general,'states')
-                    plotTemporalStates
-                    ax6 = axis;
+                plotAxes.XLabel.String = 'Time (s)';
+                plotAxes.Title.String = 'Spike raster';
+                if strcmp(UI.settings.raster,'cv2')
+                    line(cell_metrics.spikes.times{ii},spikes2cv2(cell_metrics.spikes.times{ii}),'HitTest','off','Marker','.','LineStyle','none','color', [0.5 0.5 0.5]), axis tight
+                    plotAxes.YLabel.String = 'CV_2';
+                elseif strcmp(UI.settings.raster,'ISIs')
+                    line(cell_metrics.spikes.times{ii},spikes2isi(cell_metrics.spikes.times{ii}),'HitTest','off','Marker','.','LineStyle','none','color', [0.5 0.5 0.5]), axis tight
+                    plotAxes.YLabel.String = 'ISIs';
                 end
+                axis tight, ax6 = axis; 
+                
+                plotTemporalStates
+                plotTemporalRestriction
+                
                 if isfield(general.responseCurves.firingRateAcrossTime,'boundaries')
                     boundaries = general.responseCurves.firingRateAcrossTime.boundaries;
                     if isfield(general.responseCurves.firingRateAcrossTime,'boundaries_labels')
@@ -2887,10 +2866,11 @@ end
                 subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.responseCurves.(responseCurvesName));
 
                 axis tight, ax6 = axis; 
-                if contains(customPlotSelection,'RCs_firingRateAcrossTime') && isfield(general,'states')
+                if contains(customPlotSelection,'RCs_firingRateAcrossTime')
                     plotTemporalStates
-                    ax6 = axis;
+                    plotTemporalRestriction
                 end
+                
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
                         boundaries = general.responseCurves.(responseCurvesName).boundaries;
@@ -2943,10 +2923,11 @@ end
                 ploConnectionsHighlights(Xdata,subset1(troughToPeakSorted));
                 
                 ax6 = axis; 
-                if contains(customPlotSelection,'RCs_firingRateAcrossTime') && isfield(general,'states')
+                if contains(customPlotSelection,'RCs_firingRateAcrossTime')
                     plotTemporalStates
-                    ax6 = axis;
+                    plotTemporalRestriction
                 end
+                
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
                         boundaries = general.responseCurves.(responseCurvesName).boundaries;
@@ -2993,9 +2974,9 @@ end
                 subsetPlots.subset = subset222;
 
                 ax6 = axis; 
-                if contains(customPlotSelection,'RCs_firingRateAcrossTime') && isfield(general,'states')
+                if contains(customPlotSelection,'RCs_firingRateAcrossTime')
                     plotTemporalStates
-                    ax6 = axis;
+                    plotTemporalRestriction
                 end
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
@@ -3347,6 +3328,7 @@ end
         end
         
         function plotTemporalStates
+            if isfield(general,'states')   
             stateData = fieldnames(general.states);
             k_states = 0;
 %             clr_states = hsv(max(structfun(@(X) numel(fields(X)),general.states)))*0.8;
@@ -3363,6 +3345,27 @@ end
                 text(ax6(1),k_states*ax6(4),[stateData{j}, ' (',num2str(numel(stateNames)),')'],'VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
                 ylim([k_states*ax6(4),ax6(4)])
             end
+            ax6 = axis;
+            end
+        end
+        
+        function plotTemporalRestriction
+            k_states = 0;
+            if isfield(cell_metrics.general,'restrictToIntervals')
+                states1  = cell_metrics.general.restrictToIntervals;
+                patch(double([states1,flip(states1,2)])',k_states*ax6(4)+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1,1)),[0.2 0.2 0.8],'EdgeColor',[0.2 0.2 0.8],'HitTest','off')
+                k_states = k_states - .1;
+                text(ax6(1),k_states*ax6(4),'restrictToIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+%                 ylim([k_states*ax6(4),ax6(4)])
+            end
+            if isfield(cell_metrics.general,'excludeIntervals')
+                states1  = cell_metrics.general.excludeIntervals;
+                patch(double([states1,flip(states1,2)])',k_states*ax6(4)+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1,1)),[0.2 0.2 0.8],'EdgeColor',[0.2 0.2 0.8],'HitTest','off')
+                k_states = k_states - .1;
+                text(ax6(1),k_states*ax6(4),'excludeIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+            end
+            ylim([k_states*ax6(4),ax6(4)])
+            ax6 = axis;
         end
         
         function raster = spikes2isi(spikes_times)
@@ -3747,7 +3750,7 @@ end
         if strcmp(answer,'Yes') && UI.BatchMode
             ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
             try
-                cell_metrics1 = LoadCellMetricsBatch('clusteringpaths', cell_metrics.general.path,'basenames',cell_metrics.general.basenames,'basepaths',cell_metrics.general.basepaths,'waitbar_handle',ce_waitbar);
+                cell_metrics1 = LoadCellMetricsBatch('basenames',cell_metrics.general.basenames,'basepaths',cell_metrics.general.basepaths,'waitbar_handle',ce_waitbar);
                 if ~isempty(cell_metrics1)
                     cell_metrics = cell_metrics1;
                 else
@@ -3769,7 +3772,7 @@ end
                 path1 = cell_metrics.general.path;
                 file = fullfile(cell_metrics.general.path,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
             else isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir')
-                path1 = fullfile(cell_metrics.general.basepath,cell_metrics.general.clusteringpath);
+                path1 = cell_metrics.general.basepath;
                 file = fullfile(path1,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
             end
             if exist(file,'file')
@@ -4786,7 +4789,7 @@ end
             referenceData_path1 = cell(1,length(listing));
             referenceData_path1(:) = {referenceData_path};
             % Loading metrics
-            gt_cell_metrics = LoadCellMetricsBatch('clusteringpaths', referenceData_path1,'basenames',listing,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
+            gt_cell_metrics = LoadCellMetricsBatch('basenames',listing,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
             gt.refreshTime = datetime('now','Format','HH:mm:ss, d MMMM, yyyy');
             
             % Generating list of sessions
@@ -4860,7 +4863,7 @@ end
                 referenceData_path1 = cell(1,length(listSession2));
                 referenceData_path1(:) = {referenceData_path};
                 % Loading metrics
-                groundTruth_cell_metrics = LoadCellMetricsBatch('clusteringpaths', referenceData_path1,'basenames',listSession2,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
+                groundTruth_cell_metrics = LoadCellMetricsBatch('basenames',listSession2,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
                 
                 % Saving batch metrics
                 save(fullfile(referenceData_path,'groundTruth_cell_metrics.cellinfo.mat'),'groundTruth_cell_metrics');
@@ -4964,21 +4967,21 @@ end
                 cellCount = cell2mat( cellfun(@(x) x.spikeSorting.cellCount,db.sessions,'UniformOutput',false));
                 [~,idx2] = sort(cellCount(db.index),'descend');
             elseif loadDB.popupmenu.sorting.Value == 3 % Animal
-                [~,idx2] = sort(db.menu_animals(db.index));
+                [~,idx2] = sort(db.animals(db.index));
             elseif loadDB.popupmenu.sorting.Value == 4 % Species
-                [~,idx2] = sort(db.menu_species(db.index));
+                [~,idx2] = sort(db.species(db.index));
             elseif loadDB.popupmenu.sorting.Value == 5 % Behavioral paradigm
-                [~,idx2] = sort(db.menu_behavioralParadigm(db.index));
+                [~,idx2] = sort(db.behavioralParadigm(db.index));
             elseif loadDB.popupmenu.sorting.Value == 6 % Investigator
-                [~,idx2] = sort(db.menu_investigator(db.index));
+                [~,idx2] = sort(db.investigator(db.index));
             elseif loadDB.popupmenu.sorting.Value == 7 % Data repository
-                [~,idx2] = sort(db.menu_repository(db.index));
+                [~,idx2] = sort(db.repository(db.index));
             else
                 idx2 = 1:size(db.dataTable,1);
             end
             
             if loadDB.popupmenu.repositories.Value == 1 && ~isempty(db_settings.repositories)
-                idx3 = find(ismember(db.menu_repository(db.index),[fieldnames(db_settings.repositories);'NYUshare_Datasets']));
+                idx3 = find(ismember(db.repository(db.index),[fieldnames(db_settings.repositories);'NYUshare_Datasets']));
             else
                 idx3 = 1:size(db.dataTable,1);
             end
@@ -5014,7 +5017,6 @@ end
                 % Loading multiple sessions
                 % Setting paths from reference data folder/nyu share
                 db_basepath = {};
-                db_clusteringpath = {};
                 db_basename = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
                 i_db_subset_all = db.index(indx);
                 [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
@@ -5034,9 +5036,8 @@ end
                         return
                     end
                     
-                    db_clusteringpath{i_db} = referenceData_path;
                     db_basepath{i_db} = referenceData_path;
-                    if ~exist(fullfile(db_clusteringpath{i_db},[db_basename{indx2},'.cell_metrics.cellinfo.mat']),'file')
+                    if ~exist(fullfile(db_basepath{i_db},[db_basename{indx2},'.cell_metrics.cellinfo.mat']),'file')
                         waitbar(i_db/length(i_db_subset_all),ce_waitbar,['Downloading missing reference data : ' db_basename{indx2}]);
                         Investigator_name = strsplit(db.sessions{i_db_subset}.investigator,' ');
                         path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
@@ -5063,10 +5064,9 @@ end
                             end
                         end
                     end
-                    %                         cell_metrics2{i_db} = load(fullfile(db_clusteringpath{i_db},[db_basename{i_db_subset},'.',saveAs,'.cellinfo.mat']));
                 end
                 
-                cell_metrics1 = LoadCellMetricsBatch('clusteringpaths', db_clusteringpath,'basenames',db_basename(indx),'basepaths',db_basepath,'waitbar_handle',ce_waitbar);
+                cell_metrics1 = LoadCellMetricsBatch('basenames',db_basename(indx),'basepaths',db_basepath,'waitbar_handle',ce_waitbar);
                 if ~isempty(cell_metrics1)
                     reference_cell_metrics = cell_metrics1;
                 else
@@ -5106,9 +5106,9 @@ end
                     
                 catch
                     if isfield(UI,'panel')
-                        MsgLog(['Failed to load dataset from database: ',strjoin(db.menu_items(indx))],4);
+                        MsgLog(['Failed to load dataset from database: ',strjoin(db.sessionName(indx))],4);
                     else
-                        disp(['Failed to load dataset from database: ',strjoin(db.menu_items(indx))]);
+                        disp(['Failed to load dataset from database: ',strjoin(db.sessionName(indx))]);
                     end
                     
                 end
@@ -6398,7 +6398,7 @@ end
     function hoverCallback(~,~)
         if UI.fig == get(groot,'CurrentFigure') && clickPlotRegular && UI.settings.hoverEffect == 1 
             axnum = getAxisBelowCursor;
-            if ~isempty(axnum) && axnum < 10
+            if ~isempty(axnum) && axnum < 10 && ~isempty(UI.params.subset)
                 handle34 = subfig_ax(axnum);
                 set(UI.fig,'CurrentAxes',handle34)
                 if ishandle(hover2highlight.handle1)
@@ -7159,6 +7159,7 @@ end
                     y_scale = range(y1(:));
                     [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
                     In = unique(floor(In/length(subsetPlots.xaxis)))+1;
+                    In = min([In,length(subset1)]);
                     iii = subset1(In);
                     [~,time_index] = min(abs(subsetPlots.xaxis-u));
                     if highlight || hover
@@ -8608,7 +8609,7 @@ end
                     uicontrol('Parent',exportPlots.dialog,'Style','text','Position',[5, 62, 140, 20],'Units','normalized','String','File format','HorizontalAlignment','center','Units','normalized');
                     exportPlots.popupmenu.fileFormat = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[5, 40, 140, 25],'Units','normalized','String',{'png','pdf (slower but vector graphics)'},'HorizontalAlignment','left','Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','text','Position',[155, 62, 140, 20],'Units','normalized','String','File path','HorizontalAlignment','center','Units','normalized');
-                    exportPlots.popupmenu.savePath = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[155, 40, 140, 25],'Units','normalized','String',{'Clustering path','CellExplorer','Define path'},'HorizontalAlignment','left','Units','normalized');
+                    exportPlots.popupmenu.savePath = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[155, 40, 140, 25],'Units','normalized','String',{'basepath','CellExplorer','Define path'},'HorizontalAlignment','left','Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[5, 5, 140, 30],'String','OK','Callback',@ClosePlot_dialog,'Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[155, 5, 140, 30],'String','Cancel','Callback',@(src,evnt)CancelPlot_dialog,'Units','normalized');
                     
@@ -9351,6 +9352,9 @@ end
         end
         UI.params.randomNumbers = rand(1,cell_metrics.general.cellCount);
         
+        if ~isfield(cell_metrics.general,'initialized')
+            cell_metrics.general.initialized = 0;
+        end
         % Initialize labels
         if ~isfield(cell_metrics, 'labels')
             cell_metrics.labels = repmat({''},1,cell_metrics.general.cellCount);
@@ -9483,54 +9487,78 @@ end
             updateCellTableData;
         end
         
-        % waveform initialization
-        filtWaveform = [];
         step_size = [cellfun(@diff,cell_metrics.waveforms.time,'UniformOutput',false)];
         time_waveforms_zscored = [max(cellfun(@min, cell_metrics.waveforms.time)):min([step_size{:}]):min(cellfun(@max, cell_metrics.waveforms.time))];
-        if ~isfield(cell_metrics.waveforms,'filt_zscored') || ~isfield(cell_metrics.waveforms,'filt_absolute') || size(cell_metrics.waveforms.filt_zscored,2) ~= cell_metrics.general.cellCount
+        
+        % Response curves
+        UI.x_bins.thetaPhase = [-1:0.05:1]*pi;
+        UI.x_bins.thetaPhase = UI.x_bins.thetaPhase(1:end-1)+diff(UI.x_bins.thetaPhase([1,2]))/2;
+        
+        % Generating extrac fields if necessary
+        if ~cell_metrics.general.initialized
+            % waveform initialization
+            filtWaveform = [];
             statusUpdate('Initializing filtered waveforms')
             for i = 1:length(cell_metrics.waveforms.filt)
-                filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},time_waveforms_zscored,'spline',nan);
+                if isempty(cell_metrics.waveforms.raw{i}) || any(isnan(cell_metrics.waveforms.filt{i}))
+                    filtWaveform(:,i) = zeros(size(time_waveforms_zscored));
+                else
+                    filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},time_waveforms_zscored,'spline',nan);
+                end
             end
             cell_metrics.waveforms.filt_absolute = filtWaveform;
             cell_metrics.waveforms.filt_zscored = (filtWaveform-nanmean(filtWaveform))./nanstd(filtWaveform);
-        end
-        
-        % 'All raw waveforms'
-        if isfield(cell_metrics.waveforms,'raw') && (~isfield(cell_metrics.waveforms,'raw_zscored') || ~isfield(cell_metrics.waveforms,'raw_absolute') || size(cell_metrics.waveforms.raw_zscored,2) ~= cell_metrics.general.cellCount)
+            
+            % 'All raw waveforms'
+            if isfield(cell_metrics.waveforms,'raw')
             statusUpdate('Initializing raw waveforms')
             rawWaveform = [];
             for i = 1:length(cell_metrics.waveforms.raw)
-                if isempty(cell_metrics.waveforms.raw{i})
+                if isempty(cell_metrics.waveforms.raw{i}) || any(isnan(cell_metrics.waveforms.raw{i}))
                     rawWaveform(:,i) = zeros(size(time_waveforms_zscored));
                 else
                     rawWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.raw{i},time_waveforms_zscored,'spline',nan);
                 end
             end
-                cell_metrics.waveforms.raw_absolute = rawWaveform;
-                cell_metrics.waveforms.raw_zscored = (rawWaveform-nanmean(rawWaveform))./nanstd(rawWaveform);
+            cell_metrics.waveforms.raw_absolute = rawWaveform;
+            cell_metrics.waveforms.raw_zscored = (rawWaveform-nanmean(rawWaveform))./nanstd(rawWaveform);
             clear rawWaveform
-        end
-        
-        if ~isfield(cell_metrics.acg,'wide_normalized') || size(cell_metrics.acg.wide_normalized,2) ~= size(cell_metrics.acg.wide,2)
+            end
+            
+            % ACGs
             statusUpdate('Initializing wide ACGs')
             cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide);
-        end
-        if ~isfield(cell_metrics.acg,'narrow_normalized') || size(cell_metrics.acg.narrow_normalized,2) ~= size(cell_metrics.acg.narrow,2)
+
             statusUpdate('Initializing narrow ACGs')
             cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow);
-        end
-        
-        if isfield(cell_metrics.acg,'log10') && (~isfield(cell_metrics.acg,'log10_occurrence') || ~isfield(cell_metrics.acg,'log10_rate') || size(cell_metrics.acg.log10_rate,2) ~= size(cell_metrics.acg.log10,2))
+            
+            if isfield(cell_metrics.acg,'log10')
             statusUpdate('Initializing log10 ACGs')
             cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
             cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.settings.ACGLogIntervals)');
-        end
-        
-        if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')  && (~isfield(cell_metrics.isi,'log10_occurrence') || ~isfield(cell_metrics.isi,'log10_rate') || size(cell_metrics.isi.log10_rate,2) ~= size(cell_metrics.isi.log10,2))
+            end
+            
+            if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')
             statusUpdate('Initializing log10 ACGs')
             cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
             cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.settings.ACGLogIntervals)');
+            end
+            
+            if isfield(cell_metrics.responseCurves,'thetaPhase')
+                statusUpdate('Initializing response curves')
+                thetaPhaseCurves = nan(length(UI.x_bins.thetaPhase),cell_metrics.general.cellCount);
+                for i = 1:length(cell_metrics.responseCurves.thetaPhase)
+                    if isempty(cell_metrics.responseCurves.thetaPhase{i}) || any(isnan(cell_metrics.responseCurves.thetaPhase{i}))
+                        thetaPhaseCurves(:,i) = nan(size(UI.x_bins.thetaPhase));
+                    elseif UI.BatchMode
+                        thetaPhaseCurves(:,i) = interp1(cell_metrics.general.batch{cell_metrics.batchIDs(i)}.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i}',UI.x_bins.thetaPhase,'spline',nan);
+                    else
+                        thetaPhaseCurves(:,i) = interp1(cell_metrics.general.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i},UI.x_bins.thetaPhase,'spline',nan);
+                    end
+                end
+                cell_metrics.responseCurves.thetaPhase_zscored = (thetaPhaseCurves-nanmean(thetaPhaseCurves))./nanstd(thetaPhaseCurves);
+                clear thetaPhaseCurves
+            end
         end
         
         % filtWaveform, acg2, acg1, plot
@@ -9583,25 +9611,6 @@ end
                 X(isnan(X) | isinf(X)) = 0;
                 tSNE_metrics.plot = tsne(X','Standardize',true,'Distance',UI.settings.tSNE.dDistanceMetric,'Exaggeration',UI.settings.tSNE.exaggeration);
             end
-        end
-        
-        % Response curves
-        UI.x_bins.thetaPhase = [-1:0.05:1]*pi;
-        UI.x_bins.thetaPhase = UI.x_bins.thetaPhase(1:end-1)+diff(UI.x_bins.thetaPhase([1,2]))/2;
-        if isfield(cell_metrics.responseCurves,'thetaPhase') && (~isfield(cell_metrics.responseCurves,'thetaPhase_zscored')  || size(cell_metrics.responseCurves.thetaPhase_zscored,2) ~= length(cell_metrics.troughToPeak))
-            statusUpdate('Initializing response curves')
-            thetaPhaseCurves = nan(length(UI.x_bins.thetaPhase),cell_metrics.general.cellCount);
-            for i = 1:length(cell_metrics.responseCurves.thetaPhase)
-                if isempty(cell_metrics.responseCurves.thetaPhase{i}) || any(isnan(cell_metrics.responseCurves.thetaPhase{i}))
-                    thetaPhaseCurves(:,i) = nan(size(UI.x_bins.thetaPhase));
-                elseif UI.BatchMode
-                    thetaPhaseCurves(:,i) = interp1(cell_metrics.general.batch{cell_metrics.batchIDs(i)}.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i}',UI.x_bins.thetaPhase,'spline',nan);
-                else
-                    thetaPhaseCurves(:,i) = interp1(cell_metrics.general.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i},UI.x_bins.thetaPhase,'spline',nan);
-                end
-            end
-            cell_metrics.responseCurves.thetaPhase_zscored = (thetaPhaseCurves-nanmean(thetaPhaseCurves))./nanstd(thetaPhaseCurves);
-            clear thetaPhaseCurves
         end
         
         % Setting initial settings for plots, popups and listboxes
@@ -9715,7 +9724,7 @@ end
         customPlotOptions = cellfun(@(X) X(1:end-2),customPlotOptions.m,'UniformOutput', false);
         customPlotOptions(strcmpi(customPlotOptions,'template')) = [];
         
-        %         cell_metricsFieldnames = fieldnames(cell_metrics,'-full');
+        % cell_metricsFieldnames = fieldnames(cell_metrics,'-full');
         structFieldsType = metrics_fieldsNames(find(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'struct')));
         plotOptions = {};
         for j = 1:length(structFieldsType)
@@ -9804,6 +9813,7 @@ end
         for i = 1:length(customSpikePlotOptions)
             spikesPlots.(customSpikePlotOptions{i}) = customSpikesPlots.(customSpikePlotOptions{i});
         end
+        cell_metrics.general.initialized = 1;
     end
 
     function updateColorMenuCount
@@ -9874,6 +9884,22 @@ end
         referenceData.y = referenceData.y(1:end-1);
         
         referenceData.selection = temp;
+        
+        % 'All filt waveforms'
+        if isfield(cell_metrics.waveforms,'filt')
+            filtWaveform = [];
+            for i = 1:length(cell_metrics.waveforms.filt)
+                if isempty(cell_metrics.waveforms.filt{i})
+                    filtWaveform(:,i) = zeros(size(time_waveforms_zscored));
+                else
+                    filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},time_waveforms_zscored,'spline',nan);
+                end
+            end
+            if ~isfield(cell_metrics.waveforms,'filt_zscored')  || size(cell_metrics.waveforms.filt,2) ~= size(cell_metrics.waveforms.filt_zscored,2)
+                cell_metrics.waveforms.filt_zscored = (filtWaveform-nanmean(filtWaveform))./nanstd(filtWaveform);
+            end
+            clear filtWaveform
+        end
         
         % 'All raw waveforms'
         if isfield(cell_metrics.waveforms,'raw')
@@ -10010,21 +10036,21 @@ end
                 cellCount = cell2mat( cellfun(@(x) x.spikeSorting.cellCount,db.sessions,'UniformOutput',false));
                 [~,idx2] = sort(cellCount(db.index),'descend');
             elseif loadDB.popupmenu.sorting.Value == 3 % Animal
-                [~,idx2] = sort(db.menu_animals(db.index));
+                [~,idx2] = sort(db.animals(db.index));
             elseif loadDB.popupmenu.sorting.Value == 4 % Species
-                [~,idx2] = sort(db.menu_species(db.index));
+                [~,idx2] = sort(db.species(db.index));
             elseif loadDB.popupmenu.sorting.Value == 5 % Behavioral paradigm
-                [~,idx2] = sort(db.menu_behavioralParadigm(db.index));
+                [~,idx2] = sort(db.behavioralParadigm(db.index));
             elseif loadDB.popupmenu.sorting.Value == 6 % Investigator
-                [~,idx2] = sort(db.menu_investigator(db.index));
+                [~,idx2] = sort(db.investigator(db.index));
             elseif loadDB.popupmenu.sorting.Value == 7 % Data repository
-                [~,idx2] = sort(db.menu_repository(db.index));
+                [~,idx2] = sort(db.repository(db.index));
             else
                 idx2 = 1:size(db.dataTable,1);
             end
             
             if loadDB.popupmenu.repositories.Value == 2
-                idx3 = find(ismember(db.menu_repository(db.index),fieldnames(db_settings.repositories)));
+                idx3 = find(ismember(db.repository(db.index),fieldnames(db_settings.repositories)));
             else
                 idx3 = 1:size(db.dataTable,1);
             end
@@ -10063,12 +10089,6 @@ end
                         else
                             basepath = fullfile(db_settings.repositories.(session.repositories{1}), session.animal, session.name);
                         end
-                        
-                        if ~isempty(session.spikeSorting.relativePath)
-                            clusteringpath = fullfile(basepath, session.spikeSorting.relativePath{1});
-                        else
-                            clusteringpath = basepath;
-                        end
                         SWR_in = {};
                         successMessage = LoadSession;
                     end
@@ -10077,7 +10097,6 @@ end
                     % Setting paths from db struct
                     db_basename = {};
                     db_basepath = {};
-                    db_clusteringpath = {};
                     db_basename = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
                     i_db_subset_all = db.index(indx);
                     for i_db = 1:length(i_db_subset_all)
@@ -10094,23 +10113,14 @@ end
                         else
                             db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
                         end
-                        
-                        if ~isempty(db.sessions{i_db_subset}.spikeSorting.relativePath)
-                            db_clusteringpath{i_db} = fullfile(db_basepath{i_db}, db.sessions{i_db_subset}.spikeSorting.relativePath{1});
-                        else
-                            db_clusteringpath{i_db} = db_basepath{i_db};
-                        end
-                        
                     end
-                    
                     ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
-                    cell_metrics1 = LoadCellMetricsBatch('clusteringpaths', db_clusteringpath,'basenames',db_basename(indx),'basepaths',db_basepath,'waitbar_handle',ce_waitbar);
+                    cell_metrics1 = LoadCellMetricsBatch('basenames',db_basename(indx),'basepaths',db_basepath,'waitbar_handle',ce_waitbar);
                     if ~isempty(cell_metrics1)
                         cell_metrics = cell_metrics1;
                     else
                         return
                     end
-                    % cell_metrics = LoadCellMetricsBatch('sessionIDs', str2double(db_menu_ids(indx)));
                     SWR_in = {};
                     
                     statusUpdate('Initializing session(s)')
@@ -10127,9 +10137,9 @@ end
                         
                     catch
                         if isfield(UI,'panel')
-                            MsgLog(['Failed to load dataset from database: ',strjoin(db.menu_items(indx))],4);
+                            MsgLog(['Failed to load dataset from database: ',strjoin(db.sessionName(indx))],4);
                         else
-                            disp(['Failed to load dataset from database: ',strjoin(db.menu_items(indx))]);
+                            disp(['Failed to load dataset from database: ',strjoin(db.sessionName(indx))]);
                         end
                     end
                     
@@ -10178,39 +10188,39 @@ end
                 db.refreshTime = datetime('now','Format','HH:mm:ss, d MMMM, yyyy');
                 
                 % Generating list of sessions
-                [db.menu_items,db.index] = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
-                db.menu_ids = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
-                db.menu_ids = db.menu_ids(db.index);
-                db.menu_animals = cellfun(@(x) x.animal,db.sessions,'UniformOutput',false);
-                db.menu_species = cellfun(@(x) x.species,db.sessions,'UniformOutput',false);
+                [db.sessionName,db.index] = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
+                db.ids = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
+                db.ids = db.ids(db.index);
+                db.animals = cellfun(@(x) x.animal,db.sessions,'UniformOutput',false);
+                db.species = cellfun(@(x) x.species,db.sessions,'UniformOutput',false);
                 for i = 1:size(db.sessions,2)
                     if ~isempty(db.sessions{i}.behavioralParadigm)
-                        db.menu_behavioralParadigm{i} = strjoin(db.sessions{i}.behavioralParadigm,', ');
+                        db.behavioralParadigm{i} = strjoin(db.sessions{i}.behavioralParadigm,', ');
                     else
-                        db.menu_behavioralParadigm{i} = '';
+                        db.behavioralParadigm{i} = '';
                     end
                     if ~isempty(db.sessions{i}.brainRegion)
-                        db.menu_brainRegion{i} = strjoin(db.sessions{i}.brainRegion,', ');
+                        db.brainRegion{i} = strjoin(db.sessions{i}.brainRegion,', ');
                     else
-                        db.menu_brainRegion{i} = '';
+                        db.brainRegion{i} = '';
                     end
                 end
-                db.menu_investigator = cellfun(@(x) x.investigator,db.sessions,'UniformOutput',false);
-                db.menu_repository = cellfun(@(x) x.repositories{1},db.sessions,'UniformOutput',false);
-                db.menu_cells = cellfun(@(x) num2str(x.spikeSorting.cellCount),db.sessions,'UniformOutput',false);
+                db.investigator = cellfun(@(x) x.investigator,db.sessions,'UniformOutput',false);
+                db.repository = cellfun(@(x) x.repositories{1},db.sessions,'UniformOutput',false);
+                db.cells = cellfun(@(x) num2str(x.spikeSorting.cellCount),db.sessions,'UniformOutput',false);
                 
-                db.menu_values = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
-                db.menu_values = db.menu_values(db.index);
-                db.menu_items2 = strcat(db.menu_items);
-                sessionEnumerator = cellstr(num2str([1:length(db.menu_items2)]'))';
-                db.sessionList = strcat(sessionEnumerator,{' '},db.menu_items2,{' '},db.menu_cells(db.index),{' '},db.menu_animals(db.index),{' '},db.menu_behavioralParadigm(db.index),{' '},db.menu_species(db.index),{' '},db.menu_investigator(db.index),{' '},db.menu_repository(db.index),{' '},db.menu_brainRegion(db.index));
+                db.values = cellfun(@(x) x.id,db.sessions,'UniformOutput',false);
+                db.values = db.values(db.index);
+                db.sessionName2 = strcat(db.sessionName);
+                sessionEnumerator = cellstr(num2str([1:length(db.sessionName2)]'))';
+                db.sessionList = strcat(sessionEnumerator,{' '},db.sessionName2,{' '},db.cells(db.index),{' '},db.animals(db.index),{' '},db.behavioralParadigm(db.index),{' '},db.species(db.index),{' '},db.investigator(db.index),{' '},db.repository(db.index),{' '},db.brainRegion(db.index));
                 
                 % Promt user with a tabel with sessions
                 if ishandle(ce_waitbar)
                     close(ce_waitbar)
                 end
                 db.dataTable = {};
-                db.dataTable(:,2:10) = [sessionEnumerator;db.menu_items2;db.menu_cells(db.index);db.menu_animals(db.index);db.menu_species(db.index);db.menu_behavioralParadigm(db.index);db.menu_investigator(db.index);db.menu_repository(db.index);db.menu_brainRegion(db.index)]';
+                db.dataTable(:,2:10) = [sessionEnumerator;db.sessionName2;db.cells(db.index);db.animals(db.index);db.species(db.index);db.behavioralParadigm(db.index);db.investigator(db.index);db.repository(db.index);db.brainRegion(db.index)]';
                 db.dataTable(:,1) = {false};
                 [db_path,~,~] = fileparts(which('db_load_sessions.m'));
                 try
@@ -10241,10 +10251,10 @@ end
         successMessage = '';
         messagePriority = 1;
         if exist(basepath,'dir')
-            if exist(fullfile(clusteringpath,[basename, '.cell_metrics.cellinfo.mat']),'file')
+            if exist(fullfile(basepath,[basename, '.cell_metrics.cellinfo.mat']),'file')
                 cd(basepath);
-                load(fullfile(clusteringpath,[basename, '.cell_metrics.cellinfo.mat']));
-                cell_metrics.general.path = clusteringpath;
+                load(fullfile(basepath,[basename, '.cell_metrics.cellinfo.mat']));
+                cell_metrics.general.path = basepath;
                 initializeSession;
                 
                 successMessage = [basename ' with ' num2str(cell_metrics.general.cellCount)  ' cells loaded from database'];
@@ -10314,14 +10324,12 @@ end
             
             if isempty(spikes) || length(spikes) < batchIDsPrivate || isempty(spikes{batchIDsPrivate})
                 if UI.BatchMode
-                    clusteringpath1 = cell_metrics.general.path{batchIDsPrivate};
                     basename1 = cell_metrics.general.basenames{batchIDsPrivate};
                 else
-                    clusteringpath1 = cell_metrics.general.clusteringpath;
                     basename1 = cell_metrics.general.basename;
                 end
                 
-                if exist(fullfile(clusteringpath1,[basename1,'.spikes.cellinfo.mat']),'file')
+                if exist(fullfile(basename1,[basename1,'.spikes.cellinfo.mat']),'file')
                     if length(batchIDsIn)==1
                         ce_waitbar = waitbar(0,'Loading spike data','Name','Loading spikes data','WindowStyle','modal');
                     end
@@ -10330,7 +10338,7 @@ end
                         return
                     end
                     ce_waitbar = waitbar((batchIDsPrivate-1)/length(batchIDsIn),ce_waitbar,[num2str(batchIDsPrivate) '. Loading ', basename1]);
-                    temp = load(fullfile(clusteringpath1,[basename1,'.spikes.cellinfo.mat']));
+                    temp = load(fullfile(basename1,[basename1,'.spikes.cellinfo.mat']));
                     spikes{batchIDsPrivate} = temp.spikes;
                     out = true;
                     MsgLog(['Spikes loaded succesfully for ' basename1]);
@@ -10967,7 +10975,7 @@ end
                 path1 = cell_metrics.general.path;
             else
                 basename1 = cell_metrics.general.basename;
-                path1 = fullfile(cell_metrics.general.basepath,cell_metrics.general.clusteringpath);
+                path1 = cell_metrics.general.basepath;
             end
         end
         
@@ -11454,7 +11462,7 @@ end
         idx = testGroupsSizes==0;
         testGroups(idx) = [];
         testGroupsSizes(idx) = [];
-        nRepetitions = 100; 
+        nRepetitions = min([100,numel(UI.params.subset)]); 
 
         [indx,~] = listdlg('PromptString','What benchmark do you want to perform?','ListString',{'Cell Exporer UI', 'Single plot figures', 'Cell metrics file loading','Reference data file loading'},'ListSize',[300,200],'InitialValue',1,'SelectionMode','many','Name','Benchmarks');
         if any(indx == 3)
