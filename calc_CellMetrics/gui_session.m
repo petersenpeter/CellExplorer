@@ -1,3 +1,4 @@
+
 function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % Displays a GUI allowing you to edit parameters for the CellExplorer and metadata for a session
 %
@@ -28,7 +29,7 @@ inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
 
 % metrics in cell metrics pipeline
-UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics','importCellTypeClassification'};
+UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
 
 % Parameters in cell metrics pipeline
 UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections'};
@@ -59,22 +60,12 @@ if exist('sessionIn','var') && isstruct(sessionIn)
     else
         basepath = '';
     end
-    if isfield(session,'spikeSorting') && iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') && ~isempty(session.spikeSorting{1}.relativePath)
-        clusteringpath = session.spikeSorting{1}.relativePath;
-    else
-        clusteringpath = '';
-    end
 elseif exist('sessionIn','file') && ischar(sessionIn)
     disp(['Loading ' sessionIn]);
     load(sessionIn,'session');
     [filepath,~,~] = fileparts(sessionIn);
     basepath = filepath;
     sessionIn = session;
-    if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') & ~isempty(session.spikeSorting{1}.relativePath)
-        clusteringpath = session.spikeSorting{1}.relativePath;
-    else
-        clusteringpath = '';
-    end
 else
     basepath = pwd;
     [~,basename,~] = fileparts(pwd);
@@ -83,20 +74,10 @@ else
         
         load(fullfile(basepath,[basename,'.session.mat']),'session');
         sessionIn = session;
-        if iscell(session.spikeSorting) && ~isempty(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') && ~isempty(session.spikeSorting{1}.relativePath)
-            clusteringpath = session.spikeSorting{1}.relativePath;
-        else
-            clusteringpath = '';
-        end
     elseif exist(fullfile(basepath,'session.mat'),'file')
         disp('Loading session.mat from current path');
         load(fullfile(basepath,'session.mat'),'session');
         sessionIn = session;
-        if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') && ~isempty(session.spikeSorting{1}.relativePath)
-            clusteringpath = session.spikeSorting{1}.relativePath;
-        else
-            clusteringpath = '';
-        end
     else
         answer = questdlg([basename,'.session.mat does not exist. Would you like to create one from a template or locate an existing session file?'],'No basename.session.mat file found','Create from template', 'Load from database','Locate file','Create from template');
         % Handle response
@@ -105,11 +86,6 @@ else
                 session = sessionTemplate(pwd);
                 sessionIn = session;
                 basepath = session.general.basePath;
-                if isfield(session.spikeSorting{1},'relativePath') & ~isempty(session.spikeSorting{1}.relativePath)
-                    clusteringpath = session.spikeSorting{1}.relativePath;
-                else
-                    clusteringpath = '';
-                end
             case 'Locate file'
                 [file,basepath] = uigetfile('*.mat','Please select a session.mat file','*.session.mat');
                 if ~isequal(file,0)
@@ -117,11 +93,6 @@ else
                     temp = load(file,'session');
                     sessionIn = temp.session;
                     session = sessionIn;
-                    if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') & ~isempty(session.spikeSorting{1}.relativePath)
-                        clusteringpath = session.spikeSorting{1}.relativePath;
-                    else
-                        clusteringpath = '';
-                    end
                 else
                     warning('Please provide a session struct')
                     return
@@ -131,14 +102,8 @@ else
                 session.general.name = nameFolder;
                 success = updateFromDB;
                 if success == 0
-                    warning(['Failed to load session metadata from database']);
+                    warning('Failed to load session metadata from database');
                     return
-                else
-                    if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') & ~isempty(session.spikeSorting{1}.relativePath)
-                        clusteringpath = session.spikeSorting{1}.relativePath;
-                    else
-                        clusteringpath = '';
-                    end
                 end
             otherwise
                 return
@@ -173,9 +138,6 @@ if ~isfield(session.general,'version') || session.general.version<4
     end
 end
 session.general.basePath = basepath;
-if exist('clusteringpath','var')
-    session.general.clusteringPath = clusteringpath;
-end
 statusExit = 0;
 
 %% % % % % % % % % % % % % % % % % % % %
@@ -234,7 +196,6 @@ end
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
 uimenu(UI.menu.help.topMenu,menuLabel,'Tutorial on session metadata',menuSelectedFcn,@buttonHelp);
 uimenu(UI.menu.help.topMenu,menuLabel,'Documentation of session metadata structure',menuSelectedFcn,@buttonHelp,'Accelerator','H');
-
     
 %% % % % % % % % % % % % % % % % % % % %
 % Initializing tabs
@@ -242,7 +203,7 @@ uimenu(UI.menu.help.topMenu,menuLabel,'Documentation of session metadata structu
 
 UI.uitabgroup = uitabgroup('Units','normalized','Position',[0 0.06 1 0.94],'Parent',UI.fig,'Units','normalized');
 if exist('parameters','var')
-    UI.tabs.parameters = uitab(UI.uitabgroup,'Title','Cell metrics');
+    UI.tabs.parameters = uitab(UI.uitabgroup,'Title','CellExplorer');
 end
 UI.tabs.general = uitab(UI.uitabgroup,'Title','General','tooltip',sprintf('session.general: \nGeneral information about the dataset'));
 UI.tabs.epochs = uitab(UI.uitabgroup,'Title','Epochs','tooltip',sprintf('session.epochs: \nEpoch information describing temporal components of the dataset'));
@@ -263,41 +224,43 @@ UI.popupmenu.log = uicontrol('Style','popupmenu','String',{'Message log'},'Horiz
 % UI.status = uicontrol('Parent',UI.fig,'Style','text','Position',[410, 5, 200, 30],'String','','Units','normalized','HorizontalAlignment','Right', 'fontweight', 'bold','ForegroundColor','k','enable','on','hittest','off');
 
 % % % % % % % % % % % % % % % % % % % %
-% Cell metrics parameters
+% CellExplorer: Cell metrics parameters
 if exist('parameters','var')
     % Include metrics
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Include metrics (default: all)', 'Position', [10, 500, 285, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.listbox.includeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[10 330 275 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metrics),'Units','normalized','tooltip',sprintf('Select metrics to process by type'));
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Include metrics (default: all)', 'Position', [5, 500, 190, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.listbox.includeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[5 330 190 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metrics),'Units','normalized','tooltip',sprintf('Select metrics to process by type'));
     
     % Exclude metrics
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Exclude metrics (default: none)', 'Position', [300, 500, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.listbox.excludeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[300 330 310 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.excludeMetrics),'Units','normalized','tooltip',sprintf('Select metrics not to process by type'));
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Exclude metrics (default: none)', 'Position', [210, 500, 190, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.listbox.excludeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[210 330 190 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.excludeMetrics),'Units','normalized','tooltip',sprintf('Select metrics not to process by type'));
     
+    % Metrics to restrict analysis to for manipulations
+    UI.list.metrics = union([UI.list.metrics,'other_metrics'],parameters.metricsToExcludeManipulationIntervals);
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Exclude manipulation intervals', 'Position', [415, 500, 195, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.listbox.metricsToExcludeManipulationIntervals = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[415 330 195 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metricsToExcludeManipulationIntervals),'Units','normalized','tooltip',sprintf('Select metrics to exclude manipulation intervals'));
+
     % Parameters
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Parameters', 'Position', [10, 305, 288, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Parameters', 'Position', [10, 300, 288, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     for iParams = 1:length(UI.list.params)
         if iParams <=6
-            offset = 0;
+            offset = 10;
         else
-            offset = 140;
+            offset = 210;
         end
-        UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.parameters,'Style','checkbox','Position',[10+offset 285-rem(iParams-1,6)*18 260 15],'Units','normalized','String',UI.list.params{iParams});
+        UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.parameters,'Style','checkbox','Position',[offset 285-rem(iParams-1,6)*18 260 15],'Units','normalized','String',UI.list.params{iParams});
     end
 end
 
 % % % % % % % % % % % % % % % % % % % %
 % General
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Base path', 'Position', [10, 498, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 475, 600, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The path to the dataset'));
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session name (base name)', 'Position', [10, 498, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 475, 600, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The name of the session (basename)'));
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session name (base name)', 'Position', [10, 448, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 425, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The name of the session (basename)'));
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Base path', 'Position', [10, 448, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 425, 600, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The path to the dataset'));
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [300, 448, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', sessionTypesList, 'Position', [300, 425, 310, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Session type'));
-
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Clustering path (defined in spike sorting tab)', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized','tooltip',sprintf('Relative path to spike sorted data.\nDefined in the spike sorting tab from the first set'));
-UI.edit.clusteringpath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','enable','off','tooltip',sprintf('Relative path to spike sorted data.\nDefined in the spike sorting tab from the first set'));
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', sessionTypesList, 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Session type'));
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Duration', 'Position', [300, 398, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.duration = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 375, 310, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Duration of the session (seconds)'));
@@ -591,7 +554,7 @@ uiwait(UI.fig)
         end
         
         UI.edit.basepath.String = session.general.basePath;
-        UI.edit.clusteringpath.String = session.general.clusteringPath;
+%         UI.edit.clusteringpath.String = session.general.clusteringPath;
         UI.edit.session.String = session.general.name;
         UIsetString(session.general,'date');
         UIsetString(session.general,'time');
@@ -822,16 +785,19 @@ uiwait(UI.fig)
             if ~isempty(UI.listbox.excludeMetrics.Value)
                 parameters.excludeMetrics = UI.listbox.excludeMetrics.String(UI.listbox.excludeMetrics.Value);
             end
+            if ~isempty(UI.listbox.metricsToExcludeManipulationIntervals.Value)
+                parameters.metricsToExcludeManipulationIntervals = UI.listbox.metricsToExcludeManipulationIntervals.String(UI.listbox.metricsToExcludeManipulationIntervals.Value);
+            end
         end
         session.general.date = UI.edit.date.String;
         session.general.time = UI.edit.time.String;
         session.general.name = UI.edit.session.String;
         session.general.basePath = UI.edit.basepath.String;
-        if isfield(session,'spikeSorting') && ~isempty(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath')
-            session.general.clusteringPath = session.spikeSorting{1}.relativePath;
-        else 
-            session.general.clusteringPath = '';
-        end
+%         if isfield(session,'spikeSorting') && ~isempty(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath')
+%             session.general.clusteringPath = session.spikeSorting{1}.relativePath;
+%         else 
+%             session.general.clusteringPath = '';
+%         end
         
         session.general.duration = UI.edit.duration.String;
         session.general.location = UI.edit.location.String;
@@ -1156,12 +1122,12 @@ uiwait(UI.fig)
             UI.table.spikeSorting.Data = {};
         end
         
-        if isfield(session,'spikeSorting') && ~isempty(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath')
-            session.general.clusteringPath = session.spikeSorting{1}.relativePath;
-        else 
-            session.general.clusteringPath = '';
-        end
-        UI.edit.clusteringpath.String = session.general.clusteringPath;
+%         if isfield(session,'spikeSorting') && ~isempty(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath')
+%             session.general.clusteringPath = session.spikeSorting{1}.relativePath;
+%         else 
+%             session.general.clusteringPath = '';
+%         end
+%         UI.edit.clusteringpath.String = session.general.clusteringPath;
     end
 
     function updateAnalysisList

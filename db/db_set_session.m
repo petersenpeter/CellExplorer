@@ -1,4 +1,4 @@
-function [session,basename, basepath,clusteringpath] = db_set_session(varargin)
+function [session,basename, basepath] = db_set_session(varargin)
 % Loads a session from the database or defines paths for existing session struct
 % INPUTS
 % varargin described below
@@ -7,7 +7,6 @@ function [session,basename, basepath,clusteringpath] = db_set_session(varargin)
 % session :         session struct containing the db session info
 % basename :        basename of the session
 % basepath :        basepath of the session
-% clusteringpath :  the path to the clustered data.
 
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -67,14 +66,8 @@ for i = 1:length(sessions)
         basepath = fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.general.name);
     end
     
-    if ~isempty(session.spikeSorting) && ~isempty(session.spikeSorting{1}.relativePath)
-        clusteringpath = session.spikeSorting{1}.relativePath;
-    else
-        clusteringpath = '';
-    end
     session.general.baseName = basename;
     session.general.basePath =  basepath;
-    session.general.clusteringPath = clusteringpath;
     if ~isfield(session.extracellular,'leastSignificantBit') || session.extracellular.leastSignificantBit==0
         disp('''session.extracellular.leastSignificantBit'' set to default for intan system = 0.195 µV/bit')
     	session.extracellular.leastSignificantBit = 0.195; % Intan system = 0.195 µV/bit
@@ -115,13 +108,11 @@ for i = 1:length(sessions)
     if length(sessions)>1
         sessions{i} = session;
         basepaths{i} = basepath;
-        clusteringpaths{i} = clusteringpath;
         basenames{i} = basename;
     end
 end
 if length(sessions)>1
     session = sessions;
     basepath = basepaths;
-    clusteringpath = clusteringpaths;
     basename = basenames;
 end

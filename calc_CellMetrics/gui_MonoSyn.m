@@ -22,12 +22,7 @@ if ~exist('mono_res_input','var')
         disp(['gui_MonoSyn: Loading ',basename,'.session.mat']);
         load(fullfile(basepath,[basename,'.session.mat']),'session');
         sessionIn = session;
-        if iscell(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath') && ~isempty(session.spikeSorting{1}.relativePath)
-            clusteringpath = session.spikeSorting{1}.relativePath;
-        else
-            clusteringpath = '';
-        end
-        mono_res_input = fullfile(basepath,clusteringpath,[basename,'.mono_res.cellinfo.mat']);
+        mono_res_input = fullfile(basepath,[basename,'.mono_res.cellinfo.mat']);
         if exist(mono_res_input,'file')
             disp(['gui_MonoSyn: Loading mono_res file: ', mono_res_input])
             load(mono_res_input,'mono_res');

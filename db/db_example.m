@@ -14,7 +14,7 @@ session = sessions{1}
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Load and set session parameters
 
-[session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionName);
+[session, basename, basepath] = db_set_session('sessionName',sessionName);
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Inspecting and editing local session metadata

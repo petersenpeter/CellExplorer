@@ -8,7 +8,7 @@ function [cell_metrics_idxs, cell_metrics] = LoadCellMetrics(varargin)
 %   id                     - takes a database id as input
 %   session                - takes a database sessionName as input
 %   basepath               - path to session (base directory)
-%   clusteringpath         - path to cluster data if different from basepath
+%
 %   Filters:
 %       brainRegion, synapticEffect, putativeCellType, labels, deepSuperficial, animal, tags, groups, groundTruthClassification
 %
@@ -34,13 +34,11 @@ addParameter(p,'id',[],@isnumeric);
 addParameter(p,'session',[],@isstr);
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'basename','',@isstr);
-addParameter(p,'clusteringpath',pwd,@isstr);
 
 % Batch input
 addParameter(p,'sessionIDs',{},@iscell);
 addParameter(p,'sessions',{},@iscell);
 addParameter(p,'basepaths',{},@iscell);
-addParameter(p,'clusteringpaths',{},@iscell);
 
 % Extra inputs
 addParameter(p,'saveAs','cell_metrics',@isstr);
@@ -67,7 +65,6 @@ id = p.Results.id;
 sessionin = p.Results.session;
 basepath = p.Results.basepath;
 basename = p.Results.basename;
-clusteringpath = p.Results.clusteringpath;
 
 % Extra inputs
 saveAs = p.Results.saveAs;
@@ -76,7 +73,6 @@ saveAs = p.Results.saveAs;
 sessionIDs = p.Results.sessionIDs;
 sessions = p.Results.sessions;
 basepaths = p.Results.basepaths;
-clusteringpaths = p.Results.clusteringpaths;
 
 % Filters
 filter = p.Results.filter;
@@ -100,14 +96,14 @@ if ~isempty(cell_metrics)
 elseif ~isempty(id) || ~isempty(sessionin)
     bz_database = db_credentials;
     if ~isempty(id)
-        [session, basename, basepath, clusteringpath] = db_set_session('sessionId',id);
+        [session, basename, basepath] = db_set_session('sessionId',id);
     else
-        [session, basename, basepath, clusteringpath] = db_set_session('sessionName',sessionin);
+        [session, basename, basepath] = db_set_session('sessionName',sessionin);
     end
-    if exist(fullfile(basepath,clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
-        load(fullfile(basepath,clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat']))
+    if exist(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
+        load(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']))
     else
-        warning(['Error loading metrics: ' fullfile(basepath,clusteringpath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
+        warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
     end
 elseif ~isempty(sessions)
     cell_metrics = LoadCellMetricsBatch('sessions',sessions);

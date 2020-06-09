@@ -14,14 +14,14 @@ cd(session.general.basePath)
 sessionInfo = bz_getSessionInfo(session.general.basePath,'noPrompts',true);
 
 % Extracellular
-if ~isfield(session.general,'duration') | session.general.duration == 0 | forceReload
+if ~isfield(session.general,'duration') || session.general.duration == 0 || forceReload
     sr = sessionInfo.rates.wideband;
     if exist(fullfile(session.general.basePath,'info.rhd'))
         Intan_rec_info = read_Intan_RHD2000_file_Peter(pwd);
         nChannels = size(Intan_rec_info.amplifier_channels,2);
         sr = Intan_rec_info.frequency_parameters.amplifier_sample_rate;
-    elseif exist(fullfile(session.general.clusteringPath,[session.general.name, '.xml']))
-        xml = LoadXml(fullfile(session.general.clusteringPath,[session.general.name, '.xml']));
+    elseif exist(fullfile(session.general.basePath,[session.general.name, '.xml']))
+        xml = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
         nChannels = xml.nChannels;
         sr = xml.SampleRate;
     end
