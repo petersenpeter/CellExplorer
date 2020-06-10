@@ -72,6 +72,15 @@ A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `ML_coordinates` : Medial-Lateral coordinates (mm)
     * `depth` : implant depth (mm)
     * `brainRegions` : implant brain region acronym (Allen institute Atlas)
+* `chanCoords` : 2D channel coordinates
+    * `x` : x position of each channel (µm).
+    * `y` : y position of each channel (µm).
+    
+  * `ccf` : Allen Institute's Common Coordinate Framework for each recording channel
+    * `ap` : anterior-posterior position of each channel (µm).
+    * `dv` : dorso-ventral position of each channel (µm).
+    * `lr` : lateral position of each channel (µm).
+
 * `brainRegions`
   * `regionAcronym` : e.g. CA1 or HIP, Allen institute Atlas
     * `brainRegion` 

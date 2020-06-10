@@ -6,7 +6,7 @@ nav_order: 3
 ---
 # Standard cell metrics
 {: .no_toc}
-CellExplorer used a single Matlab struct for handling all cell metrics called `cell_metrics`. The `cell_metrics` struct consists of four types of fields for handling different types of data: double, char cells and structs. Fields must be defined for all cells in the session (1xnCells). Single numeric values are saved to numeric fields with double precision, and character/string fields are saved in char cells. Time series data like waveforms and session parameters are stored in standard struct fields.
+CellExplorer used a single Matlab struct for handling all cell metrics called `cell_metrics`. The `cell_metrics` struct consists of three types of fields for handling different types of data: double, char cells and structs. Fields must be defined for all cells in the session (1xnCells). Single numeric values are saved to numeric fields with double precision, and character/string fields are saved in char cell arrays. Time series data like waveforms and session parameters are stored in standard struct fields.
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -14,14 +14,12 @@ CellExplorer used a single Matlab struct for handling all cell metrics called `c
 1. TOC
 {:toc}
 
-
 ## General metrics
-* `general`
-  * `basename` 
-  * `basepath`
-  * `cellCount`
-  * `ccg`
-* `processinginfo`. The general fields also contains a list of timestamps for time-series metrics. 
+* `general` : struct
+  * `basename` : name of the session
+  * `basepath` : full path to the session
+  * `cellCount` : number of cells in the session
+  * `processinginfo`. The general fields also contains a list of timestamps for time-series metrics. 
 * `brainRegion`: Brain region acronyms from [Allan institute Brain atlas](http://atlas.brain-map.org/atlas?atlas=1).
 * `animal`: Unique name of animal.
 * `sex`: Sex of the animal [Male, Female, Unknown]
@@ -32,7 +30,9 @@ CellExplorer used a single Matlab struct for handling all cell metrics called `c
 * `labels`: Custom labels.
 
 ## Spike events based metrics
-* `spikeCount`: Spike count of the cell from the entire session.
+* `spikes`: struct containing spike times
+  * `times` : spike times in seconds for each cell (stored as a cell array following the format of the struct `spike.times`).
+* `spikeCount`: Spike count of each cell from the entire session (numeric).
 * `firingRate`: Firing rate in Hz: Spike count normalized by the interval between the first and the last spike.
 * `cv2`: [Coefficient of variation](https://www.ncbi.nlm.nih.gov/pubmed/8734581) (CV_2). 
 * `burstIndex_Mizuseki2012` Burst index: Fraction of spikes with a neighboring ISI < 6 ms as defined by [Mizuseki et al. Hippocampus 2012](http://www.buzsakilab.com/content/PDFs/Mizuseki2012.pdf).

@@ -13,6 +13,11 @@ Make sure to define bad channel (e.g. floating channels) and bad electrodes (e.g
 ## Deep-superficial algorithm
 The deep-superficial algorithm is built upon the reversal of the sharp-wave that happens together with the faster ripple oscillation (150Hz; see the figure below). In CA1, a sharp-wave occur together with the fast ripple oscillation and reverses across the pyramidal layer. The sharp-wave has a wider spatial span for depth-classification than the high frequency ripple, and works well for bilateral recordings. The polarity of the sharp-wave is determined from an interval before the average ripple peak at -40.8ms to -12.8ms, as this has shown to be rebust across species (rats and mice). The algorith will look for the point where the polarity of the sharp-wave flips. There is no sharp-wave on channels sitting in the cortex, and the polarity is zero. As you go down, channels will have an increasing positive sharp-wave polarity. The polarity of the sharp-wave peaks above or within the pyramidal layer, and reverses in the pyramidal layer. The algorith will only assign two labels: deep and superficial. Cortical channnels must be defined beforehand (`session.channelTags.Cortical.electrodeGroups`) or can be done in the GUI described below.
 
+### Implementation 
+The script below will create a file in the basepath with the classification: 'sessionName.deepSuperficialfromRipple.channelinfo.mat'.
+```m
+classification_DeepSuperficial(session);
+```
 Please see the description of input and related files [here]({{"/pipeline/hippocampal-metrics/#deep-superficial-metrics"|absolute_url}}).
 
 ## Using the graphical interface for curating deep-superficial assignments
