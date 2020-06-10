@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Use reference data
+title: Reference data
 parent: Tutorials
 nav_order: 8
 ---

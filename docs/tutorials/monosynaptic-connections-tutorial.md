@@ -8,6 +8,19 @@ nav_order: 5
 {: .no_toc}
 This tutorial will guide you through the manual curation process of the monosynaptic connections. Monosynaptic connections, both excitatory and inhibitory connections, are determined in the pipeline. You can visualize the connections and perform manual curation in a graphical interface. 
 
+## monosynaptic algorithm
+The algorithm is built upon the ...
+
+### Implementation
+The Processing module will automatically perform these action, but if you want to detect monosynaptic connections in a dataset independently use below script
+```m
+mono_res = ce_MonoSynConvClick(spikes,'includeInhibitoryConnections',true/false); % detects the monosynaptic connections
+gui_MonoSyn(mono_res) % Shows the GUI for manual curation
+```
+
+You can select to determine inhibitory connections as well. This is not done by default, as the algorithm finds many false positive connections.
+
+## Manual curation
 There are a few principles you have to follow when doing the manual curation:
 
 __Acceptance criteria__
