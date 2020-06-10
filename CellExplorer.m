@@ -94,7 +94,7 @@ UI = []; UI.settings.plotZLog = 0; UI.settings.plot3axis = 0; UI.settings.plotXd
 UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.metricsTableType = 'Metrics'; colorStr = [];
 UI.settings.deepSuperficial = ''; UI.settings.acgType = 'Normal'; UI.settings.cellTypeColors = []; UI.settings.monoSynDispIn = 'None';
 UI.settings.layout = 3; UI.settings.displayMenu = 0; UI.settings.displayInhibitory = false; UI.settings.displayExcitatory = false;
-UI.settings.customCellPlotIn{1} = 'Waveforms (single)'; UI.settings.customCellPlotIn{2} = 'ACGs (single)';
+UI.settings.customCellPlotIn{1} = 'Waveforms (single)'; UI.settings.customCellPlotIn{2} = 'ACGs (single)'; UI.settings.troughToPeakSorted = [];
 UI.settings.customCellPlotIn{3} = 'thetaPhaseResponse'; UI.settings.customCellPlotIn{4} = 'firingRateMap'; UI.settings.raster = 'cv2';
 UI.settings.customCellPlotIn{5} = 'firingRateMap'; UI.settings.customCellPlotIn{6} = 'firingRateMap'; UI.settings.plotCountIn = 'GUI 3+3';
 UI.settings.tSNE.calcNarrowAcg = true; UI.settings.tSNE.calcFiltWaveform = true; UI.settings.tSNE.metrics = '';
@@ -967,6 +967,7 @@ function updateUI
     if ~isempty(idx_textFilter)
         UI.params.subset = intersect(UI.params.subset,idx_textFilter);
     end
+    [~,UI.settings.troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
     
     % Regrouping cells if comparison checkbox is checked
     if UI.checkbox.compare.Value == 1
@@ -2193,17 +2194,16 @@ end
             plotAxes.YLabel.String = 'Cells';
             plotAxes.Title.String = customPlotSelection;
             % Sorted according to trough-to-peak
-            [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
-            [~,idx] = find(UI.params.subset(troughToPeakSorted) == ii);
+            [~,idx] = find(UI.params.subset(UI.settings.troughToPeakSorted) == ii);
             
-            imagesc(time_waveforms_zscored, [1:length(UI.params.subset)], cell_metrics.waveforms.filt_zscored(:,UI.params.subset(troughToPeakSorted))','HitTest','off'),
+            imagesc(time_waveforms_zscored, [1:length(UI.params.subset)], cell_metrics.waveforms.filt_zscored(:,UI.params.subset(UI.settings.troughToPeakSorted))','HitTest','off'),
             colormap(UI.settings.colormap),
             
             % selected cell highlighted in white
             if ~isempty(idx)
                 line([time_waveforms_zscored(1),time_waveforms_zscored(end)],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','color','w','HitTest','off','linewidth',1.5)
             end
-            ploConnectionsHighlights(time_waveforms_zscored,UI.params.subset(troughToPeakSorted))
+            ploConnectionsHighlights(time_waveforms_zscored,UI.params.subset(UI.settings.troughToPeakSorted))
             
         elseif strcmp(customPlotSelection,'Raw waveforms (single)')
             % Single waveform with std
@@ -2344,6 +2344,54 @@ end
 %                 title('ISI distribution')
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
+        elseif strcmp(customPlotSelection,'Connectivity matrix')
+            plotAxes.XLabel.String = 'Cells';
+            plotAxes.YLabel.String = 'Cells';
+            plotAxes.Title.String = customPlotSelection;
+            if UI.BatchMode
+                subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                subset222 = UI.params.subset(subset1);
+            else
+                subset1 = 1:numel(UI.params.subset);
+                subset222 = UI.params.subset;
+            end
+            connectionMatrix = ones(length(subset222),length(subset222),3);
+            for j3 = 1:length(subset222)
+                connectionMatrix(j3,j3,:) = [0.8,0.8,0.8];
+            end
+            if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatory')
+                putativeSubset22 = find(sum(ismember(cell_metrics.putativeConnections.excitatory,subset222)')==2);
+                if ~isempty(putativeSubset22)
+                    putativeSubset31 = cell_metrics.putativeConnections.excitatory(putativeSubset22,1)';
+                    putativeSubset32 = cell_metrics.putativeConnections.excitatory(putativeSubset22,2)';
+                    [~,ia1] = ismember(putativeSubset31,subset222);
+                    [~,ia2] = ismember(putativeSubset32,subset222);
+                    for j1 = 1:length(putativeSubset22)
+                        connectionMatrix(ia1(j1),ia2(j1),[1,2]) = 0;
+                    end
+                end
+            end
+            if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory')
+                putativeSubset22 = find(sum(ismember(cell_metrics.putativeConnections.inhibitory,subset222)')==2);
+                if ~isempty(putativeSubset22)
+                    putativeSubset31 = cell_metrics.putativeConnections.inhibitory(putativeSubset22,1)';
+                    putativeSubset32 = cell_metrics.putativeConnections.inhibitory(putativeSubset22,2)';
+                    [~,ia1] = ismember(putativeSubset31,subset222);
+                    [~,ia2] = ismember(putativeSubset32,subset222);
+                    for j1 = 1:length(putativeSubset22)
+                        connectionMatrix(ia1(j1),ia2(j1),[2,3]) = 0;
+                    end
+                end
+            end
+            [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(subset222));
+            imagesc(connectionMatrix(troughToPeakSorted,troughToPeakSorted,:),'HitTest','off'),
+            
+            idx = find(subset222(troughToPeakSorted) == ii);
+            if ~isempty(idx)
+                line([0,length(subset222)]+0.5,[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','color','m','HitTest','off','linewidth',0.8)
+                line([idx-0.5,idx-0.5;idx+0.5,idx+0.5]',[0,length(subset222)]+0.5,'color','b','HitTest','off','linewidth',0.8)
+            end
+            
         elseif strcmp(customPlotSelection,'CCGs (image)')
             % CCGs for selected cell with other cell pairs from the same session. The ACG for the selected cell is shown first
             plotAxes.XLabel.String = 'Time (ms)';
@@ -2909,6 +2957,7 @@ end
                     Xdata = [1:length(cell_metrics.responseCurves.(responseCurvesName))];
                 end
                 [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(subset222));
+                
                 Zdata = horzcat(cell_metrics.responseCurves.(responseCurvesName){subset222(troughToPeakSorted)});
                 
                 imagesc(Xdata,Ydata,(Zdata./max(Zdata))','HitTest','off'),
@@ -3022,17 +3071,16 @@ end
             plotAxes.Title.String = responseCurvesName;
             % All responseCurves shown in an imagesc plot
             % Sorted according to user input
-            [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
-            [~,idx] = find(UI.params.subset(troughToPeakSorted) == ii);
+            [~,idx] = find(UI.params.subset(UI.settings.troughToPeakSorted) == ii);
             
-            imagesc(UI.x_bins.thetaPhase, [1:length(UI.params.subset)], cell_metrics.responseCurves.thetaPhase_zscored(:,UI.params.subset(troughToPeakSorted))','HitTest','off'),
+            imagesc(UI.x_bins.thetaPhase, [1:length(UI.params.subset)], cell_metrics.responseCurves.thetaPhase_zscored(:,UI.params.subset(UI.settings.troughToPeakSorted))','HitTest','off'),
             colormap(UI.settings.colormap),
             xticks([-pi,-pi/2,0,pi/2,pi]),xticklabels({'-\pi','-\pi/2','0','\pi/2','\pi'}),xlim([-pi,pi])
             % selected cell highlighted in white
             if ~isempty(idx)
                 line([UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','color','w','HitTest','off','linewidth',1.5)
             end
-            ploConnectionsHighlights(xlim,UI.params.subset(troughToPeakSorted))
+            ploConnectionsHighlights(xlim,UI.params.subset(UI.settings.troughToPeakSorted))
             
         elseif contains(customPlotSelection,'RCs_') && contains(customPlotSelection,'(all)')
             
@@ -6916,9 +6964,8 @@ end
                     end
                     
                 case 'Waveforms (image)'
-                    [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
-                        iii = UI.params.subset(troughToPeakSorted(round(v)));
+                        iii = UI.params.subset(UI.settings.troughToPeakSorted(round(v)));
                         if highlight || hover
                             hover2highlight.handle2 = line([time_waveforms_zscored(1),time_waveforms_zscored(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
                             hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
@@ -7168,15 +7215,31 @@ end
                     end
                     
                 case 'RCs_thetaPhase (image)'
-                    [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
-                        iii = UI.params.subset(troughToPeakSorted(round(v)));
+                        iii = UI.params.subset(UI.settings.troughToPeakSorted(round(v)));
                         if highlight || hover
                             hover2highlight.handle2 = line([UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
                             hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
-                    
+                case 'Connectivity matrix'
+                    if UI.BatchMode
+                        subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                        subset222 = UI.params.subset(subset1);
+                    else
+                        subset1 = 1:numel(UI.params.subset);
+                        subset222 = UI.params.subset;
+                    end
+                    if round(v) > 0 && round(v) <= length(subset222)
+                        [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(subset222));
+                        iii = subset222(troughToPeakSorted(round(v)));
+                        if highlight || hover
+                            xline = [[0,length(subset222)]+0.5;[0,length(subset222)]+0.5;[round(v)-0.5,round(v)-0.5;round(v)+0.5,round(v)+0.5]]';
+                            yline = [[round(v)-0.5,round(v)-0.5;round(v)+0.5,round(v)+0.5];[0,length(subset222)]+0.5;[0,length(subset222)]+0.5]';
+                            hover2highlight.handle2 = line(xline,yline,'color',[0.7 0.7 0.7],'linewidth',1.,'HitTest','off');
+                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                        end
+                    end
                 case 'RCs_firingRateAcrossTime (image)'
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
                         if UI.BatchMode
@@ -7562,8 +7625,7 @@ end
                             end
                             
                         case 'Waveforms (image)'
-                            [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
-                            In = UI.params.subset(troughToPeakSorted(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2)))));
+                            In = UI.params.subset(UI.settings.troughToPeakSorted(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2)))));
                             
                         case 'Waveforms (tSNE)'
                             In = find(inpolygon(tSNE_metrics.filtWaveform(UI.params.subset,1), tSNE_metrics.filtWaveform(UI.params.subset,2), polygon_coords(:,1)',polygon_coords(:,2)'));
@@ -7598,6 +7660,17 @@ end
                                 subset2 = [ii,subset2(subset2~=ii)];
                                 In = subset2(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2))));
                             end
+                        case 'Connectivity matrix'
+                            if UI.BatchMode
+                                subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                                subset222 = UI.params.subset(subset1);
+                            else
+                                subset1 = 1:numel(UI.params.subset);
+                                subset222 = UI.params.subset;
+                            end
+                            [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(subset222));
+%                             In = UI.params.subset(troughToPeakSorted(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2)))));
+                            In = subset222(troughToPeakSorted(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2)))));
                             
                         case 'ACGs (all)'
                             if strcmp(UI.settings.acgType,'Normal')
@@ -7658,8 +7731,7 @@ end
                             In = UI.params.subset(In);
                             
                         case 'RCs_thetaPhase (image)'
-                            [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
-                            In = UI.params.subset(troughToPeakSorted(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2)))));
+                            In = UI.params.subset(UI.settings.troughToPeakSorted(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2)))));
                             
                         case 'RCs_firingRateAcrossTime (image)'
                             if UI.BatchMode
@@ -9735,7 +9807,7 @@ end
         %         customPlotOptions = customPlotOptions(   (strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.spikeCount,2) )   );
         %         customPlotOptions = [customPlotOptions;customPlotOptions2];
         plotOptions(find(contains(plotOptions,UI.settings.plotOptionsToExlude)))=[]; %
-        plotOptions = unique([waveformOptions; waveformOptions2; acgOptions; 'Connectivity graph'; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
+        plotOptions = unique([waveformOptions; waveformOptions2; acgOptions; 'Connectivity graph'; 'Connectivity matrix'; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
         
         % Initilizing views
         for i = 1:6
