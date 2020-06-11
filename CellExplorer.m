@@ -136,16 +136,16 @@ timerVal = tic;
 spikes = []; events = []; states = [];
 createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal';
 polygon1.handle = gobjects(0); fig = 1;
-set(groot, 'DefaultFigureVisible', 'on','DefaultAxesLooseInset',[.01,.01,.01,.01]), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1500,maxFigureSize(3)-50), min(1000,maxFigureSize(4)-50)];
-
+set(groot, 'DefaultFigureVisible', 'on','DefaultAxesLooseInset',[.01,.01,.01,.01],'DefaultTextInterpreter', 'none'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1500,maxFigureSize(3)-50), min(1000,maxFigureSize(4)-50)];
+% set(0, 'DefaultTextInterpreter', 'none')
 if isempty(basename)
     s = regexp(basepath, filesep, 'split');
     basename = s{end};
 end
 
-CellExplorerVersion = 1.65;
+CellExplorerVersion = 1.66;
 
-UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800]);
+UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none');
 hManager = uigetmodemanager(UI.fig);
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -2345,8 +2345,8 @@ end
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
         elseif strcmp(customPlotSelection,'Connectivity matrix')
-            plotAxes.XLabel.String = 'Cells';
-            plotAxes.YLabel.String = 'Cells';
+            plotAxes.XLabel.String = ['Cells (sorted by ', UI.settings.sortingMetric,')'];
+            plotAxes.YLabel.String = ['Cells (sorted by ', UI.settings.sortingMetric,')'];
             plotAxes.Title.String = customPlotSelection;
             if UI.BatchMode
                 subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
@@ -2388,8 +2388,8 @@ end
             
             idx = find(subset222(troughToPeakSorted) == ii);
             if ~isempty(idx)
-                line([0,length(subset222)]+0.5,[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','color','m','HitTest','off','linewidth',0.8)
-                line([idx-0.5,idx-0.5;idx+0.5,idx+0.5]',[0,length(subset222)]+0.5,'color','b','HitTest','off','linewidth',0.8)
+                patch([0,length(subset222),length(subset222),0]+0.5,[idx-0.5,idx-0.5,idx+0.5,idx+0.5],'m','EdgeColor','m','HitTest','off','facealpha',0.1)
+                patch([idx-0.5,idx-0.5,idx+0.5,idx+0.5],[0,length(subset222),length(subset222),0]+0.5,'b','EdgeColor','b','HitTest','off','facealpha',0.1)
             end
             
         elseif strcmp(customPlotSelection,'CCGs (image)')
@@ -7234,9 +7234,9 @@ end
                         [~,troughToPeakSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(subset222));
                         iii = subset222(troughToPeakSorted(round(v)));
                         if highlight || hover
-                            xline = [[0,length(subset222)]+0.5;[0,length(subset222)]+0.5;[round(v)-0.5,round(v)-0.5;round(v)+0.5,round(v)+0.5]]';
-                            yline = [[round(v)-0.5,round(v)-0.5;round(v)+0.5,round(v)+0.5];[0,length(subset222)]+0.5;[0,length(subset222)]+0.5]';
-                            hover2highlight.handle2 = line(xline,yline,'color',[0.7 0.7 0.7],'linewidth',1.,'HitTest','off');
+                            xline = [[0,length(subset222),length(subset222),0]+0.5;[round(v)-0.5,round(v)-0.5,round(v)+0.5,round(v)+0.5]]';
+                            yline = [[round(v)-0.5,round(v)-0.5,round(v)+0.5,round(v)+0.5];[0,length(subset222),length(subset222),0]+0.5]';
+                            hover2highlight.handle2 = patch(xline,yline,'k','EdgeColor','none','HitTest','off','facealpha',0.1);
                             hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
@@ -11377,13 +11377,13 @@ end
                 disp(message)
             end
             if any(priority == 2)
-                msgbox(message,'CellExplorer message',createStruct);
+                msgbox(message,'CellExplorer',createStruct);
             end
             if any(priority == 3)
                 warning(message)
             end
             if any(priority == 4)
-                warndlg(message,'CellExplorer warning')
+                warndlg(message,'CellExplorer')
             end
         end
     end
