@@ -57,8 +57,11 @@ if showWaveforms
 end
 wfWin = round((wfWin_sec * session.extracellular.sr)/2);
 t1 = toc(timerVal);
-
+if ~exist(fullfile(basepath,fileNameRaw),'file')
+    error(['Binary file missing: ', fullfile(basepath,fileNameRaw)])
+end
 s = dir(fullfile(basepath,fileNameRaw));
+
 duration = s.bytes/(2*session.extracellular.nChannels*session.extracellular.sr);
 m = memmapfile(fullfile(basepath,fileNameRaw),'Format','int16','writable',false);
 DATA = m.Data;
