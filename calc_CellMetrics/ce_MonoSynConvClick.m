@@ -1,57 +1,62 @@
 function mono_res = ce_MonoSynConvClick(spikes,varargin)
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%  INPUTS
-    %%%
-    %%%  spikes
-    %%%
-    %%%  spikeIDs = Nx3 matrix. N = # spikes.
-    %%%      col1 = shank ID, col2 = cluID on shanke, col3 = unit ID
-    %%%
-    %%%  spikestimes = Nx1 matrix aligned with spikeIDs where each row is a
-    %%%      time stamp in ms.
-    %%%
-    %%%  OPTIONAL INPUTS:
-    %%%
-    %%%  binSize = timebin to compute CCG (in seconds)
-    %%%
-    %%%  duration = window to compute CCG (in seconds)
-    %%%
-    %%%  epoch = [start end] (in seconds)
-    %%%
-    %%%  cells = N x 2 matrix -  [sh celID] to include (NOTE indexing will be
-    %%%          done on full spikeIDlist
-    %%%
-    %%%  conv_w = # of time bins for computing the CI for the CCG.
-    %%%
-    %%%  alpha = type I error for significance testing using convolution
-    %%%     technique. Stark et al, 2009
-    %%%
-    %%%  calls: CCG, InInterval,FindInInterval (from FMA toolbox)
-    %%%         tight_subplot, gui_MonoSyn
-    %%%         ce_cch_conv
-    %%%
-    %%%  OUTPUT
-    %%%  mono_res.alpha = p-value
-    %%%  mono_res.ccgR = 3D CCG (time x ref x target;
-    %%%  mono_res.sig_con = list of significant CCG;
-    %%%  mono_res.Pred = predicted Poisson rate;
-    %%%  mono_res.Bounds = conf. intervals of Poisson rate;
-    %%%  mono_res.conv_w = convolution windows (ms)
-    %%%  mono_res.completeIndex = cell ID index;
-    %%%  mono_res.binSize = binSize;
-    %%%  mono_res.duration = duration;
-    %%%  mono_res.manualEdit = visual confirmation of connections
-    %%%  mono_res.Pcausal = probability of getting more excess in the causal than anticausal direction;
-    %%%  mono_res.FalsePositive = FalsePositive rate from English et al., 2017;
-    %%%  mono_res.TruePositive = TruePositive rate from English et al., 2017;
     
-    %%%  EXAMPLE:
-    %%%
-    %%%  mono_res = ce_MonoSynConvClick (spikes,'binsize',.0005,'duration',.2, ...
-    %%%  'alpha',.05,'conv_w',20,'cells',[1 2;1 3;4 5;8 8],'epoch',[10 3000; 4000 5000]);
-    %%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%
+    %  INPUTS
+    %
+    %  spikes = CellExplorer struct with below required fields:
+    %      .times = cell array with timestamps for each unit in seconds
+    %      .shankID = numeric vector with a shank id for each cell. 
+    %      .cluID =  numeric vector with cluster ID for each cell
+    %      .spindices Nx2 matrix with spike times and a unique ID for each cell. Spike times must be sorted. 
+    %       spindices can be generated with the script generateSpinDices.m
+    %
+    %  OPTIONAL INPUTS:
+    %
+    %  includeInhibitoryConnections = boolean, whether to detect inhibitory connections
+    %
+    %  binSize = timebin to compute CCG (in seconds)
+    %
+    %  duration = window to compute CCG (in seconds)
+    %
+    %  epoch = [start end] (in seconds)
+    %
+    %  cells = N x 2 matrix -  [sh celID] to include (NOTE indexing will be
+    %          done on full spikeIDlist
+    %
+    %  conv_w = # of time bins for computing the CI for the CCG.
+    %
+    %  alpha = type I error for significance testing using convolution
+    %     technique. Stark et al, 2009
+    %
+    %  calls: CCG, InInterval,FindInInterval (from FMA toolbox)
+    %         tight_subplot, gui_MonoSyn
+    %         ce_cch_conv
+    %
+    %  OUTPUT
+    %  mono_res = struct with below fields
+    %      .alpha = p-value
+    %      .ccgR = 3D CCG (time x ref x target;
+    %      .sig_con = list of significant CCG;
+    %      .Pred = predicted Poisson rate;
+    %      .Bounds = conf. intervals of Poisson rate;
+    %      .conv_w = convolution windows (ms)
+    %      .completeIndex = cell ID index;
+    %      .binSize = binSize;
+    %      .duration = duration;
+    %      .manualEdit = visual confirmation of connections
+    %      .Pcausal = probability of getting more excess in the causal than anticausal direction;
+    %      .FalsePositive = FalsePositive rate from English et al., 2017;
+    %      .TruePositive = TruePositive rate from English et al., 2017;
     
+    %  EXAMPLE:
+    %  mono_res = ce_MonoSynConvClick (spikes)
+    %  mono_res = ce_MonoSynConvClick (spikes,'binsize',.0005,'duration',.2, ...
+    %  'alpha',.05,'conv_w',20,'cells',[1 2;1 3;4 5;8 8],'epoch',[10 3000; 4000 5000]);
+    %
+    
+    
+    % Script by Peter Petersen
+    % Adapted by algorithms and previous versions developed by Sam McKenzie, Eran Stark, and others.
+    % 09-06-2020
     
     %get experimentally validated probabilities
     
@@ -75,13 +80,13 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     end
     
     %set defaults
-    binSize = .0004; %.4ms
-    duration = .120; %120ms
-    epoch = [0 inf]; %whole session
+    binSize = .0004;            % 0.4ms
+    duration = .120;            % 120ms
+    epoch = [0 inf];            %whole session
     cells = unique(spikeIDs(:,1:2),'rows');
     nCel = size(cells,1);
-    conv_w = .010/binSize;  % 10ms window
-    alpha = 0.001; %high frequency cut off, must be .001 for causal p-value matrix
+    conv_w = .010/binSize;      % 10ms window
+    alpha = 0.001;              %high frequency cut off, must be .001 for causal p-value matrix
     plotit = false;
     sorted = false;
     includeInhibitoryConnections = false;
@@ -274,21 +279,21 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
             % % % % % % % % % % % % % % % % % % % % % % %
             % INHIBITORY
             if includeInhibitoryConnections
-            sig_inh = cch<loBound;
-            cchud = flipud(cch);
-            sigud_inh = flipud(sig_inh);
-            sigpost_inh = min(cch(postbins))<poissinv(alpha,max(cch(prebins)));
-            sigpre_inh = min(cchud(postbins))<poissinv(alpha,max(cchud(prebins)));
-            
-            % check which is bigger
-            if (any(sigud_inh(postbins)) && sigpre_inh)
-                %test if causal is bigger than anti causal
-                sig_con_inh = [sig_con_inh;cell2ID refcellID];
-            end
-            
-            if any(sig_inh(postbins)) && sigpost_inh
-                sig_con_inh = [sig_con_inh;refcellID cell2ID];
-            end
+                sig_inh = cch<loBound;
+                cchud = flipud(cch);
+                sigud_inh = flipud(sig_inh);
+                sigpost_inh = min(cch(postbins))<poissinv(alpha,max(cch(prebins)));
+                sigpre_inh = min(cchud(postbins))<poissinv(alpha,max(cchud(prebins)));
+                
+                % check which is bigger
+                if (any(sigud_inh(postbins)) && sigpre_inh)
+                    %test if causal is bigger than anti causal
+                    sig_con_inh = [sig_con_inh;cell2ID refcellID];
+                end
+                
+                if any(sig_inh(postbins)) && sigpost_inh
+                    sig_con_inh = [sig_con_inh;refcellID cell2ID];
+                end
             end
         end
     end
@@ -302,9 +307,9 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     
     % Creating output structure
     mono_res.ccgR = ccgR;
-%     mono_res.Pval = Pval;
-%     mono_res.prob = prob;
-%     mono_res.prob_noncor = ccgR./permute(repmat(nn2,1,1,size(ccgR,1)),[3 1 2]);
+    %     mono_res.Pval = Pval;
+    %     mono_res.prob = prob;
+    %     mono_res.prob_noncor = ccgR./permute(repmat(nn2,1,1,size(ccgR,1)),[3 1 2]);
     mono_res.n = n;
     mono_res.sig_con = sig_con; % FOR BACKWARDS COMPATIBILITY
     mono_res.sig_con_excitatory = sig_con;
@@ -323,10 +328,10 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     mono_res.Pcausal = Pcausal;
     
     % plot
-%     if plotit
-%         mono_res = gui_MonoSyn(mono_res);
-%     end
-
+    %     if plotit
+    %         mono_res = gui_MonoSyn(mono_res);
+    %     end
+    
     if foundMat
         mono_res.FalsePositive = FalsePositive;
         mono_res.TruePositive = TruePositive;

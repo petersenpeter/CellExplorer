@@ -211,7 +211,7 @@ if forceReload
                 error('''readNPY.m'' is not in your path and is required to load the python data. Please download it here: https://github.com/kwikteam/npy-matlab.')
             end
             disp('loadSpikes: Loading Phy data')
-            labelsToRead = {'Good'};
+            labelsToRead = {'good'};
             spike_cluster_index = readNPY(fullfile(clusteringpath_full, 'spike_clusters.npy'));
             spike_times = readNPY(fullfile(clusteringpath_full, 'spike_times.npy'));
             spike_amplitudes = readNPY(fullfile(clusteringpath_full, 'amplitudes.npy'));
@@ -246,7 +246,7 @@ if forceReload
             j = 1;
             for i = 1:length(dataArray{1})
                 if raw_clusters == 0
-                    if any(strcmp(dataArray{2}{i},labelsToRead))
+                    if any(strcmpi(dataArray{2}{i},labelsToRead))
                         if sum(spike_cluster_index == dataArray{1}(i))>0
                             spikes.ids{j} = find(spike_cluster_index == dataArray{1}(i));
                             spikes.ts{j} = double(spike_times(spikes.ids{j}));
