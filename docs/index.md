@@ -4,7 +4,7 @@ title: Home
 nav_order: 1
 has_children: false
 ---
-# Framework for analyzing and characterizing single cells
+# Framework for analyzing single cells
 {: .no_toc}
 {: .fs-9 }
 

@@ -78,8 +78,8 @@ A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     
   * `ccf` : Allen Institute's Common Coordinate Framework for each recording channel
     * `ap` : anterior-posterior position of each channel (µm).
-    * `dv` : dorso-ventral position of each channel (µm).
-    * `lr` : lateral position of each channel (µm).
+    * `dv` : dorsol-ventral position of each channel (µm).
+    * `lr` : left-right position of each channel (µm).
 
 * `brainRegions`
   * `regionAcronym` : e.g. CA1 or HIP, Allen institute Atlas

@@ -18,7 +18,7 @@ mono_res = ce_MonoSynConvClick(spikes,'includeInhibitoryConnections',true/false)
 gui_MonoSyn(mono_res) % Shows the GUI for manual curation
 ```
 
-You can select to determine inhibitory connections as well. This is not done by default, as the algorithm finds many false positive connections.
+You can select to determine inhibitory connections as well. This is not done by default, as the algorithm finds many false positive connections. There are further optional inputs. See the header of `ce_MonoSynConvClick` for further info. 
 
 ## Manual curation
 There are a few principles you have to follow when doing the manual curation:
