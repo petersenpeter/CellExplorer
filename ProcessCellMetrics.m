@@ -313,6 +313,7 @@ end
 % account for cases in which there is no spike in an interval for some
 % neurons
 empty_cell_inds = cellfun(@isempty, spikes{1}.ids); % find which neurons have no spikes
+if sum(empty_cell_inds) > 0 
 tempspikes = spikes{1}; % make an temporary spike strucure
 tempspikes = rmfield(tempspikes,{'processinginfo','sessionName','numcells','spindices'}); % remove fields are not the same length as number of neurons
 tempspikes = structfun(@(x) x(~empty_cell_inds), tempspikes,'UniformOutput',false); % remove empty neurons from all fields
@@ -320,6 +321,7 @@ for fn = fieldnames(tempspikes)'
    spikes{1}.(fn{1}) = tempspikes.(fn{1}); % replace the modified fields
 end
 spikes{1}.numcells = spikes{1}.numcells - sum(empty_cell_inds); 
+end
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Initializing cell_metrics struct
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
