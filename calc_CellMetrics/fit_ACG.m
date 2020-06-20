@@ -1,28 +1,51 @@
-function fit_params_out = fit_ACG(acg2)
-fit_params = nan(8,size(acg2,2));
-rsquare = [];
-offset = 101;
+function fit_params_out = fit_ACG(acg_narrow)
+% This function is part of CellExplorer
+% Fits a tripple exponential to the ACGs
+% By Peter Petersen
+% Last edited: 16-06-22020;
 
+fit_params = nan(8,size(acg_narrow,2));
+rsquare = nan(1,size(acg_narrow,2));
+plotf0 = zeros(100,size(acg_narrow,2));
+offset = 101;
+x = ([1:100]/2)';
 g = fittype('max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c','d','e','f','g','h'});
 
-acg_mat =[]; paut=[];
+% Calculations
+gcp;
+parfor j = 1:size(acg_narrow,2)
+    if ~any(isnan(acg_narrow(:,j)))
+        [f0,gof] = fit(x,acg_narrow(x*2+offset,j),g,'StartPoint',[20, 1, 30, 2, 0, 5, 1.5,2],'Lower',[1, 0.1, 0, 0, -30, 0,0.1,0],'Upper',[500, 50, 500, 15, 50, 20,5,100]);
+        plotf0(:,j) = f0(x);
+        fit_params(:,j) = coeffvalues(f0);
+        rsquare(j) = gof.rsquare;
+    end
+end
+
+fit_params_out.acg_tau_decay = fit_params(1,:);
+fit_params_out.acg_tau_rise = fit_params(2,:);
+fit_params_out.acg_c = fit_params(3,:);
+fit_params_out.acg_d = fit_params(4,:);
+fit_params_out.acg_asymptote = fit_params(5,:);
+fit_params_out.acg_refrac = fit_params(6,:);
+fit_params_out.acg_tau_burst = fit_params(7,:); 
+fit_params_out.acg_h = fit_params(8,:);
+fit_params_out.acg_fit_rsquare = rsquare;
+
+% Plots
 jj = 1;
-for j = 1:size(acg2,2)
-    x = ([1:100]/2)';
-    y = acg2(x*2+offset,j);
+for j = 1:size(acg_narrow,2)
+    
     if rem(j,12)==1
         fig = figure('Name','Fitting ACGs','pos',[50,50,1000,800]);
         ha = tight_subplot(3,4,[.06 .03],[.08 .06],[.06 .05]);
         jj = 1;
     end
-    if ~any(isnan(y))
-        [f0,gof] = fit(x,y,g,'StartPoint',[20, 1, 30, 2, 0, 5, 1.5,2],'Lower',[1, 0.1, 0, 0, -30, 0,0.1,0],'Upper',[500, 50, 500, 15, 50, 20,5,100]);
-        fit_params(:,j) = coeffvalues(f0);
-        rsquare(j) = gof.rsquare;
-        
+    if ~any(isnan(acg_narrow(:,j)))
+        y = acg_narrow(x*2+offset,j);
         set(fig,'CurrentAxes',ha(jj)), hold(ha(jj),'on')
         patch(ha(jj),[x(1),reshape([x,x([2:end,end])]',1,[]),x(end)]  , [0,reshape([y,y]',1,[]),0],'b','EdgeColor','none','FaceAlpha',.8,'HitTest','off')
-        plot(ha(jj),x,f0(x),'r-');
+        plot(ha(jj),x,plotf0(:,j),'r-');
         title(ha(jj),[num2str(j) , ': rise=' num2str(fit_params(2,j),3),', decay=' num2str(fit_params(1,j),3),])
         xlim(ha(jj),[0,50])
     end
@@ -64,14 +87,5 @@ histogram(x1,40), xlabel('Burst constant'), axis tight, title('fit = max(c*(exp(
 
 subplot(3,3,9), x1 = rsquare;
 histogram(x1,40), xlabel('r^2'), axis tight, ylabel('r^2')
-
-fit_params_out.acg_tau_decay = fit_params(1,:);
-fit_params_out.acg_tau_rise = fit_params(2,:);
-fit_params_out.acg_c = fit_params(3,:);
-fit_params_out.acg_d = fit_params(4,:);
-fit_params_out.acg_asymptote = fit_params(5,:);
-fit_params_out.acg_refrac = fit_params(6,:);
-fit_params_out.acg_tau_burst = fit_params(7,:); 
-fit_params_out.acg_h = fit_params(8,:);
-fit_params_out.acg_fit_rsquare = rsquare;
+drawnow
 end

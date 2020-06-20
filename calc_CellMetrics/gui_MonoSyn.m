@@ -1,6 +1,7 @@
 function mono_res = gui_MonoSyn(mono_res_input,UID)
 % Manual curating detected CCGs
 % Limitation: can only deselect connections at this point. Click the CCG subplot to deselect a connection (turns pink)
+% Press H in the GUI to learn shortcuts and actions
 %
 % INPUT
 % mono_res_input : full path to monosyn mat file or a matlab struct
@@ -10,10 +11,10 @@ function mono_res = gui_MonoSyn(mono_res_input,UID)
 % mono_res = gui_MonoSyn(mono_res)
 % mono_res = gui_MonoSyn  - determines the mono_res file from the pwd
 
-% Original function (bz_PlotMonoSyn) by: Sam, Gabrielle & ?
+% Original function (bz_PlotMonoSyn) by: Sam, Gabrielle & ...?
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 15-03-2019
+% Last edited: 17-06-2020
 
 if ~exist('mono_res_input','var')
     basepath = pwd;

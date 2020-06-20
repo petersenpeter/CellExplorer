@@ -132,9 +132,8 @@ end
 
 % Compute CCGs
 nEvents = length(times);
-% 
-
 counts = double(CCGHeart(times,uint32(groups),binSize_Fs,uint32(halfBins)));
+
 % -----------------------------------
 % 
 % Reshape the results
@@ -142,7 +141,7 @@ n = max(groups);
 counts = reshape(counts,[nBins n n]);
 
 
-if n < nGroups,
+if n < nGroups
 	counts(nBins,nGroups,nGroups) = 0;
 end
 

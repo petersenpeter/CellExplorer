@@ -13,7 +13,7 @@ p = inputParser;
 addParameter(p,'basepath',pwd,@isstr); 
 addParameter(p,'basename','',@isstr);
 addParameter(p,'session',{},@isstruct);
-parse(p,varargin{:})
+parse(p,varargin{:});
 
 basepath = p.Results.basepath;
 basename = p.Results.basename;

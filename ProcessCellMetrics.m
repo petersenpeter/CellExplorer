@@ -74,6 +74,7 @@ p = inputParser;
 addParameter(p,'sessionID',[],@isnumeric);
 addParameter(p,'sessionName',[],@isstr);
 addParameter(p,'session',[],@isstruct);
+addParameter(p,'spikes',[],@isstruct);
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'metrics','all',@iscellstr);
 addParameter(p,'excludeMetrics',{'none'},@iscellstr);
@@ -164,7 +165,7 @@ if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracell
     session.extracellular.electrodeGroups.channels = num2cell(session.extracellular.electrodeGroups.channels,2)';
 end
 % Non-standard parameters: probeSpacing and probeLayout
-if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout') && isfield(session.extracellular,'electrodes') && isfield(session.extracellular.electrodes,'siliconProbes')
+if ~isfield(session,'analysisTags') || (~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout')) && isfield(session.extracellular,'electrodes') && isfield(session.extracellular.electrodes,'siliconProbes')
     session = determineProbeSpacing(session);
     if ~isfield(session.analysisTags,'probesVerticalSpacing')
         session.analysisTags.probesVerticalSpacing = 10;
@@ -182,6 +183,11 @@ if ~isfield(session,'extracellular') || ~isfield(session.extracellular,'electrod
         session.extracellular.electrodeGroups = session.extracellular.spikeGroups;
         session.extracellular.nElectrodeGroups = session.extracellular.nSpikeGroups;
     end
+end
+if any([session.extracellular.electrodeGroups.channels{:}]==0)
+    error('session.extracellular.electrodeGroups.channels contains 0. Must be 1-indexed')
+elseif any([session.extracellular.spikeGroups.channels{:}]==0)
+    error('session.extracellular.spikeGroups.channels contains 0. Must be 1-indexed')
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -230,9 +236,15 @@ end
 % Getting spikes  -  excluding user specified- and manipulation intervals
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-dispLog('Getting spikes')
 sr = session.extracellular.sr;
-spikes{1} = loadSpikes('session',session);
+if ~isempty(parameters.spikes)
+    dispLog('Using spikes provided as input')
+    spikes{1} = parameters.spikes;
+    parameters.spikes = [];
+else
+    dispLog('Getting spikes')
+    spikes{1} = loadSpikes('session',session);
+end
 if ~isfield(spikes{1},'processinginfo') || ~isfield(spikes{1}.processinginfo.params,'WaveformsSource') || ~strcmp(spikes{1}.processinginfo.params.WaveformsSource,'dat file') || spikes{1}.processinginfo.version<3.5
     spikes{1} = loadSpikes('forceReload',true,'spikes',spikes{1},'session',session);
 end
@@ -256,7 +268,16 @@ if ~isempty(parameters.restrictToIntervals)
         if isfield(spikes{1},'amplitudes')
             spikes{1}.amplitudes = cellfun(@(X,Y) X(Y),spikes{1}.amplitudes,spikes_indices,'UniformOutput',false);
         end
-        spikes{1}.total = cell2mat(cellfun(@(X,Y) sum(X),spikes_indices,'UniformOutput',false));
+        
+        % Removing empty units from structure
+        unitsToRemove = find(cellfun(@isempty,spikes{1}.times));
+        fieldsToProcess = fieldnames(spikes{1});
+        fieldsToProcess = fieldsToProcess(structfun(@(X) (isnumeric(X) || iscell(X)) && numel(X)==numel(spikes{1}.times),spikes{1}));
+        for iField = 1:numel(fieldsToProcess)
+            spikes{1}.(fieldsToProcess{iField})(unitsToRemove) = [];
+        end
+        spikes{1}.total = cell2mat(cellfun(@(X,Y) length(X),spikes{1}.times,'UniformOutput',false));
+        spikes{1}.numcells = numel(spikes{1}.times);
         spikes{1}.spindices = generateSpinDices(spikes{1}.times);
     end
 end
@@ -301,7 +322,7 @@ if ~isempty(parameters.excludeIntervals)
         if isfield(spikes{1},'amplitudes')
             spikes{2}.amplitudes = cellfun(@(X,Y) X(Y),spikes{1}.amplitudes,spikes_indices,'UniformOutput',false);
         end
-        spikes{2}.total = cell2mat(cellfun(@(X,Y) sum(X),spikes_indices,'UniformOutput',false));
+        spikes{2}.total = cell2mat(cellfun(@(X,Y) length(X),spikes{2}.times,'UniformOutput',false));
         spikes{2}.spindices = generateSpinDices(spikes{2}.times);
     end
 else
@@ -331,7 +352,6 @@ if parameters.saveBackup && ~isempty(cell_metrics)
     % Creating backup of existing user adjustable metrics
     backupDirectory = 'revisions_cell_metrics';
     dispLog(['Creating backup of existing user adjustable metrics ''',backupDirectory,'''']);
-    
     
     backupFields = {'labels','tags','deepSuperficial','deepSuperficialDistance','brainRegion','putativeCellType','groundTruthClassification','groups'};
     temp = {};
@@ -379,8 +399,13 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         end
 
         for j = 1:cell_metrics.general.cellCount
-            nChannelFit = min([16,length(spikes{spkExclu}.maxWaveform_all{j}),length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
-            cell_metrics.waveforms.bestChannels{j} = spikes{spkExclu}.maxWaveform_all{j}(1:nChannelFit);
+            if numel(spikes{spkExclu}.maxWaveform_all)>=j && ~isempty(spikes{spkExclu}.maxWaveform_all{j})
+                nChannelFit = min([16,length(spikes{spkExclu}.maxWaveform_all{j}),length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
+                cell_metrics.waveforms.bestChannels{j} = spikes{spkExclu}.maxWaveform_all{j}(1:nChannelFit);
+            else
+                cell_metrics.waveforms.bestChannels{j} = [];
+            end
+            
         end
         
         dispLog('Calculating waveform metrics');
@@ -398,32 +423,37 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     
     % Channel coordinates map, trilateration and length constant determined from waveforms across channels
     if ~all(isfield(cell_metrics,{'trilat_x','trilat_y','peakVoltage_expFit'})) || parameters.forceReload == true
-        if exist(fullfile(basepath,'chanMap.mat'),'file') % Will look for a chanMap file with default name (compatible with KiloSort)
-            chanMap = load(fullfile(basepath,'chanMap.mat'));
-        elseif isfield(session,'analysisTags') && isfield(session.analysisTags,'chanMapFile') 
-            % You can use a different filename that must be specified in: session.analysisTags.chanMapFile
-            chanMap = load(fullfile(basepath,session.analysisTags.chanMapFile));
-        else
-            if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
-                disp('  Using default probesLayout: poly2')
-                session.analysisTags.probesLayout = 'poly2';
+        if ~isfield(session.extracellular,'chanCoords')
+            if exist(fullfile(basepath,'chanMap.mat'),'file') % Will look for a chanMap file with default name (compatible with KiloSort)
+                chanMap = load(fullfile(basepath,'chanMap.mat'));
+            elseif isfield(session,'analysisTags') && isfield(session.analysisTags,'chanMapFile')
+                % You can use a different filename that must be specified in: session.analysisTags.chanMapFile
+                chanMap = load(fullfile(basepath,session.analysisTags.chanMapFile));
+            else
+                if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
+                    disp('  Using default probesLayout: poly2')
+                    session.analysisTags.probesLayout = 'poly2';
+                end
+                disp('  Creating channelmap')
+                chanMap = createChannelMap(session);
             end
-            disp('  Creating channelmap')
-            chanMap = createChannelMap(session);
+            session.extracellular.chanCoords.x = chanMap.xcoords(:);
+            session.extracellular.chanCoords.y = chanMap.ycoords(:);
         end
-        session.extracellular.chanCoords.x = chanMap.xcoords(:);
-        session.extracellular.chanCoords.y = chanMap.ycoords(:);
         cell_metrics.general.chanCoords = session.extracellular.chanCoords;
        
         % Fit exponential
         fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
-        fig1 = figure('Name', 'Length constant and Trilateration','NumberTitle', 'off','position',[100,100,1000,800]);
+        
+        expential_x = {};
+        expential_y = {};
         for j = 1:cell_metrics.general.cellCount
             if ~isnan(cell_metrics.peakVoltage(j))
                 % Trilateration
-                bestChannels = (cell_metrics.waveforms.bestChannels{j});
+                [~,idx] = sort(cell_metrics.waveforms.peakVoltage_all{j},'descend');
+                bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:16));
                 beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
-                trilat_pos = trilat([cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels)],cell_metrics.waveforms.peakVoltage_all{j}(bestChannels),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
+                trilat_pos = trilat([cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels)],cell_metrics.waveforms.peakVoltage_all{j}(idx(1:16)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
                 cell_metrics.trilat_x(j) = trilat_pos(1);
                 cell_metrics.trilat_y(j) = trilat_pos(2);
                 
@@ -432,37 +462,40 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 y1 = cell_metrics.general.chanCoords.y;
                 u = cell_metrics.trilat_x(j);
                 v = cell_metrics.trilat_y(j);
-                [channel_distance,idx] = sort(hypot((x1(:)-u),(y1(:)-v)));
+                [channel_distance,idx2] = sort(hypot((x1(:)-u),(y1(:)-v)));
                 
                 nChannelFit = min([16,length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
                 x = 1:nChannelFit;
                 y = cell_metrics.waveforms.peakVoltage_all{j}(idx(x));
                 x2 = channel_distance(1:nChannelFit)';
+                expential_x{j} = x2;
+                expential_y{j} = y;
                 f0 = fit(x2',y',fit_eqn,'StartPoint',[cell_metrics.peakVoltage(j), 30, 5],'Lower',[1, 0.001, 0],'Upper',[5000, 200, 1000]);
                 fitCoeffValues = coeffvalues(f0);
                 cell_metrics.peakVoltage_expFit(j) = fitCoeffValues(2);
-                
-                if ishandle(fig1)
-                    figure(fig1)
-                    subplot(2,2,1), hold off
-                    plot(x2,y,'.-b'), hold on
-                    plot(x2,fitCoeffValues(1)*exp(-x2/fitCoeffValues(2))+fitCoeffValues(3),'r'),
-                    title(['Spike amplitude (lambda=',num2str(cell_metrics.peakVoltage_expFit(j),2) ,')']), xlabel('Distance (µm)'), ylabel('µV'), %xlim([0,nChannelFit])
-                    subplot(2,2,2), hold on
-                    plot(x2,y), title('Spike amplitude (all)'), xlabel('Distance (µm)'), ylabel('µV'), % xlim([0,nChannelFit])
-                    subplot(2,2,3), hold off,
-                    histogram(cell_metrics.peakVoltage_expFit,20), xlabel('Length constant (µm)')
-                    subplot(2,2,4), hold on
-                    plot(cell_metrics.peakVoltage(j),cell_metrics.peakVoltage_expFit(j),'ok')
-                    ylabel('Length constant (µm)'), xlabel('Peak voltage (µV)')
-                    %     pause(0.5)
-                end
             else
                 cell_metrics.trilat_x(j) = nan;
                 cell_metrics.trilat_y(j) = nan;
                 cell_metrics.peakVoltage_expFit(j) = nan;
+                expential_x{j} = [];
+                expential_y{j} = [];
             end
         end
+        fig1 = figure('Name', 'Length constant and Trilateration','NumberTitle', 'off','position',[100,100,1000,800]);
+        subplot(2,2,1), hold on
+        for j = 1:cell_metrics.general.cellCount
+            plot(expential_x{j},expential_y{j})
+        end
+        title('Spike amplitude (all)'), xlabel('Distance (µm)'), ylabel('µV')
+        subplot(2,2,2), hold off,
+        histogram(cell_metrics.peakVoltage_expFit,20), xlabel('Length constant (µm)')
+        subplot(2,2,3), hold on
+        plot(cell_metrics.peakVoltage,cell_metrics.peakVoltage_expFit,'ok')
+        ylabel('Length constant (µm)'), xlabel('Peak voltage (µV)')
+        subplot(2,2,4), hold on
+        plot(cell_metrics.general.chanCoords.x,cell_metrics.general.chanCoords.y,'.k'), hold on
+        plot(cell_metrics.trilat_x,cell_metrics.trilat_y,'ob'), xlabel('x position (µm)'), ylabel('y position (µm)')
+        
     end
 end
 
@@ -518,17 +551,17 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
         cell_metrics = rmfield(cell_metrics,field2remove(test));
     end
     if ~all(isfield(cell_metrics,{'acg','thetaModulationIndex','burstIndex_Royer2012','burstIndex_Doublets','acg_tau_decay','acg_tau_rise'})) || parameters.forceReload == true
-        dispLog('CCG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets')
+        dispLog('ACG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets')
         acg_metrics = calc_ACG_metrics(spikes{spkExclu});
         
-        cell_metrics.acg.wide = acg_metrics.acg; % Wide: 1000ms wide CCG with 1ms bins
-        cell_metrics.acg.narrow = acg_metrics.acg2; % Narrow: 100ms wide CCG with 0.5ms bins
+        cell_metrics.acg.wide = acg_metrics.acg_wide; % Wide: 1000ms wide CCG with 1ms bins
+        cell_metrics.acg.narrow = acg_metrics.acg_narrow; % Narrow: 100ms wide CCG with 0.5ms bins
         cell_metrics.thetaModulationIndex = acg_metrics.thetaModulationIndex; % cell_tmi
         cell_metrics.burstIndex_Royer2012 = acg_metrics.burstIndex_Royer2012; % cell_burstRoyer2012
         cell_metrics.burstIndex_Doublets = acg_metrics.burstIndex_Doublets;
         
         dispLog('Fitting triple exponential to ACG')
-        fit_params = fit_ACG(acg_metrics.acg2);
+        fit_params = fit_ACG(acg_metrics.acg_narrow);
         cell_metrics.acg_tau_decay = fit_params.acg_tau_decay;
         cell_metrics.acg_tau_rise = fit_params.acg_tau_rise;
         cell_metrics.acg_c = fit_params.acg_c;
@@ -538,9 +571,6 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
         cell_metrics.acg_fit_rsquare = fit_params.acg_fit_rsquare;
         cell_metrics.acg_tau_burst = fit_params.acg_tau_burst;
         cell_metrics.acg_h = fit_params.acg_h;
-        
-%         cell_metrics.general.ccg = acg_metrics.ccg;
-%         cell_metrics.general.ccg_time = acg_metrics.ccg_time;
     end
     if ~all(isfield(cell_metrics,{'acg'}))  || ~isfield(cell_metrics.acg,{'log10'})  || parameters.forceReload == true
         dispLog('Calculating log10 ACGs')
@@ -609,6 +639,7 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
     if ~exist(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'file')
         mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections);
         if parameters.manualAdjustMonoSyn
+            dispLog('Loading MonoSynaptic GUI for manual adjustment')
             mono_res = gui_MonoSyn(mono_res);
         end
         save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
@@ -652,18 +683,16 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
         
         % Connection strength
         disp('  Determining MonoSynaptic connection strengths (transmission probabilities)')
-        % Excitatory connections
-        [ccg2,time2] = CCG(spikes{spkExclu}.spindices(:,1),spikes{spkExclu}.spindices(:,2),'binSize',0.0005,'duration',0.100,'norm','rate');
+        ccg2 = mono_res.ccgR;
         ccg2(isnan(ccg2)) =  0;
+        % Excitatory connections
         for i = 1:size(cell_metrics.putativeConnections.excitatory,1)
-            rawCCG = round(ccg2(:,cell_metrics.putativeConnections.excitatory(i,1),cell_metrics.putativeConnections.excitatory(i,2))*spikes{spkExclu}.total(cell_metrics.putativeConnections.excitatory(i,1))*0.001);
-            [trans,prob,prob_uncor,pred] = ce_GetTransProb(rawCCG,spikes{spkExclu}.total(cell_metrics.putativeConnections.excitatory(i,1)),0.001,0.020);
+            [trans,prob,prob_uncor,pred] = ce_GetTransProb(ccg2(:,cell_metrics.putativeConnections.excitatory(i,1),cell_metrics.putativeConnections.excitatory(i,2)),  spikes{spkExclu}.total(cell_metrics.putativeConnections.excitatory(i,1)),  mono_res.binSize,  0.020);
             cell_metrics.putativeConnections.excitatoryTransProb(i) = trans;
         end
         % Inhibitory connections
         for i = 1:size(cell_metrics.putativeConnections.inhibitory,1)
-            rawCCG = round(ccg2(:,cell_metrics.putativeConnections.inhibitory(i,1),cell_metrics.putativeConnections.inhibitory(i,2))*spikes{spkExclu}.total(cell_metrics.putativeConnections.inhibitory(i,1))*0.001);
-            [trans,prob,prob_uncor,pred] = ce_GetTransProb(rawCCG,spikes{spkExclu}.total(cell_metrics.putativeConnections.inhibitory(i,1)),0.001,0.020);
+            [trans,prob,prob_uncor,pred] = ce_GetTransProb(ccg2(:,cell_metrics.putativeConnections.inhibitory(i,1),cell_metrics.putativeConnections.inhibitory(i,2)),  spikes{spkExclu}.total(cell_metrics.putativeConnections.inhibitory(i,1)),  mono_res.binSize,  0.020);
             cell_metrics.putativeConnections.inhibitoryTransProb(i) = trans;
         end
     else
@@ -1144,11 +1173,13 @@ end
 cell_metrics.cellID =  spikes{spkExclu}.UID;
 cell_metrics.UID =  spikes{spkExclu}.UID;
 cell_metrics.cluID =  spikes{spkExclu}.cluID;
-cell_metrics.spikeGroup = spikes{spkExclu}.shankID; % cell_spikegroup OK
+% cell_metrics.spikeGroup = spikes{spkExclu}.shankID; % cell_spikegroup OK
+cell_metrics.electrodeGroup = spikes{spkExclu}.shankID; % cell_spikegroup OK
 cell_metrics.maxWaveformCh = spikes{spkExclu}.maxWaveformCh1-1; % cell_maxchannel OK
 cell_metrics.maxWaveformCh1 = spikes{spkExclu}.maxWaveformCh1; % cell_maxchannel OK
 cell_metrics.spikeCount = spikes{spkExclu}.total; % cell_spikecount OK
 
+cell_metrics.general.electrodeGroups = session.extracellular.electrodeGroups.channels;
 
 for j = 1:cell_metrics.general.cellCount
     % Session metrics
@@ -1171,6 +1202,7 @@ for j = 1:cell_metrics.general.cellCount
         warning('peak channel not determined')
         cell_metrics.maxWaveformChannelOrder(j) = nan;
     end
+    
     % Spike times based metrics
     if ~isempty(parameters.excludeIntervals)
         idx = find(any(parameters.excludeIntervals' > spikes{spkExclu}.times{j}(1)) & any(parameters.excludeIntervals' < spikes{spkExclu}.times{j}(end)));
@@ -1364,7 +1396,12 @@ verifyCellMetricsStruct(cell_metrics);
 if parameters.saveMat
     dispLog(['Saving cells to: ',saveAsFullfile]);
     try
-        save(saveAsFullfile,'cell_metrics')
+        structSize = whos('cell_metrics');
+        if structSize.bytes/1000000000 > 2
+            save(saveAsFullfile,'cell_metrics','-v7.3')
+        else
+            save(saveAsFullfile,'cell_metrics')
+        end
         dispLog(['Saving session struct: ' fullfile(basepath,[basename,'.session.mat'])]);
         save(fullfile(basepath,[basename,'.session.mat']),'session')
     catch
@@ -1395,7 +1432,7 @@ if parameters.summaryFigures
     end
     
     figure,
-    histogram(cell_metrics.spikeGroup,[0:14]+0.5),xlabel('Spike groups'), ylabel('Count')
+    histogram(cell_metrics.electrodeGroup,[0:14]+0.5),xlabel('Spike groups'), ylabel('Count')
     
     figure, subplot(2,2,1)
     histogram(cell_metrics.burstIndex_Mizuseki2012,40),xlabel('BurstIndex Mizuseki2012'), ylabel('Count')

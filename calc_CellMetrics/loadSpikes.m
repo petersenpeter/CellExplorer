@@ -132,9 +132,141 @@ if forceReload
     session = loadClassicMetadata(session);
     
     switch lower(clusteringFormat)
+        case {'allensdk'}
+            disp('loadSpikes: Loading Allen SDK nwb data')
+            nwb_file = fullfile(session.general.basePath,[session.general.name,'.nwb']);
+            info = h5info(nwb_file);
+            % unit_metrics = {info.Groups(7).Datasets.Name};
+            fieldsToExtract = {'PT_ratio','amplitude','amplitude_cutoff','cluster_id','cumulative_drift','d_prime','firing_rate','id','isi_violations','isolation_distance','l_ratio','local_index','max_drift','nn_hit_rate','nn_miss_rate', ...
+                'peak_channel_id','presence_ratio','quality','recovery_slope','repolarization_slope','silhouette_score','snr','spike_amplitudes','spike_amplitudes_index','spike_times','spike_times_index','spread','velocity_above',...
+                'velocity_below','waveform_duration','waveform_halfwidth','waveform_mean','waveform_mean_index'};
+            spikes = [];
+            
+            for i = 1:numel(fieldsToExtract)
+                disp(['Loading ' fieldsToExtract{i},' (',num2str(i),'/',num2str(numel(fieldsToExtract)),')'])
+                if strcmp(fieldsToExtract{i},'spike_times')
+                    spike_data = h5read(nwb_file,['/units/','spike_times']);
+                    spike_data_index = h5read(nwb_file,['/units/','spike_times_index']);
+                    spikes.total = double([spike_data_index(1);diff(spike_data_index)]);
+                    index = [0;spike_data_index];
+                    for j = 1:numel(spike_data_index)
+                        spikes.times{j} = spike_data(index(j)+1:index(j+1));
+                    end
+                elseif strcmp(fieldsToExtract{i},'spike_amplitudes')
+                    spike_data = h5read(nwb_file,['/units/','spike_amplitudes']);
+                    spike_data_index = h5read(nwb_file,['/units/','spike_amplitudes_index']);
+                    index = [0;spike_data_index];
+                    for j = 1:numel(spike_data_index)
+                        spikes.amplitudes{j} = spike_data(index(j)+1:index(j+1));
+                    end
+                elseif strcmp(fieldsToExtract{i},'waveform_mean')
+                    spike_data = h5read(nwb_file,['/units/','waveform_mean']);
+                    spike_data_index = h5read(nwb_file,['/units/','waveform_mean_index']);
+                    index = [0;spike_data_index];
+                    for j = 1:numel(spike_data_index)
+                        spikes.waveform_mean{j} = spike_data(:,index(j)+1:index(j+1));
+                    end
+                elseif any(strcmp(fieldsToExtract{i},{'spike_times_index','waveform_mean_index','spike_amplitudes_index'}))
+                    disp('Not imported')
+                elseif strcmp(fieldsToExtract{i},'cluster_id')
+                    spikes.cluID = double(h5read(nwb_file,['/units/',fieldsToExtract{i}]))';
+                elseif  strcmp(fieldsToExtract{i},'amplitude')
+                    spikes.peakVoltage = h5read(nwb_file,['/units/',fieldsToExtract{i}]);
+                elseif strcmp(fieldsToExtract{i},'peak_channel_id')
+                    % maxWaveformCh
+                    electrode_channel_id = double(h5read(nwb_file,'/general/extracellular_ephys/electrodes/id'));
+                    peak_channel_id = double(h5read(nwb_file,['/units/','peak_channel_id']));
+                    for j = 1:numel(peak_channel_id)
+                        spikes.maxWaveformCh1(j) = find(peak_channel_id(j) == electrode_channel_id);
+                    end
+                    spikes.maxWaveformCh = spikes.maxWaveformCh1-1;
+                    spikes.peak_channel_id = peak_channel_id';
+                else
+                    fieldData =  h5read(nwb_file,['/units/',fieldsToExtract{i}]);
+                    if isnumeric(fieldData)
+                        spikes.(fieldsToExtract{i}) = fieldData';
+                    else
+                        spikes.(fieldsToExtract{i}) = fieldData;
+                    end
+                end
+            end
+            
+            % Getting raw timestamps using the AllenSDK saved as separate npy files for each unit
+            k = 0;
+            
+            for iCells = 1:numel(spikes.times)
+                spikes.shankID(iCells) = find(cellfun(@(X) ismember(spikes.maxWaveformCh1(iCells),X),session.extracellular.electrodeGroups.channels));
+                rawTimestampsFile = [session.analysisTags.rawTimestampsFile, num2str(spikes.id(iCells)),'.npy'];
+                if exist(rawTimestampsFile,'file')
+                    temp = readNPY(rawTimestampsFile);
+                    spikes.ts{iCells} = double(temp);
+                    k = k + 1;
+                else
+                    spikes.ts{iCells} = [];
+                end
+            end
+
+            % Removing empty units from structure
+            unitsToRemove = find(cellfun(@isempty,spikes.ts));
+            fieldsToProcess = fieldnames(spikes);
+            fieldsToProcess = fieldsToProcess(structfun(@(X) (isnumeric(X) || iscell(X)) && numel(X)==numel(spikes.times),spikes));
+            for iField = 1:numel(fieldsToProcess)
+                spikes.(fieldsToProcess{iField})(unitsToRemove) = [];
+            end
+            
+            % Getting raw waveforms
+            unitsToProcess = {};
+            channel_offset = [];
+            for iProbe = 1:session.extracellular.nElectrodeGroups
+                unitsToProcess{iProbe} = find(spikes.shankID == iProbe);
+                session1{iProbe} = session;
+                session1{iProbe}.extracellular.fileName = fullfile(session.extracellular.electrodeGroups.label{iProbe},'spike_band.dat');
+                session1{iProbe}.extracellular.nChannels = length(session.extracellular.electrodeGroups.channels{iProbe});
+                session1{iProbe}.extracellular.electrodeGroups.channels = {1:session1{iProbe}.extracellular.nChannels};
+                session1{iProbe}.extracellular.nElectrodeGroups = 1;
+                channel_offset(iProbe) = 384*(iProbe-1);
+                session1{iProbe}.channelTags.Bad.channels = session.channelTags.Bad.channels(ismember(session1{iProbe}.channelTags.Bad.channels,session.extracellular.electrodeGroups.channels{iProbe})) - channel_offset(iProbe);
+            end
+            disp(['Applying channel offset: ', num2str(channel_offset)])
+            % Pulling out waveforms in parfor loop
+            probesToProcess = find(~cellfun(@isempty, unitsToProcess));
+            gcp; spikes_out = {}; tic;
+            parfor iProbe = probesToProcess
+                disp(['Getting waveforms from ',num2str(numel(unitsToProcess{iProbe})) ,' cells from binary file (',num2str(iProbe),'/',num2str(session.extracellular.nElectrodeGroups),')'])
+                spikes_out{iProbe} = getAllWaveformsFromDat(spikes,session1{iProbe},unitsToProcess{iProbe});
+            end
+            
+            % Writing fields back to spikes struct
+            disp('Extracting waveforms from parfor loop')
+            fieldsWaveform = {'maxWaveformCh','maxWaveformCh1','rawWaveform','filtWaveform','rawWaveform_all','rawWaveform_std','filtWaveform_all','filtWaveform_std','timeWaveform','timeWaveform_all','peakVoltage','peakVoltage_all','channels_all','peakVoltage_sorted','maxWaveform_all','peakVoltage_expFitLengthConstant'};
+            for iProbe = probesToProcess
+                for jFields = 1:numel(fieldsWaveform)
+                    spikes.(fieldsWaveform{jFields})(unitsToProcess{iProbe}) = spikes_out{iProbe}.(fieldsWaveform{jFields})(unitsToProcess{iProbe});
+                end
+                spikes.maxWaveformCh1(unitsToProcess{iProbe}) = spikes.maxWaveformCh1(unitsToProcess{iProbe}) + channel_offset(iProbe);
+                spikes.maxWaveformCh(unitsToProcess{iProbe}) = spikes.maxWaveformCh(unitsToProcess{iProbe}) + channel_offset(iProbe);
+                for j = 1:length(unitsToProcess{iProbe})
+                    spikes.channels_all{unitsToProcess{iProbe}(j)} = spikes.channels_all{unitsToProcess{iProbe}(j)} + channel_offset(iProbe);
+                end
+            end
+            fieldsParams = {'WaveformsSource','WaveformsFiltFreq','Waveforms_nPull','WaveformsWin_sec','WaveformsWinKeep','WaveformsFilterType'};
+            for jFields = 1:numel(fieldsParams)
+                spikes.processinginfo.params.(fieldsParams{jFields}) = spikes_out{iProbe}.processinginfo.params.(fieldsParams{jFields});
+            end
+            toc
+            spikes.numcells = numel(spikes.times);
+            spikes.UID = 1:spikes.numcells;
+            
+            spikesFields = fieldnames(spikes);
+            for j = 1:numel(spikesFields)
+                if size(spikes.(spikesFields{j})) == [spikes.numcells,1]
+                    spikes.(spikesFields{j}) = spikes.(spikesFields{j})';
+                end
+            end
+            
         case {'kilosort'}
             error('KiloSort output format not implemented yet')
-        case {'spyking circus'} 
+        case {'spyking circus'}
             error('spyking circus output format not implemented yet')
         case {'mountainsort'}
             error('mountainsort output format not implemented yet')
@@ -339,21 +471,22 @@ if forceReload
             elseif getWaveforms % gets waveforms from dat file
                 spikes = GetWaveformsFromDat(spikes,session);
             end
+        otherwise
+            error('Please provide a compatible clustering format')
     end
     %
     spikes.sessionName = basename;
     spikes.numcells = length(spikes.UID);
     
-    % Generate spindices matrics
-    for cc = 1:spikes.numcells
-        groups{cc}=spikes.UID(cc).*ones(size(spikes.times{cc}));
-    end
-    
-    if spikes.numcells>0
-        alltimes = cat(1,spikes.times{:}); groups = cat(1,groups{:});  % from cell to array
-        [alltimes,sortidx] = sort(alltimes); groups = groups(sortidx); % sort both
-        spikes.spindices = [alltimes groups];
-    end
+%     % Generate spindices matrics
+%     for cc = 1:spikes.numcells
+%         groups{cc}=spikes.UID(cc).*ones(size(spikes.times{cc}));
+%     end
+%     if spikes.numcells>0
+%         alltimes = cat(1,spikes.times{:}); groups = cat(1,groups{:});  % from cell to array
+%         [alltimes,sortidx] = sort(alltimes); groups = groups(sortidx); % sort both
+%         spikes.spindices = [alltimes groups];
+%     end
     
     % Attaching info about how the spikes structure was generated
     spikes.processinginfo.function = 'loadSpikes';
@@ -378,7 +511,13 @@ if forceReload
     % Saving output to a buzcode compatible spikes file.
     if saveMat
         disp('loadSpikes: Saving spikes')
-        try save(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'spikes')
+        try
+            structSize = whos('spikes');
+            if structSize.bytes/1000000000 > 2
+                save(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'spikes','-v7.3')
+            else
+                save(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'spikes')
+            end
         catch
             warning('Spikes could not be saved')
         end

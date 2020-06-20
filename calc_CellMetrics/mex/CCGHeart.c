@@ -69,15 +69,14 @@ void AddPair(unsigned int n1, unsigned int n2) {
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ) {
 
-	unsigned int nSpikes, nMarks, HalfBins, nBins, i, CountArraySize, CountIndex;
+	unsigned int nSpikes, nMarks, HalfBins, nBins, i, CountArraySize, CountIndex, optimalRefresh;
 	double *Times;
-	double BinSize, FurthestEdge;
+	double BinSize, FurthestEdge; 
 	unsigned int *Marks, Mark, *Count;
 	unsigned int CenterSpike, Mark1, Mark2, Bin;
 	int SecondSpike; /* we want to let it go negative so we can stop it there... */
 	double Time1, Time2;
 	char errstr[STRLEN];
-
 	/* global variables are not initialized on each call to mex fn!! */
 	PairCnt = 0; PairSz = 0;
 
@@ -124,12 +123,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ) {
 	}
 
 	/* Now the main program .... */
-
-
-	for(CenterSpike=0; CenterSpike<nSpikes; CenterSpike++) {
+    if (nSpikes > 1000000) {
+        optimalRefresh = 200000;
+    }
+    else {
+        optimalRefresh = 50000;
+    }
+	for (CenterSpike=0; CenterSpike<nSpikes; CenterSpike++) {
 		Mark1 = Marks[CenterSpike];
 		Time1 = Times[CenterSpike];
-
+        if (CenterSpike % optimalRefresh == 0 && nSpikes>1000000) {
+            mexPrintf("%3i%%", 100 * CenterSpike / nSpikes);
+            mexCallMATLAB(0, NULL, 0, NULL, "drawnow");
+        }
 		/* Go back from CenterSpike */
 		for(SecondSpike=CenterSpike-1; SecondSpike>=0; SecondSpike--) {
 			Time2 = Times[SecondSpike];

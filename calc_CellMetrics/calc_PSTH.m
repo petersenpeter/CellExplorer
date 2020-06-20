@@ -74,19 +74,29 @@ binsPre = 1:floor(binDistribution(1)*length(binsToKeep));
 binsEvents = floor(binDistribution(1)*length(binsToKeep))+1:floor((binDistribution(1)+binDistribution(2))*length(binsToKeep));
 binsPost = floor((binDistribution(1)+binDistribution(2))*length(binsToKeep))+1:length(binsToKeep);
 
-% Calculating PSTH
-spike_times = spikes.spindices(:,1);
-spike_cluster_index = spikes.spindices(:,2);
-[spike_times,index] = sort([spike_times;event_times(:)]);
-spike_cluster_index = [spike_cluster_index;zeros(length(event_times),1)];
-spike_cluster_index = spike_cluster_index(index);
-[~, ~, spike_cluster_index] = unique(spike_cluster_index);
-[ccg,time] = CCG(spike_times,spike_cluster_index,'binSize',binSize,'duration',(duration+padding)*2);
 
+% spike_times = spikes.spindices(:,1);
+% spike_cluster_index = spikes.spindices(:,2);
+% [spike_times,index] = sort([spike_times;event_times(:)]);
+% spike_cluster_index = [spike_cluster_index;zeros(length(event_times),1)];
+% spike_cluster_index = spike_cluster_index(index);
+% [~, ~, spike_cluster_index] = unique(spike_cluster_index);
+
+
+% Calculating PSTH
+PSTH_out = [];
+for j = 1:numel(spikes.times)
+    [spike_times,index] = sort([spikes.times{j};event_times(:)]);
+    spike_cluster_index = [ones(size(spikes.times{j}));2*ones(size(event_times(:)))];
+    [ccg,time] = CCG(spike_times,spike_cluster_index(index),'binSize',binSize,'duration',(duration+padding)*2);
+    PSTH_out(:,j) = ccg(binsToKeep+1,2,1)./numel(event_times)/binSize;
+end
 time = time(binsToKeep+1);
-PSTH_out = flip(ccg(:,2:end,1),1);
-% PSTH_out = ccg(:,2:end,1);
-PSTH_out = PSTH_out(binsToKeep+1,:)./length(event_times)/binSize;
+
+% PSTH_out = PSTH_out./length(event_times)/binSize;
+
+% PSTH_out = flip(ccg(:,2:end,1),1);
+% PSTH_out = PSTH_out(binsToKeep+1,:)./length(event_times)/binSize;
 
 modulationIndex = mean(PSTH_out(binsEvents,:))./mean(PSTH_out(binsPre,:));
 modulationSignificanceLevel = [];
@@ -118,6 +128,6 @@ if plots
     figure,
     subplot(2,2,1), histogram(modulationIndex,40), title('modulationIndex'), xlabel('Ratio'), ylabel(eventName)
     subplot(2,2,2), histogram(modulationPeakResponseTime,40), title('modulationPeakResponseTime'), xlabel('Time')
-    subplot(2,2,3), imagesc(time,[1:size(PSTH_out,2)],zscore(PSTH_out(:,index2))'), title(['Sorting: modulationIndex']), xlabel('Time'), ylabel('Units')
-    subplot(2,2,4), imagesc(time,[1:size(PSTH_out,2)],zscore(PSTH_out(:,index3))'),  title(['Sorting: modulationPeakResponseTime']), xlabel('Time')
+    subplot(2,2,3), imagesc(time,[1:size(PSTH_out,2)],zscore(PSTH_out(:,index2))'), title('Sorting: modulationIndex'), xlabel('Time'), ylabel('Units')
+    subplot(2,2,4), imagesc(time,[1:size(PSTH_out,2)],zscore(PSTH_out(:,index3))'),  title('Sorting: modulationPeakResponseTime'), xlabel('Time')
 end

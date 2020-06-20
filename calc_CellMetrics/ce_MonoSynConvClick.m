@@ -59,7 +59,10 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     % 09-06-2020
     
     %get experimentally validated probabilities
-    
+    if ~isfield(spikes,'spindices')
+        disp('Generating spindices')
+        spikes.spindices = generateSpinDices(spikes.times);
+    end
     spikeIDs = double([spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)]);
     spiketimes = spikes.spindices(:,1);
     
@@ -111,6 +114,8 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
                 if ~isa(binSize,'numeric') | length(binSize) ~= 1 | binSize <= 0
                     error('Incorrect value for property ''binsize'' ');
                 end
+            case 'sr'
+                sr = varargin{i+1};
             case 'epoch'
                 epoch = varargin{i+1};
                 if ~isa(epoch,'numeric') | size(epoch,2) ~= 2
@@ -160,8 +165,10 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     
     
     % Create CCGs (including autoCG) for all cells
+    disp('Generating CCGs')
+    tic
     [ccgR1,tR] = CCG(spiketimes,double(spikeIDs(:,3)),'binSize',binSize,'duration',duration);
-    
+    toc
     ccgR = nan(size(ccgR1,1),nCel,nCel);
     ccgR(:,1:size(ccgR1,2),1:size(ccgR1,2)) = ccgR1;
     

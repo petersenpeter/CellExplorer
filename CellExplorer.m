@@ -97,7 +97,7 @@ UI.settings.layout = 3; UI.settings.displayMenu = 0; UI.settings.displayInhibito
 UI.settings.customCellPlotIn{1} = 'Waveforms (single)'; UI.settings.customCellPlotIn{2} = 'ACGs (single)'; UI.settings.troughToPeakSorted = [];
 UI.settings.customCellPlotIn{3} = 'thetaPhaseResponse'; UI.settings.customCellPlotIn{4} = 'firingRateMap'; UI.settings.raster = 'cv2';
 UI.settings.customCellPlotIn{5} = 'firingRateMap'; UI.settings.customCellPlotIn{6} = 'firingRateMap'; UI.settings.plotCountIn = 'GUI 3+3';
-UI.settings.tSNE.calcNarrowAcg = true; UI.settings.tSNE.calcFiltWaveform = true; UI.settings.tSNE.metrics = '';
+UI.settings.tSNE.calcNarrowAcg = true; UI.settings.tSNE.calcFiltWaveform = true; UI.settings.tSNE.metrics = ''; UI.settings.acgYaxisLog = 1;
 UI.settings.tSNE.calcWideAcg = true; UI.settings.dispLegend = 1; UI.settings.tags = {'good','bad','mua','noise','inverseSpike','Other'};
 UI.settings.groundTruthMarkers = {'d','o','s','*','+','p'}; UI.settings.groundTruth = {'PV+','NOS1+','GAT1+'};
 UI.settings.plotWaveformMetrics = 1; UI.settings.metricsTable = 1; synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'};
@@ -105,7 +105,7 @@ UI.settings.stickySelection = false; UI.settings.fieldsMenuMetricsToExlude  = {'
 UI.settings.plotOptionsToExlude = {'acg_','waveforms_','isi_','responseCurves_thetaPhase','responseCurves_thetaPhase_zscored','responseCurves_firingRateAcrossTime','groups','tags','groundTruthClassification','spikes'}; UI.settings.tSNE.dDistanceMetric = 'euclidean';
 UI.settings.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','groups','spikes'}; UI.params.inbound = [];
 UI.settings.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial','groups','spikes'};
-UI.settings.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','spikeGroup'});
+UI.settings.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','electrodeGroup'});
 UI.settings.firingRateMap.showHeatmap = false; UI.settings.firingRateMap.showLegend = false; UI.settings.firingRateMap.showHeatmapColorbar = false;
 UI.settings.referenceData = 'None'; UI.settings.groundTruthData = 'None'; UI.BatchMode = false; UI.params.ii_history = 1; UI.params.ClickedCells = [];
 UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoSyn.dispHollowGauss = false; UI.settings.binCount = 100;
@@ -136,7 +136,7 @@ timerVal = tic;
 spikes = []; events = []; states = [];
 createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal';
 polygon1.handle = gobjects(0); fig = 1;
-set(groot, 'DefaultFigureVisible', 'on','DefaultAxesLooseInset',[.01,.01,.01,.01],'DefaultTextInterpreter', 'none'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min(1500,maxFigureSize(3)-50), min(1000,maxFigureSize(4)-50)];
+set(groot, 'DefaultFigureVisible', 'on','DefaultAxesLooseInset',[.01,.01,.01,.01],'DefaultTextInterpreter', 'none'), maxFigureSize = get(groot,'ScreenSize'); UI.settings.figureSize = [50, 50, min([1500,maxFigureSize(3)-100]), min([1000,maxFigureSize(4)-100])];
 % set(0, 'DefaultTextInterpreter', 'none')
 if isempty(basename)
     s = regexp(basepath, filesep, 'split');
@@ -623,9 +623,6 @@ subfig_ax(7) = axes('Parent',UI.panel.subfig_ax7);
 subfig_ax(8) = axes('Parent',UI.panel.subfig_ax8);
 subfig_ax(9) = axes('Parent',UI.panel.subfig_ax9);
 
-
-
-
 % % % % % % % % % % % % % % % % % % %
 % Metrics table
 % % % % % % % % % % % % % % % % % % %
@@ -673,9 +670,9 @@ set(UI.panel.centerBottom, 'Widths', [-600 -300], 'Spacing', 5);
 % % % % % % % % % % % % % % % % % % % %
 
 % Navigation buttons
-uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0 0 0.33 1],'String','<','Callback',@(src,evnt)back,'KeyPressFcn', {@keyPress},'tooltip','Go to previous cell (i-1)');
+uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0 0 0.33 1],'String','<','Callback',@back,'KeyPressFcn', {@keyPress},'tooltip','Go to previous cell (i-1)');
 uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0 0.33 1],'String','GoTo','Callback',@(src,evnt)goToCell,'KeyPressFcn', {@keyPress},'tooltip','Open a dialog to provide specific cell id');
-UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0 0.33 1],'String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress},'tooltip','Go to next cell (i+1)');
+UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0 0.33 1],'String','>','Callback',@advance,'KeyPressFcn', {@keyPress},'tooltip','Go to next cell (i+1)');
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell assignments panel (right side)
@@ -1124,9 +1121,9 @@ function updateUI
     
     % Updating title
      if isfield(cell_metrics,'sessionName') && isfield(cell_metrics.general,'batch')
-        UI.title.String = ['Cell class: ', UI.settings.cellTypes{clusClas(ii)},', ' , num2str(ii),'/', num2str(cell_metrics.general.cellCount),' (batch ',num2str(batchIDs),'/',num2str(length(cell_metrics.general.batch)),') - UID: ', num2str(cell_metrics.UID(ii)),'/',num2str(general.cellCount),', spike group: ', num2str(cell_metrics.spikeGroup(ii)),', session: ', cell_metrics.sessionName{ii},',  animal: ',cell_metrics.animal{ii}];
+        UI.title.String = ['Cell class: ', UI.settings.cellTypes{clusClas(ii)},', ' , num2str(ii),'/', num2str(cell_metrics.general.cellCount),' (batch ',num2str(batchIDs),'/',num2str(length(cell_metrics.general.batch)),') - UID: ', num2str(cell_metrics.UID(ii)),'/',num2str(general.cellCount),', electrode group: ', num2str(cell_metrics.electrodeGroup(ii)),', session: ', cell_metrics.sessionName{ii},',  animal: ',cell_metrics.animal{ii}];
     else
-        UI.title.String = ['Cell Class: ', UI.settings.cellTypes{clusClas(ii)},', ', num2str(ii),'/', num2str(cell_metrics.general.cellCount),'  - spike group: ', num2str(cell_metrics.spikeGroup(ii))];
+        UI.title.String = ['Cell Class: ', UI.settings.cellTypes{clusClas(ii)},', ', num2str(ii),'/', num2str(cell_metrics.general.cellCount),'  - electrode group: ', num2str(cell_metrics.electrodeGroup(ii))];
      end
 
     %% % % % % % % % % % % % % % % % % % % % % %
@@ -2129,11 +2126,14 @@ end
                 plotAxes.XLabel.String = ['Time (ms) / Position (',char(181),'m*',num2str(UI.params.chanCoords.x_factor),')'];
                 plotAxes.YLabel.String = ['Waveforms (',char(181),'V) / Position (',char(181),'m/',num2str(UI.params.chanCoords.y_factor),')'];
                 plotAxes.Title.String = 'Waveforms across channels';
-                if isfield(general,'chanCoords')
+                if isfield(general,'chanCoords')  && ~isempty(cell_metrics.waveforms.filt_all{ii}) && ~isempty(cell_metrics.waveforms.time_all{ii})
                     if UI.settings.plotChannelMapAllChannels
                         channels2plot = cell_metrics.waveforms.channels_all{ii};
                     else
                         channels2plot = cell_metrics.waveforms.bestChannels{ii};
+                    end
+                    if length(channels2plot) > size(cell_metrics.waveforms.filt_all{ii},1)
+                        channels2plot =channels2plot(1:size(cell_metrics.waveforms.filt_all{ii},1));
                     end
                     xdata = repmat([cell_metrics.waveforms.time_all{ii},nan(1,1)],length(channels2plot),1)' + general.chanCoords.x(channels2plot)'/UI.params.chanCoords.x_factor;
                     ydata = [cell_metrics.waveforms.filt_all{ii}(channels2plot,:),nan(length(channels2plot),1)]' + general.chanCoords.y(channels2plot)'*UI.params.chanCoords.y_factor;
@@ -2154,7 +2154,30 @@ end
                     text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
                 end
             end
-            
+        elseif strcmp(customPlotSelection,'Waveforms (image across channels)')
+            plotAxes.XLabel.String = 'Time (ms)';
+            plotAxes.YLabel.String = 'Channels';
+            plotAxes.Title.String = customPlotSelection;
+            if isfield(general,'electrodeGroups') && ~isempty(cell_metrics.waveforms.raw_all{ii}) && ~isempty(cell_metrics.waveforms.time_all{ii})
+                if UI.settings.plotChannelMapAllChannels
+                    channelOrder = flip([general.electrodeGroups{:}]);
+                    horzlines = cumsum(flip(cellfun(@length,general.electrodeGroups)));
+                else
+                    channels2plot = cell_metrics.waveforms.bestChannels{ii};
+                    channelOrder = flip([general.electrodeGroups{cell_metrics.electrodeGroup(ii)}]);
+                    channelOrder = intersect(channelOrder,channels2plot,'stable');
+                end
+                if length(channelOrder) > size(cell_metrics.waveforms.filt_all{ii},1)
+                    channelOrder =channelOrder(1:size(cell_metrics.waveforms.filt_all{ii},1));
+                end
+                
+                imagesc(cell_metrics.waveforms.time_all{ii}, [1:numel(channelOrder)], cell_metrics.waveforms.filt_all{ii}(channelOrder,:),'HitTest','off'),
+                if UI.settings.plotChannelMapAllChannels
+                    line(cell_metrics.waveforms.time_all{ii}([1,end]),[horzlines;horzlines]+0.5,'color','w','HitTest','off','linewidth',0.8)
+                end
+            else
+                text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
+            end
         elseif strcmp(customPlotSelection,'Trilaterated position')
             % All waveforms across channels with largest ampitude colored according to cell type
             plotAxes.XLabel.String = ['Position (',char(181),'m)'];
@@ -2191,7 +2214,7 @@ end
         elseif strcmp(customPlotSelection,'Waveforms (image)')
             % All waveforms, zscored and shown in a imagesc plot
             plotAxes.XLabel.String = 'Time (ms)';
-            plotAxes.YLabel.String = 'Cells';
+            plotAxes.YLabel.String = ['Cells (Sorting: ', UI.settings.sortingMetric,')'];
             plotAxes.Title.String = customPlotSelection;
             % Sorted according to trough-to-peak
             [~,idx] = find(UI.params.subset(UI.settings.troughToPeakSorted) == ii);
@@ -2345,8 +2368,8 @@ end
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
         elseif strcmp(customPlotSelection,'Connectivity matrix')
-            plotAxes.XLabel.String = ['Cells (sorted by ', UI.settings.sortingMetric,')'];
-            plotAxes.YLabel.String = ['Cells (sorted by ', UI.settings.sortingMetric,')'];
+            plotAxes.XLabel.String = ['Cells (sorting: ', UI.settings.sortingMetric,')'];
+            plotAxes.YLabel.String = ['Cells (sorting: ', UI.settings.sortingMetric,')'];
             plotAxes.Title.String = customPlotSelection;
             if UI.BatchMode
                 subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
@@ -2445,9 +2468,15 @@ end
                 if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10') 
                     bar_from_patch(general.isis.log10, cell_metrics.acg.log10(:,ii)-cell_metrics.isi.log10(:,ii),'k')
                 end
-                bar_from_patch(general.acgs.log10, cell_metrics.acg.log10(:,ii),col)
+                if UI.settings.acgYaxisLog == 3
+                    bar_from_patch(general.acgs.log10, cell_metrics.acg.log10(:,ii).*general.acgs.log10,col)
+                    set(gca, 'YScale', 'log')
+                else
+                    bar_from_patch(general.acgs.log10, cell_metrics.acg.log10(:,ii),col)
+                end
                 set(gca,'xscale','log'),xlim([.001,10])
                 plotAxes.XLabel.String = 'Time (sec)';
+                
             else
                 bar_from_patch([-500:500]', cell_metrics.acg.wide(:,ii),col)
                 xticks([-500:100:500]),xlim([-500,500])
@@ -2575,13 +2604,24 @@ end
                 xticks([-15:5:15]),xlim([-15,15])
                 plotAxes.XLabel.String = 'Time (ms)';
             elseif strcmp(UI.settings.acgType,'Log10')
-                for k = 1:length(classes2plotSubset)
-                    set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
-                    xdata = repmat([general.acgs.log10',nan(1,1)],length(set1),1)';
-                    ydata = [cell_metrics.acg.log10(:,set1);nan(1,length(set1))];
-                    line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                if UI.settings.acgYaxisLog == 1
+                    for k = 1:length(classes2plotSubset)
+                        set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                        xdata = repmat([general.acgs.log10',nan(1,1)],length(set1),1)';
+                        ydata = [cell_metrics.acg.log10(:,set1).*general.acgs.log10;nan(1,length(set1))];
+                        line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                    end
+                    line(general.acgs.log10,cell_metrics.acg.log10(:,ii).*general.acgs.log10, 'color', 'k','linewidth',1.5,'HitTest','off')
+                    set(gca, 'YScale', 'log')
+                else
+                    for k = 1:length(classes2plotSubset)
+                        set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                        xdata = repmat([general.acgs.log10',nan(1,1)],length(set1),1)';
+                        ydata = [cell_metrics.acg.log10(:,set1);nan(1,length(set1))];
+                        line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                    end
+                    line(general.acgs.log10,cell_metrics.acg.log10(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
                 end
-                line(general.acgs.log10,cell_metrics.acg.log10(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
                 xlim([0,10]), set(gca,'xscale','log')
                 plotAxes.XLabel.String = 'Time (sec)';
             else
@@ -2597,7 +2637,7 @@ end
             end
             
         elseif strcmp(customPlotSelection,'ISIs (image)')
-            plotAxes.YLabel.String = 'Cells';
+            plotAxes.YLabel.String = ['Cells (sorting: ', UI.settings.sortingMetric,')'];
             plotAxes.Title.String = customPlotSelection;
             [~,burstIndexSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
             [~,idx] = find(UI.params.subset(burstIndexSorted) == ii);
@@ -2624,7 +2664,7 @@ end
             
         elseif strcmp(customPlotSelection,'ACGs (image)')
             % All ACGs shown in an image (z-scored). Sorted by the burst-index from Royer 2012
-            plotAxes.YLabel.String = 'Cells';
+            plotAxes.YLabel.String = ['Cells (sorting: ', UI.settings.sortingMetric,')'];
             plotAxes.Title.String = customPlotSelection;
             [~,burstIndexSorted] = sort(cell_metrics.(UI.settings.sortingMetric)(UI.params.subset));
             [~,idx] = find(UI.params.subset(burstIndexSorted) == ii);
@@ -4158,7 +4198,7 @@ end
                 temp1 = find(strcmp(subfieldstypes1,'double') & subfieldssizes1(:,2) == length(cell_metrics.cellID) & ~contains(subfieldsnames1,'_num'));
                 list_metrics = [list_metrics;strcat({fieldname},{'.'},subfieldsnames1(temp1))];
             end
-            subfieldsExclude = {'UID','batchIDs','cellID','cluID','maxWaveformCh1','maxWaveformCh','sessionID','spikeGroup','spikeSortingID','entryID'};
+            subfieldsExclude = {'UID','batchIDs','cellID','cluID','maxWaveformCh1','maxWaveformCh','sessionID','electrodeGroup','spikeSortingID','entryID'};
             list_metrics = setdiff(list_metrics,subfieldsExclude);
         end
         if exist('preselectedList','var')
@@ -5346,7 +5386,7 @@ end
         subfieldssizes = cell2mat(subfieldssizes);
         temp = find(strcmp(subfieldstypes,'double') & subfieldssizes(:,2) == length(cell_metrics.cellID) & ~contains(subfieldsnames,'_num'));
         list_tSNE_metrics = sort(subfieldsnames(temp));
-        subfieldsExclude = {'UID','batchIDs','cellID','cluID','maxWaveformCh1','maxWaveformCh','sessionID','SpikeGroup','SpikeSortingID'};
+        subfieldsExclude = {'UID','batchIDs','cellID','cluID','maxWaveformCh1','maxWaveformCh','sessionID','electrodeGroup','SpikeSortingID'};
         list_tSNE_metrics = setdiff(list_tSNE_metrics,subfieldsExclude);
         if isfield(UI.settings,'classification_metrics')
             [~,ia,~] = intersect(list_tSNE_metrics,UI.settings.classification_metrics);
@@ -5743,7 +5783,7 @@ end
         end
     end
 
-    function advance
+    function advance(src,evnt)
         % Advance to next cell in the GUI
         if ~isempty(UI.params.subset) && length(UI.params.subset)>1
             if ii >= UI.params.subset(end)
@@ -5760,7 +5800,24 @@ end
         UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
         uiresume(UI.fig);
     end
-
+    
+    function advance10
+        % Advance 10 cells in the GUI
+        if ~isempty(UI.params.subset) && length(UI.params.subset)>1
+            if ii >= UI.params.subset(end)
+                ii = UI.params.subset(1);
+            else
+                ii = UI.params.subset(min([9+find(UI.params.subset > ii,1),length(UI.params.subset)]));
+            end
+        elseif length(UI.params.subset)==1
+            ii = UI.params.subset(1);
+        end
+        UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
+        UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
+        UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
+        uiresume(UI.fig);
+    end
+    
     function plotLegends
         nLegends = -1;
         line(0,0,'Marker','x','LineStyle','none','color','w', 'LineWidth', 3., 'MarkerSize',18,'HitTest','off'), xlim([-0.3,2]), hold on, yticks([]), xticks([])
@@ -5873,7 +5930,7 @@ end
 
     function plotCharacteristics(cellID)
         nLegends = 0;
-        fieldname = {'cellID','spikeGroup','cluID','putativeCellType','peakVoltage','firingRate','troughToPeak'};
+        fieldname = {'cellID','electrodeGroup','cluID','putativeCellType','peakVoltage','firingRate','troughToPeak'};
         xlim([-2,2]), hold on, yticks([]), xticks([]),
         %         text(0,1.2,'Characteristics','HorizontalAlignment','center','FontWeight', 'Bold')
         for i = 1:length(fieldname)
@@ -5938,7 +5995,7 @@ end
         uiresume(UI.fig);
     end
 
-    function back
+    function back(src,evnt)
         if ~isempty(UI.params.subset) && length(UI.params.subset)>1
             if ii <= UI.params.subset(1)
                 ii = UI.params.subset(end);
@@ -5953,7 +6010,22 @@ end
         UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
         uiresume(UI.fig);
     end
-
+    
+    function back10
+        if ~isempty(UI.params.subset) && length(UI.params.subset)>1
+            if ii <= UI.params.subset(1)
+                ii = UI.params.subset(end);
+            else
+                ii = UI.params.subset(max([1,find(UI.params.subset < ii,1,'last')-9]));
+            end
+        elseif length(UI.params.subset)==1
+            ii = UI.params.subset(1);
+        end
+        UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
+        UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
+        UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
+        uiresume(UI.fig);
+    end
     function buttonACG(src,~)
         if src.Position == 1
             UI.settings.acgType = 'Narrow';
@@ -8107,7 +8179,7 @@ end
         
         [plotRows,~]= numSubplots(length(plotOptions)+plotCount);
         
-        fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.settings.figureSize,'visible','off'); movegui(fig,'center'), set(fig,'visible','on')
+        fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.settings.figureSize,'visible','off');
         for j = 1:length(cellIDs)
             if ~ishandle(fig)
                 warning(['Summary figures canceled by user']);
@@ -8178,7 +8250,7 @@ end
                 set(fig,'CurrentAxes',ha(jj+2)), hold on
                 customPlot(plotOptions{jj},cellIDs(j),general1,batchIDs1,ha(jj+2));
                 if jj == 1
-                    ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
+                    ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                 end
             end
             if plotCellIDs~=-1
@@ -8198,6 +8270,7 @@ end
                 end
             end
         end
+        movegui(fig,'center'), set(fig,'visible','on')
         
         function savefigure(fig,savePathIn,fileNameIn)
             savePath = fullfile(savePathIn,'summaryFigures');
@@ -8592,7 +8665,7 @@ end
                                 if jj == j
                                     col1 = UI.settings.cellTypeColors(clusClas(plot_cells(j)),:);
                                     bar_from_patch(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),col1)
-                                    title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.spikeGroup(plot_cells(j))) ]),
+                                    title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.electrodeGroup(plot_cells(j))) ]),
                                     xlabel(cell_metrics.putativeCellType{plot_cells(j)})
                                 else
                                     bar_from_patch(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),[0.5,0.5,0.5])
@@ -8653,7 +8726,7 @@ end
                                 line(general.ccg_time*1000,hiBound/norm_factor,'color','r')
                             end
                             
-                            title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.spikeGroup(plot_cells(j))),' (cluID ',num2str(cell_metrics.cluID(plot_cells(j))),')']),
+                            title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.electrodeGroup(plot_cells(j))),' (cluID ',num2str(cell_metrics.cluID(plot_cells(j))),')']),
                             xlabel(cell_metrics.putativeCellType{plot_cells(j)}), grid on
                             if j==2; ylabel('Rate (Hz)'); end
                             xticks([-50:10:50])
@@ -8712,7 +8785,7 @@ end
                             UI.params.connections = [UI.params.incoming;UI.params.outgoing];
                         end
                         set(fig,'CurrentAxes',ha(j)), hold on
-                        customPlot(actionList{choice},cellIDs(j),general1,batchIDs1,ha(j)); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
+                        customPlot(actionList{choice},cellIDs(j),general1,batchIDs1,ha(j)); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                     end
                     movegui(fig,'center'), set(fig,'visible','on')
                 else
@@ -8773,7 +8846,7 @@ end
                             set(fig,'CurrentAxes',ha(subPlotNum))
                             customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(subPlotNum));
                             if jj == 1
-                                ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
+                                ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                             end
                             if (mod(j,5)==0 || j == length(cellIDs)) && jj == length(selectedActions)
                                 savefigure(gcf,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_MultipleCells_', num2str(nPlots)])
@@ -8866,7 +8939,7 @@ end
                             set(fig,'CurrentAxes',ha(jj+1))
                             customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(jj+1));
                             if jj == 1
-                                ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.spikeGroup(cellIDs(j)))])
+                                ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                             end
                         end
                         set(fig,'CurrentAxes',ha(length(selectedActions)+2))
@@ -9211,7 +9284,7 @@ end
             % Cell metrics differences
             temp = fieldnames(cell_metrics);
             temp3 = struct2cell(structfun(@class,cell_metrics,'UniformOutput',false));
-            subindex = intersect(find(~contains(temp3',{'cell','struct'})), find(~contains(temp,{'batchIDs','placeCell','ripples_modulationSignificanceLevel','spikeGroup','maxWaveformChannelOrder','maxWaveformCh','maxWaveformCh1','entryID','UID','cluID','truePositive','falsePositive','putativeConnections','acg','acg2','spatialCoherence','_num','optoPSTH','FiringRateMap','firingRateMapStates','firingRateMap','filtWaveform_zscored','filtWaveform','filtWaveform_std','cellID','spikeSortingID','Promoter','sessionID'})));
+            subindex = intersect(find(~contains(temp3',{'cell','struct'})), find(~contains(temp,{'batchIDs','placeCell','ripples_modulationSignificanceLevel','electrodeGroup','maxWaveformChannelOrder','maxWaveformCh','maxWaveformCh1','entryID','UID','cluID','truePositive','falsePositive','putativeConnections','acg','acg2','spatialCoherence','_num','optoPSTH','FiringRateMap','firingRateMapStates','firingRateMap','filtWaveform_zscored','filtWaveform','filtWaveform_std','cellID','spikeSortingID','Promoter','sessionID'})));
             plotClas_subset = plotClas(UI.params.subset);
             ids = nanUnique(plotClas_subset);
             
@@ -9261,7 +9334,7 @@ end
         % Shows a dialog with metrics to plot and plots selected metrics in a new window. 
         temp = fieldnames(cell_metrics);
         temp3 = struct2cell(structfun(@class,cell_metrics,'UniformOutput',false));
-        subindex = intersect(find(~contains(temp3',{'cell','struct'})), find(~contains(temp,{'batchIDs','placeCell','_modulationSignificanceLevel','spikeGroup','maxWaveformChannelOrder','maxWaveformCh','maxWaveformCh1','entryID','UID','cluID','truePositive','falsePositive','putativeConnections','acg','acg2','spatialCoherence','_num','optoPSTH','FiringRateMap','firingRateMapStates','firingRateMap','filtWaveform_zscored','filtWaveform','filtWaveform_std','cellID','spikeSortingID','Promoter','sessionID'})));
+        subindex = intersect(find(~contains(temp3',{'cell','struct'})), find(~contains(temp,{'batchIDs','placeCell','_modulationSignificanceLevel','electrodeGroup','maxWaveformChannelOrder','maxWaveformCh','maxWaveformCh1','entryID','UID','cluID','truePositive','falsePositive','putativeConnections','acg','acg2','spatialCoherence','_num','optoPSTH','FiringRateMap','firingRateMapStates','firingRateMap','filtWaveform_zscored','filtWaveform','filtWaveform_std','cellID','spikeSortingID','Promoter','sessionID'})));
         [labels2,~]= sort(temp(subindex));
         [indx,~] = listdlg('PromptString','Select the metrics to show in the rain cloud plot','ListString',labels2,'SelectionMode','multiple','ListSize',[350,400],'InitialValue',1:length(labels2));
         if ~isempty(indx)
@@ -9419,6 +9492,9 @@ end
         hover2highlight.handle3 = [];
         hover2highlight.handle4 = [];
         UI.params.ii_history = 1;
+        if ~isfield(cell_metrics,'electrodeGroup') && isfield(cell_metrics,'spikeGroup')
+            cell_metrics.electrodeGroup = cell_metrics.spikeGroup;
+        end
         if ~isfield(cell_metrics.general,'cellCount')
             cell_metrics.general.cellCount = size(cell_metrics.UID,2);
         end
@@ -9750,7 +9826,7 @@ end
         
         waveformOptions = {'Waveforms (single)';'Waveforms (all)'};
         if isfield(cell_metrics.waveforms,'filt_all')
-            waveformOptions = [waveformOptions;'Waveforms (across channels)'];
+            waveformOptions = [waveformOptions;'Waveforms (across channels)';'Waveforms (image across channels)'];
         end
         waveformOptions = [waveformOptions;'Waveforms (image)'];
         
@@ -10365,11 +10441,20 @@ end
                 if numel(cell_metrics.spikes.times) < max(subset1)
                    return 
                 end
-                spindices = generateSpinDices(cell_metrics.spikes.times(subset1));
             else
-                spindices = generateSpinDices(cell_metrics.spikes.times);
+                subset1 = 1:numel(cell_metrics.spikes.times);
             end
-            spike_times = spindices(:,1);
+            if sum(cell_metrics.spikeCount(subset1)) > 10000000
+                answer = questdlg(['Do you want to generate CCGs for this session? This can take a while when nSpikes = ', num2str(sum(cell_metrics.spikeCount(subset1)))], 'Generate CCGs', 'Yes','Cancel','Yes');
+                if strcmp(answer,'Cancel')
+                   return 
+                end
+            end
+            if sum(cell_metrics.spikeCount(subset1)) > 3000000
+                ce_waitbar = waitbar(0,'Generating CCGs','Name',['Generating CCGs for ' general.basename],'WindowStyle','modal');
+            end
+            spindices = generateSpinDices(cell_metrics.spikes.times(subset1));
+            spike_times = spindices(:,1); 
             spike_cluster_index = spindices(:,2);
             [~, ~, spike_cluster_index] = unique(spike_cluster_index);
             [ccg2,time2] = CCG(spike_times,spike_cluster_index,'binSize',0.0005,'duration',0.100,'norm','rate');
@@ -10382,6 +10467,9 @@ end
             end
             general.ccg = ccg2;
             general.ccg_time = time2;
+            if ishandle(ce_waitbar)
+            	close(ce_waitbar)
+            end
         end
     end
 
@@ -11720,7 +11808,7 @@ end
     end
 
     function keyPress(~, event)
-        % Keyboard shortcuts. Sorted alphabetically
+        % Keyboard shortcuts
         switch event.Key
             case 'h'
                 HelpDialog;
@@ -11744,41 +11832,69 @@ end
                 ScrolltoZoomInPlot([],[],0)
             case 'pagedown'
                 % Goes to the first cell from the previous session in a batch
-                if UI.BatchMode
-                    if ii ~= 1 && cell_metrics.batchIDs(ii) == cell_metrics.batchIDs(ii-1)
-                        temp = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii),1);
-                    else
-                        temp = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii)-1,1);
-                    end
-                    if ~isempty(temp)
-                        ii =  UI.params.subset(temp);
-                        uiresume(UI.fig);
-                    end
-                end
+                previousSession
             case {'pageup','backquote'}
                 % Goes to the first cell from the next session in a batch
-                if UI.BatchMode
-                    temp = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii)+1,1);
-                    if ~isempty(temp)
-                        ii =  UI.params.subset(temp);
-                        uiresume(UI.fig);
-                    end
-                end
+                nextSession
             case 'rightarrow'
-                advance;
+                if strcmp(event.Modifier,'shift')
+                    nextSession
+                else
+                    advance;
+                end
             case 'leftarrow'
-                back;
+                if strcmp(event.Modifier,'shift')
+                    previousSession
+                else
+                    back;
+                end
             case 'period'
-                advanceClass
+                if strcmp(event.Modifier,'shift')
+                    advanceClass
+                else
+                    advance10
+                end
             case 'comma'
-                backClass
+                if strcmp(event.Modifier,'shift')
+                    backClass
+                else
+                    back10
+                end
             case {'1','2','3','4','5','6','7','8','9'}
-                buttonCellType(str2double(event.Key));
+                if strcmp(event.Modifier,'shift')
+                    advanceClass(str2double(event.Key))
+                else
+                    buttonCellType(str2double(event.Key));
+                end
             case {'numpad1','numpad2','numpad3','numpad4','numpad5','numpad6','numpad7','numpad8','numpad9'}
                 advanceClass(str2double(event.Key(end)))
             case 'numpad0'
                 ii = 1;
                 uiresume(UI.fig);
+        end
+    end
+
+    function nextSession
+        if UI.BatchMode
+            temp = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii)+1,1);
+            if ~isempty(temp)
+                ii =  UI.params.subset(temp);
+                uiresume(UI.fig);
+            end
+        end
+    end
+
+    function previousSession
+        if UI.BatchMode
+            if ii ~= 1 && cell_metrics.batchIDs(ii) == cell_metrics.batchIDs(ii-1)
+                temp = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii),1);
+            else
+                temp = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii)-1,1);
+            end
+            if ~isempty(temp)
+                ii =  UI.params.subset(temp);
+                uiresume(UI.fig);
+            end
         end
     end
 
@@ -11814,8 +11930,7 @@ end
         AboutWindow.image = gca;
         set(AboutWindow.image,'Color','none','Units','Pixels') , hold on, axis off
         AboutWindow.image.Position = pos_image;
-        
-        text(0,pos_text,{['\bfCellExplorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\it\color[rgb]{0. 0.2 0.5}https://CellExplorer.org/\rm'},'HorizontalAlignment','left','VerticalAlignment','top','ButtonDownFcn',@openWebsite)
+        text(0,pos_text,{['\bfCellExplorer\rm v', num2str(CellExplorerVersion)],'By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\bf\color[rgb]{0. 0.2 0.5}https://CellExplorer.org/\rm'},'HorizontalAlignment','left','VerticalAlignment','top','ButtonDownFcn',@openWebsite, 'interpreter','tex')
     end
 
     function HelpDialog(~,~)
