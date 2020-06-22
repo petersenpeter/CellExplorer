@@ -203,12 +203,15 @@ if ishandle(f)
     spikes.processinginfo.params.WaveformsWinKeep = wfWinKeep;
     spikes.processinginfo.params.WaveformsFilterType = 'butter';
     clear rawWaveform rawWaveform_std filtWaveform filtWaveform_std
-%     clear DATA
     clear rawData
-    waitbar(i/length(unitsToProcess),f,['Waveform extraction complete ',num2str(i),'/',num2str(length(unitsToProcess)),'.  ', num2str(round(toc(timerVal)/60)) ' minutes total']);
+%     waitbar(i/length(unitsToProcess),f,['Waveform extraction complete ',num2str(i),'/',num2str(length(unitsToProcess)),'.  ', num2str(round(toc(timerVal)/60)) ' minutes total']);
     disp(['Waveform extraction complete. Total duration: ' num2str(round(toc(timerVal)/60)),' minutes'])
     if ishandle(fig1)
         set(fig1,'Name',['Waveform extraction complete for ' basename])
     end
+    close(f)
+end
+if ishandle(fig1)
+    fig1.Name = [basename, ': Waveform extraction complete. ',num2str(i),' cells processed.  ', num2str(round(toc(timerVal)/60)) ' minutes total'];
 end
 end

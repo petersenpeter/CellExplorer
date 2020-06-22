@@ -2129,6 +2129,7 @@ end
                 if isfield(general,'chanCoords')  && ~isempty(cell_metrics.waveforms.filt_all{ii}) && ~isempty(cell_metrics.waveforms.time_all{ii})
                     if UI.settings.plotChannelMapAllChannels
                         channels2plot = cell_metrics.waveforms.channels_all{ii};
+                        
                     else
                         channels2plot = cell_metrics.waveforms.bestChannels{ii};
                     end

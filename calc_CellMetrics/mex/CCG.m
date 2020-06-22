@@ -1,3 +1,4 @@
+function [ccg,t] = CCG(times,groups,varargin)
 %CCG - Compute multiple cross- and auto-correlograms
 %
 %  USAGE
@@ -41,13 +42,19 @@
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-function [ccg,t] = CCG(times,groups,varargin)
+p = inputParser;
 
-% Default values
-duration = 2;
-binSize = 0.001;
-Fs = 1/20000;
-normtype = 'counts';
+addParameter(p,'duration',2,@isnumeric);     
+addParameter(p,'binSize',0.001,@isnumeric);  
+addParameter(p,'Fs',1/20000,@isnumeric);
+addParameter(p,'normtype','counts',@isstr);
+
+% Parsing inputs
+parse(p,varargin{:})
+duration = p.Results.duration;
+binSize = p.Results.binSize;
+Fs = p.Results.Fs;
+normtype = p.Results.normtype;
 
 % Option for spike times to be in {Ncells} array of spiketimes DL2017
 if iscell(times) && isempty(groups)
@@ -77,35 +84,6 @@ if ~isdscalar(groups) && length(times) ~= length(groups),
 end
 groups = groups(:);
 times = times(:);
-
-% Parse parameter list
-for i = 1:2:length(varargin),
-	if ~ischar(varargin{i}),
-		error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help CCG">CCG</a>'' for details).']);
-	end
-	switch(lower(varargin{i})),
-		case 'binsize',
-			binSize = varargin{i+1};
-			%if ~isdscalar(binSize,'>0'),
-		%		error('Incorrect value for property ''binSize'' (type ''help <a href="matlab:help CCG">CCG</a>'' for details).');
-	%		end
-		case 'duration',
-			duration = varargin{i+1};
-			if ~isdscalar(duration,'>0'),
-				error('Incorrect value for property ''duration'' (type ''help <a href="matlab:help CCG">CCG</a>'' for details).');
-            end
-            
-            case 'Fs',
-			Fs = varargin{i+1};
-			if ~isdscalar(Fs,'>0'),
-				error('Incorrect value for property ''Fs'' (type ''help <a href="matlab:help CCG">CCG</a>'' for details).');
-            end
-        case 'norm'
-            normtype = varargin{i+1};
-     
-  end
-end
-
 
 
 % Number of groups, number of bins, etc.

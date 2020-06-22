@@ -1,5 +1,5 @@
-/* CCGEngine.c /*
-/* This is a bare-bones C program whos purpose is to compute
+/* CCGEngine.c 
+ This is a bare-bones C program whos purpose is to compute
    Multi-unit cross correlograms quickly.  Not intended for
    use on its own.  It is designed to be wrapped by a MATLAB
    function.
@@ -123,16 +123,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ) {
 	}
 
 	/* Now the main program .... */
-    if (nSpikes > 1000000) {
-        optimalRefresh = 200000;
-    }
-    else {
-        optimalRefresh = 50000;
-    }
 	for (CenterSpike=0; CenterSpike<nSpikes; CenterSpike++) {
 		Mark1 = Marks[CenterSpike];
 		Time1 = Times[CenterSpike];
-        if (CenterSpike % optimalRefresh == 0 && nSpikes>1000000) {
+        if (CenterSpike % 200000 == 0 && nSpikes>1000000) {
             mexPrintf("%3i%%", 100 * CenterSpike / nSpikes);
             mexCallMATLAB(0, NULL, 0, NULL, "drawnow");
         }
