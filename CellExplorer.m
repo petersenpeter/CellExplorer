@@ -112,7 +112,7 @@ UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoS
 UI.settings.customPlotHistograms = 1; UI.tableData.Column1 = 'putativeCellType'; UI.tableData.Column2 = 'brainRegion'; UI.settings.ACGLogIntervals = -3:0.04:1;
 UI.tableData.SortBy = 'cellID'; UI.plot.xTitle = ''; UI.plot.yTitle = ''; UI.plot.zTitle = ''; ce_waitbar = [];
 UI.cells.excitatory = []; UI.cells.inhibitory = []; UI.cells.inhibitory_subset = []; UI.cells.excitatory_subset = [];
-UI.cells.excitatoryPostsynaptic = []; UI.cells.inhibitoryPostsynaptic = []; UI.params.outbound = []; h_scatter = [];
+UI.cells.excitatoryPostsynaptic = []; UI.cells.inhibitoryPostsynaptic = []; UI.params.outbound = []; h_scatter = []; ccf_ratio = [-35.5,30];
 UI.zoom.global = cell(1,10); UI.zoom.globalLog = cell(1,10); UI.settings.logMarkerSize = 0; clr_groups = []; clr_groups2 = [];  clr_groups3 = []; putativeSubset = []; putativeSubset_inh = [];
 UI.params.chanCoords.x_factor = 40; UI.params.chanCoords.y_factor = 10; UI.colors.toggleButtons = [0. 0.3 0.7];
 UI.settings.plotExcitatoryConnections = true; UI.settings.plotInhibitoryConnections = true; iLine = 1; batchIDs = [];
@@ -586,15 +586,15 @@ UI.title = uicontrol('Style','text','Units','normalized','Position',[0 0 1 1],'S
 UI.panel.GridFlex = uipanel('position',[0 0.66 0.26 0.31],'BorderType','none','Parent',UI.VBox);
 
 % UI plot panels
-UI.panel.subfig_ax1 = uipanel('position',[0 0.67 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
-UI.panel.subfig_ax2 = uipanel('position',[0.33 0.67 0.34 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
-UI.panel.subfig_ax3 = uipanel('position',[0.67 0.67 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
-UI.panel.subfig_ax4 = uipanel('position',[0 0.33 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
-UI.panel.subfig_ax5 = uipanel('position',[0.33 0.33 0.34 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
-UI.panel.subfig_ax6 = uipanel('position',[0.67 0.33 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
-UI.panel.subfig_ax7 = uipanel('position',[0 0 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
-UI.panel.subfig_ax8 = uipanel('position',[0.33 0 0.34 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
-UI.panel.subfig_ax9 = uipanel('position',[0.67 0 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax(1) = uipanel('position',[0 0.67 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax(2) = uipanel('position',[0.33 0.67 0.34 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax(3) = uipanel('position',[0.67 0.67 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax(4) = uipanel('position',[0 0.33 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax(5) = uipanel('position',[0.33 0.33 0.34 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax(6) = uipanel('position',[0.67 0.33 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax(7) = uipanel('position',[0 0 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax(8) = uipanel('position',[0.33 0 0.34 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
+UI.panel.subfig_ax(9) = uipanel('position',[0.67 0 0.33 0.33],'BorderType','none','Parent',UI.panel.GridFlex);
 
 % Right panel
 UI.panel.right = uix.VBoxFlex('Parent',UI.HBox,'position',[0 0.66 0.26 0.31]);
@@ -613,15 +613,15 @@ set( UI.HBox, 'Widths', [160 -1 160]);
 % set HBox elements sizes
 set( UI.VBox, 'Heights', [25 -1 25]);
 
-subfig_ax(1) = axes('Parent',UI.panel.subfig_ax1);
-subfig_ax(2) = axes('Parent',UI.panel.subfig_ax2);
-subfig_ax(3) = axes('Parent',UI.panel.subfig_ax3);
-subfig_ax(4) = axes('Parent',UI.panel.subfig_ax4);
-subfig_ax(5) = axes('Parent',UI.panel.subfig_ax5);
-subfig_ax(6) = axes('Parent',UI.panel.subfig_ax6);
-subfig_ax(7) = axes('Parent',UI.panel.subfig_ax7);
-subfig_ax(8) = axes('Parent',UI.panel.subfig_ax8);
-subfig_ax(9) = axes('Parent',UI.panel.subfig_ax9);
+subfig_ax(1) = axes('Parent',UI.panel.subfig_ax(1));
+subfig_ax(2) = axes('Parent',UI.panel.subfig_ax(2));
+subfig_ax(3) = axes('Parent',UI.panel.subfig_ax(3));
+subfig_ax(4) = axes('Parent',UI.panel.subfig_ax(4));
+subfig_ax(5) = axes('Parent',UI.panel.subfig_ax(5));
+subfig_ax(6) = axes('Parent',UI.panel.subfig_ax(6));
+subfig_ax(7) = axes('Parent',UI.panel.subfig_ax(7));
+subfig_ax(8) = axes('Parent',UI.panel.subfig_ax(8));
+subfig_ax(9) = axes('Parent',UI.panel.subfig_ax(9));
 
 % % % % % % % % % % % % % % % % % % %
 % Metrics table
@@ -914,6 +914,15 @@ function updateUI
     % Updating tags
     updateTags
 
+    % Rotation of common coordinate framework
+    if any(strcmp(UI.settings.customPlot,'Common Coordinate Framework'))
+        idx = find(strcmp(UI.settings.customPlot,'Common Coordinate Framework'));
+        [ccf_ratio1(1),ccf_ratio1(2)] = view(subfig_ax(idx+3));
+        if all(ccf_ratio1 ~= [0,90])
+            ccf_ratio = ccf_ratio1;
+        end
+    end
+    
     % Group data
     % Filters tagged cells ('tags','groups','groundTruthClassification')
     if ~isempty(groupData)
@@ -1131,19 +1140,19 @@ function updateUI
     % % % % % % % % % % % % % % % % % % % % % %
     
     if any(UI.settings.customPlotHistograms == [1,3,4])
-        if size(UI.panel.subfig_ax1.Children,1) > 1
-            set(UI.fig,'CurrentAxes',UI.panel.subfig_ax1.Children(2))
+        if size(UI.panel.subfig_ax(1).Children,1) > 1
+            set(UI.fig,'CurrentAxes',UI.panel.subfig_ax(1).Children(2))
         else
-            set(UI.fig,'CurrentAxes',UI.panel.subfig_ax1.Children)
+            set(UI.fig,'CurrentAxes',UI.panel.subfig_ax(1).Children)
         end
         % Saving current view activated for previous cell
         [az,el] = view;
     end
 
     % Deletes all children from the panel
-    delete(UI.panel.subfig_ax1.Children)
+    delete(UI.panel.subfig_ax(1).Children)
     % Creating new chield
-    subfig_ax(1) = axes('Parent',UI.panel.subfig_ax1);
+    subfig_ax(1) = axes('Parent',UI.panel.subfig_ax(1));
     
     % Regular plot without histograms
     if any(UI.settings.customPlotHistograms == [1,2])
@@ -1442,16 +1451,30 @@ function updateUI
                     X1 = plotX(temp1);
                     if UI.checkbox.logx.Value
                         X1 = X1(X1>0 & ~isinf(X1) & ~isnan(X1));
-                        if all(isnan(X1))
-                            return
+                        if ~all(isnan(X1))
+                            [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
+                            Xi = 10.^Xi;
+                            area(Xi, f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(2)); hold on
                         end
-                        [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
-                        Xi = 10.^Xi;
                     else
                         X1 = X1(~isinf(X1) & ~isnan(X1));
-                        [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
+                        if ~isempty(X1)
+                            [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
+                            area(Xi, f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(2)); hold on
+                        end
                     end
-                    area(Xi, f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(2)); hold on
+                end
+            end
+            for m = 1:length(unique(plotClas(UI.params.subset)))
+                temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
+                idx = find(plotClas_subset==ids(m));
+                if length(temp1)>1
+                    X1 = plotX(temp1);
+                    P = polyfit(plotX(temp1),plotY(temp1),1);
+                    yfit = P(1)*plotX(temp1)+P(2);
+                    [r,p] = corrcoef(plotX(temp1),plotY(temp1),'Rows','complete');
+                    line(plotX(temp1),yfit,'color',clr_groups(m,:), 'LineWidth', 1.5);
+                    text(xlim11(1)+0.1*diff(xlim11),xlim12(2)-0.1*diff(xlim12)*m,['r = ' num2str(r(2,1))],'Color',clr_groups(m,:),'BackgroundColor',[1 1 1 0.8],'margin',1,'FontWeight','bold')
                 end
             end
             xlim(h_scatter(2), xlim11)
@@ -1464,16 +1487,18 @@ function updateUI
                     if UI.checkbox.logy.Value
                         X1 = X1(X1>0 & ~isinf(X1) & ~isnan(X1));
                         X1 = X1(X1>0);
-                        if all(isnan(X1))
-                            return
+                        if ~all(isnan(X1))
+                            [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
+                            Xi = 10.^Xi;
+                            area(Xi,f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(3)); hold on
                         end
-                        [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
-                        Xi = 10.^Xi;
                     else
                         X1 = X1(~isinf(X1) & ~isnan(X1));
-                        [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
+                        if ~isempty(X1)
+                            [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
+                            area(Xi,f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(3)); hold on
+                        end
                     end
-                    area(Xi,f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(3)); hold on
                 end
             end
             xlim(h_scatter(3),xlim12)
@@ -1715,7 +1740,7 @@ function updateUI
         
 
         % Activating rotation
-        rotateFig1
+        rotateFig(subfig_ax(1))
 
         if contains(UI.plot.xTitle,'_num')
             xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5]),
@@ -1804,13 +1829,13 @@ function updateUI
     % Subfig 2
     % % % % % % % % % % % % % % % % % % % % % %
     
-    if strcmp(UI.panel.subfig_ax2.Visible,'on')
+    if strcmp(UI.panel.subfig_ax(2).Visible,'on')
 
-        d = findobj(UI.panel.subfig_ax2,'Type','line');
+        d = findobj(UI.panel.subfig_ax(2),'Type','line');
         delete(d)
-        d = findobj(UI.panel.subfig_ax2,'Type','image');
+        d = findobj(UI.panel.subfig_ax(2),'Type','image');
         delete(d)
-        d = findobj(UI.panel.subfig_ax2,'Type','text');
+        d = findobj(UI.panel.subfig_ax(2),'Type','text');
         delete(d)
         set(UI.fig,'CurrentAxes',subfig_ax(2))
         set(subfig_ax(2),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), hold on
@@ -1924,7 +1949,7 @@ function updateUI
     % Subfig 3
     % % % % % % % % % % % % % % % % % % % % % %
     
-    if strcmp(UI.panel.subfig_ax3.Visible,'on')
+    if strcmp(UI.panel.subfig_ax(3).Visible,'on')
         delete(subfig_ax(3).Children)
         set(UI.fig,'CurrentAxes',subfig_ax(3))
         set(subfig_ax(3),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
@@ -1942,56 +1967,55 @@ function updateUI
     % % % % % % % % % % % % % % % % % % % % % %
     delete(subfig_ax(4).Children)
     set(UI.fig,'CurrentAxes',subfig_ax(4))
-    set(subfig_ax(4),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), grid(subfig_ax(4),'off')
-    UI.subsetPlots{1} = customPlot(UI.settings.customPlot{1},ii,general,batchIDs,subfig_ax(4)); 
-    
+    set(subfig_ax(4),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(4),'off'), view(subfig_ax(4),2), daspect(subfig_ax(4),'auto')
+    UI.subsetPlots{1} = customPlot(UI.settings.customPlot{1},ii,general,batchIDs,subfig_ax(4),1); 
     % % % % % % % % % % % % % % % % % % % % % %
     % Subfig 5
     % % % % % % % % % % % % % % % % % % % % % %
     delete(subfig_ax(5).Children)
     set(UI.fig,'CurrentAxes',subfig_ax(5))
-    set(subfig_ax(5),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), grid(subfig_ax(5),'off')
-    UI.subsetPlots{2} = customPlot(UI.settings.customPlot{2},ii,general,batchIDs,subfig_ax(5));
+    set(subfig_ax(5),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(5),'off'), view(subfig_ax(5),2), daspect(subfig_ax(5),'auto')
+    UI.subsetPlots{2} = customPlot(UI.settings.customPlot{2},ii,general,batchIDs,subfig_ax(5),1);
     
     % % % % % % % % % % % % % % % % % % % % % %
     % Subfig 6
     % % % % % % % % % % % % % % % % % % % % % %
     delete(subfig_ax(6).Children)
     set(UI.fig,'CurrentAxes',subfig_ax(6))
-    set(subfig_ax(6),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), grid(subfig_ax(6),'off')
-    UI.subsetPlots{3} = customPlot(UI.settings.customPlot{3},ii,general,batchIDs,subfig_ax(6));
+    set(subfig_ax(6),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(6),'off'), view(subfig_ax(6),2), daspect(subfig_ax(6),'auto')
+    UI.subsetPlots{3} = customPlot(UI.settings.customPlot{3},ii,general,batchIDs,subfig_ax(6),1);
     
     % % % % % % % % % % % % % % % % % % % % % %
     % Subfig 7
     % % % % % % % % % % % % % % % % % % % % % %
     
-    if strcmp(UI.panel.subfig_ax7.Visible,'on')
+    if strcmp(UI.panel.subfig_ax(7).Visible,'on')
         delete(subfig_ax(7).Children)
         set(UI.fig,'CurrentAxes',subfig_ax(7))
-        set(subfig_ax(7),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), grid(subfig_ax(7),'off')
-        UI.subsetPlots{4} = customPlot(UI.settings.customPlot{4},ii,general,batchIDs,subfig_ax(7));
+        set(subfig_ax(7),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(7),'off'), view(subfig_ax(7),2), daspect(subfig_ax(7),'auto')
+        UI.subsetPlots{4} = customPlot(UI.settings.customPlot{4},ii,general,batchIDs,subfig_ax(7),1);
     end
     
     % % % % % % % % % % % % % % % % % % % % % %
     % Subfig 8
     % % % % % % % % % % % % % % % % % % % % % %
     
-    if strcmp(UI.panel.subfig_ax8.Visible,'on')
+    if strcmp(UI.panel.subfig_ax(8).Visible,'on')
         delete(subfig_ax(8).Children)
         set(UI.fig,'CurrentAxes',subfig_ax(8))
-        set(subfig_ax(8),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), grid(subfig_ax(8),'off')
-        UI.subsetPlots{5} = customPlot(UI.settings.customPlot{5},ii,general,batchIDs,subfig_ax(8));
+        set(subfig_ax(8),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(8),'off'), view(subfig_ax(8),2), daspect(subfig_ax(8),'auto')
+        UI.subsetPlots{5} = customPlot(UI.settings.customPlot{5},ii,general,batchIDs,subfig_ax(8),1);
     end
     
     % % % % % % % % % % % % % % % % % % % % % %
     % Subfig 9 
     % % % % % % % % % % % % % % % % % % % % % %
     
-    if strcmp(UI.panel.subfig_ax9.Visible,'on')
+    if strcmp(UI.panel.subfig_ax(9).Visible,'on')
         delete(subfig_ax(9).Children)
         set(UI.fig,'CurrentAxes',subfig_ax(9))
-        set(subfig_ax(9),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), grid(subfig_ax(9),'off')
-        UI.subsetPlots{6} = customPlot(UI.settings.customPlot{6},ii,general,batchIDs,subfig_ax(9));
+        set(subfig_ax(9),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(9),'off'), view(subfig_ax(9),2), daspect(subfig_ax(9),'auto')
+        UI.subsetPlots{6} = customPlot(UI.settings.customPlot{6},ii,general,batchIDs,subfig_ax(9),1);
     end
     
     % % % % % % % % % % % % % % % % % % % % % %
@@ -2005,7 +2029,15 @@ function updateUI
     
 end
 
-    function subsetPlots = customPlot(customPlotSelection,ii,general,batchIDs,plotAxes)
+    function subsetPlots = customPlot(customPlotSelection,ii,general,batchIDs,plotAxes,UI_fig)
+        % INPUTS:
+        % customPlotSelection = plot type
+        % ii = cell to plot
+        % general struct for the session of the cell to plot
+        % 
+        % plotAxes = plot axis
+        % UI_fig = if the plot is a UI fig or an external plot
+        
         % Creates all cell specific plots
         subsetPlots = [];
         
@@ -2129,7 +2161,6 @@ end
                 if isfield(general,'chanCoords')  && ~isempty(cell_metrics.waveforms.filt_all{ii}) && ~isempty(cell_metrics.waveforms.time_all{ii})
                     if UI.settings.plotChannelMapAllChannels
                         channels2plot = cell_metrics.waveforms.channels_all{ii};
-                        
                     else
                         channels2plot = cell_metrics.waveforms.bestChannels{ii};
                     end
@@ -2171,8 +2202,8 @@ end
                 if length(channelOrder) > size(cell_metrics.waveforms.filt_all{ii},1)
                     channelOrder =channelOrder(1:size(cell_metrics.waveforms.filt_all{ii},1));
                 end
-                
-                imagesc(cell_metrics.waveforms.time_all{ii}, [1:numel(channelOrder)], cell_metrics.waveforms.filt_all{ii}(channelOrder,:),'HitTest','off'),
+%                 channelOrder = 1:size(cell_metrics.waveforms.filt_all{ii},1);
+                imagesc(cell_metrics.waveforms.time_all{ii}, [1:numel(channelOrder)], cell_metrics.waveforms.filt_all{ii}(channelOrder,:),'HitTest','off'), axis tight
                 if UI.settings.plotChannelMapAllChannels
                     line(cell_metrics.waveforms.time_all{ii}([1,end]),[horzlines;horzlines]+0.5,'color','w','HitTest','off','linewidth',0.8)
                 end
@@ -2211,6 +2242,47 @@ end
             
             % Plots tagget ground-truth cell types
             plotGroudhTruthCells(cell_metrics.trilat_x, cell_metrics.trilat_y)
+
+        elseif strcmp(customPlotSelection,'Common Coordinate Framework')
+            % All waveforms across channels with largest ampitude colored according to cell type
+            plotAxes.XLabel.String = ['Position (',char(181),'m)'];
+            plotAxes.YLabel.String = ['Position (',char(181),'m)'];
+            plotAxes.Title.String = customPlotSelection;
+            if isfield(general,'ccf')
+                line(general.ccf.x,general.ccf.z,general.ccf.y,'Marker','.','color',[0.3 0.5 0.5],'MarkerFaceColor',[0.5 0.5 0.5],'markersize',5,'HitTest','off','LineStyle','none','linewidth',0.5)
+            end
+            switch UI.settings.trilatGroupData
+                case 'session'
+                    subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                    subset1 = UI.params.subset(subset1);
+                case 'animal'
+                    subset1 = ismember(cell_metrics.animal(UI.params.subset),cell_metrics.animal{ii});
+                    subset1 = UI.params.subset(subset1);
+                otherwise
+                    subset1 = UI.params.subset;
+            end
+            for k = 1:length(classes2plotSubset)
+                set1 = intersect(find(plotClas==classes2plotSubset(k)), subset1);
+                line(cell_metrics.ccf_x(set1),cell_metrics.ccf_z(set1),cell_metrics.ccf_y(set1),'Marker','.','LineStyle','none', 'color', [clr_groups(k,:),0.2],'markersize',UI.settings.markerSize,'HitTest','off')
+            end
+
+            if exist('plotAllenBrainGrid.m','file')
+                plotAllenBrainGrid
+            end
+            xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse','Clipping','off','ButtonDownFcn',[]);
+            view(ccf_ratio(1),ccf_ratio(2)); 
+            if UI_fig
+                rotateFig(plotAxes)
+            end
+            
+            % Plots putative connections
+            plotPutativeConnections3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,UI.monoSyn.disp)
+            
+            % Plots X marker for selected cell
+            plotMarker3(cell_metrics.ccf_x(ii),cell_metrics.ccf_z(ii),cell_metrics.ccf_y(ii))
+            
+            % Plots tagget ground-truth cell types
+%             plotGroudhTruthCells3(cell_metrics.ccf_x(ii),cell_metrics.ccf_z(ii),cell_metrics.ccf_y(ii))
             
         elseif strcmp(customPlotSelection,'Waveforms (image)')
             % All waveforms, zscored and shown in a imagesc plot
@@ -2609,11 +2681,11 @@ end
                     for k = 1:length(classes2plotSubset)
                         set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
                         xdata = repmat([general.acgs.log10',nan(1,1)],length(set1),1)';
-                        ydata = [cell_metrics.acg.log10(:,set1).*general.acgs.log10;nan(1,length(set1))];
+                        ydata = [cell_metrics.acg.log10(:,set1);nan(1,length(set1))]; % .*general.acgs.log10
                         line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
                     end
-                    line(general.acgs.log10,cell_metrics.acg.log10(:,ii).*general.acgs.log10, 'color', 'k','linewidth',1.5,'HitTest','off')
-                    set(gca, 'YScale', 'log')
+                    line(general.acgs.log10,cell_metrics.acg.log10(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off') % .*general.acgs.log10
+%                     set(gca, 'YScale', 'log')
                 else
                     for k = 1:length(classes2plotSubset)
                         set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
@@ -3607,6 +3679,11 @@ end
         line(plotX1, plotY1,'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
     end
 
+    function plotMarker3(plotX1,plotY1,plotZ1)
+        line(plotX1, plotY1, plotZ1,'Marker','x','LineStyle','none','color','w', 'LineWidth', 3., 'MarkerSize',22,'HitTest','off');
+        line(plotX1, plotY1, plotZ1,'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
+    end
+
     function plotPutativeConnections(plotX1,plotY1,monoSynDisp)
         % Plots putative excitatory connections
         if ~isempty(putativeSubset) && UI.settings.plotExcitatoryConnections
@@ -3645,6 +3722,54 @@ end
                         xdata_inh = [plotX1(UI.params.b1(UI.params.outbound_inh));plotX1(UI.params.outgoing_inh);nan(1,length(UI.params.outgoing_inh))];
                         ydata_inh = [plotY1(UI.params.b1(UI.params.outbound_inh));plotY1(UI.params.outgoing_inh);nan(1,length(UI.params.outgoing_inh))];
                         line(xdata_inh(:),ydata_inh(:),'LineStyle','--','color','c','HitTest','off')
+                    end
+            end
+        end
+    end
+    function plotPutativeConnections3(plotX1,plotY1,plotZ1,monoSynDisp)
+        % Plots putative excitatory connections
+        if ~isempty(putativeSubset) && UI.settings.plotExcitatoryConnections
+            switch monoSynDisp
+                case 'All'
+                    xdata = [plotX1(UI.params.a1);plotX1(UI.params.a2);nan(1,length(UI.params.a2))];
+                    ydata = [plotY1(UI.params.a1);plotY1(UI.params.a2);nan(1,length(UI.params.a2))];
+                    zdata = [plotZ1(UI.params.a1);plotZ1(UI.params.a2);nan(1,length(UI.params.a2))];
+                    line(xdata(:),ydata(:),zdata(:),'color','k','HitTest','off')
+                case {'Selected','Upstream','Downstream','Up & downstream'}
+                    if ~isempty(UI.params.inbound)
+                        xdata = [plotX1(UI.params.incoming);plotX1(UI.params.a2(UI.params.inbound));nan(1,length(UI.params.a2(UI.params.inbound)))];
+                        ydata = [plotY1(UI.params.incoming);plotY1(UI.params.a2(UI.params.inbound));nan(1,length(UI.params.a2(UI.params.inbound)))];
+                        zdata = [plotZ1(UI.params.incoming);plotZ1(UI.params.a2(UI.params.inbound));nan(1,length(UI.params.a2(UI.params.inbound)))];
+                        line(xdata,ydata,zdata,'color','b','HitTest','off')
+                    end
+                    if ~isempty(UI.params.outbound)
+                        xdata = [plotX1(UI.params.a1(UI.params.outbound));plotX1(UI.params.outgoing);nan(1,length(UI.params.outgoing))];
+                        ydata = [plotY1(UI.params.a1(UI.params.outbound));plotY1(UI.params.outgoing);nan(1,length(UI.params.outgoing))];
+                        zdata = [plotZ1(UI.params.a1(UI.params.outbound));plotZ1(UI.params.outgoing);nan(1,length(UI.params.outgoing))];
+                        line(xdata(:),ydata(:),zdata(:),'color','m','HitTest','off')
+                    end
+            end
+        end
+        % Plots putative inhibitory connections
+        if ~isempty(putativeSubset_inh) && UI.settings.plotInhibitoryConnections
+            switch monoSynDisp
+                case 'All'
+                    xdata_inh = [plotX1(UI.params.b1);plotX1(UI.params.b2);nan(1,length(UI.params.b2))];
+                    ydata_inh = [plotY1(UI.params.b1);plotY1(UI.params.b2);nan(1,length(UI.params.b2))];
+                    zdata_inh = [plotZ1(UI.params.b1);plotZ1(UI.params.b2);nan(1,length(UI.params.b2))];
+                    line(xdata_inh(:),ydata_inh(:),zdata_inh(:),'LineStyle','--','HitTest','off','color',[0.5 0.5 0.5])
+                case {'Selected','Upstream','Downstream','Up & downstream'}
+                    if ~isempty(UI.params.inbound_inh)
+                        xdata_inh = [plotX1(UI.params.incoming_inh);plotX1(UI.params.b2(UI.params.inbound_inh));nan(1,length(UI.params.b2(UI.params.inbound_inh)))];
+                        ydata_inh = [plotY1(UI.params.incoming_inh);plotY1(UI.params.b2(UI.params.inbound_inh));nan(1,length(UI.params.b2(UI.params.inbound_inh)))];
+                        zdata_inh = [plotZ1(UI.params.incoming_inh);plotZ1(UI.params.b2(UI.params.inbound_inh));nan(1,length(UI.params.b2(UI.params.inbound_inh)))];
+                        line(xdata_inh,ydata_inh,zdata_inh,'LineStyle','--','color','r','HitTest','off')
+                    end
+                    if ~isempty(UI.params.outbound_inh)
+                        xdata_inh = [plotX1(UI.params.b1(UI.params.outbound_inh));plotX1(UI.params.outgoing_inh);nan(1,length(UI.params.outgoing_inh))];
+                        ydata_inh = [plotY1(UI.params.b1(UI.params.outbound_inh));plotY1(UI.params.outgoing_inh);nan(1,length(UI.params.outgoing_inh))];
+                        zdata_inh = [plotZ1(UI.params.b1(UI.params.outbound_inh));plotZ1(UI.params.outgoing_inh);nan(1,length(UI.params.outgoing_inh))];
+                        line(xdata_inh(:),ydata_inh(:),zdata_inh(:),'LineStyle','--','color','c','HitTest','off')
                     end
             end
         end
@@ -6551,18 +6676,19 @@ end
         um_axes = get(gca,'CurrentPoint');
         u = um_axes(1,1);
         v = um_axes(1,2);
+        w = um_axes(1,3);
         if clickPlotRegular
             
             switch get(UI.fig, 'selectiontype')
                 case 'normal'
                     if ~isempty(UI.params.subset)
-                        SelectFromPlot(u,v);
+                        SelectFromPlot(u,v,w);
                     else
                         MsgLog(['No cells with selected classification']);
                     end
                 case 'alt'
                     if ~isempty(UI.params.subset)
-                        HighlightFromPlot(u,v,0);
+                        HighlightFromPlot(u,v,w);
                     end
                 case 'extend'
                     polygonSelection
@@ -7084,6 +7210,42 @@ end
                         hover2highlight.handle1 = text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
+                case 'Common Coordinate Framework'
+                    switch UI.settings.trilatGroupData
+                        case 'session'
+                            subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                            subset1 = UI.params.subset(subset1);
+                        case 'animal'
+                            subset1 = ismember(cell_metrics.animal(UI.params.subset),cell_metrics.animal{ii});
+                            subset1 = UI.params.subset(subset1);
+                        otherwise
+                            subset1 = UI.params.subset;
+                    end
+                    [azimuth,elevation] = view;
+                    r  = 100000000;
+                    y1 = -r .* cosd(elevation) .* cosd(azimuth);
+                    x1 = r .* cosd(elevation) .* sind(azimuth);
+                    z1 = r .* sind(elevation);
+                    plotX22 = cell_metrics.ccf_x;
+                    plotY22 = cell_metrics.ccf_z;
+                    plotZ22 = cell_metrics.ccf_y;
+                    x_scale = range(xlim);
+                    y_scale = range(ylim);
+                    z_scale = range(zlim);
+                    distance = point_to_line_distance([plotX22(subset1); plotY22(subset1); plotZ22(subset1)]'./[x_scale y_scale z_scale], [u,v,w]./[x_scale y_scale z_scale], ([u,v,w]./[x_scale y_scale z_scale]+[x1,y1,z1]));
+                    [~,idx] = min(distance);
+                    iii = subset1(idx);
+                    [~,idx] = min(distance);
+                    iii = subset1(idx);
+                    if highlight
+                        line(plotX22(iii),plotY22(iii),plotZ22(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+                    elseif hover
+                        hover2highlight.handle1 = text(plotX22(iii),plotY22(iii),plotZ22(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle2 = line(plotX22(iii),plotY22(iii),plotZ22(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                    else
+                        return
+                    end
+                    
                 case 'tSNE of narrow ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_narrow(UI.params.subset,1)-u,tSNE_metrics.acg_narrow(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
@@ -7387,10 +7549,10 @@ end
         patch(x_data, y_data,col,'EdgeColor',col, 'HitTest','off')
     end
 
-    function SelectFromPlot(u,v)
+    function SelectFromPlot(u,v,w)
         % Called with a plot-click and goes to selected cells and updates
         % the GUI
-        iii = FromPlot(u,v,0);
+        iii = FromPlot(u,v,0,w);
         if iii>0
             ii = iii;
             UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
@@ -8103,7 +8265,7 @@ end
         legend(legendDots,legendNames,'Location','southwest');
         % Waveforms
         subplot('Position',[0.5 0.72 0.23 .25]) 
-        customPlot('Waveforms (all)',ii,general,batchIDs,gca); yticks([]), axis tight, ylabel(''), figureLetter('B','center');
+        customPlot('Waveforms (all)',ii,general,batchIDs,gca,0); yticks([]), axis tight, ylabel(''), figureLetter('B','center');
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1]), title('');
         % Firing rates
         subplot('Position',[0.5 0.41 0.23 .21]) 
@@ -8249,7 +8411,7 @@ end
             
             for jj = 1:length(plotOptions)
                 set(fig,'CurrentAxes',ha(jj+2)), hold on
-                customPlot(plotOptions{jj},cellIDs(j),general1,batchIDs1,ha(jj+2));
+                customPlot(plotOptions{jj},cellIDs(j),general1,batchIDs1,ha(jj+2),0);
                 if jj == 1
                     ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                 end
@@ -8457,7 +8619,7 @@ end
             UI.popupmenu.markerSizeData.Enable = 'On';
             UI.checkbox.logMarkerSize.Enable = 'On';
             UI.settings.plot3axis = 1;
-             set(UI.fig,'CurrentAxes',UI.panel.subfig_ax1.Children(end)) % Peter
+             set(UI.fig,'CurrentAxes',UI.panel.subfig_ax(1).Children(end)) % Peter
             view([40 20]);
 
         elseif UI.popupmenu.metricsPlot.Value == 4
@@ -8556,7 +8718,7 @@ end
         choice = '';
         GoTo_dialog = dialog('Position', [0, 0, 300, 350],'Name','Group actions','visible','off'); movegui(GoTo_dialog,'center'), set(GoTo_dialog,'visible','on')
         
-        actionList = strcat([{'---------------- Assignments -----------------','Assign existing cell-type','Assign new cell-type','Assign label','Assign deep/superficial','Assign tag','Assign group','-------------------- CCGs ---------------------','CCGs ','CCGs (only with selected cell)','----------- MULTI PLOT OPTIONS ----------','Row-wise plots (5 cells per figure)','Plot-on-top (one figure for all cells)','Dedicated figures (one figure per cell)','--------------- SINGLE PLOTS ---------------'},plotOptions']);
+        actionList = strcat([{'---------------- Assignments -----------------','Assign cell-type','Assign label','Assign deep/superficial','Assign tag','Assign group','-------------------- CCGs ---------------------','CCGs ','CCGs (only with selected cell)','----------- MULTI PLOT OPTIONS ----------','Row-wise plots (5 cells per figure)','Plot-on-top (one figure for all cells)','Dedicated figures (one figure per cell)','--------------- SINGLE PLOTS ---------------'},plotOptions']);
         brainRegionsList = uicontrol('Parent',GoTo_dialog,'Style', 'ListBox', 'String', actionList, 'Position', [10, 50, 280, 270],'Value',1,'Callback',@(src,evnt)CloseGoTo_dialog(cellIDs));
         uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[10, 10, 135, 30],'String','OK','Callback',@(src,evnt)CloseGoTo_dialog(cellIDs));
         uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[155, 10, 135, 30],'String','Cancel','Callback',@(src,evnt)CancelGoTo_dialog);
@@ -8567,12 +8729,12 @@ end
         function  CloseGoTo_dialog(cellIDs)
             choice = brainRegionsList.Value;
             MsgLog(['Action selected: ' actionList{choice} ' for ' num2str(length(cellIDs)) ' cells']);
-            if any(choice == [2:7,9:10,12:14,16:length(actionList)])
+            if any(choice == [2:6,8:9,11:13,15:length(actionList)])
                 delete(GoTo_dialog);
                 
                 if choice == 2
                     [selectedClas,~] = listdlg('PromptString',['Assign cell-type to ' num2str(length(cellIDs)) ' cells'],'ListString',colored_string,'SelectionMode','single','ListSize',[200,150]);
-                    if ~isempty(selectedClas)
+                    if ~isempty(selectedClas) && selectedClas < numel(colored_string)
                         saveStateToHistory(cellIDs)
                         clusClas(cellIDs) = selectedClas;
                         updateCellCount
@@ -8580,22 +8742,34 @@ end
                         updatePlotClas
                         updatePutativeCellType
                         uiresume(UI.fig);
+                    elseif ~isempty(selectedClas) && selectedClas == numel(colored_string)
+                        AddNewCellType
+                        selectedClas = length(colored_string); % Last entry is the not a a real cell type
+                        if ~isempty(selectedClas)
+                            saveStateToHistory(cellIDs)
+                            clusClas(cellIDs) = selectedClas-1;
+                            updateCellCount
+                            MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.settings.cellTypes{selectedClas-1}, ' from t-SNE visualization']);
+                            updatePlotClas
+                            updatePutativeCellType
+                            uiresume(UI.fig);
+                        end
                     end
+%                     
+%                 elseif choice == 3
+%                     AddNewCellType
+%                     selectedClas = length(colored_string)-1; % Last entry is the not a a real cell type
+%                     if ~isempty(selectedClas)
+%                         saveStateToHistory(cellIDs)
+%                         clusClas(cellIDs) = selectedClas;
+%                         updateCellCount
+%                         MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.settings.cellTypes{selectedClas}, ' from t-SNE visualization']);
+%                         updatePlotClas
+%                         updatePutativeCellType
+%                         uiresume(UI.fig);
+%                     end
                     
                 elseif choice == 3
-                    AddNewCellType
-                    selectedClas = length(colored_string);
-                    if ~isempty(selectedClas)
-                        saveStateToHistory(cellIDs)
-                        clusClas(cellIDs) = selectedClas;
-                        updateCellCount
-                        MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.settings.cellTypes{selectedClas}, ' from t-SNE visualization']);
-                        updatePlotClas
-                        updatePutativeCellType
-                        uiresume(UI.fig);
-                    end
-                    
-                elseif choice == 4
                     Label = inputdlg({'Assign label to cell'},'Custom label',[1 40],{''});
                     if ~isempty(Label)
                         saveStateToHistory(cellIDs)
@@ -8609,7 +8783,7 @@ end
                         uiresume(UI.fig);
                     end
                     
-                elseif choice == 5
+                elseif choice == 4
                     [selectedClas,~] = listdlg('PromptString',['Assign Deep-Superficial to ' num2str(length(cellIDs)) ' cells'],'ListString',UI.listbox.deepSuperficial.String,'SelectionMode','single','ListSize',[200,150]);
                     if ~isempty(selectedClas)
                         saveStateToHistory(cellIDs)
@@ -8630,16 +8804,16 @@ end
                         uiresume(UI.fig);
                     end
                     
-                elseif choice == 6
+                elseif choice == 5
                     % Assign tags
                     assignGroup(cellIDs,'tags')
                     updateTags
                     uiresume(UI.fig);
                     
-                elseif choice == 7
+                elseif choice == 6
                     assignGroup(cellIDs,'groups')
                     
-                elseif choice == 9
+                elseif choice == 8
                     % All CCGs for all combinations of selected cell with highlighted cells
                     UI.params.ClickedCells = cellIDs(:)';
                     updateTableClickedCells
@@ -8690,7 +8864,7 @@ end
                         MsgLog('There is no cross- and auto-correlograms matrix structure found for this dataset (Location general.ccg).',2)
                     end
                     
-                elseif choice == 10
+                elseif choice == 9
                     % CCGs with selected cell
                     UI.params.ClickedCells = cellIDs(:)';
                     updateTableClickedCells
@@ -8744,7 +8918,7 @@ end
                     else
                         MsgLog('There is no cross- and auto-correlograms matrix structure found for this dataset (Location general.ccg).',2)
                     end
-                elseif any(choice == [12,13,14])
+                elseif any(choice == [11,12,13])
                     % Multiple plots
                     % Creates summary figures and saves them to '/summaryFigures' or a custom path
                     exportPlots.dialog = dialog('Position', [300, 300, 300, 370],'Name','Multi plot','WindowStyle','modal', 'resize', 'on', 'visible','off'); movegui(exportPlots.dialog,'center'), set(exportPlots.dialog,'visible','on')
@@ -8759,7 +8933,7 @@ end
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[5, 5, 140, 30],'String','OK','Callback',@ClosePlot_dialog,'Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[155, 5, 140, 30],'String','Cancel','Callback',@(src,evnt)CancelPlot_dialog,'Units','normalized');
                     
-                elseif choice > 15
+                elseif choice > 14
                     % Plots any custom plot for selected cells in a single new figure with subplots
                     fig = figure('Name',['CellExplorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off','pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off');
                     [plotRows,~]= numSubplots(length(cellIDs));
@@ -8786,7 +8960,13 @@ end
                             UI.params.connections = [UI.params.incoming;UI.params.outgoing];
                         end
                         set(fig,'CurrentAxes',ha(j)), hold on
-                        customPlot(actionList{choice},cellIDs(j),general1,batchIDs1,ha(j)); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
+                        customPlot(actionList{choice},cellIDs(j),general1,batchIDs1,ha(j),0); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
+                        if length(cellIDs)>25
+                            plotAxes = ha(j);
+                            plotAxes.XLabel.String = [];
+                            plotAxes.YLabel.String = [];
+                            plotAxes.Title.String = num2str(cellIDs(j));
+                        end
                     end
                     movegui(fig,'center'), set(fig,'visible','on')
                 else
@@ -8812,7 +8992,7 @@ end
                     end
                 end
                 delete(exportPlots.dialog);
-                if choice == 12 && ~isempty(selectedActions)
+                if choice == 11 && ~isempty(selectedActions)
                     % Displayes a new dialog where a number of plot can be combined and plotted for the highlighted cells
                     plot_columns = min([length(cellIDs),5]);
                     nPlots = 1;
@@ -8845,7 +9025,7 @@ end
                                 subPlotNum = subPlotNum+1;
                             end
                             set(fig,'CurrentAxes',ha(subPlotNum))
-                            customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(subPlotNum));
+                            customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(subPlotNum),0);
                             if jj == 1
                                 ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                             end
@@ -8856,7 +9036,7 @@ end
                         end
                     end
                     
-                elseif choice == 13 && ~isempty(selectedActions)
+                elseif choice == 12 && ~isempty(selectedActions)
                     
                     fig = figure('name',['CellExplorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.settings.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
                     [plotRows,~]= numSubplots(length(selectedActions));
@@ -8883,13 +9063,13 @@ end
                         for jjj = 1:length(selectedActions)
                             set(fig,'CurrentAxes',ha(jjj)), hold on
 %                             subplot(plotRows(1),plotRows(2),jjj), hold on
-                            customPlot(plotOptions{selectedActions(jjj)},cellIDs(j),general1,batchIDs1,ha(jjj));
+                            customPlot(plotOptions{selectedActions(jjj)},cellIDs(j),general1,batchIDs1,ha(jjj),0);
                             title(plotOptions{selectedActions(jjj)},'Interpreter', 'none')
                         end
                     end
                     savefigure(fig,savePath1,['CellExplorer_Cells_', num2str(cell_metrics.UID(cellIDs),'%d_')])
                     
-                elseif choice == 14 && ~isempty(selectedActions)
+                elseif choice == 13 && ~isempty(selectedActions)
                     
                     [plotRows,~]= numSubplots(length(selectedActions)+3);
                     for j = 1:length(cellIDs)
@@ -8938,7 +9118,7 @@ end
                         for jj = 1:length(selectedActions)
                             
                             set(fig,'CurrentAxes',ha(jj+1))
-                            customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(jj+1));
+                            customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(jj+1),0);
                             if jj == 1
                                 ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                             end
@@ -9439,11 +9619,11 @@ end
         end
     end
 
-    function rotateFig1
+    function rotateFig(axisTorate)
         % activates a rotation mode for subfig1 while maintaining the keyboard shortcuts and click functionality for the remaining plots
-        set(UI.fig,'CurrentAxes',UI.panel.subfig_ax1.Children)
-        rotate3d(subfig_ax(1),'on');
-        h = rotate3d(subfig_ax(1));
+%         set(UI.fig,'CurrentAxes',UI.panel.subfig_ax(axisTorate).Children)
+        rotate3d(axisTorate,'on');
+        h = rotate3d(axisTorate);
         h.Enable = 'on';
         setAllowAxesRotate(h,subfig_ax(2),false);
         set(h,'ButtonDownFilter',@myRotateFilter);
@@ -9461,13 +9641,14 @@ end
     function [disallowRotation] = myRotateFilter(obj,~)
         disallowRotation = true;
         axnum = find(ismember(subfig_ax, gca));
-        if UI.settings.customPlotHistograms == 3 && axnum == 1 && strcmp(get(UI.fig, 'selectiontype'),'extend') &&  ~isempty(UI.params.subset)
+        if ((UI.settings.customPlotHistograms == 3 && axnum == 1) || (axnum > 3 && strcmp(UI.settings.customPlot{axnum-3},'Common Coordinate Framework'))) && strcmp(get(UI.fig, 'selectiontype'),'extend') && ~isempty(UI.params.subset)
             um_axes = get(gca,'CurrentPoint');
             u = um_axes(1,1);
             v = um_axes(1,2);
             w = um_axes(1,3);
             HighlightFromPlot(u,v,w);
-        elseif UI.settings.customPlotHistograms == 3 && axnum == 1 && strcmp(get(UI.fig, 'selectiontype'),'alt') &&  ~isempty(UI.params.subset)
+        elseif ((UI.settings.customPlotHistograms == 3 && axnum == 1) || (axnum > 3 && strcmp(UI.settings.customPlot{axnum-3},'Common Coordinate Framework'))) && strcmp(get(UI.fig, 'selectiontype'),'alt') && ~isempty(UI.params.subset)
+%             UI.settings.customPlotHistograms == 3 && axnum == 1 && strcmp(get(UI.fig, 'selectiontype'),'alt') &&  ~isempty(UI.params.subset)
             um_axes = get(gca,'CurrentPoint');
             u = um_axes(1,1);
             v = um_axes(1,2);
@@ -9833,6 +10014,9 @@ end
         
         if isfield(cell_metrics,'trilat_x') && isfield(cell_metrics,'trilat_y')
             waveformOptions = [waveformOptions;'Trilaterated position'];
+        end
+        if isfield(cell_metrics,'ccf_x') && isfield(cell_metrics,'ccf_y') && isfield(cell_metrics,'ccf_z')
+            waveformOptions = [waveformOptions;'Common Coordinate Framework'];
         end
         
         if isfield(tSNE_metrics,'filtWaveform')
@@ -11486,117 +11670,117 @@ end
             UI.popupmenu.customplot{4}.Enable = 'off';
             UI.popupmenu.customplot{5}.Enable = 'off';
             UI.popupmenu.customplot{6}.Enable = 'off';
-            UI.panel.subfig_ax2.Visible = 'off';
-            UI.panel.subfig_ax3.Visible = 'off';
-            UI.panel.subfig_ax7.Visible = 'off';
-            UI.panel.subfig_ax8.Visible = 'off';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0 0.7 1];
-            UI.panel.subfig_ax4.Position = [0.70 0.67 0.3 0.33];
-            UI.panel.subfig_ax5.Position = [0.70 0.33 0.3 0.34];
-            UI.panel.subfig_ax6.Position = [0.70 0 0.3 0.33];
+            UI.panel.subfig_ax(2).Visible = 'off';
+            UI.panel.subfig_ax(3).Visible = 'off';
+            UI.panel.subfig_ax(7).Visible = 'off';
+            UI.panel.subfig_ax(8).Visible = 'off';
+            UI.panel.subfig_ax(9).Visible = 'off';
+            UI.panel.subfig_ax(1).Position = [0 0 0.7 1];
+            UI.panel.subfig_ax(4).Position = [0.70 0.67 0.3 0.33];
+            UI.panel.subfig_ax(5).Position = [0.70 0.33 0.3 0.34];
+            UI.panel.subfig_ax(6).Position = [0.70 0 0.3 0.33];
          elseif UI.settings.layout == 2
             % GUI: 2+3 figures
             UI.popupmenu.customplot{4}.Enable = 'off';
             UI.popupmenu.customplot{5}.Enable = 'off';
             UI.popupmenu.customplot{6}.Enable = 'off';
-            UI.panel.subfig_ax2.Visible = 'off';
-            UI.panel.subfig_ax3.Visible = 'on';
-            UI.panel.subfig_ax7.Visible = 'off';
-            UI.panel.subfig_ax8.Visible = 'off';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0.4 0.5 0.6];
-            UI.panel.subfig_ax3.Position = [0.5 0.4 0.5 0.6];
-            UI.panel.subfig_ax4.Position = [0 0 0.33 0.4];
-            UI.panel.subfig_ax5.Position = [0.33 0 0.34 0.4];
-            UI.panel.subfig_ax6.Position = [0.67 0 0.33 0.4];
+            UI.panel.subfig_ax(2).Visible = 'off';
+            UI.panel.subfig_ax(3).Visible = 'on';
+            UI.panel.subfig_ax(7).Visible = 'off';
+            UI.panel.subfig_ax(8).Visible = 'off';
+            UI.panel.subfig_ax(9).Visible = 'off';
+            UI.panel.subfig_ax(1).Position = [0 0.4 0.5 0.6];
+            UI.panel.subfig_ax(3).Position = [0.5 0.4 0.5 0.6];
+            UI.panel.subfig_ax(4).Position = [0 0 0.33 0.4];
+            UI.panel.subfig_ax(5).Position = [0.33 0 0.34 0.4];
+            UI.panel.subfig_ax(6).Position = [0.67 0 0.33 0.4];
         elseif UI.settings.layout == 3
             % GUI: 3+3 figures
             UI.popupmenu.customplot{4}.Enable = 'off';
             UI.popupmenu.customplot{5}.Enable = 'off';
             UI.popupmenu.customplot{6}.Enable = 'off';
-            UI.panel.subfig_ax2.Visible = 'on';
-            UI.panel.subfig_ax3.Visible = 'on';
-            UI.panel.subfig_ax7.Visible = 'off';
-            UI.panel.subfig_ax8.Visible = 'off';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
-            UI.panel.subfig_ax2.Position = [0.33 0.5 0.34 0.5];
-            UI.panel.subfig_ax3.Position = [0.67 0.5 0.33 0.5];
-            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
-            UI.panel.subfig_ax5.Position = [0.33 0 0.34 0.5];
-            UI.panel.subfig_ax6.Position = [0.67 0 0.33 0.5];
+            UI.panel.subfig_ax(2).Visible = 'on';
+            UI.panel.subfig_ax(3).Visible = 'on';
+            UI.panel.subfig_ax(7).Visible = 'off';
+            UI.panel.subfig_ax(8).Visible = 'off';
+            UI.panel.subfig_ax(9).Visible = 'off';
+            UI.panel.subfig_ax(1).Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax(2).Position = [0.33 0.5 0.34 0.5];
+            UI.panel.subfig_ax(3).Position = [0.67 0.5 0.33 0.5];
+            UI.panel.subfig_ax(4).Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax(5).Position = [0.33 0 0.34 0.5];
+            UI.panel.subfig_ax(6).Position = [0.67 0 0.33 0.5];
         elseif UI.settings.layout == 4
             % GUI: 3+4 figures
             UI.popupmenu.customplot{4}.Enable = 'on';
             UI.popupmenu.customplot{5}.Enable = 'off';
             UI.popupmenu.customplot{6}.Enable = 'off';
-            UI.panel.subfig_ax2.Visible = 'on';
-            UI.panel.subfig_ax3.Visible = 'on';
-            UI.panel.subfig_ax7.Visible = 'on';
-            UI.panel.subfig_ax8.Visible = 'off';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
-            UI.panel.subfig_ax2.Position = [0.33 0.5 0.34 0.5];
-            UI.panel.subfig_ax3.Position = [0.67 0.5 0.33 0.5];
-            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
-            UI.panel.subfig_ax5.Position = [0.33 0 0.34 0.5];
-            UI.panel.subfig_ax6.Position = [0.67 0.25 0.33 0.25];
-            UI.panel.subfig_ax7.Position = [0.67 0 0.33 0.25];
+            UI.panel.subfig_ax(2).Visible = 'on';
+            UI.panel.subfig_ax(3).Visible = 'on';
+            UI.panel.subfig_ax(7).Visible = 'on';
+            UI.panel.subfig_ax(8).Visible = 'off';
+            UI.panel.subfig_ax(9).Visible = 'off';
+            UI.panel.subfig_ax(1).Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax(2).Position = [0.33 0.5 0.34 0.5];
+            UI.panel.subfig_ax(3).Position = [0.67 0.5 0.33 0.5];
+            UI.panel.subfig_ax(4).Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax(5).Position = [0.33 0 0.34 0.5];
+            UI.panel.subfig_ax(6).Position = [0.67 0.25 0.33 0.25];
+            UI.panel.subfig_ax(7).Position = [0.67 0 0.33 0.25];
         elseif UI.settings.layout == 5
             % GUI: 3+5 figures
             UI.popupmenu.customplot{4}.Enable = 'on';
             UI.popupmenu.customplot{5}.Enable = 'on';
             UI.popupmenu.customplot{6}.Enable = 'off';
-            UI.panel.subfig_ax2.Visible = 'on';
-            UI.panel.subfig_ax3.Visible = 'on';
-            UI.panel.subfig_ax7.Visible = 'on';
-            UI.panel.subfig_ax8.Visible = 'on';
-            UI.panel.subfig_ax9.Visible = 'off';
-            UI.panel.subfig_ax1.Position = [0 0.5 0.33 0.5];
-            UI.panel.subfig_ax2.Position = [0.33 0.5 0.33 0.5];
-            UI.panel.subfig_ax3.Position = [0.67 0.5 0.33 0.5];
-            UI.panel.subfig_ax4.Position = [0 0 0.33 0.5];
-            UI.panel.subfig_ax5.Position = [0.33 0.25 0.34 0.25];
-            UI.panel.subfig_ax6.Position = [0.67 0.25 0.33 0.25];
-            UI.panel.subfig_ax7.Position = [0.33 0 0.34 0.25];
-            UI.panel.subfig_ax8.Position = [0.67 0 0.33 0.25];
+            UI.panel.subfig_ax(2).Visible = 'on';
+            UI.panel.subfig_ax(3).Visible = 'on';
+            UI.panel.subfig_ax(7).Visible = 'on';
+            UI.panel.subfig_ax(8).Visible = 'on';
+            UI.panel.subfig_ax(9).Visible = 'off';
+            UI.panel.subfig_ax(1).Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax(2).Position = [0.33 0.5 0.33 0.5];
+            UI.panel.subfig_ax(3).Position = [0.67 0.5 0.33 0.5];
+            UI.panel.subfig_ax(4).Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax(5).Position = [0.33 0.25 0.34 0.25];
+            UI.panel.subfig_ax(6).Position = [0.67 0.25 0.33 0.25];
+            UI.panel.subfig_ax(7).Position = [0.33 0 0.34 0.25];
+            UI.panel.subfig_ax(8).Position = [0.67 0 0.33 0.25];
         elseif UI.settings.layout == 6
             % GUI: 3+6 figures
             UI.popupmenu.customplot{4}.Enable = 'on';
             UI.popupmenu.customplot{5}.Enable = 'on';
             UI.popupmenu.customplot{6}.Enable = 'on';
-            UI.panel.subfig_ax2.Visible = 'on';
-            UI.panel.subfig_ax3.Visible = 'on';
-            UI.panel.subfig_ax7.Visible = 'on';
-            UI.panel.subfig_ax8.Visible = 'on';
-            UI.panel.subfig_ax9.Visible = 'on';
-            UI.panel.subfig_ax1.Position = [0 0.67 0.33 0.33];
-            UI.panel.subfig_ax2.Position = [0.33 0.67 0.34 0.33];
-            UI.panel.subfig_ax3.Position = [0.67 0.67 0.33 0.33];
-            UI.panel.subfig_ax4.Position = [0 0.33 0.33 0.34];
-            UI.panel.subfig_ax5.Position = [0.33 0.33 0.34 0.34];
-            UI.panel.subfig_ax6.Position = [0.67 0.33 0.33 0.34];
-            UI.panel.subfig_ax7.Position = [0 0 0.33 0.33];
-            UI.panel.subfig_ax8.Position = [0.33 0 0.34 0.33];
-            UI.panel.subfig_ax9.Position = [0.67 0 0.33 0.33];
+            UI.panel.subfig_ax(2).Visible = 'on';
+            UI.panel.subfig_ax(3).Visible = 'on';
+            UI.panel.subfig_ax(7).Visible = 'on';
+            UI.panel.subfig_ax(8).Visible = 'on';
+            UI.panel.subfig_ax(9).Visible = 'on';
+            UI.panel.subfig_ax(1).Position = [0 0.67 0.33 0.33];
+            UI.panel.subfig_ax(2).Position = [0.33 0.67 0.34 0.33];
+            UI.panel.subfig_ax(3).Position = [0.67 0.67 0.33 0.33];
+            UI.panel.subfig_ax(4).Position = [0 0.33 0.33 0.34];
+            UI.panel.subfig_ax(5).Position = [0.33 0.33 0.34 0.34];
+            UI.panel.subfig_ax(6).Position = [0.67 0.33 0.33 0.34];
+            UI.panel.subfig_ax(7).Position = [0 0 0.33 0.33];
+            UI.panel.subfig_ax(8).Position = [0.33 0 0.34 0.33];
+            UI.panel.subfig_ax(9).Position = [0.67 0 0.33 0.33];
         elseif UI.settings.layout == 7
             % GUI: 1+6 figures.
             UI.popupmenu.customplot{4}.Enable = 'on';
             UI.popupmenu.customplot{5}.Enable = 'on';
             UI.popupmenu.customplot{6}.Enable = 'on';
-            UI.panel.subfig_ax2.Visible = 'off';
-            UI.panel.subfig_ax3.Visible = 'off';
-            UI.panel.subfig_ax7.Visible = 'on';
-            UI.panel.subfig_ax8.Visible = 'on';
-            UI.panel.subfig_ax9.Visible = 'on';
-            UI.panel.subfig_ax1.Position = [0 0 0.5 1];
-            UI.panel.subfig_ax4.Position = [0.5 0.67 0.25 0.33];
-            UI.panel.subfig_ax5.Position = [0.5 0.33 0.25 0.34];
-            UI.panel.subfig_ax6.Position = [0.5 0    0.25 0.33];
-            UI.panel.subfig_ax7.Position = [0.75 0.67 0.25 0.33];
-            UI.panel.subfig_ax8.Position = [0.75 0.33 0.25 0.34];
-            UI.panel.subfig_ax9.Position = [0.75 0    0.25 0.33];
+            UI.panel.subfig_ax(2).Visible = 'off';
+            UI.panel.subfig_ax(3).Visible = 'off';
+            UI.panel.subfig_ax(7).Visible = 'on';
+            UI.panel.subfig_ax(8).Visible = 'on';
+            UI.panel.subfig_ax(9).Visible = 'on';
+            UI.panel.subfig_ax(1).Position = [0 0 0.5 1];
+            UI.panel.subfig_ax(4).Position = [0.5 0.67 0.25 0.33];
+            UI.panel.subfig_ax(5).Position = [0.5 0.33 0.25 0.34];
+            UI.panel.subfig_ax(6).Position = [0.5 0    0.25 0.33];
+            UI.panel.subfig_ax(7).Position = [0.75 0.67 0.25 0.33];
+            UI.panel.subfig_ax(8).Position = [0.75 0.33 0.25 0.34];
+            UI.panel.subfig_ax(9).Position = [0.75 0    0.25 0.33];
         end
         uiresume(UI.fig);
     end
@@ -11798,7 +11982,7 @@ end
                         UI.params.connections = [UI.params.incoming;UI.params.outgoing];
                     end
                     
-                    customPlot(plotOptionsIn,ii,general1,batchIDs1,testFig);
+                    customPlot(plotOptionsIn,ii,general1,batchIDs1,testFig,0);
                     drawnow nocallbacks;
                     t_bench(i_rep,j) = toc(timerVal1);
                 end
