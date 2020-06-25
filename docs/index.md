@@ -25,7 +25,7 @@ To address this, we built CellExplorer, a framework for analyzing and characteri
 [Data structure]({{"/datastructure/data-structure/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Processing module]({{"/pipeline/pipeline/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/interface/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}
 
 ## Getting started
-1. [Clone](x-github-client://openRepo/https://github.com/petersenpeter/CellExplorer), fork, or [download](https://github.com/petersenpeter/CellExplorer/archive/master.zip) the repository (cloning is recommended).
+1. [Clone](x-github-client://openRepo/https://github.com/petersenpeter/CellExplorer), fork, or [download](https://github.com/petersenpeter/CellExplorer/archive/master.zip) the repository (cloning or forking is recommended).
 2. Add the local repository to your MATLAB setpath. 
 3. The pipeline uses two c-code files that must be compiled `CCGHeart.c` and `FindInInterval.c` (originally part of the FMA toolbox). Compiled versions are included for Windows and Mac. __If you are using Linux__ you have to compile the scripts. In MATLAB, go to `CellExplorer/calc_CellMetrics/mex/` and run these line:
 ```m
@@ -49,7 +49,7 @@ We have created a few tutorials to get you started, covering the pipeline and th
 [View tutorials]({{ "/tutorials/tutorials/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2}
 
 ## Reporting bugs, enhancements or questions
-Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues) for reporting bugs, enhancement requests or general questions.
+Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues), or send us an [email](mailto:petersen.peter@gmail.com) for reporting bugs, enhancement requests or general questions.
 
 ## Citing CellExplorer in your research and publications
 Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical user interface and standardized pipeline for visualizing and characterizing single neuron features. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1). [Download pdf](http://buzsakilab.com/CellExplorer/Petersen_Buzsaki_CellExplorer_bioRxiv_2020.pdf).

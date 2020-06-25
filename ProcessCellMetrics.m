@@ -347,6 +347,17 @@ elseif exist(fullfile(basepath,[parameters.saveAs,'.mat']),'file')
 else
     cell_metrics = [];
 end
+% Importing fields from spikes struct to cell_metrics
+spikes_fields = fieldnames(spikes{1});
+spikes_fields = setdiff(spikes_fields,{'times','ts','rawWaveform','filtWaveform', 'rawWaveform_all', 'rawWaveform_std', 'filtWaveform_all', 'filtWaveform_std', 'timeWaveform', 'timeWaveform_all', 'peakVoltage_all', 'channels_all', 'peakVoltage_sorted', 'maxWaveform_all', 'peakVoltage_expFitLengthConstant', 'processinginfo', 'numcells', 'UID', 'sessionName'});
+spikes_type = structfun(@(X) (iscell(X) || isnumeric(X)) && all(size(X) == [1,spikes{1}.numcells]), spikes{1},'uni',0);
+for j = 1:numel(spikes_fields)
+    if spikes_type.(spikes_fields{j}) && iscell(spikes{1}.(spikes_fields{j})) && all(cellfun(@ischar, spikes{1}.(spikes_fields{j})))
+        cell_metrics.(spikes_fields{j}) = spikes{1}.(spikes_fields{j});
+    elseif spikes_type.(spikes_fields{j}) && isnumeric(spikes{1}.(spikes_fields{j}))
+        cell_metrics.(spikes_fields{j}) = spikes{1}.(spikes_fields{j});
+    end
+end
 
 if parameters.saveBackup && ~isempty(cell_metrics)
     % Creating backup of existing user adjustable metrics
@@ -439,12 +450,11 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             end
             session.extracellular.chanCoords.x = chanMap.xcoords(:);
             session.extracellular.chanCoords.y = chanMap.ycoords(:);
+            
         end
         cell_metrics.general.chanCoords = session.extracellular.chanCoords;
-       
         % Fit exponential
         fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
-        
         expential_x = {};
         expential_y = {};
         for j = 1:cell_metrics.general.cellCount
@@ -495,7 +505,42 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         subplot(2,2,4), hold on
         plot(cell_metrics.general.chanCoords.x,cell_metrics.general.chanCoords.y,'.k'), hold on
         plot(cell_metrics.trilat_x,cell_metrics.trilat_y,'ob'), xlabel('x position (µm)'), ylabel('y position (µm)')
-        
+    end
+    
+    % Common coordinate framework
+    if isfield(session.extracellular,'ccf') && (~all(isfield(cell_metrics,{'ccf_x','ccf_y','ccf_z'}))) || parameters.forceReload == true
+        cell_metrics.general.ccf = session.extracellular.ccf;
+        cell_metrics.ccf_x = cell_metrics.general.ccf.x(cell_metrics.maxWaveformCh1)';
+        cell_metrics.ccf_y = cell_metrics.general.ccf.y(cell_metrics.maxWaveformCh1)';
+        cell_metrics.ccf_z = cell_metrics.general.ccf.z(cell_metrics.maxWaveformCh1)';
+        for j = 1:cell_metrics.general.cellCount
+            if ~isnan(cell_metrics.peakVoltage(j))
+                [~,idx] = sort(cell_metrics.waveforms.peakVoltage_all{j},'descend');
+                bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:16));
+                beta0 = [cell_metrics.general.ccf.x(bestChannels(1)),cell_metrics.general.ccf.y(bestChannels(1)),cell_metrics.general.ccf.z(bestChannels(1))]; % initial position
+                if isnan(beta0)
+                    cell_metrics.ccf_x(j) = nan;
+                    cell_metrics.ccf_y(j) = nan;
+                	cell_metrics.ccf_z(j) = nan;
+                else
+                    trilat_pos = trilat3([cell_metrics.general.ccf.x(bestChannels),cell_metrics.general.ccf.y(bestChannels),cell_metrics.general.ccf.z(bestChannels)],cell_metrics.waveforms.peakVoltage_all{j}(idx(1:16)),beta0,0);
+                    cell_metrics.ccf_x(j) = trilat_pos(1);
+                    cell_metrics.ccf_y(j) = trilat_pos(2);
+                    cell_metrics.ccf_z(j) = trilat_pos(3);
+                end
+            else
+                cell_metrics.ccf_x(j) = nan;
+                cell_metrics.ccf_y(j) = nan;
+                cell_metrics.ccf_z(j) = nan;
+            end
+        end
+        figure
+        plot3(session.extracellular.ccf.x,session.extracellular.ccf.y,session.extracellular.ccf.z,'.k'), hold on
+        plot3(cell_metrics.ccf_x,cell_metrics.ccf_y,cell_metrics.ccf_z,'ob'),
+        xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse')
+        if exist('plotBrainGrid.m','file')
+            plotAllenBrainGrid, hold on
+        end
     end
 end
 
@@ -1113,7 +1158,7 @@ end
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Other metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
+        
 spkExclu = setSpkExclu('other_metrics',parameters);
 
 % Session specific metrics
@@ -1341,7 +1386,7 @@ else
     enableDatabase = 0;
 end
 
-if parameters.submitToDatabase && enableDatabase
+if parameters.submitToDatabase && enableDatabase && isfield(cell_metrics,'spikeSortingID')
     dispLog('Submitting cells to database');
     if parameters.debugMode
         cell_metrics = db_submit_cells(cell_metrics,session);
