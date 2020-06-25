@@ -85,7 +85,7 @@ end
 % Extracellular parameters from a Neuroscope xml and buzcode sessionInfo file will be imported as well
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'sr')) || isempty(session.extracellular.sr))
     session.extracellular.sr = 25000;           % Sampling rate
-    session.extracellular.nChannels = 64;       % number of channels
+    session.extracellular.nChannels = 60;       % number of channels
     session.extracellular.fileName = 'data_all.dat';        % (optional) file name of raw data if different from basename.dat
     session.extracellular.electrodeGroups.channels = {[1:session.extracellular.nChannels]}; %creating a default list of channels. Please change according to your own layout. 
     session.extracellular.nElectrodeGroups = numel(session.extracellular.electrodeGroups);
