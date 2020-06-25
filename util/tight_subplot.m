@@ -15,6 +15,9 @@ if numel(marg_h)==1
     marg_h = [marg_h marg_h];
 end
 axh = (1-sum(marg_h)-(Nh-1)*gap(1))/Nh;
+if axh<0 
+    axh = 0.001;
+end
 axw = (1-sum(marg_w)-(Nw-1)*gap(2))/Nw;
 py = 1-marg_h(2)-axh;
 
