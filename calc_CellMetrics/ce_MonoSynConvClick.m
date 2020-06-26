@@ -27,7 +27,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     %  alpha = type I error for significance testing using convolution
     %     technique. Stark et al, 2009
     %
-    %  calls: CCG, InInterval,FindInInterval (from FMA toolbox)
+    %  calls: CCG, ce_InInterval,FindInInterval (from FMA toolbox)
     %         tight_subplot, gui_MonoSyn
     %         ce_cch_conv
     %
@@ -53,10 +53,9 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     %  'alpha',.05,'conv_w',20,'cells',[1 2;1 3;4 5;8 8],'epoch',[10 3000; 4000 5000]);
     %
     
-    
     % Script by Peter Petersen
     % Adapted by algorithms and previous versions developed by Sam McKenzie, Eran Stark, and others.
-    % 09-06-2020
+    % 24-06-2020
     
     %get experimentally validated probabilities
     if ~isfield(spikes,'spindices')
@@ -66,7 +65,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     spikeIDs = double([spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)]);
     spiketimes = spikes.spindices(:,1);
     
-    fil = which('ce_MonoSynConvClick');
+    fil = which('ce_MonoSynConvClick.m');
     if ispc
         sl = regexp(fil,'\');
     else
@@ -74,74 +73,44 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     end
     
     fil = fil(1:sl(end));
-    if exist([fil 'ProbSynMat.mat'],'file')==2
-        v = load([fil 'ProbSynMat.mat']);
+    if exist(fullfile(fil, 'ce_ProbSynMat.mat'),'file')
+        v = load(fullfile([fil, 'ce_ProbSynMat.mat']));
         foundMat = true;
     else
         foundMat = false;
-        warning('ce_MonoSynConvClick: You do not have the ProbSynMat matrix describing the likelihood of experimentally validated connectivty given excess syncrony')
+        disp('ce_MonoSynConvClick: You do not have the ce_ProbSynMat.m matrix describing the likelihood of experimentally validated connectivty given excess syncrony')
     end
     
-    %set defaults
-    binSize = .0004;            % 0.4ms
-    duration = .120;            % 120ms
-    epoch = [0 inf];            %whole session
-    cells = unique(spikeIDs(:,1:2),'rows');
-    nCel = size(cells,1);
-    conv_w = .010/binSize;      % 10ms window
-    alpha = 0.001;              %high frequency cut off, must be .001 for causal p-value matrix
-    plotit = false;
-    sorted = false;
-    includeInhibitoryConnections = false;
+    validationDuration = @(x) assert(isnumeric(x) && length(X) == 1 && X>0, 'Duration must be numeric and positive');
+    validationBinsize = @(x) assert(isnumeric(x) && length(X) == 1 && X>0, 'Binsize must be numeric and positive');
+    validationEpoch = @(x) assert(isnumeric(x) && (size(x,2) == 2), 'Epoch must be numeric and of size nx2');
     
+    p = inputParser;
+    addParameter(p,'binSize',0.0004,validationBinsize); % 0.4ms
+    addParameter(p,'duration',0.120,validationDuration); % 120ms
+    addParameter(p,'epoch',[0 inf],validationEpoch); % [0,inf] = whole session
+    addParameter(p,'cells',unique(spikeIDs(:,1:2),'rows'),@isnumeric);
+    addParameter(p,'conv_w',0.010,@isnumeric); % 10ms window   
+    addParameter(p,'alpha',0.001,@isnumeric); % high frequency cut off, must be .001 for causal p-value matrix
+    addParameter(p,'sorted',false,@isnumeric);
+    addParameter(p,'includeInhibitoryConnections',false,@islogical); 
+    addParameter(p,'sigWindow',0.004,@isnumeric); % monosynaptic connection will be +/- 4 ms
+    
+    parse(p,varargin{:})
+    binSize = p.Results.binSize;
+    duration = p.Results.duration;
+    epoch = p.Results.epoch;
+    cells = p.Results.cells;
+    
+    conv_w = p.Results.conv_w/binSize;
+    alpha = p.Results.alpha;
+    sorted = p.Results.sorted;
+    includeInhibitoryConnections = p.Results.includeInhibitoryConnections;
+    sigWindow = p.Results.sigWindow;
+    
+    nCel = size(cells,1);
     if length(varargin) ==1 && iscell(varargin{1})
         varargin = varargin{1};
-    end
-    
-    % Parse options
-    for i = 1:2:length(varargin)
-        if ~isa(varargin{i},'char')
-            error(['Parameter ' num2str(i+3) ' is not a property ']);
-        end
-        switch(lower(varargin{i}))
-            case 'duration'
-                duration = varargin{i+1};
-                if ~isa(duration,'numeric') | length(duration) ~= 1 | duration < 0
-                    error('Incorrect value for property ''duration''');
-                end
-            case 'binsize'
-                binSize = varargin{i+1};
-                if ~isa(binSize,'numeric') | length(binSize) ~= 1 | binSize <= 0
-                    error('Incorrect value for property ''binsize'' ');
-                end
-            case 'sr'
-                sr = varargin{i+1};
-            case 'epoch'
-                epoch = varargin{i+1};
-                if ~isa(epoch,'numeric') | size(epoch,2) ~= 2
-                    error('Incorrect value for property ''epoch'' ');
-                end
-            case 'cells'
-                cells = varargin{i+1};
-            case 'conv_w'
-                conv_w = varargin{i+1};
-            case 'alpha'
-                alpha = varargin{i+1};
-                if ~isa(alpha,'numeric')
-                    error('Incorrect value for property ''alpha''');
-                end
-            case 'plot'
-                plotit = varargin{i+1};
-                if ~islogical(plotit)
-                    error('Incorrect value for property ''plot''');
-                end
-            case 'sorted'
-                sorted = varargin{i+1};
-            case 'includeinhibitoryconnections'
-                includeInhibitoryConnections = varargin{i+1};
-            otherwise
-                error(['Unknown property']);
-        end
     end
     
     if ~sorted
@@ -189,7 +158,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
             cch=ccgR(:,refcellID,cell2ID); % extract corresponding cross-correlation histogram vector
             
             prebins = round(length(cch)/2 - .0032/binSize):round(length(cch)/2);
-            postbins = round(length(cch)/2 + .0008/binSize):round(length(cch)/2 + .004/binSize);
+            postbins = round(length(cch)/2 + .0008/binSize):round(length(cch)/2 + sigWindow/binSize);
             
             refcellshank=completeIndex(completeIndex(:,3)==refcellID);
             cell2shank=completeIndex(completeIndex(:,3)==cell2ID);
@@ -217,9 +186,8 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
             Pval(:,cell2ID,refcellID)=flipud(pvals(:));
             
             % Calculate upper and lower limits with bonferonni correction
-            % monosynaptic connection will be +/- 4 ms
             
-            nBonf = round(.004/binSize)*2;
+            nBonf = round(sigWindow/binSize)*2;
             
             hiBound=poissinv(1-alpha/nBonf,pred);
             loBound=poissinv(alpha/nBonf, pred);
@@ -330,17 +298,15 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     mono_res.completeIndex = completeIndex;
     mono_res.binSize = binSize;
     mono_res.duration = duration;
-    mono_res.ManuelEdit = plotit;
     mono_res.conv_w = conv_w;
     mono_res.Pcausal = Pcausal;
-    
-    % plot
-    %     if plotit
-    %         mono_res = gui_MonoSyn(mono_res);
-    %     end
     
     if foundMat
         mono_res.FalsePositive = FalsePositive;
         mono_res.TruePositive = TruePositive;
     end
+end
+
+function out = validSize(X,Y)
+    out = size(X,2) == Y;
 end

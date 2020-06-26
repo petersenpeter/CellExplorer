@@ -24,7 +24,7 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % Lists
 sortingMethodList = {'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
-sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust'}; % Spike sorting formats
+sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','allensdk'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
 
@@ -33,7 +33,6 @@ UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperfic
 
 % Parameters in cell metrics pipeline
 UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections'};
-
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Database initialization

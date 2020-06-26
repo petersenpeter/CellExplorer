@@ -29,8 +29,8 @@ function spikes = loadSpikes(varargin)
 %
 % LoadXml.m & xmltools.m (required: https://github.com/petersenpeter/CellExplorer/tree/master/calc_CellMetrics/private)
 % or bz_getSessionInfo.m (optional. From buzcode: https://github.com/buzsakilab/buzcode)
-% npy-matlab toolbox (required for reading phy data: https://github.com/kwikteam/npy-matlab)
-% getAllWaveformsFromDat
+% npy-matlab toolbox (required for reading phy, allenSDK & ALF data: https://github.com/kwikteam/npy-matlab)
+% getWaveformsFromDat
 %
 %
 % EXAMPLE CALLS
@@ -53,15 +53,14 @@ function spikes = loadSpikes(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
 addParameter(p,'clusteringpath','',@ischar); % clustering path to spike data
-addParameter(p,'clusteringformat','Phy',@ischar); % clustering format: [current options: phy, klustakwik/neurosuite,KlustaViewa ]
-% 'Phy', 'KlustaViewa', 'Klustakwik', 'Neurosuite', 'KiloSort', 'SpyKING CIRCUS','MountainSort','IronClust'
+addParameter(p,'clusteringformat','Phy',@ischar); % clustering format: [current options: phy, klustakwik/neurosuite, KlustaViewa, ALF, AllenSDK (nwb)]
+% 'Phy', 'KlustaViewa', 'Klustakwik', 'Neurosuite', 'KiloSort', 'SpyKING CIRCUS', 'MountainSort', 'IronClust', 'ALF', 'AllenSDK'
 addParameter(p,'basename','',@ischar); % The basename file naming convention
 addParameter(p,'shanks',nan,@isnumeric); % shanks: Loading only a subset of shanks (only applicable to Klustakwik)
 addParameter(p,'raw_clusters',false,@islogical); % raw_clusters: Load only a subset of clusters (might not work anymore as it has not been tested for a long time)
 addParameter(p,'saveMat',true,@islogical); % Save spikes to mat file?
-addParameter(p,'forceReload',false,@islogical); % Reload spikes from original format (overwrites existing mat file if saveMat==true)
-addParameter(p,'getWaveforms',true,@islogical); % Get average waveforms?
-addParameter(p,'getAllWaveforms',true,@islogical); % Gets up to 16 largest waveforms from best channels
+addParameter(p,'forceReload',false,@islogical); % Reload spikes from original format (overwrites existing mat file if saveMat==true)?
+addParameter(p,'getWaveformsFromDat',true,@islogical); % Gets waveforms from dat (binary file)
 addParameter(p,'useNeurosuiteWaveforms',false,@islogical); % Use Waveform features from spk files. Alternatively it loads waveforms from dat file (Klustakwik specific)
 addParameter(p,'spikes',[],@isstruct); % Load existing spikes structure to append new spike info
 addParameter(p,'LSB',0.195,@isnumeric); % Least significant bit (LSB in uV/bit) Intan = 0.195, Amplipex = 0.3815. (range/precision)
@@ -75,15 +74,11 @@ clusteringFormat = p.Results.clusteringformat;
 basename = p.Results.basename;
 shanks = p.Results.shanks;
 raw_clusters = p.Results.raw_clusters;
-forceReload = p.Results.forceReload;
-saveMat = p.Results.saveMat;
-getWaveforms = p.Results.getWaveforms;
-getAllWaveforms = p.Results.getAllWaveforms;
 spikes = p.Results.spikes;
-useNeurosuiteWaveforms = p.Results.useNeurosuiteWaveforms;
 LSB = p.Results.LSB;
 session = p.Results.session;
 
+parameters = p.Results;
 % Loads parameters from a session struct
 if ~isempty(session)
     basename = session.general.name;
@@ -104,10 +99,10 @@ end
 
 clusteringpath_full = fullfile(basepath,clusteringpath);
 
-if exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])) && ~forceReload
+if exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])) && ~parameters.forceReload
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
     if ~isfield(spikes,'processinginfo') || (isfield(spikes,'processinginfo') && spikes.processinginfo.version < 3 && strcmp(spikes.processinginfo.function,'loadSpikes') )
-        forceReload = true;
+        parameters.forceReload = true;
         disp('spikes.mat structure not up to date. Reloading spikes.')
     else
         disp('loadSpikes: Loading existing spikes file')
@@ -117,12 +112,12 @@ elseif ~isempty(spikes)
 elseif exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])) 
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
 else
-    forceReload = true;
+    parameters.forceReload = true;
     spikes = [];
 end
 
 % Loading spikes
-if forceReload
+if parameters.forceReload
     % Setting parameters
     session.general.name = basename;
     session.general.basePath = basepath;
@@ -132,7 +127,79 @@ if forceReload
     session = loadClassicMetadata(session);
     
     switch lower(clusteringFormat)
-        case {'allensdk'}
+        case {'alf'} % ALF format from the cortex lab at UCL
+            disp('loadSpikes: Loading ALF npy data')
+            % Format described here: https://github.com/nsteinme/steinmetz-et-al-2019/wiki/data-files
+            clusters_phy_annotation = readNPY(fullfile(session.general.basePath,'clusters._phy_annotation.npy')); % 0:noise,1:mua,2:good,3:other. all units >1 are accepted
+            clusters_depths = readNPY(fullfile(session.general.basePath,'clusters.depths.npy')); % What is this?
+            clusters_peakChannel = readNPY(fullfile(session.general.basePath,'clusters.peakChannel.npy')); % 1-indexed?
+            clusters_probes = readNPY(fullfile(session.general.basePath,'clusters.probes.npy'));
+            clusters_originalIDs = readNPY(fullfile(session.general.basePath,'clusters.originalIDs.npy'));
+            clusters_templateWaveforms = 200*readNPY(fullfile(session.general.basePath,'clusters.templateWaveforms.npy')); % units?  % Channels sorted by amplitude 
+            clusters_templateWaveformChans = readNPY(fullfile(session.general.basePath,'clusters.templateWaveformChans.npy'));   % Channel sorting
+            
+            spikes_amps = readNPY(fullfile(session.general.basePath,'spikes.amps.npy'));
+            spikes_clusters = readNPY(fullfile(session.general.basePath,'spikes.clusters.npy'));
+            spikes_depths = readNPY(fullfile(session.general.basePath,'spikes.depths.npy'));
+            spikes_times = readNPY('spikes.times.npy');
+            
+            clusters = unique(spikes_clusters);
+            spikes = [];
+            for iCluster = 1:numel(clusters)
+                idx = spikes_clusters == clusters(iCluster);
+                spikes.times{iCluster} = spikes_times(idx);
+                spikes.amplitudes{iCluster} = spikes_amps(idx);
+                spikes.depths{iCluster} = spikes_depths(idx);
+                spikes.total(iCluster) = sum(idx);
+            end
+            spikes.cluID = clusters_originalIDs';
+            spikes.phy_annotation = clusters_phy_annotation';
+            spikes.shankID = clusters_probes'+1;
+            spikes.maxWaveformCh1 = clusters_peakChannel';
+            spikes.maxWaveformCh = clusters_peakChannel'-1;
+            
+            spikes.filtWaveform_all = permute(num2cell(permute(clusters_templateWaveforms,[3,2,1]),[1,2]),[3,2,1])';
+            spikes.probe = clusters_probes+1;
+            probes = unique(clusters_probes+1);
+            nChannelsPerProbe = cellfun(@numel, session.extracellular.electrodeGroups.channels);
+            nChannelsPerProbe = cumsum([0,nChannelsPerProbe]);
+            if any(clusters_templateWaveformChans(:) > nChannelsPerProbe(2))
+                warning('loadSpikes: ALF npy data: Some waveform channels are not aligned correctly')
+            end
+            clusters_templateWaveformChans = rem(clusters_templateWaveformChans,nChannelsPerProbe(2));
+            for i = 1:length(probes)
+                clusters_templateWaveformChans(spikes.probe==probes(i),:) = clusters_templateWaveformChans(spikes.probe==probes(i),:) + nChannelsPerProbe(probes(i));
+            end
+            spikes.channels_all = num2cell(clusters_templateWaveformChans+1,2);
+            spikes.filtWaveform = cellfun(@(X) X(1,:),spikes.filtWaveform_all,'UniformOutput', false);
+            spikes.timeWaveform = cellfun(@(X) ([1:length(X)]-length(X)/2)*1000/session.extracellular.sr,spikes.filtWaveform,'UniformOutput', false);
+            spikes.timeWaveform_all = spikes.timeWaveform;
+            spikes.peakVoltage = cell2mat(cellfun(@(X) range(X(1,:)) ,spikes.filtWaveform_all,'UniformOutput', false))';
+            spikes.maxWaveform_all = spikes.channels_all;
+            
+            spikesFields = fieldnames(spikes);
+            badCells = clusters_phy_annotation<2;
+            spikes.numcells = numel(spikes.times);
+            for j = 1:numel(spikesFields)
+                % Flipping dimensions on fields if necessary
+                if size(spikes.(spikesFields{j})) == [spikes.numcells,1]
+                    spikes.(spikesFields{j}) = spikes.(spikesFields{j})';
+                end
+                % Taking out bad units
+                if size(spikes.(spikesFields{j})) == [1,spikes.numcells]
+                    spikes.(spikesFields{j})(badCells) = [];
+                end
+            end
+            
+            spikes.sessionName = basename;
+            spikes.numcells = numel(spikes.times);
+            spikes.UID = 1:spikes.numcells;
+            % No waveforms are extracted from the raw file at this point
+
+            spikes.processinginfo.params.WaveformsSource = 'kilosort template';
+            spikes.processinginfo.params.WaveformsFiltFreq = 500;
+            
+        case {'allensdk'} % Allen institute's nwb data combined info from the allenSDK
             disp('loadSpikes: Loading Allen SDK nwb data')
             nwb_file = fullfile(session.general.basePath,[session.general.name,'.nwb']);
             info = h5info(nwb_file);
@@ -193,7 +260,6 @@ if forceReload
             
             % Getting raw timestamps using the AllenSDK saved as separate npy files for each unit
             k = 0;
-            
             for iCells = 1:numel(spikes.times)
                 spikes.shankID(iCells) = find(cellfun(@(X) ismember(spikes.maxWaveformCh1(iCells),X),session.extracellular.electrodeGroups.channels));
                 rawTimestampsFile = [session.analysisTags.rawTimestampsFile, num2str(spikes.id(iCells)),'.npy'];
@@ -233,7 +299,7 @@ if forceReload
             gcp; spikes_out = {}; tic;
             parfor iProbe = probesToProcess
                 disp(['Getting waveforms from ',num2str(numel(unitsToProcess{iProbe})) ,' cells from binary file (',num2str(iProbe),'/',num2str(session.extracellular.nElectrodeGroups),')'])
-                spikes_out{iProbe} = getAllWaveformsFromDat(spikes,session1{iProbe},unitsToProcess{iProbe});
+                spikes_out{iProbe} = getWaveformsFromDat(spikes,session1{iProbe},unitsToProcess{iProbe});
             end
             
             % Writing fields back to spikes struct
@@ -257,6 +323,7 @@ if forceReload
             spikes.numcells = numel(spikes.times);
             spikes.UID = 1:spikes.numcells;
             
+            % Flipping dimensions on fields if necessary
             spikesFields = fieldnames(spikes);
             for j = 1:numel(spikesFields)
                 if size(spikes.(spikesFields{j})) == [spikes.numcells,1]
@@ -290,7 +357,7 @@ if forceReload
                 if ~raw_clusters
                     cluster_index = load(fullfile(clusteringpath_full, [basename '.clu.' num2str(shank)]));
                     time_stamps = load(fullfile(clusteringpath_full,[basename '.res.' num2str(shank)]));
-                    if getWaveforms & useNeurosuiteWaveforms
+                    if parameters.useNeurosuiteWaveforms
                         fname = fullfile(clusteringpath_full,[basename '.spk.' num2str(shank)]);
                         f = fopen(fname,'r');
                         waveforms = LSB * double(fread(f,'int16'));
@@ -314,7 +381,7 @@ if forceReload
                     spikes.cluID(unit_nb) = nb_clusters2(i);
                     spikes.cluster_index(unit_nb) = nb_clusters2(i);
                     spikes.total(unit_nb) = length(spikes.ts{unit_nb});
-                    if getWaveforms & useNeurosuiteWaveforms
+                    if getWaveforms & parameters.useNeurosuiteWaveforms
                         spikes.filtWaveform_all{unit_nb} = mean(waveforms(:,:,cluster_index == nb_clusters2(i)),3);
                         spikes.filtWaveform_all_std{unit_nb} = permute(std(permute(waveforms(:,:,cluster_index == nb_clusters2(i)),[3,1,2])),[2,3,1]);
                         [~,index1] = max(max(spikes.filtWaveform_all{unit_nb}') - min(spikes.filtWaveform_all{unit_nb}'));
@@ -325,15 +392,13 @@ if forceReload
                         spikes.peakVoltage(unit_nb) = max(spikes.filtWaveform{unit_nb}) - min(spikes.filtWaveform{unit_nb});
                     end
                 end
-                if getWaveforms
+                if parameters.getWaveformsFromDat
                     spikes.processinginfo.params.WaveformsSource = 'spk files';
                 end
             end
             
-            if getAllWaveforms && ~useNeurosuiteWaveforms
-                spikes = getAllWaveformsFromDat(spikes,session);
-            elseif getWaveforms && ~useNeurosuiteWaveforms % gets waveforms from dat file
-                spikes = GetWaveformsFromDat(spikes,session);
+            if parameters.getWaveformsFromDat && ~parameters.useNeurosuiteWaveforms
+                spikes = getWaveformsFromDat(spikes,session);
             end
             clear cluster_index time_stamps
             
@@ -413,10 +478,8 @@ if forceReload
                 end
             end
             
-            if getAllWaveforms
-                spikes = getAllWaveformsFromDat(spikes,session);
-            elseif getWaveforms % gets waveforms from dat file
-                spikes = GetWaveformsFromDat(spikes,session);
+            if parameters.getWaveformsFromDat
+                spikes = getWaveformsFromDat(spikes,session);
             end
             
             % Loading klustaViewa - Kwik format (Klustasuite 0.3.0.beta4)
@@ -446,10 +509,8 @@ if forceReload
                 end
             end
             
-            if getAllWaveforms
-                spikes = getAllWaveformsFromDat(spikes,session);
-            elseif getWaveforms % gets waveforms from dat file
-                spikes = GetWaveformsFromDat(spikes,session);
+            if parameters.getWaveformsFromDat
+                spikes = getWaveformsFromDat(spikes,session);
             end
             
             % Loading sebastienroyer's data format
@@ -466,10 +527,8 @@ if forceReload
                 spikes.UID(i) = i;
                 spikes.filtWaveform_all{i}  = temp.spkinfo.waveform(:,:,i);
             end
-            if getAllWaveforms
-                spikes = getAllWaveformsFromDat(spikes,session);
-            elseif getWaveforms % gets waveforms from dat file
-                spikes = GetWaveformsFromDat(spikes,session);
+            if parameters.getWaveformsFromDat
+                spikes = getWaveformsFromDat(spikes,session);
             end
         otherwise
             error('Please provide a compatible clustering format')
@@ -492,15 +551,15 @@ if forceReload
     spikes.processinginfo.function = 'loadSpikes';
     spikes.processinginfo.version = 3.8;
     spikes.processinginfo.date = now;
-    spikes.processinginfo.params.forceReload = forceReload;
+    spikes.processinginfo.params.forceReload = parameters.forceReload;
     spikes.processinginfo.params.shanks = shanks;
     spikes.processinginfo.params.raw_clusters = raw_clusters;
-    spikes.processinginfo.params.getWaveforms = getWaveforms;
+    spikes.processinginfo.params.getWaveformsFromDat = parameters.getWaveformsFromDat;
     spikes.processinginfo.params.basename = basename;
     spikes.processinginfo.params.clusteringFormat = clusteringFormat;
     spikes.processinginfo.params.clusteringpath = clusteringpath;
     spikes.processinginfo.params.basepath = basepath;
-    spikes.processinginfo.params.useNeurosuiteWaveforms = useNeurosuiteWaveforms;
+    spikes.processinginfo.params.useNeurosuiteWaveforms = parameters.useNeurosuiteWaveforms;
     try
         spikes.processinginfo.username = char(java.lang.System.getProperty('user.name'));
         spikes.processinginfo.hostname = char(java.net.InetAddress.getLocalHost.getHostName);
@@ -509,7 +568,7 @@ if forceReload
     end
     
     % Saving output to a buzcode compatible spikes file.
-    if saveMat
+    if parameters.saveMat
         disp('loadSpikes: Saving spikes')
         try
             structSize = whos('spikes');
@@ -525,160 +584,6 @@ if forceReload
 end
 
 end
-
-function spikes = GetWaveformsFromDat(spikes,session)
-basepath = session.general.basePath;
-basename = session.general.name;
-LSB = session.extracellular.leastSignificantBit;
-if isfield(session.extracellular,'fileName') && ~isempty(session.extracellular.fileName)
-    fileNameRaw = session.extracellular.fileName;
-else
-    fileNameRaw = [basename '.dat'];
-end
-% Bad channels must be deselected in the spike groups, or skipped beforehand
-timerVal = tic;
-nPull = 600; % number of spikes to pull out (default: 600)
-wfWin_sec = 0.004; % Larger size of waveform windows for filterning. total width in ms
-wfWinKeep = 0.0008; % half width in ms
-filtFreq = [500,8000];
-showWaveforms = true;
-
-badChannels = [];
-
-% Removing channels marked as Bad in session struct
-if ~isempty(session) && isfield(session.channelTags,'Bad')
-    badChannels = session.channelTags.Bad.channels;
-    if ~isempty(session.channelTags.Bad.electrodeGroups)
-        badChannels = [badChannels,session.extracellular.electrodeGroups(session.channelTags.Bad.electrodeGroups)];
-    end
-    badChannels = unique(badChannels);
-end
-
-% Removing channels that does not exist in SpkGrps
-if isfield(session.extracellular,'spikeGroups')
-    badChannels = [badChannels,setdiff([session.extracellular.electrodeGroups.channels{:}],[session.extracellular.spikeGroups.channels{:}])];
-end
-
-goodChannels = setdiff(1:session.extracellular.nChannels,badChannels);
-nGoodChannels = length(goodChannels);
-
-[b1, a1] = butter(3, filtFreq/session.extracellular.sr*2, 'bandpass');
-
-f = waitbar(0,['Getting waveforms from dat file'],'Name',['Processing ' basename]);
-if showWaveforms
-    fig1 = figure('Name', ['Getting waveforms for ' basename],'NumberTitle', 'off','position',[100,100,1000,800]);
-end
-wfWin = round((wfWin_sec * session.extracellular.sr)/2);
-t1 = toc(timerVal);
-s = dir(fullfile(basepath,fileNameRaw));
-duration = s.bytes/(2*session.extracellular.nChannels*session.extracellular.sr);
-m = memmapfile(fullfile(basepath,fileNameRaw),'Format','int16','writable',false);
-DATA = m.Data;
-
-for ii = 1 : size(spikes.times,2)
-    if ishandle(f)
-        waitbar(ii/size(spikes.times,2),f,['Waveforms: ',num2str(ii),'/',num2str(size(spikes.times,2)),'. ', num2str(round(toc(timerVal)-t1)),' sec/unit, ', num2str(round(toc(timerVal)/60)) ' minutes total']);
-    else
-        disp('Canceling waveform extraction...')
-        clear rawWaveform rawWaveform_std filtWaveform filtWaveform_std
-        clear DATA
-        clear m
-        error('Waveform extraction canceled by user')
-    end
-    t1 = toc(timerVal);
-    if isfield(spikes,'ts')
-        spkTmp = spikes.ts{ii}(find(spikes.times{ii} > wfWin_sec/1.8 & spikes.times{ii} < duration-wfWin_sec/1.8));
-    else
-        spkTmp = round(session.extracellular.sr * spikes.times{ii}(find(spikes.times{ii} > wfWin_sec/1.8 & spikes.times{ii} < duration-wfWin_sec/1.8)));
-    end
-    
-    if length(spkTmp) > nPull
-        spkTmp = spkTmp(randperm(length(spkTmp)));
-        spkTmp = sort(spkTmp(1:nPull));
-    end
-    
-    % Determines the maximum waveform channel
-    startIndicies = (spkTmp(1:min(100,length(spkTmp))) - wfWin)*session.extracellular.nChannels+1;
-    stopIndicies =  (spkTmp(1:min(100,length(spkTmp))) + wfWin)*session.extracellular.nChannels;
-    X = cumsum(accumarray(cumsum([1;stopIndicies(:)-startIndicies(:)+1]),[startIndicies(:);0]-[0;stopIndicies(:)]-1)+1);
-    %     temp1 = reshape(double(m.Data(X(1:end-1))),session.extracellular.nChannels,(wfWin*2),[]);
-    wf = LSB * mean(reshape(double(DATA(X(1:end-1))),session.extracellular.nChannels,(wfWin*2),[]),3);
-    wfF2 = zeros((wfWin * 2),nGoodChannels);
-    for jj = 1 : nGoodChannels
-        wfF2(:,jj) = filtfilt(b1, a1, wf(goodChannels(jj),:));
-    end
-    [~, idx] = max(max(wfF2)-min(wfF2)); % max(abs(wfF(wfWin,:)));
-    spikes.maxWaveformCh1(ii) = goodChannels(idx);
-    spikes.maxWaveformCh(ii) = spikes.maxWaveformCh1(ii)-1;
-    
-    % Assigning shankID to the unit
-    for jj = 1:session.extracellular.nElectrodeGroups
-        if any(session.extracellular.electrodeGroups.channels{jj} == spikes.maxWaveformCh1(ii))
-            spikes.shankID(ii) = jj;
-        end
-    end
-    
-    % Pulls the waveforms from the dat
-    startIndicies = (spkTmp - wfWin+1);
-    stopIndicies =  (spkTmp + wfWin);
-    X = cumsum(accumarray(cumsum([1;stopIndicies(:)-startIndicies(:)+1]),[startIndicies(:);0]-[0;stopIndicies(:)]-1)+1);
-    X = X(1:end-1) * session.extracellular.nChannels+spikes.maxWaveformCh1(ii);
-    
-    wf = LSB * double(reshape(DATA(X),wfWin*2,length(spkTmp)));
-    wfF = zeros((wfWin * 2),length(spkTmp));
-    for jj = 1 : length(spkTmp)
-        wfF(:,jj) = filtfilt(b1, a1, wf(:,jj));
-    end
-    
-    wf2 = mean(wf,2);
-    rawWaveform = detrend(wf2 - mean(wf2))';
-    rawWaveform_std = std((wf-mean(wf))');
-    filtWaveform = mean(wfF,2)';
-    filtWaveform_std = std(wfF');
-    
-    window_interval = wfWin-ceil(wfWinKeep*session.extracellular.sr):wfWin-1+ceil(wfWinKeep*session.extracellular.sr);
-    spikes.rawWaveform{ii} = rawWaveform(window_interval); % keep only +- 0.8 ms of waveform
-    spikes.rawWaveform_std{ii} = rawWaveform_std(window_interval);
-    spikes.filtWaveform{ii} = filtWaveform(window_interval);
-    spikes.filtWaveform_std{ii} = filtWaveform_std(window_interval);
-    spikes.timeWaveform{ii} = ([-ceil(wfWinKeep*session.extracellular.sr)*(1/session.extracellular.sr):1/session.extracellular.sr:(ceil(wfWinKeep*session.extracellular.sr)-1)*(1/session.extracellular.sr)])*1000;
-    %     spikes.timeWaveform{ii} = (-wfWinKeep+1/session.extracellular.sr:1/session.extracellular.sr:wfWinKeep)*1000;
-    spikes.peakVoltage(ii) = max(spikes.filtWaveform{ii})-min(spikes.filtWaveform{ii});
-    
-    if ishandle(fig1)
-        figure(fig1)
-        subplot(2,2,1), hold off
-        plot(wfF2), hold on, plot(wfF2(:,idx),'k','linewidth',2), title('Filtered waveforms across channels'), xlabel('Samples'), ylabel('uV'),hold off
-        subplot(2,2,2), hold off,
-        plot(wfF), title(['Peak channel waveforms (maxWaveformCh1=',num2str(spikes.maxWaveformCh1(ii)),')']), xlabel('Samples'), ylabel('uV')
-        subplot(2,2,3), hold on,
-        plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii}), title(['Raw waveform (',num2str(ii),'/',num2str(size(spikes.times,2)),')']), xlabel('Time (ms)'), ylabel('uV')
-        xlim([-0.8,0.8])
-        subplot(2,2,4), hold on,
-        plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii}), title('Filtered waveform'), xlabel('Time (ms)'), ylabel('uV')
-        xlim([-0.8,0.8])
-    end
-    clear wf wfF wf2 wfF2
-end
-if ishandle(f)
-    spikes.processinginfo.params.WaveformsSource = 'dat file';
-    spikes.processinginfo.params.WaveformsFiltFreq = filtFreq;
-    spikes.processinginfo.params.Waveforms_nPull = nPull;
-    spikes.processinginfo.params.WaveformsWin_sec = wfWin_sec;
-    spikes.processinginfo.params.WaveformsWinKeep = wfWinKeep;
-    spikes.processinginfo.params.WaveformsFilterType = 'butter';
-    clear rawWaveform rawWaveform_std filtWaveform filtWaveform_std
-    clear DATA
-    clear m
-    waitbar(ii/size(spikes.times,2),f,['Waveform extraction complete ',num2str(ii),'/',num2str(size(spikes.times,2)),'.  ', num2str(round(toc(timerVal)/60)) ' minutes total']);
-    disp(['Waveform extraction complete. Total duration: ' num2str(round(toc(timerVal)/60)),' minutes'])
-    if ishandle(fig1)
-        set(fig1,'Name',['Waveform extraction complete for ' basename])
-    end
-    % close(f)
-end
-end
-
 
 function session = loadClassicMetadata(session)
 
@@ -726,7 +631,7 @@ elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[ses
     session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0);
     session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
 else
-    warning('No sessionInfo.mat or xml file loaded')
+    disp('No sessionInfo.mat or xml found in basepath.')
     sessionInfo = [];
 end
 
@@ -740,5 +645,4 @@ if isfield(sessionInfo,'AnatGrps') && isfield(sessionInfo.AnatGrps,'Skip')
         session.channelTags.Bad.channels = channelOrder(skip);
     end
 end
-
 end

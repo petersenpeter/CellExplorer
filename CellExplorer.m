@@ -418,7 +418,7 @@ UI.menu.display.waveformsAcrossChannelsAlignment.ops(2) = uimenu(UI.menu.display
 initGroupMenu('waveformsAcrossChannelsAlignment')
 UI.menu.display.plotChannelMapAllChannelsMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Waveform count across channels');
 UI.menu.display.plotChannelMapAllChannels.ops(1) = uimenu(UI.menu.display.plotChannelMapAllChannelsMenu,menuLabel,'All channels',menuSelectedFcn,@adjustPlotChannelMapAllChannels);
-UI.menu.display.plotChannelMapAllChannels.ops(2) = uimenu(UI.menu.display.plotChannelMapAllChannelsMenu,menuLabel,'Subset',menuSelectedFcn,@adjustPlotChannelMapAllChannels);
+UI.menu.display.plotChannelMapAllChannels.ops(2) = uimenu(UI.menu.display.plotChannelMapAllChannelsMenu,menuLabel,'Best channels',menuSelectedFcn,@adjustPlotChannelMapAllChannels);
 initGroupMenu('plotChannelMapAllChannels')
 UI.menu.display.trilatGroupDataMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Trilateration group data');
 UI.menu.display.trilatGroupData.ops(1) = uimenu(UI.menu.display.trilatGroupDataMenu,menuLabel,'session',menuSelectedFcn,@adjustTrilatGroupData);
@@ -2167,6 +2167,7 @@ end
                     if length(channels2plot) > size(cell_metrics.waveforms.filt_all{ii},1)
                         channels2plot =channels2plot(1:size(cell_metrics.waveforms.filt_all{ii},1));
                     end
+                    channels2plot = 1:size(cell_metrics.waveforms.filt_all{ii},1);
                     xdata = repmat([cell_metrics.waveforms.time_all{ii},nan(1,1)],length(channels2plot),1)' + general.chanCoords.x(channels2plot)'/UI.params.chanCoords.x_factor;
                     ydata = [cell_metrics.waveforms.filt_all{ii}(channels2plot,:),nan(length(channels2plot),1)]' + general.chanCoords.y(channels2plot)'*UI.params.chanCoords.y_factor;
                     line(xdata(:),ydata(:), 'color', col,'linewidth',1,'HitTest','off')
@@ -2190,22 +2191,27 @@ end
             plotAxes.XLabel.String = 'Time (ms)';
             plotAxes.YLabel.String = 'Channels';
             plotAxes.Title.String = customPlotSelection;
-            if isfield(general,'electrodeGroups') && ~isempty(cell_metrics.waveforms.raw_all{ii}) && ~isempty(cell_metrics.waveforms.time_all{ii})
+            if isfield(general,'electrodeGroups') && isfield(general,'electrodeGroups') && ~isempty(cell_metrics.waveforms.filt_all{ii}) && ~isempty(cell_metrics.waveforms.time_all{ii})
                 if UI.settings.plotChannelMapAllChannels
                     channelOrder = flip([general.electrodeGroups{:}]);
                     horzlines = cumsum(flip(cellfun(@length,general.electrodeGroups)));
+                    if numel(channelOrder) > size(cell_metrics.waveforms.filt_all{ii},1)
+                        channelOrder = 1:size(cell_metrics.waveforms.filt_all{ii},1);
+                    end
+                    horzlines(horzlines>size(cell_metrics.waveforms.filt_all{ii},1)) = [];
                 else
                     channels2plot = cell_metrics.waveforms.bestChannels{ii};
                     channelOrder = flip([general.electrodeGroups{cell_metrics.electrodeGroup(ii)}]);
                     channelOrder = intersect(channelOrder,channels2plot,'stable');
                 end
-                if length(channelOrder) > size(cell_metrics.waveforms.filt_all{ii},1)
-                    channelOrder =channelOrder(1:size(cell_metrics.waveforms.filt_all{ii},1));
-                end
-%                 channelOrder = 1:size(cell_metrics.waveforms.filt_all{ii},1);
+                
                 imagesc(cell_metrics.waveforms.time_all{ii}, [1:numel(channelOrder)], cell_metrics.waveforms.filt_all{ii}(channelOrder,:),'HitTest','off'), axis tight
-                if UI.settings.plotChannelMapAllChannels
+                if UI.settings.plotChannelMapAllChannels & ~isempty(horzlines)
                     line(cell_metrics.waveforms.time_all{ii}([1,end]),[horzlines;horzlines]+0.5,'color','w','HitTest','off','linewidth',0.8)
+                end
+                [~,bestChannel] = max(range(cell_metrics.waveforms.filt_all{ii}(channelOrder,:),2));
+                if ~isempty(bestChannel)
+                    line(cell_metrics.waveforms.time_all{ii}([1,end]),[1;1]*(bestChannel+[-0.5,0.5]),'color','w','HitTest','off','linewidth',0.8)
                 end
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
@@ -2375,7 +2381,7 @@ end
             plotAxes.XLabel.String = '';
             plotAxes.YLabel.String = '';
             plotAxes.Title.String = customPlotSelection;
-
+            if isfield(cell_metrics,'putativeConnections') && (isfield(cell_metrics.putativeConnections,'excitatory') || isfield(cell_metrics.putativeConnections,'inhibitory'))
             putativeConnections_subset = all(ismember(cell_metrics.putativeConnections.excitatory,UI.params.subset),2);
             putativeConnections_subset = cell_metrics.putativeConnections.excitatory(putativeConnections_subset,:);
             
@@ -2437,7 +2443,9 @@ end
                 line(subsetPlots.xaxis(C),subsetPlots.yaxis(C),'Marker','o','LineStyle','none','color','k','HitTest','off')
             end
             else
-%                 title('ISI distribution')
+                text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
+            end
+            else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
         elseif strcmp(customPlotSelection,'Connectivity matrix')
@@ -5263,6 +5271,8 @@ end
                         else
                             if strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
                                 url = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), path_Investigator,db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
+                            elseif strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_AllenInstitute')
+                                url = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.name);
                             else
                                 url = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
                             end
@@ -8333,8 +8343,11 @@ end
         clr_groups = UI.settings.cellTypeColors(intersect(classes2plot,plotClas(UI.params.subset)),:);
         classes2plotSubset = unique(plotClas);
         if plotCellIDs==-1
-            plotOptions_all = {'Trilaterated position','Waveforms (all)','Waveforms (image)','Raw waveforms (all)','ACGs (all)','ACGs (image)','ISIs (all)','ISIs (image)','RCs_firingRateAcrossTime (image)','RCs_firingRateAcrossTime (all)','Connectivity graph'};
+            plotOptions_all = {'Trilaterated position','Waveforms (all)','Waveforms (image)','Raw waveforms (all)','ACGs (all)','ACGs (image)','ISIs (all)','ISIs (image)','RCs_firingRateAcrossTime (image)','RCs_firingRateAcrossTime (all)'};
             plotOptions = plotOptions(ismember(plotOptions,plotOptions_all));
+            if isfield(cell_metrics,'putativeConnections') && (isfield(cell_metrics.putativeConnections,'excitatory') || isfield(cell_metrics.putativeConnections,'inhibitory'))
+                plotOptions = [plotOptions;'Connectivity graph'];
+            end
             plotCount = 3;
         else
             plotCount = 4;
@@ -9746,7 +9759,7 @@ end
         colored_string = DefineCellTypeList;
         plotClasGroups = UI.settings.cellTypes;
         
-        % SRW Profile initialization
+        % SWR profile initialization
         if isempty(SWR_in)
             if isfield(cell_metrics.general,'SWR_batch') && ~isempty(cell_metrics.general.SWR_batch)
                 
@@ -9824,13 +9837,13 @@ end
         UI.x_bins.thetaPhase = [-1:0.05:1]*pi;
         UI.x_bins.thetaPhase = UI.x_bins.thetaPhase(1:end-1)+diff(UI.x_bins.thetaPhase([1,2]))/2;
         
-        % Generating extrac fields if necessary
+        % Generating extra fields if necessary
         if ~cell_metrics.general.initialized
             % waveform initialization
             filtWaveform = [];
             statusUpdate('Initializing filtered waveforms')
             for i = 1:length(cell_metrics.waveforms.filt)
-                if isempty(cell_metrics.waveforms.raw{i}) || any(isnan(cell_metrics.waveforms.filt{i}))
+                if isempty(cell_metrics.waveforms.filt{i}) || any(isnan(cell_metrics.waveforms.filt{i}))
                     filtWaveform(:,i) = zeros(size(time_waveforms_zscored));
                 else
                     filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},time_waveforms_zscored,'spline',nan);
@@ -10007,7 +10020,7 @@ end
         UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
         
         waveformOptions = {'Waveforms (single)';'Waveforms (all)'};
-        if isfield(cell_metrics.waveforms,'filt_all')
+        if isfield(cell_metrics.waveforms,'filt_all') && isfield(cell_metrics.waveforms,'time_all')
             waveformOptions = [waveformOptions;'Waveforms (across channels)';'Waveforms (image across channels)'];
         end
         waveformOptions = [waveformOptions;'Waveforms (image)'];
@@ -10065,10 +10078,14 @@ end
                 plotOptions = [plotOptions;strcat(structFieldsType{j},{'_'},fieldnames(cell_metrics.(structFieldsType{j})))];
             end
         end
-        %         customPlotOptions = customPlotOptions(   (strcmp(temp,'double') & temp1>1 & temp2==size(cell_metrics.spikeCount,2) )   );
-        %         customPlotOptions = [customPlotOptions;customPlotOptions2];
+
+        if isfield(cell_metrics,'putativeConnections') && (isfield(cell_metrics.putativeConnections,'excitatory') || isfield(cell_metrics.putativeConnections,'inhibitory'))
+        	monosynOptions = {'Connectivity graph'; 'Connectivity matrix'};
+        else
+            monosynOptions = [];
+        end
         plotOptions(find(contains(plotOptions,UI.settings.plotOptionsToExlude)))=[]; %
-        plotOptions = unique([waveformOptions; waveformOptions2; acgOptions; 'Connectivity graph'; 'Connectivity matrix'; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
+        plotOptions = unique([waveformOptions; waveformOptions2; acgOptions; monosynOptions; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
         
         % Initilizing views
         for i = 1:6
@@ -10419,6 +10436,8 @@ end
                             Investigator_name = strsplit(session.investigator,' ');
                             path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
                             basepath = fullfile(db_settings.repositories.(session.repositories{1}), path_Investigator,session.animal, session.name);
+                        elseif strcmp(session.repositories{1},'NYUshare_AllenInstitute')
+                            basepath = fullfile(db_settings.repositories.(session.repositories{1}), session.name);
                         else
                             basepath = fullfile(db_settings.repositories.(session.repositories{1}), session.animal, session.name);
                         end
@@ -10443,6 +10462,8 @@ end
                             Investigator_name = strsplit(db.sessions{i_db_subset}.investigator,' ');
                             path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
                             db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), path_Investigator,db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
+                        elseif strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_AllenInstitute')
+                            db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.name);
                         else
                             db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
                         end
