@@ -93,7 +93,7 @@ if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~i
     session.extracellular.nSpikeGroups = session.extracellular.nElectrodeGroups;
 end
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'leastSignificantBit')) || isempty(session.extracellular.leastSignificantBit))
-    session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
+    session.extracellular.leastSignificantBit = 0.1135; %0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
 end
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'probeDepths')) || isempty(session.extracellular.probeDepths))
     session.extracellular.probeDepths = 0;
