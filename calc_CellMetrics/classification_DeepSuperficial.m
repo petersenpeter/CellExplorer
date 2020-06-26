@@ -1,4 +1,4 @@
-function classification_deepSuperficial(session,varargin)
+function deepSuperficialfromRipple = classification_deepSuperficial(session,varargin)
 % SWR ripples classification of Deep-superficial channels
 % Defines the deep superficial boundary by the sharp wave reversal.
 %
@@ -40,10 +40,12 @@ function classification_deepSuperficial(session,varargin)
 
 p = inputParser;
 addParameter(p,'buzcode',false,@islogical); % Defines whether bz_FindRipples or ce_FindRipples is called
+addParameter(p,'saveMat',true,@islogical); % Defines whether bz_FindRipples or ce_FindRipples is called
 
 % Parsing inputs
 parse(p,varargin{:})
 buzcode = p.Results.buzcode;
+saveMat = p.Results.saveMat;
 
 % Gets basepath and basename from session struct
 basepath = session.general.basePath;
@@ -331,4 +333,6 @@ for jj = 1:session.extracellular.nSpikeGroups
         ht3 = text(1.05,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
     end
 end
-saveas(gcf,'deepSuperficial_classification_fromRipples.png');
+if saveMat
+    saveas(gcf,'deepSuperficial_classification_fromRipples.png');
+end

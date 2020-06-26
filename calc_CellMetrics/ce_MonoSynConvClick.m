@@ -93,7 +93,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     addParameter(p,'conv_w',0.010,@isnumeric); % 10ms window   
     addParameter(p,'alpha',0.001,@isnumeric); % high frequency cut off, must be .001 for causal p-value matrix
     addParameter(p,'sorted',false,@isnumeric);
-    addParameter(p,'includeInhibitoryConnections',false,@isnumeric); 
+    addParameter(p,'includeInhibitoryConnections',false,@islogical); 
     addParameter(p,'sigWindow',0.004,@isnumeric); % monosynaptic connection will be +/- 4 ms
     
     parse(p,varargin{:})

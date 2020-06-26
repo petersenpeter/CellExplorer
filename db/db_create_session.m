@@ -21,13 +21,6 @@ if isfield(session.general,'name') && ~isempty(session.general.name)
         if ~isfield(session.animal,'id') || isempty(session.animal.id)
             if isfield(session.animal,'name')
                 session.animal = db_create_animal(session.animal);
-%                 animals = db_load_table('animals');
-%                 if isfield(animals,['animal_',animal.name])
-%                     session.animal.id = animals.(session.animal.name).General.Id;
-%                 else
-%                     disp('Animal does not exist in DB. Will be created from template for required fields if they do not exist.')
-%                     session.animal = db_create_animal(session.animal,animals);
-%                 end
             end
         end
         jsonStructure.fiElD_2599 = session.animal.id; % REQUIRED FIELD

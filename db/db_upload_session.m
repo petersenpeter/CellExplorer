@@ -43,7 +43,18 @@ if any(contains(fields,{'general','all'}))
     jsonStructure.fiElD_1903 = session.general.sessionType;
     jsonStructure.fiElD_1902 = session.general.notes;
     jsonStructure.fiElD_1892 = session.general.date;
-
+    if isfield(session.general,'investigator_id')
+        jsonStructure.fiElD_2522 = session.general.investigator_id;
+    end
+    if isfield(session.general,'experimenters_id')
+        jsonStructure.fiElD_1895 = session.general.experimenters_id;
+    end
+    if isfield(session.general,'projects_id')
+        jsonStructure.fiElD_2486 = session.general.projects_id;
+    end
+    if isfield(session.general,'repositories_id')
+        jsonStructure.fiElD_2359 = session.general.repositories_id;
+    end
     cluIDs = fieldnames(jsonStructure);
     jsonStructure = rmfield(jsonStructure,cluIDs(find(struct2array(structfun(@(x) any(isnan(x) | isinf(x)), jsonStructure,'UniformOutput', false)))));
     jsonStructure = jsonencode(jsonStructure);
@@ -177,13 +188,17 @@ success = true;
                     jsonStructure.wu0al.(idx).fiElD_2392 = session.spikeSorting{i}.spikeSorterID;  % dynamic field
                 end
             else
-                idx = ['shank' num2str(iTag)];
+                idx = ['shank' num2str(i)];
             end
             jsonStructure.wu0al.(idx).fiElD_1933 = session.spikeSorting{i}.method;
             jsonStructure.wu0al.(idx).fiElD_1934 = session.spikeSorting{i}.format;
             jsonStructure.wu0al.(idx).fiElD_1935 = session.spikeSorting{i}.relativePath;
-            jsonStructure.wu0al.(idx).fiElD_1937 = session.spikeSorting{i}.channels;
+            if isfield(session.spikeSorting{i},'channels')
+                jsonStructure.wu0al.(idx).fiElD_1937 = session.spikeSorting{i}.channels;
+            end
+                if isfield(session.spikeSorting{i},'notes')
             jsonStructure.wu0al.(idx).fiElD_1938 = session.spikeSorting{i}.notes;
+            end
             if isfield(session.spikeSorting{i},'cellMetrics')
                 jsonStructure.wu0al.(idx).fiElD_2944 = session.spikeSorting{i}.cellMetrics;
             end
@@ -339,6 +354,7 @@ success = true;
                     if isfield(session.epochs{i},'notes') && ~isempty(session.epochs{i}.notes)
                         jsonStructure.r0g5h.(idx).fiElD_2314 = session.epochs{i}.notes;
                     end
+                    keyboard
                 end
             end
             jsonStructure = jsonencode(jsonStructure);

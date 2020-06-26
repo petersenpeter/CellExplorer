@@ -205,10 +205,10 @@ for iii = 1:length(cell_metrics2)
         if  strcmp(subfieldstypes{ii},'struct') && ~strcmp(cell_metrics_fieldnames{ii},'general')
             % If putative connections field (special)
             if strcmp(cell_metrics_fieldnames{ii},'putativeConnections')
-                if isfield(cell_metrics.putativeConnections,'excitatory') && iii > 1 && isfield(cell_metrics_batch,'putativeConnections') && isfield(cell_metrics,'putativeConnections')
+                if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatory') && iii > 1 && isfield(cell_metrics_batch,'putativeConnections') && isfield(cell_metrics,'putativeConnections')
                     cell_metrics_batch.putativeConnections.excitatory = [cell_metrics_batch.putativeConnections.excitatory; cell_metrics.putativeConnections.excitatory+h];
                 end
-                if isfield(cell_metrics.putativeConnections,'inhibitory') && iii > 1 && isfield(cell_metrics_batch,'putativeConnections') && isfield(cell_metrics,'putativeConnections')
+                if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory') && iii > 1 && isfield(cell_metrics_batch,'putativeConnections') && isfield(cell_metrics,'putativeConnections')
                     cell_metrics_batch.putativeConnections.inhibitory = [cell_metrics_batch.putativeConnections.inhibitory; cell_metrics.putativeConnections.inhibitory+h];
                 end
             elseif ismember(cell_metrics_fieldnames{ii},{'groups','tags','groundTruthClassification'})
