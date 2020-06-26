@@ -1,5 +1,5 @@
 #theme: just-the-docs
-remote_theme: petersenpeter/just-the-docs
+remote_theme: petersenpeter/just-the-docs/tree/v0.2.8
 # Set the search token separator for hyphenated-word search:
 search_tokenizer_separator: /[\s/]+/
 # Aux links for the upper right navigation
