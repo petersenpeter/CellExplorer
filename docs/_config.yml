@@ -1,5 +1,5 @@
 #theme: just-the-docs
-remote_theme: petersenpeter/just-the-docs/
+remote_theme: petersenpeter/just-the-docs
 # Set the search token separator for hyphenated-word search:
 search_tokenizer_separator: /[\s/]+/
 # Aux links for the upper right navigation
@@ -27,7 +27,7 @@ search_enabled: true
 heading_anchors: true
 
 # Footer content appears at the bottom of every page's main content
-footer_content: "Copyright &copy; 2019-2020 Peter Petersen. Theme: Just the Docs."
+footer_content: "Copyright &copy; 2019-2020 Peter Petersen. Theme: <a href=\"https://github.com/pmarsceill/just-the-docs\" target=\"_blank\">Just the Docs</a>."
 
 # Color scheme currently only supports "dark" or nil (default)
 color_scheme: nil
