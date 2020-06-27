@@ -479,7 +479,7 @@ if parameters.forceReload
             end
             
             if parameters.getWaveformsFromDat
-                spikes = GetWaveformsFromDat(spikes,session);
+                spikes = getWaveformsFromDat(spikes,session);
             end
             
             % Loading klustaViewa - Kwik format (Klustasuite 0.3.0.beta4)
