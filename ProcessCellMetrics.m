@@ -405,7 +405,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         field2copy = {'filtWaveform_std','rawWaveform','rawWaveform_std','rawWaveform_all','filtWaveform_all','timeWaveform_all','channels_all','filtWaveform','timeWaveform'};
         field2copyNewNames = {'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time'};
         if parameters.getWaveformsFromDat && (spkExclu==2 || any(~isfield(spikes{spkExclu},field2copy)) || ~isempty(parameters.restrictToIntervals) || parameters.forceReload == true)
-            spikes{spkExclu} = getWaveformsFromDat(spikes{spkExclu},session);
+            spikes{spkExclu} = GetWaveformsFromDat(spikes{spkExclu},session);
         end
         cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
         if isfield(spikes{spkExclu},'peakVoltage_expFitLengthConstant')
