@@ -262,7 +262,7 @@ if parameters.forceReload
             k = 0;
             for iCells = 1:numel(spikes.times)
                 spikes.shankID(iCells) = find(cellfun(@(X) ismember(spikes.maxWaveformCh1(iCells),X),session.extracellular.electrodeGroups.channels));
-                rawTimestampsFile = [session.analysisTags.rawTimestampsFile, num2str(spikes.id(iCells)),'.npy'];
+                rawTimestampsFile = fullfile(session.analysisTags.rawTimestampsFile, [num2str(spikes.id(iCells)),'.npy']);
                 if exist(rawTimestampsFile,'file')
                     temp = readNPY(rawTimestampsFile);
                     spikes.ts{iCells} = double(temp);
@@ -295,19 +295,20 @@ if parameters.forceReload
             end
             disp(['Applying channel offset: ', num2str(channel_offset)])
             % Pulling out waveforms in parfor loop
-            probesToProcess = find(~cellfun(@isempty, unitsToProcess));
+            probesToProcess = sort(find(~cellfun(@isempty, unitsToProcess)));
             gcp; spikes_out = {}; tic;
-            parfor iProbe = probesToProcess
-                disp(['Getting waveforms from ',num2str(numel(unitsToProcess{iProbe})) ,' cells from binary file (',num2str(iProbe),'/',num2str(session.extracellular.nElectrodeGroups),')'])
-                spikes_out{iProbe} = getWaveformsFromDat(spikes,session1{iProbe},unitsToProcess{iProbe});
+            parfor iProbe = 1:numel(probesToProcess)
+                disp(['Getting waveforms from ',num2str(numel(unitsToProcess{probesToProcess(iProbe)})) ,' cells from binary file (',num2str(probesToProcess(iProbe)),'/',num2str(session.extracellular.nElectrodeGroups),')'])
+                spikes_out{iProbe} = getWaveformsFromDat(spikes,session1{probesToProcess(iProbe)},unitsToProcess{probesToProcess(iProbe)});
             end
             
             % Writing fields back to spikes struct
             disp('Extracting waveforms from parfor loop')
-            fieldsWaveform = {'maxWaveformCh','maxWaveformCh1','rawWaveform','filtWaveform','rawWaveform_all','rawWaveform_std','filtWaveform_all','filtWaveform_std','timeWaveform','timeWaveform_all','peakVoltage','peakVoltage_all','channels_all','peakVoltage_sorted','maxWaveform_all','peakVoltage_expFitLengthConstant'};
-            for iProbe = probesToProcess
+            fieldsWaveform = {'maxWaveformCh','maxWaveformCh1','rawWaveform','filtWaveform','rawWaveform_all','rawWaveform_std','filtWaveform_all','filtWaveform_std','timeWaveform','timeWaveform_all','peakVoltage','channels_all','peakVoltage_sorted','maxWaveform_all','peakVoltage_expFitLengthConstant'};
+            for i = 1:numel(probesToProcess)
+                iProbe = probesToProcess(i);
                 for jFields = 1:numel(fieldsWaveform)
-                    spikes.(fieldsWaveform{jFields})(unitsToProcess{iProbe}) = spikes_out{iProbe}.(fieldsWaveform{jFields})(unitsToProcess{iProbe});
+                    spikes.(fieldsWaveform{jFields})(unitsToProcess{iProbe}) = spikes_out{i}.(fieldsWaveform{jFields})(unitsToProcess{iProbe});
                 end
                 spikes.maxWaveformCh1(unitsToProcess{iProbe}) = spikes.maxWaveformCh1(unitsToProcess{iProbe}) + channel_offset(iProbe);
                 spikes.maxWaveformCh(unitsToProcess{iProbe}) = spikes.maxWaveformCh(unitsToProcess{iProbe}) + channel_offset(iProbe);
@@ -317,7 +318,7 @@ if parameters.forceReload
             end
             fieldsParams = {'WaveformsSource','WaveformsFiltFreq','Waveforms_nPull','WaveformsWin_sec','WaveformsWinKeep','WaveformsFilterType'};
             for jFields = 1:numel(fieldsParams)
-                spikes.processinginfo.params.(fieldsParams{jFields}) = spikes_out{iProbe}.processinginfo.params.(fieldsParams{jFields});
+                spikes.processinginfo.params.(fieldsParams{jFields}) = spikes_out{end}.processinginfo.params.(fieldsParams{jFields});
             end
             toc
             spikes.numcells = numel(spikes.times);
@@ -381,7 +382,7 @@ if parameters.forceReload
                     spikes.cluID(unit_nb) = nb_clusters2(i);
                     spikes.cluster_index(unit_nb) = nb_clusters2(i);
                     spikes.total(unit_nb) = length(spikes.ts{unit_nb});
-                    if getWaveforms & parameters.useNeurosuiteWaveforms
+                    if parameters.useNeurosuiteWaveforms
                         spikes.filtWaveform_all{unit_nb} = mean(waveforms(:,:,cluster_index == nb_clusters2(i)),3);
                         spikes.filtWaveform_all_std{unit_nb} = permute(std(permute(waveforms(:,:,cluster_index == nb_clusters2(i)),[3,1,2])),[2,3,1]);
                         [~,index1] = max(max(spikes.filtWaveform_all{unit_nb}') - min(spikes.filtWaveform_all{unit_nb}'));
