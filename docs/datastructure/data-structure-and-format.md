@@ -183,12 +183,12 @@ The `*.channelinfo.mat` files should be stored in the basepath.
 
 __sessionName.chanCoords.channelinfo.mat__
 A channel coordinates (probe layout) struct with x and y position for each recording channel.
-* `chanCoords` : 2D channel coordinates
+`chanCoords` : 2D channel coordinates with fields:
   * `x` : x position of each channel (µm).
   * `y` : y position of each channel (µm).
   
 __sessionName.ccf.channelinfo.mat__
-* `ccf` : Allen Institute's Common Coordinate Framework for each recording channel
+`ccf` : Allen Institute's Common Coordinate Framework for each recording channel with fields:
   * `ap` : anterior-posterior position of each channel (µm).
   * `dv` : dorsol-ventral position of each channel (µm).
   * `lr` : left-right position of each channel (µm).
