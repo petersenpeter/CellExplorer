@@ -72,15 +72,6 @@ A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `ML_coordinates` : Medial-Lateral coordinates (mm)
     * `depth` : implant depth (mm)
     * `brainRegions` : implant brain region acronym (Allen institute Atlas)
-* `chanCoords` : 2D channel coordinates
-    * `x` : x position of each channel (µm).
-    * `y` : y position of each channel (µm).
-    
-  * `ccf` : Allen Institute's Common Coordinate Framework for each recording channel
-    * `ap` : anterior-posterior position of each channel (µm).
-    * `dv` : dorsol-ventral position of each channel (µm).
-    * `lr` : left-right position of each channel (µm).
-
 * `brainRegions`
   * `regionAcronym` : e.g. CA1 or HIP, Allen institute Atlas
     * `brainRegion` 
@@ -189,6 +180,18 @@ This is a data container for channel-wise data. A MATLAB struct `ChannelName` st
 * `detectorinfo`: If the channelinfo struct is based on determined events, detectorinfo contains info about how the event was processed.
 
 The `*.channelinfo.mat` files should be stored in the basepath.
+
+__sessionName.chanCoords.channelinfo.mat__
+A channel coordinates (probe layout) struct with x and y position for each recording channel.
+* `chanCoords` : 2D channel coordinates
+  * `x` : x position of each channel (µm).
+  * `y` : y position of each channel (µm).
+  
+__sessionName.ccf.channelinfo.mat__
+* `ccf` : Allen Institute's Common Coordinate Framework for each recording channel
+  * `ap` : anterior-posterior position of each channel (µm).
+  * `dv` : dorsol-ventral position of each channel (µm).
+  * `lr` : left-right position of each channel (µm).
 
 ### Time series
 This is a data container for other time series data (check other containers for specific formats like intracellular). A MATLAB struct `timeserieName` stored in a .mat file: `sessionName.timeserieName.timeSeries.mat` with the following fields:
