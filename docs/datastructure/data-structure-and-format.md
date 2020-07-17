@@ -181,14 +181,16 @@ This is a data container for channel-wise data. A MATLAB struct `ChannelName` st
 
 The `*.channelinfo.mat` files should be stored in the basepath.
 
-__sessionName.chanCoords.channelinfo.mat__
-A channel coordinates (probe layout) struct with x and y position for each recording channel.
-`chanCoords` : 2D channel coordinates with fields:
+
+
+__Channels coordinates__
+`chanCoords` : Channels coordinates struct (probe layout) with x and y position for each recording channel saved to `sessionName.chanCoords.channelinfo.mat` with the following fields:
   * `x` : x position of each channel (µm).
   * `y` : y position of each channel (µm).
-  
-__sessionName.ccf.channelinfo.mat__
-`ccf` : Allen Institute's Common Coordinate Framework for each recording channel with fields:
+
+
+__Allen Institute's Common Coordinate Framework__
+`ccf` : Allen Institute's Common Coordinate Framework for each recording channel saved to  `sessionName.ccf.channelinfo.mat` with the following fields:
   * `ap` : anterior-posterior position of each channel (µm).
   * `dv` : dorsol-ventral position of each channel (µm).
   * `lr` : left-right position of each channel (µm).
