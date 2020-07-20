@@ -62,6 +62,8 @@ for i = 1:length(sessions)
         Investigator_name = strsplit(session.general.investigator,' ');
         path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
         basepath = fullfile(db_settings.repositories.(session.general.repositories{1}), path_Investigator,session.animal.name, session.general.name);
+    elseif strcmp(session.general.repositories{1},'NYUshare_AllenInstitute')
+        basepath = fullfile(db_settings.repositories.(session.general.repositories{1}), session.general.name);
     else
         basepath = fullfile(db_settings.repositories.(session.general.repositories{1}), session.animal.name, session.general.name);
     end

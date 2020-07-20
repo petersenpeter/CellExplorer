@@ -45,7 +45,7 @@ if plots
         
         if rem(j,12)==1
             fig = figure('Name','Fitting ACGs','pos',[50,50,1000,800]);
-            ha = tight_subplot(3,4,[.06 .03],[.08 .06],[.06 .05]);
+            ha = ce_tight_subplot(3,4,[.06 .03],[.08 .06],[.06 .05]);
             jj = 1;
         end
         if ~any(isnan(acg_narrow(:,j)))

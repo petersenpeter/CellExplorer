@@ -4,7 +4,7 @@ function mono_res = gui_MonoSyn(mono_res_input,UID)
 % Press H in the GUI to learn shortcuts and actions
 %
 % INPUT
-% mono_res_input : full path to monosyn mat file or a matlab struct
+% mono_res_input : full path to monosyn mat file or a matlab mono_res struct
 %
 % Example call
 % mono_res = gui_MonoSyn('Z:\peterp03\IntanData\MS13\Peter_MS13_171130_121758_concat\Kilosort_2017-12-14_170737\Peter_MS13_171130_121758_concat.mono_res.cellinfo.mat')
@@ -46,6 +46,9 @@ binSize = mono_res.binSize;
 xLimit = false;
 x_window = [-30 30];
 xLimState = 1;
+i_history_exc = 1;
+i_history_inh = 1;
+showGrid = 0;
 
 if ~isfield(mono_res,'sig_con_excitatory')
     mono_res.sig_con_excitatory = mono_res.sig_con;
@@ -81,7 +84,24 @@ window(ceil(length(window)/2) - round(.004/binSize): ceil(length(window)/2) + ro
 halfBins = round(mono_res.duration/binSize/2);
 t = 1000*(-halfBins:halfBins)'*binSize;
 
-UI.fig = figure('KeyReleaseFcn', {@keyPress},'Name','MonoSynCon inspector','NumberTitle','off','renderer','opengl');
+connectionMatrix = zeros(size(ccgR,2),size(ccgR,2),3);
+if  ~isempty(mono_res.sig_con_excitatory)
+    for ii = 1:size(mono_res.sig_con_excitatory,1)
+        connectionMatrix(mono_res.sig_con_excitatory(ii,1),mono_res.sig_con_excitatory(ii,2),1) = 1;
+    end
+end
+if  ~isempty(mono_res.sig_con_inhibitory)
+    for ii = 1:size(mono_res.sig_con_inhibitory,1)
+        connectionMatrix(mono_res.sig_con_inhibitory(ii,1),mono_res.sig_con_inhibitory(ii,2),3) = 1;
+    end
+end
+temp1 = sum(sum(connectionMatrix,3),2);
+temp2 = sum(sum(connectionMatrix,3),1);
+connectionMatrix(temp1==0,:,:) = [];
+connectionMatrix(:,temp2==0,:) = [];
+matrix_index1 = find(temp1>0);
+matrix_index2 = find(temp2>0);
+UI.fig = figure('KeyReleaseFcn', {@keyPress},'Name','MonoSynCon inspector','NumberTitle','off','renderer','opengl', 'DefaultLegendInterpreter', 'tex',  'DefaultTextInterpreter', 'tex');
 % p = uipanel(UI.fig,'Position',[0 0 1 .1],'BorderType','none')
 % p2 = uipanel(UI.fig,'Position',[0 0 0.01 0.01],'BorderType','none')
 UI.leftbutton = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[5 410 20 10],'Units','normalized','String','<','Callback',@(src,evnt)goBack,'KeyPressFcn', {@keyPress});
@@ -116,8 +136,21 @@ while temp444 == 1
     delete(findobj(UI.fig, 'type', 'axes'));
     
     prs = sig_con(any(sig_con==allcel(i),2),:);
-    [plotRows,~]= numSubplots(max(2+size(prs,1),4));
-    ha = tight_subplot(plotRows(1),plotRows(2),[.03 .03],[.05 .05],[.02 .015]); %  tight_subplot(Nh, Nw, gap, marg_h, marg_w)
+    [plotRows,~]= numSubplots(max(3+size(prs,1),4));
+    ha = ce_tight_subplot(plotRows(1),plotRows(2),[.03 .03],[.05 .05],[.02 .015]); %  ce_tight_subplot(Nh, Nw, gap, marg_h, marg_w)
+    
+    % Keeping track of selected cells
+    if connectionsDisplayed == 1
+        if i_history_exc(end) ~= i
+            i_history_exc = [i_history_exc,i];
+        end
+        i_history = i_history_exc;
+    else
+        if i_history_inh(end) ~= i
+            i_history_inh = [i_history_inh,i];
+        end
+        i_history = i_history_inh;
+    end
     
     prs2 = [];
     for j=1:length(ha)
@@ -128,10 +161,10 @@ while temp444 == 1
         if j<=size(prs,1)
             prs1 = prs(j,:);
             if prs1(1)~=allcel(i)
-                dirArrow = [num2str(prs1(1)),' <- ', num2str(prs1(2))];
                 prs1 = fliplr(prs1);
+                dirArrow = [' \leftarrow ', num2str(prs1(2))];
             else
-                dirArrow = [num2str(prs1(1)),' -> ', num2str(prs1(2))];
+                dirArrow = [' \rightarrow ', num2str(prs1(2))];
             end
             prs2(j,:) = prs1;
             exc=ccgR(:,prs1(1),prs1(2));
@@ -196,17 +229,42 @@ while temp444 == 1
                 t2 = (16/60)*axhpos2(2)*t./max(t)+axhpos2(2)*(43/60);
             end
             
-            rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),max(t2)-min(t2),axhpos(2)*0.2],'FaceColor','w','EdgeColor','w', 'HitTest','off')
+            rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),max(t2)-min(t2),axhpos(2)*0.2],'FaceColor','w','EdgeColor','w', 'HitTest','off','linewidth',0.5)
             bar_from_patch(t2,thisacg,[.5 .5 .5],min(axhpos(2)*0.8,min(thisacg)))
-            rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),(max(t2)-min(t2))+mean(diff(t2)),axhpos(2)*0.2], 'HitTest','off')
+            rectangle('Position',[min(t2),min(axhpos(2)*0.8,min(thisacg)),(max(t2)-min(t2))+mean(diff(t2)),axhpos(2)*0.2], 'HitTest','off','linewidth',0.5)
             upL = get(gca,'ylim');
             plot([0 0],[0 upL(2)],'k', 'HitTest','off')
             if xLimit
-                text(min(t(idx)) +.03*abs(min(t(idx))),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', group: '  num2str(targ(1)),' | ',dirArrow])
+                text(min(t(idx)) +.03*abs(min(t(idx))),temp(2)*0.97,[dirArrow ', group: '  num2str(targ(1))],'VerticalAlignment','top', 'HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',1)
             else
-                text(min(t) +.03*abs(min(t)),temp(2)*0.97,['Cell: ' num2str(targ_UID) ', group: '  num2str(targ(1)),' | ',dirArrow])
+                text(min(t) +.03*abs(min(t)),temp(2)*0.97,[dirArrow ', group: '  num2str(targ(1))],'VerticalAlignment','top', 'HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',1)
             end
-        elseif j<length(ha)-1
+            
+            if length(i_history) > 1 && length(allcel)>= i_history(end-1) && any(allcel(i_history(end-1)) == prs1)
+                xlim1 = ha(j).XLim;
+                ylim1 = ha(j).YLim;
+                rectangle('Position',[xlim1(1),ylim1(1),diff(xlim1),diff(ylim1)],'FaceColor','none','EdgeColor',[0.9 0.1 0.1], 'HitTest','off','linewidth',2)
+            end
+            if showGrid
+                set(ha(j),'xminorgrid','on')
+                grid on
+            else
+                grid off
+            end
+        elseif  j == length(ha)-2
+            imagesc(connectionMatrix, 'HitTest','off'), hold on
+            idx1 = find(matrix_index1 == prs1(1));
+            if ~isempty(idx1)
+            patch([0,size(connectionMatrix,2),size(connectionMatrix,2),0]+0.5,[idx1(1)-0.5,idx1(1)-0.5,idx1(1)+0.5,idx1(1)+0.5],'w','EdgeColor','none','HitTest','off','facealpha',0.3)
+            end
+            idx2 = find(matrix_index2 == prs1(1));
+            if ~isempty(idx2)
+                patch([idx2(1)-0.5,idx2(1)-0.5,idx2(1)+0.5,idx2(1)+0.5],[0,size(connectionMatrix,1),size(connectionMatrix,1),0]+0.5,'w','EdgeColor','none','HitTest','off','facealpha',0.3)
+            end
+            axis tight, axis equal,xlabel('Incoming'), ylabel('Outgoing')
+            set(ha(j),'ButtonDownFcn',@matrixClick);
+            
+        elseif j<length(ha)-2
             axis off
         elseif j<length(ha)
             zdata = ccgR(:,:,allcel(i))';
@@ -225,14 +283,23 @@ while temp444 == 1
 %             xlabel('CCGs (black marker: reference cell)')
             ha(j).XLabel.String = 'CCGs (black marker: reference cell)';
         else
-            bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0)
+            bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0), hold on
+            ylim2 = ha(j).YLim;
+            plot([0;0],[0;1]*ylim2(2),'k', 'HitTest','off')
             if xLimit
                 xlim(x_window)
             else
                 xlim([min(t) max(t)]);
             end
+            if showGrid
+                set(ha(j),'xminorgrid','on')
+                grid on
+            else
+                grid off
+            end
 %             xlabel('Reference Cell ACG');
             ha(j).XLabel.String = 'Reference Cell ACG';
+            
             uiwait(UI.fig);
         end
     end
@@ -255,11 +322,33 @@ saveOnExitDialog
             answer = questdlg('Do you want to save the manual monosynaptic curration?', 'Save monosynaptic curration', 'Yes','No','Yes');
             if strcmp(answer,'Yes')
                 try
-                    save(mono_res_input,'mono_res','-v7.3','-nocompression');
+                    save(mono_res_input,'mono_res','-v7.3');
                 catch
                     warndlg('Failed to save the mono_res file.')
                 end
             end
+        end
+    end
+
+    function matrixClick(obj,~)
+        um_axes = get(gca,'CurrentPoint');
+        switch get(UI.fig, 'selectiontype')
+            case 'normal'
+                if round(um_axes(1,2))> 0 && round(um_axes(1,2)) <= length(matrix_index1)
+                    idx = find(allcel <= matrix_index1(round(um_axes(1,2))),1,'last');
+                    if ~isempty(idx)
+                        i = idx;
+                    end
+                    uiresume(UI.fig);
+                end
+            case 'alt'
+                if round(um_axes(1,1))> 0 && round(um_axes(1,1)) <= length(matrix_index2)
+                    idx = find(allcel <= matrix_index2(round(um_axes(1,1))),1,'last');
+                    if ~isempty(idx)
+                        i = idx;
+                    end
+                    uiresume(UI.fig);
+                end
         end
     end
 
@@ -343,10 +432,38 @@ saveOnExitDialog
         end
     end
 
+    function toggleGrid
+%         disp('Toggle grid')
+        showGrid = 1-showGrid;
+        uiresume(UI.fig);
+    end
+    
+    function i_history_reverse
+        if connectionsDisplayed == 1
+            if length(i_history_exc)>1
+                i_history_exc(end) = [];
+                i = i_history_exc(end);
+                uiresume(UI.fig);
+            else
+                disp('No further cell selection history available')
+            end
+        else
+            if length(i_history_inh)>1
+                i_history_inh(end) = [];
+                i = i_history_inh(end);
+                uiresume(UI.fig);
+            else
+                disp('No further cell selection history available')
+            end
+        end
+    end
+        
     function keyPress(~,event)
         switch event.Key
             case 'space'
                 goToCell
+            case 'backspace'
+                i_history_reverse;
             case 'rightarrow'
                 advance
             case 'leftarrow'
@@ -364,6 +481,8 @@ saveOnExitDialog
                 goBack10
             case 'h'
                 HelpDialog;
+            case 'g'    
+                toggleGrid
             case 'x'
                 changeXlim
             case 'w'
@@ -429,7 +548,7 @@ saveOnExitDialog
             sig_con = mono_res.sig_con_excitatory;
             keep_con = sig_con;
             allcel = unique(sig_con(:));
-            disp('Excitatory connections')
+%             disp('Excitatory connections')
         elseif connectionsDisplayed == 1 && displayAllConnections.Value == 1
             keep_con = mono_res.sig_con_excitatory;
             if ~isempty(mono_res.sig_con_excitatory_all)
@@ -439,13 +558,13 @@ saveOnExitDialog
                 sig_con = keep_con;
             end
             allcel = unique(sig_con(:));
-            disp('Excitatory connections (all)')
+%             disp('Excitatory connections (all)')
         elseif connectionsDisplayed == 2 && displayAllConnections.Value == 0 && ~isempty(mono_res.sig_con_inhibitory)
             
             sig_con = mono_res.sig_con_inhibitory;
             keep_con = sig_con;
             allcel = unique(sig_con(:));
-            disp('Inhibitory connections')
+%             disp('Inhibitory connections')
         elseif connectionsDisplayed == 2 && displayAllConnections.Value == 1 && ~isempty(mono_res.sig_con_inhibitory)
             keep_con = mono_res.sig_con_inhibitory;
             if ~isempty(mono_res.sig_con_excitatory_all)
@@ -454,7 +573,7 @@ saveOnExitDialog
                 sig_con = keep_con;
             end
             allcel = unique(sig_con(:));
-            disp('Inhibitory connections (all)')
+%             disp('Inhibitory connections (all)')
         else
             connectionsDisplayed = 1;
             UI.switchConnectionType.Value = connectionsDisplayed;

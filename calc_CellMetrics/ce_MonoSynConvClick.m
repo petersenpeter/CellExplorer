@@ -28,8 +28,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     %     technique. Stark et al, 2009
     %
     %  calls: CCG, ce_InInterval,FindInInterval (from FMA toolbox)
-    %         tight_subplot, gui_MonoSyn
-    %         ce_cch_conv
+    %         gui_MonoSyn, ce_cch_conv
     %
     %  OUTPUT
     %  mono_res = struct with below fields
@@ -57,7 +56,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     % Adapted by algorithms and previous versions developed by Sam McKenzie, Eran Stark, and others.
     % 24-06-2020
     
-    %get experimentally validated probabilities
+    
     if ~isfield(spikes,'spindices')
         disp('Generating spindices')
         spikes.spindices = generateSpinDices(spikes.times);
@@ -65,6 +64,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     spikeIDs = double([spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)]);
     spiketimes = spikes.spindices(:,1);
     
+    %get experimentally validated probabilities
     fil = which('ce_MonoSynConvClick.m');
     if ispc
         sl = regexp(fil,'\');
@@ -84,6 +84,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     validationDuration = @(x) assert(isnumeric(x) && length(X) == 1 && X>0, 'Duration must be numeric and positive');
     validationBinsize = @(x) assert(isnumeric(x) && length(X) == 1 && X>0, 'Binsize must be numeric and positive');
     validationEpoch = @(x) assert(isnumeric(x) && (size(x,2) == 2), 'Epoch must be numeric and of size nx2');
+    validationIncludeInhibitoryConnections = @(x) assert(isnumeric(x) || islogical(x), 'Epoch must be numeric and of size nx2');
     
     p = inputParser;
     addParameter(p,'binSize',0.0004,validationBinsize); % 0.4ms
@@ -93,7 +94,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     addParameter(p,'conv_w',0.010,@isnumeric); % 10ms window   
     addParameter(p,'alpha',0.001,@isnumeric); % high frequency cut off, must be .001 for causal p-value matrix
     addParameter(p,'sorted',false,@isnumeric);
-    addParameter(p,'includeInhibitoryConnections',false,@islogical); 
+    addParameter(p,'includeInhibitoryConnections',false,validationIncludeInhibitoryConnections); 
     addParameter(p,'sigWindow',0.004,@isnumeric); % monosynaptic connection will be +/- 4 ms
     
     parse(p,varargin{:})
@@ -120,7 +121,6 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     end
     
     %restrict by cells and epochs
-    
     [status] = ce_InIntervals(spiketimes,epoch);
     allID = unique(spikeIDs(:,3));
     kp = ismember(spikeIDs(:,1:2),cells,'rows') & status;

@@ -7,9 +7,9 @@ edit db_local_repositories
 
 %% Load session from db
 
-sessionName = 'Peter_MS13_171129_105507_concat';
+sessionName = 'ham34_153-155_amp';
 sessions = db_load_sessions('sessionName',sessionName);
-session = sessions{1}
+session = sessions{1};
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Load and set session parameters
