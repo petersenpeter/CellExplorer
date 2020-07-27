@@ -6,6 +6,8 @@ function data = readNPY(filename)
 % See https://github.com/kwikteam/npy-matlab/blob/master/npy.ipynb for
 % more. 
 %
+f=dir(filename);
+filename=f.name;
 
 [shape, dataType, fortranOrder, littleEndian, totalHeaderLength, ~] = readNPYheader(filename);
 
