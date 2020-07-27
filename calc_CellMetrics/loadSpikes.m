@@ -462,7 +462,7 @@ if parameters.forceReload
             disp('loadSpikes: Loading Phy data')
             labelsToRead = {'good'};
             spike_cluster_index = readNPY(fullfile(clusteringpath_full, 'spike*clusters.npy'));
-            spike_times = readNPY(fullfile(clusteringpath_full, 'spike_times.npy'));
+            spike_times = readNPY(fullfile(clusteringpath_full, 'spike*times.npy'));
             spike_amplitudes = readNPY(fullfile(clusteringpath_full, 'amplitudes.npy'));
             spike_clusters = unique(spike_cluster_index);
             filename1 = fullfile(clusteringpath_full,'cluster_group.tsv');
