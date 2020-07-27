@@ -8,7 +8,8 @@ function [arrayShape, dataType, fortranOrder, littleEndian, totalHeaderLength, n
 % therein.
 %
 % Based on spec at http://docs.scipy.org/doc/numpy-dev/neps/npy-format.html
-
+f=dir(filename);
+filename=f.name;
 fid = fopen(filename);
 
 % verify that the file exists
