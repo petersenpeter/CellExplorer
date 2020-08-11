@@ -28,7 +28,9 @@ weights = d.^(-1);
 % beta0 = [20, -100]; % initial position
 
 modelfun = @(b,X)(abs(b(1)-X(:,1)).^2+abs(b(2)-X(:,2)).^2).^(1/2);
-mdl = fitnlm(tbl,modelfun,beta0, 'Weights', weights.');
+opts = statset('TolFun',1e-3);
+% mdl = fitnlm(X,y,modelfun,beta0,'Options',opts);
+mdl = fitnlm(tbl,modelfun,beta0, 'Weights', weights.','Options',opts);
 b = mdl.Coefficients{1:2,{'Estimate'}};
 
 if plots

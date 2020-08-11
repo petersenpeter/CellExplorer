@@ -72,15 +72,6 @@ A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `ML_coordinates` : Medial-Lateral coordinates (mm)
     * `depth` : implant depth (mm)
     * `brainRegions` : implant brain region acronym (Allen institute Atlas)
-* `chanCoords` : 2D channel coordinates
-    * `x` : x position of each channel (µm).
-    * `y` : y position of each channel (µm).
-    
-  * `ccf` : Allen Institute's Common Coordinate Framework for each recording channel
-    * `ap` : anterior-posterior position of each channel (µm).
-    * `dv` : dorsol-ventral position of each channel (µm).
-    * `lr` : left-right position of each channel (µm).
-
 * `brainRegions`
   * `regionAcronym` : e.g. CA1 or HIP, Allen institute Atlas
     * `brainRegion` 
@@ -182,13 +173,28 @@ This is a data container for manipulation data. A MATLAB struct `manipulationNam
 The `*.manipulation.mat` files should be stored in the basepath. `events` and `manipulation` files are similar in content, but only manipulation intervals are excluded in the pipeline. Any `manipulation` files located in the basepath will be detected in the pipeline (ProcessCellMetrics.m) and an average PSTH will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline.
 
 ### Channels
-This is a data container for channel-wise data. A MATLAB struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following fields:
+This is a data container for channel-wise data. A MATLAB struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following optional fields:
 * `channel`: a 1xQ vector containing a list of Q channel indexes (0-indexed).
 * `channelClass`: a 1xQ cell with classification assigned to each channel (char).
 * `processinginfo`: a struct with information about how the mat file was generated including the name of the function, version, date and parameters.
 * `detectorinfo`: If the channelinfo struct is based on determined events, detectorinfo contains info about how the event was processed.
 
 The `*.channelinfo.mat` files should be stored in the basepath.
+
+__Channels coordinates__
+`chanCoords` : Channels coordinates struct (probe layout) with x and y position for each recording channel saved to `sessionName.chanCoords.channelinfo.mat` with the following fields:
+  * `x` : x position of each channel (µm).
+  * `y` : y position of each channel (µm).
+
+This works as a simple 2D representation of recordings and will help you determine the location of your neurons. It is also used to determine the spike amplitude length constant of the spike waveforms across channels. 
+
+__Allen Institute's Common Coordinate Framework__
+`ccf` : Allen Institute's Common Coordinate Framework for each recording channel saved to  `sessionName.ccf.channelinfo.mat` with the following fields:
+  * `ap` : anterior-posterior position of each channel (µm).
+  * `dv` : dorsol-ventral position of each channel (µm).
+  * `lr` : left-right position of each channel (µm).
+
+The Allen Institute's Common Coordinate Frame allows you to visualize your cells into a standardized mouse atlas. 
 
 ### Time series
 This is a data container for other time series data (check other containers for specific formats like intracellular). A MATLAB struct `timeserieName` stored in a .mat file: `sessionName.timeserieName.timeSeries.mat` with the following fields:

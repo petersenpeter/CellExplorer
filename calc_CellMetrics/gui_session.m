@@ -1,4 +1,3 @@
-
 function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % Displays a GUI allowing you to edit parameters for the CellExplorer and metadata for a session
 %
@@ -20,11 +19,11 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % By Peter Petersen 
 % petersen.peter@gmail.com
-% Last edited: 05-06-2020
+% Last edited: 08-07-2020
 
 % Lists
-sortingMethodList = {'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
-sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust'}; % Spike sorting formats
+sortingMethodList = {'KiloSort', 'KiloSort2','SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik','MountainSort','IronClust','MClust'}; % Spike sorting methods
+sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
 
@@ -33,7 +32,6 @@ UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperfic
 
 % Parameters in cell metrics pipeline
 UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections'};
-
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Database initialization
@@ -71,8 +69,7 @@ else
     [~,basename,~] = fileparts(pwd);
     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
         disp(['Loading ',basename,'.session.mat from current path']);
-        
-        load(fullfile(basepath,[basename,'.session.mat']),'session');
+        session = loadSession(basepath,basename);
         sessionIn = session;
     elseif exist(fullfile(basepath,'session.mat'),'file')
         disp('Loading session.mat from current path');
@@ -457,7 +454,7 @@ uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 10,
 % uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[340, 10, 110, 30],'String','Duplicate tag','Callback',@(src,evnt)duplicateAnalysis,'Units','normalized');
 
 % Loading session struct into gui
-loadSessionStruct
+importSessionStruct
 UI.fig.Visible = 'on';
 uiLoaded = true;
 uiwait(UI.fig)
@@ -546,7 +543,7 @@ uiwait(UI.fig)
         MsgLog('Updated from intan',0)
     end
     
-    function loadSessionStruct
+    function importSessionStruct
         if exist('parameters','var')
             for iParams = 1:length(UI.list.params)
                 UI.checkbox.params(iParams).Value = parameters.(UI.list.params{iParams});
@@ -698,7 +695,7 @@ uiwait(UI.fig)
             end
             if ~isempty(session)
                 if uiLoaded
-                    loadSessionStruct
+                    importSessionStruct
                 end
                 success = 1;
             end
@@ -831,6 +828,9 @@ uiwait(UI.fig)
         if ~strcmp(UI.edit.nChannels.String,'')
             session.extracellular.nChannels = str2double(UI.edit.nChannels.String);
         end
+        session.extracellular.nElectrodeGroups = numel(session.extracellular.electrodeGroups.channels);
+        session.extracellular.nSpikeGroups = numel(session.extracellular.spikeGroups.channels);
+        
         session.extracellular.fileName = UI.edit.fileName.String;
         session.extracellular.precision = UI.edit.precision.String;
         session.extracellular.equipment = UI.edit.equipment.String;

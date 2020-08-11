@@ -1,4 +1,4 @@
-function [InstantaneousTheta] = calcInstantaneousTheta2(session,varargin)
+function InstantaneousTheta = calcInstantaneousTheta2(session,varargin)
 % Calculates the instantaneous theta with phase and power
 % By Peter Petersen
 % Last edited: 18-08-2019
