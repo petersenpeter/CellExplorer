@@ -121,7 +121,7 @@ A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat
 * `UID`: a 1xN vector with values 1:N.
 * `shankID`: a 1xN vector containing the corresponding shank/electrode-group each unit (1-indexed).
 * `maxWaveformCh`: a 1xN vector with the channel for the maximum waveform for the units (0-indexed) 
-* `maxWaveformCh1`: a 1xN vector with the channel for the maximum waveform for the units (1-indexed) 
+* `maxWaveformCh1`: a 1xN vector with the channel for the maximum waveform for the units (1-indexed)
 * `total`: a 1xN vector with the total number of spikes for each unit.
 * `peakVoltage`: a 1xN vector with spike waveform amplitude (µV).
 * `filtWaveform`: a 1xN cell-struct with spike waveforms from maxWaveformChannel (µV).
@@ -129,6 +129,10 @@ A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat
 * `rawWaveform`: a 1xN cell-struct with raw spike waveforms (µV).
 * `rawWaveform_std`: a 1xN cell-struct with std of the raw spike waveforms (µV).
 * `timeWaveform`: a 1xN cell-struct with spike timestamps for the waveforms (ms).
+* `maxWaveform_all`: a 1xN vector with channel indexes for the `_all` waveforms for the units (1-indexed) 
+* `rawWaveform_all`: a 1xN cell-struct with raw spike waveforms from `maxWaveform_all` (µV).
+* `filtWaveform_all`: a 1xN cell-struct with filtered spike waveforms from `maxWaveform_all` (µV).
+* `timeWaveform_all`: a 1xN cell-struct with spike timestamps for the `_all` waveforms (ms).
 * `numcells`: number of cells.
 * `sessionName`: name of the session (string).
 * `spindices`: a Kx2 matrix where the first column contains the K spike times for all units and the second column contains the unit index for each spike. 
