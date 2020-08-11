@@ -36,7 +36,7 @@ You can incorporate calculations/import of metrics into the `ProcessCellMetrics`
 
 ### Custom plot (e.g. spike triggered average response)
 Response curves, event histograms, firing rate maps, manipulations and other plots should be saved into predefined subfields. To categorize, a few field names (plot types) are available:
-1. responseCurves (e.g. thetaPhase)
+1. responseCurves (e.g. thetaPhase)  
 2. events (any ´sessionName.*.events.mat´ file in the basepath will create an event response curve aligned at event start).
 3. manipulations (any ´sessionName.*.manipulation.mat´ file in the basepath will create an event response curve per cell aligned at event start).
 4. states 
