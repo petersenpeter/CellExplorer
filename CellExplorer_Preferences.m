@@ -38,6 +38,7 @@ UI.settings.showAllWaveforms = 0;               % Show all traces or a random su
 UI.settings.zscoreWaveforms = 1;                % Show zscored or full amplitude waveforms
 UI.settings.trilatGroupData = 'session';        % 'session','animal','all'
 UI.settings.hoverEffect = 1;                    % Highlights cells by hovering the mouse
+UI.settings.plotLinearFits = 0;                 % Linear fit shown in group plot for each cell group
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 5;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off

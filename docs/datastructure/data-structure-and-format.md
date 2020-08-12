@@ -72,15 +72,6 @@ A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The 
     * `ML_coordinates` : Medial-Lateral coordinates (mm)
     * `depth` : implant depth (mm)
     * `brainRegions` : implant brain region acronym (Allen institute Atlas)
-* `chanCoords` : 2D channel coordinates
-    * `x` : x position of each channel (µm).
-    * `y` : y position of each channel (µm).
-    
-  * `ccf` : Allen Institute's Common Coordinate Framework for each recording channel
-    * `ap` : anterior-posterior position of each channel (µm).
-    * `dv` : dorsol-ventral position of each channel (µm).
-    * `lr` : left-right position of each channel (µm).
-
 * `brainRegions`
   * `regionAcronym` : e.g. CA1 or HIP, Allen institute Atlas
     * `brainRegion` 
@@ -130,7 +121,7 @@ A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat
 * `UID`: a 1xN vector with values 1:N.
 * `shankID`: a 1xN vector containing the corresponding shank/electrode-group each unit (1-indexed).
 * `maxWaveformCh`: a 1xN vector with the channel for the maximum waveform for the units (0-indexed) 
-* `maxWaveformCh1`: a 1xN vector with the channel for the maximum waveform for the units (1-indexed) 
+* `maxWaveformCh1`: a 1xN vector with the channel for the maximum waveform for the units (1-indexed)
 * `total`: a 1xN vector with the total number of spikes for each unit.
 * `peakVoltage`: a 1xN vector with spike waveform amplitude (µV).
 * `filtWaveform`: a 1xN cell-struct with spike waveforms from maxWaveformChannel (µV).
@@ -138,6 +129,10 @@ A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat
 * `rawWaveform`: a 1xN cell-struct with raw spike waveforms (µV).
 * `rawWaveform_std`: a 1xN cell-struct with std of the raw spike waveforms (µV).
 * `timeWaveform`: a 1xN cell-struct with spike timestamps for the waveforms (ms).
+* `maxWaveform_all`: a 1xN vector with channel indexes for the `_all` waveforms for the units (1-indexed) 
+* `rawWaveform_all`: a 1xN cell-struct with raw spike waveforms from `maxWaveform_all` (µV).
+* `filtWaveform_all`: a 1xN cell-struct with filtered spike waveforms from `maxWaveform_all` (µV).
+* `timeWaveform_all`: a 1xN cell-struct with spike timestamps for the `_all` waveforms (ms).
 * `numcells`: number of cells.
 * `sessionName`: name of the session (string).
 * `spindices`: a Kx2 matrix where the first column contains the K spike times for all units and the second column contains the unit index for each spike. 
@@ -182,13 +177,28 @@ This is a data container for manipulation data. A MATLAB struct `manipulationNam
 The `*.manipulation.mat` files should be stored in the basepath. `events` and `manipulation` files are similar in content, but only manipulation intervals are excluded in the pipeline. Any `manipulation` files located in the basepath will be detected in the pipeline (ProcessCellMetrics.m) and an average PSTH will be generated. Events and manipulation files are similar in content, but only manipulation intervals are excluded in the pipeline.
 
 ### Channels
-This is a data container for channel-wise data. A MATLAB struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following fields:
+This is a data container for channel-wise data. A MATLAB struct `ChannelName` stored in a .mat file: `sessionName.ChannelName.channelinfo.mat` with the following optional fields:
 * `channel`: a 1xQ vector containing a list of Q channel indexes (0-indexed).
 * `channelClass`: a 1xQ cell with classification assigned to each channel (char).
 * `processinginfo`: a struct with information about how the mat file was generated including the name of the function, version, date and parameters.
 * `detectorinfo`: If the channelinfo struct is based on determined events, detectorinfo contains info about how the event was processed.
 
 The `*.channelinfo.mat` files should be stored in the basepath.
+
+__Channels coordinates__
+`chanCoords` : Channels coordinates struct (probe layout) with x and y position for each recording channel saved to `sessionName.chanCoords.channelinfo.mat` with the following fields:
+  * `x` : x position of each channel (µm).
+  * `y` : y position of each channel (µm).
+
+This works as a simple 2D representation of recordings and will help you determine the location of your neurons. It is also used to determine the spike amplitude length constant of the spike waveforms across channels. 
+
+__Allen Institute's Common Coordinate Framework__
+`ccf` : Allen Institute's Common Coordinate Framework for each recording channel saved to  `sessionName.ccf.channelinfo.mat` with the following fields:
+  * `ap` : anterior-posterior position of each channel (µm).
+  * `dv` : dorsol-ventral position of each channel (µm).
+  * `lr` : left-right position of each channel (µm).
+
+The Allen Institute's Common Coordinate Frame allows you to visualize your cells into a standardized mouse atlas. 
 
 ### Time series
 This is a data container for other time series data (check other containers for specific formats like intracellular). A MATLAB struct `timeserieName` stored in a .mat file: `sessionName.timeserieName.timeSeries.mat` with the following fields:

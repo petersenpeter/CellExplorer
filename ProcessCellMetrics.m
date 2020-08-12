@@ -340,7 +340,6 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 saveAsFullfile = fullfile(basepath,[basename,'.',parameters.saveAs,'.cellinfo.mat']);
-
 if exist(saveAsFullfile,'file')
     dispLog(['Loading existing metrics: ' saveAsFullfile])
     load(saveAsFullfile)
@@ -351,6 +350,7 @@ elseif exist(fullfile(basepath,[parameters.saveAs,'.mat']),'file')
 else
     cell_metrics = [];
 end
+
 % Importing fields from spikes struct to cell_metrics
 spikes_fields = fieldnames(spikes{1});
 spikes_fields = setdiff(spikes_fields,{'times','ts','rawWaveform','filtWaveform', 'rawWaveform_all', 'rawWaveform_std', 'filtWaveform_all', 'filtWaveform_std', 'timeWaveform', 'timeWaveform_all', 'channels_all', 'peakVoltage_sorted', 'maxWaveform_all', 'peakVoltage_expFitLengthConstant', 'processinginfo', 'numcells', 'UID', 'sessionName'});
@@ -366,7 +366,7 @@ end
 if parameters.saveBackup && ~isempty(cell_metrics)
     % Creating backup of existing user adjustable metrics
     backupDirectory = 'revisions_cell_metrics';
-    dispLog(['Creating backup of existing user adjustable metrics ''',backupDirectory,'''']);
+    dispLog(['Creating backup of existing user adjustable metrics in subfolder ''',backupDirectory,'''']);
     
     backupFields = {'labels','tags','deepSuperficial','deepSuperficialDistance','brainRegion','putativeCellType','groundTruthClassification','groups'};
     temp = {};
@@ -441,7 +441,11 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     
     % Channel coordinates map, trilateration and length constant determined from waveforms across channels
     if ~all(isfield(cell_metrics,{'trilat_x','trilat_y','peakVoltage_expFit'})) || parameters.forceReload == true
-        if ~isfield(session.extracellular,'chanCoords')
+        chanCoordsFile = fullfile(basepath,[basename,'.chanCoords.channelInfo.mat']);
+        if exist(chanCoordsFile,'file')
+            load(chanCoordsFile,'chanCoords');
+        else
+            chanCoords = {};
             if exist(fullfile(basepath,'chanMap.mat'),'file') % Will look for a chanMap file with default name (compatible with KiloSort)
                 chanMap = load(fullfile(basepath,'chanMap.mat'));
             elseif isfield(session,'analysisTags') && isfield(session.analysisTags,'chanMapFile')
@@ -455,11 +459,11 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 disp('  Creating channelmap')
                 chanMap = createChannelMap(session);
             end
-            session.extracellular.chanCoords.x = chanMap.xcoords(:);
-            session.extracellular.chanCoords.y = chanMap.ycoords(:);
-            
+            chanCoords.x = chanMap.xcoords(:);
+            chanCoords.y = chanMap.ycoords(:);
+            saveStruct(chanCoords,'channelInfo','session',session);
         end
-        cell_metrics.general.chanCoords = session.extracellular.chanCoords;
+        cell_metrics.general.chanCoords = chanCoords;
         % Fit exponential
         fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
         expential_x = {};
@@ -538,8 +542,10 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     end
     
     % Common coordinate framework
-    if isfield(session.extracellular,'ccf') && (~all(isfield(cell_metrics,{'ccf_x','ccf_y','ccf_z'}))) || parameters.forceReload == true
-        cell_metrics.general.ccf = session.extracellular.ccf;
+    ccf_file = fullfile(basepath,[basename,'.ccf.channelInfo.mat']);
+    if exist(ccf_file,'file') && (~all(isfield(cell_metrics,{'ccf_x','ccf_y','ccf_z'}))) || parameters.forceReload == true
+        load(ccf_file,'ccf');
+        cell_metrics.general.ccf = ccf;
         cell_metrics.ccf_x = cell_metrics.general.ccf.x(cell_metrics.maxWaveformCh1)';
         cell_metrics.ccf_y = cell_metrics.general.ccf.y(cell_metrics.maxWaveformCh1)';
         cell_metrics.ccf_z = cell_metrics.general.ccf.z(cell_metrics.maxWaveformCh1)';
@@ -566,7 +572,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             end
         end
         figure
-        plot3(session.extracellular.ccf.x,session.extracellular.ccf.z,session.extracellular.ccf.y,'.k'), hold on
+        plot3(cell_metrics.general.ccf.x,cell_metrics.general.ccf.z,cell_metrics.general.ccf.y,'.k'), hold on
         plot3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,'ob'),
         xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse')
         if exist('plotBrainGrid.m','file')
@@ -660,47 +666,12 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
         cell_metrics.isi.log10 = isi.log10;
         cell_metrics.general.isis.log10 = isi.log10_bins;
     end
-end
-
-%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Deep-Superficial by ripple polarity reversal
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
-if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(parameters.excludeMetrics,{'deepSuperficial'}))
-    spkExclu = setSpkExclu('deepSuperficial',parameters);
-    if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session,'channelTags') && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple.channels)
-        dispLog('Finding ripples')
-        if ~exist(fullfile(session.general.basePath,[session.general.name, '.lfp']),'file')
-            disp('Creating lfp file')
-            ce_LFPfromDat(session)
-        end
-        if isfield(session.channelTags,'RippleNoise')
-            disp('  Using RippleNoise reference channel')
-            RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
-            ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',[50 150],'passband',[120 180],'noise',RippleNoiseChannel);
-        else
-            ripples = ce_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',[50 150]);
-        end
-    end
-
-    deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
-    if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') && (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || parameters.forceReload == true)
-        dispLog('Deep-Superficial by ripple polarity reversal')
-        if ~exist(deepSuperficial_file,'file')
-            if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout')
-                session = determineProbeSpacing(session);
-            end
-            classification_DeepSuperficial(session);
-        end
-        load(deepSuperficial_file)
-        cell_metrics.general.SWR = deepSuperficialfromRipple;
-        deepSuperficial_ChDistance = deepSuperficialfromRipple.channelDistance; %
-        deepSuperficial_ChClass = deepSuperficialfromRipple.channelClass;% cell_deep_superficial
-        cell_metrics.general.deepSuperficial_file = deepSuperficial_file;
-        for j = 1:cell_metrics.general.cellCount
-            cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial OK
-            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial_distance
-        end
+    if ~isfield(cell_metrics,{'population_modIndex'}) || ~isfield(cell_metrics.general,'responseCurves') || ~isfield(cell_metrics.general.responseCurves,'meanCCG') || numel(cell_metrics.general.responseCurves.meanCCG.x_bins) ~= 51
+        dispLog('Calculating population modulation index')
+        [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes{spkExclu});
+        cell_metrics.responseCurves.meanCCG = num2cell(meanCCG,1);
+        cell_metrics.general.responseCurves.meanCCG.x_bins = tR;
+        cell_metrics.population_modIndex = population_modIndex;
     end
 end
 
@@ -761,11 +732,13 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
         disp('  Determining MonoSynaptic connection strengths (transmission probabilities)')
         ccg2 = mono_res.ccgR;
         ccg2(isnan(ccg2)) =  0;
+        
         % Excitatory connections
         for i = 1:size(cell_metrics.putativeConnections.excitatory,1)
             [trans,prob,prob_uncor,pred] = ce_GetTransProb(ccg2(:,cell_metrics.putativeConnections.excitatory(i,1),cell_metrics.putativeConnections.excitatory(i,2)),  spikes{spkExclu}.total(cell_metrics.putativeConnections.excitatory(i,1)),  mono_res.binSize,  0.020);
             cell_metrics.putativeConnections.excitatoryTransProb(i) = trans;
         end
+        
         % Inhibitory connections
         for i = 1:size(cell_metrics.putativeConnections.inhibitory,1)
             [trans,prob,prob_uncor,pred] = ce_GetTransProb(ccg2(:,cell_metrics.putativeConnections.inhibitory(i,1),cell_metrics.putativeConnections.inhibitory(i,2)),  spikes{spkExclu}.total(cell_metrics.putativeConnections.inhibitory(i,1)),  mono_res.binSize,  0.020);
@@ -779,6 +752,48 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
     end
 end
 
+%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Deep-Superficial by ripple polarity reversal
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+
+if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(parameters.excludeMetrics,{'deepSuperficial'}))
+    spkExclu = setSpkExclu('deepSuperficial',parameters);
+    if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session,'channelTags') && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple.channels)
+        dispLog('Finding ripples')
+        if ~exist(fullfile(session.general.basePath,[session.general.name, '.lfp']),'file')
+            disp('Creating lfp file')
+            ce_LFPfromDat(session)
+        end
+        if isfield(session.channelTags,'RippleNoise')
+            disp('  Using RippleNoise reference channel')
+            RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
+            ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',[50 150],'passband',[120 180],'noise',RippleNoiseChannel);
+        else
+            ripples = ce_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',[50 150]);
+        end
+    end
+
+    deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
+    if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') && (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || parameters.forceReload == true)
+        dispLog('Deep-Superficial by ripple polarity reversal')
+        if ~exist(deepSuperficial_file,'file')
+            if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout')
+                session = determineProbeSpacing(session);
+            end
+            classification_DeepSuperficial(session);
+        end
+        load(deepSuperficial_file)
+        cell_metrics.general.SWR = deepSuperficialfromRipple;
+        deepSuperficial_ChDistance = deepSuperficialfromRipple.channelDistance; %
+        deepSuperficial_ChClass = deepSuperficialfromRipple.channelClass;% cell_deep_superficial
+        cell_metrics.general.deepSuperficial_file = deepSuperficial_file;
+        for j = 1:cell_metrics.general.cellCount
+            cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial OK
+            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial_distance
+        end
+    end
+end
+
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Theta related activity
@@ -788,7 +803,7 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
     spkExclu = setSpkExclu('theta_metrics',parameters);
     dispLog('Theta metrics');
     InstantaneousTheta = calcInstantaneousTheta2(session);
-    load(fullfile(basepath,[basename,'.animal.behavior.mat']));
+    load(fullfile(basepath,[basename,'.animal.behavior.mat']),'animal');
     theta_bins =[-1:0.05:1]*pi;
     cell_metrics.thetaPhasePeak = nan(1,cell_metrics.general.cellCount);
     cell_metrics.thetaPhaseTrough = nan(1,cell_metrics.general.cellCount);
@@ -1393,6 +1408,12 @@ cell_metrics = rmfield(cell_metrics,field2remove(test2));
 test = isfield(cell_metrics.general,field2remove);
 cell_metrics.general = rmfield(cell_metrics.general,field2remove(test));
 
+
+% cleaning waveforms
+field2remove = {'filt_absolute','filt_zscored', 'raw_absolute','raw_zscored'};
+test2 = isfield(cell_metrics.waveforms,field2remove);
+cell_metrics.waveforms = rmfield(cell_metrics.waveforms,field2remove(test2));
+
 % cleaning cell_metrics.general.session & cell_metrics.general.animal
 field2remove = {'name'};
 test2 = isfield(cell_metrics.general.session,field2remove);
@@ -1427,8 +1448,11 @@ if parameters.submitToDatabase && enableDatabase && isfield(cell_metrics,'spikeS
             cell_metrics = db_submit_cells(cell_metrics,session);
 %             session = db_update_session(session,'forceReload',true);
         catch exception
+            waitbarHandles = findall(0,'type','figure','tag','TMWWaitbar');
+            delete(waitbarHandles);
             disp(exception.identifier)
             warning('Failed to submit to database');
+            
         end
     end
 end
@@ -1568,7 +1592,7 @@ if parameters.summaryFigures
     % Plotting the average ripple with sharp wave across all spike groups
     deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
     if exist(deepSuperficial_file,'file')
-        load(deepSuperficial_file)
+        load(deepSuperficial_file,'deepSuperficialfromRipple')
         fig = figure('Name','Deep-Superficial assignment','pos',[50,50,1000,800]);
         ripple_scaling = 0.2;
         for jj = 1:session.extracellular.nSpikeGroups
@@ -1616,13 +1640,13 @@ end
 
 dispLog(['Cell metrics calculations complete. Elapsed time is ', num2str(toc(timerCalcMetrics),5),' seconds.'])
 
-end
-
 function dispLog(message)
     timestamp = datestr(now, 'dd-mm-yyyy HH:MM:SS');
-    message2 = sprintf('[%s] %s', timestamp, message);
+    message2 = sprintf('[%s: %s] %s', timestamp, basename, message);
     disp(message2);
 end
+end
+
 
 function spkExclu = setSpkExclu(metrics,parameters)
     if ismember(metrics,parameters.metricsToExcludeManipulationIntervals)
