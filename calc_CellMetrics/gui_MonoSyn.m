@@ -279,7 +279,7 @@ while temp444 == 1
             plot(1.01*axhpos3(1)*ones(size(prs2,1),1),prs2(:,2),'.m', 'HitTest','off', 'MarkerSize',12)
             plot(1.01*axhpos3(1)*ones(size(prs2,1),1),prs2(:,1),'.k', 'HitTest','off', 'MarkerSize',12)
             xlim([1.02*axhpos3(1),axhpos3(2)])
-            plot([0;0],[0;1]*size(zdata,1),'m', 'HitTest','off')
+            plot([0;0],[0;1]*size(zdata,1)+0.5,'m', 'HitTest','off')
 %             xlabel('CCGs (black marker: reference cell)')
             ha(j).XLabel.String = 'CCGs (black marker: reference cell)';
         else

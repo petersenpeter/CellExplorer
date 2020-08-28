@@ -519,7 +519,6 @@ UI.menu.tableData.sortingList(strcmp(UI.tableData.SortBy,UI.settings.tableDataSo
 % Spikes
 UI.menu.spikeData.topMenu = uimenu(UI.fig,menuLabel,'Spikes');
 uimenu(UI.menu.spikeData.topMenu,menuLabel,'Open spike data dialog',menuSelectedFcn,@defineSpikesPlots,'Accelerator','A');
-uimenu(UI.menu.spikeData.topMenu,menuLabel,'Hover to edit spike plot',menuSelectedFcn,@editSelectedSpikePlot,'Accelerator','J');
 
 % Session
 UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
@@ -1977,7 +1976,7 @@ end
             plotAxes.Title.String = customPlotSelection;
 %             plotAxes.ContextMenu = cm;
             % Single waveform with std
-            if isfield(cell_metrics.waveforms,'filt_std') && ~isempty(cell_metrics.waveforms.filt_std{ii})
+            if isfield(cell_metrics.waveforms,'filt_std') && ~isempty(cell_metrics.waveforms.filt_std{ii}) && numel(cell_metrics.waveforms.filt{ii}) == numel(cell_metrics.waveforms.filt_std{ii})
                 patch([cell_metrics.waveforms.time{ii},flip(cell_metrics.waveforms.time{ii})], [cell_metrics.waveforms.filt{ii}+cell_metrics.waveforms.filt_std{ii},flip(cell_metrics.waveforms.filt{ii}-cell_metrics.waveforms.filt_std{ii})],'black','EdgeColor','none','FaceAlpha',.2,'HitTest','off')
             end
             line(cell_metrics.waveforms.time{ii}, cell_metrics.waveforms.filt{ii}, 'color', col,'linewidth',2,'HitTest','off')    
@@ -2209,7 +2208,7 @@ end
             end
             ploConnectionsHighlights(time_waveforms_zscored,UI.params.subset(UI.settings.troughToPeakSorted))
             
-        elseif strcmp(customPlotSelection,'Raw waveforms (single)')
+        elseif strcmp(customPlotSelection,'Waveforms (raw single)')
             % Single waveform with std
             plotAxes.XLabel.String = 'Time (ms)';
             plotAxes.YLabel.String = ['Voltage (',char(181),'V)'];
@@ -2226,7 +2225,7 @@ end
                 plotInsetChannelMap(ii,col,general,1);
             end
             
-        elseif strcmp(customPlotSelection,'Raw waveforms (all)')
+        elseif strcmp(customPlotSelection,'Waveforms (raw all)')
             % All raw waveforms (z-scored) colored according to cell type
             plotAxes.XLabel.String = 'Time (ms)';
             
@@ -3326,7 +3325,7 @@ end
                             temp2 = find(temp>0);
                             line(secafter+temp(temp2)/max(temp(temp2))*(secbefore+secafter)/6,temp2,'Marker','.','LineStyle','none','color','r')
                             duration = events.(spikesPlots.(customPlotSelection).event){batchIDs}.duration;
-                            text(secafter+(secbefore+secafter)/6,0,['Duration (' num2str(min(duration)),' => ',num2str(max(duration)),' sec)'],'color','r','HorizontalAlignment','left','VerticalAlignment','top','rotation',90,'Interpreter', 'none')
+                            text(1,0.5,['Duration (' num2str(min(duration)),' => ',num2str(max(duration)),' sec)'],'color','r','HorizontalAlignment','left','VerticalAlignment','bottom','rotation',90,'Interpreter', 'none','HitTest','off','Units','normalized')
                             line([0, secafter+(secbefore+secafter)/6], [0 0],'color','k', 'HitTest','off');
                             line([secafter, secafter], [0 length(ts_onset)],'color','k', 'HitTest','off');
                         end
@@ -3337,6 +3336,9 @@ end
                             line([0, -secbefore-(secbefore+secafter)/6], [0 0],'color','k', 'HitTest','off');
                         end
                         line([0, 0], [0 -0.2*length(ts_onset)],'color','k', 'HitTest','off');
+                        if isfield(spikesPlots.(customPlotSelection),'eventIDlabels') &&  spikesPlots.(customPlotSelection).eventIDlabels
+                            text(0.02,0.98,events.(spikesPlots.(customPlotSelection).event){batchIDs}.eventIDlabels,'HorizontalAlignment','left','VerticalAlignment','top', 'Color', 'k','BackgroundColor',[1 1 1 0.8],'margin',0.1,'HitTest','off','Units','normalized')
+                        end
                     end
                     axis tight
                 else
@@ -3406,6 +3408,24 @@ end
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
             end
             xlabel(spikesPlots.(customPlotSelection).x_label), ylabel(spikesPlots.(customPlotSelection).y_label), title(customPlotSelection,'Interpreter', 'none')
+        elseif contains(customPlotSelection,{'Waveforms ('})
+            
+            plotAxes.XLabel.String = 'Time (ms)';
+            plotAxes.YLabel.String = ['Voltage (',char(181),'V)'];
+            plotAxes.Title.String = customPlotSelection;
+            field2plot = customPlotSelection(12:end-1);
+            if isfield(cell_metrics.waveforms,field2plot) && ~isempty(cell_metrics.waveforms.(field2plot){ii})
+                if size(cell_metrics.waveforms.(field2plot){ii},1)>1
+                    imagesc(cell_metrics.waveforms.(field2plot){ii},'HitTest','off')
+                else
+                    line(cell_metrics.waveforms.(field2plot){ii}, 'color', col,'linewidth',2,'HitTest','off'), grid on
+                end
+                if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
+                    plotInsetChannelMap(ii,col,general,1);
+                end
+            else
+                text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
+            end
             
         else
             customCellPlotNum = find(strcmp(customPlotSelection, plotOptions));
@@ -3804,7 +3824,7 @@ end
 %                 text(0.02,1.02-0.04*m,['r = ' num2str(r(2,1)), p1_text],'Color',clr_groups(m,:),'BackgroundColor',[1 1 1 0.8],'margin',1,'FontWeight','bold', 'HitTest','off','Units','normalized')
             end
         end
-        text(0.02,0.98,textconcat,'BackgroundColor',[1 1 1 0.8],'margin',1,'HitTest','off','Units','normalized','interpreter','tex','VerticalAlignment','top')
+        text(0.02,0.98,textconcat,'BackgroundColor',[1 1 1 0.8],'margin',0.1,'HitTest','off','Units','normalized','interpreter','tex','VerticalAlignment','top')
     end
     
     function plotPutativeConnections(plotX1,plotY1,monoSynDisp,subset1)
@@ -4755,7 +4775,7 @@ end
         
         updateGroupList
         drawnow nocallbacks;
-        groupData.dialog = dialog('Position', [300, 300, 840, 465],'Name','CellExplorer: group data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(groupData.dialog,'center'), set(groupData.dialog,'visible','on') % 'MenuBar', 'None','NumberTitle','off'
+        groupData.dialog = dialog('Position', [300, 300, 840, 465],'Name','Group data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(groupData.dialog,'center'), set(groupData.dialog,'visible','on') % 'MenuBar', 'None','NumberTitle','off'
         groupData.VBox = uix.VBox( 'Parent', groupData.dialog, 'Spacing', 5, 'Padding', 0 );
         groupData.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',groupData.VBox);
         groupData.sessionList = uitable(groupData.VBox,'Data',UI.groupData.dataTable,'Position',[10, 50, 740, 457],'ColumnWidth',{65,45,45,100,460 75,45},'columnname',{'Highlight','+filter','-filter','Group name','List of cells','Cell count','Select'},'RowName',[],'ColumnEditable',[true true true true true false true],'Units','normalized','CellEditCallback',@editTable);
@@ -4774,7 +4794,7 @@ end
         uicontrol('Parent',groupData.panel.top,'Style','pushbutton','Position',[620, 5, 100, 30],'String','+ New','Callback',@(src,evnt)newGroup,'Units','normalized');
         uicontrol('Parent',groupData.panel.top,'Style','pushbutton','Position',[730, 5, 100, 30],'String','Delete','Callback',@(src,evnt)deleteGroup,'Units','normalized');
         uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[620, 5, 100, 30],'String','Actions','Callback',@(src,evnt)CreateGroupAction,'Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[730, 5, 100, 30],'String','Close','Callback',@(src,evnt)CloseDialog,'Units','normalized');
+        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[730, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseDialog,'Units','normalized');
         groupData.popupmenu.performGroundTruthClassification = uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[270, 5, 110, 30],'String','Show G/T tab','Callback',@(src,evnt)performGroundTruthClassification,'Units','normalized','visible','Off');
         groupData.popupmenu.importGroundTruth = uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[390, 5, 110, 30],'String','Export GT','Callback',@(src,evnt)importGroundTruth,'Units','normalized','visible','Off');
 
@@ -5478,7 +5498,6 @@ end
             end
             
             if ishandle(ce_waitbar)
-                waitbar(1,ce_waitbar,'feature space calculations complete.')
                 close(ce_waitbar)
             end
             uiresume(UI.fig);
@@ -6917,13 +6936,13 @@ end
             end
         end
         % Highlighting raw waveforms
-        if any(strcmp(UI.settings.customPlot,'Raw waveforms (all)'))
+        if any(strcmp(UI.settings.customPlot,'Waveforms (raw all)'))
             if UI.settings.zscoreWaveforms == 1
                 zscoreWaveforms1 = 'raw_zscored';
             else
                 zscoreWaveforms1 = 'raw_absolute';
             end
-            idx = find(strcmp(UI.settings.customPlot,'Raw waveforms (all)'));
+            idx = find(strcmp(UI.settings.customPlot,'Waveforms (raw all)'));
             for i = 1:length(idx)
                 set(UI.fig,'CurrentAxes',subfig_ax(3+idx(i)))
                 line(time_waveforms_zscored,cell_metrics.waveforms.(zscoreWaveforms1)(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
@@ -7114,8 +7133,11 @@ end
         elseif any(axnum == [4,5,6,7,8,9])
             
             selectedOption = UI.settings.customPlot{axnum-3};
+            if numel(UI.subsetPlots)>= axnum-3
             subsetPlots = UI.subsetPlots{axnum-3};
-            
+            else 
+                subsetPlots = [];
+            end
             switch selectedOption
                 case 'Waveforms (tSNE)'
                     [~,idx] = min(hypot(tSNE_metrics.filtWaveform(UI.params.subset,1)-u,tSNE_metrics.filtWaveform(UI.params.subset,2)-v));
@@ -7187,7 +7209,7 @@ end
                         hover2highlight.handle2 = line(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
                         hover2highlight.handle1 = text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
-                case 'Raw waveforms (single)'    
+                case 'Waveforms (raw single)'    
                     if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
                         out = plotInsetChannelMap(ii,[],general,0);
                         x_scale = range(out(1,:));
@@ -7199,7 +7221,7 @@ end
                             hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                         end
                     end
-                case 'Raw waveforms (all)'
+                case 'Waveforms (raw all)'
                     if UI.settings.zscoreWaveforms == 1
                         zscoreWaveforms1 = 'raw_zscored';
                     else
@@ -7901,7 +7923,7 @@ end
                                 line(out(1,In1),out(2,In1),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
                             end
                             
-                        case 'Raw waveforms (single)'
+                        case 'Waveforms (raw single)'
                             if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
                                 out = plotInsetChannelMap(ii,[],general,0);                                
                                 In1 = find(inpolygon(out(1,:), out(2,:), polygon_coords(:,1)',polygon_coords(:,2)'));
@@ -7928,7 +7950,7 @@ end
                                 In = [In,In2];
                             end
                             
-                        case 'Raw waveforms (all)'
+                        case 'Waveforms (raw all)'
                             if UI.settings.zscoreWaveforms == 1
                                 zscoreWaveforms1 = 'raw_zscored';
                             else
@@ -10120,12 +10142,17 @@ end
             waveformOptions = [waveformOptions;'Waveforms (tSNE)'];
         end
         if isfield(cell_metrics.waveforms,'raw')
-            waveformOptions2 = {'Raw waveforms (single)';'Raw waveforms (all)'};
+            waveformOptions2 = {'Waveforms (raw single)';'Waveforms (raw all)'};
             if isfield(tSNE_metrics,'rawWaveform')
                 waveformOptions2 = [waveformOptions2;'Raw waveforms (tSNE)'];
             end
         else
             waveformOptions2 = {};
+        end
+        temp = fieldnames(cell_metrics.waveforms);
+        temp(ismember(temp,{'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time','bestChannels'}) | ~structfun(@iscell,cell_metrics.waveforms)) = [];
+        for i = 1:length(temp)
+            waveformOptions2 = [waveformOptions2;['Waveforms (',temp{i},')']];
         end
         acgOptions = {'ACGs (single)';'ACGs (all)';'ACGs (image)';'CCGs (image)'};
         if isfield(cell_metrics,'isi')
@@ -10898,6 +10925,7 @@ end
         uicontrol('Parent',spikePlots_dialog,'Style', 'text', 'String', 'Event trialwise curves', 'Position', [550, 71, 120, 20],'HorizontalAlignment','left');
         spikePlotEventPlotRaster = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[450 55 70 20],'Units','normalized','String','Raster','HorizontalAlignment','left');
         spikePlotEventPlotAverage = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[450 35 90 20],'Units','normalized','String','Average PSTH','HorizontalAlignment','left');
+        spikePlotEventLegend = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[450 15 90 20],'Units','normalized','String','ID labels','HorizontalAlignment','left');
         spikePlotEventPlotAmplitude = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[550 15 70 20],'Units','normalized','String','Amplitude','HorizontalAlignment','left');
         spikePlotEventPlotDuration = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[550 55 70 20],'Units','normalized','String','Duration','HorizontalAlignment','left');
         spikePlotEventPlotCount = uicontrol('Parent',spikePlots_dialog,'Style','checkbox','Position',[550 35 70 20],'Units','normalized','String','Count','HorizontalAlignment','left');
@@ -10917,6 +10945,9 @@ end
             end
             if isfield(spikesPlots.(fieldtoedit),'plotAverage')
                 spikePlotEventPlotAverage.Value = spikesPlots.(fieldtoedit).plotAverage;
+            end
+            if isfield(spikesPlots.(fieldtoedit),'eventIDlabels')
+                spikePlotEventLegend.Value = spikesPlots.(fieldtoedit).eventIDlabels;
             end
             if isfield(spikesPlots.(fieldtoedit),'plotAmplitude')
                 spikePlotEventPlotAmplitude.Value = spikesPlots.(fieldtoedit).plotAmplitude;
@@ -11036,6 +11067,7 @@ end
                 spikesPlotsOut.(spikePlotName2).eventSecAfter = str2double(spikePlotEventSecAfter.String);
                 spikesPlotsOut.(spikePlotName2).plotRaster = spikePlotEventPlotRaster.Value;
                 spikesPlotsOut.(spikePlotName2).plotAverage = spikePlotEventPlotAverage.Value;
+                spikesPlotsOut.(spikePlotName2).eventIDlabels = spikePlotEventLegend.Value;
                 spikesPlotsOut.(spikePlotName2).plotAmplitude = spikePlotEventPlotAmplitude.Value;
                 spikesPlotsOut.(spikePlotName2).plotDuration = spikePlotEventPlotDuration.Value;
                 spikesPlotsOut.(spikePlotName2).plotCount = spikePlotEventPlotCount.Value;
@@ -11926,6 +11958,8 @@ end
                 AdjustGUIkey;
             case 'z'
                 % undoClassification;
+            case 'j'
+                editSelectedSpikePlot;
             case 'space'
                 selectCellsForGroupAction
             case 'backspace'

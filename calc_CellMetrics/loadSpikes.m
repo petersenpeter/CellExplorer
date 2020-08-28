@@ -236,9 +236,10 @@ if parameters.forceReload
                     index = [0;spike_data_index];
                     for j = 1:numel(spike_data_index)
                         spikes.waveform_mean{j} = spike_data(:,index(j)+1:index(j+1));
+                        spikes.waveform_mean_filt{j} = spikes.waveform_mean{j};
                     end
                 elseif any(strcmp(fieldsToExtract{i},{'spike_times_index','waveform_mean_index','spike_amplitudes_index'}))
-                    disp('Not imported')
+%                     disp('Not imported')
                 elseif strcmp(fieldsToExtract{i},'cluster_id')
                     spikes.cluID = double(h5read(nwb_file,['/units/',fieldsToExtract{i}]))';
                 elseif  strcmp(fieldsToExtract{i},'amplitude')
@@ -280,7 +281,7 @@ if parameters.forceReload
             unitsToRemove = find(cellfun(@isempty,spikes.ts));
             fieldsToProcess = fieldnames(spikes);
             fieldsToProcess = fieldsToProcess(structfun(@(X) (isnumeric(X) || iscell(X)) && numel(X)==numel(spikes.times),spikes));
-            for iField = 1:numel(fieldsToProcess)
+            for iField = 1:numel(fieldsToProcess)   
                 spikes.(fieldsToProcess{iField})(unitsToRemove) = [];
             end
             
@@ -342,7 +343,8 @@ if parameters.forceReload
             fileList = {fileList.name};
             fileList(contains(fileList,'_')) = [];
             if exist(fullfile(clusteringpath_full,'timestamps.npy'),'file')
-                % This is specific for open ephys system where tom zero does not occur with the recording start
+                % This is specific for open ephys system where time zero does not occur with the recording start
+                % The timestamps.npy must be located with the spike sorted data
                 open_ephys_timestamps = readNPY(fullfile(clusteringpath_full,'timestamps.npy'));
             end
             for iTetrode = 1:numel(fileList)
@@ -357,6 +359,7 @@ if parameters.forceReload
                     for i = 1:numel(clusterData.MClust_Clusters)
                         unit_nb = unit_nb +1;
                         if exist('open_ephys_timestamps','var')
+                            % Again, specific to open ephys
                             spikes.ts{unit_nb} = round(tetrodeData.TimeStamps(clusterData.MClust_Clusters{i}.myPoints)*session.extracellular.sr)-double(open_ephys_timestamps(1));
                         end
                         spikes.times{unit_nb} = tetrodeData.TimeStamps(clusterData.MClust_Clusters{i}.myPoints);
