@@ -5,7 +5,7 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   The metrics are based on a number of features: spikes, waveforms, PCA features,
 %   the ACG and CCGs, LFP, theta, ripples and so fourth
 %
-%   Check the website of the CellExplorer for more details: https://petersenpeter.github.io/CellExplorer/
+%   Check the website of the CellExplorer for more details: https://cellexplorer.org/
 %
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %   INPUTS
@@ -59,7 +59,7 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   OUTPUT
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %
-%   Cell_metrics : structure described in details at: https://petersenpeter.github.io/CellExplorer/datastructure/standard-cell-metrics/
+%   Cell_metrics : structure described in details at: https://cellexplorer.org/datastructure/standard-cell-metrics/
 
 %   By Peter Petersen
 %   petersen.peter@gmail.com
@@ -318,7 +318,9 @@ if ~isempty(parameters.excludeIntervals)
         spikes_indices = cellfun(@(X) ~ce_InIntervals(X,double(parameters.excludeIntervals)),spikes{1}.times,'UniformOutput',false);
         spikes{2}.times = cellfun(@(X,Y) X(Y),spikes{1}.times,spikes_indices,'UniformOutput',false);
         if isfield(spikes{1},'ts')
-            spikes{2}.ts = cellfun(@(X,Y) X(Y),spikes{1}.ts,spikes_indices,'UniformOutput',false);
+            try 
+                spikes{2}.ts = cellfun(@(X,Y) X(Y),spikes{1}.ts,spikes_indices,'UniformOutput',false);
+            end
         end
         if isfield(spikes{1},'ids')
             spikes{2}.ids = cellfun(@(X,Y) X(Y),spikes{1}.ids,spikes_indices,'UniformOutput',false);
@@ -402,8 +404,8 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     spkExclu = setSpkExclu('waveform_metrics',parameters);
     if ~all(isfield(cell_metrics,{'waveforms','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || ~all(isfield(cell_metrics.waveforms,{'filt','filt_all'})) || parameters.forceReload == true
         dispLog('Getting waveforms');
-        field2copy = {'filtWaveform_std','rawWaveform','rawWaveform_std','rawWaveform_all','filtWaveform_all','timeWaveform_all','channels_all','filtWaveform','timeWaveform'};
-        field2copyNewNames = {'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time'};
+        field2copy = {'filtWaveform_std','rawWaveform','rawWaveform_std','rawWaveform_all','filtWaveform_all','timeWaveform_all','channels_all','filtWaveform','timeWaveform','id'};
+        field2copyNewNames = {'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time','id'};
         if parameters.getWaveformsFromDat && (spkExclu==2 || any(~isfield(spikes{spkExclu},field2copy)) || ~isempty(parameters.restrictToIntervals) || parameters.forceReload == true)
             spikes{spkExclu} = getWaveformsFromDat(spikes{spkExclu},session);
         end
@@ -769,7 +771,7 @@ if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(
             RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
             ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',[50 150],'passband',[120 180],'noise',RippleNoiseChannel);
         else
-            ripples = ce_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',[50 150]);
+            ripples = ce_FindRipples(session,'channel',session.channelTags.Ripple.channels-1,'durations',[50 150]);
         end
     end
 

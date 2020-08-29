@@ -1,13 +1,13 @@
 function spikes = getWaveformsFromDat(spikes,session,unitsToProcess)
 % Extracts raw waveforms from the binary file. 
-% This function is a part of CellExplorer: https://cellexplorer.org/
+% This function is part of CellExplorer: https://cellexplorer.org/
 %
 % INPUTS
 % Spikes struct:            https://cellexplorer.org/datastructure/data-structure-and-format/#spikes
 % session metadata struct:  https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 13-06-2020
+% Last edited: 26-07-2020
 
 basepath = session.general.basePath;
 basename = session.general.name;
@@ -60,6 +60,8 @@ if showWaveforms
     fig1 = figure('Name', ['Getting waveforms for ' basename],'NumberTitle', 'off','position',[100,100,1000,800]);
 end
 wfWin = round((wfWin_sec * sr)/2);
+window_interval = wfWin-ceil(wfWinKeep*sr):wfWin-1+ceil(wfWinKeep*sr); % +- 0.8 ms of waveform
+window_interval2 = wfWin-ceil(1.5*wfWinKeep*sr):wfWin-1+ceil(1.5*wfWinKeep*sr); % +- 1.20 ms of waveform
 t1 = toc(timerVal);
 if ~exist(fullfile(basepath,fileNameRaw),'file')
     error(['Binary file missing: ', fullfile(basepath,fileNameRaw)])
@@ -99,8 +101,9 @@ for i = 1:length(unitsToProcess)
     for jj = 1 : nGoodChannels
         wfF2(:,jj) = filtfilt(b1, a1, wf(goodChannels(jj),:));
     end
-    [~, idx] = max(max(wfF2)-min(wfF2)); % max(abs(wfF(wfWin,:)));
-    spikes.maxWaveformCh1(ii) = goodChannels(idx);
+
+    [~, maxWaveformCh1] = max(max(wfF2(window_interval,:))-min(wfF2(window_interval,:))); % max(abs(wfF(wfWin,:)));
+    spikes.maxWaveformCh1(ii) = goodChannels(maxWaveformCh1);
     spikes.maxWaveformCh(ii) = spikes.maxWaveformCh1(ii)-1;
     
     % Assigning shankID to the unit
@@ -121,8 +124,7 @@ for i = 1:length(unitsToProcess)
             wfF(jjj,:,jj) = filtfilt(b1, a1, wf(jjj,:,jj));
         end
     end
-    window_interval = wfWin-ceil(wfWinKeep*sr):wfWin-1+ceil(wfWinKeep*sr); % +- 0.8 ms of waveform
-    window_interval2 = wfWin-ceil(1.5*wfWinKeep*sr):wfWin-1+ceil(1.5*wfWinKeep*sr); % +- 1.20 ms of waveform
+    
     
     wf2 = mean(wf,3);
     rawWaveform_all = detrend(wf2 - mean(wf2,2));
@@ -161,7 +163,7 @@ for i = 1:length(unitsToProcess)
     if ishandle(fig1)
         figure(fig1)
         subplot(2,3,1), hold off
-        plot(wfF2), hold on, plot(wfF2(:,idx),'k','linewidth',2), title('Filtered waveforms across channels'), xlabel('Samples'), ylabel('uV'),hold off
+        plot(wfF2), hold on, plot(wfF2(:,maxWaveformCh1),'k','linewidth',2), title('Filtered waveforms across channels'), xlabel('Samples'), ylabel('uV'),hold off
         subplot(2,3,2), hold off,
         plot(permute(wfF(spikes.maxWaveformCh1(ii),:,:),[2,3,1])), hold on
         plot(mean(permute(wfF(spikes.maxWaveformCh1(ii),:,:),[2,3,1]),2),'k','linewidth',2),
@@ -182,6 +184,11 @@ for i = 1:length(unitsToProcess)
         subplot(3,3,9), hold off,
         histogram(spikes.peakVoltage_expFitLengthConstant,20), xlabel('Length constant')
     end
+    
+%     if spikes.peakVoltage(ii)<80
+%         figure, subplot(2,1,1),plot(spikes.filtWaveform{ii}), subplot(2,1,2), plot(filtWaveform_all')
+%         keyboard
+%     end
     clear wf wfF wf2 wfF2
     
     if ishandle(f)
