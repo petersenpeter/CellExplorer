@@ -545,7 +545,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     
     % Common coordinate framework
     ccf_file = fullfile(basepath,[basename,'.ccf.channelInfo.mat']);
-    if exist(ccf_file,'file') && (~all(isfield(cell_metrics,{'ccf_x','ccf_y','ccf_z'}))) || parameters.forceReload == true
+    if exist(ccf_file,'file') && (~all(isfield(cell_metrics,{'ccf_x','ccf_y','ccf_z'})) || parameters.forceReload == true)
         load(ccf_file,'ccf');
         cell_metrics.general.ccf = ccf;
         cell_metrics.ccf_x = cell_metrics.general.ccf.x(cell_metrics.maxWaveformCh1)';
