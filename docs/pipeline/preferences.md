@@ -2,7 +2,7 @@
 layout: default
 title: Preferences
 parent: Processing module
-nav_order:4
+nav_order: 4
 ---
 # Preferences
 the CellExplorer processing module allows you to adjust the default preferences or create your own. The preferences are saved in `ProcessCellMetrics_Preferences`. You may edit the preferences or provide your own preferences in a separate file. Provide the path to your preferences as an analysis tag in the session struct: 
