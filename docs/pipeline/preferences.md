@@ -7,7 +7,8 @@ nav_order: 4
 # Preferences
 the CellExplorer processing module allows you to adjust the default preferences or create your own. The preferences are saved in `ProcessCellMetrics_Preferences`. You may edit the preferences or provide your own preferences in a separate file. Provide the path to your preferences as an analysis tag in the session struct: 
 ```m
-% session.analysisTags.ProcessCellMetrics_preferences = 'user_preferences.user_preferences'; % loads the user_preference.m file from the folder +user_preferences
+% load a user_preference.m file from the folder +user_preferences
+session.analysisTags.ProcessCellMetrics_preferences = 'user_preferences.user_preferences';
 ```
 
 __user_preferences exampe file__
@@ -21,7 +22,6 @@ function preferences = user_preferences(preferences,session)
 % preferences.waveform.wfWin_sec = 0.004;      % Larger size of waveform windows for filterning. total width in ms
 % preferences.waveform.wfWinKeep = 0.0008;     % half width in ms
 % preferences.waveform.showWaveforms = true;
-disp('User preferences loaded successfully')
 
 end
 ```
