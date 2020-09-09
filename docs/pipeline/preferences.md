@@ -5,7 +5,7 @@ parent: Processing module
 nav_order: 4
 ---
 # Preferences
-The processing module allows you to adjust the default preferences or create your own. The preferences are saved in `ProcessCellMetrics_Preferences`. You may edit the default preferences or provide your own preferences in a separate file. To use your own, specify the path to your preferences as an analysis tag in the session struct: 
+The processing module allows you to adjust the default preferences or create your own. The preferences are saved in [ProcessCellMetrics_Preferences.m](https://github.com/petersenpeter/CellExplorer/blob/master/ProcessCellMetrics_Preferences.m). You may edit the default preferences or provide your own preferences in a separate file. To use your own, specify the path to your preferences as an analysis tag in the session struct: 
 ```m
 % load a user_preference.m file from the folder +user_preferences
 session.analysisTags.ProcessCellMetrics_preferences = 'user_preferences.user_preferences';
