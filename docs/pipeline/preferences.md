@@ -11,6 +11,7 @@ The processing module allows you to adjust the default preferences or create you
 session.analysisTags.ProcessCellMetrics_preferences = 'user_preferences.user_preferences';
 ```
 __user_preferences exampe file__
+
 You must follow the example file below when generating your own preference file:
 ```m
 function preferences = user_preferences(preferences,session)
