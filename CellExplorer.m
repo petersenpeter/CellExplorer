@@ -816,7 +816,7 @@ end
 if summaryFigures
     MsgLog('Creating summary figures',-1)
     plotSummaryFigures
-    if ishandle(fig) && plotCellIDs ~= -1
+    if ishandle(fig) & plotCellIDs ~= -1
         close(fig)
     end
     if ishandle(UI.fig)
@@ -3418,7 +3418,7 @@ end
                 if size(cell_metrics.waveforms.(field2plot){ii},1)>1
                     imagesc(cell_metrics.waveforms.(field2plot){ii},'HitTest','off')
                 else
-                    line(cell_metrics.waveforms.(field2plot){ii}, 'color', col,'linewidth',2,'HitTest','off'), grid on
+                    line(1:numel(cell_metrics.waveforms.(field2plot){ii}),cell_metrics.waveforms.(field2plot){ii}, 'color', col,'linewidth',2,'HitTest','off'), grid on
                 end
                 if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
                     plotInsetChannelMap(ii,col,general,1);
@@ -8547,6 +8547,10 @@ end
                     savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
                 catch 
                     disp('figure not saved (action canceled by user or directory not available for writing)')
+                    movegui(fig,'center'), set(fig,'visible','on')
+                    if plotCellIDs~=-1
+                        fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.settings.figureSize,'visible','off');
+                    end
                 end
             end
         end

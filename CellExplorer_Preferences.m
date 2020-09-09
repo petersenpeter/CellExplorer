@@ -1,13 +1,13 @@
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% CellExplorer Preferences  
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%
 % Preferences loaded by the CellExplorer at startup
-% Check the website of the CellExplorer for more details: https://petersenpeter.github.io/CellExplorer/
+% Check the website of the CellExplorer for more details: https://cellexplorer.org/
   
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 24-04-2020
-
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% CellExplorer Preferences  
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 % Display settings - An incomplete list:
 % 'Waveforms (single)','Waveforms (all)','Waveforms (image)','Raw waveforms (single)','Raw waveforms (all)','ACGs (single)',
@@ -58,7 +58,7 @@ UI.settings.groundTruth = {'PV','NOS1','GAT1','SST','Axoaxonic','CellType_A'};
 UI.settings.groupDataMarkers = ce_append(["o","d","s","*","+"],["m","k","g"]'); 
 
 UI.settings.groundTruthMarkers = {'om','d','sm','*k','+k','+m','om','dm','sg','*m'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
-UI.settings.groundTruthColors = [[.9,.2,.2];[.2,.2,.9];[0.2,0.9,0.9];[0.9,0.2,0.9];[.2,.9,.2];[.5,.5,.5]];
+UI.settings.groundTruthColors = [[.9,.2,.2];[.2,.2,.9];[0.2,0.9,0.9];[0.9,0.2,0.9];[.2,.9,.2];[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8]];
 UI.settings.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
 
 % tSNE representation

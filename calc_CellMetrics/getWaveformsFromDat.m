@@ -22,13 +22,17 @@ else
     fileNameRaw = [basename '.dat'];
 end
 
-timerVal = tic;         
-nPull = 600;            % number of spikes to pull out (default: 600)
-wfWin_sec = 0.004;      % Larger size of waveform windows for filterning. total width in ms
-wfWinKeep = 0.0008;     % half width in ms
-filtFreq = [500,8000];  % Band pass filter
-showWaveforms = true;   
-badChannels = [];       
+% Loading preferences
+preferences = ProcessCellMetrics_Preferences(session);
+
+nPull = preferences.waveform.nPull;         % number of spikes to pull out (default: 600)
+wfWin_sec = preferences.waveform.wfWin_sec; % Larger size of waveform windows for filterning. total width in seconds (default: 0.004)
+wfWinKeep = preferences.waveform.wfWinKeep; % half width in seconds (default: 0.0008)
+showWaveforms = preferences.waveform.showWaveforms;
+filtFreq = [500,8000];   % Band pass filter (default: 500,8000)
+
+badChannels = [];
+timerVal = tic;
 
 % Removing channels marked as Bad in session struct
 if ~isempty(session) && isfield(session,'channelTags') && isfield(session.channelTags,'Bad')
@@ -184,11 +188,6 @@ for i = 1:length(unitsToProcess)
         subplot(3,3,9), hold off,
         histogram(spikes.peakVoltage_expFitLengthConstant,20), xlabel('Length constant')
     end
-    
-%     if spikes.peakVoltage(ii)<80
-%         figure, subplot(2,1,1),plot(spikes.filtWaveform{ii}), subplot(2,1,2), plot(filtWaveform_all')
-%         keyboard
-%     end
     clear wf wfF wf2 wfF2
     
     if ishandle(f)
