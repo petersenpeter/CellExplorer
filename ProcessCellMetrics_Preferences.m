@@ -4,7 +4,7 @@ function preferences = ProcessCellMetrics_Preferences(session)
 % Check the website of CellExplorer for more details: https://cellexplorer.org/
 
 % By Peter Petersen
-% Last edited: 09-09-2020
+% Last edited: 10-09-2020
 
 % General
 preferences.general.probesVerticalSpacing = 10; % 10um spacing between channels
@@ -16,40 +16,13 @@ preferences.waveform.wfWin_sec = 0.004;         % Larger size of waveform window
 preferences.waveform.wfWinKeep = 0.0008;        % half width in ms
 preferences.waveform.showWaveforms = true;
 
-% PCA
-
-% ACG
-
-% Deep superficial 
-preferences.deepSuperficial.ripples_durations = [50 150]; % in ms
-preferences.deepSuperficial.ripples_passband = [120 180]; % in Hz
-
-% monoSynaptic_connections
-
-% Theta
-preferences.theta.bins = [-1:0.05:1]*pi; % theta bins from -pi to pi
-preferences.theta.speed_threshold = 10;  % behavioral running speed (cm/s)
-preferences.theta.min_spikes = 500;      % only calculated if the unit has above 500 spikes
-
-% Spatial
-
-% Event
-
-% PSTH
+% PSTHs / Events / Manipulations
 preferences.psth.binCount = 100;                % how many bins (for half the window)
 preferences.psth.alignment = 'onset';           % alignment of time ['onset','center','peaks','offset']
 preferences.psth.binDistribution = [0.25,0.5,0.25];  % How the bins should be distributed around the events, pre, during, post. Must sum to 1
 preferences.psth.duration = 0;                  % duration of PSTH (for half the window - used in CCG) [in seconds]
 preferences.psth.smoothing = 5;                 % any gaussian smoothing to apply? units of bins.
 preferences.psth.percentile = 99;               % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
-
-% Manipulation
-preferences.manipulation.binCount = 100;        % how many bins (for half the window)
-preferences.manipulation.alignment = 'onset';   % alignment of time ['onset','center','peaks','offset']
-preferences.manipulation.binDistribution = [0.25,0.5,0.25];  % How the bins should be distributed around the events, pre, during, post. Must sum to 1
-preferences.manipulation.duration = 0;          % duration of PSTH (for half the window - used in CCG) [in seconds]
-preferences.manipulation.smoothing = 5;         % any gaussian smoothing to apply? units of bins.
-preferences.manipulation.percentile = 99;       % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
 
 % Other
 preferences.other.firingRateAcrossTime_binsize = 3*60;      % 180 seconds default bin_size
@@ -59,6 +32,27 @@ preferences.other.firingRateAcrossTime_binsize = 3*60;      % 180 seconds defaul
 preferences.putativeCellType.acg_tau_decay_bondary = 30;    % acg_tau_decay > 30ms
 preferences.putativeCellType.acg_tau_rise_boundary = 3;     % acg_tau_rise > 3ms
 preferences.putativeCellType.troughToPeak_boundary = 0.425; % Narrow interneuron assigned if troughToPeak <= 0.425ms, otherwise wide interneuron
+
+% PCA
+
+% ACG
+
+% monoSynaptic_connections
+
+% Spatial
+
+% % % % % % % % % % % % % % % % % % % %
+% Hippocampal preferences
+% % % % % % % % % % % % % % % % % % % %
+% Deep superficial 
+preferences.deepSuperficial.ripples_durations = [50 150]; % in ms
+preferences.deepSuperficial.ripples_passband = [120 180]; % in Hz
+
+% Theta oscillation metrics
+preferences.theta.bins = [-1:0.05:1]*pi; % theta bins from -pi to pi
+preferences.theta.speed_threshold = 10;  % behavioral running speed (cm/s)
+preferences.theta.min_spikes = 500;      % only calculated if the unit has above 500 spikes
+
 
 % % % % % % % % % % % % % % % % % % % %
 % User preferences 
