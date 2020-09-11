@@ -1,12 +1,23 @@
 function acg_metrics = calc_ACG_metrics(spikes)%(clustering_path,sr,TimeRestriction)
-% theta modulation index (TMI) % The TMI was computed as the difference 
-% between the theta modulation trough (defined as mean of autocorrelogram 
-% bins 50-70 ms) and the theta modulation peak (mean of autocorrelogram 
-% bins 100-140ms) over their sum
+% Two autocorrelograms are calculated:  narrow (100ms, 0.5ms bins) and wide (1s, 1ms bins) using the CCG function (for speed)
+%
+% Further three metrics are derived from these:
+%
+% Theta modulation index:
+%    Computed as the difference between the theta modulation trough (defined as mean of autocorrelogram bins 50-70 ms)
+%    and the theta modulation peak (mean of autocorrelogram  bins 100-140ms) over their sum
+%
+% BurstIndex_Doublets
+%    max bin count from 2.5-8ms normalized by the average number of spikes
+%    in the 8-11.5ms bins
+% BurstIndex_Royer2012
+%    Burst index is determined by calculating the average number of spikes in the 3?5 ms bins of the spike
+%    autocorrelogram divided by the average number of spikes in the 200?300 ms bins.
+%    Metrics introduced in Royer et al. Nature Neuroscience 2012, and adjusted in Senzai & Buzsaki, Neuron 2017.
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 16-06-2020
+% Last edited: 08-09-2020
 
 ThetaModulationIndex = nan(1,spikes.numcells);
 BurstIndex_Royer2012 = nan(1,spikes.numcells);
@@ -22,7 +33,7 @@ bins_wide = 500;
 acg_wide = zeros(bins_wide*2+1,numel(spikes.times));
 bins_narrow = 100;
 acg_narrow = zeros(bins_narrow*2+1,numel(spikes.times));
-disp('Calculating narrow CCGs (100ms, 0.5ms bins) and wide CCGs (1s, 1ms bins)')
+disp('Calculating narrow ACGs (100ms, 0.5ms bins) and wide ACGs (1s, 1ms bins)')
 tic
 for i = cell_indexes
     acg_wide(:,i) = CCG(spikes.times{i},ones(size(spikes.times{i})),'binSize',0.001,'duration',1,'norm','rate');
@@ -31,7 +42,7 @@ for i = cell_indexes
     BurstIndex_Doublets(i) = max(acg_narrow(bins_narrow+1+5:bins_narrow+1+16,i))/mean(acg_narrow(bins_narrow+1+16:bins_narrow+1+23,i));
     % Metrics from wide
     ThetaModulationIndex(i) = (mean(acg_wide(bins_wide+1+50:bins_wide+1+70,i))-mean(acg_wide(bins_wide+1+100:bins_wide+1+140,i)))/(mean(acg_wide(bins_wide+1+50:bins_wide+1+70,i))+mean(acg_wide(bins_wide+1+100:bins_wide+1+140,i)));
-    BurstIndex_Royer2012(i) = sum(acg_wide(bins_wide+1+3:bins_wide+1+5,i))/mean(acg_wide(bins_wide+1+200:bins_wide+1+300,i));
+    BurstIndex_Royer2012(i) = mean(acg_wide(bins_wide+1+3:bins_wide+1+5,i))/mean(acg_wide(bins_wide+1+200:bins_wide+1+300,i));
 end
 toc
 

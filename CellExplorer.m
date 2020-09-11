@@ -816,7 +816,7 @@ end
 if summaryFigures
     MsgLog('Creating summary figures',-1)
     plotSummaryFigures
-    if ishandle(fig) && plotCellIDs ~= -1
+    if ishandle(fig) & plotCellIDs ~= -1
         close(fig)
     end
     if ishandle(UI.fig)
@@ -1785,7 +1785,7 @@ function updateUI
         
         plotGroupData(cell_metrics.troughToPeak * 1000,cell_metrics.burstIndex_Royer2012,plotConnections(2),1)
         
-        if strcmp(UI.settings.groundTruthData, 'None') && ~strcmp(UI.settings.referenceData, 'None')
+        if strcmp(UI.settings.groundTruthData, 'None') && ~strcmp(UI.settings.referenceData, 'None') && ~isempty(fig2_axislimit_x_reference) && ~isempty(fig2_axislimit_y_reference)
             xlim(fig2_axislimit_x_reference), ylim(fig2_axislimit_y_reference)
         elseif ~strcmp(UI.settings.groundTruthData, 'None') && strcmp(UI.settings.referenceData, 'None') && ~isempty(fig2_axislimit_x_groundTruth) && ~isempty(fig2_axislimit_y_groundTruth)
             xlim(fig2_axislimit_x_groundTruth), ylim(fig2_axislimit_y_groundTruth)
@@ -3418,7 +3418,7 @@ end
                 if size(cell_metrics.waveforms.(field2plot){ii},1)>1
                     imagesc(cell_metrics.waveforms.(field2plot){ii},'HitTest','off')
                 else
-                    line(cell_metrics.waveforms.(field2plot){ii}, 'color', col,'linewidth',2,'HitTest','off'), grid on
+                    line(1:numel(cell_metrics.waveforms.(field2plot){ii}),cell_metrics.waveforms.(field2plot){ii}, 'color', col,'linewidth',2,'HitTest','off'), grid on
                 end
                 if UI.settings.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
                     plotInsetChannelMap(ii,col,general,1);
@@ -5273,11 +5273,9 @@ end
             out = loadReferenceData;
             ref_sessionNames = '';
         end
-        
         if ~isempty(reference_cell_metrics)
-            ref_sessionNames = unique(cell_metrics.sessionName);
+            ref_sessionNames = unique(reference_cell_metrics.sessionName);
         end
-        
         [basenames,basepaths,exitMode] = gui_db_sessions(ref_sessionNames);
         
         if ~isempty(basenames)
@@ -5301,9 +5299,12 @@ end
             
             ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading reference data');
             
+            if isempty(db_settings.repositories)
+                db_settings.repositories.random576 = '';
+            end
             for i_db = 1:length(i_db_subset_all)
                 i_db2 = find(strcmp(basenames{i_db},cellfun(@(X) X.name,db.sessions,'UniformOutput',0)));
-                if ~any(strcmp(db.sessions{i_db2}.repositories{1},fieldnames(db_settings.repositories)))
+                if ~any(strcmp(db.sessions{i_db2}.repositories{1},fieldnames(db_settings.repositories))) && ~strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
                     MsgLog(['The respository ', db.sessions{i_db2}.repositories{1} ,' has not been defined on this computer. Please edit db_local_repositories and provide the path'],4)
                     edit db_local_repositories.m
                     return
@@ -5311,7 +5312,7 @@ end
                 
                 db_basepath{i_db} = referenceData_path;
                 if ~exist(fullfile(db_basepath{i_db},[basenames{i_db},'.cell_metrics.cellinfo.mat']),'file')
-                    waitbar(i_db/length(i_db_subset_all),ce_waitbar,['Downloading missing reference data : ' basenames{i_db}]);
+                    waitbar((i_db-1)/length(i_db_subset_all),ce_waitbar,['Downloading missing reference data : ' basenames{i_db}]);
                     Investigator_name = strsplit(db.sessions{i_db2}.investigator,' ');
                     path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
                     filename = fullfile(referenceData_path,[basenames{i_db},'.cell_metrics.cellinfo.mat']);
@@ -5328,11 +5329,6 @@ end
                             url = fullfile(db_settings.repositories.(db.sessions{i_db2}.repositories{1}), db.sessions{i_db2}.animal, db.sessions{i_db2}.name);
                         end
                         url = fullfile(url,[basenames{i_db},'.cell_metrics.cellinfo.mat']);
-%                         if ~isempty(db.sessions{i_db2}.spikeSorting.relativePath)
-%                             url = fullfile(url, db.sessions{i_db2}.spikeSorting.relativePath{1},[basenames{i_db},'.cell_metrics.cellinfo.mat']);
-%                         else
-%                             
-%                         end
                         status = copyfile(url,filename);
                         if ~status
                             MsgLog('Copying cell metrics failed',4)
@@ -8547,6 +8543,10 @@ end
                     savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
                 catch 
                     disp('figure not saved (action canceled by user or directory not available for writing)')
+                    movegui(fig,'center'), set(fig,'visible','on')
+                    if plotCellIDs~=-1
+                        fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.settings.figureSize,'visible','off');
+                    end
                 end
             end
         end

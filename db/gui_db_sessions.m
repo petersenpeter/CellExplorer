@@ -84,7 +84,7 @@ function [basenames,basepaths,exitMode] = gui_db_sessions(basenames_in)
             idx2 = 1:size(db.dataTable,1);
         end
 
-        if loadDB.popupmenu.repositories.Value == 2
+        if loadDB.popupmenu.repositories.Value == 2 && ~isempty(db_settings.repositories)
             idx3 = find(ismember(db.repository(db.index),fieldnames(db_settings.repositories)));
         else
             idx3 = 1:size(db.dataTable,1);
@@ -116,6 +116,11 @@ function [basenames,basepaths,exitMode] = gui_db_sessions(basenames_in)
             db_basename = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
             basenames = db_basename(indx);
             i_db_subset_all = db.index(indx);
+            
+            if isempty(db_settings.repositories)
+                disp(['Local respositories have not been defined on this computer. Edit db_local_repositories']);
+                return
+            end
             for i_db = 1:length(i_db_subset_all)
                 i_db_subset = i_db_subset_all(i_db);
                 if ~any(strcmp(db.sessions{i_db_subset}.repositories{1},fieldnames(db_settings.repositories)))

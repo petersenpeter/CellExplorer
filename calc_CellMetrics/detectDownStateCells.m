@@ -1,13 +1,13 @@
 function [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes)
 % Calculates the average CCG for each cell and determines their population modulation
-% index by the ration of the CCG from t=-500ms to -450ms and +450ms to
-% +500ms to the interval arounnd +-50ms
+% index defined as the ratio between the CCG bins from t=-250 to -200 and +200ms to
+% +250ms to the interval arounnd +-50ms
 
 % By Peter Petersen
-% Last edited: 07-07-2020
+% Last edited: 08-09-2020
 
-binSize = 0.01;  % in seconds (default: 5ms interval)
-duration = 0.5; % in seconds (default: +-2500ms)
+binSize = 0.01;  % in seconds (default: 0.010 second bin size)
+duration = 0.5; % in seconds (default: +-0.250 second)
 
 if ~isfield(spikes,'spindices')
     disp('Generating spindices')
