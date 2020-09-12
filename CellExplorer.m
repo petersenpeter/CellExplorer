@@ -5319,7 +5319,8 @@ end
                     
                     if ~any(strcmp(db.sessions{i_db2}.repositories{1},fieldnames(db_settings.repositories))) && strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
                         url = [nyu_url,path_Investigator,'/',db.sessions{i_db2}.animal,'/', basenames{i_db},'/',[basenames{i_db},'.cell_metrics.cellinfo.mat']];
-                        outfilename = websave(filename,url);
+                        options = weboptions('Timeout', 30);
+                        outfilename = websave(filename,url,options);
                     else
                         if strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
                             url = fullfile(db_settings.repositories.(db.sessions{i_db2}.repositories{1}), path_Investigator,db.sessions{i_db2}.animal, db.sessions{i_db2}.name);
