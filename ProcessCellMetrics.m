@@ -857,110 +857,6 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
     histogram(cell_metrics.thetaPhasePeak,[-1:0.2:1]*pi), legend({'Trough','Peak'})
 end
 
-%% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Spatial related metrics
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
-if any(contains(parameters.metrics,{'spatial_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'spatial_metrics'}))
-    spkExclu = setSpkExclu('spatial_metrics',parameters);
-    dispLog('Spatial metrics');
-    field2remove = {'firingRateMap_CoolingStates','firingRateMap_LeftRight','firingRateMaps','firingRateMap','firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate','FiringRateMap','FiringRateMap_CoolingStates','FiringRateMap_StimStates','FiringRateMap_LeftRight'};
-    test = isfield(cell_metrics,field2remove);
-    cell_metrics = rmfield(cell_metrics,field2remove(test));
-
-    % General firing rate map
-    if exist(fullfile(basepath,[basename,'.firingRateMap.firingRateMap.mat']),'file')
-        
-        temp2 = load(fullfile(basepath,[basename,'.firingRateMap.firingRateMap.mat']));
-        disp('  Loaded firingRateMap.mat succesfully');
-        if isfield(temp2,'firingRateMap')
-            firingRateMap = temp2.firingRateMap;
-            if cell_metrics.general.cellCount == length(firingRateMap.total)
-                cell_metrics.firingRateMaps.firingRateMap = firingRateMap.map;
-                
-                if isfield(firingRateMap,'x_bins')
-                    cell_metrics.general.firingRateMaps.firingRateMap.x_bins = firingRateMap.x_bins;
-                end
-                if isfield(firingRateMap,'boundaries')
-                    cell_metrics.general.firingRateMaps.firingRateMap.boundaries = firingRateMap.boundaries;
-                end
-                
-                cell_metrics.general.firingRateMaps.firingRateMap.x_bins = firingRateMap.x_bins;
-                cell_metrics.general.firingRateMaps.firingRateMap.boundaries = firingRateMap.boundaries;
-                
-                for j = 1:cell_metrics.general.cellCount
-                    cell_metrics.spatialPeakRate(j) = max(firingRateMap.map{j});
-                    temp = place_cell_condition(firingRateMap.map{j});
-                    cell_metrics.spatialCoherence(j) = temp.SpatialCoherence;
-                    cell_metrics.placeCell(j) = temp.condition;
-                    cell_metrics.placeFieldsCount(j) = temp.placefield_count;
-                    temp3 = cumsum(sort(firingRateMap.map{j},'descend'));
-                    if ~all(temp3==0)
-                        cell_metrics.spatialCoverageIndex(j) = find(temp3>0.75*temp3(end),1)/(length(temp3)*0.75); % Spatial coverage index (Royer, NN 2012)
-                        cum_firing1 = cumsum(sort(firingRateMap.map{j}));
-                        cum_firing1 = cum_firing1/max(cum_firing1);
-                        cell_metrics.spatialGiniCoeff(j) = 1-2*sum(cum_firing1)./length(cum_firing1);
-                    else
-                        cell_metrics.spatialCoverageIndex(j) = nan;
-                        cell_metrics.spatialGiniCoeff(j) = nan;
-                    end
-                end
-                disp('  Spatial metrics succesfully calculated');
-            else
-                warning(['Number of cells firing rate maps (', num2str(size(firingRateMap.map,2)),  ') does not corresponds to the number of cells in spikes structure (', num2str(numel(spikes{spkExclu}.times)) ,')' ])
-            end
-        end
-        
-    else
-        disp('  No *.firingRateMap.firingRateMap.mat file found');
-    end
-    
-    % State dependent firing rate maps
-    % e.g. basename.LeftRightRateMap.firingRateMap.mat
-    firingRateMap_filelist = dir(fullfile(basepath,[basename,'.*.firingRateMap.mat'])); 
-    firingRateMap_filelist = {firingRateMap_filelist.name};
-    
-    for i = 1:length(firingRateMap_filelist)
-        
-        temp2 = load(fullfile(basepath,firingRateMap_filelist{i}));
-        firingRateMapName = strsplit(firingRateMap_filelist{i},'.'); 
-        firingRateMapName = firingRateMapName{end-2};
-        firingRateMap = temp2.(firingRateMapName);
-        if cell_metrics.general.cellCount == size(firingRateMap.map,2) && length(firingRateMap.x_bins) == size(firingRateMap.map{1},1)
-            disp(['  Loaded ' firingRateMapName ' succesfully']);
-            cell_metrics.firingRateMaps.(firingRateMapName) = firingRateMap.map;
-            if isfield(firingRateMap,'x_bins')
-                cell_metrics.general.firingRateMaps.(firingRateMapName).x_bins = firingRateMap.x_bins;
-            end
-            if isfield(firingRateMap,'x_label')
-                cell_metrics.general.firingRateMaps.(firingRateMapName).x_label = firingRateMap.x_label;
-            end
-            if isfield(firingRateMap,'boundaries')
-                cell_metrics.general.firingRateMaps.(firingRateMapName).boundaries = firingRateMap.boundaries;
-            end
-            if isfield(firingRateMap,'labels')
-                cell_metrics.general.firingRateMaps.(firingRateMapName).labels = firingRateMap.labels;
-            end
-            if isfield(firingRateMap,'boundaries_labels')
-                cell_metrics.general.firingRateMaps.(firingRateMapName).boundaries_labels = firingRateMap.boundaries_labels;
-            end
-        end
-    end
-    
-    if isfield(cell_metrics,'firingRateMaps') && isfield(cell_metrics.firingRateMaps,'LeftRightRateMap')
-        if isfield(firingRateMap,'splitter_bins')
-            splitter_bins = firingRateMap.splitter_bins;
-            cell_metrics.general.firingRateMaps.(firingRateMapName).splitter_bins = firingRateMap.splitter_bins;
-        else
-            splitter_bins = find( cell_metrics.general.firingRateMaps.(firingRateMapName).x_bins < cell_metrics.general.firingRateMaps.(firingRateMapName).boundaries(1) );
-            cell_metrics.general.firingRateMaps.(firingRateMapName).splitter_bins = splitter_bins;
-        end
-        splitter_bins = find( cell_metrics.general.firingRateMaps.(firingRateMapName).x_bins < cell_metrics.general.firingRateMaps.(firingRateMapName).boundaries(1) );
-        for j = 1:cell_metrics.general.cellCount
-            cell_metrics.spatialSplitterDegree(j) = sum(abs(cell_metrics.firingRateMaps.(firingRateMapName){1}(splitter_bins,j,1) - cell_metrics.firingRateMaps.(firingRateMapName){1}(splitter_bins,j,2)))/sum(cell_metrics.firingRateMaps.(firingRateMapName){1}(splitter_bins,j,1) + cell_metrics.firingRateMaps.(firingRateMapName){1}(splitter_bins,j,2) + length(splitter_bins));
-        end
-    end
-end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Event metrics
@@ -1172,8 +1068,109 @@ if any(contains(parameters.metrics,{'psth_metrics','all'})) && ~any(contains(par
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Behavior metrics
+% Spatial related metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+
+if any(contains(parameters.metrics,{'spatial_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'spatial_metrics'}))
+    spkExclu = setSpkExclu('spatial_metrics',parameters);
+    dispLog('Spatial metrics');
+    field2remove = {'firingRateMap_CoolingStates','firingRateMap_LeftRight','firingRateMaps','firingRateMap','firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate','FiringRateMap','FiringRateMap_CoolingStates','FiringRateMap_StimStates','FiringRateMap_LeftRight'};
+    test = isfield(cell_metrics,field2remove);
+    cell_metrics = rmfield(cell_metrics,field2remove(test));
+
+    % General firing rate map
+    if exist(fullfile(basepath,[basename,'.firingRateMap.firingRateMap.mat']),'file')
+        
+        temp2 = load(fullfile(basepath,[basename,'.firingRateMap.firingRateMap.mat']));
+        disp('  Loaded firingRateMap.mat succesfully');
+        if isfield(temp2,'firingRateMap')
+            firingRateMap = temp2.firingRateMap;
+            if cell_metrics.general.cellCount == length(firingRateMap.total)
+                cell_metrics.firingRateMaps.firingRateMap = firingRateMap.map;
+                
+                if isfield(firingRateMap,'x_bins')
+                    cell_metrics.general.firingRateMaps.firingRateMap.x_bins = firingRateMap.x_bins;
+                end
+                if isfield(firingRateMap,'boundaries')
+                    cell_metrics.general.firingRateMaps.firingRateMap.boundaries = firingRateMap.boundaries;
+                end
+                
+                cell_metrics.general.firingRateMaps.firingRateMap.x_bins = firingRateMap.x_bins;
+                cell_metrics.general.firingRateMaps.firingRateMap.boundaries = firingRateMap.boundaries;
+                
+                for j = 1:cell_metrics.general.cellCount
+                    cell_metrics.spatialPeakRate(j) = max(firingRateMap.map{j});
+                    temp = place_cell_condition(firingRateMap.map{j});
+                    cell_metrics.spatialCoherence(j) = temp.SpatialCoherence;
+                    cell_metrics.placeCell(j) = temp.condition;
+                    cell_metrics.placeFieldsCount(j) = temp.placefield_count;
+                    temp3 = cumsum(sort(firingRateMap.map{j},'descend'));
+                    if ~all(temp3==0)
+                        cell_metrics.spatialCoverageIndex(j) = find(temp3>0.75*temp3(end),1)/(length(temp3)*0.75); % Spatial coverage index (Royer, NN 2012)
+                        cum_firing1 = cumsum(sort(firingRateMap.map{j}));
+                        cum_firing1 = cum_firing1/max(cum_firing1);
+                        cell_metrics.spatialGiniCoeff(j) = 1-2*sum(cum_firing1)./length(cum_firing1);
+                    else
+                        cell_metrics.spatialCoverageIndex(j) = nan;
+                        cell_metrics.spatialGiniCoeff(j) = nan;
+                    end
+                end
+                disp('  Spatial metrics succesfully calculated');
+            else
+                warning(['Number of cells firing rate maps (', num2str(size(firingRateMap.map,2)),  ') does not corresponds to the number of cells in spikes structure (', num2str(numel(spikes{spkExclu}.times)) ,')' ])
+            end
+        end
+        
+    else
+        disp('  No *.firingRateMap.firingRateMap.mat file found');
+    end
+    
+    % State dependent firing rate maps
+    % e.g. basename.LeftRightRateMap.firingRateMap.mat
+    firingRateMap_filelist = dir(fullfile(basepath,[basename,'.*.firingRateMap.mat'])); 
+    firingRateMap_filelist = {firingRateMap_filelist.name};
+    
+    for i = 1:length(firingRateMap_filelist)
+        
+        temp2 = load(fullfile(basepath,firingRateMap_filelist{i}));
+        firingRateMapName = strsplit(firingRateMap_filelist{i},'.'); 
+        firingRateMapName = firingRateMapName{end-2};
+        firingRateMap = temp2.(firingRateMapName);
+        if cell_metrics.general.cellCount == size(firingRateMap.map,2) && length(firingRateMap.x_bins) == size(firingRateMap.map{1},1)
+            disp(['  Loaded ' firingRateMapName ' succesfully']);
+            cell_metrics.firingRateMaps.(firingRateMapName) = firingRateMap.map;
+            if isfield(firingRateMap,'x_bins')
+                cell_metrics.general.firingRateMaps.(firingRateMapName).x_bins = firingRateMap.x_bins;
+            end
+            if isfield(firingRateMap,'x_label')
+                cell_metrics.general.firingRateMaps.(firingRateMapName).x_label = firingRateMap.x_label;
+            end
+            if isfield(firingRateMap,'boundaries')
+                cell_metrics.general.firingRateMaps.(firingRateMapName).boundaries = firingRateMap.boundaries;
+            end
+            if isfield(firingRateMap,'labels')
+                cell_metrics.general.firingRateMaps.(firingRateMapName).labels = firingRateMap.labels;
+            end
+            if isfield(firingRateMap,'boundaries_labels')
+                cell_metrics.general.firingRateMaps.(firingRateMapName).boundaries_labels = firingRateMap.boundaries_labels;
+            end
+        end
+    end
+    
+    if isfield(cell_metrics,'firingRateMaps') && isfield(cell_metrics.firingRateMaps,'LeftRightRateMap')
+        if isfield(firingRateMap,'splitter_bins')
+            splitter_bins = firingRateMap.splitter_bins;
+            cell_metrics.general.firingRateMaps.(firingRateMapName).splitter_bins = firingRateMap.splitter_bins;
+        else
+            splitter_bins = find( cell_metrics.general.firingRateMaps.(firingRateMapName).x_bins < cell_metrics.general.firingRateMaps.(firingRateMapName).boundaries(1) );
+            cell_metrics.general.firingRateMaps.(firingRateMapName).splitter_bins = splitter_bins;
+        end
+        splitter_bins = find( cell_metrics.general.firingRateMaps.(firingRateMapName).x_bins < cell_metrics.general.firingRateMaps.(firingRateMapName).boundaries(1) );
+        for j = 1:cell_metrics.general.cellCount
+            cell_metrics.spatialSplitterDegree(j) = sum(abs(cell_metrics.firingRateMaps.(firingRateMapName){1}(splitter_bins,j,1) - cell_metrics.firingRateMaps.(firingRateMapName){1}(splitter_bins,j,2)))/sum(cell_metrics.firingRateMaps.(firingRateMapName){1}(splitter_bins,j,1) + cell_metrics.firingRateMaps.(firingRateMapName){1}(splitter_bins,j,2) + length(splitter_bins));
+        end
+    end
+end
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -1189,6 +1186,7 @@ for i = 1:length(customCalculationsOptions)
         cell_metrics = customCalculations.(customCalculationsOptions{i})(cell_metrics,session,spikes,parameters);
     end
 end
+
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Import pE and pI classifications from Buzcode (basename.CellClass.cellinfo.mat)
