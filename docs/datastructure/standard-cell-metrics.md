@@ -76,16 +76,7 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%"></p>
 
 ## Cell-type classification
-* `putativeCellType`: Putative cell types.
-  * In the processing pipeline, cells are classified into three putative cell types: **Narrow Interneurons, Wide Interneurons and Pyramidal Cells**.
-  * Interneurons are selected by 3 separate criteria:
-  1. acg_tau_decay > 30 ms
-  2. acg_tau_rise > 3 ms
-  3. troughToPeak <= 0.425 ms
-  * Next interneurons are separated into two classes
-  1. Narrow interneuron assigned if troughToPeak <= 0.425 ms
-  2. Wide interneuron assigned if troughToPeak > 0.425 ms
-  * Remaining cells are assigned as Pyramidal cells. 
+* `putativeCellType`: Putative cell types. [See the dedicated page on the cell-type classification]({{"/pipeline/cell-type-classification/"|absolute_url}}).
 
 ## Monosynaptic connections
 * `putativeConnections`: putative connections determined from cross correlograms. Contains two fields: `excitatory` and `inhibitory`, each contains connections pairs. 
