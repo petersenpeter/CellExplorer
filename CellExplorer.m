@@ -143,7 +143,7 @@ if isempty(basename)
     basename = s{end};
 end
 
-CellExplorerVersion = 1.66;
+CellExplorerVersion = 1.67;
 
 UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none');
 hManager = uigetmodemanager(UI.fig);
@@ -475,6 +475,7 @@ UI.menu.referenceData.ops(4) = uimenu(UI.menu.referenceData.topMenu,menuLabel,'H
 uimenu(UI.menu.referenceData.topMenu,menuLabel,'Open reference data dialog',menuSelectedFcn,@defineReferenceData,'Separator','on');
 % uimenu(UI.menu.referenceData.topMenu,menuLabel,'Compare cell groups to reference data',menuSelectedFcn,@compareToReference,'Separator','on');
 uimenu(UI.menu.referenceData.topMenu,menuLabel,'Adjust bin count for reference and ground truth plots',menuSelectedFcn,@defineBinSize,'Separator','on');
+uimenu(UI.menu.referenceData.topMenu,menuLabel,'Explore reference data',menuSelectedFcn,@exploreReferenceData,'Separator','on');
 
 % Ground truth
 UI.menu.groundTruth.topMenu = uimenu(UI.fig,menuLabel,'Ground truth');
@@ -488,6 +489,8 @@ uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Adjust bin count for reference and
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Show ground truth classification tab',menuSelectedFcn,@performGroundTruthClassification,'Accelerator','Y','Separator','on');
 % uimenu(UI.menu.groupData.topMenu,menuLabel,'Show ground truth data in current session(s)',menuSelectedFcn,@loadGroundTruth,'Accelerator','U');
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Save tagging to groundTruthData folder',menuSelectedFcn,@importGroundTruth);
+uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Explore groundTruth data',menuSelectedFcn,@exploreGroundTruth,'Separator','on');
+
 
 % Group data
 UI.menu.groupData.topMenu = uimenu(UI.fig,menuLabel,'Group data');
@@ -1811,11 +1814,12 @@ function updateUI
             set(subfig_ax(2),'YScale','log','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), hold on
             subfig_ax(2).YAxis(1).Color = 'k'; 
             subfig_ax(2).YAxis(2).Color = 'k';
+%             figure
             legendScatter2 = line(groundTruthData.x,10.^(line_histograms_X./max(line_histograms_X)*diff(log10(ylim21))*0.15+log10(ylim21(1))),'LineStyle','-','linewidth',1,'HitTest','off');
 %             legendScatter2 = line(groundTruthData.x,log10(ylim21(1))+diff(log10(ylim21))*0.15*line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off');
-            set(legendScatter2, {'color'}, num2cell(clr_groups3,2));
+            set(legendScatter2, {'color'}, num2cell(clr_groups3,2),'Marker','none');
             legendScatter22 = line(xlim21(1)+100*line_histograms_Y./max(line_histograms_Y),10.^(groundTruthData.y1'*ones(1,length(clusClas_list))),'LineStyle','-','linewidth',1,'HitTest','off');
-            set(legendScatter22, {'color'}, num2cell(clr_groups3,2));
+            set(legendScatter22, {'color'}, num2cell(clr_groups3,2),'Marker','none');
             xlim(xlim21), ylim((ylim21))
             yyaxis left, hold on
         elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics)
@@ -4678,6 +4682,28 @@ end
         end
     end
 
+    function exploreGroundTruth(~,~)
+        if ~isempty(groundTruth_cell_metrics)
+            cell_metrics = groundTruth_cell_metrics;
+            initializeSession;
+            uiresume(UI.fig);
+            MsgLog('Ground truth data loaded as primary data',2)
+        else
+            MsgLog('Ground truth data must be loaded first before exploring',4)
+        end
+    end
+
+    function exploreReferenceData(~,~)
+        if ~isempty(reference_cell_metrics)
+            cell_metrics = reference_cell_metrics;
+            initializeSession;
+            uiresume(UI.fig);
+            MsgLog('Reference data loaded as primary data',2)
+        else
+            MsgLog('Reference data must be loaded first before exploring',4)
+        end
+    end
+
     function importGroundTruth(src,evnt)
         [choice,dialog_canceled] = groundTruthDlg(UI.settings.groundTruth,groundTruthSelection);
         if ~isempty(choice) & ~dialog_canceled
@@ -5273,9 +5299,11 @@ end
             out = loadReferenceData;
             ref_sessionNames = '';
         end
+        
         if ~isempty(reference_cell_metrics)
             ref_sessionNames = unique(reference_cell_metrics.sessionName);
         end
+        
         [basenames,basepaths,exitMode] = gui_db_sessions(ref_sessionNames);
         
         if ~isempty(basenames)
@@ -5319,7 +5347,8 @@ end
                     
                     if ~any(strcmp(db.sessions{i_db2}.repositories{1},fieldnames(db_settings.repositories))) && strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
                         url = [nyu_url,path_Investigator,'/',db.sessions{i_db2}.animal,'/', basenames{i_db},'/',[basenames{i_db},'.cell_metrics.cellinfo.mat']];
-                        outfilename = websave(filename,url);
+                        options = weboptions('Timeout', 30);
+                        outfilename = websave(filename,url,options);
                     else
                         if strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
                             url = fullfile(db_settings.repositories.(db.sessions{i_db2}.repositories{1}), path_Investigator,db.sessions{i_db2}.animal, db.sessions{i_db2}.name);
