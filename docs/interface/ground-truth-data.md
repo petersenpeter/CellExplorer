@@ -10,11 +10,11 @@ At present (September 2020) the list includes PV, SST, Axo-axonic cells, VGAT an
 
 | Cell-type    | Count   | Contributers |
 |:-------------|:--------|:------|
-| PV           | 184     | Josh Siegle with Allen Institute; Yuta Senzai, Buzsaki lab |
-| SST          | 115     | Josh Siegle with Allen Institute  |
-| Axo axonic   | 35      | Dan English & Sam McKenzie, Buzsaki lab       |
+| PV           | 184     | Josh Siegle with the Allen Institute; Yuta Senzai, Buzsaki lab |
+| SST          | 115     | Josh Siegle with the Allen Institute  |
+| Axo-axonic   | 35      | Dan English & Sam McKenzie, Buzsaki lab       |
 | VGAT         | 15      | Yuta Senzai, Buzsaki lab         |
-| VIP          | 14      | Josh Siegle with Allen Institute |
+| VIP          | 14      | Josh Siegle with the Allen Institute |
 
 ### Classifying your cells in CellExplorer
 You can also implement your own ground truth cells into the pipeline or do the classification in CellExplorer. Once classified you can share your metrics list with collaborators or provide them for publications. 
