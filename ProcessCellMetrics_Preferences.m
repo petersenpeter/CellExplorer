@@ -9,7 +9,10 @@ function preferences = ProcessCellMetrics_Preferences(session)
 % General
 preferences.general.probesVerticalSpacing = 10; % 10um spacing between channels
 preferences.general.probesLayout = 'poly2';     % Default probe layout
-    
+
+% Loading spike data
+preferences.loadSpikes.labelsToRead = {'good'};     % allows you to load units with various labels, e.g. MUA or a custom label
+
 % Waveform
 preferences.waveform.nPull = 600;               % number of spikes to pull out (default: 600)
 preferences.waveform.wfWin_sec = 0.004;         % Larger size of waveform windows for filterning. total width in ms
@@ -29,9 +32,11 @@ preferences.other.firingRateAcrossTime_binsize = 3*60;      % 180 seconds defaul
 
 % PutativeCellType
 % Cells are reassigned as interneurons by below criteria
-preferences.putativeCellType.acg_tau_decay_bondary = 30;    % acg_tau_decay > 30ms
-preferences.putativeCellType.acg_tau_rise_boundary = 3;     % acg_tau_rise > 3ms
-preferences.putativeCellType.troughToPeak_boundary = 0.425; % Narrow interneuron assigned if troughToPeak <= 0.425ms, otherwise wide interneuron
+% First narrow interneurons are determined:
+preferences.putativeCellType.troughToPeak_boundary = 0.425; % Narrow interneuron assigned if troughToPeak <= 0.425ms
+
+% Second, from the remaining cells the wide interneurons are determined:
+preferences.putativeCellType.acg_tau_rise_boundary = 6;     % acg_tau_rise > 6ms
 
 % PCA
 
