@@ -4,6 +4,7 @@ function output = loadStruct(dataName,datatype,varargin)
 % Example calls
 % trials = loadStruct('trials','behavior','session',session);
 % spikes = loadStruct('spikes','cellinfo','session',session);
+% cell_metrics = loadStruct('cell_metrics','cellinfo','session',session);
 
 % By Peter Petersen
 % petersen.peter@gmail.com

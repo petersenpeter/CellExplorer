@@ -1,6 +1,6 @@
 function session = loadSession(basepath,basename)
 % Loads an existing basename.session.mat file from the basepath. If no
-% basepath is providede it will try to loaf from current directory
+% basepath is providede it will try to load from current directory
 
 % By Peter Petersen
 % Last edited: 29-06-2020

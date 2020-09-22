@@ -58,7 +58,7 @@ if exist('sessionIn','var') && isstruct(sessionIn)
     else
         basepath = '';
     end
-elseif exist('sessionIn','file') && ischar(sessionIn)
+elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'file')
     disp(['Loading ' sessionIn]);
     load(sessionIn,'session');
     [filepath,~,~] = fileparts(sessionIn);
