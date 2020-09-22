@@ -63,8 +63,9 @@ session.general.basePath =  basepath; % Full path
 
 session.general.name = pathPieces{end}; % Session name / basename
 session.general.version = 5; % Metadata version
-session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
-
+if ~isfield(session.general,'sessionType') || isempty(session.general.sessionType)
+    session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
+end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Limited animal metadata (practical information)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -206,7 +207,7 @@ end
 if (~isfield(session.general,'date') || isempty(session.general.date)) && isfield(sessionInfo,'Date')
     session.general.date = sessionInfo.Date;
 end
-if isfield(session,'extracellular') && isfield(session.extracellular,'nChannels')
+if isfield(session,'extracellular') && isfield(session.extracellular,'nChannels') && ~isfield(session.extracellular,'nSamples')
     fullpath = fullfile(session.general.basePath,[session.general.name,'.dat']);
     if exist(fullpath,'file')
         temp2_ = dir(fullpath);
