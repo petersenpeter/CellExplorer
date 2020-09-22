@@ -63,14 +63,14 @@ UI.settings.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.
 
 % tSNE representation
 UI.settings.tSNE.metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','troughtoPeakDerivative'};
-UI.settings.tSNE.dDistanceMetric = 'euclidean'; % default: 'euclidean'
-UI.settings.tSNE.exaggeration = 15;             % default: 15
-UI.settings.tSNE.standardize = false;           % boolean
+UI.settings.tSNE.dDistanceMetric = 'chebychev'; % default: 'euclidean'
+UI.settings.tSNE.exaggeration = 10;             % default: 15
+UI.settings.tSNE.standardize = true;           % boolean
 UI.settings.tSNE.NumPCAComponents = 0;
 UI.settings.tSNE.LearnRate = 1000;
-UI.settings.tSNE.Perplexity = 200;
+UI.settings.tSNE.Perplexity = 30;
 UI.settings.tSNE.InitialY = 'Random';
-        
+
 UI.settings.tSNE.calcWideAcg = false;           % boolean
 UI.settings.tSNE.calcNarrowAcg = false;         % boolean
 UI.settings.tSNE.calcLogAcg = false;            % boolean
