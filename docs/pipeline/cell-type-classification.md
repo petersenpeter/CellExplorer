@@ -21,14 +21,14 @@ $$ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_
 
 To support this separation we have included ground truth opto-tagged interneurons into CellExplorer (PV, SST and VIP) and further determined excitatory vs inhibitory cells by monosynaptic connections. There is no golden rule that works across brain regions and behavioral states, but the parameters can serve as guidance. The narrow waveform cells are almost entirely inhibitory as verified by opto-tagging and monosynaptic connections, while the wide waveform cells are more difficult to separate. A smaller fraction is know to be interneurons, which are typically less bursty than pyramidal cells.
 
-## Hippocampal data
+### Hippocampal data
 Below figure shows the cell-type separation on hippocampal data from Petersen and Buzsaki (Neuron, 2020), and hippocampal data collected by Viktor Varga (not published yet). The triangles indicate excitatory cells determined from monosynaptic connections.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/PeterViktorCellExplorerPlot-v3.jpg){: .mt-4}
 
-##Cortical data
+### Cortical data
 Below figure shows the cell type separation applied to the cortical data from Senzai et al., Neuron 2019. The triangles and squares indicate excitatory and inhibitory cells determined from monosynaptic connections.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/YutaCellExplorerPlot_v2.jpg){: .mt-4}
 
-## Ground truth cells
+### Ground truth cells
 Below figure shows the various ground truth interneurons projected on the cortical data from the previous figure determined by opto-tagging. [Learn more about the ground truth cells here]({{"/interface/ground-truth-data/"|absolute_url}}).
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/Yuta_groundTruth_CellExplorerPlot.jpg){: .mt-4}
