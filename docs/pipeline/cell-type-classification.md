@@ -21,13 +21,14 @@ $$ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_
 
 To support this separation we have included ground truth opto-tagged interneurons into CellExplorer (PV, SST and VIP) and further verified cell types (excitatory vs inhibitory cells) by the monosynaptic connections.
 
-Below figure shows the cell type separation on hippocampal data from Petersen and Buzsaki, Neuron 2020 and hippocampak data collected by Viktor Varga: 
-
+## Hippocampal data
+Below figure shows the cell type separation on hippocampal data from Petersen and Buzsaki, Neuron 2020 and hippocampal data collected by Viktor Varga. The triangles indicate excitatory cells determined from monosynaptic connections.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/PeterViktorCellExplorerPlot-v3.jpg){: .mt-4}
 
-Below figure shows the cell type separation on cortical data in Senzai et al., Neuron 2019: 
+##Cortical data
+Below figure shows the cell type separation applied to the cortical data from Senzai et al., Neuron 2019. The triangles and squares indicate excitatory and inhibitory cells determined from monosynaptic connections.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/YutaCellExplorerPlot_v2.jpg){: .mt-4}
 
-
-Below are the ground truth interneurons with count projected on the cortical data from the previous figure: 
+## Ground truth cells
+Below figure shows the various ground truth interneurons projected on the cortical data from the previous figure determined by opto-tagging.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/Yuta_groundTruth_CellExplorerPlot.jpg){: .mt-4}
