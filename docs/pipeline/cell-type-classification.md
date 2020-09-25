@@ -22,11 +22,11 @@ $$ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_
 To support this separation we have included ground truth opto-tagged interneurons into CellExplorer (PV, SST and VIP) and further determined excitatory vs inhibitory cells by monosynaptic connections. There is no golden rule that works across brain regions and behavioral states, but the parameters can serve as guidance. The narrow waveform cells are almost entirely inhibitory as verified by opto-tagging and monosynaptic connections, while the wide waveform cells are more difficult to separate. A smaller fraction is know to be interneurons, which are typically less bursty than pyramidal cells.
 
 ### Hippocampal data
-Below figure shows the cell-type separation on hippocampal data from Petersen and Buzsaki (Neuron, 2020), and hippocampal data collected by Viktor Varga (not published yet). The triangles indicate excitatory cells determined from monosynaptic connections.
+Below figure shows the cell-type separation on hippocampal data from Petersen and Buzsaki (Neuron, 2020), and hippocampal data collected by Viktor Varga (not published yet). The triangles indicate excitatory cells determined from monosynaptic connections. Dark blue: Narrow interneurons, Cyan: Wide interneurons, Red: Pyramidal cells.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/PeterViktorCellExplorerPlot-v3.jpg){: .mt-4}
 
 ### Cortical data
-Below figure shows the cell type separation applied to the cortical data from Senzai et al., Neuron 2019. The triangles and squares indicate excitatory and inhibitory cells determined from monosynaptic connections.
+Below figure shows the cell type separation applied to the cortical data from Senzai et al., Neuron 2019. The triangles and squares indicate excitatory and inhibitory cells determined from monosynaptic connections. Dark blue: Narrow interneurons, Cyan: Wide interneurons, Red: Pyramidal cells.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/YutaCellExplorerPlot_v2.jpg){: .mt-4}
 
 ### Ground truth cells
