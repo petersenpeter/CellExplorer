@@ -15,9 +15,19 @@ This was inspired by previous papers from our lab (Sirota et al., Neuron 2008; S
 
 Pyramidal cells have a wide waveform, are typically bursty with an average firing rate below 2Hz. PV and SST cells have a much more narrow waveform, a higher base firing rate and are much less likely to burst during physiological in vivo conditions.
 
-The wide waveform interneurons are harder to distinquish from pydamidal cells. Here we introduce the autocorrelogram as a dimension for capturing this difference. Autocorrelograms are fitted with a triple-exponential equation:
+The wide waveform interneurons are harder to distinquish from pyramidal cells. Here we introduce the autocorrelogram as a dimension for capturing this difference. Autocorrelograms are fitted with a triple-exponential equation:
 
 $$ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)$$
 
-To support this separation we have included ground truth opto-tagged interneurons into CellExplorer (PV, SST and VIP) and further verified cell types (excitatory vs inhibitory cells) by the monosynaptic connections. To be continued!
+To support this separation we have included ground truth opto-tagged interneurons into CellExplorer (PV, SST and VIP) and further verified cell types (excitatory vs inhibitory cells) by the monosynaptic connections.
 
+Below figure shows the cell type separation on hippocampal data from Petersen and Buzsaki, Neuron 2020 and hippocampak data collected by Viktor Varga: 
+
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/PeterViktorCellExplorerPlot-v3.jpg){: .mt-4}
+
+Below figure shows the cell type separation on cortical data in Senzai et al., Neuron 2019: 
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/YutaCellExplorerPlot_v2.jpg){: .mt-4}
+
+
+Below are the ground truth interneurons with count projected on the cortical data from the previous figure: 
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/Yuta_groundTruth_CellExplorerPlot.jpg){: .mt-4}
