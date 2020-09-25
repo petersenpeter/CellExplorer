@@ -56,10 +56,10 @@ function [basenames,basepaths,exitMode] = gui_db_sessions(basenames_in)
 
     function Button_DB_filterList
         if ~isempty(loadDB.popupmenu.filter.String) && ~strcmp(loadDB.popupmenu.filter.String,'Filter')
-            newStr2 = split(loadDB.popupmenu.filter.String,' & ');
+            newStr2 = split(loadDB.popupmenu.filter.String,{' & ',' AND '});
             idx_textFilter2 = zeros(length(newStr2),size(db.dataTable,1));
             for i = 1:length(newStr2)
-                newStr3 = split(newStr2{i},' | ');
+                newStr3 = split(newStr2{i},{' | ',' OR ',});
                 idx_textFilter2(i,:) = contains(db.sessionList,newStr3,'IgnoreCase',true);
             end
             idx1 = find(sum(idx_textFilter2,1)==length(newStr2));

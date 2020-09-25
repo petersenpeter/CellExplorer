@@ -5073,10 +5073,10 @@ end
         end
         function filterGroupData
             if ~isempty(groupData.popupmenu.filter.String) && ~strcmp(groupData.popupmenu.filter.String,'Filter')
-                newStr2 = split(groupData.popupmenu.filter.String,' & ');
+                newStr2 = split(groupData.popupmenu.filter.String,{' & ',' AND '});
                 idx_textFilter2 = zeros(length(newStr2),size(UI.groupData.dataTable,1));
                 for i = 1:length(newStr2)
-                    newStr3 = split(newStr2{i},' | ');
+                    newStr3 = split(newStr2{i},{' | ',' OR ',});
                     idx_textFilter2(i,:) = contains(UI.groupData.sessionList,newStr3,'IgnoreCase',true);
                 end
                 idx1 = find(sum(idx_textFilter2,1)==length(newStr2));
@@ -5242,10 +5242,10 @@ end
         function Button_DB_filterList
 %             dataTable1 = gt.dataTable;
             if ~isempty(loadDB.popupmenu.filter.String) && ~strcmp(loadDB.popupmenu.filter.String,'Filter')
-                newStr2 = split(loadDB.popupmenu.filter.String,' & ');
+                newStr2 = split(loadDB.popupmenu.filter.String,{' & ',' AND '});
                 idx_textFilter2 = zeros(length(newStr2),size(gt.dataTable,1));
                 for i = 1:length(newStr2)
-                    newStr3 = split(newStr2{i},' | ');
+                    newStr3 = split(newStr2{i},{' | ',' OR ',});
                     idx_textFilter2(i,:) = contains(gt.sessionList,newStr3,'IgnoreCase',true);
                 end
                 idx1 = find(sum(idx_textFilter2,1)==length(newStr2));
@@ -11635,7 +11635,7 @@ end
                 end
             end
             if failCheck == 0
-                orPairs = find(contains(matches,' | '));
+                orPairs = find(contains(matches,{' | ',' OR ',}));
                 if ~isempty(orPairs)
                     for i = 1:length(orPairs)
                         idx_textFilter2([orPairs(i),orPairs(i)+1],:) = any(idx_textFilter2([orPairs(i),orPairs(i)+1],:)).*[1;1];
