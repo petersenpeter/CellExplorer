@@ -643,7 +643,7 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
     end
     if ~all(isfield(cell_metrics,{'acg','thetaModulationIndex','burstIndex_Royer2012','burstIndex_Doublets','acg_tau_decay','acg_tau_rise'})) || parameters.forceReload == true
         dispLog('ACG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets')
-        acg_metrics = calc_ACG_metrics(spikes{spkExclu});
+        acg_metrics = calc_ACG_metrics(spikes{spkExclu},sr);
         
         cell_metrics.acg.wide = acg_metrics.acg_wide; % Wide: 1000ms wide CCG with 1ms bins
         cell_metrics.acg.narrow = acg_metrics.acg_narrow; % Narrow: 100ms wide CCG with 0.5ms bins

@@ -201,7 +201,7 @@ if parameters.forceReload
                                 temp = find(cluster_info.id == spikes.cluID(j));
                                 spikes.maxWaveformCh(j) = cluster_info.ch(temp); % max waveform channel
                                 spikes.maxWaveformCh1(j) = cluster_info.ch(temp)+1; % index 1;
-                                spikes.phy_purity(j) = cluster_info.purity(temp)+1; % cluster purity
+%                                 spikes.phy_purity(j) = cluster_info.purity(temp)+1; % cluster purity
                                 spikes.phy_amp(j) = cluster_info.amp(temp)+1; % spike amplitude
                             end
                             spikes.total(j) = length(spikes.ts{j});

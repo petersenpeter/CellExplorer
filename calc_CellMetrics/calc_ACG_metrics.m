@@ -1,4 +1,4 @@
-function acg_metrics = calc_ACG_metrics(spikes)%(clustering_path,sr,TimeRestriction)
+function acg_metrics = calc_ACG_metrics(spikes,sr)%(clustering_path,sr,TimeRestriction)
 % Two autocorrelograms are calculated:  narrow (100ms, 0.5ms bins) and wide (1s, 1ms bins) using the CCG function (for speed)
 %
 % Further three metrics are derived from these:
@@ -36,8 +36,8 @@ acg_narrow = zeros(bins_narrow*2+1,numel(spikes.times));
 disp('Calculating narrow ACGs (100ms, 0.5ms bins) and wide ACGs (1s, 1ms bins)')
 tic
 for i = cell_indexes
-    acg_wide(:,i) = CCG(spikes.times{i},ones(size(spikes.times{i})),'binSize',0.001,'duration',1,'norm','rate');
-    acg_narrow(:,i) = CCG(spikes.times{i},ones(size(spikes.times{i})),'binSize',0.0005,'duration',0.100,'norm','rate');
+    acg_wide(:,i) = CCG(spikes.times{i},ones(size(spikes.times{i})),'binSize',0.001,'duration',1,'norm','rate','Fs',1/sr);
+    acg_narrow(:,i) = CCG(spikes.times{i},ones(size(spikes.times{i})),'binSize',0.0005,'duration',0.100,'norm','rate','Fs',1/sr);
     % Metrics from narrow
     BurstIndex_Doublets(i) = max(acg_narrow(bins_narrow+1+5:bins_narrow+1+16,i))/mean(acg_narrow(bins_narrow+1+16:bins_narrow+1+23,i));
     % Metrics from wide
