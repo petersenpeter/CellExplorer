@@ -4683,8 +4683,12 @@ end
         referenceData_path = fullfile(referenceData_path,'+referenceData','reference_cell_metrics.cellinfo.mat');
         if exist(referenceData_path,'file')
             load(referenceData_path);
-            [reference_cell_metrics,referenceData,fig2_axislimit_x_reference,fig2_axislimit_y_reference] = initializeReferenceData(reference_cell_metrics,'reference');
-            out = true;
+            if ~isempty(reference_cell_metrics)
+                [reference_cell_metrics,referenceData,fig2_axislimit_x_reference,fig2_axislimit_y_reference] = initializeReferenceData(reference_cell_metrics,'reference');
+                out = true;
+            else
+                out = false;
+            end
         else
             out = false;
         end
