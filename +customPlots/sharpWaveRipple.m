@@ -14,8 +14,8 @@ function subsetPlots = sharpWaveRipple(cell_metrics,UI,ii,col)
         else
             SWR = cell_metrics.general.SWR_batch;
         end
-        spikeGroup = cell_metrics.spikeGroup(ii);
-        if ~isempty(SWR) && isfield(SWR,'SWR_diff') && spikeGroup <= length(SWR.ripple_power)
+        if isfield(cell_metrics,'spikeGroup') && ~isempty(SWR) && isfield(SWR,'SWR_diff') && cell_metrics.spikeGroup(ii) <= length(SWR.ripple_power)
+            spikeGroup = cell_metrics.spikeGroup(ii);
             multiplier = 0.1;
             ripple_power_temp = SWR.ripple_power{spikeGroup}/max(SWR.ripple_power{spikeGroup}); grid on
             
