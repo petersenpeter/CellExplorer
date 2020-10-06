@@ -41,7 +41,7 @@ for i = cell_indexes
     % Metrics from narrow
     BurstIndex_Doublets(i) = max(acg_narrow(bins_narrow+1+5:bins_narrow+1+16,i))/mean(acg_narrow(bins_narrow+1+16:bins_narrow+1+23,i));
     % Metrics from wide
-    ThetaModulationIndex(i) = (mean(acg_wide(bins_wide+1+50:bins_wide+1+70,i))-mean(acg_wide(bins_wide+1+100:bins_wide+1+140,i)))/(mean(acg_wide(bins_wide+1+50:bins_wide+1+70,i))+mean(acg_wide(bins_wide+1+100:bins_wide+1+140,i)));
+    ThetaModulationIndex(i) = (mean(acg_wide(bins_wide+1+100:bins_wide+1+140,i)) - mean(acg_wide(bins_wide+1+50:bins_wide+1+70,i)))/(mean(acg_wide(bins_wide+1+50:bins_wide+1+70,i))+mean(acg_wide(bins_wide+1+100:bins_wide+1+140,i)));
     BurstIndex_Royer2012(i) = mean(acg_wide(bins_wide+1+3:bins_wide+1+5,i))/mean(acg_wide(bins_wide+1+200:bins_wide+1+300,i));
 end
 toc
