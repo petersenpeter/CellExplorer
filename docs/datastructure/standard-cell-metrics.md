@@ -97,7 +97,7 @@ Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscie
 * `thetaPhasePeak`: Theta phase peak
 * `thetaPhaseTrough`: Theta phase trough
 * `thetaEntrainment`: Theta entrainment
-* `thetaModulationIndex`: Theta modulation index. determined from the ACG.
+* `thetaModulationIndex`: Theta modulation index. Originally defined in [Cacucci et al., JNeuro 2004](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2683733/). Computed as the difference between the theta modulation trough (defined as mean of autocorrelogram bins, 50-70 msec) and the theta modulation peak (mean of autocorrelogram bins, 100-140 msec) over their sum.
 
 ## Firing rate maps
 * `firingRateMaps`: (spatial) firing rate maps.
