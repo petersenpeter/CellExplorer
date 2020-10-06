@@ -12,7 +12,7 @@ function acg_metrics = calc_ACG_metrics(spikes,sr)%(clustering_path,sr,TimeRestr
 %    max bin count from 2.5-8ms normalized by the average number of spikes in the 8-11.5ms bins
 %
 % BurstIndex_Royer2012:
-%    Burst index is determined by calculating the average number of spikes in the 3?5 ms bins of the spike
+%    Burst index is determined by calculating the average number of spikes in the 3-5 ms bins of the spike
 %    autocorrelogram divided by the average number of spikes in the 200-300 ms bins.
 %    Metrics introduced in Royer et al. Nature Neuroscience 2012, and adjusted in Senzai & Buzsaki, Neuron 2017.
 
