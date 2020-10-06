@@ -18,7 +18,13 @@ spikeIDs = double(spikes.spindices(b,2));
 
 % Generating CCG matrix
 [ccgR1,tR] = CCG(spiketimes,spikeIDs,'binSize',binSize,'duration',duration);
-meanCCG = mean(ccgR1,3);
+
+neuron_num = size(ccgR1,3);
+NaNccgR1 = ccgR1;
+for i=1:neuron_num
+    NaNccgR1(:,i,i)=NaN(51,1);
+end
+meanCCG = nanmean(NaNccgR1,3);
 
 disp('Detecting down-state cells')
 if isfield(spikes,'sessionName') 
