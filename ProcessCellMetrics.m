@@ -677,7 +677,7 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
     end
     if ~isfield(cell_metrics,{'population_modIndex'}) || ~isfield(cell_metrics.general,'responseCurves') || ~isfield(cell_metrics.general.responseCurves,'meanCCG') || numel(cell_metrics.general.responseCurves.meanCCG.x_bins) ~= 51
         dispLog('Calculating population modulation index')
-        [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes{spkExclu});
+        [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes{spkExclu},sr);
         cell_metrics.responseCurves.meanCCG = num2cell(meanCCG,1);
         cell_metrics.general.responseCurves.meanCCG.x_bins = tR;
         cell_metrics.population_modIndex = population_modIndex;
