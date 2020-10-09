@@ -6,7 +6,7 @@ nav_order: 7
 ---
 # Ground truth data
 {: .no_toc}
-At present (September 2020) the list includes PV, SST, Axo-axonic cells, VGAT and VIP cells and will continuesly be expanded with a further cells. The plan is to ultimately do classification from ground truth cell metrics so if you have opto-tagged data that you are interested in sharing/including, please reach out to us. Please see the [ground truth tutorial]({{"/tutorials/ground-truth-tutorial/"|absolute_url}}) to learn more about using the included ground truth data. The table below shows the current cell-types, their counts and the contributers:
+At present (September 2020) the list includes PV, SST, Axo-axonic cells, VGAT and VIP cells and we will continue to expand with more cells. The goal is to perform the classification from ground truth cell metrics. If you have opto-tagged data that you are interested in sharing/including, please reach out to us. See the [ground truth tutorial]({{"/tutorials/ground-truth-tutorial/"|absolute_url}}) to learn more about using the included ground truth data. The table below lists the cell-types, their counts and the contributers:
 
 | Cell-type  | Count | Contributers |
 |:-----------|:------|:------|
