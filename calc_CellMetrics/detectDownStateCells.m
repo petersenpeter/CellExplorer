@@ -1,4 +1,4 @@
-function [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes)
+function [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes,sr)
 % Calculates the average CCG for each cell and determines their population modulation
 % index defined as the ratio between the CCG bins from t=-250 to -200 and +200ms to
 % +250ms to the interval arounnd +-50ms
@@ -17,7 +17,7 @@ end
 spikeIDs = double(spikes.spindices(b,2));
 
 % Generating CCG matrix
-[ccgR1,tR] = CCG(spiketimes,spikeIDs,'binSize',binSize,'duration',duration);
+[ccgR1,tR] = CCG(spiketimes,spikeIDs,'binSize',binSize,'duration',duration,'norm','rate','Fs',1/sr);
 meanCCG = mean(ccgR1,3);
 
 disp('Detecting down-state cells')
