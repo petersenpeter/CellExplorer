@@ -45,11 +45,9 @@ CellExplorer used a single Matlab struct for handling all cell metrics called `c
 * `isi`: interspike intervals
   * `log10` [log-intervals spanning 1 ms : 10 s].
 * Autocorrelograms are fitted with a triple-exponential equation: 
-
 $$
 ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)
 $$ 
-
 ```m
 ACG_fit = 'max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)'
 a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asymptote, f = refrac, g = tau_burst, h = burst_amplitude
