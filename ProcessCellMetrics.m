@@ -665,13 +665,13 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
     end
     if ~all(isfield(cell_metrics,{'acg'}))  || ~isfield(cell_metrics.acg,{'log10'})  || parameters.forceReload == true
         dispLog('Calculating log10 ACGs')
-         acg = calc_logACGs(spikes{spkExclu});
+         acg = calc_logACGs(spikes{spkExclu}.times);
          cell_metrics.acg.log10 = acg.log10;
          cell_metrics.general.acgs.log10 = acg.log10_bins;
     end
     if ~all(isfield(cell_metrics,{'isi'}))  || ~isfield(cell_metrics.isi,{'log10'})  || parameters.forceReload == true
         dispLog('Calculating log10 ISIs')
-        isi = calc_logISIs(spikes{spkExclu});
+        isi = calc_logISIs(spikes{spkExclu}.times);
         cell_metrics.isi.log10 = isi.log10;
         cell_metrics.general.isis.log10 = isi.log10_bins;
     end
