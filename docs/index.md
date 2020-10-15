@@ -59,4 +59,4 @@ Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical use
   <source src="https://buzsakilab.com/CellExplorer/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
 </video>
 
-The video is [__available for download (60MB)__](https://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4), and can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY). For best viewing experience on YouTube, select highest resolution and maximize the video.
+The video can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY) and is [__available for download (60MB)__](https://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4). For best viewing experience on YouTube, select highest resolution and maximize the video.
