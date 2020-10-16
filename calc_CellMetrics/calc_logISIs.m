@@ -5,7 +5,7 @@ function isi = calc_logISIs(times)
 % petersen.peter@gmail.com
 % Last edited: 16-06-2020
 
-intervals = -3:0.04:2;
+intervals = -3:0.04:1;
 intervals2 = intervals(1:end-1)+.02;
 isi = {};
 isi.log10 = zeros(length(intervals2),size(times,2));
