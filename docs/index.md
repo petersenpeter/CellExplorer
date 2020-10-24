@@ -32,8 +32,9 @@ To address this, we built CellExplorer, a framework for analyzing and characteri
 mex -O CCGHeart.c
 mex -O FindInInterval.c
 ```
-4. CellExplorer uses additional toolboxes, of which one MATLAB toolbox must be installed manually.
-  * [Curvefit MATLAB toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline)
+4. CellExplorer uses additional toolboxes, of which two MATLAB toolbox must be installed manually.
+  * [Curve Fitting Toolbox](https://se.mathworks.com/products/curvefitting.html).
+  * [Parallel Computing Toolbox](https://se.mathworks.com/products/parallel-computing.html).
 
 5. That's it! Now you can explore the software with below example data or try one of the tutorials.
 
