@@ -242,7 +242,9 @@ if parameters.forceReload
                         spikes.cluID(UID) = ums2k_spikes.labels(i,1);
                         idx = ums2k_spikes.assigns == spikes.cluID(UID);
                         spikes.times{UID} = double(ums2k_spikes.spiketimes(idx))';
-                        spikes.trials{UID} = double(ums2k_spikes.spiketimes(idx))';
+                        if isfield(ums2k_spikes,'trials')
+                            spikes.trials{UID} = double(ums2k_spikes.trials(idx))';
+                        end
                         spikes.filtWaveform{UID} = double(1000000*mean(ums2k_spikes.waveforms(idx,:)));
                         spikes.filtWaveform_std{UID} = 1000000*std(ums2k_spikes.waveforms(idx,:));
                         spikes.timeWaveform{UID} = [0:size(ums2k_spikes.waveforms,2)-1]/ums2k_spikes.params.Fs*1000 - ums2k_spikes.params.cross_time;
