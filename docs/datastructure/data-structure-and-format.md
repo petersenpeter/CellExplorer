@@ -92,8 +92,8 @@ A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The 
 * `analysisTags`
   * `tagName`: the numeric or string values saved in the tag
 * `spikeSorting`
-  * `method` : e.g. KiloSort
-  * `format` : Phy, KiloSort, KlustaViewer, Klustakwik, ...
+  * `method` : KiloSort, KiloSort2,SpyKING CIRCUS, Klustakwik, MaskedKlustakwik, MountainSort, IronClust, MClust, UltraMegaSort2000
+  * `format` : Phy, KiloSort, SpyKING CIRCUS, Klustakwik, KlustaViewa, Neurosuite, MountainSort, IronClust, 'ALF, AllenSDK, MClust, UltraMegaSort2000
   * `relativePath` : relative to base/sessionpath
   * `channels` : list of channels selected.
   * `spikeSorter` : Person performed the manual spike sorting

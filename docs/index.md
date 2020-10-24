@@ -36,7 +36,7 @@ mex -O FindInInterval.c
   * [Curve Fitting Toolbox](https://se.mathworks.com/products/curvefitting.html).
   * [Parallel Computing Toolbox](https://se.mathworks.com/products/parallel-computing.html).
 
-5. That's it! Now you can explore the software with below example data or try one of the tutorials.
+That's it! Now you can explore the software with below example data or try one of the tutorials.
 
 ### Try CellExplorer with example data
 There is an example dataset included in the repository for trying CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/LoadCellMetricsBatch.m) into MATLAB and type:

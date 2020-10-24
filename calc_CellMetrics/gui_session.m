@@ -23,7 +23,7 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % Lists
 sortingMethodList = {'KiloSort', 'KiloSort2','SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik','MountainSort','IronClust','MClust','UltraMegaSort2000'}; % Spike sorting methods
-sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','UltraMegaSort2000'}; % Spike sorting formats
+sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','AllenSDK','MClust','UltraMegaSort2000'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
 speciesTypesList = {'Rat', 'Mouse','Red-eared Turtles'}; % animal species
