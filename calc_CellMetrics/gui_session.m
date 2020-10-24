@@ -22,16 +22,17 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % Last edited: 08-07-2020
 
 % Lists
-sortingMethodList = {'KiloSort', 'KiloSort2','SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik','MountainSort','IronClust','MClust'}; % Spike sorting methods
-sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust'}; % Spike sorting formats
+sortingMethodList = {'KiloSort', 'KiloSort2','SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik','MountainSort','IronClust','MClust','UltraMegaSort2000'}; % Spike sorting methods
+sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','UltraMegaSort2000'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
+speciesTypesList = {'Rat', 'Mouse','Red-eared Turtles'}; % animal species
 
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
 
 % Parameters in cell metrics pipeline
-UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections'};
+UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','getWaveformsFromDat'};
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Database initialization
@@ -774,7 +775,11 @@ uiwait(UI.fig)
         % Saving parameters
         if exist('parameters','var')
             for iParams = 1:length(UI.list.params)
-                parameters.(UI.list.params{iParams}) = UI.checkbox.params(iParams).Value;
+                if isfield(parameters,UI.list.params{iParams}) && islogical(parameters.(UI.list.params{iParams}))
+                    parameters.(UI.list.params{iParams}) = logical(UI.checkbox.params(iParams).Value);
+                else
+                    parameters.(UI.list.params{iParams}) = UI.checkbox.params(iParams).Value;
+                end
             end
             if ~isempty(UI.listbox.includeMetrics.Value)
                 parameters.metrics = UI.listbox.includeMetrics.String(UI.listbox.includeMetrics.Value);

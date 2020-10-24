@@ -1,5 +1,6 @@
 function spikes = loadSpikes(varargin)
-% Load clustered data from multiple pipelines [Current options: Phy (default), Klustakwik/Neurosuite, MClust, KlustaViewa, ALF, AllenSDK (nwb)]
+% Load clustered data from multiple pipelines [
+% Current options: Phy (default), Klustakwik/Neurosuite, MClust, KlustaViewa, ALF, AllenSDK (nwb), UltraMegaSort2000, Sebastien Royer's Lab standard]
 % Buzcode compatible output. Saves output to a basename.spikes.cellinfo.mat file
 %
 % Please see the CellExplorer website: https://cellexplorer.org/datastructure/data-structure-and-format/#spikes
@@ -31,6 +32,7 @@ function spikes = loadSpikes(varargin)
 %
 % LoadXml.m & xmltools.m (required: https://github.com/petersenpeter/CellExplorer/tree/master/calc_CellMetrics/private)
 % or bz_getSessionInfo.m (optional. From buzcode: https://github.com/buzsakilab/buzcode)
+%
 % npy-matlab toolbox (required for reading phy, AllenSDK & ALF data: https://github.com/kwikteam/npy-matlab)
 % getWaveformsFromDat (included with CellExplorer)
 %
@@ -43,7 +45,7 @@ function spikes = loadSpikes(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 20-07-2020
+% Last edited: 24-10-2020
 
 % Version history
 % 3.2 waveforms for phy data extracted from the raw dat
@@ -57,7 +59,7 @@ function spikes = loadSpikes(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
 addParameter(p,'clusteringpath','',@ischar); % clustering path to spike data
-addParameter(p,'clusteringformat','Phy',@ischar); % clustering format: [current options: phy, klustakwik/neurosuite, KlustaViewa, ALF, AllenSDK,MClust]
+addParameter(p,'clusteringformat','Phy',@ischar); % clustering format: [current options: phy, klustakwik/neurosuite, KlustaViewa, ALF, AllenSDK,MClust,UltraMegaSort2000]
                                                   % TODO: 'KiloSort', 'SpyKING CIRCUS', 'MountainSort', 'IronClust'
 addParameter(p,'basename','',@ischar); % The basename file naming convention
 addParameter(p,'shanks',nan,@isnumeric); % shanks: Loading only a subset of shanks (only applicable to Klustakwik)
@@ -226,6 +228,37 @@ if parameters.forceReload
                 spikes = getWaveformsFromDat(spikes,session);
             end
             
+        case {'ultramegasort2000','ums2k'} % ultramegasort2000 (https://github.com/danamics/UMS2K)
+            % From the Neurophysics Lab at UCSD (Daniel N. Hill, Samar B. Mehta, David Kleinfeld)
+            fileList = dir(fullfile(clusteringpath_full,['times_raw_elec_CH*.mat']));
+            fileList = {fileList.name};
+            UID = 1;
+            for i_channel = 1:numel(fileList)
+                ums2k_spikes = load(fullfile(clusteringpath_full,fileList{i_channel}),'spikes');
+                ums2k_spikes = ums2k_spikes.spikes;
+                for i = 1:size(ums2k_spikes.labels,1)
+                    if ums2k_spikes.labels(i,2) == 2 % Only good clusters are imported (labels == 2)
+                        spikes.UID(UID) = UID;
+                        spikes.cluID(UID) = ums2k_spikes.labels(i,1);
+                        idx = ums2k_spikes.assigns == spikes.cluID(UID);
+                        spikes.times{UID} = double(ums2k_spikes.spiketimes(idx))';
+                        spikes.trials{UID} = double(ums2k_spikes.spiketimes(idx))';
+                        spikes.filtWaveform{UID} = double(1000000*mean(ums2k_spikes.waveforms(idx,:)));
+                        spikes.filtWaveform_std{UID} = 1000000*std(ums2k_spikes.waveforms(idx,:));
+                        spikes.timeWaveform{UID} = [0:size(ums2k_spikes.waveforms,2)-1]/ums2k_spikes.params.Fs*1000 - ums2k_spikes.params.cross_time;
+                        spikes.peakVoltage(UID) = double(range(spikes.filtWaveform{UID}));
+                        spikes.maxWaveformCh(UID) = str2double(fileList{i_channel}(18:end-4))-1; % max waveform channel (index-0)
+                        spikes.maxWaveformCh1(UID) = str2double(fileList{i_channel}(18:end-4)); % max waveform channel (index-1)
+                        spikes.total(UID) = length(spikes.times{UID});
+                        spikes.shankID(UID) = spikes.maxWaveformCh1(UID); % Assigning shankID to the unit
+                        UID = UID+1;
+                    end
+                end
+            end
+            spikes.processinginfo.params.WaveformsSource = 'ultramegasort2000'; 
+            if parameters.getWaveformsFromDat
+                spikes = getWaveformsFromDat(spikes,session);
+            end
             
         case {'alf'} % ALF format from the cortex lab at UCL
             disp('loadSpikes: Loading ALF npy data')
@@ -295,7 +328,6 @@ if parameters.forceReload
             spikes.numcells = numel(spikes.times);
             spikes.UID = 1:spikes.numcells;
             % No waveforms are extracted from the raw file at this point
-
             spikes.processinginfo.params.WaveformsSource = 'kilosort template';
             spikes.processinginfo.params.WaveformsFiltFreq = 500;
             
@@ -481,15 +513,6 @@ if parameters.forceReload
             if parameters.getWaveformsFromDat
                 spikes = getWaveformsFromDat(spikes,session);
             end
-            
-        case {'kilosort'}
-            error('KiloSort output format not implemented yet')
-        case {'spyking circus'}
-            error('spyking circus output format not implemented yet')
-        case {'mountainsort'}
-            error('mountainsort output format not implemented yet')
-        case {'ironclust'}
-            error('ironclust output format not implemented yet')
         case {'klustakwik', 'neurosuite'}
             disp('loadSpikes: Loading Klustakwik data')
             unit_nb = 0;
@@ -601,6 +624,14 @@ if parameters.forceReload
             if parameters.getWaveformsFromDat
                 spikes = getWaveformsFromDat(spikes,session);
             end
+        case {'kilosort'}
+            error('KiloSort output format not implemented yet')
+        case {'spyking circus'}
+            error('spyking circus output format not implemented yet')
+        case {'mountainsort'}
+            error('mountainsort output format not implemented yet')
+        case {'ironclust'}
+            error('ironclust output format not implemented yet')
         otherwise
             error('Please provide a compatible clustering format')
     end

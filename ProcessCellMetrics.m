@@ -249,7 +249,7 @@ if ~isempty(parameters.spikes)
     parameters.spikes = [];
 else
     dispLog('Getting spikes')
-    spikes{1} = loadSpikes('session',session,'labelsToRead',preferences.loadSpikes.labelsToRead);
+    spikes{1} = loadSpikes('session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'getWaveformsFromDat',parameters.getWaveformsFromDat);
 end
 if parameters.getWaveformsFromDat && (~isfield(spikes{1},'processinginfo') || ~isfield(spikes{1}.processinginfo.params,'WaveformsSource') || ~strcmp(spikes{1}.processinginfo.params.WaveformsSource,'dat file') || spikes{1}.processinginfo.version<3.5 || parameters.forceReloadSpikes == true)
     spikes{1} = loadSpikes('forceReload',true,'spikes',spikes{1},'session',session,'labelsToRead',preferences.loadSpikes.labelsToRead);
@@ -423,13 +423,15 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 cell_metrics.waveforms.(field2copyNewNames{j}) =  spikes{spkExclu}.(field2copy{j});
             end
         end
-
-        for j = 1:cell_metrics.general.cellCount
-            if numel(spikes{spkExclu}.maxWaveform_all)>=j && ~isempty(spikes{spkExclu}.maxWaveform_all{j})
-                nChannelFit = min([16,length(spikes{spkExclu}.maxWaveform_all{j}),length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
-                cell_metrics.waveforms.bestChannels{j} = spikes{spkExclu}.maxWaveform_all{j}(1:nChannelFit);
-            else
-                cell_metrics.waveforms.bestChannels{j} = [];
+        
+        if isfield(spikes{spkExclu},'maxWaveform_all')
+            for j = 1:cell_metrics.general.cellCount
+                if numel(spikes{spkExclu}.maxWaveform_all)>=j && ~isempty(spikes{spkExclu}.maxWaveform_all{j})
+                    nChannelFit = min([16,length(spikes{spkExclu}.maxWaveform_all{j}),length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
+                    cell_metrics.waveforms.bestChannels{j} = spikes{spkExclu}.maxWaveform_all{j}(1:nChannelFit);
+                else
+                    cell_metrics.waveforms.bestChannels{j} = [];
+                end
             end
         end
         
@@ -488,7 +490,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             drawnow
         end
         for j = 1:cell_metrics.general.cellCount
-            if ~isnan(cell_metrics.peakVoltage(j))
+            if ~isnan(cell_metrics.peakVoltage(j)) && isfield(cell_metrics.waveforms,'filt_all')
                 % Trilateration
                 peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
                 [~,idx] = sort(range(cell_metrics.waveforms.filt_all{j}'),'descend');
