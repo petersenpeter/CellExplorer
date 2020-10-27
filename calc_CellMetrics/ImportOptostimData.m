@@ -80,7 +80,7 @@ for i = 2%:length(sessionNames)
     [session, basename, basepath] = db_set_session('sessionName',sessionNames{i});
     disp([num2str(i),': ', basename])
     load(fullfile(basepath,[basename,'.optoStim.manipulation.mat']),'optoStim');
-    spikes = loadSpikes('clusteringpath',session.spikeSorting{1}.relativePath,'clusteringformat',session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
+    spikes = loadSpikes('clusteringpath',session.spikeSorting{1}.relativePath,'format',session.spikeSorting.format{1},'basepath',basepath,'basename',basename,'LSB',session.extracellular.leastSignificantBit);
     
     trigger = optoStim.timestamps(:,1);
     bins_size = 0.01;

@@ -40,7 +40,7 @@ function spikes = loadSpikes(varargin)
 % EXAMPLE CALLS
 % spikes = loadSpikes('session',session);
 % spikes = loadSpikes('basepath',pwd,'clusteringpath',Kilosort_RelativeOutputPath); % Run from basepath, assumes Phy format.
-% spikes = loadSpikes('basepath',pwd,'clusteringformat','mclust'); % Run from basepath, loads MClust format.
+% spikes = loadSpikes('basepath',pwd,'format','mclust'); % Run from basepath, loads MClust format.
 
 
 % By Peter Petersen
@@ -59,7 +59,7 @@ function spikes = loadSpikes(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
 addParameter(p,'clusteringpath','',@ischar); % clustering path to spike data
-addParameter(p,'clusteringformat','Phy',@ischar); % clustering format: [current options: phy, klustakwik/neurosuite, KlustaViewa, ALF, AllenSDK,MClust,UltraMegaSort2000]
+addParameter(p,'format','Phy',@ischar); % clustering format: [current options: phy, klustakwik/neurosuite, KlustaViewa, ALF, AllenSDK,MClust,UltraMegaSort2000]
                                                   % TODO: 'KiloSort', 'SpyKING CIRCUS', 'MountainSort', 'IronClust'
 addParameter(p,'basename','',@ischar); % The basename file naming convention
 addParameter(p,'shanks',nan,@isnumeric); % shanks: Loading only a subset of shanks (only applicable to Klustakwik)
@@ -77,7 +77,7 @@ parse(p,varargin{:})
 
 basepath = p.Results.basepath;
 clusteringpath = p.Results.clusteringpath;
-clusteringFormat = p.Results.clusteringformat;
+format = p.Results.format;
 basename = p.Results.basename;
 shanks = p.Results.shanks;
 raw_clusters = p.Results.raw_clusters;
@@ -91,7 +91,7 @@ parameters = p.Results;
 if ~isempty(session)
     basename = session.general.name;
     basepath = session.general.basePath;
-    clusteringFormat = session.spikeSorting{1}.format;
+    format = session.spikeSorting{1}.format;
     clusteringpath = session.spikeSorting{1}.relativePath;
     if isfield(session.extracellular,'leastSignificantBit') && session.extracellular.leastSignificantBit>0
         LSB = session.extracellular.leastSignificantBit;
@@ -134,7 +134,7 @@ if parameters.forceReload
     end
     session = loadClassicMetadata(session);
     
-    switch lower(clusteringFormat)
+    switch lower(format)
         case 'phy' % Loading phy
             if ~exist('readNPY.m','file')
                 error('''readNPY.m'' is not in your path and is required to load the python data. Please download it here: https://github.com/kwikteam/npy-matlab.')
@@ -650,7 +650,7 @@ if parameters.forceReload
     spikes.processinginfo.params.raw_clusters = raw_clusters;
     spikes.processinginfo.params.getWaveformsFromDat = parameters.getWaveformsFromDat;
     spikes.processinginfo.params.basename = basename;
-    spikes.processinginfo.params.clusteringFormat = clusteringFormat;
+    spikes.processinginfo.params.format = format;
     spikes.processinginfo.params.clusteringpath = clusteringpath;
     spikes.processinginfo.params.basepath = basepath;
     spikes.processinginfo.params.useNeurosuiteWaveforms = parameters.useNeurosuiteWaveforms;
