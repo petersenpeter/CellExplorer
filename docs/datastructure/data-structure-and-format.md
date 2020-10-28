@@ -19,9 +19,6 @@ CellExplorer uses one main path for each session called `basepath`. The basepath
 ## Data structures
 Each type of data is saved in its own MATLAB structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode). Please see the list of data containers in the next section.  CellExplorer is fully compatible with the Buzcode toolbox repository.
 
-### Cell metrics
-The cell metrics are kept in a `cell_metrics` struct as [described here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat`.
-
 ### Session metadata
 A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/sessionTemplate.m) and inspected with [gui_session.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/gui_session.m). The `sessionName.session.mat` files should be stored in the basepath. It is structured as defined below:
 
@@ -95,8 +92,8 @@ A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The 
 * `analysisTags`
   * `tagName`: the numeric or string values saved in the tag
 * `spikeSorting`
-  * `method` : e.g. KiloSort
-  * `format` : Phy, KiloSort, KlustaViewer, Klustakwik, ...
+  * `method` : KiloSort, KiloSort2,SpyKING CIRCUS, Klustakwik, MaskedKlustakwik, MountainSort, IronClust, MClust, UltraMegaSort2000
+  * `format` : Phy, KiloSort, SpyKING CIRCUS, Klustakwik, KlustaViewa, Neurosuite, MountainSort, IronClust, 'ALF, AllenSDK, MClust, UltraMegaSort2000
   * `relativePath` : relative to base/sessionpath
   * `channels` : list of channels selected.
   * `spikeSorter` : Person performed the manual spike sorting
@@ -121,7 +118,7 @@ A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat
 * `UID`: a 1xN vector with values 1:N.
 * `shankID`: a 1xN vector containing the corresponding shank/electrode-group each unit (1-indexed).
 * `maxWaveformCh`: a 1xN vector with the channel for the maximum waveform for the units (0-indexed) 
-* `maxWaveformCh1`: a 1xN vector with the channel for the maximum waveform for the units (1-indexed) 
+* `maxWaveformCh1`: a 1xN vector with the channel for the maximum waveform for the units (1-indexed)
 * `total`: a 1xN vector with the total number of spikes for each unit.
 * `peakVoltage`: a 1xN vector with spike waveform amplitude (µV).
 * `filtWaveform`: a 1xN cell-struct with spike waveforms from maxWaveformChannel (µV).
@@ -129,12 +126,19 @@ A MATLAB struct `spikes` stored in a .mat file: `sessionName.spikes.cellinfo.mat
 * `rawWaveform`: a 1xN cell-struct with raw spike waveforms (µV).
 * `rawWaveform_std`: a 1xN cell-struct with std of the raw spike waveforms (µV).
 * `timeWaveform`: a 1xN cell-struct with spike timestamps for the waveforms (ms).
+* `maxWaveform_all`: a 1xN vector with channel indexes for the `_all` waveforms for the units (1-indexed) 
+* `rawWaveform_all`: a 1xN cell-struct with raw spike waveforms from `maxWaveform_all` (µV).
+* `filtWaveform_all`: a 1xN cell-struct with filtered spike waveforms from `maxWaveform_all` (µV).
+* `timeWaveform_all`: a 1xN cell-struct with spike timestamps for the `_all` waveforms (ms).
 * `numcells`: number of cells.
 * `sessionName`: name of the session (string).
 * `spindices`: a Kx2 matrix where the first column contains the K spike times for all units and the second column contains the unit index for each spike. 
 * `processinginfo`: a substruct with information about how the spikes was generated including the name of the function, version, date and the parameters.
 
 Any extra field can be added with info about the units, e.g. the theta phase of each spike for the units, or the position/speed of the animal for each spike.
+
+### Cell metrics
+The cell metrics are kept in a `cell_metrics` struct as [described here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `sessionName.cell_metrics.cellinfo.mat`.
 
 ### Firing rate maps
 This is a data container for firing rate map data. A MATLAB struct `ratemap` containing 1D or linearized firing rat maps, stored in a .mat file: `sessionName.ratemap.firingRateMap.mat`. The firing rate maps have the following fields:

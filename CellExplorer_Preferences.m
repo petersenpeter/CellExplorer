@@ -1,13 +1,13 @@
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% CellExplorer Preferences  
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%
 % Preferences loaded by the CellExplorer at startup
-% Check the website of the CellExplorer for more details: https://petersenpeter.github.io/CellExplorer/
+% Check the website of the CellExplorer for more details: https://cellexplorer.org/
   
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 24-04-2020
-
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% CellExplorer Preferences  
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 % Display settings - An incomplete list:
 % 'Waveforms (single)','Waveforms (all)','Waveforms (image)','Raw waveforms (single)','Raw waveforms (all)','ACGs (single)',
@@ -38,6 +38,7 @@ UI.settings.showAllWaveforms = 0;               % Show all traces or a random su
 UI.settings.zscoreWaveforms = 1;                % Show zscored or full amplitude waveforms
 UI.settings.trilatGroupData = 'session';        % 'session','animal','all'
 UI.settings.hoverEffect = 1;                    % Highlights cells by hovering the mouse
+UI.settings.plotLinearFits = 0;                 % Linear fit shown in group plot for each cell group
 
 % Autosave settings
 UI.settings.autoSaveFrequency = 5;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
@@ -57,19 +58,19 @@ UI.settings.groundTruth = {'PV','NOS1','GAT1','SST','Axoaxonic','CellType_A'};
 UI.settings.groupDataMarkers = ce_append(["o","d","s","*","+"],["m","k","g"]'); 
 
 UI.settings.groundTruthMarkers = {'om','d','sm','*k','+k','+m','om','dm','sg','*m'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
-UI.settings.groundTruthColors = [[.9,.2,.2];[.2,.2,.9];[0.2,0.9,0.9];[0.9,0.2,0.9];[.2,.9,.2];[.5,.5,.5]];
+UI.settings.groundTruthColors = [[.9,.2,.2];[.2,.2,.9];[0.2,0.9,0.9];[0.9,0.2,0.9];[.2,.9,.2];[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8]];
 UI.settings.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
 
 % tSNE representation
 UI.settings.tSNE.metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','troughtoPeakDerivative'};
-UI.settings.tSNE.dDistanceMetric = 'euclidean'; % default: 'euclidean'
-UI.settings.tSNE.exaggeration = 15;             % default: 15
-UI.settings.tSNE.standardize = false;           % boolean
+UI.settings.tSNE.dDistanceMetric = 'chebychev'; % default: 'euclidean'
+UI.settings.tSNE.exaggeration = 10;             % default: 15
+UI.settings.tSNE.standardize = true;           % boolean
 UI.settings.tSNE.NumPCAComponents = 0;
 UI.settings.tSNE.LearnRate = 1000;
-UI.settings.tSNE.Perplexity = 200;
+UI.settings.tSNE.Perplexity = 30;
 UI.settings.tSNE.InitialY = 'Random';
-        
+
 UI.settings.tSNE.calcWideAcg = false;           % boolean
 UI.settings.tSNE.calcNarrowAcg = false;         % boolean
 UI.settings.tSNE.calcLogAcg = false;            % boolean

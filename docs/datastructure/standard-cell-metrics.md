@@ -44,12 +44,16 @@ CellExplorer used a single Matlab struct for handling all cell metrics called `c
   * `log10` [log-intervals spanning 1 ms : 10 s].
 * `isi`: interspike intervals
   * `log10` [log-intervals spanning 1 ms : 10 s].
-* Autocorrelograms are fitted with a triple-exponential equation:
-$$ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)$$
+* Autocorrelograms are fitted with a triple-exponential equation: 
 ```m
 ACG_fit = 'max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)'
 a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asymptote, f = refrac, g = tau_burst, h = burst_amplitude
  ```
+ 
+$$
+ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)
+$$ 
+
 * `acg_tau_rise` ACG tau rise (ms)
 * `acg_tau_decay` ACG tau decay (ms)
 * `acg_tau_burst` ACG tau bursts (ms)
@@ -76,19 +80,10 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%"></p>
 
 ## Cell-type classification
-* `putativeCellType`: Putative cell types.
-  * In the processing pipeline, cells are classified into three putative cell types: **Narrow Interneurons, Wide Interneurons and Pyramidal Cells**.
-  * Interneurons are selected by 3 separate criteria:
-  1. acg_tau_decay > 30 ms
-  2. acg_tau_rise > 3 ms
-  3. troughToPeak <= 0.425 ms
-  * Next interneurons are separated into two classes
-  1. Narrow interneuron assigned if troughToPeak <= 0.425 ms
-  2. Wide interneuron assigned if troughToPeak > 0.425 ms
-  * Remaining cells are assigned as Pyramidal cells. 
+* `putativeCellType`: Putative cell types. [See the dedicated page about cell-type classification]({{"/pipeline/cell-type-classification/"|absolute_url}}).
 
 ## Monosynaptic connections
-* `putativeConnections`: putative connections determined from cross correlograms. Contains two fields: `excitatory` and `inhibitory`, each contains connections pairs. 
+* `putativeConnections`: putative connections determined from cross correlograms. Contains two fields: `excitatory` and `inhibitory`, each contains connections pairs.
 
 ## Sorting quality metrics
 Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscience. 2005.](https://www.ncbi.nlm.nih.gov/pubmed/15680687)
@@ -106,7 +101,7 @@ Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscie
 * `thetaPhasePeak`: Theta phase peak
 * `thetaPhaseTrough`: Theta phase trough
 * `thetaEntrainment`: Theta entrainment
-* `thetaModulationIndex`: Theta modulation index. determined from the ACG.
+* `thetaModulationIndex`: Theta modulation index. Originally defined in [Cacucci et al., JNeuro 2004](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2683733/). Computed as the difference between the theta modulation trough (defined as mean of autocorrelogram bins, 50-70 msec) and the theta modulation peak (mean of autocorrelogram bins, 100-140 msec) over their sum.
 
 ## Firing rate maps
 * `firingRateMaps`: (spatial) firing rate maps.

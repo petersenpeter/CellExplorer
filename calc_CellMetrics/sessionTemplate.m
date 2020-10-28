@@ -10,7 +10,7 @@ function session = sessionTemplate(input1,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 25-5-2020
+% Last edited: 30-06-2020
 
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
@@ -44,7 +44,7 @@ end
 [~,basename,~] = fileparts(basepath);
 if ~exist('session','var') && exist(fullfile(basepath,[basename,'.session.mat']),'file')
     disp('Loading existing basename.session.mat file')
-    load(fullfile(basepath,[basename,'.session.mat']))
+    session = loadSession(basepath,basename);
 elseif ~exist('session','var')
     session = [];
 end
@@ -63,8 +63,9 @@ session.general.basePath =  basepath; % Full path
 
 session.general.name = pathPieces{end}; % Session name / basename
 session.general.version = 5; % Metadata version
-session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
-
+if ~isfield(session.general,'sessionType') || isempty(session.general.sessionType)
+    session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
+end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Limited animal metadata (practical information)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -206,7 +207,7 @@ end
 if (~isfield(session.general,'date') || isempty(session.general.date)) && isfield(sessionInfo,'Date')
     session.general.date = sessionInfo.Date;
 end
-if isfield(session,'extracellular') && isfield(session.extracellular,'nChannels')
+if isfield(session,'extracellular') && isfield(session.extracellular,'nChannels') && ~isfield(session.extracellular,'nSamples')
     fullpath = fullfile(session.general.basePath,[session.general.name,'.dat']);
     if exist(fullpath,'file')
         temp2_ = dir(fullpath);
@@ -266,6 +267,12 @@ if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'fi
         session.epochs{i}.startTime =  MergePoints.timestamps(i,1);
         session.epochs{i}.stopTime =  MergePoints.timestamps(i,2);
     end
+end
+
+% Creating empty epoch if none exist
+if ~isfield(session,'epochs')
+    session.epochs{1}.name = session.general.name;
+    session.epochs{1}.startTime =  0;
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %

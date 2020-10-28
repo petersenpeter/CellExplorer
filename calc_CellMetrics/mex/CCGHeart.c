@@ -126,7 +126,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ) {
 	for (CenterSpike=0; CenterSpike<nSpikes; CenterSpike++) {
 		Mark1 = Marks[CenterSpike];
 		Time1 = Times[CenterSpike];
-        if (CenterSpike % 200000 == 0 && nSpikes>1000000) {
+        if (CenterSpike % 200000 == 0 && nSpikes>2000000) {
             mexPrintf("%3i%%", 100 * CenterSpike / nSpikes);
             mexCallMATLAB(0, NULL, 0, NULL, "drawnow");
         }

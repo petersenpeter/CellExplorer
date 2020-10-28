@@ -11,7 +11,7 @@ CellExplorer contains a select set of ground truth data located in `+groundTruth
 
 1. Launch CellExplorer
 2. From the top menu `Ground truth`, select `Define ground truth data`. This will display the dialog below with a list of ground truth cells from the `+groundTruthData/` folder. The data is orgazied by sessions, where each session contains at least one tagged cell but can contain more.
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/GroundTruthCellsDialog.png)
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/10/GroundTruthCellsDialog_v2.png)
 3. Select the cells you would like to load as ground truth data, press OK and the data will be loaded.
 4. From the `Ground truth` menu, you can select how to display the ground truth data: as scatter points, as a density map (image), or double histograms.
 5. You can select which of the ground truth cell types to display in the Display Settings tab group `GroundTruth` at the bottom of the right panel in CellExplorer.

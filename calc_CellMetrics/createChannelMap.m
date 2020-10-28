@@ -12,8 +12,8 @@ electrode_type = session.analysisTags.probesLayout;
 inter_shanks_distance = 200;
 
 electrodeTypes = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
-if ~any(strcmp(electrode_type,electrodeTypes))
-    disp('Applying default prove layout: poly2')
+if ~any(strcmpi(electrode_type,electrodeTypes))
+    disp('Applying default probe layout: poly2')
     electrode_type = 'poly2';
 end
 

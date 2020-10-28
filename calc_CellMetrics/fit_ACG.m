@@ -1,11 +1,14 @@
 function fit_params_out = fit_ACG(acg_narrow,plots)
 % This function is part of CellExplorer
-% Fits a tripple exponential to the ACGs
+% Fits a tripple exponential to the autocorrelogram with 0.5ms bins from -50ms -> 50ms 
+
 % By Peter Petersen
-% Last edited: 16-06-22020;
+% Last edited: 24-08-22020;
+
 if ~exist('plots','var')
     plots = true;
 end
+acg_narrow(100:102) = 0; % Sets the time-zero bin to zero (-0.5ms -> 0.5ms)
 fit_params = nan(8,size(acg_narrow,2));
 rsquare = nan(1,size(acg_narrow,2));
 plotf0 = zeros(100,size(acg_narrow,2));
@@ -45,7 +48,7 @@ if plots
         
         if rem(j,12)==1
             fig = figure('Name','Fitting ACGs','pos',[50,50,1000,800]);
-            ha = tight_subplot(3,4,[.06 .03],[.08 .06],[.06 .05]);
+            ha = ce_tight_subplot(3,4,[.06 .03],[.08 .06],[.06 .05]);
             jj = 1;
         end
         if ~any(isnan(acg_narrow(:,j)))

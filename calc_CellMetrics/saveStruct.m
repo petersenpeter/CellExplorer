@@ -1,9 +1,9 @@
 function success = saveStruct(data,datatype,varargin)
 % Saves event, manipulation, behavior data to appropiate .mat files
-% Performs validation of the content before saving (not yet implemented)
+% TODO: Perform validation of the content before saving
 %
 % Example calls:
-% 
+% saveStruct(cell_metrics,'cellinfo','session',session);
 
 % By Peter Petersen
 % petersen.peter@gmail.com

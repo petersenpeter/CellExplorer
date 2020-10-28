@@ -49,13 +49,13 @@ fit_params = fit_ACG(acg_metrics.acg_narrow);
 ### Calculate log ACGs
 The log ACGs are calculated with log bins from 1ms to 10sec:
 ```m
-acg = calc_logACGs(spikes)
+acg = calc_logACGs(spikes.times)
 ```
 
 ### Calculate log ISIs
-The log ISIs are calculated with log bins from 1ms to 10sec:
+The log ISIs are calculated with log bins from 1ms to 100sec:
 ```m
-isi = calc_logISIs(spikes);
+isi = calc_logISIs(spikes.times);
 ```
 
 ### Monosynaptic connections

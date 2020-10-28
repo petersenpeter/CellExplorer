@@ -32,10 +32,11 @@ To address this, we built CellExplorer, a framework for analyzing and characteri
 mex -O CCGHeart.c
 mex -O FindInInterval.c
 ```
-4. CellExplorer uses additional toolboxes, of which one MATLAB toolbox must be installed manually.
-  * [Curvefit MATLAB toolbox](https://www.mathworks.com/help/curvefit/index.html?s_cid=doc_ftr) (ACG fit in pipeline)
+4. CellExplorer uses additional toolboxes, of which two MATLAB toolboxes must be installed manually.
+  * [Curve Fitting Toolbox](https://se.mathworks.com/products/curvefitting.html).
+  * [Parallel Computing Toolbox](https://se.mathworks.com/products/parallel-computing.html).
 
-5. That's it! Now you can explore the software with below example data or try one of the tutorials.
+That's it! Now you can explore the software with below example data or try one of the tutorials.
 
 ### Try CellExplorer with example data
 There is an example dataset included in the repository for trying CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/LoadCellMetricsBatch.m) into MATLAB and type:
@@ -52,11 +53,11 @@ We have created a few tutorials to get you started, covering the pipeline and th
 Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues) for reporting bugs, enhancement requests or general questions.
 
 ## Citing CellExplorer in your research and publications
-Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical user interface and standardized pipeline for visualizing and characterizing single neuron features. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1). [Download pdf](http://buzsakilab.com/CellExplorer/Petersen_Buzsaki_CellExplorer_bioRxiv_2020.pdf).
+Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical user interface and standardized pipeline for visualizing and characterizing single neuron features. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1). [Download pdf](https://buzsakilab.com/CellExplorer/Petersen_Buzsaki_CellExplorer_bioRxiv_2020.pdf).
 
 ## Video demonstrating the user-friendly capabilities of CellExplorer
 <video width="100%" height="auto" controls="controls">
-  <source src="http://buzsakilab.com/CellExplorer/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
+  <source src="https://buzsakilab.com/CellExplorer/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
 </video>
 
-The video is [__available for download (60MB)__](http://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4), and can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY). For best viewing experience on YouTube, select highest resolution and maximize the video.
+The video can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY) and is [__available for download (60MB)__](https://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4). For best viewing experience on YouTube, select highest resolution and maximize the video.

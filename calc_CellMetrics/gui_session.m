@@ -1,4 +1,3 @@
-
 function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % Displays a GUI allowing you to edit parameters for the CellExplorer and metadata for a session
 %
@@ -20,19 +19,20 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 
 % By Peter Petersen 
 % petersen.peter@gmail.com
-% Last edited: 05-06-2020
+% Last edited: 08-07-2020
 
 % Lists
-sortingMethodList = {'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik'}; % Spike sorting methods
-sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','allensdk'}; % Spike sorting formats
+sortingMethodList = {'KiloSort', 'KiloSort2','SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik','MountainSort','IronClust','MClust','UltraMegaSort2000'}; % Spike sorting methods
+sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','AllenSDK','MClust','UltraMegaSort2000'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
+speciesTypesList = {'Rat', 'Mouse','Red-eared Turtles'}; % animal species
 
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
 
 % Parameters in cell metrics pipeline
-UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections'};
+UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','getWaveformsFromDat'};
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Database initialization
@@ -59,7 +59,7 @@ if exist('sessionIn','var') && isstruct(sessionIn)
     else
         basepath = '';
     end
-elseif exist('sessionIn','file') && ischar(sessionIn)
+elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'file')
     disp(['Loading ' sessionIn]);
     load(sessionIn,'session');
     [filepath,~,~] = fileparts(sessionIn);
@@ -70,8 +70,7 @@ else
     [~,basename,~] = fileparts(pwd);
     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
         disp(['Loading ',basename,'.session.mat from current path']);
-        
-        load(fullfile(basepath,[basename,'.session.mat']),'session');
+        session = loadSession(basepath,basename);
         sessionIn = session;
     elseif exist(fullfile(basepath,'session.mat'),'file')
         disp('Loading session.mat from current path');
@@ -456,7 +455,7 @@ uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 10,
 % uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[340, 10, 110, 30],'String','Duplicate tag','Callback',@(src,evnt)duplicateAnalysis,'Units','normalized');
 
 % Loading session struct into gui
-loadSessionStruct
+importSessionStruct
 UI.fig.Visible = 'on';
 uiLoaded = true;
 uiwait(UI.fig)
@@ -545,7 +544,7 @@ uiwait(UI.fig)
         MsgLog('Updated from intan',0)
     end
     
-    function loadSessionStruct
+    function importSessionStruct
         if exist('parameters','var')
             for iParams = 1:length(UI.list.params)
                 UI.checkbox.params(iParams).Value = parameters.(UI.list.params{iParams});
@@ -697,7 +696,7 @@ uiwait(UI.fig)
             end
             if ~isempty(session)
                 if uiLoaded
-                    loadSessionStruct
+                    importSessionStruct
                 end
                 success = 1;
             end
@@ -776,7 +775,11 @@ uiwait(UI.fig)
         % Saving parameters
         if exist('parameters','var')
             for iParams = 1:length(UI.list.params)
-                parameters.(UI.list.params{iParams}) = UI.checkbox.params(iParams).Value;
+                if isfield(parameters,UI.list.params{iParams}) && islogical(parameters.(UI.list.params{iParams}))
+                    parameters.(UI.list.params{iParams}) = logical(UI.checkbox.params(iParams).Value);
+                else
+                    parameters.(UI.list.params{iParams}) = UI.checkbox.params(iParams).Value;
+                end
             end
             if ~isempty(UI.listbox.includeMetrics.Value)
                 parameters.metrics = UI.listbox.includeMetrics.String(UI.listbox.includeMetrics.Value);
@@ -830,6 +833,9 @@ uiwait(UI.fig)
         if ~strcmp(UI.edit.nChannels.String,'')
             session.extracellular.nChannels = str2double(UI.edit.nChannels.String);
         end
+        session.extracellular.nElectrodeGroups = numel(session.extracellular.electrodeGroups.channels);
+        session.extracellular.nSpikeGroups = numel(session.extracellular.spikeGroups.channels);
+        
         session.extracellular.fileName = UI.edit.fileName.String;
         session.extracellular.precision = UI.edit.precision.String;
         session.extracellular.equipment = UI.edit.equipment.String;
