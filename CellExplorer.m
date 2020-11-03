@@ -46,7 +46,7 @@ function cell_metrics = CellExplorer(varargin)
 
 % Shortcuts to built-in functions:
 % Data handling: initializeSession, saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData, defineGroupData
-% UI: updateUI, customPlot, plotGroupData, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics plotSummaryFigures
+% UI: hoverCallback, updateUI, customPlot, plotGroupData, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics plotSummaryFigures
 
 p = inputParser;
 
@@ -6789,7 +6789,7 @@ end
     end
     
     function hoverCallback(~,~)
-        if UI.fig == get(groot,'CurrentFigure') && clickPlotRegular && UI.settings.hoverEffect == 1 
+        if UI.settings.hoverEffect == 1 && clickPlotRegular && UI.fig == get(groot,'CurrentFigure') 
             axnum = getAxisBelowCursor;
             if ~isempty(axnum) && axnum < 10 && ~isempty(UI.params.subset)
                 handle34 = subfig_ax(axnum);
@@ -6810,7 +6810,9 @@ end
                 u = um_axes(1,1);
                 v = um_axes(1,2);
                 w = um_axes(1,3);
-                FromPlot(u,v,0,w,1);
+                try 
+                    FromPlot(u,v,0,w,1);
+                end
             end
         end
     end
@@ -8444,17 +8446,21 @@ end
         axis tight, figureLetter('D','center'), xticks([10 100 1000]), xlabel(['Peak voltage (',char(181),'V)']),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
         % Isolation distance
-        subplot('Position',[0.76 0.57 0.23 .145]) 
-        ce_raincloud_plot(cell_metrics.isolationDistance,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]); 
+        subplot('Position',[0.76 0.57 0.23 .145])
+        if isfield(cell_metrics,'isolationDistance')
+            ce_raincloud_plot(cell_metrics.isolationDistance,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]);
+        end
         axis tight, xticks([10 100]); xlim([10,300]), xlabel('Isolation distance'),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
         % L_ratio
-        subplot('Position',[0.76 0.335 0.23 .142]) 
-        ce_raincloud_plot(cell_metrics.lRatio,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]); 
-        axis tight, xticks(10.^(-5:2:1)); xlim(10.^([-5 2])), xlabel('L-ratio'), 
+        subplot('Position',[0.76 0.335 0.23 .142])
+        if isfield(cell_metrics,'lRatio')
+            ce_raincloud_plot(cell_metrics.lRatio,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]);
+        end
+        axis tight, xticks(10.^(-5:2:1)); xlim(10.^([-5 2])), xlabel('L-ratio'),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
         % refractory period
-        subplot('Position',[0.76 0.1 0.23 .142]) 
+        subplot('Position',[0.76 0.1 0.23 .142])
         ce_raincloud_plot(cell_metrics.refractoryPeriodViolation,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]); 
         axis tight, xticks(10.^(-2:2:2)); xlabel(['Refractory period violation (',char(8240),')']),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
