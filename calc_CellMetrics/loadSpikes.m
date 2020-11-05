@@ -174,7 +174,7 @@ if parameters.forceReload
             dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
             fclose(fileID);
             j = 1;
-            tol_ms = session.extracellular.sr/1000; % 1 ms tolerance in timestamp units
+            tol_ms = session.extracellular.sr/1100; % 1 ms tolerance in timestamp units
             for i = 1:length(dataArray{1})
                 if raw_clusters == 0
                     if any(strcmpi(dataArray{2}{i},labelsToRead))
@@ -627,7 +627,47 @@ if parameters.forceReload
                 spikes = getWaveformsFromDat(spikes,session);
             end
         case {'kilosort'}
-            error('KiloSort output format not implemented yet')
+            disp('loadSpikes: Loading KiloSort data (the rez.mat file)')
+            if exist(fullfile(clusteringpath_full, 'rez.mat'),'file')
+                load(fullfile(clusteringpath_full, 'rez.mat'))
+                temp = find(rez.connected);
+                peak_channel = temp(peak_channel);
+                clear temp
+            else
+                error('rez.mat file does not exist')
+            end
+            
+            if size(rez.st3,2)>4
+                spikeClusters = uint32(1+rez.st3(:,5));
+                spike_cluster_index = uint32(spikeClusters-1); % -1 for zero indexing
+            else
+                spikeTemplates = uint32(rez.st3(:,2));
+                spike_cluster_index = uint32(spikeTemplates-1); % -1 for zero indexing
+            end
+            
+            spike_times = uint64(rez.st3(:,1));
+            spike_amplitudes = rez.st3(:,3);
+            spike_clusters = unique(spike_cluster_index);
+
+            j = 1;
+            tol_ms = session.extracellular.sr/1100; % 1 ms tolerance in timestamp units
+            for i = 1:length(spike_clusters)
+                spikes.ids{j} = find(spike_cluster_index == spike_clusters(i));
+                tol = tol_ms/max(double(spike_times(spikes.ids{j}))); % unique values within tol (=within 1 ms)
+                [spikes.ts{j},ind_unique] = uniquetol(double(spike_times(spikes.ids{j})),tol);
+                spikes.ids{j} = spikes.ids{j}(ind_unique);
+                spikes.times{j} = spikes.ts{j}/session.extracellular.sr;
+                spikes.cluID(j) = spike_clusters(i);
+                spikes.UID(j) = j;
+                spikes.total(j) = length(spikes.ts{j});
+                spikes.amplitudes{j} = double(spike_amplitudes(spikes.ids{j}));
+                j = j+1;
+            end
+            
+            if parameters.getWaveformsFromDat
+                spikes = getWaveformsFromDat(spikes,session);
+            end
+            
         case {'spyking circus'}
             error('spyking circus output format not implemented yet')
         case {'mountainsort'}
