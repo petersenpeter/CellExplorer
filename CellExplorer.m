@@ -34,8 +34,9 @@ function cell_metrics = CellExplorer(varargin)
 % cell_metrics = CellExplorer('basepaths',{'path1','[path1'})      % Load batch from a list with paths
 %
 % - Summary figure calls:
-% CellExplorer('summaryFigures',true)                       % creates summary figures from current path
-% CellExplorer('summaryFigures',true,'plotCellIDs',[1,4,5]) % creates summary figures for select cells [1,4,5]
+% CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1)      % creates Session summary figure from cell_metrics for all cells
+% CellExplorer('metrics',cell_metrics,'summaryFigures',true)                       % creates Cell summary figures from cell_metrics for all cells
+% CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',[1,4,5]) % creates Cell summary figures for select cells [1,4,5]
 %
 % OUTPUT
 % cell_metrics: struct
@@ -571,7 +572,7 @@ UI.HBox = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0);
 UI.panel.left = uix.VBoxFlex('Parent',UI.HBox,'position',[0 0.66 0.26 0.31]);
 
 % Elements in left panel
-UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText,'tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with and // or operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nMake sure to include  spaces between fields and operators' ));
+UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText,'tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with AND // OR operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nMake sure to include  spaces between fields and operators' ));
 UI.panel.custom = uix.VBox('Position',[0 0.717 1 0.255],'Parent',UI.panel.left);
 UI.panel.group = uix.VBox('Parent',UI.panel.left);
 UI.panel.displaySettings = uix.VBox('Parent',UI.panel.left);
@@ -819,9 +820,9 @@ end
 if summaryFigures
     MsgLog('Generating summary figures',-1)
     plotSummaryFigures
-    if ishandle(fig) & plotCellIDs ~= -1
-        close(fig)
-    end
+%     if ishandle(fig) & plotCellIDs ~= -1
+%         close(fig)
+%     end
     if ishandle(UI.fig)
         close(UI.fig)
     end
@@ -4511,9 +4512,9 @@ end
     end
 
     function defineMarkerSize(~,~)
-        answer = inputdlg({'Enter marker size [recommended: 5-25]'},'Input',[1 40],{num2str(UI.settings.markerSize)});
+        answer = inputdlg({'Enter marker size [recommended: 6-25]'},'Input',[1 40],{num2str(UI.settings.markerSize)});
         if ~isempty(answer)
-            UI.settings.markerSize = str2double(answer);
+            UI.settings.markerSize = max(str2double(answer),6);
             uiresume(UI.fig);
         end
     end
@@ -8504,6 +8505,7 @@ end
         end
         clr_groups = UI.settings.cellTypeColors(intersect(classes2plot,plotClas(UI.params.subset)),:);
         classes2plotSubset = unique(plotClas);
+            
         if plotCellIDs==-1
             plotOptions_all = {'Trilaterated position','Waveforms (all)','Waveforms (image)','ACGs (all)','ACGs (image)','ISIs (all)','ISIs (image)','RCs_firingRateAcrossTime (image)','RCs_firingRateAcrossTime (all)'};
             plotOptions = plotOptions(ismember(plotOptions,plotOptions_all));
@@ -8530,12 +8532,7 @@ end
                 disp('Summary figures canceled by user');
                 break
             end
-            clf(fig,'reset')
-            if plotCellIDs~=-1
-                set(fig,'Name',['CellExplorer summary figures ',num2str(j),'/',num2str(length(cellIDs))]);
-            else
-                set(fig,'Name',['CellExplorer summary figure, session = ', basename]);
-            end
+            
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
                 general1 = cell_metrics.general.batch{batchIDs1};
@@ -8548,6 +8545,19 @@ end
                 elseif isfield(cell_metrics.general,'basepath')
                     savePath1 = cell_metrics.general.basepath;
                 end
+            end
+            
+            if isfield(cell_metrics.general,'saveAs')
+                saveAs = cell_metrics.general.saveAs{batchIDs1};
+            else
+                saveAs = 'cell_metrics';
+            end
+            
+            clf(fig,'reset')
+            if plotCellIDs~=-1
+                set(fig,'Name',['CellExplorer cell summary ',saveAs,', ', num2str(j),'/', num2str(length(cellIDs))]);
+            else
+                set(fig,'Name',['CellExplorer session summary: ', basename,', ',saveAs]);
             end
             if ~isempty(UI.params.putativeSubse)
                 UI.params.a1 = cell_metrics.putativeConnections.excitatory(UI.params.putativeSubse,1);
@@ -8621,9 +8631,9 @@ end
             if ishandle(fig)
                 try
                     if highlight == 0
-                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_Summary'],0)
+                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_SessionSummary_', saveAs],0)
                     else
-                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0)
+                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_CellSummary_',saveAs,'_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0)
                     end
                 catch 
                     disp('figure not saved (action canceled by user or directory not available for writing)')
@@ -11616,7 +11626,7 @@ end
                 end
                 UI.settings.alteredCellMetrics = 0;
             end
-            [newStr2,matches] = split(UI.textFilter.String,[" & "," | "]);
+            [newStr2,matches] = split(UI.textFilter.String,[" & "," | "," OR "," AND "]);
             idx_textFilter2 = zeros(length(newStr2),cell_metrics.general.cellCount);
             failCheck = 0;
             for i = 1:length(newStr2)
@@ -11645,7 +11655,7 @@ end
                 end
             end
             if failCheck == 0
-                orPairs = find(contains(matches,{' | ',' OR ',}));
+                orPairs = find(contains(matches,{' | ',' OR '}));
                 if ~isempty(orPairs)
                     for i = 1:length(orPairs)
                         idx_textFilter2([orPairs(i),orPairs(i)+1],:) = any(idx_textFilter2([orPairs(i),orPairs(i)+1],:)).*[1;1];
