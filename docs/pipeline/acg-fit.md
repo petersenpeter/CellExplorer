@@ -22,7 +22,7 @@ The fiting is performed in the script [`fit_ACG.m`](https://github.com/petersenp
 ### Fitting method
 Below figure shows three example fits for a typical wide interneuron (top row), narrow interneuron and a pyramidal cell. The contribution of each exponential function is shown in the second row for the three examples. The exponential decay components captures the slow decay of the ACG (red curves) while the rise and burst components together describes the fast rise and burstiness of the cells.
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/ACG_fit_summary_examples.png" width="80%"></p>
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/ACG_fit_summary_taus2.png" width="80%"></p>
 
 ### Components of the fit and example fits
 
