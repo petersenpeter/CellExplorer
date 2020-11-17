@@ -2,7 +2,7 @@
 layout: default
 title: Custom calculations
 parent: Processing module
-nav_order: 5
+nav_order: 7
 ---
 # Custom calculations
 The CellExplorer processing module has a subfolder for user defined calculations to exist outside the main processing module. These scripts will automatically be loaded by the processing module `ProcessCellMetrics`.

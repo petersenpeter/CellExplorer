@@ -54,6 +54,7 @@ $$
 ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)
 $$ 
 
+[See the dedicated page about the fitting procedure]({{"/pipeline/acg-fit/"|absolute_url}}).
 * `acg_tau_rise` ACG tau rise (ms)
 * `acg_tau_decay` ACG tau decay (ms)
 * `acg_tau_burst` ACG tau bursts (ms)
