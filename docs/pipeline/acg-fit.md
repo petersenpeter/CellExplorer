@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Fit the autocorrelograms
+title: Fitting autocorrelograms
 parent: Processing module
 nav_order: 4
 ---
