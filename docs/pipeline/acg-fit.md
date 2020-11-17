@@ -4,7 +4,7 @@ title: Fit the autocorrelograms
 parent: Processing module
 nav_order: 4
 ---
-# Fit the autocorrelograms
+# Fitting autocorrelograms
 In the processing pipeline, the autocorrelograms of each cell is parametrized using a triple exponential equation:
 ```m
 ACG_fit = 'max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)'
