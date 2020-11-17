@@ -17,9 +17,10 @@ At present (September 2020) the list includes PV, SST, Axo-axonic cells, VGAT an
 | VGAT       | 15    | Yuta Senzai, Buzsaki lab |
 | VIP        | 14    | Josh Siegle with the Allen Institute |
 
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/11/groundTruth_CellExplorerPlot.png){: .mt-4}
 
 ### Classifying your cells in CellExplorer
 You can also implement your own ground truth cells into the pipeline or do the classification in CellExplorer. Once classified you can share your metrics list with collaborators or provide them for publications.
 
 Please see the [opto-tagging tutorial]({{"/tutorials/optotagging-tutorial/"|absolute_url}}) for how to do the ground truth classification on your own data.
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/11/groundTruth_CellExplorerPlot.png){: .mt-4}
+
