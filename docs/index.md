@@ -65,3 +65,9 @@ The video can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v
 ## Funding
 CellExplorer is funded by the NIH Brain initiative as part of the [Oxytocin U19 BRAIN Initiative Grant](https://med.nyu.edu/departments-institutes/neuroscience/research/shared-research-resources/oxytocin-u19-brain-initiative-grant), [the Lundbeck Foundation](https://www.lundbeckfonden.com/en/), and the [Independent Research Fund Denmark](https://ufm.dk/en/research-and-innovation/councils-and-commissions/independent-research-fund-Denmark).
 
+<p align="center">
+	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/brain-logo.png" width="30%">
+	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/LUNDBECK-logo-RGB.jpg" width="30%">
+	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/IndependentResearchFundDenmark.png" width="30%">
+</p>
+
