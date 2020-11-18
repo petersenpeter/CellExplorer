@@ -20,7 +20,9 @@ Opto-tagged/ground truth cells can be assigned to one or more groups in `cell_me
 cellIDs_optoTagged = [1,5,10]; % IDs (UIDs) of the opto-tagged cells
 name_optoTagged = 'PV_pos'; % Cell line name
 cell_metrics.groundTruthClassification.(name_optoTagged) = cellIDs_optoTagged;
-% or:
+```
+Or:
+```m
 cell_metrics.groundTruthClassification.PV_pos = [1,5,10];
 ```
 
