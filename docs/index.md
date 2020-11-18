@@ -67,7 +67,6 @@ CellExplorer is funded by the NIH Brain initiative as part of the [Oxytocin U19 
 
 <p align="center">
 	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/brain-logo.png" width="30%">
-	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/LUNDBECK-logo-RGB.jpg" width="30%">
+	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/LUNDBECK-logo-RGB.jpg" width="30%">{: .px-4}
 	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/IndependentResearchFundDenmark.png" width="30%">
 </p>
-
