@@ -1,4 +1,4 @@
-function [cell_metrics_idxs, cell_metrics] = LoadCellMetrics(varargin)
+function [cell_metrics,cell_metrics_idxs] = loadCellMetrics(varargin)
 %   This function loads cell metrics for a given session
 
 %
@@ -13,12 +13,16 @@ function [cell_metrics_idxs, cell_metrics] = LoadCellMetrics(varargin)
 %       brainRegion, synapticEffect, putativeCellType, labels, deepSuperficial, animal, tags, groups, groundTruthClassification
 %
 %   OUTPUT
-%   cell_metrics_idxs       - indexes of cells fulfilling filters*
 %   cell_metrics            - Cell_metrics matlab structure
+%   cell_metrics_idxs       - indexes of cells fulfilling filters*
+% 
+%   Example calls
+%   cell_metrics = loadCellMetrics('basepath',pwd);
+%   cell_metrics = loadCellMetrics('session',session);
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 5-04-2020
+% Last edited: 20-11-2020
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -30,14 +34,15 @@ p = inputParser;
 addParameter(p,'cell_metrics',{},@isstruct);
 
 % Single session input
-addParameter(p,'id',[],@isnumeric);
-addParameter(p,'session',[],@isstr);
-addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'basepath',[],@isstr);
 addParameter(p,'basename','',@isstr);
+addParameter(p,'session',[],@isstruct);
+addParameter(p,'id',[],@isnumeric);
+addParameter(p,'sessionName',[],@isstr);
 
 % Batch input
 addParameter(p,'sessionIDs',{},@iscell);
-addParameter(p,'sessions',{},@iscell);
+addParameter(p,'sessionNames',{},@iscell);
 addParameter(p,'basepaths',{},@iscell);
 
 % Extra inputs
@@ -61,8 +66,9 @@ parse(p,varargin{:})
 cell_metrics = p.Results.cell_metrics;
 
 % Single session input
-id = p.Results.id;
-sessionin = p.Results.session;
+id = p.Results.id; 
+session = p.Results.session;
+sessionin = p.Results.sessionName; 
 basepath = p.Results.basepath;
 basename = p.Results.basename;
 
@@ -71,7 +77,7 @@ saveAs = p.Results.saveAs;
 
 % Batch input
 sessionIDs = p.Results.sessionIDs;
-sessions = p.Results.sessions;
+sessions = p.Results.sessionNames;
 basepaths = p.Results.basepaths;
 
 % Filters
@@ -86,10 +92,9 @@ tags = p.Results.tags;
 groups = p.Results.groups;
 groundTruthClassification = p.Results.groundTruthClassification;
 
-if isempty(basename)
-    s = regexp(basepath, filesep, 'split');
-    basename = s{end};
-end
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Loading metrics
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if ~isempty(cell_metrics)
     disp('')
@@ -105,9 +110,34 @@ elseif ~isempty(id) || ~isempty(sessionin)
     else
         warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
     end
+elseif ~isempty(basepath)
+    if isempty(basename)
+        s = regexp(basepath, filesep, 'split');
+        if isempty(s{end})
+            s = s(1:end-1);
+        end
+        basename = s{end};
+    end
+    if exist(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
+        load(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']))
+    else
+        warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
+    end
+elseif ~isempty(session)
+    basepath = session.general.basePath;
+    basename = session.general.name;
+    if exist(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
+        load(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']))
+    else
+        warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
+    end
 elseif ~isempty(sessions)
-    cell_metrics = LoadCellMetricsBatch('sessions',sessions);
+    cell_metrics = loadCellMetricsBatch('sessions',sessions);
 end
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Filtering metrics
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 filterIndx = ones(length(cell_metrics.UID),9);
 if ~isempty(brainRegion)
@@ -153,4 +183,3 @@ if ~isempty(groundTruthClassification)
     end
 end
 cell_metrics_idxs = find(sum(filterIndx')==9);
-

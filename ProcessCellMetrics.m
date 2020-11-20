@@ -1335,7 +1335,7 @@ for j = 1:cell_metrics.general.cellCount
     cum_firing1 = cumsum(sort(temp(:)));
     cum_firing1 = cum_firing1/max(cum_firing1);
     cell_metrics.firingRateGiniCoeff(j) = 1-2*sum(cum_firing1)./length(cum_firing1);
-    cell_metrics.firingRateStd(j) = std(temp(:))./mean(temp(:));
+    cell_metrics.firingRateCV(j) = std(temp(:))./mean(temp(:));
     cell_metrics.firingRateInstability(j) = median(abs(diff(temp(:))))./mean(temp(:));
     
     % CV2

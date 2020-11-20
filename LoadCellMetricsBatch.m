@@ -1,4 +1,4 @@
-function cell_metrics_batch = LoadCellMetricsBatch(varargin)
+function cell_metrics_batch = loadCellMetricsBatch(varargin)
 % Load metrics across sessions and concats the metrics into a single struct
 % with the appropriate format for each field.
 %
@@ -13,9 +13,9 @@ function cell_metrics_batch = LoadCellMetricsBatch(varargin)
 % Last edited: 13-03-2020
 
 % - Example calls:
-% LoadCellMetricsBatch('basepaths',{'path1','[path1'})      % Load batch from a list with paths
-% LoadCellMetricsBatch('sessions',{'rec1','rec2'})          % Load batch from database
-% LoadCellMetricsBatch('sessionIDs',[10985,10985])          % Load session from database session id
+% loadCellMetricsBatch('basepaths',{'path1','[path1'})      % Load batch from a list with paths
+% loadCellMetricsBatch('sessions',{'rec1','rec2'})          % Load batch from database
+% loadCellMetricsBatch('sessionIDs',[10985,10985])          % Load session from database session id
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % 

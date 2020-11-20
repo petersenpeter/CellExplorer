@@ -29,7 +29,7 @@ cell_metrics_pharmaco1 = CellExplorer('metrics',cell_metrics_pharmaco1);
 cell_metrics_pharmaco2 = CellExplorer('metrics',cell_metrics_pharmaco2); 
 % There is not way yet to combine the same sessions in CellExplorer with different names (restrictToIntervals). 
 % You can easily combine the same cell_metrics files within states by calling:
-cell_metrics = LoadCellMetricsBatch('basepaths',basepaths,'saveAs','cell_metrics_control');
+cell_metrics = loadCellMetricsBatch('basepaths',basepaths,'saveAs','cell_metrics_control');
 
 % What you can  do the comparison of various metrics yourself, e.g.:
 figure, plot(cell_metrics_pharmaco2.firingRate,cell_metrics_control.firingRate,'.')

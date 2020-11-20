@@ -235,7 +235,7 @@ elseif ~isempty(id) || ~isempty(sessionName) || ~isempty(session)
 elseif ~isempty(sessionIDs)
     if enableDatabase
         try
-            cell_metrics = LoadCellMetricsBatch('sessionIDs',sessionIDs);
+            cell_metrics = loadCellMetricsBatch('sessionIDs',sessionIDs);
             initializeSession
         catch
             warning('Failed to load dataset');
@@ -248,7 +248,7 @@ elseif ~isempty(sessionIDs)
 elseif ~isempty(sessionsin)
     if enableDatabase
         try
-            cell_metrics = LoadCellMetricsBatch('sessions',sessionsin);
+            cell_metrics = loadCellMetricsBatch('sessions',sessionsin);
             initializeSession
         catch
             warning('Failed to load dataset');
@@ -260,7 +260,7 @@ elseif ~isempty(sessionsin)
     end
 elseif ~isempty(basepaths)
     try
-        cell_metrics = LoadCellMetricsBatch('basepaths',basepaths);
+        cell_metrics = loadCellMetricsBatch('basepaths',basepaths);
         initializeSession
     catch
         warning('Failed to load dataset from basepaths');
@@ -4140,7 +4140,7 @@ end
         if strcmp(answer,'Yes') && UI.BatchMode
             ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
             try
-                cell_metrics1 = LoadCellMetricsBatch('basenames',cell_metrics.general.basenames,'basepaths',cell_metrics.general.basepaths,'waitbar_handle',ce_waitbar);
+                cell_metrics1 = loadCellMetricsBatch('basenames',cell_metrics.general.basenames,'basepaths',cell_metrics.general.basepaths,'waitbar_handle',ce_waitbar);
                 if ~isempty(cell_metrics1)
                     cell_metrics = cell_metrics1;
                 else
@@ -5207,7 +5207,7 @@ end
             referenceData_path1 = cell(1,length(listing));
             referenceData_path1(:) = {referenceData_path};
             % Loading metrics
-            gt_cell_metrics = LoadCellMetricsBatch('basenames',listing,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
+            gt_cell_metrics = loadCellMetricsBatch('basenames',listing,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
             gt.refreshTime = datetime('now','Format','HH:mm:ss, d MMMM, yyyy');
             
             % Generating list of sessions
@@ -5282,7 +5282,7 @@ end
                 referenceData_path1 = cell(1,length(listSession2));
                 referenceData_path1(:) = {referenceData_path};
                 % Loading metrics
-                groundTruth_cell_metrics = LoadCellMetricsBatch('basenames',listSession2,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
+                groundTruth_cell_metrics = loadCellMetricsBatch('basenames',listSession2,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
                 
                 % Saving batch metrics
                 save(fullfile(referenceData_path,'groundTruth_cell_metrics.cellinfo.mat'),'groundTruth_cell_metrics');
@@ -5392,7 +5392,7 @@ end
                 end
             end
             
-            cell_metrics1 = LoadCellMetricsBatch('basenames',basenames,'basepaths',db_basepath,'waitbar_handle',ce_waitbar);
+            cell_metrics1 = loadCellMetricsBatch('basenames',basenames,'basepaths',db_basepath,'waitbar_handle',ce_waitbar);
             if ~isempty(cell_metrics1)
                 reference_cell_metrics = cell_metrics1;
             else
@@ -10566,7 +10566,7 @@ end
         if ~isempty(basenames)
             % Setting paths from db struct
             ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
-            cell_metrics1 = LoadCellMetricsBatch('basenames',basenames,'basepaths',basepaths,'waitbar_handle',ce_waitbar);
+            cell_metrics1 = loadCellMetricsBatch('basenames',basenames,'basepaths',basepaths,'waitbar_handle',ce_waitbar);
             if ~isempty(cell_metrics1)
                 cell_metrics = cell_metrics1;
             else
