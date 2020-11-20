@@ -30,7 +30,7 @@ cell_metrics.groundTruthClassification.PV_pos = [1,5,10];
 1. Launch CellExplorer.
 2. Activate the manual curation of ground truth classification from the top menu `Ground truth` -> `Perform ground truth cell type classification in current session(s)`. This opens a tab group in the Cell Assignment tab menu titled `G/T` in the right side-panel. 
 3. Adjust the highlighted cells using the menu option `Group data` -> `Open group data dialog`. This dialog allows you to define how to visualize your tagged cells.
-4. Assign the ground truth tag label to your cells. You can add more tags in CellExplorer and in the preference file `CellExplorer_Preferences.m`. Each cell can have one or more ground truth classification tags assigned.
+4. Assign the ground truth tag label to your cells. You can add more tags in CellExplorer and in the preference file `preferences_CellExplorer.m`. Each cell can have one or more ground truth classification tags assigned.
 5. Once complete, save the session using the top menu `File` -> `Save classification`.
 
 ![Optotagging interface](https://buzsakilab.com/wp/wp-content/uploads/2020/01/Cell-Explorer-optotagged-cells-2.png)

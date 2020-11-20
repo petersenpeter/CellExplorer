@@ -158,7 +158,7 @@ if nargin==0
 end
 
 % Loading preferences
-preferences = ProcessCellMetrics_Preferences(session);
+preferences = preferences_ProcessCellMetrics(session);
 
 % Verifying format of electrode groups and spike groups  (must be of type cell)
 if isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels') && isnumeric(session.extracellular.spikeGroups.channels)

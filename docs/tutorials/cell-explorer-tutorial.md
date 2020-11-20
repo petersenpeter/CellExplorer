@@ -23,6 +23,6 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 4. You can save your progress from the top menu `File` -> `Save classification`. This will save your metrics to the original session-wise cell_metrics files, even when working in batch mode. 
 5. A dialog will be shown and you can select to update sessions with tracked changes or all of them.
 
-All your classification actions are tracked, shown in the message log, and can be reversed step-wise by pressing `ctrl+z`. The pre-defined list of cell-types shown in CellExplorer is defined in `CellExplorer_Preferences.m`. Putative cell-types are stored in `cell_metrics.putativeCellType`. Cell types present in `cell_metrics.putativeCellType` will be added to the selection-list in CellExplorer. Default cell-type colors are defined in `CellExplorer_Preferences.m`. Learn more about preferences and the interface below.
+All your classification actions are tracked, shown in the message log, and can be reversed step-wise by pressing `ctrl+z`. The pre-defined list of cell-types shown in CellExplorer is defined in `preferences_CellExplorer.m`. Putative cell-types are stored in `cell_metrics.putativeCellType`. Cell types present in `cell_metrics.putativeCellType` will be added to the selection-list in CellExplorer. Default cell-type colors are defined in `preferences_CellExplorer.m`. Learn more about preferences and the interface below.
 
 [Preferences](/interface/preferences/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4} [Graphical interface]({{"/interface/description/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-4}

@@ -1,4 +1,4 @@
-function preferences = ProcessCellMetrics_Preferences(session)
+function preferences = preferences_ProcessCellMetrics(session)
 % Preferences loaded by ProcessCellMetrics
 %
 % Check the website of CellExplorer for more details: https://cellexplorer.org/
@@ -64,8 +64,8 @@ preferences.theta.min_spikes = 500;      % only calculated if the unit has above
 % % % % % % % % % % % % % % % % % % % % 
 % You may edit above preferences or provide your own preferences in a separate file.
 % Provide the path to your preferences as an analysis tag in the session struct: 
-% session.analysisTags.ProcessCellMetrics_preferences = 'user_preferences.user_preferences'; % loads the user_preference.m file from the folder +user_preferences
+% session.analysisTags.preferences_ProcessCellMetrics = 'user_preferences.user_preferences'; % loads the user_preference.m file from the folder +user_preferences
 
-if exist('session','var') && isfield(session,'analysisTags') && isfield(session.analysisTags,'ProcessCellMetrics_preferences') && ~isempty(which(session.analysisTags.ProcessCellMetrics_preferences))
-    preferences = feval(session.analysisTags.ProcessCellMetrics_preferences,preferences,session);
+if exist('session','var') && isfield(session,'analysisTags') && isfield(session.analysisTags,'preferences_ProcessCellMetrics') && ~isempty(which(session.analysisTags.preferences_ProcessCellMetrics))
+    preferences = feval(session.analysisTags.preferences_ProcessCellMetrics,preferences,session);
 end

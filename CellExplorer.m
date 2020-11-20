@@ -153,7 +153,7 @@ hManager = uigetmodemanager(UI.fig);
 % User preferences
 % % % % % % % % % % % % % % % % % % % % % %
 
-CellExplorer_Preferences
+preferences_CellExplorer
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Checking for Matlab version requirement (Matlab R2017a)
@@ -9390,7 +9390,7 @@ end
 
     function LoadPreferences(~,~)
         % Opens the preference .m file in matlab.
-        edit CellExplorer_Preferences.m
+        edit preferences_CellExplorer.m
     end
 
     function reclassify_celltypes(~,~)
@@ -9400,7 +9400,7 @@ end
             case 'Yes'
                 saveStateToHistory(1:cell_metrics.general.cellCount)
                 
-                preferences = ProcessCellMetrics_Preferences;
+                preferences = preferences_ProcessCellMetrics;
                 
                 % All cells are initially assigned as Pyramidal cells
                 cell_metrics.putativeCellType = repmat({'Pyramidal Cell'},1,size(cell_metrics.cellID,2));

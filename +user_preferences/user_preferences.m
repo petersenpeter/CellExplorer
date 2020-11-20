@@ -1,6 +1,6 @@
 function preferences = user_preferences(preferences,session)
 % This is an example file for generating your own preferences for ProcessCellMetrics part of CellExplorer
-% Please follow the structure of ProcessCellMetrics_Preferences.m
+% Please follow the structure of preferences_ProcessCellMetrics.m
 
 % e.g.:
 % preferences.waveform.nPull = 600;            % number of spikes to pull out (default: 600)
