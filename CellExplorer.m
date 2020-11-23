@@ -92,7 +92,7 @@ plotCellIDs = p.Results.plotCellIDs;
 % % % % % % % % % % % % % % % % % % % % % %
 
 UI = []; UI.settings.plotZLog = 0; UI.settings.plot3axis = 0; UI.settings.plotXdata = 'firingRate'; UI.settings.plotYdata = 'peakVoltage';
-UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.metricsTableType = 'Metrics'; colorStr = [];
+UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.metricsTableType = 'Metrics'; colorStr = []; 
 UI.settings.deepSuperficial = ''; UI.settings.acgType = 'Normal'; UI.settings.cellTypeColors = []; UI.settings.monoSynDispIn = 'None';
 UI.settings.layout = 3; UI.settings.displayMenu = 0; UI.settings.displayInhibitory = false; UI.settings.displayExcitatory = false;
 UI.settings.customCellPlotIn{1} = 'Waveforms (single)'; UI.settings.customCellPlotIn{2} = 'ACGs (single)'; UI.settings.troughToPeakSorted = [];
@@ -122,7 +122,7 @@ UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;
 groups_ids = []; clusClas = []; plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = []; meanCCG = [];
 hover2highlight.handle1 = []; hover2highlight.handle2 = []; hover2highlight.handle3 = []; hover2highlight.handle4 = [];
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
-brainRegions_list = []; brainRegions_acronym = []; cell_class_count = [];  plotOptions = ''; freeText = {''};
+brainRegions_list = []; brainRegions_acronym = []; relational_tree = []; cell_class_count = [];  plotOptions = ''; freeText = {''};
 plotAcgFit = 0; clasLegend = 0; Colorval = 1; plotClas = []; plotClas11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
 colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; connectivityGraph = [];
 plotClasGroups = [];  plotClas2 = []; general = []; plotAverage_nbins = 40; table_fieldsNames = {};
@@ -1210,7 +1210,7 @@ function updateUI
             % Ground truth data
             if strcmp(UI.settings.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
-                ce_gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), clr_groups3,8,'x');
+                ce_gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), clr_groups3,8,'o');
             elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 if ~exist('groundTruthData1','var') || ~isfield(groundTruthData1,'z') || ~strcmp(groundTruthData1.x_field,UI.plot.xTitle) || ~strcmp(groundTruthData1.y_field,UI.plot.yTitle) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
                     
@@ -8555,7 +8555,7 @@ end
             
             clf(fig,'reset')
             if plotCellIDs~=-1
-                set(fig,'Name',['CellExplorer cell summary ',saveAs,', ', num2str(j),'/', num2str(length(cellIDs))]);
+                set(fig,'Name',['CellExplorer cell summary ',saveAs,', cell ID ' num2str(cellIDs(j)),' (', num2str(j),'/', num2str(length(cellIDs)),')']);
             else
                 set(fig,'Name',['CellExplorer session summary: ', basename,', ',saveAs]);
             end
@@ -9566,7 +9566,12 @@ end
         
         if nargin > 1
             try
-                save(file,'cell_metrics');
+                structSize = whos('cell_metrics');
+                if structSize.bytes/1000000000 > 2
+                    save(file, 'cell_metrics', '-v7.3')
+                else
+                    save(file, 'cell_metrics');
+                end
                 MsgLog(['Classification saved to ', file],[1,2]);
             catch
                 MsgLog(['Error saving metrics: ' file],4);
@@ -11630,7 +11635,16 @@ end
             idx_textFilter2 = zeros(length(newStr2),cell_metrics.general.cellCount);
             failCheck = 0;
             for i = 1:length(newStr2)
-                if strcmp(newStr2{i}(1),'.')
+                if numel(newStr2{i})>11 && strcmp(newStr2{i}(1:12),'.brainRegion')
+                    newStr = split(newStr2{i}(2:end),' ');
+                    if numel(newStr)>1
+                        if isempty(relational_tree)
+                            load('brainRegions_relational_tree.mat','relational_tree');
+                        end
+                        acronym_out = getBrainRegionChildren(newStr{2},relational_tree);
+                        idx_textFilter2(i,:) = contains(cell_metrics.brainRegion,[acronym_out,newStr{2}],'IgnoreCase',true);
+                    end
+                elseif strcmp(newStr2{i}(1),'.')
                     newStr = split(newStr2{i}(2:end),' ');
                     if length(newStr)==3 && isfield(cell_metrics,newStr{1}) && isnumeric(cell_metrics.(newStr{1})) && contains(newStr{2},{'==','>','<','~='})
                         switch newStr{2}
