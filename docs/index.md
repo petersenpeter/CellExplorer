@@ -39,7 +39,7 @@ mex -O FindInInterval.c
 That's it! Now you can explore the software with below example data or try one of the tutorials.
 
 ### Try CellExplorer with example data
-There is an example dataset included in the repository for trying CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/LoadCellMetricsBatch.m) into MATLAB and type:
+There is an example dataset included in the repository for trying CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/loadCellMetricsBatch.m) into MATLAB and type:
 ```m
 CellExplorer('metrics',cell_metrics)
 ```
@@ -50,7 +50,7 @@ We have created a few tutorials to get you started, covering the pipeline and th
 [View tutorials]({{ "/tutorials/tutorials/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2}
 
 ## Reporting bugs, enhancements or questions
-Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues) for reporting bugs, enhancement requests or general questions.
+Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues) for reporting bugs, enhancement requests or general questions. We also have a [google group](https://groups.google.com/g/cellexplorer/) for the same requests.
 
 ## Citing CellExplorer in your research and publications
 Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical user interface and standardized pipeline for visualizing and characterizing single neuron features. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://www.biorxiv.org/content/10.1101/2020.05.07.083436v1). [Download pdf](https://buzsakilab.com/CellExplorer/Petersen_Buzsaki_CellExplorer_bioRxiv_2020.pdf).
@@ -61,3 +61,12 @@ Peter Christian Petersen, György Buzsáki (2020). CellExplorer: a graphical use
 </video>
 
 The video can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY) and is [__available for download (60MB)__](https://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4). For best viewing experience on YouTube, select highest resolution and maximize the video.
+
+## Funding
+CellExplorer is funded by the NIH Brain initiative as part of the [Oxytocin U19 BRAIN Initiative Grant](https://med.nyu.edu/departments-institutes/neuroscience/research/shared-research-resources/oxytocin-u19-brain-initiative-grant), [the Lundbeck Foundation](https://www.lundbeckfonden.com/en/), and the [Independent Research Fund Denmark](https://ufm.dk/en/research-and-innovation/councils-and-commissions/independent-research-fund-Denmark).
+
+<p align="center">
+	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/brain-logo.png" width="30%">&emsp;&emsp;
+	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/LUNDBECK-logo-RGB.jpg" width="30%">&emsp;&emsp;
+	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/IndependentResearchFundDenmark.png" width="30%">
+</p>

@@ -29,7 +29,7 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 ```m
 basenames = {'Rat08-20130708','Rat08-20130709'};
 basepaths = {'/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130709'};
-cell_metrics = LoadCellMetricsBatch('basepaths',basepaths,'basenames',basenames);
+cell_metrics = loadCellMetricsBatch('basepaths',basepaths,'basenames',basenames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 

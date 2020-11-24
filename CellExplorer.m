@@ -34,8 +34,9 @@ function cell_metrics = CellExplorer(varargin)
 % cell_metrics = CellExplorer('basepaths',{'path1','[path1'})      % Load batch from a list with paths
 %
 % - Summary figure calls:
-% CellExplorer('summaryFigures',true)                       % creates summary figures from current path
-% CellExplorer('summaryFigures',true,'plotCellIDs',[1,4,5]) % creates summary figures for select cells [1,4,5]
+% CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1)      % creates Session summary figure from cell_metrics for all cells
+% CellExplorer('metrics',cell_metrics,'summaryFigures',true)                       % creates Cell summary figures from cell_metrics for all cells
+% CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',[1,4,5]) % creates Cell summary figures for select cells [1,4,5]
 %
 % OUTPUT
 % cell_metrics: struct
@@ -46,7 +47,7 @@ function cell_metrics = CellExplorer(varargin)
 
 % Shortcuts to built-in functions:
 % Data handling: initializeSession, saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData, defineGroupData
-% UI: updateUI, customPlot, plotGroupData, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics plotSummaryFigures
+% UI: hoverCallback, updateUI, customPlot, plotGroupData, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics plotSummaryFigures
 
 p = inputParser;
 
@@ -91,7 +92,7 @@ plotCellIDs = p.Results.plotCellIDs;
 % % % % % % % % % % % % % % % % % % % % % %
 
 UI = []; UI.settings.plotZLog = 0; UI.settings.plot3axis = 0; UI.settings.plotXdata = 'firingRate'; UI.settings.plotYdata = 'peakVoltage';
-UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.metricsTableType = 'Metrics'; colorStr = [];
+UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.metricsTableType = 'Metrics'; colorStr = []; 
 UI.settings.deepSuperficial = ''; UI.settings.acgType = 'Normal'; UI.settings.cellTypeColors = []; UI.settings.monoSynDispIn = 'None';
 UI.settings.layout = 3; UI.settings.displayMenu = 0; UI.settings.displayInhibitory = false; UI.settings.displayExcitatory = false;
 UI.settings.customCellPlotIn{1} = 'Waveforms (single)'; UI.settings.customCellPlotIn{2} = 'ACGs (single)'; UI.settings.troughToPeakSorted = [];
@@ -121,7 +122,7 @@ UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;
 groups_ids = []; clusClas = []; plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = []; meanCCG = [];
 hover2highlight.handle1 = []; hover2highlight.handle2 = []; hover2highlight.handle3 = []; hover2highlight.handle4 = [];
 classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
-brainRegions_list = []; brainRegions_acronym = []; cell_class_count = [];  plotOptions = ''; freeText = {''};
+brainRegions_list = []; brainRegions_acronym = []; relational_tree = []; cell_class_count = [];  plotOptions = ''; freeText = {''};
 plotAcgFit = 0; clasLegend = 0; Colorval = 1; plotClas = []; plotClas11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
 colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; connectivityGraph = [];
 plotClasGroups = [];  plotClas2 = []; general = []; plotAverage_nbins = 40; table_fieldsNames = {};
@@ -152,7 +153,7 @@ hManager = uigetmodemanager(UI.fig);
 % User preferences
 % % % % % % % % % % % % % % % % % % % % % %
 
-CellExplorer_Preferences
+preferences_CellExplorer
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Checking for Matlab version requirement (Matlab R2017a)
@@ -234,7 +235,7 @@ elseif ~isempty(id) || ~isempty(sessionName) || ~isempty(session)
 elseif ~isempty(sessionIDs)
     if enableDatabase
         try
-            cell_metrics = LoadCellMetricsBatch('sessionIDs',sessionIDs);
+            cell_metrics = loadCellMetricsBatch('sessionIDs',sessionIDs);
             initializeSession
         catch
             warning('Failed to load dataset');
@@ -247,7 +248,7 @@ elseif ~isempty(sessionIDs)
 elseif ~isempty(sessionsin)
     if enableDatabase
         try
-            cell_metrics = LoadCellMetricsBatch('sessions',sessionsin);
+            cell_metrics = loadCellMetricsBatch('sessions',sessionsin);
             initializeSession
         catch
             warning('Failed to load dataset');
@@ -259,7 +260,7 @@ elseif ~isempty(sessionsin)
     end
 elseif ~isempty(basepaths)
     try
-        cell_metrics = LoadCellMetricsBatch('basepaths',basepaths);
+        cell_metrics = loadCellMetricsBatch('basepaths',basepaths);
         initializeSession
     catch
         warning('Failed to load dataset from basepaths');
@@ -571,7 +572,7 @@ UI.HBox = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0);
 UI.panel.left = uix.VBoxFlex('Parent',UI.HBox,'position',[0 0.66 0.26 0.31]);
 
 % Elements in left panel
-UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText,'tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with and // or operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nMake sure to include  spaces between fields and operators' ));
+UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText,'tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with AND // OR operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nMake sure to include  spaces between fields and operators' ));
 UI.panel.custom = uix.VBox('Position',[0 0.717 1 0.255],'Parent',UI.panel.left);
 UI.panel.group = uix.VBox('Parent',UI.panel.left);
 UI.panel.displaySettings = uix.VBox('Parent',UI.panel.left);
@@ -819,9 +820,9 @@ end
 if summaryFigures
     MsgLog('Generating summary figures',-1)
     plotSummaryFigures
-    if ishandle(fig) & plotCellIDs ~= -1
-        close(fig)
-    end
+%     if ishandle(fig) & plotCellIDs ~= -1
+%         close(fig)
+%     end
     if ishandle(UI.fig)
         close(UI.fig)
     end
@@ -1209,7 +1210,7 @@ function updateUI
             % Ground truth data
             if strcmp(UI.settings.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
-                ce_gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), clr_groups3,8,'x');
+                ce_gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), clr_groups3,8,'o');
             elseif strcmp(UI.settings.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 if ~exist('groundTruthData1','var') || ~isfield(groundTruthData1,'z') || ~strcmp(groundTruthData1.x_field,UI.plot.xTitle) || ~strcmp(groundTruthData1.y_field,UI.plot.yTitle) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
                     
@@ -4139,7 +4140,7 @@ end
         if strcmp(answer,'Yes') && UI.BatchMode
             ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
             try
-                cell_metrics1 = LoadCellMetricsBatch('basenames',cell_metrics.general.basenames,'basepaths',cell_metrics.general.basepaths,'waitbar_handle',ce_waitbar);
+                cell_metrics1 = loadCellMetricsBatch('basenames',cell_metrics.general.basenames,'basepaths',cell_metrics.general.basepaths,'waitbar_handle',ce_waitbar);
                 if ~isempty(cell_metrics1)
                     cell_metrics = cell_metrics1;
                 else
@@ -4511,9 +4512,9 @@ end
     end
 
     function defineMarkerSize(~,~)
-        answer = inputdlg({'Enter marker size [recommended: 5-25]'},'Input',[1 40],{num2str(UI.settings.markerSize)});
+        answer = inputdlg({'Enter marker size [recommended: 6-25]'},'Input',[1 40],{num2str(UI.settings.markerSize)});
         if ~isempty(answer)
-            UI.settings.markerSize = str2double(answer);
+            UI.settings.markerSize = max(str2double(answer),6);
             uiresume(UI.fig);
         end
     end
@@ -5206,7 +5207,7 @@ end
             referenceData_path1 = cell(1,length(listing));
             referenceData_path1(:) = {referenceData_path};
             % Loading metrics
-            gt_cell_metrics = LoadCellMetricsBatch('basenames',listing,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
+            gt_cell_metrics = loadCellMetricsBatch('basenames',listing,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
             gt.refreshTime = datetime('now','Format','HH:mm:ss, d MMMM, yyyy');
             
             % Generating list of sessions
@@ -5281,7 +5282,7 @@ end
                 referenceData_path1 = cell(1,length(listSession2));
                 referenceData_path1(:) = {referenceData_path};
                 % Loading metrics
-                groundTruth_cell_metrics = LoadCellMetricsBatch('basenames',listSession2,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
+                groundTruth_cell_metrics = loadCellMetricsBatch('basenames',listSession2,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
                 
                 % Saving batch metrics
                 save(fullfile(referenceData_path,'groundTruth_cell_metrics.cellinfo.mat'),'groundTruth_cell_metrics');
@@ -5391,7 +5392,7 @@ end
                 end
             end
             
-            cell_metrics1 = LoadCellMetricsBatch('basenames',basenames,'basepaths',db_basepath,'waitbar_handle',ce_waitbar);
+            cell_metrics1 = loadCellMetricsBatch('basenames',basenames,'basepaths',db_basepath,'waitbar_handle',ce_waitbar);
             if ~isempty(cell_metrics1)
                 reference_cell_metrics = cell_metrics1;
             else
@@ -6789,7 +6790,7 @@ end
     end
     
     function hoverCallback(~,~)
-        if UI.fig == get(groot,'CurrentFigure') && clickPlotRegular && UI.settings.hoverEffect == 1 
+        if UI.settings.hoverEffect == 1 && clickPlotRegular && UI.fig == get(groot,'CurrentFigure') 
             axnum = getAxisBelowCursor;
             if ~isempty(axnum) && axnum < 10 && ~isempty(UI.params.subset)
                 handle34 = subfig_ax(axnum);
@@ -6810,7 +6811,9 @@ end
                 u = um_axes(1,1);
                 v = um_axes(1,2);
                 w = um_axes(1,3);
-                FromPlot(u,v,0,w,1);
+                try 
+                    FromPlot(u,v,0,w,1);
+                end
             end
         end
     end
@@ -8444,17 +8447,21 @@ end
         axis tight, figureLetter('D','center'), xticks([10 100 1000]), xlabel(['Peak voltage (',char(181),'V)']),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
         % Isolation distance
-        subplot('Position',[0.76 0.57 0.23 .145]) 
-        ce_raincloud_plot(cell_metrics.isolationDistance,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]); 
+        subplot('Position',[0.76 0.57 0.23 .145])
+        if isfield(cell_metrics,'isolationDistance')
+            ce_raincloud_plot(cell_metrics.isolationDistance,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]);
+        end
         axis tight, xticks([10 100]); xlim([10,300]), xlabel('Isolation distance'),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
         % L_ratio
-        subplot('Position',[0.76 0.335 0.23 .142]) 
-        ce_raincloud_plot(cell_metrics.lRatio,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]); 
-        axis tight, xticks(10.^(-5:2:1)); xlim(10.^([-5 2])), xlabel('L-ratio'), 
+        subplot('Position',[0.76 0.335 0.23 .142])
+        if isfield(cell_metrics,'lRatio')
+            ce_raincloud_plot(cell_metrics.lRatio,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]);
+        end
+        axis tight, xticks(10.^(-5:2:1)); xlim(10.^([-5 2])), xlabel('L-ratio'),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
         % refractory period
-        subplot('Position',[0.76 0.1 0.23 .142]) 
+        subplot('Position',[0.76 0.1 0.23 .142])
         ce_raincloud_plot(cell_metrics.refractoryPeriodViolation,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]); 
         axis tight, xticks(10.^(-2:2:2)); xlabel(['Refractory period violation (',char(8240),')']),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
@@ -8498,6 +8505,7 @@ end
         end
         clr_groups = UI.settings.cellTypeColors(intersect(classes2plot,plotClas(UI.params.subset)),:);
         classes2plotSubset = unique(plotClas);
+            
         if plotCellIDs==-1
             plotOptions_all = {'Trilaterated position','Waveforms (all)','Waveforms (image)','ACGs (all)','ACGs (image)','ISIs (all)','ISIs (image)','RCs_firingRateAcrossTime (image)','RCs_firingRateAcrossTime (all)'};
             plotOptions = plotOptions(ismember(plotOptions,plotOptions_all));
@@ -8524,12 +8532,7 @@ end
                 disp('Summary figures canceled by user');
                 break
             end
-            clf(fig,'reset')
-            if plotCellIDs~=-1
-                set(fig,'Name',['CellExplorer summary figures ',num2str(j),'/',num2str(length(cellIDs))]);
-            else
-                set(fig,'Name',['CellExplorer summary figure, session = ', basename]);
-            end
+            
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
                 general1 = cell_metrics.general.batch{batchIDs1};
@@ -8542,6 +8545,19 @@ end
                 elseif isfield(cell_metrics.general,'basepath')
                     savePath1 = cell_metrics.general.basepath;
                 end
+            end
+            
+            if isfield(cell_metrics.general,'saveAs')
+                saveAs = cell_metrics.general.saveAs{batchIDs1};
+            else
+                saveAs = 'cell_metrics';
+            end
+            
+            clf(fig,'reset')
+            if plotCellIDs~=-1
+                set(fig,'Name',['CellExplorer cell summary ',saveAs,', cell ID ' num2str(cellIDs(j)),' (', num2str(j),'/', num2str(length(cellIDs)),')']);
+            else
+                set(fig,'Name',['CellExplorer session summary: ', basename,', ',saveAs]);
             end
             if ~isempty(UI.params.putativeSubse)
                 UI.params.a1 = cell_metrics.putativeConnections.excitatory(UI.params.putativeSubse,1);
@@ -8615,9 +8631,9 @@ end
             if ishandle(fig)
                 try
                     if highlight == 0
-                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_Summary'],0)
+                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_SessionSummary_', saveAs],0)
                     else
-                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0)
+                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_CellSummary_',saveAs,'_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0)
                     end
                 catch 
                     disp('figure not saved (action canceled by user or directory not available for writing)')
@@ -9374,7 +9390,7 @@ end
 
     function LoadPreferences(~,~)
         % Opens the preference .m file in matlab.
-        edit CellExplorer_Preferences.m
+        edit preferences_CellExplorer.m
     end
 
     function reclassify_celltypes(~,~)
@@ -9384,7 +9400,7 @@ end
             case 'Yes'
                 saveStateToHistory(1:cell_metrics.general.cellCount)
                 
-                preferences = ProcessCellMetrics_Preferences;
+                preferences = preferences_ProcessCellMetrics;
                 
                 % All cells are initially assigned as Pyramidal cells
                 cell_metrics.putativeCellType = repmat({'Pyramidal Cell'},1,size(cell_metrics.cellID,2));
@@ -9550,7 +9566,12 @@ end
         
         if nargin > 1
             try
-                save(file,'cell_metrics');
+                structSize = whos('cell_metrics');
+                if structSize.bytes/1000000000 > 2
+                    save(file, 'cell_metrics', '-v7.3')
+                else
+                    save(file, 'cell_metrics');
+                end
                 MsgLog(['Classification saved to ', file],[1,2]);
             catch
                 MsgLog(['Error saving metrics: ' file],4);
@@ -10550,7 +10571,7 @@ end
         if ~isempty(basenames)
             % Setting paths from db struct
             ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
-            cell_metrics1 = LoadCellMetricsBatch('basenames',basenames,'basepaths',basepaths,'waitbar_handle',ce_waitbar);
+            cell_metrics1 = loadCellMetricsBatch('basenames',basenames,'basepaths',basepaths,'waitbar_handle',ce_waitbar);
             if ~isempty(cell_metrics1)
                 cell_metrics = cell_metrics1;
             else
@@ -11610,11 +11631,20 @@ end
                 end
                 UI.settings.alteredCellMetrics = 0;
             end
-            [newStr2,matches] = split(UI.textFilter.String,[" & "," | "]);
+            [newStr2,matches] = split(UI.textFilter.String,[" & "," | "," OR "," AND "]);
             idx_textFilter2 = zeros(length(newStr2),cell_metrics.general.cellCount);
             failCheck = 0;
             for i = 1:length(newStr2)
-                if strcmp(newStr2{i}(1),'.')
+                if numel(newStr2{i})>11 && strcmp(newStr2{i}(1:12),'.brainRegion')
+                    newStr = split(newStr2{i}(2:end),' ');
+                    if numel(newStr)>1
+                        if isempty(relational_tree)
+                            load('brainRegions_relational_tree.mat','relational_tree');
+                        end
+                        acronym_out = getBrainRegionChildren(newStr{2},relational_tree);
+                        idx_textFilter2(i,:) = contains(cell_metrics.brainRegion,[acronym_out,newStr{2}],'IgnoreCase',true);
+                    end
+                elseif strcmp(newStr2{i}(1),'.')
                     newStr = split(newStr2{i}(2:end),' ');
                     if length(newStr)==3 && isfield(cell_metrics,newStr{1}) && isnumeric(cell_metrics.(newStr{1})) && contains(newStr{2},{'==','>','<','~='})
                         switch newStr{2}
@@ -11639,7 +11669,7 @@ end
                 end
             end
             if failCheck == 0
-                orPairs = find(contains(matches,{' | ',' OR ',}));
+                orPairs = find(contains(matches,{' | ',' OR '}));
                 if ~isempty(orPairs)
                     for i = 1:length(orPairs)
                         idx_textFilter2([orPairs(i),orPairs(i)+1],:) = any(idx_textFilter2([orPairs(i),orPairs(i)+1],:)).*[1;1];

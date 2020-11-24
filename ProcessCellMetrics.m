@@ -158,7 +158,7 @@ if nargin==0
 end
 
 % Loading preferences
-preferences = ProcessCellMetrics_Preferences(session);
+preferences = preferences_ProcessCellMetrics(session);
 
 % Verifying format of electrode groups and spike groups  (must be of type cell)
 if isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels') && isnumeric(session.extracellular.spikeGroups.channels)
@@ -1335,7 +1335,7 @@ for j = 1:cell_metrics.general.cellCount
     cum_firing1 = cumsum(sort(temp(:)));
     cum_firing1 = cum_firing1/max(cum_firing1);
     cell_metrics.firingRateGiniCoeff(j) = 1-2*sum(cum_firing1)./length(cum_firing1);
-    cell_metrics.firingRateStd(j) = std(temp(:))./mean(temp(:));
+    cell_metrics.firingRateCV(j) = std(temp(:))./mean(temp(:));
     cell_metrics.firingRateInstability(j) = median(abs(diff(temp(:))))./mean(temp(:));
     
     % CV2

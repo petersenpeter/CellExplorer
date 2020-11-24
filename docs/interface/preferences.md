@@ -26,7 +26,7 @@ dl {
 
 # Preferences
 {: .no_toc}
-Preferences are located in `CellExplorer_Preferences.m` and is stored as fields in `UI.settings.*`.
+Preferences are located in `preferences_CellExplorer.m` and is stored as fields in `UI.settings.*`.
 
 ### Display settings
 <dl>

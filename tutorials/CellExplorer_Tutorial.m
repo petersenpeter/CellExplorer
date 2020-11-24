@@ -23,16 +23,16 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 %% 5. Open several session from basepaths
 % basepaths = '/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130708','/Volumes/buzsakilab/Buzsakilabspace/Datasets/GirardeauG/Rat08/Rat08-20130709'}; % mac
 basepaths = {'Z:\Buzsakilabspace\Datasets\GirardeauG\Rat08\Rat08-20130708','Z:\Buzsakilabspace\Datasets\GirardeauG\Rat08\Rat08-20130709'}; % PC
-cell_metrics = LoadCellMetricsBatch('basepaths',basepaths);
+cell_metrics = loadCellMetricsBatch('basepaths',basepaths);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 
 %% 6. load a subset of units fullfilling multiple of criterium
 
 % Get cells that are assigned as 'Interneuron'
-cell_metrics_idxs1 = LoadCellMetrics('cell_metrics',cell_metrics,'putativeCellType',{'Interneuron'});
+cell_metrics_idxs1 = loadCellMetrics('cell_metrics',cell_metrics,'putativeCellType',{'Interneuron'});
 
 % Get cells that are have a tag 'InverseSpike' or 'Good' and are assigned as 'Interneuron'
-cell_metrics_idxs2 = LoadCellMetrics('cell_metrics',cell_metrics,'tags',{'InverseSpike','Good'},'putativeCellType',{'Interneuron'});
+cell_metrics_idxs2 = loadCellMetrics('cell_metrics',cell_metrics,'tags',{'InverseSpike','Good'},'putativeCellType',{'Interneuron'});
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Tutorial for running CellExplorer from the Buzsaki lab database

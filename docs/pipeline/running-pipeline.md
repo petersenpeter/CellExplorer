@@ -29,7 +29,7 @@ Following the definition of metadata, the cell metrics calculation process can b
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/05/Flowcharts_ProcessingModule.png){: .mt-4}
 
 ### Running CellExplorer
-CellExplorer can be used with single recording sessions as well as batches of sessions. Batch loading is performed with the script `LoadCellMetricsBatch`. The advanced flowchart below further details the capabilities of loading various GUIs from CellExplorer (`gui_session`, `gui_MonoSyn` and `gui_DeelSuperficial`) as well as do spike raster plots, that requires access to the local `spikes` struct and potentially also manipulation and events files when plotting PSTHs.
+CellExplorer can be used with single recording sessions as well as batches of sessions. Batch loading is performed with the script `loadCellMetricsBatch`. The advanced flowchart below further details the capabilities of loading various GUIs from CellExplorer (`gui_session`, `gui_MonoSyn` and `gui_DeelSuperficial`) as well as do spike raster plots, that requires access to the local `spikes` struct and potentially also manipulation and events files when plotting PSTHs.
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/05/Flowcharts_GraphicalInterface.png){: .mt-4}
 
 ## Running pipeline from a data path
@@ -64,7 +64,7 @@ To open multiple sessions together you can run CellExplorer in batch mode. Below
 
 ```m
 bsasepaths = {'sessionName1','sessionName2','sessionName3'};
-cell_metrics = LoadCellMetricsBatch('basepaths',bsasepaths);
+cell_metrics = loadCellMetricsBatch('basepaths',bsasepaths);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 As you perform classifications in CellExplorer, you may save back to the original cell metrics stored with the sessions defined above. You can perform the batch mode from a list of paths as well.
@@ -84,7 +84,7 @@ To open multiple sessions together you can run CellExplorer in batch mode. Below
 
 ```m
 sessionNames = {'sessionName1','sessionName2','sessionName3'};
-cell_metrics = LoadCellMetricsBatch('sessions',sessionNames);
+cell_metrics = loadCellMetricsBatch('sessions',sessionNames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 As you perform classifications in CellExplorer in batch mode, you can save your progress to the original sessions. You can work in batch mode from a list of paths as well.
