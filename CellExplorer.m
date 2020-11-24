@@ -561,7 +561,7 @@ end
 
 
 %% % % % % % % % % % % % % % % % % % % % % %
-% UI panels
+% UI panels and basic UI elements
 % % % % % % % % % % % % % % % % % % % % % %
 
 % Flexib grid box for adjusting the width of the side panels
