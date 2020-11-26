@@ -575,7 +575,7 @@ UI.HBox = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0);
 UI.panel.left = uix.VBoxFlex('Parent',UI.HBox,'position',[0 0.66 0.26 0.31]);
 
 % Elements in left panel
-UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText,'tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with AND // OR operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nMake sure to include  spaces between fields and operators' ));
+UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText,'tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with AND // OR operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nFilter by parent brain regions as well, fx: ".brainRegion HIP"\nMake sure to include  spaces between fields and operators' ));
 UI.panel.custom = uix.VBox('Position',[0 0.717 1 0.255],'Parent',UI.panel.left);
 UI.panel.group = uix.VBox('Parent',UI.panel.left);
 UI.panel.displaySettings = uix.VBox('Parent',UI.panel.left);
@@ -1106,8 +1106,8 @@ function updateUI
             subfig_ax(1).YAxis(2).Color = 'k';
         end
         hold on
-        subfig_ax(1).YLabel.String = UI.labels.(UI.plot.yTitle); %subfig_ax(1).YLabel.Interpreter = 'none';
-        subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); %subfig_ax(1).XLabel.Interpreter = 'none';
+        subfig_ax(1).YLabel.String = UI.labels.(UI.plot.yTitle); subfig_ax(1).YLabel.Interpreter = 'tex';
+        subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); subfig_ax(1).XLabel.Interpreter = 'tex';
         set(subfig_ax(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
         xlim auto, ylim auto, zlim auto, axis tight
         
@@ -1540,8 +1540,8 @@ function updateUI
     elseif UI.settings.customPlotHistograms == 3
         % 3D plot
         hold on
-        subfig_ax(1).YLabel.String = UI.labels.(UI.plot.yTitle); %subfig_ax(1).YLabel.Interpreter = 'none';
-        subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); %subfig_ax(1).XLabel.Interpreter = 'none';
+        subfig_ax(1).YLabel.String = UI.labels.(UI.plot.yTitle); subfig_ax(1).YLabel.Interpreter = 'tex';
+        subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); subfig_ax(1).XLabel.Interpreter = 'tex';
         set(subfig_ax(1), 'Clipping','off','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
         xlim auto, ylim auto, zlim auto, axis tight
         
@@ -1634,7 +1634,7 @@ function updateUI
         line(plotX(ii), plotY(ii), plotZ(ii),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off')
         line(plotX(ii), plotY(ii), plotZ(ii),'Marker','x','LineStyle','none','color','k', 'LineWidth', 2, 'MarkerSize',20, 'HitTest','off')
         
-        subfig_ax(1).ZLabel.String = UI.labels.(UI.plot.zTitle);subfig_ax(1).ZLabel.Interpreter = 'none';
+        subfig_ax(1).ZLabel.String = UI.labels.(UI.plot.zTitle); subfig_ax(1).ZLabel.Interpreter = 'tex';
         if contains(UI.plot.zTitle,'_num')
             zticks([1:length(groups_ids.(UI.plot.zTitle))]), zticklabels(groups_ids.(UI.plot.zTitle)),ztickangle(65),zlim([0.5,length(groups_ids.(UI.plot.zTitle))+0.5]),
 %             subfig_ax(1).ZLabel.String = UI.plot.zTitle(1:end-4);
@@ -1678,7 +1678,7 @@ function updateUI
         % Rain cloud plot
         
         if ~isempty(clr_groups)
-            subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); %subfig_ax(1).XLabel.Interpreter = 'none';
+            subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); subfig_ax(1).XLabel.Interpreter = 'tex';
             set(subfig_ax(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
             xlim auto, ylim manual, zlim auto
             set(subfig_ax(1),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on, axis tight

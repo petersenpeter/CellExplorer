@@ -63,8 +63,8 @@ You can save your combined cell metrics from a study into a single mat file that
 ### Export figures
 Figures can be exported using the GUI, either the main CellExplorer window or through cell selection actions dialog. For more information please see the [figure export tutorial]({{"/tutorials/export-figure/"|absolute_url}}).
 
-### Export summary figure
-A summary/supplementary figure can be created for publications as shown below (no further edits required). From the menu select `View` -> `Generate supplementary figure`.
+### Export supplementary figure
+A supplementary figure can be created for publications as shown below. From the menu select `File` -> `Generate supplementary figure`. The figure is customizable, allowing you to select the metric to show in each scatter and histogram plot.
 ![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2020/05/UnitsSummaryLowRess.png){: .mt-4}
 
 ### Work in batch-mode while handling metrics on a single session level
