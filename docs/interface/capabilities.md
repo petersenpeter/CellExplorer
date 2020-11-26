@@ -32,16 +32,10 @@ Monosynaptic connections are determined in the pipeline, and you can visualize t
 ### Interface for deep-superfial classification curation
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/gui_deepSuperficial.png){: .mt-4}
 
-### Database capabilities
-CellExplorer is capable of loading datasets from and writing to the Buzsaki lab database. Please setup your credentials and local paths as [described here]({{"/database/preparation/"|absolute_url}}).
-
 ### Reference data
 To help you characterize your own data, you can load reference data provided by our lab.
 
 ![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png)
-
-### Ground truth data
-There are a subset of ground truth cell types provided.
 
 ### Raincloud plot
 To quantify single dimensional variations in your data you can generate a [raincloud plot](https://github.com/RainCloudPlots/RainCloudPlots). You can generate the plot from the top menu `View` -> `Generate rain cloud metrics plot`.

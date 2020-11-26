@@ -1,23 +1,19 @@
 ---
 layout: default
-title: Preparation
+title: Setup access
 parent: Database
-nav_order: 1
+nav_order: 3
 ---
-# Database preparation
+# Database access
 {: .no_toc}
-
-The public data in the database can be loaded as reference data, and can be accessed without providing credentials, but login credentials are necessary for full functionality of the database. 
-
-## Preparation for using the Buzsaki lab database
-To use the [Buzsaki lab database](https://buzsakilab.com/wp/database/) with CellExplorer, there are two necessary steps you have to do in Matlab: add your credentials and define the repository paths. Public reference data can still be used without credentials.
+To have full access to the [Buzsaki lab databank](https://buzsakilab.com/wp/database/) with CellExplorer, there are two necessary steps you have to do in Matlab: add your credentials and define the repository paths. Public reference data can still be used without credentials. This page is therefore mostly dedicated to lab members.
 
 ### 1. Add your db credentials
 Once CellExplorer has been added to your Matlab Set Path, you should provide your buzsakilab.com credentials in the file [db_credentials.m](https://github.com/petersenpeter/CellExplorer/blob/master/db/db_credentials.m). In the Matlab Command Window type:
 ```m
 edit db_credentials.m
 ```
-In the Matlab file, replace the two lines below with your credentials:
+In the credentials file, replace the two lines below with your credentials:
 ```m
 credentials.username = 'user';
 credentials.password = 'password';
