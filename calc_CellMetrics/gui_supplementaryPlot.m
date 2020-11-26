@@ -11,7 +11,7 @@ listOffsets = 30*[4,3,4,3,4,3,2,1]-20;
 listTabs = [1,1,2,2,3,3,3,3];
 
 supplementaryFigure.dialog = dialog('Position',[300 300 500 225],'Name','Select features for supplementary figure','visible','off'); movegui(supplementaryFigure.dialog,'center'), set(supplementaryFigure.dialog,'visible','on')
-supplementaryFigure.uitabgroup = uitabgroup('Units','normalized','Position',[0 0.12 1 0.88],'Parent',supplementaryFigure.dialog,'Units','normalized');
+supplementaryFigure.uitabgroup = uitabgroup('Units','normalized','Position',[0 0.13 1 0.865],'Parent',supplementaryFigure.dialog,'Units','normalized');
 supplementaryFigure.tabs.histograms(1) = uitab(supplementaryFigure.uitabgroup,'Title','Scatter plot','tooltip',sprintf('session.general: \nGeneral information about the dataset'));
 supplementaryFigure.tabs.histograms(2) = uitab(supplementaryFigure.uitabgroup,'Title','Color groups','tooltip',sprintf('session.general: \nGeneral information about the dataset'));
 supplementaryFigure.tabs.histograms(3) = uitab(supplementaryFigure.uitabgroup,'Title','Population','tooltip',sprintf('session.general: \nGeneral information about the dataset'));
@@ -40,6 +40,7 @@ uicontrol('Parent',supplementaryFigure.tabs.histograms(3),'Style', 'text', 'Stri
 uicontrol('Parent',supplementaryFigure.tabs.histograms(1),'Style', 'text', 'String', 'Axis scale', 'Position', [310, listOffsets(1)+30, 80, 15], 'HorizontalAlignment','center');
 uicontrol('Parent',supplementaryFigure.tabs.histograms(1),'Style', 'text', 'String', 'Smoothing', 'Position', [400, listOffsets(1)+30, 80, 15], 'HorizontalAlignment','center');
 
+uicontrol('Parent',supplementaryFigure.tabs.histograms(1),'Style','text','Position',[165, 42, 120, 15],'String','Export options','HorizontalAlignment','left');
 supplementaryFigure.popupmenu.saveFigure = uicontrol('Parent',supplementaryFigure.tabs.histograms(1),'Style','checkbox','Position',[160, 12, 120, 25],'String','Save figures','HorizontalAlignment','left');
 uicontrol('Parent',supplementaryFigure.tabs.histograms(1),'Style','text','Position',[260, 42, 140, 15],'String','File format','HorizontalAlignment','left');
 supplementaryFigure.popupmenu.fileFormat = uicontrol('Parent',supplementaryFigure.tabs.histograms(1),'Style','popupmenu','Position',[250, 10, 100, 25],'String',{'png','pdf'},'HorizontalAlignment','left');
@@ -47,9 +48,8 @@ uicontrol('Parent',supplementaryFigure.tabs.histograms(1),'Style','text','Positi
 supplementaryFigure.popupmenu.savePath = uicontrol('Parent',supplementaryFigure.tabs.histograms(1),'Style','popupmenu','Position',[360, 10, 120, 25],'String',{'basepath','CellExplorer','Define path'},'HorizontalAlignment','left');
 
 % Buttons
-supplementaryFigure.button.ok = uicontrol('Parent',supplementaryFigure.dialog,'Style','pushbutton','Position',[10, 10, 150, 30],'String','OK','Callback',@(src,evnt)close_with_ok);
-supplementaryFigure.button.preview = uicontrol('Parent',supplementaryFigure.dialog,'Style','pushbutton','Position',[170, 10, 150, 30],'String','Preview','Callback',@(src,evnt)close_with_ok);
-supplementaryFigure.button.cancel = uicontrol('Parent',supplementaryFigure.dialog,'Style','pushbutton','Position',[330, 10, 150, 30],'String','Cancel','Callback',@(src,evnt)close_with_cancel);
+supplementaryFigure.button.ok = uicontrol('Parent',supplementaryFigure.dialog,'Style','pushbutton','Position',[10, 10, 240, 30],'String','OK','Callback',@(src,evnt)close_with_ok);
+supplementaryFigure.button.cancel = uicontrol('Parent',supplementaryFigure.dialog,'Style','pushbutton','Position',[260, 10, 230, 30],'String','Cancel','Callback',@(src,evnt)close_with_cancel);
 
 % uicontrol(supplementaryFigure.cellIDs)
 uiwait(supplementaryFigure.dialog);
