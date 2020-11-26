@@ -88,3 +88,10 @@ UI.settings.displayInhibitoryPostsynapticCells = false; % boolean
 UI.settings.firingRateMap.showHeatmap = false;          % boolean
 UI.settings.firingRateMap.showLegend = false;           % boolean
 UI.settings.firingRateMap.showHeatmapColorbar = false;  % boolean
+
+% Supplementary figure
+UI.supplementaryFigure.waveformNormalization = 1;
+UI.supplementaryFigure.groupDataNormalization = 1;
+UI.supplementaryFigure.metrics = {'troughToPeak'  'acg_tau_rise'  'firingRate'  'cv2'  'peakVoltage'  'isolationDistance'  'lRatio'  'refractoryPeriodViolation'};
+UI.supplementaryFigure.axisScale = [1 2 2 2 2 2 2 2];
+UI.supplementaryFigure.smoothing = [1 1 1 1 1 1 1 1];

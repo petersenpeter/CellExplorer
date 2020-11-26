@@ -92,7 +92,7 @@ plotCellIDs = p.Results.plotCellIDs;
 % % % % % % % % % % % % % % % % % % % % % %
 
 UI = []; UI.settings.plotZLog = 0; UI.settings.plot3axis = 0; UI.settings.plotXdata = 'firingRate'; UI.settings.plotYdata = 'peakVoltage';
-UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.metricsTableType = 'Metrics'; colorStr = []; 
+UI.settings.plotZdata = 'deepSuperficialDistance'; UI.settings.metricsTableType = 'Metrics'; 
 UI.settings.deepSuperficial = ''; UI.settings.acgType = 'Normal'; UI.settings.cellTypeColors = []; UI.settings.monoSynDispIn = 'None';
 UI.settings.layout = 3; UI.settings.displayMenu = 0; UI.settings.displayInhibitory = false; UI.settings.displayExcitatory = false;
 UI.settings.customCellPlotIn{1} = 'Waveforms (single)'; UI.settings.customCellPlotIn{2} = 'ACGs (single)'; UI.settings.troughToPeakSorted = [];
@@ -101,7 +101,7 @@ UI.settings.customCellPlotIn{5} = 'firingRateMap'; UI.settings.customCellPlotIn{
 UI.settings.tSNE.calcNarrowAcg = true; UI.settings.tSNE.calcFiltWaveform = true; UI.settings.tSNE.metrics = ''; UI.settings.acgYaxisLog = 1;
 UI.settings.tSNE.calcWideAcg = true; UI.settings.dispLegend = 1; UI.settings.tags = {'good','bad','mua','noise','inverseSpike','Other'};
 UI.settings.groundTruthMarkers = {'d','o','s','*','+','p'}; UI.settings.groundTruth = {'PV+','NOS1+','GAT1+'};
-UI.settings.plotWaveformMetrics = 1; UI.settings.metricsTable = 1; synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'};
+UI.settings.plotWaveformMetrics = 1; UI.settings.metricsTable = 1; 
 UI.settings.stickySelection = false; UI.settings.fieldsMenuMetricsToExlude  = {'tags','groundTruthClassification','groups','spikes'};
 UI.settings.plotOptionsToExlude = {'acg_','waveforms_','isi_','responseCurves_thetaPhase','responseCurves_thetaPhase_zscored','responseCurves_firingRateAcrossTime','groups','tags','groundTruthClassification','spikes'}; UI.settings.tSNE.dDistanceMetric = 'euclidean';
 UI.settings.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','groups','spikes'}; UI.params.inbound = [];
@@ -111,17 +111,20 @@ UI.settings.firingRateMap.showHeatmap = false; UI.settings.firingRateMap.showLeg
 UI.settings.referenceData = 'None'; UI.settings.groundTruthData = 'None'; UI.BatchMode = false; UI.params.ii_history = 1; UI.params.ClickedCells = [];
 UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoSyn.dispHollowGauss = false; UI.settings.binCount = 100;
 UI.settings.customPlotHistograms = 1; UI.tableData.Column1 = 'putativeCellType'; UI.tableData.Column2 = 'brainRegion'; UI.settings.ACGLogIntervals = -3:0.04:1;
-UI.tableData.SortBy = 'cellID'; UI.plot.xTitle = ''; UI.plot.yTitle = ''; UI.plot.zTitle = ''; ce_waitbar = []; UI.settings.alteredCellMetrics = 1;
+UI.tableData.SortBy = 'cellID'; UI.plot.xTitle = ''; UI.plot.yTitle = ''; UI.plot.zTitle = '';  UI.settings.alteredCellMetrics = 1;
 UI.cells.excitatory = []; UI.cells.inhibitory = []; UI.cells.inhibitory_subset = []; UI.cells.excitatory_subset = [];
-UI.cells.excitatoryPostsynaptic = []; UI.cells.inhibitoryPostsynaptic = []; UI.params.outbound = []; h_scatter = []; ccf_ratio = [-35.5,30];
-UI.zoom.global = cell(1,10); UI.zoom.globalLog = cell(1,10); UI.settings.logMarkerSize = 0; clr_groups = []; clr_groups2 = [];  clr_groups3 = [];
+UI.cells.excitatoryPostsynaptic = []; UI.cells.inhibitoryPostsynaptic = []; UI.params.outbound = []; 
+UI.zoom.global = cell(1,10); UI.zoom.globalLog = cell(1,10); UI.settings.logMarkerSize = 0; 
 UI.params.chanCoords.x_factor = 40; UI.params.chanCoords.y_factor = 10; UI.colors.toggleButtons = [0. 0.3 0.7];
-UI.settings.plotExcitatoryConnections = true; UI.settings.plotInhibitoryConnections = true; iLine = 1; batchIDs = [];
+UI.settings.plotExcitatoryConnections = true; UI.settings.plotInhibitoryConnections = true; 
 UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;0.4940, 0.1840, 0.5560;0.4660, 0.6740, 0.1880;0.3010, 0.7450, 0.9330;0.6350, 0.0780, 0.1840];
+UI.lists.metrics = [];
 
+synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'}; ce_waitbar = []; colorStr = []; 
+iLine = 1; batchIDs = []; clr_groups = []; clr_groups2 = [];  clr_groups3 = []; h_scatter = []; ccf_ratio = [-35.5,30];
 groups_ids = []; clusClas = []; plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = []; meanCCG = [];
 hover2highlight.handle1 = []; hover2highlight.handle2 = []; hover2highlight.handle3 = []; hover2highlight.handle4 = [];
-classes2plot = []; classes2plotSubset = []; fieldsMenu = []; table_metrics = []; ii = []; history_classification = [];
+classes2plot = []; classes2plotSubset = []; table_metrics = []; ii = []; history_classification = [];
 brainRegions_list = []; brainRegions_acronym = []; relational_tree = []; cell_class_count = [];  plotOptions = ''; freeText = {''};
 plotAcgFit = 0; clasLegend = 0; Colorval = 1; plotClas = []; plotClas11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
 colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; connectivityGraph = [];
@@ -351,7 +354,8 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@
 UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save classification',menuSelectedFcn,@saveDialog,'Separator','on','Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Restore classification from backup',menuSelectedFcn,@restoreBackup);
 uimenu(UI.menu.file.topMenu,menuLabel,'Reload cell metrics',menuSelectedFcn,@reloadCellMetrics,'Separator','on');
-uimenu(UI.menu.file.topMenu,menuLabel,'Export figure',menuSelectedFcn,@exportFigure,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Export main figure window',menuSelectedFcn,@exportFigure,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Generate supplementary figure',menuSelectedFcn,@plotSupplementaryFigureFromMenu);
 
 % Navigation
 UI.menu.navigation.topMenu = uimenu(UI.fig,menuLabel,'Navigation');
@@ -430,7 +434,6 @@ UI.menu.display.trilatGroupData.ops(3) = uimenu(UI.menu.display.trilatGroupDataM
 initGroupMenu('trilatGroupData')
 UI.menu.display.significanceMetricsMatrix = uimenu(UI.menu.display.topMenu,menuLabel,'Generate significance matrix',menuSelectedFcn,@SignificanceMetricsMatrix,'Accelerator','K','Separator','on');
 UI.menu.display.generateRainCloudsPlot = uimenu(UI.menu.display.topMenu,menuLabel,'Generate rain cloud metrics figure',menuSelectedFcn,@generateRainCloudPlot);
-UI.menu.display.plotSupplementaryFigure = uimenu(UI.menu.display.topMenu,menuLabel,'Generate supplementary figure',menuSelectedFcn,@plotSupplementaryFigure);
 UI.menu.display.markerSizeMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Change marker size for group plots',menuSelectedFcn,@defineMarkerSize,'Separator','on');
 UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap',menuSelectedFcn,@changeColormap);
 UI.menu.display.sortingMetric = uimenu(UI.menu.display.topMenu,menuLabel,'Change metric used for sorting image data',menuSelectedFcn,@editSortingMetric);
@@ -732,26 +735,26 @@ UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu
 UI.panel.buttonGroup1 = uix.HBox('Parent',UI.panel.custom);
 uicontrol('Parent',UI.panel.buttonGroup1,'Style','text','Units','normalized','Position',[0.2 0 0.5 1],'String','  X data','HorizontalAlignment','left');
 UI.checkbox.logx = uicontrol('Parent',UI.panel.buttonGroup1,'Style','checkbox','Units','normalized','Position',[0.5 0 0.5 1],'String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle x axis linear/log');
-UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 62 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on x axis');
+UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 62 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.settings.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on x axis');
 set(UI.panel.buttonGroup1, 'Widths', [-1 70], 'Spacing', 5);
 
 UI.panel.buttonGroup2 = uix.HBox('Parent',UI.panel.custom);
 uicontrol('Parent',UI.panel.buttonGroup2,'Style','text','Position',[0.2 0 0.5 1],'Units','normalized','String','  Y data','HorizontalAlignment','left');
 UI.checkbox.logy = uicontrol('Parent',UI.panel.buttonGroup2,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle y axis linear/log');
-UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 42 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on y axis');
+UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 42 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.settings.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on y axis');
 set(UI.panel.buttonGroup2, 'Widths', [-1 70], 'Spacing', 5);
 
 UI.panel.buttonGroup3 = uix.HBox('Parent',UI.panel.custom);
 uicontrol('Parent',UI.panel.buttonGroup3,'Style','text','Position',[0.2 0 0.5 1],'Units','normalized','String','  Z data','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
 UI.checkbox.logz = uicontrol('Parent',UI.panel.buttonGroup3,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle z axis linear/log');
-UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 22 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on z axis');
+UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 22 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.settings.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on z axis');
 UI.popupmenu.zData.Enable = 'Off'; UI.checkbox.logz.Enable = 'Off';
 set(UI.panel.buttonGroup3, 'Widths', [-1 70], 'Spacing', 5);
 
 UI.panel.buttonGroup4 = uix.HBox('Parent',UI.panel.custom);
 uicontrol('Parent',UI.panel.buttonGroup4,'Style','text','Position',[0.2 0 0.5 1],'Units','normalized','String','  Marker size','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
 UI.checkbox.logMarkerSize = uicontrol('Parent',UI.panel.buttonGroup4,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log size','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotMarkerSizeLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle marker size linear/log');
-UI.popupmenu.markerSizeData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 144 10],'Units','normalized','String',fieldsMenu,'Value',find(strcmp(fieldsMenu,UI.settings.plotMarkerSizedata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotMarkerSize(),'KeyPressFcn', {@keyPress},'tooltip','Metric data for marker size');
+UI.popupmenu.markerSizeData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.settings.plotMarkerSizedata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotMarkerSize(),'KeyPressFcn', {@keyPress},'tooltip','Metric data for marker size');
 UI.popupmenu.markerSizeData.Enable = 'Off'; UI.checkbox.logMarkerSize.Enable = 'Off';
 set(UI.panel.buttonGroup4, 'Widths', [-1 70], 'Spacing', 5);
 set(UI.panel.custom, 'Heights', [15 20 15 20 15 20 15 20 15 25], 'Spacing', 5);
@@ -1103,8 +1106,8 @@ function updateUI
             subfig_ax(1).YAxis(2).Color = 'k';
         end
         hold on
-        subfig_ax(1).YLabel.String = UI.plot.yTitle; subfig_ax(1).YLabel.Interpreter = 'none';
-        subfig_ax(1).XLabel.String = UI.plot.xTitle;subfig_ax(1).XLabel.Interpreter = 'none';
+        subfig_ax(1).YLabel.String = UI.labels.(UI.plot.yTitle); %subfig_ax(1).YLabel.Interpreter = 'none';
+        subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); %subfig_ax(1).XLabel.Interpreter = 'none';
         set(subfig_ax(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
         xlim auto, ylim auto, zlim auto, axis tight
         
@@ -1326,12 +1329,14 @@ function updateUI
             if contains(UI.plot.xTitle,'_num')
                 xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),
                 xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5001]),
-                subfig_ax(1).XLabel.String = UI.plot.xTitle(1:end-4);subfig_ax(1).XLabel.Interpreter = 'none';
+%                 subfig_ax(1).XLabel.String = UI.plot.xTitle(1:end-4);
+                subfig_ax(1).XLabel.Interpreter = 'none';
             end
             if contains(UI.plot.yTitle,'_num')
                 yticks([1:length(groups_ids.(UI.plot.yTitle))]), yticklabels(groups_ids.(UI.plot.yTitle)),ytickangle(65),
                 ylim([0.5,length(groups_ids.(UI.plot.yTitle))+0.5001]),
-                subfig_ax(1).YLabel.String = UI.plot.yTitle(1:end-4); subfig_ax(1).YLabel.Interpreter = 'none';
+%                 subfig_ax(1).YLabel.String = UI.plot.yTitle(1:end-4); 
+                subfig_ax(1).YLabel.Interpreter = 'none';
             end
             if length(unique(plotClas(UI.params.subset)))==2
 %                 G1 = plotX(UI.params.subset);
@@ -1535,8 +1540,8 @@ function updateUI
     elseif UI.settings.customPlotHistograms == 3
         % 3D plot
         hold on
-        subfig_ax(1).YLabel.String = UI.plot.yTitle; subfig_ax(1).YLabel.Interpreter = 'none';
-        subfig_ax(1).XLabel.String = UI.plot.xTitle;subfig_ax(1).XLabel.Interpreter = 'none';
+        subfig_ax(1).YLabel.String = UI.labels.(UI.plot.yTitle); %subfig_ax(1).YLabel.Interpreter = 'none';
+        subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); %subfig_ax(1).XLabel.Interpreter = 'none';
         set(subfig_ax(1), 'Clipping','off','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
         xlim auto, ylim auto, zlim auto, axis tight
         
@@ -1629,10 +1634,11 @@ function updateUI
         line(plotX(ii), plotY(ii), plotZ(ii),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off')
         line(plotX(ii), plotY(ii), plotZ(ii),'Marker','x','LineStyle','none','color','k', 'LineWidth', 2, 'MarkerSize',20, 'HitTest','off')
         
-        subfig_ax(1).ZLabel.String = UI.plot.zTitle;subfig_ax(1).ZLabel.Interpreter = 'none';
+        subfig_ax(1).ZLabel.String = UI.labels.(UI.plot.zTitle);subfig_ax(1).ZLabel.Interpreter = 'none';
         if contains(UI.plot.zTitle,'_num')
             zticks([1:length(groups_ids.(UI.plot.zTitle))]), zticklabels(groups_ids.(UI.plot.zTitle)),ztickangle(65),zlim([0.5,length(groups_ids.(UI.plot.zTitle))+0.5]),
-            subfig_ax(1).ZLabel.String = UI.plot.zTitle(1:end-4);subfig_ax(1).ZLabel.Interpreter = 'none';
+%             subfig_ax(1).ZLabel.String = UI.plot.zTitle(1:end-4);
+            subfig_ax(1).ZLabel.Interpreter = 'none';
         end
         
         % Ground truth cell types
@@ -1658,12 +1664,13 @@ function updateUI
 
         if contains(UI.plot.xTitle,'_num')
             xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5]),
-            subfig_ax(1).XLabel.String(1:end-4) = UI.plot.xTitle;subfig_ax(1).XLabel.Interpreter = 'none';
+%             subfig_ax(1).XLabel.String(1:end-4) = UI.plot.xTitle;
+            subfig_ax(1).XLabel.Interpreter = 'none';
         end
         if contains(UI.plot.yTitle,'_num')
             yticks([1:length(groups_ids.(UI.plot.yTitle))]), yticklabels(groups_ids.(UI.plot.yTitle)),ytickangle(65),ylim([0.5,length(groups_ids.(UI.plot.yTitle))+0.5]),
-            subfig_ax(1).YLabel.String(1:end-4) = UI.plot.yTitle; subfig_ax(1).YLabel.Interpreter = 'none';
-            
+%             subfig_ax(1).YLabel.String(1:end-4) = UI.plot.yTitle; 
+            subfig_ax(1).YLabel.Interpreter = 'none';
         end
         [az,el] = view;
         
@@ -1671,7 +1678,7 @@ function updateUI
         % Rain cloud plot
         
         if ~isempty(clr_groups)
-            subfig_ax(1).XLabel.String = UI.plot.xTitle;subfig_ax(1).XLabel.Interpreter = 'none';
+            subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); %subfig_ax(1).XLabel.Interpreter = 'none';
             set(subfig_ax(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
             xlim auto, ylim manual, zlim auto
             set(subfig_ax(1),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on, axis tight
@@ -1747,7 +1754,8 @@ function updateUI
             % % %
             if contains(UI.plot.xTitle,'_num')
                 xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5]),
-                subfig_ax(1).XLabel.String = UI.plot.xTitle(1:end-4);subfig_ax(1).XLabel.Interpreter = 'none';
+%                 subfig_ax(1).XLabel.String = UI.plot.xTitle(1:end-4); 
+                subfig_ax(1).XLabel.Interpreter = 'none';
             end
         end
     end
@@ -3624,13 +3632,7 @@ end
             end
         end
     end
-    function handle_ce_gscatter = ce_gscatter(plotX,plotY1,plotClas,clr_groups,markerSize,markerType)
-        uniqueGroups = unique(plotClas);
-        for i_groups = 1:size(clr_groups,1)
-            idx = plotClas == uniqueGroups(i_groups);
-            handle_ce_gscatter(i_groups) = line(plotX(idx), plotY1(idx),'Marker',markerType,'LineStyle','none','color',clr_groups(i_groups,:), 'MarkerSize',markerSize,'HitTest','off');
-        end
-    end
+    
     
     function plotGroupData(plotX1,plotY1,plotConnections1,highlightCurrentCell)
         if ~isempty(clr_groups)
@@ -6911,11 +6913,11 @@ end
         
         if UI.settings.metricsTable==1 && ~isempty(event.Indices) && size(event.Indices,1) == 1
             if event.Indices(2) == 1
-                UI.popupmenu.xData.Value = find(contains(fieldsMenu,table_fieldsNames(event.Indices(1))),1);
+                UI.popupmenu.xData.Value = find(contains(UI.lists.metrics,table_fieldsNames(event.Indices(1))),1);
                 uicontrol(UI.popupmenu.xData);
                 buttonPlotX;
             elseif event.Indices(2) == 2
-                UI.popupmenu.yData.Value = find(contains(fieldsMenu,table_fieldsNames(event.Indices(1))),1);
+                UI.popupmenu.yData.Value = find(contains(UI.lists.metrics,table_fieldsNames(event.Indices(1))),1);
                 uicontrol(UI.popupmenu.yData);
                 buttonPlotY;
             end
@@ -7747,7 +7749,7 @@ end
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Metric to filter', 'Position', [10, 420, 180, 15],'HorizontalAlignment','left');
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Logic filter', 'Position', [300, 420, 100, 15],'HorizontalAlignment','left');
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Value', 'Position', [410, 420, 170, 15],'HorizontalAlignment','left');
-            filterCells.filterDropdown = uicontrol('Parent',filterCells.dialog,'Style','popupmenu','Position',[10, 395, 280, 25],'Units','normalized','String',['Select';fieldsMenu],'Value',1,'HorizontalAlignment','left');
+            filterCells.filterDropdown = uicontrol('Parent',filterCells.dialog,'Style','popupmenu','Position',[10, 395, 280, 25],'Units','normalized','String',['Select';UI.lists.metrics],'Value',1,'HorizontalAlignment','left');
             filterCells.filterType = uicontrol('Parent',filterCells.dialog,'Style', 'popupmenu', 'String', {'>','<','==','~='}, 'Value',1,'Position', [300, 395, 100, 25],'HorizontalAlignment','left');
             filterCells.filterInput = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [410, 395, 170, 25],'HorizontalAlignment','left','KeyReleaseFcn',@cellSelection1);
             
@@ -8407,7 +8409,16 @@ end
         end
     end
 
-    function plotSupplementaryFigure(~,~)
+    function plotSupplementaryFigureFromMenu(~,~)
+        axisScale = {'lin','log'};
+        UI = gui_supplementaryPlot(UI);
+        
+        if UI.supplementaryFigure.waveformNormalization==1
+            UI.settings.zscoreWaveforms=1;
+        else
+            UI.settings.zscoreWaveforms=0;
+        end
+%         adjustZscoreWaveforms;
         UI.settings.plotInsetChannelMap = 1; % Hiding channel map inset in waveform plots.
         UI.settings.plotInsetACG = 1; % Hiding ACG inset in waveform plots.
         if ismac
@@ -8417,66 +8428,91 @@ end
             defaultAxesFontSize = 12;
             fig_pos = [0,0,1200,600];
         end
-        fig = figure('Name','CellExplorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','off');
+        fig = figure('Name','CellExplorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','off','DefaultTextInterpreter', 'tex');
         % Scatter plot with trough to peak vs burst index
-        ax1 = subplot('Position',[0.06 0.1 0.41 .87]); % Trough to peak vs burstiness
-        ce_gscatter(cell_metrics.troughToPeak(UI.params.subset), cell_metrics.burstIndex_Royer2012(UI.params.subset), plotClas(UI.params.subset), clr_groups,UI.settings.markerSize,'.'); axis tight
-        xlabel('Trough to peak (ms)'), ylabel('Burst index'); set(gca, 'YScale', 'log','TickLength',[0.02 1]), axis tight, figureLetter('A','right')
+        ax1 = subplot('Position',[0.13 0.22 0.34 .75]); % Trough to peak vs burstiness
+        hold on
+        uniqueGroups = unique(plotClas);
+        for i_groups = 1:size(clr_groups,1)
+            idx = plotClas(UI.params.subset) == uniqueGroups(i_groups);
+%             handle_ce_gscatter(i_groups) = line(cell_metrics.(UI.supplementaryFigure.metrics{1})(UI.params.subset(idx)), cell_metrics.(UI.supplementaryFigure.metrics{2})(UI.params.subset(idx)),'Marker','.','LineStyle','none','color',[clr_groups(i_groups,:),0.5], 'MarkerSize',UI.settings.markerSize,'HitTest','off');
+            handle_ce_gscatter(i_groups) = scatter(cell_metrics.(UI.supplementaryFigure.metrics{1})(UI.params.subset(idx)), cell_metrics.(UI.supplementaryFigure.metrics{2})(UI.params.subset(idx)),UI.settings.markerSize+5,clr_groups(i_groups,:), 'filled', 'HitTest','off');
+            alpha(handle_ce_gscatter(i_groups),.8)
+        end
+
+        xlabel(UI.labels.(UI.supplementaryFigure.metrics{1})), ylabel(UI.labels.(UI.supplementaryFigure.metrics{2})); set(gca, 'XScale', axisScale{UI.supplementaryFigure.axisScale(1)}, 'YScale', axisScale{UI.supplementaryFigure.axisScale(2)},'TickLength',[0.02 1]), axis tight, figureLetter('A','right')
         % Generating legend
         legendNames = plotClasGroups(nanUnique(plotClas(UI.params.subset)));
         for i = 1:length(legendNames)
             legendDots(i) = line(nan,nan,'Marker','.','LineStyle','none','color',clr_groups(i,:), 'MarkerSize',20);
         end
         legend(legendDots,legendNames,'Location','southwest');
+        subplot('Position',[0.13 0.01 0.34 .1])
+        generateGroupRainCloudPlot(UI.supplementaryFigure.metrics{1},UI.supplementaryFigure.axisScale(1)-1,0,0, 0.06,0)
+        set(gca,'XColor', 'none','Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(1)}),title('')
+        subplot('Position',[0.01 0.22 0.06 0.75])
+        generateGroupRainCloudPlot(UI.supplementaryFigure.metrics{2},UI.supplementaryFigure.axisScale(2)-1,0,0, 0.06,0)
+        set(gca,'XColor', 'none','Ydir','reverse','Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(2)}),title('')
+        camroll(90)
         % Waveforms
-        subplot('Position',[0.5 0.72 0.23 .25]) 
-        customPlot('Waveforms (all)',ii,general,batchIDs,gca,0,0); yticks([]), axis tight, ylabel(''), figureLetter('B','center');
-        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1]), title('');
+        subplot('Position',[0.5 0.72 0.23 .25])
+        customPlot('Waveforms (all)',ii,general,batchIDs,gca,0,0); yticks([]), axis tight, ylabel(''), figureLetter('B','right');
+        set(gca,'Color','none','box','off','TickLength',[0.03 1]), title('');
+        if UI.supplementaryFigure.waveformNormalization==1
+            set(gca,'YColor','none')
+        end
         % Firing rates
-        subplot('Position',[0.5 0.41 0.23 .21]) 
-        generateGroupRainCloudPlot('firingRate',1,0,0, 0.06)
-        xlabel('Firing rate (Hz)'), figureLetter('C','center'),
-        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log'), title('')
+        subplot('Position',[0.5 0.41 0.23 .21])
+        generateGroupRainCloudPlot(UI.supplementaryFigure.metrics{3},UI.supplementaryFigure.axisScale(3)-1,0,0, 0.06,1)
+        xlabel(UI.labels.(UI.supplementaryFigure.metrics{3})), figureLetter('C','right'),
+        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(3)}), title('')
         % CV2
-        subplot('Position',[0.5 0.1 0.23 .21]) 
-        generateGroupRainCloudPlot('cv2',0,0,0, 0.06), xlabel('CV_2'),
-        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1]), title('')
+        subplot('Position',[0.5 0.1 0.23 .21])
+        generateGroupRainCloudPlot(UI.supplementaryFigure.metrics{4},UI.supplementaryFigure.axisScale(4)-1,0,0, 0.06,1), xlabel(UI.labels.(UI.supplementaryFigure.metrics{4})),
+        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(4)}), title('')
         % Peak voltage
-        subplot('Position',[0.76 0.815 0.23 .155]) 
-        ce_raincloud_plot(cell_metrics.peakVoltage,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]); 
-        axis tight, figureLetter('D','center'), xticks([10 100 1000]), xlabel(['Peak voltage (',char(181),'V)']),
-        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
+        subplot('Position',[0.76 0.815 0.23 .155])
+        ce_raincloud_plot(cell_metrics.(UI.supplementaryFigure.metrics{5}),'scatter_on',0,'log_axis',UI.supplementaryFigure.axisScale(5)-1,'color', [0.9 0.9 0.9]);
+        axis tight, figureLetter('D','right'), xlabel(UI.labels.(UI.supplementaryFigure.metrics{5})), % xticks([10 100 1000])
+        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(5)});
         % Isolation distance
         subplot('Position',[0.76 0.57 0.23 .145])
-        if isfield(cell_metrics,'isolationDistance')
-            ce_raincloud_plot(cell_metrics.isolationDistance,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]);
-        end
-        axis tight, xticks([10 100]); xlim([10,300]), xlabel('Isolation distance'),
-        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
+        ce_raincloud_plot(cell_metrics.(UI.supplementaryFigure.metrics{6}),'scatter_on',0,'log_axis',UI.supplementaryFigure.axisScale(6)-1,'color', [0.9 0.9 0.9]);
+        axis tight, xlabel(UI.labels.(UI.supplementaryFigure.metrics{6})), % xticks([10 100]); xlim([10,300]), 
+        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(6)});
         % L_ratio
         subplot('Position',[0.76 0.335 0.23 .142])
-        if isfield(cell_metrics,'lRatio')
-            ce_raincloud_plot(cell_metrics.lRatio,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]);
-        end
-        axis tight, xticks(10.^(-5:2:1)); xlim(10.^([-5 2])), xlabel('L-ratio'),
-        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
+        ce_raincloud_plot(cell_metrics.(UI.supplementaryFigure.metrics{7}),'scatter_on',0,'log_axis',UI.supplementaryFigure.axisScale(7)-1,'color', [0.9 0.9 0.9]);
+        axis tight, xlabel(UI.labels.(UI.supplementaryFigure.metrics{7})), % xticks(10.^(-5:2:1)); xlim(10.^([-5 2]))
+        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(7)});
         % refractory period
         subplot('Position',[0.76 0.1 0.23 .142])
-        ce_raincloud_plot(cell_metrics.refractoryPeriodViolation,'scatter_on',0,'log_axis',1,'color', [0.9 0.9 0.9]); 
-        axis tight, xticks(10.^(-2:2:2)); xlabel(['Refractory period violation (',char(8240),')']),
-        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', 'log');
+        ce_raincloud_plot(cell_metrics.(UI.supplementaryFigure.metrics{8}),'scatter_on',0,'log_axis',UI.supplementaryFigure.axisScale(8)-1,'color', [0.9 0.9 0.9]);
+        axis tight, xlabel(UI.labels.(UI.supplementaryFigure.metrics{8})), %xticks(10.^(-2:2:2));
+        set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(8)});
+        
+        % Saving figure
+        if isfield(UI.supplementaryFigure,'saveFigure') && UI.supplementaryFigure.saveFigure
+            saveFig.save = true;
+            saveFig.path = UI.supplementaryFigure.savePath;
+            saveFig.fileFormat = UI.supplementaryFigure.fileFormat;
+            ce_savefigure(fig,pwd,['Supplementary figure ' datestr(now, 'dd-mm-yyyy HH.MM.SS')],1,saveFig)
+        end
         
         movegui(fig,'center'), set(fig,'visible','on')
-%         classes2plotSubset = unique(plotClas);
-%         cell_class_count = histc(plotClas,1:length(UI.settings.cellTypes));
-%         figure
-%         h_pie = pie(cell_class_count);
-%         for i = 1:numel(classes2plotSubset)
-%             h_pie((i*2)-1).FaceColor = clr_groups(i,:);
-%         end
+        
+        %         classes2plotSubset = unique(plotClas);
+        %         cell_class_count = histc(plotClas,1:length(UI.settings.cellTypes));
+        %         figure
+        %         h_pie = pie(cell_class_count);
+        %         for i = 1:numel(classes2plotSubset)
+        %             h_pie((i*2)-1).FaceColor = clr_groups(i,:);
+        %         end
+
         function figureLetter(letter,alignment)
             text(-0.015,1,letter,'FontSize',30,'Units','normalized','verticalalignment','middle','horizontalalignment',alignment);
         end
+        
     end
 
     function plotSummaryFigures
@@ -8631,9 +8667,9 @@ end
             if ishandle(fig)
                 try
                     if highlight == 0
-                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_SessionSummary_', saveAs],0)
+                        ce_savefigure2(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_SessionSummary_', saveAs],0)
                     else
-                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_CellSummary_',saveAs,'_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0)
+                        ce_savefigure2(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_CellSummary_',saveAs,'_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0)
                     end
                 catch 
                     disp('figure not saved (action canceled by user or directory not available for writing)')
@@ -8647,7 +8683,7 @@ end
         end
         movegui(fig,'center'), set(fig,'visible','on')
         
-        function ce_savefigure(fig,savePathIn,fileNameIn,dispSave)
+        function ce_savefigure2(fig,savePathIn,fileNameIn,dispSave)
             savePath = fullfile(savePathIn,'summaryFigures');
             if ~exist(savePath,'dir')
                 mkdir(savePathIn,'summaryFigures')
@@ -9242,7 +9278,7 @@ end
                                 ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                             end
                             if (mod(j,5)==0 || j == length(cellIDs)) && jj == length(selectedActions)
-                                ce_savefigure(gcf,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_MultipleCells_', num2str(nPlots)])
+                                ce_savefigure(gcf,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_MultipleCells_', num2str(nPlots)],saveFig)
                                 nPlots = nPlots+1;
                             end
                         end
@@ -9279,7 +9315,7 @@ end
                             title(plotOptions{selectedActions(jjj)},'Interpreter', 'none')
                         end
                     end
-                    ce_savefigure(fig,savePath1,['CellExplorer_Cells_', num2str(cell_metrics.UID(cellIDs),'%d_')])
+                    ce_savefigure(fig,savePath1,['CellExplorer_Cells_', num2str(cell_metrics.UID(cellIDs),'%d_')],saveFig)
                     
                 elseif choice == 13 && ~isempty(selectedActions)
                     
@@ -9342,42 +9378,10 @@ end
                         plotCharacteristics(cellIDs(j)), title('Characteristics')
                         
                         % Saving figure
-                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))])
+                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))],saveFig)
                     end
                 end
 
-                function ce_savefigure(fig,savePathIn,fileNameIn,dispSave)
-                    if saveFig.save
-                        if saveFig.path == 1
-                            savePath = fullfile(savePathIn,'summaryFigures');
-                            if ~exist(savePath,'dir')
-                                mkdir(savePathIn,'summaryFigures')
-                            end
-                        elseif saveFig.path == 2
-                            [dirName,~,~] = fileparts(which('CellExplorer.m'));
-                            savePath = fullfile(dirName,'summaryFigures');
-                            if ~exist(savePath,'dir')
-                                mkdir(dirName,'summaryFigures')
-                            end
-                        elseif saveFig.path == 3
-                            if ~exist('dirNameCustom','var')
-                                dirNameCustom = uigetdir;
-                            end
-                            savePath = dirNameCustom;
-                        end
-                        if saveFig.fileFormat == 1
-                            saveas(fig,fullfile(savePath,[fileNameIn,'.png']))
-                        else
-                            set(fig,'Units','Inches','Renderer','painters');
-                            pos = get(fig,'Position');
-                            set(fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]) 
-                            print(fig, fullfile(savePath,[fileNameIn,'.pdf']),'-dpdf');
-                        end
-                        if exist('dispSave','var') && dispSave
-                            disp(['Figure saved: ', fileNameIn])
-                        end
-                    end
-                end
             end
         end
         
@@ -9755,7 +9759,7 @@ end
                 if UI.checkbox.logx.Value == 1
                     set(ha(j), 'XScale', 'log')
                 end
-                generateGroupRainCloudPlot(fieldName,UI.checkbox.logx.Value,1,box_on,stats_offset)
+                generateGroupRainCloudPlot(fieldName,UI.checkbox.logx.Value,1,box_on,stats_offset,1)
             end
             
             % Generating legends
@@ -9775,7 +9779,7 @@ end
         end
     end
 
-    function generateGroupRainCloudPlot(fieldName,log_axis,plotStats,box_on,stats_offset)
+    function generateGroupRainCloudPlot(fieldName,log_axis,plotStats,box_on,stats_offset,scatter_on)
         if ~all(isnan(cell_metrics.(fieldName)(UI.params.subset)))
             plotClas_subset = plotClas(UI.params.subset);
             counter = 1; % For aligning scatter data
@@ -9783,7 +9787,7 @@ end
             for i = 1:length(ids)
                 temp1 = UI.params.subset(find(plotClas_subset==ids(i)));
                 if length(temp1)>1
-                    ce_raincloud_plot(cell_metrics.(fieldName)(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',clr_groups(i,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',clr_groups(i,:),'box_col_match',1,'randomNumbers',UI.params.randomNumbers(temp1),'log_axis',log_axis,'normalization',UI.settings.rainCloudNormalization);
+                    ce_raincloud_plot(cell_metrics.(fieldName)(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',clr_groups(i,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',clr_groups(i,:),'box_col_match',1,'randomNumbers',UI.params.randomNumbers(temp1),'log_axis',log_axis,'normalization',UI.settings.rainCloudNormalization,'scatter_on',scatter_on);
                     counter = counter + 1;
                 end
             end
@@ -10016,11 +10020,11 @@ end
         end
         clear fieldsMenuCells
         
-        fieldsMenu = fieldnames(cell_metrics);
+        UI.lists.metrics = fieldnames(cell_metrics);
         structDouble = strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'double');
         structSize = cell2mat(struct2cell(structfun(@size,cell_metrics,'UniformOutput',0)));
         structNumeric = cell2mat(struct2cell(structfun(@isnumeric,cell_metrics,'UniformOutput',0)));
-        fieldsMenu = sort(fieldsMenu(structDouble & structNumeric & structSize(:,1) == 1 & structSize(:,2) == cell_metrics.general.cellCount));
+        UI.lists.metrics = sort(UI.lists.metrics(structDouble & structNumeric & structSize(:,1) == 1 & structSize(:,2) == cell_metrics.general.cellCount));
         
         % Metric table initialization
         table_metrics = cell(size(table_fieldsNames,1),cell_metrics.general.cellCount);
@@ -10167,19 +10171,21 @@ end
             end
         end
         
+        % Loading and defining labels
+        UI = metrics_labels(UI);
         % Setting initial settings for plots, popups and listboxes
-        UI.popupmenu.xData.String = fieldsMenu;
-        UI.popupmenu.yData.String = fieldsMenu;
-        UI.popupmenu.zData.String = fieldsMenu;
+        UI.popupmenu.xData.String = UI.lists.metrics;
+        UI.popupmenu.yData.String = UI.lists.metrics;
+        UI.popupmenu.zData.String = UI.lists.metrics;
         plotX = cell_metrics.(UI.settings.plotXdata);
         plotY  = cell_metrics.(UI.settings.plotYdata);
         plotZ  = cell_metrics.(UI.settings.plotZdata);
         plotMarkerSize  = cell_metrics.(UI.settings.plotMarkerSizedata);
         
-        UI.popupmenu.xData.Value = find(strcmp(fieldsMenu,UI.settings.plotXdata));
-        UI.popupmenu.yData.Value = find(strcmp(fieldsMenu,UI.settings.plotYdata));
-        UI.popupmenu.zData.Value = find(strcmp(fieldsMenu,UI.settings.plotZdata));
-        UI.popupmenu.markerSizeData.Value = find(strcmp(fieldsMenu,UI.settings.plotMarkerSizedata));
+        UI.popupmenu.xData.Value = find(strcmp(UI.lists.metrics,UI.settings.plotXdata));
+        UI.popupmenu.yData.Value = find(strcmp(UI.lists.metrics,UI.settings.plotYdata));
+        UI.popupmenu.zData.Value = find(strcmp(UI.lists.metrics,UI.settings.plotZdata));
+        UI.popupmenu.markerSizeData.Value = find(strcmp(UI.lists.metrics,UI.settings.plotMarkerSizedata));
         
         UI.plot.xTitle = UI.settings.plotXdata;
         UI.plot.yTitle = UI.settings.plotYdata;
@@ -10193,6 +10199,7 @@ end
         else
             UI.monoSyn.disp = 'None';
         end
+        
         
         % History function initialization
         if isfield(cell_metrics.general,'classificationTrackChanges') && ~isempty(cell_metrics.general.classificationTrackChanges)
