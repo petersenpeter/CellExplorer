@@ -26,7 +26,11 @@ supplementaryFigure.groupDataNormalization = uicontrol('Parent',supplementaryFig
 
 % Histograms
 for iMetrics = 1:numel(UI.supplementaryFigure.metrics)
-    supplementaryFigure.metricsList(iMetrics) = uicontrol('Parent',supplementaryFigure.tabs.histograms(listTabs(iMetrics)),'Style','popupmenu','Position',[10, listOffsets(iMetrics), 280, 25],'String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.supplementaryFigure.metrics{iMetrics})),'HorizontalAlignment','left');
+    value = find(strcmp(UI.lists.metrics,UI.supplementaryFigure.metrics{iMetrics}));
+    if isempty(value)
+        value = 1;
+    end
+    supplementaryFigure.metricsList(iMetrics) = uicontrol('Parent',supplementaryFigure.tabs.histograms(listTabs(iMetrics)),'Style','popupmenu','Position',[10, listOffsets(iMetrics), 280, 25],'String',UI.lists.metrics,'Value',value,'HorizontalAlignment','left');
     supplementaryFigure.axisScale(iMetrics) = uicontrol('Parent',supplementaryFigure.tabs.histograms(listTabs(iMetrics)),'Style', 'popupmenu', 'String', {'Linear','Log'}, 'Value',UI.supplementaryFigure.axisScale(iMetrics),'Position', [310, listOffsets(iMetrics), 80, 25],'HorizontalAlignment','left');
     supplementaryFigure.smoothing(iMetrics) = uicontrol('Parent',supplementaryFigure.tabs.histograms(listTabs(iMetrics)),'Style', 'popupmenu', 'String', {'Yes','No'}, 'Value',UI.supplementaryFigure.smoothing(iMetrics),'Position', [400, listOffsets(iMetrics), 80, 25],'HorizontalAlignment','left');
 end

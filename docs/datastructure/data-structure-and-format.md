@@ -201,7 +201,7 @@ __Allen Institute's Common Coordinate Framework__
 The Allen Institute's Common Coordinate Frame allows you to visualize your cells into a standardized mouse atlas. 
 
 ### Time series
-This is a data container for other time series data (check other containers for specific formats like intracellular). A MATLAB struct `timeserieName` stored in a .mat file: `sessionName.timeserieName.timeSeries.mat` with the following fields:
+This is a data container for other time series data (check other containers for specific formats like intracellular). A MATLAB struct `timeserieName` stored in a .mat file: `sessionName.timeserieName.timeseries.mat` with the following fields:
 * `data` : a [nSamples x nChannels] vector with time series data.
 * `timestamps` : a [nSamples x 1] vector with timestamps.
 * `precision` : e.g. int16.
