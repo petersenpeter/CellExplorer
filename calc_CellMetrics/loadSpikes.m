@@ -174,7 +174,7 @@ if parameters.forceReload
             dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
             fclose(fileID);
             j = 1;
-            tol_ms = session.extracellular.sr/1100; % 1 ms tolerance in timestamp units
+            tol_ms = session.extracellular.sr/1000; % 1 ms tolerance in timestamp units
             for i = 1:length(dataArray{1})
                 if raw_clusters == 0
                     if any(strcmpi(dataArray{2}{i},labelsToRead))
