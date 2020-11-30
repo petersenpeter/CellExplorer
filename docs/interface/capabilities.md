@@ -32,16 +32,10 @@ Monosynaptic connections are determined in the pipeline, and you can visualize t
 ### Interface for deep-superfial classification curation
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/gui_deepSuperficial.png){: .mt-4}
 
-### Database capabilities
-CellExplorer is capable of loading datasets from and writing to the Buzsaki lab database. Please setup your credentials and local paths as [described here]({{"/database/preparation/"|absolute_url}}).
-
 ### Reference data
 To help you characterize your own data, you can load reference data provided by our lab.
 
 ![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png)
-
-### Ground truth data
-There are a subset of ground truth cell types provided.
 
 ### Raincloud plot
 To quantify single dimensional variations in your data you can generate a [raincloud plot](https://github.com/RainCloudPlots/RainCloudPlots). You can generate the plot from the top menu `View` -> `Generate rain cloud metrics plot`.
@@ -63,8 +57,8 @@ You can save your combined cell metrics from a study into a single mat file that
 ### Export figures
 Figures can be exported using the GUI, either the main CellExplorer window or through cell selection actions dialog. For more information please see the [figure export tutorial]({{"/tutorials/export-figure/"|absolute_url}}).
 
-### Export summary figure
-A summary/supplementary figure can be created for publications as shown below (no further edits required). From the menu select `View` -> `Generate supplementary figure`.
+### Export supplementary figure
+A supplementary figure can be created for publications as shown below. From the menu select `File` -> `Generate supplementary figure`. The figure is customizable, allowing you to select the metric to show in each scatter and histogram plot.
 ![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2020/05/UnitsSummaryLowRess.png){: .mt-4}
 
 ### Work in batch-mode while handling metrics on a single session level

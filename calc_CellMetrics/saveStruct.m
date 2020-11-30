@@ -13,11 +13,13 @@ p = inputParser;
 addParameter(p,'basepath',pwd,@isstr); 
 addParameter(p,'basename','',@isstr);
 addParameter(p,'session',{},@isstruct);
+addParameter(p,'dataName','',@isstr);
 parse(p,varargin{:});
 
 basepath = p.Results.basepath;
 basename = p.Results.basename;
 session = p.Results.session;
+dataName = p.Results.dataName;
 
 success = false;
 
@@ -39,7 +41,9 @@ end
 % Saving data to basepath
 supportedDataTypes = {'timeseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap','lfp','session'};
 if any(strcmp(datatype,supportedDataTypes))
-    dataName = inputname(1);
+    if isempty(dataName)
+        dataName = inputname(1);
+    end
     S.(dataName) = data;
     switch datatype
         case {'sessionInfo','session'}

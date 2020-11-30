@@ -55,7 +55,7 @@ cell_metrics = CellExplorer('sessionName',sessionName);
    1. Run CellExplorer from list of `sessionNames`
 ```m
 sessionNames = {'ham11_27-29_amp','ham11_34-36_amp'};
-cell_metrics = LoadCellMetricsBatch('sessions',sessionNames);
+cell_metrics = loadCellMetricsBatch('sessions',sessionNames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 

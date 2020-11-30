@@ -27,7 +27,7 @@ search_enabled: true
 heading_anchors: true
 
 # Footer content appears at the bottom of every page's main content
-footer_content: "Copyright &copy; 2019-2020 Peter Petersen. Theme: <a href=\"https://github.com/pmarsceill/just-the-docs\" target=\"_blank\">Just the Docs</a>."
+footer_content: "Copyright &copy; 2019-2020 Peter Petersen. Theme: <a href=\"https://github.com/pmarsceill/just-the-docs\" target=\"_blank\">Just the Docs</a>. Support: <a href=\"https://github.com/petersenpeter/CellExplorer/issues\" target=\"_blank\">GitHub issues</a>, <a href=\"https://groups.google.com/g/cellexplorer/\" target=\"_blank\">Google group</a>, or <a href=\"mailto:petersen.peter@gmail.com\" target=\"_blank\">email</a>."
 
 # Color scheme currently only supports "dark" or nil (default)
 color_scheme: nil

@@ -93,7 +93,7 @@ lfp = double(LoadBinary(fullfile(basepath,[basename, '.lfp']),'nChannels',sessio
 signal = filtfilt(filt_b,filt_a,double(lfp));
 
 % Assigning timestamps
-timestamps = [1:length(signal)]/session.extracellular.srLfp;
+timestamps = [1:length(signal)]'/session.extracellular.srLfp;
 
 % assign parameters (either defaults or given)
 frequency = p.Results.frequency;

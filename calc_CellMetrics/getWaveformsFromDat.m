@@ -11,7 +11,7 @@ function spikes = getWaveformsFromDat(spikes,session,varargin)
 % Last edited: 26-07-2020
 
 % Loading preferences
-preferences = ProcessCellMetrics_Preferences(session);
+preferences = preferences_ProcessCellMetrics(session);
 
 p = inputParser;
 addParameter(p,'unitsToProcess',1:size(spikes.times,2), @isnumeric);
