@@ -126,7 +126,7 @@ groups_ids = []; clusClas = []; plotX = []; plotY = []; plotY1 = []; plotZ = [];
 hover2highlight.handle1 = []; hover2highlight.handle2 = []; hover2highlight.handle3 = []; hover2highlight.handle4 = [];
 classes2plot = []; classes2plotSubset = []; table_metrics = []; ii = []; history_classification = [];
 brainRegions_list = []; brainRegions_acronym = []; relational_tree = []; cell_class_count = [];  plotOptions = ''; freeText = {''};
-plotAcgFit = 0; clasLegend = 0; Colorval = 1; plotClas = []; plotClas11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
+plotAcgFit = 0; clasLegend = 0; GroupVal = 1; ColorVal = 1; plotClas = []; plotClas11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
 colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; connectivityGraph = [];
 plotClasGroups = [];  plotClas2 = []; general = []; plotAverage_nbins = 40; table_fieldsNames = {};
 tSNE_metrics = [];  classificationTrackChanges = []; time_waveforms_zscored = []; spikesPlots = {}; K = gausswin(10)*gausswin(10)'; K = 1.*K/sum(K(:));
@@ -580,7 +580,7 @@ UI.panel.custom = uix.VBox('Position',[0 0.717 1 0.255],'Parent',UI.panel.left);
 UI.panel.group = uix.VBox('Parent',UI.panel.left);
 UI.panel.displaySettings = uix.VBox('Parent',UI.panel.left);
 UI.panel.tabgroup2 = uitabgroup('Position',[0 0 1 0.162],'Units','normalized','SelectionChangedFcn',@updateLegends,'Parent',UI.panel.left);
-set(UI.panel.left, 'Heights', [25 230 -100 -180 -90], 'Spacing', 8);
+set(UI.panel.left, 'Heights', [25 230 -100 -180 -90], 'Spacing', 8); % ,'MinimumHeights',[25 230 10 10 180]
 
 % Vertical center box with the title at top, grid flex with plots as middle element and message log and bechmark text at bottom
 UI.VBox = uix.VBox( 'Parent', UI.HBox, 'Spacing', 0, 'Padding', 0 );
@@ -616,7 +616,7 @@ UI.panel.tabgroup1 = uitabgroup('Position',[0 0.493 1 0.142],'Units','normalized
 UI.panel.centerBottom = uix.HBox('Parent',UI.VBox);
 
 % set VBox elements sizes
-set( UI.HBox, 'Widths', [160 -1 160]);
+set( UI.HBox, 'Widths', [160 -1 160],'MinimumWidths',[80 1 80]);
 
 % set HBox elements sizes
 set( UI.VBox, 'Heights', [25 -1 25]);
@@ -644,7 +644,7 @@ end
 % Table with metrics for selected cell
 UI.table = uitable('Parent',UI.panel.right,'Data',[table_fieldsNames,table_metrics(:,1)],'Units','normalized','Position',[0 0.003 1 0.485],'ColumnWidth',{100,  100},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn', {@keyPress},'tooltip',sprintf('Metrics for current cell. \nClick left column to select metric in custom group plot on x axis. \nClick right column to select metric in custom group plot on y axis  \nChange table data in Table data menu'));
 
-set(UI.panel.right, 'Heights', [50 250 180 -1], 'Spacing', 8);
+set(UI.panel.right, 'Heights', [50 250 180 -1], 'Spacing', 8,'MinimumHeights',[50 20 20 20]);
 
 if strcmp(UI.preferences.metricsTableType,'Metrics')
     UI.preferences.metricsTable=1;
@@ -733,26 +733,26 @@ UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu
 
 % Custom plotting menues
 UI.panel.buttonGroup1 = uix.HBox('Parent',UI.panel.custom);
-uicontrol('Parent',UI.panel.buttonGroup1,'Style','text','Units','normalized','Position',[0.2 0 0.5 1],'String','  X data','HorizontalAlignment','left');
+uicontrol('Parent',UI.panel.buttonGroup1,'Style','text','Units','normalized','Position',[0.25 0 0.5 0.8],'String','  X data','HorizontalAlignment','left');
 UI.checkbox.logx = uicontrol('Parent',UI.panel.buttonGroup1,'Style','checkbox','Units','normalized','Position',[0.5 0 0.5 1],'String','Log X','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotXLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle x axis linear/log');
 UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 62 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.preferences.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on x axis');
 set(UI.panel.buttonGroup1, 'Widths', [-1 70], 'Spacing', 5);
 
 UI.panel.buttonGroup2 = uix.HBox('Parent',UI.panel.custom);
-uicontrol('Parent',UI.panel.buttonGroup2,'Style','text','Position',[0.2 0 0.5 1],'Units','normalized','String','  Y data','HorizontalAlignment','left');
+uicontrol('Parent',UI.panel.buttonGroup2,'Style','text','Position',[0.25 0 0.5 1],'Units','normalized','String','  Y data','HorizontalAlignment','left');
 UI.checkbox.logy = uicontrol('Parent',UI.panel.buttonGroup2,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle y axis linear/log');
 UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 42 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.preferences.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on y axis');
 set(UI.panel.buttonGroup2, 'Widths', [-1 70], 'Spacing', 5);
 
 UI.panel.buttonGroup3 = uix.HBox('Parent',UI.panel.custom);
-uicontrol('Parent',UI.panel.buttonGroup3,'Style','text','Position',[0.2 0 0.5 1],'Units','normalized','String','  Z data','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.buttonGroup3,'Style','text','Position',[0.25 0 0.5 1],'Units','normalized','String','  Z data','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
 UI.checkbox.logz = uicontrol('Parent',UI.panel.buttonGroup3,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log Z','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotZLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle z axis linear/log');
 UI.popupmenu.zData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 22 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.preferences.plotZdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotZ(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on z axis');
 UI.popupmenu.zData.Enable = 'Off'; UI.checkbox.logz.Enable = 'Off';
 set(UI.panel.buttonGroup3, 'Widths', [-1 70], 'Spacing', 5);
 
 UI.panel.buttonGroup4 = uix.HBox('Parent',UI.panel.custom);
-uicontrol('Parent',UI.panel.buttonGroup4,'Style','text','Position',[0.2 0 0.5 1],'Units','normalized','String','  Marker size','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
+uicontrol('Parent',UI.panel.buttonGroup4,'Style','text','Position',[0.25 0 0.5 1],'Units','normalized','String','  Marker size','HorizontalAlignment','left','KeyPressFcn', {@keyPress});
 UI.checkbox.logMarkerSize = uicontrol('Parent',UI.panel.buttonGroup4,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log size','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotMarkerSizeLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle marker size linear/log');
 UI.popupmenu.markerSizeData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 2 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.preferences.plotMarkerSizedata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotMarkerSize(),'KeyPressFcn', {@keyPress},'tooltip','Metric data for marker size');
 UI.popupmenu.markerSizeData.Enable = 'Off'; UI.checkbox.logMarkerSize.Enable = 'Off';
@@ -762,14 +762,13 @@ set(UI.panel.custom, 'Heights', [15 20 15 20 15 20 15 20 15 25], 'Spacing', 5);
 % % % % % % % % % % % % % % % % % % % %
 % Custom colors
 % % % % % % % % % % % % % % % % % % % %'
-uicontrol('Parent',UI.panel.group,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Color groups & filter','HorizontalAlignment','center');
+uicontrol('Parent',UI.panel.group,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Group data & filters','HorizontalAlignment','center');
 UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 73 144 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress},'tooltip','Filter and select group data');
 updateColorMenuCount
 UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[0 20 148 54],'Units','normalized','String',{},'max',100,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Enable','Off','tooltip','Group data');
-UI.checkbox.groups = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 10 144 10],'Units','normalized','String','Group by cell types','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'Enable','Off','Value',1,'tooltip','Group data by cell type');
-UI.checkbox.compare = uicontrol('Parent',UI.panel.group,'Style','checkbox','Position',[3 0 144 10],'Units','normalized','String','Compare to other','HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'tooltip','Compare filtered cells to the rest of the population');
-
-set(UI.panel.group, 'Heights', [15 20 -1 20 20], 'Spacing', 5);
+uicontrol('Parent',UI.panel.group,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Color groups','HorizontalAlignment','center');
+UI.popupmenu.colors = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 10 144 10],'Units','normalized','String',{'By group data','By cell types','Single group','Compare to other'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'tooltip','Select color data');
+set(UI.panel.group, 'Heights', [15 20 -1 15 25], 'Spacing', 5);
 
 % % % % % % % % % % % % % % % % % % % %
 % Display settings panel (left side)
@@ -801,9 +800,9 @@ if find(strcmp(UI.preferences.plotCountIn,UI.popupmenu.plotCount.String)); UI.po
 % % % % % % % % % % % % % % % % % % % %
 
 % UI display settings tabs
-UI.tabs.legends = uitab(UI.panel.tabgroup2,'Title','Legend','tooltip',sprintf('Legend for plots. \nClick to show legends in separate figure'));
+UI.tabs.legends =        uitab(UI.panel.tabgroup2,'Title','Legend','tooltip',sprintf('Legend for plots. \nClick to show legends in separate figure'));
 UI.tabs.dispTags_minus = uitab(UI.panel.tabgroup2,'Title','-Tags','tooltip',sprintf('Cell tags. \nHide cells with one or more specific tags'));
-UI.tabs.dispTags_plus = uitab(UI.panel.tabgroup2,'Title','+Tags','tooltip',sprintf('Cell tags. \nFilter cells with one or more specific tags'));
+UI.tabs.dispTags_plus =  uitab(UI.panel.tabgroup2,'Title','+Tags','tooltip',sprintf('Cell tags. \nFilter cells with one or more specific tags'));
 UI.axis.legends = axes(UI.tabs.legends,'Position',[0 0 1 1]);
 set(UI.axis.legends,'ButtonDownFcn',@createLegend)
 
@@ -818,6 +817,8 @@ end
 for m = 1:length(UI.preferences.tags)
     UI.togglebutton.dispTags2(m) = uicontrol('Parent',UI.tabs.dispTags_plus,'Style','togglebutton','String',UI.preferences.tags{m},'Units','normalized','Position',buttonPosition{m},'Value',0,'Callback',@(src,evnt)buttonTags_plus(m),'KeyPressFcn', {@keyPress});
 end
+
+set(UI.panel.left, 'MinimumHeights',[25 230 10 10 50]);
 
 % Creates summary figures and closes the UI
 if summaryFigures
@@ -966,8 +967,8 @@ function updateUI
         end
     end
     
-    if ~isempty(groups2plot2) && Colorval ~=1
-        if UI.checkbox.groups.Value == 0
+    if ~isempty(groups2plot2) && GroupVal >1
+        if ColorVal ~= 2
             subset2 = find(ismember(plotClas11,groups2plot2));
             plotClas = plotClas11;
         else
@@ -983,19 +984,30 @@ function updateUI
     [~,UI.preferences.troughToPeakSorted] = sort(cell_metrics.(UI.preferences.sortingMetric)(UI.params.subset));
     
     % Regrouping cells if comparison checkbox is checked
-    if UI.checkbox.compare.Value == 1
+    if ColorVal == 4 % Compare to rest
         plotClas = ones(1,length(plotClas));
         plotClas(UI.params.subset) = 2;
         UI.params.subset = 1:length(plotClas);
         classes2plotSubset = unique(plotClas);
         plotClasGroups = {'Other cells','Selected cells'};
-    elseif UI.popupmenu.groups.Value == 1
+    elseif ColorVal == 3 % Single group
+%         plotClas = ones(1,length(plotClas));
+        plotClas(1:numel(plotClas)) = 1;
+%         UI.params.subset = 1:length(plotClas);
+        classes2plotSubset = unique(plotClas);
+        plotClasGroups = {'Selected cells'};
+    elseif ColorVal == 2 % Cell type color groups
         classes2plotSubset = intersect(plotClas(UI.params.subset),classes2plot);
-    else
+    elseif ColorVal == 1  % Regular grouping
+        if GroupVal == 1
+            groups2plot = classes2plot;
+            classes2plotSubset = unique(plotClas);
+%         else
+%             1
+        end
         classes2plotSubset = intersect(plotClas(UI.params.subset),groups2plot);
     end
     
-
     % Defining synaptic connections
     UI = defineSynapticConnections(UI);
     
@@ -1022,9 +1034,9 @@ function updateUI
     end
     
     % Group display definition
-    if UI.checkbox.compare.Value == 1
+    if ColorVal > 2
         clr_groups = UI.preferences.cellTypeColors(intersect(classes2plotSubset,plotClas(UI.params.subset)),:);
-    elseif Colorval == 1 ||  UI.checkbox.groups.Value == 1
+    elseif  ColorVal == 2 || GroupVal == 1
         clr_groups = UI.preferences.cellTypeColors(intersect(classes2plot,plotClas(UI.params.subset)),:);
     else
         clr_groups = hsv(length(nanUnique(plotClas(UI.params.subset))))*0.8;
@@ -1979,7 +1991,7 @@ end
         subsetPlots = [];
         
         % Determinig the plot color
-        if UI.checkbox.compare.Value == 1 || Colorval == 1 ||  UI.checkbox.groups.Value == 1
+        if ColorVal == 2 || GroupVal == 1
             col = UI.preferences.cellTypeColors(plotClas(ii),:);
         else
             if isnan(clr_groups)
@@ -2167,9 +2179,8 @@ end
             end
             for k = 1:length(classes2plotSubset)
                 set1 = intersect(find(plotClas==classes2plotSubset(k)), subset1);
-                line(cell_metrics.trilat_x(set1),cell_metrics.trilat_y(set1),'Marker','.','LineStyle','none', 'color', [clr_groups(k,:),0.2],'markersize',UI.preferences.markerSize,'HitTest','off')
+                line(cell_metrics.trilat_x(set1),cell_metrics.trilat_y(set1),'Marker','.','LineStyle','none', 'color', [clr_groups(k,:),0.2],'markersize',UI.preferences.markerSize,'HitTest','off'), hold on
             end
-%             plot(cell_metrics.trilat_x(ii),cell_metrics.trilat_y(ii),'.', 'color', 'k','markersize',14,'HitTest','off')
             
             % Plots putative connections
             plotPutativeConnections(cell_metrics.trilat_x,cell_metrics.trilat_y,UI.monoSyn.disp,subset1)
@@ -5761,7 +5772,7 @@ end
             colored_string = DefineCellTypeList;
             UI.listbox.cellClassification.String = colored_string;
             
-            if Colorval == 1 || ( Colorval > 1 && UI.checkbox.groups.Value == 1 )
+            if GroupVal == 1 || ColorVal == 2
                 plotClasGroups = UI.preferences.cellTypes;
             end
             updateCellCount;
@@ -6067,16 +6078,18 @@ end
     
     function plotLegends
         nLegends = -1;
-        line(0,0,'Marker','x','LineStyle','none','color','w', 'LineWidth', 3., 'MarkerSize',18,'HitTest','off'), xlim([-0.3,2]), hold on, yticks([]), xticks([])
+        line(0,0,'Marker','x','LineStyle','none','color','w', 'LineWidth', 3., 'MarkerSize',18,'HitTest','off'), xlim([-0.15,2]), hold on, yticks([]), xticks([])
         line(0,0,'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',16,'HitTest','off');
         text(0.2,0,'Selected cell','HitTest','off')
         if numel(plotClasGroups) >= numel(nanUnique(plotClas(UI.params.subset)))
-        legendNames = plotClasGroups(nanUnique(plotClas(UI.params.subset)));
-        for i = 1:length(legendNames)
-            line(0,nLegends,'Marker','.','LineStyle','none','color',clr_groups(i,:), 'MarkerSize',25,'HitTest','off')
-            text(0.2,nLegends,legendNames{i}, 'interpreter', 'none','HitTest','off')
-            nLegends = nLegends - 1;
-        end
+            b12 = nanUnique(plotClas(UI.params.subset));
+            [cnt_unique, ~] = histc(plotClas(UI.params.subset),b12);
+            legendNames = strcat(plotClasGroups(b12) ,' (',cellstr(num2str(cnt_unique'))',')');
+            for i = 1:length(legendNames)
+                line(0,nLegends,'Marker','.','LineStyle','none','color',clr_groups(i,:), 'MarkerSize',25,'HitTest','off')
+                text(0.2,nLegends,legendNames{i}, 'interpreter', 'none','HitTest','off')
+                nLegends = nLegends - 1;
+            end
         end
         % Synaptic connections
         switch UI.monoSyn.disp
@@ -8260,17 +8273,17 @@ end
     end
 
     function updatePlotClas
-        if Colorval == 1
+        if GroupVal == 1 || ColorVal == 2
             plotClas = clusClas;
         else
-            if UI.checkbox.groups.Value == 0
-                plotClas11 = cell_metrics.(colorStr{Colorval});
+%             if ColorVal == 1
+                plotClas11 = cell_metrics.(colorStr{GroupVal});
                 if iscell(plotClas11)
                     plotClas11 = findgroups(plotClas11);
                 end
-            else
-                plotClas = clusClas;
-            end
+%             else
+%                 plotClas = clusClas;
+%             end
         end
     end
 
@@ -8288,30 +8301,28 @@ end
     end
 
     function buttonGroups(inpt)
-        Colorval = UI.popupmenu.groups.Value;
+        % inpt: describes the call
+        % 0 = Color dropdown
+        % 1 = Filter dropdown
+        GroupVal = UI.popupmenu.groups.Value;
+        ColorVal = UI.popupmenu.colors.Value;
         colorStr = colorMenu;
         
-        if Colorval == 1
+        if GroupVal == 1
             clasLegend = 0;
             UI.listbox.groups.Enable = 'Off';
             UI.listbox.groups.String = {};
-            UI.checkbox.groups.Enable = 'Off';
             plotClas = clusClas;
-            UI.checkbox.groups.Value = 1;
             plotClasGroups = UI.preferences.cellTypes;
         else
             clasLegend = 1;
             UI.listbox.groups.Enable = 'On';
-            UI.checkbox.groups.Enable = 'On';
-            if inpt == 1
-                UI.checkbox.groups.Value = 0;
-            end
-            if UI.checkbox.groups.Value == 0
-                plotClas11 = cell_metrics.(colorStr{Colorval});
-                plotClasGroups = groups_ids.([colorStr{Colorval} '_num']);
-                if iscell(plotClas11) && ~strcmp(colorStr{Colorval},'deepSuperficial')
+            if ColorVal ~= 2
+                plotClas11 = cell_metrics.(colorStr{GroupVal});
+                plotClasGroups = groups_ids.([colorStr{GroupVal} '_num']);
+                if iscell(plotClas11) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
                     plotClas11 = findgroups(plotClas11);
-                elseif strcmp(colorStr{Colorval},'deepSuperficial')
+                elseif strcmp(colorStr{GroupVal},'deepSuperficial')
                     [~,plotClas11] = ismember(plotClas11,plotClasGroups);
                 end
                 color_class_count = histc(plotClas11,[1:length(plotClasGroups)]);
@@ -8326,11 +8337,11 @@ end
             else
                 plotClas = clusClas;
                 plotClasGroups = UI.preferences.cellTypes;
-                plotClas2 = cell_metrics.(colorStr{Colorval});
-                plotClasGroups2 = groups_ids.([colorStr{Colorval} '_num']);
-                if iscell(plotClas2) && ~strcmp(colorStr{Colorval},'deepSuperficial')
+                plotClas2 = cell_metrics.(colorStr{GroupVal});
+                plotClasGroups2 = groups_ids.([colorStr{GroupVal} '_num']);
+                if iscell(plotClas2) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
                     plotClas2 = findgroups(plotClas2);
-                elseif strcmp(colorStr{Colorval},'deepSuperficial')
+                elseif strcmp(colorStr{GroupVal},'deepSuperficial')
                     [~,plotClas2] = ismember(plotClas2,plotClasGroups2);
                 end
                 
@@ -9483,13 +9494,13 @@ end
 
     function updateCount
         % Updates the cell count in the custom groups listbox
-        if Colorval > 1
-            if UI.checkbox.groups.Value == 0
-                plotClas11 = cell_metrics.(colorStr{Colorval});
-                plotClasGroups = groups_ids.([colorStr{Colorval} '_num']);
-                if iscell(plotClas11) && ~strcmp(colorStr{Colorval},'deepSuperficial')
+        if GroupVal > 1
+            if ColorVal ~= 2
+                plotClas11 = cell_metrics.(colorStr{GroupVal});
+                plotClasGroups = groups_ids.([colorStr{GroupVal} '_num']);
+                if iscell(plotClas11) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
                     plotClas11 = findgroups(plotClas11);
-                elseif strcmp(colorStr{Colorval},'deepSuperficial')
+                elseif strcmp(colorStr{GroupVal},'deepSuperficial')
                     [~,plotClas11] = ismember(plotClas11,plotClasGroups);
                 end
                 color_class_count = histc(plotClas11,[1:length(plotClasGroups)]);
@@ -9498,11 +9509,11 @@ end
             else
                 plotClas = clusClas;
                 plotClasGroups = UI.preferences.cellTypes;
-                plotClas2 = cell_metrics.(colorStr{Colorval});
-                plotClasGroups2 = groups_ids.([colorStr{Colorval} '_num']);
-                if iscell(plotClas2) && ~strcmp(colorStr{Colorval},'deepSuperficial')
+                plotClas2 = cell_metrics.(colorStr{GroupVal});
+                plotClasGroups2 = groups_ids.([colorStr{GroupVal} '_num']);
+                if iscell(plotClas2) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
                     plotClas2 = findgroups(plotClas2);
-                elseif strcmp(colorStr{Colorval},'deepSuperficial')
+                elseif strcmp(colorStr{GroupVal},'deepSuperficial')
                     [~,plotClas2] = ismember(plotClas2,plotClasGroups2);
                 end
                 color_class_count = histc(plotClas2,[1:length(plotClasGroups2)]);
@@ -10339,9 +10350,11 @@ end
         
         plotClas = clusClas;
         UI.popupmenu.groups.Value = 1;
+        UI.popupmenu.colors.Value = 1;
+        ColorVal = 1;
+        GroupVal = 1;
         clasLegend = 0;
         UI.preferences.customPlot{2} = UI.preferences.customCellPlotIn{2};
-        UI.checkbox.groups.Value = 0;
         
         % Init synaptic connections
         if isfield(cell_metrics,'synapticEffect')
