@@ -174,14 +174,13 @@ if parameters.forceReload
             dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
             fclose(fileID);
             j = 1;
-            tol_ms = session.extracellular.sr/1100; % 1 ms tolerance in timestamp units
+            tol_samples = session.extracellular.sr*8e-4; % 0.8 ms tolerance in timestamp units
             for i = 1:length(dataArray{1})
                 if raw_clusters == 0
                     if any(strcmpi(dataArray{2}{i},labelsToRead))
                         if sum(spike_cluster_index == dataArray{1}(i))>0
                             spikes.ids{j} = find(spike_cluster_index == dataArray{1}(i));
-                            tol = tol_ms/max(double(spike_times(spikes.ids{j}))); % unique values within tol (=within 1 ms)
-                            [spikes.ts{j},ind_unique] = uniquetol(double(spike_times(spikes.ids{j})),tol);
+                            [spikes.ts{j},ind_unique] = uniquetol(double(spike_times(spikes.ids{j})),tol_samples,'DataScale',1); % unique values within tol (<= 0.8ms)
                             spikes.ids{j} = spikes.ids{j}(ind_unique);
                             spikes.times{j} = spikes.ts{j}/session.extracellular.sr;
                             spikes.cluID(j) = dataArray{1}(i);
