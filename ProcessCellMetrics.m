@@ -1534,7 +1534,7 @@ end
 CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
 
 if parameters.summaryFigures
-    cell_metrics.general.path = basepath;
+    cell_metrics.general.basepath = basepath;
     CellExplorer('metrics',cell_metrics,'summaryFigures',true);
     
     % Plotting the average ripple with sharp wave across all spike groups

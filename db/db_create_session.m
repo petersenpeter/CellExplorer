@@ -1,4 +1,4 @@
-function session = db_create_session(session)
+function [session,success] = db_create_session(session)
 % Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 22-05-2020
@@ -6,7 +6,7 @@ function session = db_create_session(session)
 % loading and defining db settings
 db_settings = db_load_settings;
 db_settings.web_address = [db_settings.address, 'entries/'];
-
+success = 0;
 % Creating session
 if isfield(session.general,'name') && ~isempty(session.general.name)
     % Checking if session already exist
@@ -25,16 +25,18 @@ if isfield(session.general,'name') && ~isempty(session.general.name)
         end
         jsonStructure.fiElD_2599 = session.animal.id; % REQUIRED FIELD
         if ~isfield(session.general,'notes') || isempty(session.general.notes)
-            session.general.notes = 'This session was generated using the REST-API';
+            session.general.notes = '';
         end
         jsonStructure.fiElD_1902 = session.general.notes;
+        
+        if ~isfield(session.general,'date')
+            jsonStructure.fiElD_1892 = session.general.date;
+        end
+        cluIDs = fieldnames(jsonStructure);
+        jsonStructure = rmfield(jsonStructure,cluIDs(find(struct2array(structfun(@(x) any(isnan(x) | isinf(x)), jsonStructure,'UniformOutput', false)))));
         if ~isfield(session.general,'date') || isempty(session.general.date)
             session.general.date = datetime('now','TimeZone','local','Format','y-MM-d');
         end
-        jsonStructure.fiElD_1892 = session.general.date;
-        
-        cluIDs = fieldnames(jsonStructure);
-        jsonStructure = rmfield(jsonStructure,cluIDs(find(struct2array(structfun(@(x) any(isnan(x) | isinf(x)), jsonStructure,'UniformOutput', false)))));
         jsonStructure = jsonencode(jsonStructure);
         jsonStructure = strrep(jsonStructure,'fiElD_','');
         options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'MediaType','application/json','Timeout',30,'CertificateFilename','');
@@ -42,9 +44,11 @@ if isfield(session.general,'name') && ~isempty(session.general.name)
             RESPONSE = webwrite(db_settings.web_address,jsonStructure,options);
             session.general.entryID = RESPONSE.id; % Saving ID of created session in struct
             disp('Session submitted to db')
+            success = 1;
         catch ME
             warning(ME.message)
             disp('Failed to submit session to db')
+            success = -1;
         end
     else
         db_session = loadjson(db_session.renderedHtml); % Saving ID of created session in struct
@@ -53,4 +57,5 @@ if isfield(session.general,'name') && ~isempty(session.general.name)
     end
 else
     warning('Please specify session name')
+    success = -2;
 end

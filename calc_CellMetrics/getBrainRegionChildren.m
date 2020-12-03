@@ -13,17 +13,18 @@ function acronym_out = getBrainRegionChildren(acronym_in,relational_tree)
     
     for j = 1:numel(acronyms_to_filter)
         if any(strcmpi(relational_tree.acronyms,acronyms_to_filter{j}))
-        % IDX of acronym
-        idx = find(strcmpi(relational_tree.acronyms,acronyms_to_filter{j}));
-        
-        % Determining children og brain region
-        out2 = searchRecurvesively(relational_tree.relationships,relational_tree.relationships_names{idx});
-        
-        % Finding all fields below
-%         temp2 = fieldnamesr(out2,'full');
-        temp2 = fieldnamesRecurvesively(out2,[]);
-        temp3 = find(contains(relational_tree.relationships_names,temp2));
-        acronym_out = [acronym_out,relational_tree.acronyms(temp3)];
+            % IDX of acronym
+            idx = find(strcmpi(relational_tree.acronyms,acronyms_to_filter{j}));
+            
+            % Determining children og brain region
+            out2 = searchRecurvesively(relational_tree.relationships,relational_tree.relationships_names{idx});
+            
+            % Finding all fields below
+            if ~isempty(out2)
+                temp2 = fieldnamesRecurvesively(out2,[]);
+                temp3 = find(contains(relational_tree.relationships_names,temp2));
+                acronym_out = [acronym_out,relational_tree.acronyms(temp3)];
+            end
         end
     end
     
@@ -47,7 +48,6 @@ function out = searchRecurvesively(relationships,in)
     end
     
 end
-
 
 function out = fieldnamesRecurvesively(struct_in,out)
     temp = fieldnames(struct_in);

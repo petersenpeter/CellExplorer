@@ -56,3 +56,13 @@ cell_metrics = CellExplorer('sessionName',sessionName);
 session.general.name
 session = db_create_session(session);
 success = db_upload_session(session);
+
+%% % Scanning a directory for new sessions
+Investigator_directory = 'FernandezRuiz_Oliva'; % BerenyiT
+[bz_datasets,bz_datasets_excluded] = db_scan_repository_and_submit_collection(Dataset_directory,NYU_share_path);
+
+basepath = fullfile(basepaths,sessionName);
+session = sessionTemplate(basepath);
+session = gui_session(session);
+session = db_create_session(session);
+success = db_upload_session(session);

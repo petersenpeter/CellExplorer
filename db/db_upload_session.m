@@ -39,10 +39,12 @@ if any(contains(fields,{'general','all'}))
     if isfield(session.general,'location')
         jsonStructure.fiElD_1901 = session.general.location;
     end
-    jsonStructure.fiElD_2013 = session.general.time;
+    if isfield(session.general,'time')
+        jsonStructure.fiElD_2013 = session.general.time;
+    end
     jsonStructure.fiElD_1903 = session.general.sessionType;
     jsonStructure.fiElD_1902 = session.general.notes;
-    jsonStructure.fiElD_1892 = session.general.date;
+    jsonStructure.fiElD_1892 = char(session.general.date);
     if isfield(session.general,'investigator_id')
         jsonStructure.fiElD_2522 = session.general.investigator_id;
     end
@@ -80,7 +82,9 @@ if any(contains(fields,{'extracellular','all'}))
     if isfield(session.extracellular,'precision')
         jsonStructure.fiElD_1910 = session.extracellular.precision;
     end
-    jsonStructure.fiElD_2010 = session.extracellular.fileFormat;
+    if isfield(session.extracellular,'fileFormat')
+        jsonStructure.fiElD_2010 = session.extracellular.fileFormat;
+    end
     if isfield(session.extracellular,'probeDepths')
         jsonStructure.fiElD_1915 = session.extracellular.probeDepths;
     end
@@ -164,9 +168,15 @@ success = true;
             end
             jsonStructure.w0uy7.(idx).fiElD_1957 = session.behavioralTracking{i}.filenames;
             jsonStructure.w0uy7.(idx).fiElD_2554 = session.behavioralTracking{i}.epoch;
-            jsonStructure.w0uy7.(idx).fiElD_1956 = session.behavioralTracking{i}.type;
-            jsonStructure.w0uy7.(idx).fiElD_1965 = session.behavioralTracking{i}.framerate;
-            jsonStructure.w0uy7.(idx).fiElD_1959 = session.behavioralTracking{i}.notes;
+            if isfield(session.behavioralTracking{i},'type')
+                jsonStructure.w0uy7.(idx).fiElD_1956 = session.behavioralTracking{i}.type;
+            end
+            if isfield(session.behavioralTracking{i},'framerate')
+                jsonStructure.w0uy7.(idx).fiElD_1965 = session.behavioralTracking{i}.framerate;
+            end
+            if isfield(session.behavioralTracking{i},'notes')
+                jsonStructure.w0uy7.(idx).fiElD_1959 = session.behavioralTracking{i}.notes;
+            end
         end
         jsonStructure = jsonencode(jsonStructure);
         jsonStructure = strrep(jsonStructure,'fiElD_','');
@@ -354,7 +364,7 @@ success = true;
                     if isfield(session.epochs{i},'notes') && ~isempty(session.epochs{i}.notes)
                         jsonStructure.r0g5h.(idx).fiElD_2314 = session.epochs{i}.notes;
                     end
-                    keyboard
+%                     keyboard
                 end
             end
             jsonStructure = jsonencode(jsonStructure);
@@ -453,7 +463,7 @@ success = true;
         jsonStructure = [];
         jsonStructure.form_id = 143; % Form id of sessions
         jsonStructure.sessionbrainregions.form = 148; % Form id of brainRegions repeatable section
-        load BrainRegions.mat
+        load('BrainRegions.mat','BrainRegions')
         
         brainRegionAcronyms = fieldnames(session.brainRegions);
         for iTag = 1:length(brainRegionAcronyms)

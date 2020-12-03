@@ -205,14 +205,9 @@ for iii = 1:length(cell_metrics2)
     end
     cell_metrics_batch.batchIDs(h+1:hh+h) = iii*ones(1,hh);
     cell_metrics_batch.general.batch{iii} = cell_metrics.general;
-    cell_metrics_batch.general.path{iii} = basepaths{iii};
+    cell_metrics_batch.general.basepaths{iii} = basepaths{iii};
     cell_metrics_batch.general.basenames{iii} = cell_metrics.general.basename;
     cell_metrics_batch.general.saveAs{iii} = saveAs;
-    if ~isempty(basepaths)
-        cell_metrics_batch.general.basepaths{iii} = basepaths{iii};
-    else
-        cell_metrics_batch.general.basepaths{iii} = basepaths{iii};
-    end
     
     for ii = 1:length(cell_metrics_fieldnames)
         % Struct field

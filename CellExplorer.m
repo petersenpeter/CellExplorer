@@ -129,7 +129,7 @@ brainRegions_list = []; brainRegions_acronym = []; relational_tree = []; cell_cl
 plotAcgFit = 0; clasLegend = 0; GroupVal = 1; ColorVal = 1; plotClas = []; plotClas11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
 colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; connectivityGraph = [];
 plotClasGroups = [];  plotClas2 = []; general = []; plotAverage_nbins = 40; table_fieldsNames = {};
-tSNE_metrics = [];  classificationTrackChanges = []; time_waveforms_zscored = []; spikesPlots = {}; K = gausswin(10)*gausswin(10)'; K = 1.*K/sum(K(:));
+tSNE_metrics = [];  classificationTrackChanges = []; spikesPlots = {}; K = gausswin(10)*gausswin(10)'; K = 1.*K/sum(K(:));
 tableDataOrder = []; groundTruthSelection = []; subsetGroundTruth = [];
 idx_textFilter = []; groundTruthCelltypesList = {''}; db = {}; gt = {}; plotConnections = [1 1 1];
 clickPlotRegular = true; fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];
@@ -139,6 +139,7 @@ referenceData=[]; reference_cell_metrics = []; groundTruth_cell_metrics = []; gr
 timerVal = tic;
 spikes = []; events = []; states = [];
 createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal';
+createStruct1.Interpreter = 'none'; createStruct1.WindowStyle = 'modal';
 polygon1.handle = gobjects(0); fig = 1;
 set(groot, 'DefaultFigureVisible', 'on','DefaultAxesLooseInset',[.01,.01,.01,.01],'DefaultTextInterpreter', 'none'), maxFigureSize = get(groot,'ScreenSize'); UI.preferences.figureSize = [50, 50, min([1500,maxFigureSize(3)-100]), min([1000,maxFigureSize(4)-100])];
 % set(0, 'DefaultTextInterpreter', 'none')
@@ -283,7 +284,7 @@ else
         load(fullfile(basepath,[basename,'.session.mat']),'session')
         if exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
             load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'cell_metrics');
-            cell_metrics.general.path = fullfile(basepath);
+            cell_metrics.general.basepath = fullfile(basepath);
             cell_metrics.general.saveAs = 'cell_metrics';
             initializeSession;
         else
@@ -311,7 +312,7 @@ else
     elseif exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
         disp('Loading local cell_metrics')
         load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
-        cell_metrics.general.path = basepath;
+        cell_metrics.general.basepath = basepath;
         initializeSession
     else
         if enableDatabase
@@ -499,6 +500,7 @@ uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Explore groundTruth data',menuSele
 % Group data
 UI.menu.groupData.topMenu = uimenu(UI.fig,menuLabel,'Group data');
 UI.menu.display.defineGroupData = uimenu(UI.menu.groupData.topMenu,menuLabel,'Open group data dialog',menuSelectedFcn,@defineGroupData,'Accelerator','G');
+UI.menu.display.generateFilterbyGroupData = uimenu(UI.menu.groupData.topMenu,menuLabel,'Generate filter from group data',menuSelectedFcn,@generateFilterbyGroupData,'Separator','on');
 
 % Table menu
 UI.menu.tableData.topMenu = uimenu(UI.fig,menuLabel,'Table data');
@@ -767,7 +769,7 @@ UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Pos
 updateColorMenuCount
 UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[0 20 148 54],'Units','normalized','String',{},'max',100,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Enable','Off','tooltip','Group data');
 uicontrol('Parent',UI.panel.group,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Color groups','HorizontalAlignment','center');
-UI.popupmenu.colors = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 10 144 10],'Units','normalized','String',{'By group data','By cell types','Single group','Compare to other'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'tooltip','Select color data');
+UI.popupmenu.colors = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 10 144 10],'Units','normalized','String',{'By group data','By cell types','Single group','Compare to other','By higher brain region'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'tooltip','Select color data');
 set(UI.panel.group, 'Heights', [15 20 -1 15 25], 'Spacing', 5);
 
 % % % % % % % % % % % % % % % % % % % %
@@ -984,16 +986,37 @@ function updateUI
     [~,UI.preferences.troughToPeakSorted] = sort(cell_metrics.(UI.preferences.sortingMetric)(UI.params.subset));
     
     % Regrouping cells if comparison checkbox is checked
-    if ColorVal == 4 % Compare to rest
+    if ColorVal == 5 % major brain regions 
+        if ~isfield(UI.params,'brainRegionsLevel') | ~isfield(UI.params,'subset_pre') | numel(UI.params.subset) ~= numel(UI.params.subset_pre) | UI.params.subset ~= UI.params.subset_pre
+            if isempty(relational_tree)
+                load('brainRegions_relational_tree.mat','relational_tree');
+            end
+            kk = 1;
+            idx = find(relational_tree.graph_depth == 4);
+            brainRegionsLevel1 = relational_tree.acronyms(idx);
+            UI.params.brainRegionsLevel = {};
+            plotClas = ones(1,length(plotClas));
+            for i = 1:numel(brainRegionsLevel1)
+                acronym_out = getBrainRegionChildren(brainRegionsLevel1{i},relational_tree);
+                idx2 = ismember(lower(cell_metrics.brainRegion(UI.params.subset)),lower([acronym_out,brainRegionsLevel1{i}]));
+                if any(idx2)
+                    plotClas(UI.params.subset(idx2)) = kk;
+                    UI.params.brainRegionsLevel{kk} = brainRegionsLevel1{i};
+                    kk = kk + 1;
+                end
+            end
+        end
+        classes2plotSubset = unique(plotClas(UI.params.subset));
+        plotClasGroups = UI.params.brainRegionsLevel(unique(plotClas(UI.params.subset)));
+        UI.params.subset_pre = UI.params.subset;
+    elseif ColorVal == 4 % Compare to rest
         plotClas = ones(1,length(plotClas));
         plotClas(UI.params.subset) = 2;
         UI.params.subset = 1:length(plotClas);
         classes2plotSubset = unique(plotClas);
         plotClasGroups = {'Other cells','Selected cells'};
     elseif ColorVal == 3 % Single group
-%         plotClas = ones(1,length(plotClas));
         plotClas(1:numel(plotClas)) = 1;
-%         UI.params.subset = 1:length(plotClas);
         classes2plotSubset = unique(plotClas);
         plotClasGroups = {'Selected cells'};
     elseif ColorVal == 2 % Cell type color groups
@@ -1002,8 +1025,6 @@ function updateUI
         if GroupVal == 1
             groups2plot = classes2plot;
             classes2plotSubset = unique(plotClas);
-%         else
-%             1
         end
         classes2plotSubset = intersect(plotClas(UI.params.subset),groups2plot);
     end
@@ -1034,9 +1055,9 @@ function updateUI
     end
     
     % Group display definition
-    if ColorVal > 2
+    if ColorVal > 2 && ColorVal < 5
         clr_groups = UI.preferences.cellTypeColors(intersect(classes2plotSubset,plotClas(UI.params.subset)),:);
-    elseif  ColorVal == 2 || GroupVal == 1
+    elseif  ColorVal == 2 || (GroupVal == 1 && ColorVal < 5)
         clr_groups = UI.preferences.cellTypeColors(intersect(classes2plot,plotClas(UI.params.subset)),:);
     else
         clr_groups = hsv(length(nanUnique(plotClas(UI.params.subset))))*0.8;
@@ -1991,7 +2012,7 @@ end
         subsetPlots = [];
         
         % Determinig the plot color
-        if ColorVal == 2 || GroupVal == 1
+        if ColorVal == 2 || (GroupVal == 1 && ColorVal < 5)
             col = UI.preferences.cellTypeColors(plotClas(ii),:);
         else
             if isnan(clr_groups)
@@ -2079,14 +2100,14 @@ end
             end
             for k = 1:length(classes2plotSubset)
                 set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
-                xdata = repmat([time_waveforms_zscored,nan(1,1)],length(set1),1)';
+                xdata = repmat([cell_metrics.waveforms.time_zscored,nan(1,1)],length(set1),1)';
                 ydata = [cell_metrics.waveforms.(zscoreWaveforms1)(:,set1);nan(1,length(set1))];
                 line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
             end
             
             % selected cell in black
             if highlightCurrentCell
-                line(time_waveforms_zscored, cell_metrics.waveforms.(zscoreWaveforms1)(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
+                line(cell_metrics.waveforms.time_zscored, cell_metrics.waveforms.(zscoreWaveforms1)(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
             end
             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
                 plotInsetChannelMap(ii,col,general,1);
@@ -2243,14 +2264,14 @@ end
             % Sorted according to trough-to-peak
             [~,idx] = find(UI.params.subset(UI.preferences.troughToPeakSorted) == ii);
             
-            imagesc(time_waveforms_zscored, [1:length(UI.params.subset)], cell_metrics.waveforms.filt_zscored(:,UI.params.subset(UI.preferences.troughToPeakSorted))','HitTest','off'),
+            imagesc(cell_metrics.waveforms.time_zscored, [1:length(UI.params.subset)], cell_metrics.waveforms.filt_zscored(:,UI.params.subset(UI.preferences.troughToPeakSorted))','HitTest','off'),
             colormap(UI.preferences.colormap),
             
             % selected cell highlighted in white
             if ~isempty(idx) && highlightCurrentCell
-                line([time_waveforms_zscored(1),time_waveforms_zscored(end)],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','color','w','HitTest','off','linewidth',1.5)
+                line([cell_metrics.waveforms.time_zscored(1),cell_metrics.waveforms.time_zscored(end)],[idx-0.5,idx-0.5;idx+0.5,idx+0.5]','color','w','HitTest','off','linewidth',1.5)
             end
-            ploConnectionsHighlights(time_waveforms_zscored,UI.params.subset(UI.preferences.troughToPeakSorted))
+            ploConnectionsHighlights(cell_metrics.waveforms.time_zscored,UI.params.subset(UI.preferences.troughToPeakSorted))
             
         elseif strcmp(customPlotSelection,'Waveforms (raw single)')
             % Single waveform with std
@@ -2288,14 +2309,14 @@ end
             end
             for k = 1:length(classes2plotSubset)
                 set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
-                xdata = repmat([time_waveforms_zscored,nan(1,1)],length(set1),1)';
+                xdata = repmat([cell_metrics.waveforms.time_zscored,nan(1,1)],length(set1),1)';
                 ydata = [cell_metrics.waveforms.(zscoreWaveforms1)(:,set1);nan(1,length(set1))];
                 line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
             end
             
             % selected cell in black
             if highlightCurrentCell
-                line(time_waveforms_zscored, cell_metrics.waveforms.(zscoreWaveforms1)(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
+                line(cell_metrics.waveforms.time_zscored, cell_metrics.waveforms.(zscoreWaveforms1)(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
             end
             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
                 plotInsetChannelMap(ii,col,general,1);
@@ -4074,7 +4095,7 @@ end
         if ~isequal(file,0)
             cd(path)
             load(file);
-            cell_metrics.general.path = path;
+            cell_metrics.general.basepath = path;
             temp = strsplit(file,'.');
             if length(temp)==4
                 cell_metrics.general.saveAs = temp{end-2};
@@ -4171,18 +4192,15 @@ end
                 MsgLog(['Failed to reload dataset from database: ',strjoin(cell_metrics.general.basenames)],4);
             end
         elseif strcmp(answer,'Yes')
-            if isfield(cell_metrics.general,'path') && exist(cell_metrics.general.path,'dir')
-                path1 = cell_metrics.general.path;
-                file = fullfile(cell_metrics.general.path,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
-            else isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir')
+            if isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir')
                 path1 = cell_metrics.general.basepath;
-                file = fullfile(path1,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
+                file = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
             end
             if exist(file,'file')
                 load(file);
                 initializeSession;
                 uiresume(UI.fig);
-                cell_metrics.general.path = path1;
+                cell_metrics.general.basepath = path1;
                 temp = strsplit(file,'.');
                 if length(temp)==4
                     cell_metrics.general.saveAs = temp{end-2};
@@ -4205,9 +4223,9 @@ end
             cd(selpath);
         end
         if UI.BatchMode
-            backupList = dir(fullfile(cell_metrics.general.path{cell_metrics.batchIDs(ii)},'revisions_cell_metrics','cell_metrics_*'));
+            backupList = dir(fullfile(cell_metrics.general.basepath{cell_metrics.batchIDs(ii)},'revisions_cell_metrics','cell_metrics_*'));
         else
-            backupList = dir(fullfile(cell_metrics.general.path,'revisions_cell_metrics','cell_metrics_*'));
+            backupList = dir(fullfile(cell_metrics.general.basepath,'revisions_cell_metrics','cell_metrics_*'));
         end
         if ~isempty(backupList)
             backupList = {backupList.name};
@@ -4233,9 +4251,9 @@ end
             
             % Restoring backup to metrics
             if UI.BatchMode
-                cell_metrics_backup = load(fullfile(cell_metrics.general.path{cell_metrics.batchIDs(ii)},'revisions_cell_metrics',backupToRestore));
+                cell_metrics_backup = load(fullfile(cell_metrics.general.basepath{cell_metrics.batchIDs(ii)},'revisions_cell_metrics',backupToRestore));
             else
-                cell_metrics_backup = load(fullfile(cell_metrics.general.path,'revisions_cell_metrics',backupToRestore));
+                cell_metrics_backup = load(fullfile(cell_metrics.general.basepath,'revisions_cell_metrics',backupToRestore));
             end
             cell_metrics_backup.cell_metrics = verifyGroupFormat(cell_metrics_backup.cell_metrics,'tags');
             cell_metrics_backup.cell_metrics = verifyGroupFormat(cell_metrics_backup.cell_metrics,'groundTruthClassification');
@@ -4322,13 +4340,13 @@ end
         S.cell_metrics = cell_metrics_backup;
         if UI.BatchMode && isfield(cell_metrics.general,'saveAs')
             saveAs = cell_metrics.general.saveAs{cell_metrics.batchIDs(ii)};
-            path1 = cell_metrics.general.path{batchIDs};
+            path1 = cell_metrics.general.basepath{batchIDs};
         elseif isfield(cell_metrics.general,'saveAs')
             saveAs = cell_metrics.general.saveAs;
-            path1 = cell_metrics.general.path;
+            path1 = cell_metrics.general.basepath;
         else
             saveAs = 'cell_metrics';
-            path1 = cell_metrics.general.path;
+            path1 = cell_metrics.general.basepath;
         end
         
         if ~(exist(fullfile(path1,'revisions_cell_metrics'),'dir'))
@@ -4448,12 +4466,12 @@ end
     function openSessionDirectory(~,~)
         % Opens the file directory for the selected cell
         if UI.BatchMode
-            if exist(cell_metrics.general.path{cell_metrics.batchIDs(ii)},'dir')
-                cd(cell_metrics.general.path{cell_metrics.batchIDs(ii)});
+            if exist(cell_metrics.general.basepath{cell_metrics.batchIDs(ii)},'dir')
+                cd(cell_metrics.general.basepath{cell_metrics.batchIDs(ii)});
                 if ispc
-                    winopen(cell_metrics.general.path{cell_metrics.batchIDs(ii)});
+                    winopen(cell_metrics.general.basepath{cell_metrics.batchIDs(ii)});
                 elseif ismac
-                    syscmd = ['open ', cell_metrics.general.path{cell_metrics.batchIDs(ii)}, ' &'];
+                    syscmd = ['open ', cell_metrics.general.basepath{cell_metrics.batchIDs(ii)}, ' &'];
                     system(syscmd);
                 else
                     filebrowser;
@@ -4462,8 +4480,8 @@ end
                 MsgLog(['File path not available:' general.basepath],2)
             end
         else
-            if exist(cell_metrics.general.path,'dir')
-                path_to_open = cell_metrics.general.path;
+            if exist(cell_metrics.general.basepath,'dir')
+                path_to_open = cell_metrics.general.basepath;
             else
                 path_to_open = pwd;
             end
@@ -4829,6 +4847,33 @@ end
         end
     end
     
+    function generateFilterbyGroupData(~,~)
+        % Generates filter group from group data (tags/groups/groundtruth)
+        groups_fields = {'tags','groups','groundTruthClassification'};
+        idx = find(ismember(groups_fields,colorMenu));
+        if ~isempty(idx)
+            colorMenu = rmfield(colorMenu,groups_fields(idx));
+        end
+        for iGroupFields = 1:numel(groups_fields)
+            if ~isempty(cell_metrics.(groups_fields{iGroupFields}))
+                newFieldName = ['groups_from_',groups_fields{iGroupFields}];
+                temp = fieldnames(cell_metrics.(groups_fields{iGroupFields}));
+                cell_metrics.(newFieldName) = repmat({'None'},1,cell_metrics.general.cellCount);
+                for i = 1:numel(temp)
+                    cell_metrics.(newFieldName)(cell_metrics.(groups_fields{iGroupFields}).(temp{i})) = repmat({temp{i}},1,numel(cell_metrics.(groups_fields{iGroupFields}).(temp{i})));
+                end
+                colorMenu = [colorMenu;newFieldName];
+                if any(strcmp(cell_metrics.(newFieldName),'None'))
+                    groups_ids.([newFieldName,'_num']) = sort({temp{:},'None'});
+                else
+                    groups_ids.([newFieldName,'_num']) = temp';
+                end
+            end
+        end
+        updateColorMenuCount
+%         UI.popupmenu.groups.String = colorMenu; % buttonGroups(1)
+        MsgLog(['Group filters created succesfully. Check the "group data and filters" dropdown menu in the left side panel.'],[1,2]);
+    end
     function defineGroupData(~,~)
         if ~isfield(groupData,'groupToList')
             groupData.groupToList = 'tags';
@@ -5612,13 +5657,13 @@ end
             end
             if UI.BatchMode && isfield(cell_metrics.general,'saveAs')
                 saveAs = cell_metrics.general.saveAs{batchIDs};
-                matpath = fullfile(cell_metrics.general.path{batchIDs},[cell_metrics.general.basenames{batchIDs}, '.',saveAs,'.cellinfo.mat']);
+                matpath = fullfile(cell_metrics.general.basepath{batchIDs},[cell_metrics.general.basenames{batchIDs}, '.',saveAs,'.cellinfo.mat']);
             elseif isfield(cell_metrics.general,'saveAs')
                 saveAs = cell_metrics.general.saveAs;
-                matpath = fullfile(cell_metrics.general.path,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
+                matpath = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
             else
                 saveAs = 'cell_metrics';
-                matpath = fullfile(cell_metrics.general.path,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
+                matpath = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
             end
             matFileCell_metrics = matfile(matpath,'Writable',true);
             temp = matFileCell_metrics.cell_metrics;
@@ -6999,7 +7044,7 @@ end
             idx = find(strcmp(UI.preferences.customPlot,'Waveforms (all)'));
             for i = 1:length(idx)
                 set(UI.fig,'CurrentAxes',subfig_ax(3+idx(i)))
-                line(time_waveforms_zscored,cell_metrics.waveforms.(zscoreWaveforms1)(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
+                line(cell_metrics.waveforms.time_zscored,cell_metrics.waveforms.(zscoreWaveforms1)(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
             end
         end
         % Highlighting raw waveforms
@@ -7012,7 +7057,7 @@ end
             idx = find(strcmp(UI.preferences.customPlot,'Waveforms (raw all)'));
             for i = 1:length(idx)
                 set(UI.fig,'CurrentAxes',subfig_ax(3+idx(i)))
-                line(time_waveforms_zscored,cell_metrics.waveforms.(zscoreWaveforms1)(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
+                line(cell_metrics.waveforms.time_zscored,cell_metrics.waveforms.(zscoreWaveforms1)(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
             end
         end
         % Highlighting ACGs
@@ -7244,7 +7289,7 @@ end
                     else
                         zscoreWaveforms1 = 'filt_absolute';
                     end
-                    x1 = time_waveforms_zscored'*ones(1,length(UI.params.subset));
+                    x1 = cell_metrics.waveforms.time_zscored'*ones(1,length(UI.params.subset));
                     y1 = cell_metrics.waveforms.(zscoreWaveforms1)(:,UI.params.subset);
                     
                     x_scale = range(x1(:));
@@ -7266,20 +7311,20 @@ end
                                 end
                                 In = find(UI.params.subset==iii);
                             else
-                                In = unique(floor(In/length(time_waveforms_zscored)))+1;
+                                In = unique(floor(In/length(cell_metrics.waveforms.time_zscored)))+1;
                                 iii = UI.params.subset(In);
                             end
-                            [~,time_index] = min(abs(time_waveforms_zscored-u));
+                            [~,time_index] = min(abs(cell_metrics.waveforms.time_zscored-u));
                         end
                     else
                         [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
-                        In = unique(floor(In/length(time_waveforms_zscored)))+1;
+                        In = unique(floor(In/length(cell_metrics.waveforms.time_zscored)))+1;
                         iii = UI.params.subset(In);
-                        [~,time_index] = min(abs(time_waveforms_zscored-u));
+                        [~,time_index] = min(abs(cell_metrics.waveforms.time_zscored-u));
                     end
                     if highlight || hover
-                        hover2highlight.handle2 = line(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle2 = line(cell_metrics.waveforms.time_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                 case 'Waveforms (raw single)'    
                     if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
@@ -7301,7 +7346,7 @@ end
                     else
                         zscoreWaveforms1 = 'raw_absolute';
                     end
-                    x1 = time_waveforms_zscored'*ones(1,length(UI.params.subset));
+                    x1 = cell_metrics.waveforms.time_zscored'*ones(1,length(UI.params.subset));
                     y1 = cell_metrics.waveforms.(zscoreWaveforms1)(:,UI.params.subset);
                     x_scale = range(x1(:));
                     y_scale = range(y1(:));
@@ -7322,28 +7367,28 @@ end
                                 end
                                 In = find(UI.params.subset==iii);
                             else
-                                In = unique(floor(In/length(time_waveforms_zscored)))+1;
+                                In = unique(floor(In/length(cell_metrics.waveforms.time_zscored)))+1;
                                 iii = UI.params.subset(In);
                             end
-                            [~,time_index] = min(abs(time_waveforms_zscored-u));
+                            [~,time_index] = min(abs(cell_metrics.waveforms.time_zscored-u));
                         end
                     else
                         [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
-                        In = unique(floor(In/length(time_waveforms_zscored)))+1;
+                        In = unique(floor(In/length(cell_metrics.waveforms.time_zscored)))+1;
                         iii = UI.params.subset(In);
-                        [~,time_index] = min(abs(time_waveforms_zscored-u));
+                        [~,time_index] = min(abs(cell_metrics.waveforms.time_zscored-u));
                     end
                     
                     if highlight || hover
-                        hover2highlight.handle2 = line(time_waveforms_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(time_waveforms_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle2 = line(cell_metrics.waveforms.time_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'Waveforms (image)'
                     if round(v) > 0 && round(v) <= length(UI.params.subset)
                         iii = UI.params.subset(UI.preferences.troughToPeakSorted(round(v)));
                         if highlight || hover
-                            hover2highlight.handle2 = line([time_waveforms_zscored(1),time_waveforms_zscored(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
+                            hover2highlight.handle2 = line([cell_metrics.waveforms.time_zscored(1),cell_metrics.waveforms.time_zscored(end)],[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
                             hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
@@ -7756,7 +7801,8 @@ end
             
             % Text field
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell IDs to process. E.g. 1:32 or 7,8,9,10 (leave empty to select all cells)', 'Position', [10, 470, 580, 15],'HorizontalAlignment','left');
-            filterCells.cellIDs = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [10, 445, 570, 25],'KeyReleaseFcn',@cellSelection1,'HorizontalAlignment','left');
+            filterCells.cellIDs = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [10, 445, 380, 25],'KeyReleaseFcn',@cellSelection1,'HorizontalAlignment','left');
+            filterCells.currentFilter = uicontrol('Parent',filterCells.dialog,'Style','checkbox','Position',[410, 445, 150, 25],'String',['Current filter (', num2str(numel(UI.params.subset)) ,' cells)'],'HorizontalAlignment','right','tooltip','Toggle select cell by current filter');
             
             % Text field
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Metric to filter', 'Position', [10, 420, 180, 15],'HorizontalAlignment','left');
@@ -7831,6 +7877,7 @@ end
             ClickedCells4 = ones(1,cell_metrics.general.cellCount);
             ClickedCells5 = ones(1,cell_metrics.general.cellCount);
             ClickedCells6 = ones(1,cell_metrics.general.cellCount);
+            ClickedCells7 = ones(1,cell_metrics.general.cellCount);
             % Input field
             answer = filterCells.cellIDs.String;
             if ~isempty(answer)
@@ -7843,7 +7890,10 @@ end
             else
                 UI.params.ClickedCells = 1:cell_metrics.general.cellCount;
             end
-            
+            if filterCells.currentFilter.Value == 1
+                ClickedCells7 = zeros(1,cell_metrics.general.cellCount);
+                ClickedCells7(UI.params.subset) = 1;
+            end
             % Filter field % {'Select','>','<','==','~='}
             if filterCells.filterDropdown.Value > 1 && ~isempty(filterCells.filterInput.String) && isnumeric(str2double(filterCells.filterInput.String))
                 if filterCells.filterType.Value==1 % greater than
@@ -7883,11 +7933,11 @@ end
                 ClickedCells6_out = findSynapticConnections(filterCells.synConnectFilter.String{filterCells.synConnectFilter.Value});
                 ClickedCells6 = zeros(1,cell_metrics.general.cellCount);
                 ClickedCells6(ClickedCells6_out) = 1;
-                % %                 ClickedCells6 = ismember(cell_metrics.synapticEffect, groups_ids.synapticEffect_num(filterCells.synEffect.Value));
+                % % ClickedCells6 = ismember(cell_metrics.synapticEffect, groups_ids.synapticEffect_num(filterCells.synEffect.Value));
             end
             
             % Finding cells fullfilling all criteria
-            UI.params.ClickedCells = intersect(UI.params.ClickedCells,find(all([ClickedCells0;ClickedCells1;ClickedCells2;ClickedCells3;ClickedCells4;ClickedCells5;ClickedCells6])));
+            UI.params.ClickedCells = intersect(UI.params.ClickedCells,find(all([ClickedCells0;ClickedCells1;ClickedCells2;ClickedCells3;ClickedCells4;ClickedCells5;ClickedCells6;ClickedCells7])));
             
             close(filterCells.dialog)
             updateTableClickedCells
@@ -8013,10 +8063,10 @@ end
                             else
                                 zscoreWaveforms1 = 'filt_absolute';
                             end
-                            x1 = time_waveforms_zscored'*ones(1,length(UI.params.subset));
+                            x1 = cell_metrics.waveforms.time_zscored'*ones(1,length(UI.params.subset));
                             y1 = cell_metrics.waveforms.(zscoreWaveforms1)(:,UI.params.subset);
                             In = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
-                            In = unique(floor(In/length(time_waveforms_zscored)))+1;
+                            In = unique(floor(In/length(cell_metrics.waveforms.time_zscored)))+1;
                             In = UI.params.subset(In);
                             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
                                 out = plotInsetChannelMap(ii,[],general,0);                                
@@ -8032,10 +8082,10 @@ end
                             else
                                 zscoreWaveforms1 = 'raw_absolute';
                             end
-                            x1 = time_waveforms_zscored'*ones(1,length(UI.params.subset));
+                            x1 = cell_metrics.waveforms.time_zscored'*ones(1,length(UI.params.subset));
                             y1 = cell_metrics.waveforms.(zscoreWaveforms1)(:,UI.params.subset);
                             In = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
-                            In = unique(floor(In/length(time_waveforms_zscored)))+1;
+                            In = unique(floor(In/length(cell_metrics.waveforms.time_zscored)))+1;
                             In = UI.params.subset(In);    
                             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
                                 out = plotInsetChannelMap(ii,[],general,0);                                
@@ -8583,12 +8633,12 @@ end
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
                 general1 = cell_metrics.general.batch{batchIDs1};
-                savePath1 = cell_metrics.general.path{batchIDs1};
+                savePath1 = cell_metrics.general.basepath{batchIDs1};
             else
                 general1 = cell_metrics.general;
                 batchIDs1 = 1;
-                if isfield(cell_metrics.general,'path')
-                    savePath1 = cell_metrics.general.path;
+                if isfield(cell_metrics.general,'basepath')
+                    savePath1 = cell_metrics.general.basepath;
                 elseif isfield(cell_metrics.general,'basepath')
                     savePath1 = cell_metrics.general.basepath;
                 end
@@ -8757,8 +8807,8 @@ end
             sessionMetaFilename = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename,'.session.mat']);
             if exist(sessionMetaFilename,'file')
                 gui_session(sessionMetaFilename);
-            elseif exist(fullfile(cell_metrics.general.path,[cell_metrics.general.basename,'.session.mat']),'file')
-                gui_session(fullfile(cell_metrics.general.path,[cell_metrics.general.basename,'.session.mat']));
+            elseif exist(fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename,'.session.mat']),'file')
+                gui_session(fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename,'.session.mat']));
             elseif exist([basename,'.session.mat'],'file')
                 gui_session;
             else
@@ -9259,7 +9309,7 @@ end
                         if UI.BatchMode
                             batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
                             general1 = cell_metrics.general.batch{batchIDs1};
-                            savePath1 = cell_metrics.general.path{batchIDs1};
+                            savePath1 = cell_metrics.general.basepath{batchIDs1};
                         else
                             general1 = cell_metrics.general;
                             batchIDs1 = 1;
@@ -9304,7 +9354,7 @@ end
                         if UI.BatchMode
                             batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
                             general1 = cell_metrics.general.batch{batchIDs1};
-                            savePath1 = cell_metrics.general.path{batchIDs1};
+                            savePath1 = cell_metrics.general.basepath{batchIDs1};
                         else
                             general1 = cell_metrics.general;
                             batchIDs1 = 1;
@@ -9335,7 +9385,7 @@ end
                         if UI.BatchMode
                             batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
                             general1 = cell_metrics.general.batch{batchIDs1};
-                            savePath1 = cell_metrics.general.path{batchIDs1};
+                            savePath1 = cell_metrics.general.basepath{batchIDs1};
                         else
                             general1 = cell_metrics.general;
                             batchIDs1 = 1;
@@ -9535,12 +9585,6 @@ end
             case 'Update existing metrics'
                 assignin('base','cell_metrics',cell_metrics)
                 saveMetrics(cell_metrics);
-                try
-                    
-                catch exception
-                    disp(exception.identifier)
-                    MsgLog(['Failed to save file - see Command Window for details'],[3,4]);
-                end
             case 'Create new file'
                 if UI.BatchMode
                     [file,SavePath] = uiputfile('cell_metrics_batch.mat','Save metrics');
@@ -9626,7 +9670,7 @@ end
                     createBackup(cell_metricsTemp,cellSubset)
                     
                     % Saving new metrics to file
-                    matpath = fullfile(cell_metricsTemp.general.path{sessionID},[cell_metricsTemp.general.basenames{sessionID}, '.',saveAs,'.cellinfo.mat']);
+                    matpath = fullfile(cell_metricsTemp.general.basepath{sessionID},[cell_metricsTemp.general.basenames{sessionID}, '.',saveAs,'.cellinfo.mat']);
                     matFileCell_metrics = matfile(matpath,'Writable',true);
                     
                     cell_metrics = matFileCell_metrics.cell_metrics;
@@ -9658,21 +9702,24 @@ end
                 MsgLog('Metrics were not succesfully saved for all sessions in batch',4);
             end
         else
-            if isfield(cell_metrics.general,'path') && exist(cell_metrics.general.path,'dir')
+            if ((isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir')) || (isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir')))
                 if isfield(cell_metrics.general,'saveAs')
                     saveAs = cell_metrics.general.saveAs;
                 else
                     saveAs = 'cell_metrics';
                 end
+                if ~isfield(cell_metrics.general,'basepath')
+                    cell_metrics.general.basepath = cell_metrics.general.basepath;
+                end
                 try
                     createBackup(cell_metrics)
-                    file = fullfile(cell_metrics.general.path,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
+                    file = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
                     save(file,'cell_metrics');
                     classificationTrackChanges = [];
                     UI.menu.file.save.ForegroundColor = 'k';
                     MsgLog(['Classification saved to ', file],[1,2]);
                 catch
-                    MsgLog(['Failed to save the cell metrics. Please choose a different path: ' cell_metrics.general.path],4);
+                    MsgLog(['Failed to save the cell metrics. Please choose a different path: ' cell_metrics.general.basepath],4);
                 end
             else
                 MsgLog(['The path does not exist. Please choose another path to save the metrics'],4);
@@ -10057,7 +10104,7 @@ end
         end
         
         step_size = [cellfun(@diff,cell_metrics.waveforms.time,'UniformOutput',false)];
-        time_waveforms_zscored = [max(cellfun(@min, cell_metrics.waveforms.time)):min([step_size{:}]):min(cellfun(@max, cell_metrics.waveforms.time))];
+        cell_metrics.waveforms.time_zscored = [max(cellfun(@min, cell_metrics.waveforms.time)):min([step_size{:}]):min(cellfun(@max, cell_metrics.waveforms.time))];
         
         % Response curves
         UI.x_bins.thetaPhase = [-1:0.05:1]*pi;
@@ -10070,9 +10117,9 @@ end
             statusUpdate('Initializing filtered waveforms')
             for i = 1:length(cell_metrics.waveforms.filt)
                 if isempty(cell_metrics.waveforms.filt{i}) || any(isnan(cell_metrics.waveforms.filt{i}))
-                    filtWaveform(:,i) = zeros(size(time_waveforms_zscored));
+                    filtWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
                 else
-                    filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},time_waveforms_zscored,'spline',nan);
+                    filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},cell_metrics.waveforms.time_zscored,'spline',nan);
                 end
             end
             cell_metrics.waveforms.filt_absolute = filtWaveform;
@@ -10084,9 +10131,9 @@ end
             rawWaveform = [];
             for i = 1:length(cell_metrics.waveforms.raw)
                 if isempty(cell_metrics.waveforms.raw{i}) || any(isnan(cell_metrics.waveforms.raw{i}))
-                    rawWaveform(:,i) = zeros(size(time_waveforms_zscored));
+                    rawWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
                 else
-                    rawWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.raw{i},time_waveforms_zscored,'spline',nan);
+                    rawWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.raw{i},cell_metrics.waveforms.time_zscored,'spline',nan);
                 end
             end
             cell_metrics.waveforms.raw_absolute = rawWaveform;
@@ -10484,9 +10531,9 @@ end
             filtWaveform = [];
             for i = 1:length(cell_metrics.waveforms.filt)
                 if isempty(cell_metrics.waveforms.filt{i})
-                    filtWaveform(:,i) = zeros(size(time_waveforms_zscored));
+                    filtWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
                 else
-                    filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},time_waveforms_zscored,'spline',nan);
+                    filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},cell_metrics.waveforms.time_zscored,'spline',nan);
                 end
             end
             if ~isfield(cell_metrics.waveforms,'filt_zscored')  || size(cell_metrics.waveforms.filt,2) ~= size(cell_metrics.waveforms.filt_zscored,2)
@@ -10500,9 +10547,9 @@ end
             rawWaveform = [];
             for i = 1:length(cell_metrics.waveforms.raw)
                 if isempty(cell_metrics.waveforms.raw{i})
-                    rawWaveform(:,i) = zeros(size(time_waveforms_zscored));
+                    rawWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
                 else
-                    rawWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.raw{i},time_waveforms_zscored,'spline',nan);
+                    rawWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.raw{i},cell_metrics.waveforms.time_zscored,'spline',nan);
                 end
             end
             if ~isfield(cell_metrics.waveforms,'raw_zscored')  || size(cell_metrics.waveforms.raw,2) ~= size(cell_metrics.waveforms.raw_zscored,2)
@@ -10657,7 +10704,7 @@ end
             if exist(fullfile(basepath,[basename, '.cell_metrics.cellinfo.mat']),'file')
                 cd(basepath);
                 load(fullfile(basepath,[basename, '.cell_metrics.cellinfo.mat']));
-                cell_metrics.general.path = basepath;
+                cell_metrics.general.basepath = basepath;
                 initializeSession;
                 
                 successMessage = [basename ' with ' num2str(cell_metrics.general.cellCount)  ' cells loaded from database'];
@@ -11392,11 +11439,11 @@ end
         % Manually select connections
         if UI.BatchMode
             basename1 = cell_metrics.general.basenames{batchIDs};
-            path1 = cell_metrics.general.path{batchIDs};
+            path1 = cell_metrics.general.basepath{batchIDs};
         else
-            if isfield( cell_metrics.general,'path')
+            if isfield( cell_metrics.general,'basepath')
                 basename1 = cell_metrics.general.basename;
-                path1 = cell_metrics.general.path;
+                path1 = cell_metrics.general.basepath;
             else
                 basename1 = cell_metrics.general.basename;
                 path1 = cell_metrics.general.basepath;
@@ -11662,7 +11709,7 @@ end
                             load('brainRegions_relational_tree.mat','relational_tree');
                         end
                         acronym_out = getBrainRegionChildren(newStr{2},relational_tree);
-                        idx_textFilter2(i,:) = contains(cell_metrics.brainRegion,[acronym_out,newStr{2}],'IgnoreCase',true);
+                        idx_textFilter2(i,:) = ismember(lower(cell_metrics.brainRegion),lower([acronym_out,newStr{2}]));
                     end
                 elseif strcmp(newStr2{i}(1),'.')
                     newStr = split(newStr2{i}(2:end),' ');
@@ -11737,7 +11784,7 @@ end
                 disp(message)
             end
             if any(priority == 2)
-                msgbox(message,'CellExplorer',createStruct);
+                msgbox(message,'CellExplorer',createStruct1);
             end
             if any(priority == 3)
                 warning(message)
