@@ -258,8 +258,7 @@ This is a data container for behavioral tracking data. A MATLAB struct `behavior
 * `timeSeries`: can contain any derived time traces projected into the behavioral timestamps e.g. temperature, oscillation frequency, power etc.
 * `notes`: Human-readable notes about this TimeSeries dataset.
 * `description`: Description of this TimeSeries dataset.
-* `processinginfo`: a struct with information about how the .mat file was generated including.
-  * `name` of the function, `version`, `date`, `parameters`.
+* `processinginfo`: a struct with information about how the .mat file was generated including:   `function` name of the function, `version`, `date`, `parameters`.
 
 Any other field can be added to the struct containing behavior data. The `*.behavior.mat` files should be stored in the basepath.
 
