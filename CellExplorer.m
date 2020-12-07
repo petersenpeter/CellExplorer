@@ -121,14 +121,13 @@ UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;
 UI.lists.metrics = [];
 
 synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'}; ce_waitbar = []; colorStr = []; 
-iLine = 1; batchIDs = []; clr_groups = []; clr_groups2 = [];  clr_groups3 = []; h_scatter = []; ccf_ratio = [-35.5,30];
+iLine = 1; batchIDs = []; UI.classes.colors = []; UI.classes.colors2 = [];  UI.classes.colors3 = []; h_scatter = []; ccf_ratio = [-35.5,30];
 groups_ids = []; clusClas = []; plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = []; meanCCG = [];
 hover2highlight.handle1 = []; hover2highlight.handle2 = []; hover2highlight.handle3 = []; hover2highlight.handle4 = [];
 classes2plot = []; classes2plotSubset = []; table_metrics = []; ii = []; history_classification = [];
 brainRegions_list = []; brainRegions_acronym = []; relational_tree = []; cell_class_count = [];  plotOptions = ''; freeText = {''};
-plotAcgFit = 0; clasLegend = 0; GroupVal = 1; ColorVal = 1; plotClas = []; plotClas11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
-colorMenu = []; groups2plot = []; groups2plot2 = []; plotClasGroups2 = []; connectivityGraph = [];
-plotClasGroups = [];  plotClas2 = []; general = []; plotAverage_nbins = 40; table_fieldsNames = {};
+plotAcgFit = 0; clasLegend = 0; GroupVal = 1; ColorVal = 1; UI.classes.plot = []; UI.classes.plot11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
+colorMenu = []; groups2plot = []; groups2plot2 = [];  connectivityGraph = []; UI.classes.plot2 = []; general = []; plotAverage_nbins = 40; table_fieldsNames = {};
 tSNE_metrics = [];  classificationTrackChanges = []; spikesPlots = {}; K = gausswin(10)*gausswin(10)'; K = 1.*K/sum(K(:));
 tableDataOrder = []; groundTruthSelection = []; subsetGroundTruth = [];
 idx_textFilter = []; groundTruthCelltypesList = {''}; db = {}; gt = {}; plotConnections = [1 1 1];
@@ -971,10 +970,10 @@ function updateUI
     
     if ~isempty(groups2plot2) && GroupVal >1
         if ColorVal ~= 2
-            subset2 = find(ismember(plotClas11,groups2plot2));
-            plotClas = plotClas11;
+            subset2 = find(ismember(UI.classes.plot11,groups2plot2));
+            UI.classes.plot = UI.classes.plot11;
         else
-            subset2 = find(ismember(plotClas2,groups2plot2));
+            subset2 = find(ismember(UI.classes.plot2,groups2plot2));
         end
         UI.params.subset = intersect(UI.params.subset,subset2);
     end
@@ -992,41 +991,42 @@ function updateUI
                 load('brainRegions_relational_tree.mat','relational_tree');
             end
             kk = 1;
-            idx = find(relational_tree.graph_depth == 4);
+            idx = find(relational_tree.graph_depth == UI.preferences.graph_depth);
             brainRegionsLevel1 = relational_tree.acronyms(idx);
             UI.params.brainRegionsLevel = {};
-            plotClas = ones(1,length(plotClas));
+            UI.classes.plotBrainRegions = ones(1,length(UI.classes.plot));
             for i = 1:numel(brainRegionsLevel1)
                 acronym_out = getBrainRegionChildren(brainRegionsLevel1{i},relational_tree);
                 idx2 = ismember(lower(cell_metrics.brainRegion(UI.params.subset)),lower([acronym_out,brainRegionsLevel1{i}]));
                 if any(idx2)
-                    plotClas(UI.params.subset(idx2)) = kk;
+                    UI.classes.plotBrainRegions(UI.params.subset(idx2)) = kk;
                     UI.params.brainRegionsLevel{kk} = brainRegionsLevel1{i};
                     kk = kk + 1;
                 end
             end
         end
-        classes2plotSubset = unique(plotClas(UI.params.subset));
-        plotClasGroups = UI.params.brainRegionsLevel(unique(plotClas(UI.params.subset)));
+        classes2plotSubset = unique(UI.classes.plot(UI.params.subset));
+        UI.classes.plot = UI.classes.plotBrainRegions;
+        UI.classes.labels = UI.params.brainRegionsLevel(unique(UI.classes.plot(UI.params.subset)));
         UI.params.subset_pre = UI.params.subset;
     elseif ColorVal == 4 % Compare to rest
-        plotClas = ones(1,length(plotClas));
-        plotClas(UI.params.subset) = 2;
-        UI.params.subset = 1:length(plotClas);
-        classes2plotSubset = unique(plotClas);
-        plotClasGroups = {'Other cells','Selected cells'};
+        UI.classes.plot = ones(1,length(UI.classes.plot));
+        UI.classes.plot(UI.params.subset) = 2;
+        UI.params.subset = 1:length(UI.classes.plot);
+        classes2plotSubset = unique(UI.classes.plot);
+        UI.classes.labels = {'Other cells','Selected cells'};
     elseif ColorVal == 3 % Single group
-        plotClas(1:numel(plotClas)) = 1;
-        classes2plotSubset = unique(plotClas);
-        plotClasGroups = {'Selected cells'};
+        UI.classes.plot(1:numel(UI.classes.plot)) = 1;
+        classes2plotSubset = unique(UI.classes.plot);
+        UI.classes.labels = {'Selected cells'};
     elseif ColorVal == 2 % Cell type color groups
-        classes2plotSubset = intersect(plotClas(UI.params.subset),classes2plot);
+        classes2plotSubset = intersect(UI.classes.plot(UI.params.subset),classes2plot);
     elseif ColorVal == 1  % Regular grouping
         if GroupVal == 1
             groups2plot = classes2plot;
-            classes2plotSubset = unique(plotClas);
+            classes2plotSubset = unique(UI.classes.plot);
         end
-        classes2plotSubset = intersect(plotClas(UI.params.subset),groups2plot);
+        classes2plotSubset = intersect(UI.classes.plot(UI.params.subset),groups2plot);
     end
     
     % Defining synaptic connections
@@ -1056,21 +1056,21 @@ function updateUI
     
     % Group display definition
     if ColorVal > 2 && ColorVal < 5
-        clr_groups = UI.preferences.cellTypeColors(intersect(classes2plotSubset,plotClas(UI.params.subset)),:);
+        UI.classes.colors = UI.preferences.cellTypeColors(intersect(classes2plotSubset,UI.classes.plot(UI.params.subset)),:);
     elseif  ColorVal == 2 || (GroupVal == 1 && ColorVal < 5)
-        clr_groups = UI.preferences.cellTypeColors(intersect(classes2plot,plotClas(UI.params.subset)),:);
+        UI.classes.colors = UI.preferences.cellTypeColors(intersect(classes2plot,UI.classes.plot(UI.params.subset)),:);
     else
-        clr_groups = hsv(length(nanUnique(plotClas(UI.params.subset))))*0.8;
-        if isnan(clr_groups)
-            clr_groups = UI.preferences.cellTypeColors(1,:);
+        UI.classes.colors = hsv(length(nanUnique(UI.classes.plot(UI.params.subset))))*0.8;
+        if isnan(UI.classes.colors)
+            UI.classes.colors = UI.preferences.cellTypeColors(1,:);
         end
     end
     % Ground truth and reference data colors
     if ~strcmp(UI.preferences.referenceData, 'None')
-        clr_groups2 = UI.preferences.cellTypeColors(intersect(referenceData.clusClas,referenceData.selection),:);
+        UI.classes.colors2 = UI.preferences.cellTypeColors(intersect(referenceData.clusClas,referenceData.selection),:);
     end
     if ~strcmp(UI.preferences.groundTruthData, 'None')
-        clr_groups3 = UI.preferences.groundTruthColors(intersect(groundTruthData.clusClas,groundTruthData.selection),:);
+        UI.classes.colors3 = UI.preferences.groundTruthColors(intersect(groundTruthData.clusClas,groundTruthData.selection),:);
     end
     
     % Updating table for selected cell
@@ -1191,7 +1191,7 @@ function updateUI
         % Reference data
         if strcmp(UI.preferences.referenceData, 'Points') && ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,UI.plot.xTitle) && isfield(reference_cell_metrics,UI.plot.yTitle)
             idx = find(ismember(referenceData.clusClas,referenceData.selection));
-            ce_gscatter(reference_cell_metrics.(UI.plot.xTitle)(idx), reference_cell_metrics.(UI.plot.yTitle)(idx), referenceData.clusClas(idx), clr_groups2,8,'x');
+            ce_gscatter(reference_cell_metrics.(UI.plot.xTitle)(idx), reference_cell_metrics.(UI.plot.yTitle)(idx), referenceData.clusClas(idx), UI.classes.colors2,8,'x');
         elseif strcmp(UI.preferences.referenceData, 'Image') && ~isempty(reference_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(reference_cell_metrics,UI.plot.xTitle) && isfield(reference_cell_metrics,UI.plot.yTitle)
             if ~exist('referenceData1','var') || ~isfield(referenceData1,'z') || ~strcmp(referenceData1.x_field,UI.plot.xTitle) || ~strcmp(referenceData1.y_field,UI.plot.yTitle) || referenceData1.x_log ~= UI.checkbox.logx.Value || referenceData1.y_log ~= UI.checkbox.logy.Value || ~strcmp(referenceData1.plotType, 'Image')
                 if UI.checkbox.logx.Value == 1
@@ -1246,7 +1246,7 @@ function updateUI
             % Ground truth data
             if strcmp(UI.preferences.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
-                ce_gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), clr_groups3,8,'o');
+                ce_gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), UI.classes.colors3,8,'o');
             elseif strcmp(UI.preferences.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 if ~exist('groundTruthData1','var') || ~isfield(groundTruthData1,'z') || ~strcmp(groundTruthData1.x_field,UI.plot.xTitle) || ~strcmp(groundTruthData1.y_field,UI.plot.yTitle) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
                     
@@ -1371,9 +1371,9 @@ function updateUI
 %                 subfig_ax(1).YLabel.String = UI.plot.yTitle(1:end-4); 
                 subfig_ax(1).YLabel.Interpreter = 'none';
             end
-            if length(unique(plotClas(UI.params.subset)))==2
+            if length(unique(UI.classes.plot(UI.params.subset)))==2
 %                 G1 = plotX(UI.params.subset);
-                G = findgroups(plotClas(UI.params.subset));
+                G = findgroups(UI.classes.plot(UI.params.subset));
                 if ~isempty(UI.params.subset(G==1)) && ~isempty(UI.params.subset(G==2))
                     if ~all(plotX(UI.params.subset(G==1))) && ~all(plotX(UI.params.subset(G==2)))
                         [h,p] = kstest2(plotX(UI.params.subset(G==1)),plotX(UI.params.subset(G==2)));
@@ -1402,10 +1402,10 @@ function updateUI
             xlim12 = ylim;
             
         if UI.preferences.customPlotHistograms == 2
-            plotClas_subset = plotClas(UI.params.subset);
+            plotClas_subset = UI.classes.plot(UI.params.subset);
             ids = nanUnique(plotClas_subset);
             
-            for m = 1:length(unique(plotClas(UI.params.subset)))
+            for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
                 temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
                 idx = find(plotClas_subset==ids(m));
                 if length(temp1)>1
@@ -1415,13 +1415,13 @@ function updateUI
                         if ~all(isnan(X1))
                             [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
                             Xi = 10.^Xi;
-                            area(Xi, f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(2)); hold on
+                            area(Xi, f/max(f), 'FaceColor', UI.classes.colors(m,:), 'EdgeColor', UI.classes.colors(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(2)); hold on
                         end
                     else
                         X1 = X1(~isinf(X1) & ~isnan(X1));
                         if ~isempty(X1)
                             [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
-                            area(Xi, f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(2)); hold on
+                            area(Xi, f/max(f), 'FaceColor', UI.classes.colors(m,:), 'EdgeColor', UI.classes.colors(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(2)); hold on
                         end
                     end
                 end
@@ -1431,7 +1431,7 @@ function updateUI
             end
             xlim(h_scatter(2), xlim11)
             
-            for m = 1:length(unique(plotClas(UI.params.subset)))
+            for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
                 temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
                 idx = find(plotClas_subset==ids(m));
                 if length(temp1)>1
@@ -1442,13 +1442,13 @@ function updateUI
                         if ~all(isnan(X1))
                             [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
                             Xi = 10.^Xi;
-                            area(Xi,f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(3)); hold on
+                            area(Xi,f/max(f), 'FaceColor', UI.classes.colors(m,:), 'EdgeColor', UI.classes.colors(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(3)); hold on
                         end
                     else
                         X1 = X1(~isinf(X1) & ~isnan(X1));
                         if ~isempty(X1)
                             [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
-                            area(Xi,f/max(f), 'FaceColor', clr_groups(m,:), 'EdgeColor', clr_groups(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(3)); hold on
+                            area(Xi,f/max(f), 'FaceColor', UI.classes.colors(m,:), 'EdgeColor', UI.classes.colors(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(3)); hold on
                         end
                     end
                 end
@@ -1488,7 +1488,7 @@ function updateUI
                     else
                         legendScatter2 = line(10.^(groundTruthData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
                     end
-                    set(legendScatter2, {'color'}, num2cell(clr_groups3,2));
+                    set(legendScatter2, {'color'}, num2cell(UI.classes.colors3,2));
                 end
                 
                 if ~any(isnan(groundTruthData1.y)) || ~any(isinf(groundTruthData1.y))
@@ -1501,7 +1501,7 @@ function updateUI
                     else
                         legendScatter22 = line(10.^(groundTruthData1.y),line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
                     end
-                    set(legendScatter22, {'color'}, num2cell(clr_groups3,2));
+                    set(legendScatter22, {'color'}, num2cell(UI.classes.colors3,2));
                 end
         end
     if strcmp(UI.preferences.referenceData, 'Histogram') && ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,UI.plot.xTitle) && isfield(reference_cell_metrics,UI.plot.yTitle)
@@ -1551,7 +1551,7 @@ function updateUI
                 else
                     legendScatter2 = line(10.^(referenceData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
                 end
-                set(legendScatter2, {'color'}, num2cell(clr_groups2,2));
+                set(legendScatter2, {'color'}, num2cell(UI.classes.colors2,2));
             end
             
             if ~any(isnan(referenceData1.y)) || ~any(isinf(referenceData1.y))
@@ -1564,7 +1564,7 @@ function updateUI
                 else
                     legendScatter22 = line(10.^(referenceData1.y),line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
                 end
-                set(legendScatter22, {'color'}, num2cell(clr_groups2,2));
+                set(legendScatter22, {'color'}, num2cell(UI.classes.colors2,2));
             end
             xlim(h_scatter(2), xlim11)
             xlim(h_scatter(3), xlim12)
@@ -1602,9 +1602,9 @@ function updateUI
         else
             markerSize = 10+ceil(rescale_vector(plotMarkerSize(UI.params.subset))*80*UI.preferences.markerSize/15);
         end
-        [~, ~,ic] = unique(plotClas(UI.params.subset));
+        [~, ~,ic] = unique(UI.classes.plot(UI.params.subset));
 
-        markerColor = clr_groups(ic,:);
+        markerColor = UI.classes.colors(ic,:);
         legendScatter = scatter3(plotX(UI.params.subset), plotY(UI.params.subset), plotZ(UI.params.subset),markerSize,markerColor,'filled', 'HitTest','off','MarkerFaceAlpha',.7);
         if UI.preferences.displayExcitatory && ~isempty(UI.cells.excitatory_subset)
             line(plotX(UI.cells.excitatory_subset), plotY(UI.cells.excitatory_subset), plotZ(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color','k', 'HitTest','off')
@@ -1710,7 +1710,7 @@ function updateUI
     elseif UI.preferences.customPlotHistograms == 4
         % Rain cloud plot
         
-        if ~isempty(clr_groups)
+        if ~isempty(UI.classes.colors)
             subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); subfig_ax(1).XLabel.Interpreter = 'tex';
             set(subfig_ax(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
             xlim auto, ylim manual, zlim auto
@@ -1722,19 +1722,19 @@ function updateUI
             else
                 set(subfig_ax(1), 'XScale', 'linear')
             end
-            if size(clr_groups,1)>=10
+            if size(UI.classes.colors,1)>=10
                 box_on = 0; % No box plots
             else
                 box_on = 1; % No box plots
             end
             counter = 1; % For aligning scatter data
-            plotClas_subset = plotClas(UI.params.subset);
+            plotClas_subset = UI.classes.plot(UI.params.subset);
             ids = nanUnique(plotClas_subset);
             ids_count = histc(plotClas_subset, ids);
             drops_y_pos = {};
             drops_idx = {};
             ylim([-length(ids_count)/5,1])
-            for m = 1:length(unique(plotClas(UI.params.subset)))
+            for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
                 temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
                 idx = find(plotClas_subset==ids(m));
                 if length(temp1)>1
@@ -1743,7 +1743,7 @@ function updateUI
                     else
                         drops_idx{m} = UI.params.subset(idx((~isnan(plotX(temp1)) & plotX(temp1) > 0 & ~isinf(plotX(temp1)))));
                     end
-                    drops_y_pos{m} = ce_raincloud_plot(plotX(temp1),'randomNumbers',UI.params.randomNumbers(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',clr_groups(m,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',clr_groups(m,:),'box_col_match',1,'log_axis',UI.checkbox.logx.Value,'markerSize',UI.preferences.markerSize,'normalization',UI.preferences.rainCloudNormalization,'norm_value',max(ids_count));
+                    drops_y_pos{m} = ce_raincloud_plot(plotX(temp1),'randomNumbers',UI.params.randomNumbers(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',UI.classes.colors(m,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',UI.classes.colors(m,:),'box_col_match',1,'log_axis',UI.checkbox.logx.Value,'markerSize',UI.preferences.markerSize,'normalization',UI.preferences.rainCloudNormalization,'norm_value',max(ids_count));
                     counter = counter + 1;
                 end
             end
@@ -1823,7 +1823,7 @@ function updateUI
         % Reference data
         if strcmp(UI.preferences.referenceData, 'Points') && ~isempty(reference_cell_metrics)
             idx = find(ismember(referenceData.clusClas,referenceData.selection));
-            ce_gscatter(reference_cell_metrics.troughToPeak(idx) * 1000, reference_cell_metrics.burstIndex_Royer2012(idx), referenceData.clusClas(idx), clr_groups2,8,'x');
+            ce_gscatter(reference_cell_metrics.troughToPeak(idx) * 1000, reference_cell_metrics.burstIndex_Royer2012(idx), referenceData.clusClas(idx), UI.classes.colors2,8,'x');
         elseif strcmp(UI.preferences.referenceData, 'Image') && ~isempty(reference_cell_metrics)
             yyaxis left
             set(subfig_ax(2), 'YScale', 'linear');
@@ -1836,7 +1836,7 @@ function updateUI
         % Ground truth data
         if strcmp(UI.preferences.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics)
             idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
-            ce_gscatter(groundTruth_cell_metrics.troughToPeak(idx) * 1000, groundTruth_cell_metrics.burstIndex_Royer2012(idx), groundTruthData.clusClas(idx), clr_groups3,8,'x');
+            ce_gscatter(groundTruth_cell_metrics.troughToPeak(idx) * 1000, groundTruth_cell_metrics.burstIndex_Royer2012(idx), groundTruthData.clusClas(idx), UI.classes.colors3,8,'x');
         elseif strcmp(UI.preferences.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics)
             yyaxis left
             groundTruthData.image = 1-sum(groundTruthData.z(:,:,:,groundTruthData.selection),4);
@@ -1879,9 +1879,9 @@ function updateUI
 %             figure
             legendScatter2 = line(groundTruthData.x,10.^(line_histograms_X./max(line_histograms_X)*diff(log10(ylim21))*0.15+log10(ylim21(1))),'LineStyle','-','linewidth',1,'HitTest','off');
 %             legendScatter2 = line(groundTruthData.x,log10(ylim21(1))+diff(log10(ylim21))*0.15*line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off');
-            set(legendScatter2, {'color'}, num2cell(clr_groups3,2),'Marker','none');
+            set(legendScatter2, {'color'}, num2cell(UI.classes.colors3,2),'Marker','none');
             legendScatter22 = line(xlim21(1)+100*line_histograms_Y./max(line_histograms_Y),10.^(groundTruthData.y1'*ones(1,length(clusClas_list))),'LineStyle','-','linewidth',1,'HitTest','off');
-            set(legendScatter22, {'color'}, num2cell(clr_groups3,2),'Marker','none');
+            set(legendScatter22, {'color'}, num2cell(UI.classes.colors3,2),'Marker','none');
             xlim(xlim21), ylim((ylim21))
             yyaxis left, hold on
         elseif strcmp(UI.preferences.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics)
@@ -1903,9 +1903,9 @@ function updateUI
             subfig_ax(2).YAxis(1).Color = 'k'; 
             subfig_ax(2).YAxis(2).Color = 'k';
             legendScatter2 = line(referenceData.x,10.^(line_histograms_X./max(line_histograms_X)*diff(log10(ylim21))*0.15+log10(ylim21(1))),'LineStyle','-','linewidth',1,'HitTest','off'); 
-            set(legendScatter2, {'color'}, num2cell(clr_groups2,2));
+            set(legendScatter2, {'color'}, num2cell(UI.classes.colors2,2));
             legendScatter22 = line(xlim21(1)+100*line_histograms_Y./max(line_histograms_Y),10.^(referenceData.y1'*ones(1,length(clusClas_list))),'LineStyle','-','linewidth',1,'HitTest','off');
-            set(legendScatter22, {'color'}, num2cell(clr_groups2,2));
+            set(legendScatter22, {'color'}, num2cell(UI.classes.colors2,2));
             xlim(xlim21), ylim((ylim21))
             yyaxis left, hold on
         elseif strcmp(UI.preferences.referenceData, 'Image') && ~isempty(reference_cell_metrics)
@@ -2013,14 +2013,14 @@ end
         
         % Determinig the plot color
         if ColorVal == 2 || (GroupVal == 1 && ColorVal < 5)
-            col = UI.preferences.cellTypeColors(plotClas(ii),:);
+            col = UI.preferences.cellTypeColors(UI.classes.plot(ii),:);
         else
-            if isnan(clr_groups)
-                col = clr_groups;
+            if isnan(UI.classes.colors)
+                col = UI.classes.colors;
             else
-                temp = find(nanUnique(plotClas(UI.params.subset))==plotClas(ii));
-                if temp <= size(clr_groups,1)
-                    col = clr_groups(temp,:);
+                temp = find(nanUnique(UI.classes.plot(UI.params.subset))==UI.classes.plot(ii));
+                if temp <= size(UI.classes.colors,1)
+                    col = UI.classes.colors(temp,:);
                 else
                     col = [0.3,0.3,0.3];
                 end
@@ -2032,7 +2032,6 @@ end
         
         axis tight, hold on
         if any(strcmp(customPlotSelection,customPlotOptions))
-            
             subsetPlots = customPlots.(customPlotSelection)(cell_metrics,UI,ii,col);
             
         elseif strcmp(customPlotSelection,'Waveforms (single)')
@@ -2099,10 +2098,10 @@ end
                 plotSubset = UI.params.subset;
             end
             for k = 1:length(classes2plotSubset)
-                set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                 xdata = repmat([cell_metrics.waveforms.time_zscored,nan(1,1)],length(set1),1)';
                 ydata = [cell_metrics.waveforms.(zscoreWaveforms1)(:,set1);nan(1,length(set1))];
-                line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
             end
             
             % selected cell in black
@@ -2199,8 +2198,8 @@ end
                     subset1 = UI.params.subset;
             end
             for k = 1:length(classes2plotSubset)
-                set1 = intersect(find(plotClas==classes2plotSubset(k)), subset1);
-                line(cell_metrics.trilat_x(set1),cell_metrics.trilat_y(set1),'Marker','.','LineStyle','none', 'color', [clr_groups(k,:),0.2],'markersize',UI.preferences.markerSize,'HitTest','off'), hold on
+                set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), subset1);
+                line(cell_metrics.trilat_x(set1),cell_metrics.trilat_y(set1),'Marker','.','LineStyle','none', 'color', [UI.classes.colors(k,:),0.2],'markersize',UI.preferences.markerSize,'HitTest','off'), hold on
             end
             
             % Plots putative connections
@@ -2233,8 +2232,8 @@ end
                     subset1 = UI.params.subset;
             end
             for k = 1:length(classes2plotSubset)
-                set1 = intersect(find(plotClas==classes2plotSubset(k)), subset1);
-                line(cell_metrics.ccf_x(set1),cell_metrics.ccf_z(set1),cell_metrics.ccf_y(set1),'Marker','.','LineStyle','none', 'color', [clr_groups(k,:),0.2],'markersize',UI.preferences.markerSize,'HitTest','off')
+                set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), subset1);
+                line(cell_metrics.ccf_x(set1),cell_metrics.ccf_z(set1),cell_metrics.ccf_y(set1),'Marker','.','LineStyle','none', 'color', [UI.classes.colors(k,:),0.2],'markersize',UI.preferences.markerSize,'HitTest','off')
             end
 
             if exist('plotAllenBrainGrid.m','file')
@@ -2308,10 +2307,10 @@ end
                 plotAxes.YLabel.String =  ['Raw waveforms (',char(181),'V)'];
             end
             for k = 1:length(classes2plotSubset)
-                set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                 xdata = repmat([cell_metrics.waveforms.time_zscored,nan(1,1)],length(set1),1)';
                 ydata = [cell_metrics.waveforms.(zscoreWaveforms1)(:,set1);nan(1,length(set1))];
-                line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
             end
             
             % selected cell in black
@@ -2327,8 +2326,8 @@ end
             plotAxes.XLabel.String = '';
             plotAxes.YLabel.String = '';
             plotAxes.Title.String = customPlotSelection;
-            ce_gscatter(tSNE_metrics.filtWaveform(UI.params.subset,1), tSNE_metrics.filtWaveform(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,20,'.');
-%             legendScatter4 = gscatter(tSNE_metrics.filtWaveform(UI.params.subset,1), tSNE_metrics.filtWaveform(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,'',20,'off');
+            ce_gscatter(tSNE_metrics.filtWaveform(UI.params.subset,1), tSNE_metrics.filtWaveform(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
+%             legendScatter4 = gscatter(tSNE_metrics.filtWaveform(UI.params.subset,1), tSNE_metrics.filtWaveform(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
 %             set(legendScatter4,'HitTest','off')
             % selected cell highlighted with black cross
             line(tSNE_metrics.filtWaveform(ii,1), tSNE_metrics.filtWaveform(ii,2),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22,'HitTest','off');
@@ -2339,8 +2338,8 @@ end
             plotAxes.XLabel.String = '';
             plotAxes.YLabel.String = '';
             plotAxes.Title.String = customPlotSelection;
-            ce_gscatter(tSNE_metrics.rawWaveform(UI.params.subset,1), tSNE_metrics.rawWaveform(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,20,'.');
-%             legendScatter4 = gscatter(tSNE_metrics.rawWaveform(UI.params.subset,1), tSNE_metrics.rawWaveform(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,'',20,'off');
+            ce_gscatter(tSNE_metrics.rawWaveform(UI.params.subset,1), tSNE_metrics.rawWaveform(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
+%             legendScatter4 = gscatter(tSNE_metrics.rawWaveform(UI.params.subset,1), tSNE_metrics.rawWaveform(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
 %             set(legendScatter4,'HitTest','off')
             % selected cell highlighted with black cross
             line(tSNE_metrics.rawWaveform(ii,1), tSNE_metrics.rawWaveform(ii,2),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22,'HitTest','off');
@@ -2380,14 +2379,14 @@ end
                 connectivityGraph1 = connectivityGraph;
                 connectivityGraph1 = rmedge(connectivityGraph1,Y(1:size(putativeConnections_subset,1),1),Y(1:size(putativeConnections_subset,1),2));
             end
-            connectivityGraph_plot = plot(connectivityGraph,'Layout','force','Iterations',15,'MarkerSize',3,'NodeCData',plotClas(putativeSubset1)','EdgeCData',connectivityGraph.Edges.Weight,'HitTest','off','EdgeColor',[0.2 0.2 0.2],'NodeColor','k','NodeLabel',{}); %
+            connectivityGraph_plot = plot(connectivityGraph,'Layout','force','Iterations',15,'MarkerSize',3,'NodeCData',UI.classes.plot(putativeSubset1)','EdgeCData',connectivityGraph.Edges.Weight,'HitTest','off','EdgeColor',[0.2 0.2 0.2],'NodeColor','k','NodeLabel',{}); %
             subsetPlots.xaxis = connectivityGraph_plot.XData;
             subsetPlots.yaxis = connectivityGraph_plot.YData;
             subsetPlots.subset = putativeSubset1;
             subsetPlots.type = 'points';  % points, curves, image
             
             for k = 1:length(classes2plotSubset)
-                highlight(connectivityGraph_plot,find(plotClas(putativeSubset1)==classes2plotSubset(k)),'NodeColor',clr_groups(k,:))
+                highlight(connectivityGraph_plot,find(UI.classes.plot(putativeSubset1)==classes2plotSubset(k)),'NodeColor',UI.classes.colors(k,:))
             end
             if UI.preferences.plotInhibitoryConnections && ~isempty(putativeConnections_subset)
                 highlight(connectivityGraph_plot,connectivityGraph1,'EdgeColor','b')
@@ -2498,10 +2497,10 @@ end
                 plotSubset = UI.params.subset;
             end
             for k = 1:length(classes2plotSubset)
-                set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                 xdata = repmat([subsetPlots.xaxis,nan(1,1)],length(set1),1)';
                 ydata = [meanCCG(:,set1);nan(1,length(set1))];
-                line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
             end
             % Selected cell in black
             if highlightCurrentCell
@@ -2671,7 +2670,7 @@ end
             end
             if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10') && ~isempty(classes2plotSubset)
                 for k = 1:length(classes2plotSubset)
-                    set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                     xdata = repmat([general.isis.log10',nan(1,1)],length(set1),1)';
                     if strcmp(UI.preferences.isiNormalization,'Rate')
                         ydata = [cell_metrics.isi.log10(:,set1);nan(1,length(set1))];
@@ -2690,7 +2689,7 @@ end
                         plotAxes.XLabel.String = 'Time (sec)';
                         plotAxes.YLabel.String = 'Occurrence';
                     end
-                    line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                    line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
                 end
                 if highlightCurrentCell
                     if strcmp(UI.preferences.isiNormalization,'Rate')
@@ -2716,10 +2715,10 @@ end
             end
             if strcmp(UI.preferences.acgType,'Normal')
                 for k = 1:length(classes2plotSubset)
-                    set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                     xdata = repmat([[-100:100]/2,nan(1,1)],length(set1),1)';
                     ydata = [cell_metrics.acg.narrow(:,set1);nan(1,length(set1))];
-                    line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                    line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
                 end
                 if highlightCurrentCell
                     line([-100:100]/2,cell_metrics.acg.narrow(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
@@ -2728,10 +2727,10 @@ end
                 plotAxes.XLabel.String = 'Time (ms)';
             elseif strcmp(UI.preferences.acgType,'Narrow')
                 for k = 1:length(classes2plotSubset)
-                    set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                     xdata = repmat([[-30:30]/2,nan(1,1)],length(set1),1)';
                     ydata = [cell_metrics.acg.narrow(41+30:end-40-30,set1);nan(1,length(set1))];
-                    line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                    line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
                 end
                 if highlightCurrentCell
                     line([-30:30]/2,cell_metrics.acg.narrow(41+30:end-40-30,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
@@ -2741,10 +2740,10 @@ end
             elseif strcmp(UI.preferences.acgType,'Log10')
                 if UI.preferences.acgYaxisLog == 1
                     for k = 1:length(classes2plotSubset)
-                        set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                        set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                         xdata = repmat([general.acgs.log10',nan(1,1)],length(set1),1)';
                         ydata = [cell_metrics.acg.log10(:,set1);nan(1,length(set1))]; % .*general.acgs.log10
-                        line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                        line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
                     end
                     if highlightCurrentCell
                         line(general.acgs.log10,cell_metrics.acg.log10(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off') % .*general.acgs.log10
@@ -2752,10 +2751,10 @@ end
 %                     set(gca, 'YScale', 'log')
                 else
                     for k = 1:length(classes2plotSubset)
-                        set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                        set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                         xdata = repmat([general.acgs.log10',nan(1,1)],length(set1),1)';
                         ydata = [cell_metrics.acg.log10(:,set1);nan(1,length(set1))];
-                        line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                        line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
                     end
                     if highlightCurrentCell
                         line(general.acgs.log10,cell_metrics.acg.log10(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
@@ -2765,10 +2764,10 @@ end
                 plotAxes.XLabel.String = 'Time (sec)';
             else
                 for k = 1:length(classes2plotSubset)
-                    set1 = intersect(find(plotClas==classes2plotSubset(k)), plotSubset);
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                     xdata = repmat([[-500:500],nan(1,1)],length(set1),1)';
                     ydata = [cell_metrics.acg.wide(:,set1);nan(1,length(set1))];
-                    line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.2],'HitTest','off')
+                    line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
                 end
                 if highlightCurrentCell
                     line([-500:500],cell_metrics.acg.wide(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
@@ -2849,8 +2848,8 @@ end
             plotAxes.YLabel.String = '';
             plotAxes.XLabel.String = '';
             plotAxes.Title.String = customPlotSelection;
-            ce_gscatter(tSNE_metrics.acg_narrow(UI.params.subset,1), tSNE_metrics.acg_narrow(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,20,'.');
-%             legendScatter5 = gscatter(tSNE_metrics.acg_narrow(UI.params.subset,1), tSNE_metrics.acg_narrow(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,'',20,'off');
+            ce_gscatter(tSNE_metrics.acg_narrow(UI.params.subset,1), tSNE_metrics.acg_narrow(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
+%             legendScatter5 = gscatter(tSNE_metrics.acg_narrow(UI.params.subset,1), tSNE_metrics.acg_narrow(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
 %             set(legendScatter5,'HitTest','off'), axis tight
             % selected cell highlighted with black cross
             line(tSNE_metrics.acg_narrow(ii,1), tSNE_metrics.acg_narrow(ii,2),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
@@ -2861,9 +2860,9 @@ end
             plotAxes.YLabel.String = '';
             plotAxes.XLabel.String = '';
             plotAxes.Title.String = customPlotSelection;
-            if ~isempty(clr_groups)
-                ce_gscatter(tSNE_metrics.acg_wide(UI.params.subset,1), tSNE_metrics.acg_wide(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,20,'.');
-%                 legendScatter5 = gscatter(tSNE_metrics.acg_wide(UI.params.subset,1), tSNE_metrics.acg_wide(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,'',20,'off');
+            if ~isempty(UI.classes.colors)
+                ce_gscatter(tSNE_metrics.acg_wide(UI.params.subset,1), tSNE_metrics.acg_wide(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
+%                 legendScatter5 = gscatter(tSNE_metrics.acg_wide(UI.params.subset,1), tSNE_metrics.acg_wide(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
 %                 set(legendScatter5,'HitTest','off')
             end
             axis tight
@@ -2875,9 +2874,9 @@ end
             plotAxes.YLabel.String = '';
             plotAxes.XLabel.String = '';
             plotAxes.Title.String = customPlotSelection;
-            if ~isempty(clr_groups)
-                ce_gscatter(tSNE_metrics.acg_log10(UI.params.subset,1), tSNE_metrics.acg_log10(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,20,'.');
-%                 legendScatter5 = gscatter(tSNE_metrics.acg_log10(UI.params.subset,1), tSNE_metrics.acg_log10(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,'',20,'off');
+            if ~isempty(UI.classes.colors)
+                ce_gscatter(tSNE_metrics.acg_log10(UI.params.subset,1), tSNE_metrics.acg_log10(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
+%                 legendScatter5 = gscatter(tSNE_metrics.acg_log10(UI.params.subset,1), tSNE_metrics.acg_log10(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
 %                 set(legendScatter5,'HitTest','off')
             end
             axis tight
@@ -2889,9 +2888,9 @@ end
             plotAxes.YLabel.String = '';
             plotAxes.XLabel.String = '';
             plotAxes.Title.String = customPlotSelection;
-            if ~isempty(clr_groups)
-                ce_gscatter(tSNE_metrics.isi_log10(UI.params.subset,1), tSNE_metrics.isi_log10(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,20,'.');
-%                 legendScatter5 = gscatter(tSNE_metrics.isi_log10(UI.params.subset,1), tSNE_metrics.isi_log10(UI.params.subset,2), plotClas(UI.params.subset), clr_groups,'',20,'off');
+            if ~isempty(UI.classes.colors)
+                ce_gscatter(tSNE_metrics.isi_log10(UI.params.subset,1), tSNE_metrics.isi_log10(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
+%                 legendScatter5 = gscatter(tSNE_metrics.isi_log10(UI.params.subset,1), tSNE_metrics.isi_log10(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
 %                 set(legendScatter5,'HitTest','off')
             end
             axis tight
@@ -3198,10 +3197,10 @@ end
                 end
                 
                 for k = 1:length(classes2plotSubset)
-                    set1 = intersect(find(plotClas==classes2plotSubset(k)), subset222);
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), subset222);
                     xdata = repmat([Xdata,nan(1,1)],length(set1),1)';
                     ydata = [horzcat(cell_metrics.responseCurves.(responseCurvesName){set1});nan(1,length(set1))];
-                    line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.5],'HitTest','off')
+                    line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.5],'HitTest','off')
                 end
                 
                 Zdata = horzcat(cell_metrics.responseCurves.(responseCurvesName){subset222});
@@ -3282,10 +3281,10 @@ end
             plotAxes.Title.String = responseCurvesName;
             % All responseCurves colored according to cell type
             for k = 1:length(classes2plotSubset)
-                set1 = intersect(find(plotClas==classes2plotSubset(k)), UI.params.subset);
+                set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), UI.params.subset);
                 xdata = repmat([UI.x_bins.thetaPhase,nan(1,1)],length(set1),1)';
                 ydata = [cell_metrics.responseCurves.thetaPhase_zscored(:,set1);nan(1,length(set1))];
-                line(xdata(:),ydata(:), 'color', [clr_groups(k,:),0.5],'HitTest','off')
+                line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.5],'HitTest','off')
             end
             % selected cell in black
             if highlightCurrentCell
@@ -3667,8 +3666,8 @@ end
     
     
     function plotGroupData(plotX1,plotY1,plotConnections1,highlightCurrentCell)
-        if ~isempty(clr_groups)
-            ce_gscatter(plotX1(UI.params.subset), plotY1(UI.params.subset), plotClas(UI.params.subset), clr_groups,UI.preferences.markerSize,'.');
+        if ~isempty(UI.classes.colors)
+            ce_gscatter(plotX1(UI.params.subset), plotY1(UI.params.subset), UI.classes.plot(UI.params.subset), UI.classes.colors,UI.preferences.markerSize,'.');
         end
         if UI.preferences.displayExcitatory && ~isempty(UI.cells.excitatory_subset)
             line(plotX1(UI.cells.excitatory_subset), plotY1(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color','k','HitTest','off')
@@ -3717,8 +3716,8 @@ end
     end
 
     function plotGroupScatter(plotX1,plotY1)
-        if ~isempty(clr_groups)
-            ce_gscatter(plotX1(UI.params.subset), plotY1(UI.params.subset), plotClas(UI.params.subset), clr_groups,UI.preferences.markerSize,'.');
+        if ~isempty(UI.classes.colors)
+            ce_gscatter(plotX1(UI.params.subset), plotY1(UI.params.subset), UI.classes.plot(UI.params.subset), UI.classes.colors,UI.preferences.markerSize,'.');
         end
         if UI.preferences.displayExcitatory && ~isempty(UI.cells.excitatory_subset)
             line(plotX1(UI.cells.excitatory_subset), plotY1(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color','k', 'HitTest','off')
@@ -3842,7 +3841,7 @@ end
     end
     
     function plotLinearFits(plotX,plotY)
-        plotClas_subset = plotClas(UI.params.subset);
+        plotClas_subset = UI.classes.plot(UI.params.subset);
         ids = nanUnique(plotClas_subset);
         xlim11 = xlim;
         xlim12 = ylim;
@@ -3857,7 +3856,7 @@ end
             Y1 = plotY;
         end
         textconcat = {};
-        for m = 1:length(unique(plotClas(UI.params.subset)))
+        for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
             temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
             idx = find(plotClas_subset==ids(m));
             fitEnds = [nanmin(X1(temp1)),nanmax(X1(temp1))];
@@ -3878,9 +3877,9 @@ end
                 else
                     p1_text = '';
                 end
-                line(fitEnds,yfit,'color',clr_groups(m,:), 'LineWidth', 1.5, 'HitTest','off');
-                textconcat(m) = {['\bf\color[rgb]{',num2str(clr_groups(m,:)),'} r = ' num2str(r(2,1)), p1_text]};
-%                 text(0.02,1.02-0.04*m,['r = ' num2str(r(2,1)), p1_text],'Color',clr_groups(m,:),'BackgroundColor',[1 1 1 0.8],'margin',1,'FontWeight','bold', 'HitTest','off','Units','normalized')
+                line(fitEnds,yfit,'color',UI.classes.colors(m,:), 'LineWidth', 1.5, 'HitTest','off');
+                textconcat(m) = {['\bf\color[rgb]{',num2str(UI.classes.colors(m,:)),'} r = ' num2str(r(2,1)), p1_text]};
+%                 text(0.02,1.02-0.04*m,['r = ' num2str(r(2,1)), p1_text],'Color',UI.classes.colors(m,:),'BackgroundColor',[1 1 1 0.8],'margin',1,'FontWeight','bold', 'HitTest','off','Units','normalized')
             end
         end
         text(0.02,0.98,textconcat,'BackgroundColor',[1 1 1 0.8],'margin',0.1,'HitTest','off','Units','normalized','interpreter','tex','VerticalAlignment','top')
@@ -5818,7 +5817,7 @@ end
             UI.listbox.cellClassification.String = colored_string;
             
             if GroupVal == 1 || ColorVal == 2
-                plotClasGroups = UI.preferences.cellTypes;
+                UI.classes.labels = UI.preferences.cellTypes;
             end
             updateCellCount;
             UI.listbox.cellTypes.Value = [UI.listbox.cellTypes.Value,size(UI.listbox.cellTypes.String,1)];
@@ -6126,12 +6125,12 @@ end
         line(0,0,'Marker','x','LineStyle','none','color','w', 'LineWidth', 3., 'MarkerSize',18,'HitTest','off'), xlim([-0.15,2]), hold on, yticks([]), xticks([])
         line(0,0,'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',16,'HitTest','off');
         text(0.2,0,'Selected cell','HitTest','off')
-        if numel(plotClasGroups) >= numel(nanUnique(plotClas(UI.params.subset)))
-            b12 = nanUnique(plotClas(UI.params.subset));
-            [cnt_unique, ~] = histc(plotClas(UI.params.subset),b12);
-            legendNames = strcat(plotClasGroups(b12) ,' (',cellstr(num2str(cnt_unique'))',')');
+        if numel(UI.classes.labels) >= numel(nanUnique(UI.classes.plot(UI.params.subset)))
+            b12 = nanUnique(UI.classes.plot(UI.params.subset));
+            [cnt_unique, temp] = histc(UI.classes.plot(UI.params.subset),b12);
+            legendNames = strcat(UI.classes.labels(b12) ,' (',cellstr(num2str(cnt_unique'))',')');
             for i = 1:length(legendNames)
-                line(0,nLegends,'Marker','.','LineStyle','none','color',clr_groups(i,:), 'MarkerSize',25,'HitTest','off')
+                line(0,nLegends,'Marker','.','LineStyle','none','color',UI.classes.colors(i,:), 'MarkerSize',25,'HitTest','off')
                 text(0.2,nLegends,legendNames{i}, 'interpreter', 'none','HitTest','off')
                 nLegends = nLegends - 1;
             end
@@ -6194,7 +6193,7 @@ end
             idx = find(ismember(referenceData.clusClas,referenceData.selection));
             legends2plot = unique(referenceData.clusClas(idx));
             for jj = 1:length(legends2plot)
-                line(0, nLegends,'Marker','x','LineStyle','none','color',clr_groups2(jj,:),'markersize',8);
+                line(0, nLegends,'Marker','x','LineStyle','none','color',UI.classes.colors2(jj,:),'markersize',8);
                 text(0.2,nLegends,referenceData.cellTypes{legends2plot(jj)}, 'interpreter', 'none')
                 nLegends = nLegends - 1;
             end
@@ -6204,7 +6203,7 @@ end
             idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
             legends2plot = unique(groundTruthData.clusClas(idx));
             for jj = 1:length(legends2plot)
-                line(0, nLegends,'Marker','x','LineStyle','none','color', clr_groups3(jj,:),'markersize',8);
+                line(0, nLegends,'Marker','x','LineStyle','none','color', UI.classes.colors3(jj,:),'markersize',8);
                 text(0.2,nLegends,groundTruthData.groundTruthTypes{legends2plot(jj)}, 'interpreter', 'none')
                 nLegends = nLegends - 1;
             end
@@ -6296,9 +6295,9 @@ end
 
     function advanceClass(ClasIn)
         if ~exist('ClasIn','var')
-            ClasIn = plotClas(ii);
+            ClasIn = UI.classes.plot(ii);
         end
-        temp = find(ClasIn==plotClas(UI.params.subset));
+        temp = find(ClasIn==UI.classes.plot(UI.params.subset));
         temp2 = find(UI.params.subset(temp) > ii,1);
         if ~isempty(temp2)
             ii = UI.params.subset(temp(temp2));
@@ -6314,7 +6313,7 @@ end
     end
 
     function backClass
-        temp = find(plotClas(ii)==plotClas(UI.params.subset));
+        temp = find(UI.classes.plot(ii)==UI.classes.plot(UI.params.subset));
         temp2 = find(UI.params.subset(temp) < ii,1,'last');
         if ~isempty(temp2)
             ii = UI.params.subset(temp(temp2));
@@ -7856,9 +7855,9 @@ end
             end
         end
         
-        function cell_class_count = getCellcount(plotClas11,plotClasGroups)
-            [~,plotClas11] = ismember(plotClas11,plotClasGroups);
-            cell_class_count = histc(plotClas11,[1:length(plotClasGroups)]);
+        function cell_class_count = getCellcount(plot11,labels)
+            [~,plot11] = ismember(plot11,labels);
+            cell_class_count = histc(plot11,[1:length(labels)]);
             cell_class_count = cellstr(num2str(cell_class_count'))';
         end
         
@@ -8324,15 +8323,15 @@ end
 
     function updatePlotClas
         if GroupVal == 1 || ColorVal == 2
-            plotClas = clusClas;
+            UI.classes.plot = clusClas;
         else
 %             if ColorVal == 1
-                plotClas11 = cell_metrics.(colorStr{GroupVal});
-                if iscell(plotClas11)
-                    plotClas11 = findgroups(plotClas11);
+                UI.classes.plot11 = cell_metrics.(colorStr{GroupVal});
+                if iscell(UI.classes.plot11)
+                    UI.classes.plot11 = findgroups(UI.classes.plot11);
                 end
 %             else
-%                 plotClas = clusClas;
+%                 UI.classes.plot = clusClas;
 %             end
         end
     end
@@ -8362,46 +8361,46 @@ end
             clasLegend = 0;
             UI.listbox.groups.Enable = 'Off';
             UI.listbox.groups.String = {};
-            plotClas = clusClas;
-            plotClasGroups = UI.preferences.cellTypes;
+            UI.classes.plot = clusClas;
+            UI.classes.labels = UI.preferences.cellTypes;
         else
             clasLegend = 1;
             UI.listbox.groups.Enable = 'On';
             if ColorVal ~= 2
-                plotClas11 = cell_metrics.(colorStr{GroupVal});
-                plotClasGroups = groups_ids.([colorStr{GroupVal} '_num']);
-                if iscell(plotClas11) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
-                    plotClas11 = findgroups(plotClas11);
+                UI.classes.plot11 = cell_metrics.(colorStr{GroupVal});
+                UI.classes.labels = groups_ids.([colorStr{GroupVal} '_num']);
+                if iscell(UI.classes.plot11) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
+                    UI.classes.plot11 = findgroups(UI.classes.plot11);
                 elseif strcmp(colorStr{GroupVal},'deepSuperficial')
-                    [~,plotClas11] = ismember(plotClas11,plotClasGroups);
+                    [~,UI.classes.plot11] = ismember(UI.classes.plot11,UI.classes.labels);
                 end
-                color_class_count = histc(plotClas11,[1:length(plotClasGroups)]);
+                color_class_count = histc(UI.classes.plot11,[1:length(UI.classes.labels)]);
                 color_class_count = cellstr(num2str(color_class_count'))';
                 
-                UI.listbox.groups.String = strcat(plotClasGroups,' (',color_class_count,')'); %  plotClasGroups;
+                UI.listbox.groups.String = strcat(UI.classes.labels,' (',color_class_count,')'); %  UI.classes.labels;
                 if length(UI.listbox.groups.String) < max(UI.listbox.groups.Value) | inpt ==1
-                    UI.listbox.groups.Value = 1:length(plotClasGroups);
-                    groups2plot = 1:length(plotClasGroups);
-                    groups2plot2 = 1:length(plotClasGroups);
+                    UI.listbox.groups.Value = 1:length(UI.classes.labels);
+                    groups2plot = 1:length(UI.classes.labels);
+                    groups2plot2 = 1:length(UI.classes.labels);
                 end
             else
-                plotClas = clusClas;
-                plotClasGroups = UI.preferences.cellTypes;
-                plotClas2 = cell_metrics.(colorStr{GroupVal});
-                plotClasGroups2 = groups_ids.([colorStr{GroupVal} '_num']);
-                if iscell(plotClas2) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
-                    plotClas2 = findgroups(plotClas2);
+                UI.classes.plot = clusClas;
+                UI.classes.labels = UI.preferences.cellTypes;
+                UI.classes.plot2 = cell_metrics.(colorStr{GroupVal});
+                UI.classes.labels2 = groups_ids.([colorStr{GroupVal} '_num']);
+                if iscell(UI.classes.plot2) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
+                    UI.classes.plot2 = findgroups(UI.classes.plot2);
                 elseif strcmp(colorStr{GroupVal},'deepSuperficial')
-                    [~,plotClas2] = ismember(plotClas2,plotClasGroups2);
+                    [~,UI.classes.plot2] = ismember(UI.classes.plot2,UI.classes.labels2);
                 end
                 
-                color_class_count = histc(plotClas2,[1:length(plotClasGroups2)]);
+                color_class_count = histc(UI.classes.plot2,[1:length(UI.classes.labels2)]);
                 color_class_count = cellstr(num2str(color_class_count'))';
-                UI.listbox.groups.String = strcat(plotClasGroups2,' (',color_class_count,')');
+                UI.listbox.groups.String = strcat(UI.classes.labels2,' (',color_class_count,')');
                 if length(UI.listbox.groups.String) < max(UI.listbox.groups.Value) || inpt ==1
-                    UI.listbox.groups.Value = 1:length(plotClasGroups2);
-                    groups2plot = 1:length(plotClasGroups);
-                    groups2plot2 = 1:length(plotClasGroups2);
+                    UI.listbox.groups.Value = 1:length(UI.classes.labels2);
+                    groups2plot = 1:length(UI.classes.labels);
+                    groups2plot2 = 1:length(UI.classes.labels2);
                 end
                 
             end
@@ -8493,19 +8492,19 @@ end
         % Scatter plot with trough to peak vs burst index
         ax1 = subplot('Position',[0.13 0.22 0.34 .75]); % Trough to peak vs burstiness
         hold on
-        uniqueGroups = unique(plotClas);
-        for i_groups = 1:size(clr_groups,1)
-            idx = plotClas(UI.params.subset) == uniqueGroups(i_groups);
-%             handle_ce_gscatter(i_groups) = line(cell_metrics.(UI.supplementaryFigure.metrics{1})(UI.params.subset(idx)), cell_metrics.(UI.supplementaryFigure.metrics{2})(UI.params.subset(idx)),'Marker','.','LineStyle','none','color',[clr_groups(i_groups,:),0.5], 'MarkerSize',UI.preferences.markerSize,'HitTest','off');
-            handle_ce_gscatter(i_groups) = scatter(cell_metrics.(UI.supplementaryFigure.metrics{1})(UI.params.subset(idx)), cell_metrics.(UI.supplementaryFigure.metrics{2})(UI.params.subset(idx)),UI.preferences.markerSize+5,clr_groups(i_groups,:), 'filled', 'HitTest','off');
+        uniqueGroups = unique(UI.classes.plot);
+        for i_groups = 1:size(UI.classes.colors,1)
+            idx = UI.classes.plot(UI.params.subset) == uniqueGroups(i_groups);
+%             handle_ce_gscatter(i_groups) = line(cell_metrics.(UI.supplementaryFigure.metrics{1})(UI.params.subset(idx)), cell_metrics.(UI.supplementaryFigure.metrics{2})(UI.params.subset(idx)),'Marker','.','LineStyle','none','color',[UI.classes.colors(i_groups,:),0.5], 'MarkerSize',UI.preferences.markerSize,'HitTest','off');
+            handle_ce_gscatter(i_groups) = scatter(cell_metrics.(UI.supplementaryFigure.metrics{1})(UI.params.subset(idx)), cell_metrics.(UI.supplementaryFigure.metrics{2})(UI.params.subset(idx)),UI.preferences.markerSize+5,UI.classes.colors(i_groups,:), 'filled', 'HitTest','off');
             alpha(handle_ce_gscatter(i_groups),.8)
         end
 
         xlabel(UI.labels.(UI.supplementaryFigure.metrics{1})), ylabel(UI.labels.(UI.supplementaryFigure.metrics{2})); set(gca, 'XScale', axisScale{UI.supplementaryFigure.axisScale(1)}, 'YScale', axisScale{UI.supplementaryFigure.axisScale(2)},'TickLength',[0.02 1]), axis tight, figureLetter('A','right')
         % Generating legend
-        legendNames = plotClasGroups(nanUnique(plotClas(UI.params.subset)));
+        legendNames = UI.classes.labels(nanUnique(UI.classes.plot(UI.params.subset)));
         for i = 1:length(legendNames)
-            legendDots(i) = line(nan,nan,'Marker','.','LineStyle','none','color',clr_groups(i,:), 'MarkerSize',20);
+            legendDots(i) = line(nan,nan,'Marker','.','LineStyle','none','color',UI.classes.colors(i,:), 'MarkerSize',20);
         end
         legend(legendDots,legendNames,'Location','southwest');
         subplot('Position',[0.13 0.01 0.34 .1])
@@ -8562,12 +8561,12 @@ end
         
         movegui(fig,'center'), set(fig,'visible','on')
         
-        %         classes2plotSubset = unique(plotClas);
-        %         cell_class_count = histc(plotClas,1:length(UI.preferences.cellTypes));
+        %         classes2plotSubset = unique(UI.classes.plot);
+        %         cell_class_count = histc(UI.classes.plot,1:length(UI.preferences.cellTypes));
         %         figure
         %         h_pie = pie(cell_class_count);
         %         for i = 1:numel(classes2plotSubset)
-        %             h_pie((i*2)-1).FaceColor = clr_groups(i,:);
+        %             h_pie((i*2)-1).FaceColor = UI.classes.colors(i,:);
         %         end
 
         function figureLetter(letter,alignment)
@@ -8600,8 +8599,8 @@ end
         else
             UI.params.putativeSubse_inh=[];
         end
-        clr_groups = UI.preferences.cellTypeColors(intersect(classes2plot,plotClas(UI.params.subset)),:);
-        classes2plotSubset = unique(plotClas);
+        UI.classes.colors = UI.preferences.cellTypeColors(intersect(classes2plot,UI.classes.plot(UI.params.subset)),:);
+        classes2plotSubset = unique(UI.classes.plot);
             
         if plotCellIDs==-1
             plotOptions_all = {'Trilaterated position','Waveforms (all)','Waveforms (image)','ACGs (all)','ACGs (image)','ISIs (all)','ISIs (image)','RCs_firingRateAcrossTime (image)','RCs_firingRateAcrossTime (all)'};
@@ -9546,29 +9545,29 @@ end
         % Updates the cell count in the custom groups listbox
         if GroupVal > 1
             if ColorVal ~= 2
-                plotClas11 = cell_metrics.(colorStr{GroupVal});
-                plotClasGroups = groups_ids.([colorStr{GroupVal} '_num']);
-                if iscell(plotClas11) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
-                    plotClas11 = findgroups(plotClas11);
+                UI.classes.plot11 = cell_metrics.(colorStr{GroupVal});
+                UI.classes.labels = groups_ids.([colorStr{GroupVal} '_num']);
+                if iscell(UI.classes.plot11) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
+                    UI.classes.plot11 = findgroups(UI.classes.plot11);
                 elseif strcmp(colorStr{GroupVal},'deepSuperficial')
-                    [~,plotClas11] = ismember(plotClas11,plotClasGroups);
+                    [~,UI.classes.plot11] = ismember(UI.classes.plot11,UI.classes.labels);
                 end
-                color_class_count = histc(plotClas11,[1:length(plotClasGroups)]);
+                color_class_count = histc(UI.classes.plot11,[1:length(UI.classes.labels)]);
                 color_class_count = cellstr(num2str(color_class_count'))';
-                UI.listbox.groups.String = strcat(plotClasGroups,' (',color_class_count,')');
+                UI.listbox.groups.String = strcat(UI.classes.labels,' (',color_class_count,')');
             else
-                plotClas = clusClas;
-                plotClasGroups = UI.preferences.cellTypes;
-                plotClas2 = cell_metrics.(colorStr{GroupVal});
-                plotClasGroups2 = groups_ids.([colorStr{GroupVal} '_num']);
-                if iscell(plotClas2) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
-                    plotClas2 = findgroups(plotClas2);
+                UI.classes.plot = clusClas;
+                UI.classes.labels = UI.preferences.cellTypes;
+                UI.classes.plot2 = cell_metrics.(colorStr{GroupVal});
+                UI.classes.labels2 = groups_ids.([colorStr{GroupVal} '_num']);
+                if iscell(UI.classes.plot2) && ~strcmp(colorStr{GroupVal},'deepSuperficial')
+                    UI.classes.plot2 = findgroups(UI.classes.plot2);
                 elseif strcmp(colorStr{GroupVal},'deepSuperficial')
-                    [~,plotClas2] = ismember(plotClas2,plotClasGroups2);
+                    [~,UI.classes.plot2] = ismember(UI.classes.plot2,UI.classes.labels2);
                 end
-                color_class_count = histc(plotClas2,[1:length(plotClasGroups2)]);
+                color_class_count = histc(UI.classes.plot2,[1:length(UI.classes.labels2)]);
                 color_class_count = cellstr(num2str(color_class_count'))';
-                UI.listbox.groups.String = strcat(plotClasGroups2,' (',color_class_count,')');
+                UI.listbox.groups.String = strcat(UI.classes.labels2,' (',color_class_count,')');
             end
         end
     end
@@ -9741,17 +9740,17 @@ end
     function SignificanceMetricsMatrix(~,~)
         % Performs a KS-test for selected two groups and displays a colored matrix with significance levels for relevant metrics
         
-        if length(unique(plotClas(UI.params.subset)))==2
+        if length(unique(UI.classes.plot(UI.params.subset)))==2
             % Cell metrics differences
             temp = fieldnames(cell_metrics);
             temp3 = struct2cell(structfun(@class,cell_metrics,'UniformOutput',false));
             subindex = intersect(find(~contains(temp3',{'cell','struct'})), find(~contains(temp,{'batchIDs','placeCell','ripples_modulationSignificanceLevel','electrodeGroup','maxWaveformChannelOrder','maxWaveformCh','maxWaveformCh1','entryID','UID','cluID','truePositive','falsePositive','putativeConnections','acg','acg2','spatialCoherence','_num','optoPSTH','FiringRateMap','firingRateMapStates','firingRateMap','filtWaveform_zscored','filtWaveform','filtWaveform_std','cellID','spikeSortingID','Promoter','sessionID'})));
-            plotClas_subset = plotClas(UI.params.subset);
+            plotClas_subset = UI.classes.plot(UI.params.subset);
             ids = nanUnique(plotClas_subset);
             
             temp1 = UI.params.subset(find(plotClas_subset==ids(1)));
             temp2 = UI.params.subset(find(plotClas_subset==ids(2)));
-            testset = plotClasGroups(nanUnique(plotClas_subset));
+            testset = UI.classes.labels(nanUnique(plotClas_subset));
             [labels2,~]= sort(temp(subindex));
             [indx,~] = listdlg('PromptString',['Select the metrics to show in a rain cloud plot'],'ListString',labels2,'SelectionMode','multiple','ListSize',[350,400],'InitialValue',1:length(labels2));
             % keyboard
@@ -9810,7 +9809,7 @@ end
             [plotRows,~]= numSubplots(length(indx)); % Determining optimal number of subplots
             fig = figure('Name','CellExplorer: Raincloud plot','NumberTitle','off','pos',UI.preferences.figureSize,'visible','off');
             ha = ce_tight_subplot(plotRows(1),plotRows(2),[.05 .02],[.03 .04],[.03 .03]);
-            plotClas_subset = plotClas(UI.params.subset);
+            plotClas_subset = UI.classes.plot(UI.params.subset);
             for j = 1:length(indx)
                 fieldName = labels2{j};
                 set(fig,'CurrentAxes',ha(j)), hold on
@@ -9821,9 +9820,9 @@ end
             end
             
             % Generating legends
-            legendNames = plotClasGroups(nanUnique(plotClas(UI.params.subset)));
+            legendNames = UI.classes.labels(nanUnique(UI.classes.plot(UI.params.subset)));
             for i = 1:length(legendNames)
-                legendDots(i) = line(nan,nan,'Marker','.','LineStyle','none','color',clr_groups(i,:), 'MarkerSize',20);
+                legendDots(i) = line(nan,nan,'Marker','.','LineStyle','none','color',UI.classes.colors(i,:), 'MarkerSize',20);
             end
             legend(legendDots,legendNames);
             
@@ -9839,13 +9838,13 @@ end
 
     function generateGroupRainCloudPlot(fieldName,log_axis,plotStats,box_on,stats_offset,scatter_on)
         if ~all(isnan(cell_metrics.(fieldName)(UI.params.subset)))
-            plotClas_subset = plotClas(UI.params.subset);
+            plotClas_subset = UI.classes.plot(UI.params.subset);
             counter = 1; % For aligning scatter data
             ids = nanUnique(plotClas_subset);
             for i = 1:length(ids)
                 temp1 = UI.params.subset(find(plotClas_subset==ids(i)));
                 if length(temp1)>1
-                    ce_raincloud_plot(cell_metrics.(fieldName)(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',clr_groups(i,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',clr_groups(i,:),'box_col_match',1,'randomNumbers',UI.params.randomNumbers(temp1),'log_axis',log_axis,'normalization',UI.preferences.rainCloudNormalization,'scatter_on',scatter_on);
+                    ce_raincloud_plot(cell_metrics.(fieldName)(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',UI.classes.colors(i,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',UI.classes.colors(i,:),'box_col_match',1,'randomNumbers',UI.params.randomNumbers(temp1),'log_axis',log_axis,'normalization',UI.preferences.rainCloudNormalization,'scatter_on',scatter_on);
                     counter = counter + 1;
                 end
             end
@@ -9864,7 +9863,7 @@ end
     end
 
     function plotStatRelationship(data1,stats_offset1,log_axis) 
-        plotClas_subset = plotClas(UI.params.subset);
+        plotClas_subset = UI.classes.plot(UI.params.subset);
         groups = nanUnique(plotClas_subset);
         if length(groups)<10
             counter = 1;
@@ -10030,7 +10029,7 @@ end
             clusClas(strcmp(cell_metrics.putativeCellType,UI.preferences.cellTypes{i}))=i;
         end
         colored_string = DefineCellTypeList;
-        plotClasGroups = UI.preferences.cellTypes;
+        UI.classes.labels = UI.preferences.cellTypes;
         
         % SWR profile initialization
         if isempty(SWR_in)
@@ -10395,7 +10394,7 @@ end
         
         updateColorMenuCount
         
-        plotClas = clusClas;
+        UI.classes.plot = clusClas;
         UI.popupmenu.groups.Value = 1;
         UI.popupmenu.colors.Value = 1;
         ColorVal = 1;
@@ -11320,7 +11319,7 @@ end
     function compareToReference(src,~)
         if isfield(src,'Text') && strcmp(src.Text,'Compare cell groups to reference data')
             inputReferenceData = 1;
-            clr_groups2 = UI.preferences.cellTypeColors(unique(referenceData.clusClas),:);
+            UI.classes.colors2 = UI.preferences.cellTypeColors(unique(referenceData.clusClas),:);
             listClusClas_referenceData = unique(referenceData.clusClas);
         else
             inputReferenceData = 0;
@@ -11333,10 +11332,10 @@ end
         uiwait(compareToGroundTruth.dialog)
         
         function close_dialog
-            classesToPlot = unique(plotClas(UI.params.subset));
+            classesToPlot = unique(UI.classes.plot(UI.params.subset));
             idx = {};
             for j = 1:length(classesToPlot)
-                idx{j} = intersect(find(plotClas==classesToPlot(j)),UI.params.subset);
+                idx{j} = intersect(find(UI.classes.plot==classesToPlot(j)),UI.params.subset);
             end
             selectedFields = list_metrics(compareToGroundTruth.sessionList.Value);
             n_selectedFields = min(length(selectedFields),4);
@@ -11353,7 +11352,7 @@ end
                 for j = 1:length(classesToPlot)
                     
                     [N,edges] = histcounts(cell_metrics.(selectedFields{regularFields(i)})(idx{j}),20, 'Normalization', 'probability');
-                    line(edges,[N,0],'color',clr_groups(j,:),'linewidth',2)
+                    line(edges,[N,0],'color',UI.classes.colors(j,:),'linewidth',2)
                 end
                 subplot(2,n_selectedFields,k+n_selectedFields), hold on
                 if inputReferenceData == 1
@@ -11362,7 +11361,7 @@ end
                     for j = 1:length(listClusClas_referenceData)
                         idx2 = find(referenceData.clusClas==listClusClas_referenceData(j));
                         [N,edges] = histcounts(reference_cell_metrics.(selectedFields{regularFields(i)})(idx2),20, 'Normalization', 'probability');
-                        line(edges,[N,0],'color',clr_groups2(j,:),'linewidth',2)
+                        line(edges,[N,0],'color',UI.classes.colors2(j,:),'linewidth',2)
                     end
                 else
                     % Ground truth cells
@@ -11371,7 +11370,7 @@ end
                         idGroundTruth = find(~cellfun(@isempty,subsetGroundTruth));
                         for jj = 1:length(idGroundTruth)
                             [N,edges] = histcounts(cell_metrics.(selectedFields{regularFields(i)})(subsetGroundTruth{idGroundTruth(jj)}),20, 'Normalization', 'probability');
-                            line(edges,[N,0],'color',clr_groups(j,:),'linewidth',2)
+                            line(edges,[N,0],'color',UI.classes.colors(j,:),'linewidth',2)
                         end
                     end
                 end
@@ -11391,8 +11390,8 @@ end
                     for j = 1:length(classesToPlot)
                         temp1 = mean(cell_metrics.(newStr{1}).(newStr{2})(:,idx{j}),2);
                         temp2 = std(cell_metrics.(newStr{1}).(newStr{2})(:,idx{j}),0,2);
-                        patch([1:length(temp1),flip(1:length(temp1))], [temp1+temp2,flip(temp1-temp2)],clr_groups(j,:),'EdgeColor','none','FaceAlpha',.2)
-                        line(1:length(temp1), temp1, 'color', clr_groups(j,:),'linewidth',2)
+                        patch([1:length(temp1),flip(1:length(temp1))], [temp1+temp2,flip(temp1-temp2)],UI.classes.colors(j,:),'EdgeColor','none','FaceAlpha',.2)
+                        line(1:length(temp1), temp1, 'color', UI.classes.colors(j,:),'linewidth',2)
                     end
                     subplot(2,n_selectedFields,k+n_selectedFields),hold on
                     if inputReferenceData == 1
@@ -11402,10 +11401,10 @@ end
                             idx2 = find(referenceData.clusClas==listClusClas_referenceData(j));
                             temp1 = mean(reference_cell_metrics.(newStr{1}).(newStr{2})(:,idx2),2);
                             temp2 = std(reference_cell_metrics.(newStr{1}).(newStr{2})(:,idx2),0,2);
-                            patch([1:length(temp1),flip(1:length(temp1))], [temp1+temp2,flip(temp1-temp2)],clr_groups2(j,:),'EdgeColor','none','FaceAlpha',.2)
-                            line(1:length(temp1), temp1, 'color', clr_groups(j,:),'linewidth',2)
+                            patch([1:length(temp1),flip(1:length(temp1))], [temp1+temp2,flip(temp1-temp2)],UI.classes.colors2(j,:),'EdgeColor','none','FaceAlpha',.2)
+                            line(1:length(temp1), temp1, 'color', UI.classes.colors(j,:),'linewidth',2)
                         end
-                    else g
+                    else
                         % Ground truth cells
                         title('Ground truth cells')
                         if ~isempty(subsetGroundTruth)
@@ -11413,8 +11412,8 @@ end
                             for jj = 1:length(idGroundTruth)
                                 temp1 = mean(cell_metrics.(newStr{1}).(newStr{2})(:,subsetGroundTruth{idGroundTruth(jj)}),2);
                                 temp2 = std(cell_metrics.(newStr{1}).(newStr{2})(:,subsetGroundTruth{idGroundTruth(jj)}),0,2);
-                                patch([1:length(temp1),flip(1:length(temp1))], [temp1+temp2,flip(temp1-temp2)],clr_groups(j,:),'EdgeColor','none','FaceAlpha',.2)
-                                line(1:length(temp1), temp1, 'color', clr_groups(j,:),'linewidth',2)
+                                patch([1:length(temp1),flip(1:length(temp1))], [temp1+temp2,flip(temp1-temp2)],UI.classes.colors(j,:),'EdgeColor','none','FaceAlpha',.2)
+                                line(1:length(temp1), temp1, 'color', UI.classes.colors(j,:),'linewidth',2)
                             end
                         end
                     end
@@ -12257,7 +12256,7 @@ end
     function HelpDialog(~,~)
         if ismac; scs  = 'Cmd + '; else; scs  = 'Ctrl + '; end
         shortcutList = { '','<html><b>Navigation</b></html>';
-            '> (right arrow)','Next cell'; '< (left arrow)','Previous cell'; '. (dot)','Next cell with same class'; ', (comma) ','Previous cell with same class';
+            '> (right arrow)','Next cell'; '< (left arrow)','Previous cell'; '. (dot)','+10 cell (+shift: Next cell with same class)'; ', (comma) ','-10 cell (+shift: Previous cell with same class)';
             [scs,'F '],'Go to a specific cell'; 'Page Up ','Next session in batch (only in batch mode)'; 'Page Down','Previous session in batch (only in batch mode)';
             'Numpad0','First cell'; 'Numpad1-9 ','Next cell with that numeric class'; 'Backspace','Previously selected cell'; 'Numeric + / - / *','Zoom in / zoom out / reset plots'; '   ',''; 
             '','<html><b>Cell assigments</b></html>';
@@ -12265,7 +12264,7 @@ end
             '','<html><b>Display shortcuts</b></html>';
             'M','Show/Hide menubar'; 'N','Change layout [6; 5 or 4 subplots]'; [scs,'E'],'Highlight excitatory cells (triangles)'; [scs,'I'],'Highlight inhibitory cells (circles)';
             [scs,'F'],'Display ACG fit'; 'K','Calculate and display significance matrix for all metrics (KS-test)'; [scs,'T'],'Calculate tSNE space from a selection of metrics';
-            'W','Display waveform metrics'; [scs,'Y'],'Perform ground truth cell type classification'; [scs,'U'],'Load ground truth cell types'; 'Space','Show action dialog for selected cells'; '  ','';
+            'W','Display waveform metrics'; [scs,'Y'],'Perform ground truth cell type classification'; [scs,'U'],'Load ground truth cell types'; 'Space','Show action dialog'; '  ','';
             '','<html><b>Other shortcuts</b></html>';
             [scs,'P'],'Open preferences for CellExplorer'; [scs,'C'],'Open the file directory of the selected cell'; [scs,'D'],'Opens sessions from BuzLabDB';
             [scs,'A'],'Open spike data menu'; [scs,'J'],'Modify parameters for a spike plot'; [scs,'V'],'Visit the CellExplorer website in your browser';

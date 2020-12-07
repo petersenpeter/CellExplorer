@@ -39,6 +39,7 @@ UI.preferences.zscoreWaveforms = 1;                % Show zscored or full amplit
 UI.preferences.trilatGroupData = 'session';        % 'session','animal','all'
 UI.preferences.hoverEffect = 1;                    % Highlights cells by hovering the mouse
 UI.preferences.plotLinearFits = 0;                 % Linear fit shown in group plot for each cell group
+UI.preferences.graph_depth = 4;                    % Allen Institute Brain region atlas depth [1:7]
 
 % Autosave preferences
 UI.preferences.autoSaveFrequency = 5;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off

@@ -107,6 +107,7 @@ elseif ~isempty(id) || ~isempty(sessionin)
     end
     if exist(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
         load(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']))
+        cell_metrics.general.basepath = basepath;
     else
         warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
     end
@@ -120,6 +121,7 @@ elseif ~isempty(basepath)
     end
     if exist(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
         load(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']))
+        cell_metrics.general.basepath = basepath;
     else
         warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
     end
@@ -128,6 +130,7 @@ elseif ~isempty(session)
     basename = session.general.name;
     if exist(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
         load(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']))
+        cell_metrics.general.basepath = basepath;
     else
         warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
     end

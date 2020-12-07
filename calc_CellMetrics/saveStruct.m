@@ -25,6 +25,7 @@ success = false;
 
 if strcmp(inputname(1),'session')
     session = data;
+    datatype = 'session';
 end
 % Importing parameters from session struct
 if ~isempty(session)
@@ -39,7 +40,7 @@ end
 % No validation implemented yet
 
 % Saving data to basepath
-supportedDataTypes = {'timeseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap','lfp','session'};
+supportedDataTypes = {'timeseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'states', 'firingRateMap','lfp','session'};
 if any(strcmp(datatype,supportedDataTypes))
     if isempty(dataName)
         dataName = inputname(1);

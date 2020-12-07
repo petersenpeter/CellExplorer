@@ -27,6 +27,7 @@ UI.labels.entryID = 'Entry ID';
 UI.labels.firingRate = 'Firing rate (Hz)';
 UI.labels.firingRateISI = 'Firing rate from ISI (Hz)';
 UI.labels.geneticLine_num = 'Genetic line';
+UI.labels.animal_geneticLine_num = 'Genetic line';
 UI.labels.isolationDistance = 'Isolation distance';
 UI.labels.lRatio = 'L-ratio';
 UI.labels.labels_num = 'Labels';
@@ -41,16 +42,19 @@ UI.labels.refractoryPeriodViolation = ['Refractory period violation (',char(8240
 UI.labels.sessionID = 'Session ID';
 UI.labels.sessionName_num = 'Session name';
 UI.labels.sex_num = 'Animal sex';
+UI.labels.animal_sex_num = 'Animal sex';
 UI.labels.spatialCoherence = 'Spatial coherence';
 UI.labels.spatialCoverageIndex = 'Spatial Coverage index';
 UI.labels.spatialGiniCoeff = 'Spatial Gini coefficient';
 UI.labels.spatialPeakRate = 'Spatial peak firing rate (Hz)';
 UI.labels.spatialSplitterDegree = 'spatialSplitterDegree';
 UI.labels.species_num = 'Animal species';
+UI.labels.animal_species_num = 'Animal species';
 UI.labels.spikeCount = 'Spike count';
 UI.labels.spikeGroup = 'Spike group';
 UI.labels.spikeSortingID = 'Spike sorting ID';
 UI.labels.strain_num = 'Animal strain';
+UI.labels.animal_strain_num = 'Animal strain';
 UI.labels.synapticConnectionsIn = 'Synaptic connections (inbound)';
 UI.labels.synapticConnectionsOut = 'Synaptic connections (outbound)';
 UI.labels.synapticEffect_num = 'Synaptic effect';
@@ -62,7 +66,7 @@ UI.labels.troughToPeak = 'Trough-to-peak (ms)';
 UI.labels.troughtoPeakDerivative = 'Trough-to-peak (derivative; ms)';
 
 % Adding missing cell metrics labels
-missingLabels = UI.lists.metrics(~contains(UI.lists.metrics,fieldnames(UI.labels)));
+missingLabels = setdiff(UI.lists.metrics,fieldnames(UI.labels));
 for i = 1:numel(missingLabels)
     if contains(missingLabels{i},'_num')
         UI.labels.(missingLabels{i}) = missingLabels{i}(1:end-4);
