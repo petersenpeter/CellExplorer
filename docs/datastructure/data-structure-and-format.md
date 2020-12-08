@@ -23,7 +23,8 @@ Each type of data is saved in its own MATLAB structure, where a subset of the st
 A MATLAB struct `session` stored in a .mat file: `sessionName.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/sessionTemplate.m) and inspected with [gui_session.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/gui_session.m). The `sessionName.session.mat` files should be stored in the basepath. It is structured as defined below:
 
 * `general`
-  * `name` : name of session
+  * `baseName` : name of session
+  * `basePath` : basepath of session
   * `investigator` : investigator of the session
   * `projects` : projects the session belong to
   * `date` : date the session was recorded
