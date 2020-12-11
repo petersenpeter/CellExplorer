@@ -49,7 +49,7 @@ We have created a few tutorials to get you started, covering the pipeline and th
 
 [View tutorials]({{ "/tutorials/tutorials/"|absolute_url}}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2}
 
-## Reporting bugs, enhancements or questions
+## Support
 Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues) for reporting bugs, enhancement requests or general questions. We also have a [google group](https://groups.google.com/g/cellexplorer/) for the same requests.
 
 ## Citing CellExplorer in your research and publications
