@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Setup access
-parent: Database
-nav_order: 3
+parent: Public data
+nav_order: 1
 ---
 # Database access
 {: .no_toc}
