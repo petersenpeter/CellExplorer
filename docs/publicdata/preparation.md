@@ -2,7 +2,7 @@
 layout: default
 title: Setup access
 parent: Public data
-nav_order: 1
+nav_order: 3
 ---
 # Setup database access
 {: .no_toc}
