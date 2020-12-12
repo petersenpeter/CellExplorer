@@ -30,5 +30,5 @@ Below figure shows the cell type separation applied to the cortical data from Se
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/09/YutaCellExplorerPlot_v2.jpg){: .mt-4}
 
 ### Ground truth cells
-Below figure shows the various ground truth interneurons projected on the cortical data from the previous figure determined by opto-tagging. [Learn more about the ground truth cells here]({{"/database/ground-truth-data/"|absolute_url}}).
+Below figure shows the various ground truth interneurons projected on the cortical data from the previous figure determined by opto-tagging. [Learn more about the ground truth cells here]({{"/publicdata/ground-truth-data/"|absolute_url}}).
 ![](https://buzsakilab.com/wp/wp-content/uploads/2020/11/groundTruth_CellExplorerPlot.png){: .mt-4}
