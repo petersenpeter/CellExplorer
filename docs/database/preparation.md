@@ -4,7 +4,7 @@ title: Setup access
 parent: Public data
 nav_order: 1
 ---
-# Database access
+# Setup database access
 {: .no_toc}
 To have full access to the [Buzsaki lab databank](https://buzsakilab.com/wp/database/) with CellExplorer, there are two necessary steps you have to do in Matlab: add your credentials and define the repository paths. Public reference data can still be used without credentials. This page is therefore mostly dedicated to lab members.
 

@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Ground truth data
-parent: Graphical interface
-nav_order: 7
+parent: Public data
+nav_order: 2
 ---
 # Ground truth data
 {: .no_toc}
