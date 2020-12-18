@@ -62,7 +62,7 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   cell_metrics : structure described in details at: https://cellexplorer.org/datastructure/standard-cell-metrics/
 
 %   By Peter Petersen
-%   Last edited: 09-09-2020
+%   Last edited: 15-12-2020
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Parsing parameters
@@ -109,6 +109,16 @@ basepath = p.Results.basepath;
 parameters = p.Results;
 timerCalcMetrics = tic;
 
+% Verifying required toolboxes are installed
+installedToolboxes = ver;
+installedToolboxes = {installedToolboxes.Name};
+requiredToolboxes = {'Curve Fitting Toolbox', 'Parallel Computing Toolbox'};
+missingToolboxes = requiredToolboxes(~ismember(requiredToolboxes,installedToolboxes));
+if ~isempty(missingToolboxes)
+    for i = 1:numel(missingToolboxes)
+    warning(['A toolbox required by CellExplorer must be installed: ' missingToolboxes{i}]);
+    end
+end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Loading session metadata from DB or sessionStruct
@@ -552,7 +562,8 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     
     % Common coordinate framework
     ccf_file = fullfile(basepath,[basename,'.ccf.channelInfo.mat']);
-    if exist(ccf_file,'file') && (~all(isfield(cell_metrics,{'ccf_x','ccf_y','ccf_z'})) || parameters.forceReload == true)
+    if exist(ccf_file,'file') %&& (~all(isfield(cell_metrics,{'ccf_x','ccf_y','ccf_z'})) || parameters.forceReload == true)
+        dispLog('Importing common coordinate framework');
         load(ccf_file,'ccf');
         cell_metrics.general.ccf = ccf;
         cell_metrics.ccf_x = cell_metrics.general.ccf.x(cell_metrics.maxWaveformCh1)';
@@ -677,7 +688,7 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
         cell_metrics.isi.log10 = isi.log10;
         cell_metrics.general.isis.log10 = isi.log10_bins;
     end
-    if ~isfield(cell_metrics,{'population_modIndex'}) || ~isfield(cell_metrics.general,'responseCurves') || ~isfield(cell_metrics.general.responseCurves,'meanCCG') || numel(cell_metrics.general.responseCurves.meanCCG.x_bins) ~= 51
+    if ~(isfield(preferences,'acg_metrics') && isfield(preferences.acg_metrics,'population_modIndex') && ~preferences.acg_metrics.population_modIndex) && (~isfield(cell_metrics,{'population_modIndex'}) || ~isfield(cell_metrics.general,'responseCurves') || ~isfield(cell_metrics.general.responseCurves,'meanCCG') || numel(cell_metrics.general.responseCurves.meanCCG.x_bins) ~= 51   || parameters.forceReload == true)
         dispLog('Calculating population modulation index')
         [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes{spkExclu},sr);
         cell_metrics.responseCurves.meanCCG = num2cell(meanCCG,1);
@@ -699,7 +710,7 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
             dispLog('Loading MonoSynaptic GUI for manual adjustment')
             mono_res = gui_MonoSyn(mono_res);
         end
-        save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3');
+        save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
     else
         disp('  Loading previous detected MonoSynaptic connections')
         load(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res');
@@ -713,10 +724,10 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
                 dispLog('Loading MonoSynaptic GUI for manual adjustment')
                 mono_res = gui_MonoSyn(mono_res);
             end
-            save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3');
+            save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
         elseif parameters.forceReload == true && parameters.manualAdjustMonoSyn
             mono_res = gui_MonoSyn(mono_res);
-            save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3');
+            save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
         end
     end
     
@@ -779,6 +790,7 @@ end
 
 if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(parameters.excludeMetrics,{'deepSuperficial'}))
     spkExclu = setSpkExclu('deepSuperficial',parameters);
+    dispLog('Deep-Superficial metrics');
     if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session,'channelTags') && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple.channels)
         dispLog('Finding ripples')
         if ~exist(fullfile(session.general.basePath,[session.general.name, '.lfp']),'file')
@@ -815,7 +827,6 @@ if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(
     end
 end
 
-
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Theta related activity
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -830,9 +841,8 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
     cell_metrics.thetaPhaseTrough = nan(1,cell_metrics.general.cellCount);
     % cell_metrics.responseCurves.thetaPhase = nan(length(theta_bins)-1,cell_metrics.general.cellCount);
     cell_metrics.thetaEntrainment = nan(1,cell_metrics.general.cellCount);
-    
     spikes2 = spikes{spkExclu};
-    
+
     if isfield(cell_metrics,'thetaPhaseResponse')
         cell_metrics = rmfield(cell_metrics,'thetaPhaseResponse');
     end
@@ -883,7 +893,6 @@ if any(contains(parameters.metrics,{'spatial_metrics','all'})) && ~any(contains(
 
     % General firing rate map
     if exist(fullfile(basepath,[basename,'.firingRateMap.firingRateMap.mat']),'file')
-        
         temp2 = load(fullfile(basepath,[basename,'.firingRateMap.firingRateMap.mat']));
         disp('  Loaded firingRateMap.mat succesfully');
         if isfield(temp2,'firingRateMap')
@@ -1423,7 +1432,7 @@ test = isfield(cell_metrics.general,field2remove);
 cell_metrics.general = rmfield(cell_metrics.general,field2remove(test));
 
 % cleaning waveforms
-field2remove = {'filt_absolute','filt_zscored', 'raw_absolute','raw_zscored'};
+field2remove = {'filt_absolute','filt_zscored', 'raw_absolute','raw_zscored','time_zscored'};
 test2 = isfield(cell_metrics.waveforms,field2remove);
 cell_metrics.waveforms = rmfield(cell_metrics.waveforms,field2remove(test2));
 
@@ -1515,7 +1524,7 @@ if parameters.saveMat
     try
         structSize = whos('cell_metrics');
         if structSize.bytes/1000000000 > 2
-            save(saveAsFullfile,'cell_metrics','-v7.3')
+            save(saveAsFullfile,'cell_metrics','-v7.3','-nocompression')
         else
             save(saveAsFullfile,'cell_metrics')
         end

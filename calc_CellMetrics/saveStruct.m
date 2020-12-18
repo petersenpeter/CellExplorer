@@ -40,7 +40,7 @@ end
 % No validation implemented yet
 
 % Saving data to basepath
-supportedDataTypes = {'timeseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'states', 'firingRateMap','lfp','session'};
+supportedDataTypes = {'timeseries','digitalseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'states', 'firingRateMap','lfp','session'};
 if any(strcmp(datatype,supportedDataTypes))
     if isempty(dataName)
         dataName = inputname(1);
@@ -56,7 +56,7 @@ if any(strcmp(datatype,supportedDataTypes))
     % Checks byte size of struct to determine optimal mat format
     structSize = whos('S');
     if structSize.bytes/1000000000 > 2
-        save(filename, '-struct', 'S','-v7.3')
+        save(filename, '-struct', 'S','-v7.3','-nocompression')
         disp(['Saved variable ''',dataName, ''' to ', filename,' (v7.3)'])
     else
         save(filename, '-struct', 'S')

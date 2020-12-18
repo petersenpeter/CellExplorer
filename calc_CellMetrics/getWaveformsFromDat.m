@@ -22,6 +22,8 @@ addParameter(p,'showWaveforms', preferences.waveform.showWaveforms, @islogical);
 addParameter(p,'filtFreq',[500,8000], @isnumeric); % Band pass filter (default: 500Hz - 8000Hz)
 addParameter(p,'keepWaveforms_filt', false, @islogical); % Keep all extracted filtered waveforms
 addParameter(p,'keepWaveforms_raw', false, @islogical); % Keep all extracted raw waveforms
+addParameter(p,'saveFig', false, @islogical); % Save figure with data
+addParameter(p,'extraLabel', '', @ischar); % Save figure with data
 
 parse(p,varargin{:})
 
@@ -33,6 +35,8 @@ showWaveforms = p.Results.showWaveforms;
 filtFreq = p.Results.filtFreq;
 keepWaveforms_filt = p.Results.keepWaveforms_filt;
 keepWaveforms_raw = p.Results.keepWaveforms_raw;
+saveFig = p.Results.saveFig;
+extraLabel  = p.Results.extraLabel;
 
 % Loading session struct into separate parameters
 basepath = session.general.basePath;
@@ -61,6 +65,7 @@ if ~isempty(session) && isfield(session,'channelTags') && isfield(session.channe
     end
     badChannels = unique(badChannels);
 end
+disp(['Bad channels detected: ' num2str(badChannels)])
 
 % Removing channels that does not exist in SpkGrps
 if isfield(session.extracellular,'spikeGroups')
@@ -111,17 +116,29 @@ for i = 1:length(unitsToProcess)
         spkTmp = sort(spkTmp(1:nPull));
     end
     spkTmp = spkTmp(:);
-    % Determines the maximum waveform channel from 100 waveforms across all good channels
-    startIndicies1 = (spkTmp(1:min(100,length(spkTmp))) - wfWin)*nChannels+1;
-    stopIndicies1 =  (spkTmp(1:min(100,length(spkTmp))) + wfWin)*nChannels;
-    X1 = cumsum(accumarray(cumsum([1;stopIndicies1(:)-startIndicies1(:)+1]),[startIndicies1(:);0]-[0;stopIndicies1(:)]-1)+1);
-    wf = LSB * mean(reshape(double(rawData.Data(X1(1:end-1))),nChannels,(wfWin*2),[]),3);
-    wfF2 = zeros((wfWin * 2),nGoodChannels);
-    for jj = 1 : nGoodChannels
-        wfF2(:,jj) = filtfilt(b1, a1, wf(goodChannels(jj),:));
+%     % Determines the maximum waveform channel from 100 waveforms across all good channels
+%     startIndicies1 = (spkTmp(1:min(100,length(spkTmp))) - wfWin)*nChannels+1;
+%     stopIndicies1 =  (spkTmp(1:min(100,length(spkTmp))) + wfWin)*nChannels;
+%     X1 = cumsum(accumarray(cumsum([1;stopIndicies1(:)-startIndicies1(:)+1]),[startIndicies1(:);0]-[0;stopIndicies1(:)]-1)+1);
+%     wf = LSB * mean(reshape(double(rawData.Data(X1(1:end-1))),nChannels,(wfWin*2),[]),3);
+%     wfF2 = zeros((wfWin * 2),nGoodChannels);
+%     for jj = 1 : nGoodChannels
+%         wfF2(:,jj) = filtfilt(b1, a1, wf(goodChannels(jj),:));
+%     end
+    
+    % Pulls the waveforms from all channels from the dat
+    startIndicies2 = (spkTmp - wfWin)*nChannels+1;
+    stopIndicies2 = (spkTmp + wfWin)*nChannels;
+    X2 = cumsum(accumarray(cumsum([1;stopIndicies2(:)-startIndicies2(:)+1]),[startIndicies2(:);0]-[0;stopIndicies2(:)]-1)+1);
+    wf = LSB * permute(reshape(double(rawData.Data(X2(1:end-1))),nChannels,(wfWin*2),[]),[2,3,1]);
+    wfF = zeros((wfWin * 2),length(spkTmp),nChannels);
+    for jjj = 1 : nChannels
+        wfF(:,:,jjj) = filtfilt(b1, a1, wf(:,:,jjj));
     end
-
-    [~, maxWaveformCh1] = max(max(wfF2(window_interval,:))-min(wfF2(window_interval,:))); % max(abs(wfF(wfWin,:)));
+    wfF = permute(wfF,[3,1,2]);
+    wf = permute(wf,[3,1,2]);
+    wfF2 = mean(wfF(goodChannels,:,:),3)';
+    [~, maxWaveformCh1] = max(max(wfF2(window_interval,:))-min(wfF2(window_interval,:)));
     spikes.maxWaveformCh1(ii) = goodChannels(maxWaveformCh1);
     spikes.maxWaveformCh(ii) = spikes.maxWaveformCh1(ii)-1;
     
@@ -129,18 +146,6 @@ for i = 1:length(unitsToProcess)
     for jj = 1:nElectrodeGroups
         if any(electrodeGroups{jj} == spikes.maxWaveformCh1(ii))
             spikes.shankID(ii) = jj;
-        end
-    end
-    
-    % Pulls the waveforms from all channels from the dat
-    startIndicies2 = (spkTmp - wfWin)*nChannels+1;
-    stopIndicies2 = (spkTmp + wfWin)*nChannels;
-    X2 = cumsum(accumarray(cumsum([1;stopIndicies2(:)-startIndicies2(:)+1]),[startIndicies2(:);0]-[0;stopIndicies2(:)]-1)+1);
-    wf = LSB * reshape(double(rawData.Data(X2(1:end-1))),nChannels,(wfWin*2),[]);
-    wfF = zeros(nChannels,(wfWin * 2),length(spkTmp));
-    for jjj = 1 : nChannels
-        for jj = 1 : length(spkTmp)
-            wfF(jjj,:,jj) = filtfilt(b1, a1, wf(jjj,:,jj));
         end
     end
     
@@ -202,32 +207,41 @@ for i = 1:length(unitsToProcess)
         plot(time,mean(permute(wfF(spikes.maxWaveformCh1(ii),:,:),[2,3,1]),2),'k','linewidth',2),
         title(['Peak channel (',num2str(spikes.maxWaveformCh1(ii)),')']),ylabel('All filtered waveforms (uV)')
         
-        subplot(5,3,[7,10]), hold on,
-        plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii}), xlabel('Time (ms)'), ylabel('Raw waveforms (uV)')
-        xlim([-0.8,0.8])
-        subplot(5,3,[8,11]), hold on,
-        plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii}), xlabel('Time (ms)'), ylabel('Filtered waveforms (uV)')
-        xlim([-0.8,0.8])
-        subplot(4,3,3), hold off
+        subplot(5,3,[7,10]), hold off,
+        plot(spikes.timeWaveform{ii},vertcat(spikes.rawWaveform{1:ii})'), hold on
+        plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Raw waveforms (uV)'), xlim([-0.8,0.8])
+        subplot(5,3,[8,11]), hold off,
+        plot(spikes.timeWaveform{ii},vertcat(spikes.filtWaveform{1:ii})'), hold on
+        plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Filtered waveforms (uV)'), xlim([-0.8,0.8])
+        subplot(5,3,3), hold off
+        plot(permute(range((wfF(spikes.maxWaveformCh1(ii),window_interval,:)),2),[3,2,1]),'.b')
+        title('Spikes across time (uV)')
+        subplot(5,3,6), hold off
         plot(spikes.peakVoltage_sorted{ii},'.-b'), hold on
         plot(x,fitCoeffValues(1)*exp(-x/fitCoeffValues(2))+fitCoeffValues(3),'r'),
-        title(['Length constant (\lambda) = ',num2str(spikes.peakVoltage_expFitLengthConstant(ii),2)]), xlabel('Sorted channels'), ylabel('Spike amplitude (uV)'), xlim([1,nChannelFit])
-        subplot(4,3,6), hold on
-        plot(spikes.peakVoltage_sorted{ii}), title('Processed units'), xlabel('Sorted channels'), ylabel('Spike amplitude (uV)'), xlim([1,nChannelFit])
-        subplot(4,3,9), hold off,
-        histogram(spikes.peakVoltage_expFitLengthConstant,20), title('Length constant (\lambda)'), axis tight
-        subplot(4,3,12), hold off,
-        histogram(spikes.peakVoltage,20), title('Amplitudes (uV)'), axis tight
+        title(['Length constant (\lambda) = ',num2str(spikes.peakVoltage_expFitLengthConstant(ii),2)]), xlabel('Sorted channels'), ylabel('Amplitude (uV)'), xlim([1,nChannelFit])
+        subplot(5,3,9), hold on
+        plot(spikes.peakVoltage_sorted{ii}), title('Processed units'), xlabel('Sorted channels'), ylabel('Amplitude (uV)'), xlim([1,nChannelFit])
+        subplot(5,3,12), hold off,
+        histogram(spikes.peakVoltage_expFitLengthConstant(unitsToProcess(1:i)),20), title('Length constant (\lambda)'), axis tight
+        subplot(5,3,15), hold off,
+        histogram(spikes.peakVoltage(unitsToProcess(1:i)),20), title('Amplitudes (uV)'), axis tight
         
-        subplot(10,3,[28,29]), hold off, title('Extraction progress')
+        subplot(10,3,[28,29]), hold off, title(['Extraction progress for session: ' basename ,' ', extraLabel],'interpreter','none')
         rectangle('Position',[0,0,100*i/length(unitsToProcess),1],'FaceColor',[0, 0.4470, 0.7410],'EdgeColor',[0, 0.4470, 0.7410] ,'LineWidth',1), xlim([0,100]), ylim([0,1]), set(gca,'xtick',[],'ytick',[])
         xlabel(['Waveforms: ',num2str(i),'/',num2str(length(unitsToProcess)),'. ', num2str(round(toc(timerVal)-t1)),' sec/unit, Duration: ', num2str(round(toc(timerVal)/60)), '/', num2str(round(toc(timerVal)/60/i*length(unitsToProcess))),' minutes']);
+        
+        if saveFig & ishandle(fig1)
+            % Saving figure
+            saveFig1.path = 1; saveFig1.fileFormat = 1; saveFig1.save = 1;
+            ce_savefigure(fig1,basepath,[basename, '.getWaveformsFromDat_cell_', num2str(unitsToProcess(i))],0,saveFig1)
+        end
     else
         disp('Canceling waveform extraction...')
         clear wf wfF wf2 wfF2
         clear rawWaveform rawWaveform_std filtWaveform filtWaveform_std
         clear rawData
-        error('Waveform extraction canceled by user')
+        error('Waveform extraction canceled by user by closing figure window.')
     end
     clear wf wfF wf2 wfF2
 end

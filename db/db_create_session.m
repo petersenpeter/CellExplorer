@@ -10,8 +10,8 @@ success = 0;
 % Creating session
 if isfield(session.general,'name') && ~isempty(session.general.name)
     % Checking if session already exist
-    options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password);
-    db_session = webread([db_settings.address,'views/15356/'],options,'page_size','5000','Timeout',30,'session',session.general.name); 
+    options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'timeout',30);
+    db_session = webread([db_settings.address,'views/15356/'],options,'page_size','5000','timeout',30,'session',session.general.name); 
     
     if strcmp(db_session.renderedHtml, '<div class="frm_no_entries">No Entries Found</div>')
         jsonStructure = [];
@@ -29,7 +29,7 @@ if isfield(session.general,'name') && ~isempty(session.general.name)
         end
         jsonStructure.fiElD_1902 = session.general.notes;
         
-        if ~isfield(session.general,'date')
+        if isfield(session.general,'date')
             jsonStructure.fiElD_1892 = session.general.date;
         end
         cluIDs = fieldnames(jsonStructure);

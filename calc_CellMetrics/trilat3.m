@@ -24,17 +24,17 @@ if nargin < 2
 end
 d = 1000*A.^(-2);
 tbl = table(X, d');
-weights = d.^(-1);
+weights = (1000*(A-min(A)+0.0001).^(-2)).^(-2);
 % beta0 = [20, -100]; % initial position
 
-modelfun = @(b,X)(abs(b(1)-X(:,1)).^2+abs(b(2)-X(:,2)).^2+abs(b(3)-X(:,3)).^2.^(1/2));
+modelfun = @(b,X)((abs(b(1)-X(:,1)).^2+abs(b(2)-X(:,2)).^2+abs(b(3)-X(:,3)).^2).^(1/2));
 mdl = fitnlm(tbl,modelfun,beta0, 'Weights', weights.');
 b = mdl.Coefficients{1:3,{'Estimate'}};
 
 if plots
     figure
     subplot(1,2,1)
-    viscircles(X, d,'color',[0,0,0,0.1]), hold on
+    viscircles(X(), d,'color',[0,0,0,0.1]), hold on
     scatter(b(1),b(2),b(3), 70, [0 0 1], 'filled')
     scatter(X(:,1),X(:,2),X(:,3), 70, [0 0 0], 'filled')
     hold off

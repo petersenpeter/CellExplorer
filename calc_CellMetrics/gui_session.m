@@ -22,11 +22,10 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
 % Last edited: 08-07-2020
 
 % Lists
-sortingMethodList = {'KiloSort', 'KiloSort2','SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik','MountainSort','IronClust','MClust','UltraMegaSort2000'}; % Spike sorting methods
-sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','AllenSDK','MClust','UltraMegaSort2000'}; % Spike sorting formats
+sortingMethodList = {'KiloSort', 'KiloSort2','SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik','MountainSort','IronClust','MClust','Wave_clus'}; % Spike sorting methods
+sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
-speciesTypesList = {'Rat', 'Mouse','Red-eared Turtles'}; % animal species
 
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
@@ -190,6 +189,7 @@ if enableDatabase
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Edit credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
 uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Edit repository paths',menuSelectedFcn,@editDBrepositories);
 end
+
 % Help
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
 uimenu(UI.menu.help.topMenu,menuLabel,'Tutorial on session metadata',menuSelectedFcn,@buttonHelp);
@@ -775,11 +775,7 @@ uiwait(UI.fig)
         % Saving parameters
         if exist('parameters','var')
             for iParams = 1:length(UI.list.params)
-                if isfield(parameters,UI.list.params{iParams}) && islogical(parameters.(UI.list.params{iParams}))
-                    parameters.(UI.list.params{iParams}) = logical(UI.checkbox.params(iParams).Value);
-                else
-                    parameters.(UI.list.params{iParams}) = UI.checkbox.params(iParams).Value;
-                end
+                parameters.(UI.list.params{iParams}) = logical(UI.checkbox.params(iParams).Value);
             end
             if ~isempty(UI.listbox.includeMetrics.Value)
                 parameters.metrics = UI.listbox.includeMetrics.String(UI.listbox.includeMetrics.Value);
@@ -795,12 +791,6 @@ uiwait(UI.fig)
         session.general.time = UI.edit.time.String;
         session.general.name = UI.edit.session.String;
         session.general.basePath = UI.edit.basepath.String;
-%         if isfield(session,'spikeSorting') && ~isempty(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath')
-%             session.general.clusteringPath = session.spikeSorting{1}.relativePath;
-%         else 
-%             session.general.clusteringPath = '';
-%         end
-        
         session.general.duration = UI.edit.duration.String;
         session.general.location = UI.edit.location.String;
         session.general.experimenters = UI.edit.experimenters.String;
@@ -885,12 +875,12 @@ uiwait(UI.fig)
                 tableData{fn,1} = false;
                 tableData{fn,2} = tagFieldnames{fn};
                 if isfield(session.channelTags.(tagFieldnames{fn}),'channels')
-                    tableData{fn,3} = num2str(session.channelTags.(tagFieldnames{fn}).channels);
+                    tableData{fn,3} = num2str(session.channelTags.(tagFieldnames{fn}).channels(:)');
                 else
                     tableData{fn,3} = '';
                 end
                 if isfield(session.channelTags.(tagFieldnames{fn}),'electrodeGroups')
-                    tableData{fn,4} = num2str(session.channelTags.(tagFieldnames{fn}).electrodeGroups);
+                    tableData{fn,4} = num2str(session.channelTags.(tagFieldnames{fn}).electrodeGroups(:)');
                 else
                     tableData{fn,4} = '';
                 end
@@ -1326,12 +1316,12 @@ uiwait(UI.fig)
         if exist('regionIn','var')
             InitTag = regionIn;
             if isfield(session.channelTags.(regionIn),'channels')
-                initChannels = num2str(session.channelTags.(regionIn).channels);
+                initChannels = num2str(session.channelTags.(regionIn).channels(:)');
             else
                 initChannels = '';
             end
             if isfield(session.channelTags.(regionIn),'electrodeGroups')
-                initElectrodeGroups = num2str(session.channelTags.(regionIn).electrodeGroups);
+                initElectrodeGroups = num2str(session.channelTags.(regionIn).electrodeGroups(:)');
             else
                 initElectrodeGroups = '';
             end

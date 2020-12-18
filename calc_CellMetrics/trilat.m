@@ -24,10 +24,10 @@ if nargin < 2
 end
 d = 1000*A.^(-2);
 tbl = table(X, d');
-weights = d.^(-1);
+weights = (1000*(A-min(A)+0.0001).^(-2)).^(-2);
 % beta0 = [20, -100]; % initial position
 
-modelfun = @(b,X)(abs(b(1)-X(:,1)).^2+abs(b(2)-X(:,2)).^2).^(1/2);
+modelfun = @(b,X)(((b(1)-X(:,1)).^2+(b(2)-X(:,2)).^2).^(1/2));
 opts = statset('TolFun',1e-3);
 % mdl = fitnlm(X,y,modelfun,beta0,'Options',opts);
 mdl = fitnlm(tbl,modelfun,beta0, 'Weights', weights.','Options',opts);
@@ -40,8 +40,9 @@ if plots
     scatter(b(1),b(2), 70, [0 0 1], 'filled')
     scatter(X(:,1),X(:,2), 70, [0 0 0], 'filled')
     hold off
-    subplot(1,2,2)
-    scatter(X(:,1),X(:,2), 70, [0 0 0], 'filled'), hold on
+    subplot(2,2,2)
+    dist1 = (((b(1)-X(:,1)).^2+(b(2)-X(:,2)).^2).^(1/2));
+    plot(dist1,A,'o'),set(gca, 'XScale', 'log')
     
     % legend({'Recording sites'})
     title('Trilaterated spatial location'), xlabel('µm'), ylabel('Depth (µm)')

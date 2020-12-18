@@ -16,12 +16,11 @@ offset = 101;
 x = ([1:100]/2)';
 g = fittype('max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c','d','e','f','g','h'});
 
-% Calculations
-gcp;
-
 % Turning off interation limit warning
 warning('off','stats:nlinfit:IterationLimitExceeded')
+
 % Fitting ACGs in parfor
+gcp;
 parfor j = 1:size(acg_narrow,2)
     if ~any(isnan(acg_narrow(:,j)))
         [f0,gof] = fit(x,acg_narrow(x*2+offset,j),g,'StartPoint',[20, 1, 30, 2, 0, 5, 1.5,2],'Lower',[1, 0.1, 0, 0, -30, 0,0.1,0],'Upper',[500, 50, 500, 15, 50, 20,5,100]);
