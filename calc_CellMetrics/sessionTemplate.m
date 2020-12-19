@@ -78,8 +78,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Extracellular
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% This section will set some default extracellular parameters. You can comment this out 
-% if you are importing these parameters another way. 
+% This section will set some default extracellular parameters. You can comment this out if you are importing these parameters another way. 
 % Extracellular parameters from a Neuroscope xml and buzcode sessionInfo file will be imported as well
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'sr')) || isempty(session.extracellular.sr))
     session.extracellular.sr = 20000;           % Sampling rate
@@ -193,13 +192,35 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Kilosort
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+rezFile = dir(fullfile(basepath,relativePath,'rez*.mat'));
+if ~isempty(rezFile)
+    disp('Loading KiloSort metadata from rez file')
+    load(rezFile.name,'rez');
+    session.extracellular.sr = rez.ops.fs;
+    session.extracellular.nChannels = rez.ops.NchanTOT;
+    kcoords_ids = unique(rez.ops.kcoords);
+    session.extracellular.nElectrodeGroups = numel(kcoords_ids);
+    for i = 1:numel(kcoords_ids)
+        session.extracellular.electrodeGroups.channels{i} = rez.ops.chanMap(find(rez.ops.kcoords == kcoords_ids(i)))';
+    end
+    session.extracellular.nSpikeGroups = session.extracellular.nElectrodeGroups; % Number of spike groups
+    session.extracellular.spikeGroups.channels = session.extracellular.electrodeGroups.channels; % Spike groups
+    chanCoords.x = rez.xcoords;
+    chanCoords.y = rez.ycoords;
+    
+    chanCoordsFile = fullfile(basepath,[basename,'.chanCoords.channelInfo.mat']);
+    if ~exist(chanCoordsFile,'file')
+        disp(['Saving chanCoords file: ' chanCoordsFile])
+        save(chanCoordsFile,'chanCoords');
+    end
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % sessionInfo and xml (including skipped and dead channels)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'file')
+    disp('Loading buzcode sessionInfo metadata')
     load(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'sessionInfo')
-    
     if sessionInfo.spikeGroups.nGroups>0
         session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
         session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
@@ -223,6 +244,7 @@ if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.m
     session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
     
 elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
+    disp('Loading Neurosuite xml file metadata')
     sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
     if isfield(sessionInfo,'SpkGrps')
         session.extracellular.nSpikeGroups = length(sessionInfo.SpkGrps); % Number of spike groups

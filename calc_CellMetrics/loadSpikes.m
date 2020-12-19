@@ -31,11 +31,11 @@ function spikes = loadSpikes(varargin)
 %
 % DEPENDENCIES:
 %
-% LoadXml.m & xmltools.m (required: https://github.com/petersenpeter/CellExplorer/tree/master/calc_CellMetrics/private)
+% LoadXml.m & xmltools.m (optional and included with CellExplorer: https://github.com/petersenpeter/CellExplorer/tree/master/calc_CellMetrics/private)
 % or bz_getSessionInfo.m (optional. From buzcode: https://github.com/buzsakilab/buzcode)
 %
 % npy-matlab toolbox (required for reading phy, AllenSDK & ALF data: https://github.com/kwikteam/npy-matlab)
-% getWaveformsFromDat (included with CellExplorer)
+% getWaveformsFromDat (optional and included with CellExplorer)
 %
 %
 % EXAMPLE CALLS
