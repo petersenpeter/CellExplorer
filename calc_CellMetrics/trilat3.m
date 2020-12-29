@@ -18,6 +18,9 @@ function b = trilat3(X,A,beta0,plots,waveforms_in)
 % By Peter Petersen
 % petersen.peter@gmail.com
 
+% Turning off interation limit warning
+warning('off','stats:nlinfit:IterationLimitExceeded')
+
 if nargin < 2
         plots = 0;
         waveforms_in = [];

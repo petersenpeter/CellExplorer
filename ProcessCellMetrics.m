@@ -601,7 +601,6 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     end
 end
 
-
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % PCA features based calculations: Isolation distance and L-ratio
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %

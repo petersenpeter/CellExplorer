@@ -8,7 +8,7 @@ function spikes = getWaveformsFromDat(spikes,session,varargin)
 %
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 26-07-2020
+% Last edited: 21-12-2020
 
 % Loading preferences
 preferences = preferences_ProcessCellMetrics(session);
@@ -23,8 +23,8 @@ addParameter(p,'filtFreq',[500,8000], @isnumeric); % Band pass filter (default: 
 addParameter(p,'keepWaveforms_filt', false, @islogical); % Keep all extracted filtered waveforms
 addParameter(p,'keepWaveforms_raw', false, @islogical); % Keep all extracted raw waveforms
 addParameter(p,'saveFig', false, @islogical); % Save figure with data
-addParameter(p,'extraLabel', '', @ischar); % Save figure with data
-
+addParameter(p,'extraLabel', '', @ischar); % Extra labels in figures
+addParameter(p,'getBadChannelsFromDat', true, @islogical); % Determining any extra bad channels from noiselevel of .dat file
 parse(p,varargin{:})
 
 unitsToProcess = p.Results.unitsToProcess;
@@ -37,6 +37,7 @@ keepWaveforms_filt = p.Results.keepWaveforms_filt;
 keepWaveforms_raw = p.Results.keepWaveforms_raw;
 saveFig = p.Results.saveFig;
 extraLabel  = p.Results.extraLabel;
+params = p.Results;
 
 % Loading session struct into separate parameters
 basepath = session.general.basePath;
@@ -54,6 +55,11 @@ end
 
 badChannels = [];
 timerVal = tic;
+
+% Determining any extra bad channels from noiselevel of .dat file
+if params.getBadChannelsFromDat
+    session = getBadChannelsFromDat(session);
+end
 
 % Removing channels marked as Bad in session struct
 if ~isempty(session) && isfield(session,'channelTags') && isfield(session.channelTags,'Bad')

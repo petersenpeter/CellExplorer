@@ -193,27 +193,7 @@ end
 % Kilosort
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 rezFile = dir(fullfile(basepath,relativePath,'rez*.mat'));
-if ~isempty(rezFile)
-    disp('Loading KiloSort metadata from rez file')
-    load(rezFile.name,'rez');
-    session.extracellular.sr = rez.ops.fs;
-    session.extracellular.nChannels = rez.ops.NchanTOT;
-    kcoords_ids = unique(rez.ops.kcoords);
-    session.extracellular.nElectrodeGroups = numel(kcoords_ids);
-    for i = 1:numel(kcoords_ids)
-        session.extracellular.electrodeGroups.channels{i} = rez.ops.chanMap(find(rez.ops.kcoords == kcoords_ids(i)))';
-    end
-    session.extracellular.nSpikeGroups = session.extracellular.nElectrodeGroups; % Number of spike groups
-    session.extracellular.spikeGroups.channels = session.extracellular.electrodeGroups.channels; % Spike groups
-    chanCoords.x = rez.xcoords;
-    chanCoords.y = rez.ycoords;
-    
-    chanCoordsFile = fullfile(basepath,[basename,'.chanCoords.channelInfo.mat']);
-    if ~exist(chanCoordsFile,'file')
-        disp(['Saving chanCoords file: ' chanCoordsFile])
-        save(chanCoordsFile,'chanCoords');
-    end
-end
+session = loadKiloSortMetadata(session,rezFile);
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % sessionInfo and xml (including skipped and dead channels)
@@ -370,6 +350,7 @@ if (importSkippedChannels || importSyncedChannels) && exist(fullfile(session.gen
     else
         session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);
     end
+    
     % Importing notes
     try
     	if isfield(session.general,'notes')
@@ -378,6 +359,7 @@ if (importSkippedChannels || importSyncedChannels) && exist(fullfile(session.gen
             session.general.notes = ['Notes: ',rxml.child(1).child(3).value,'   Description from xml: ' rxml.child(1).child(4).value];
         end
     end
+    
     % Importing experimenters
     try
     	if ~isfield(session.general,'experimenters') || isempty(session.general.experimenters)

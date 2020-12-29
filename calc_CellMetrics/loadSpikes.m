@@ -413,7 +413,8 @@ if parameters.forceReload
                 session1{iProbe}.extracellular.nElectrodeGroups = 1;
                 channel_offset(iProbe) = numel([session.extracellular.electrodeGroups.channels{1:iProbe}]) - numel([session.extracellular.electrodeGroups.channels{1}]);
                 session1{iProbe}.channelTags.Bad.channels = session.channelTags.Bad.channels(ismember(session1{iProbe}.channelTags.Bad.channels,session.extracellular.electrodeGroups.channels{iProbe})) - channel_offset(iProbe);
-                disp(['Bad channels for probe ' num2str(iProbe),': ' num2str(session1{iProbe}.channelTags.Bad.channels)])
+                session1{iProbe} = getBadChannelsFromDat(session1{iProbe},'extraLabel', ['probe #' num2str(iProbe)]);
+                session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,session1{iProbe}.channelTags.Bad.channels + channel_offset(iProbe)]);
             end
             disp(['Applying channel offset: ', num2str(channel_offset),' (diff: ' , num2str(diff(channel_offset)),')'])
             
@@ -673,7 +674,7 @@ if parameters.forceReload
     spikes.sr = session.extracellular.sr;
     
     % Getting waveforms from dat (raw data)
-    if parameters.getWaveformsFromDat
+    if parameters.getWaveformsFromDat && ~strcmpi(format,'allensdk')
         spikes = getWaveformsFromDat(spikes,session);
     end
     

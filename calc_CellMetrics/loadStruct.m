@@ -5,6 +5,7 @@ function output = loadStruct(dataName,datatype,varargin)
 % trials = loadStruct('trials','behavior','session',session);
 % spikes = loadStruct('spikes','cellinfo','session',session);
 % cell_metrics = loadStruct('cell_metrics','cellinfo','session',session);
+% ripples = loadStruct('ripples','events','session',session);
 
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -22,6 +23,9 @@ basename = p.Results.basename;
 session = p.Results.session;
 recording = p.Results.recording;
 
+% Supported data types
+supportedDataTypes = {'timeseries', 'events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap', 'lfp', 'session'};
+
 % Importing parameters from session or recording struct
 if ~isempty(session)
     basename = session.general.name;
@@ -37,8 +41,6 @@ end
 % Validation
 % No validation implemented yet
 
-% Loading data to basepath
-supportedDataTypes = {'timeseries', 'events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap', 'lfp', 'session'};
 
 if any(strcmp(datatype,supportedDataTypes))
     switch datatype

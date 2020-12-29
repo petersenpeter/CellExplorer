@@ -5,7 +5,7 @@ function deepSuperficialfromRipple = gui_DeepSuperficial(basepath,basename)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 17-01-2019
+% Last edited: 21-12-2020
 
 if ~exist('basepath','var')
     basepath = pwd;
@@ -16,10 +16,8 @@ end
 spikegroup = 1;
 deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
 gain = 0.1;
-deepSuperficialfromRipple = [];
 if exist(deepSuperficial_file,'file')
-    test = load(deepSuperficial_file);
-    deepSuperficialfromRipple = test.deepSuperficialfromRipple;
+    load(deepSuperficial_file,'deepSuperficialfromRipple');
 else
     warndlg([deepSuperficial_file,' does not exist!'],'adjust Deep-Superficial')
     return
@@ -170,8 +168,8 @@ saveDeepSuperficial
     function clearSessionAssignments
         answer = questdlg('Are you sure you want to clear all deep-superficial assignments?', 'clear Deep-superficial', 'Yes','No','Yes');
         if strcmp(answer,'Yes')
-            deepSuperficialfromRipple.channelClass = repmat({'Unknown'},1,length(deepSuperficialfromRipple.channels));
-            deepSuperficialfromRipple.channelDistance(1:length(deepSuperficialfromRipple.channels)) = NaN;
+            deepSuperficialfromRipple.channelClass = repmat({'Unknown'},1,length(deepSuperficialfromRipple.channelDistance));
+            deepSuperficialfromRipple.channelDistance(1:length(deepSuperficialfromRipple.channelDistance)) = NaN;
             uiresume(h);
         end
         

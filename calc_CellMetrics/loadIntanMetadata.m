@@ -3,7 +3,7 @@ function session = loadIntanMetadata(session,basepathIn)
 %
 % dependencies: read_Intan_RHD2000_file_from_basepath
 
-% Check the website of the CellExplorer for more details: https://petersenpeter.github.io/CellExplorer/
+% Check the website of CellExplorer for more details: https://CellExplorer.org/
 
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -18,6 +18,7 @@ else
 end
 if exist(fullfile(basepath,'info.rhd'),'file')
     if exist('read_Intan_RHD2000_file_from_basepath','file')
+        disp('Loading metadata from Intan info.rhd located in basepath')
         Intan_rec_info = read_Intan_RHD2000_file_from_basepath(basepath);
         if isfield(session,'timeSeries') && iscell(session.timeSeries)
             warning('session.timeSeries not formatted correctly. Overwriting existing structure.')
@@ -82,6 +83,4 @@ if exist(fullfile(basepath,'info.rhd'),'file')
     else
         warning('read_Intan_RHD2000_file_from_basepath does not exist')
     end
-else
-    disp('No info.rhd located in basepath')
 end

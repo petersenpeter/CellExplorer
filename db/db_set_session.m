@@ -15,7 +15,7 @@ function [session,basename, basepath] = db_set_session(varargin)
 p = inputParser;
 % Inputs
 addParameter(p,'sessionId',[],@isnumeric);  % DB numeric ID
-addParameter(p,'sessionName',[],@isstr); % DB session name
+addParameter(p,'sessionName',[],@isstr); % DB session name / basename
 addParameter(p,'session',[],@isstruct); % session struct (can be used to generate the paths)
 
 % Parameters

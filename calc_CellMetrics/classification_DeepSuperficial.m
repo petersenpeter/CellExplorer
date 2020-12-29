@@ -17,7 +17,7 @@ function deepSuperficialfromRipple = classification_deepSuperficial(session,vara
 % session.general.basePath: basePath e.g. 'Z:\peterp03\IntanData\MS22\Peter_MS22_180629_110319_concat'
 % session.general.name: name of the recording, e.g. 'Peter_MS22_180629_110319_concat'
 % session.channelTags.(Bad or Cortical) specifying spikeGroups (1-indexed), channels (1-indexed)
-%   e.g. session.channelTags.Bad.channels = [1,25,128]; session.channelTags.Bad.spikeGroups = [1]
+%   e.g. session.channelTags.Bad.channels = [1,25,128]; session.channelTags.Bad.spikeGroups = 1;
 % session.analysisTags.probesVerticalSpacing: in µm, e.g. 20
 % session.analysisTags.probesLayout: ['staggered','linear','poly2','poly3','poly5']
 % session.extracellular.srLfp: in Hz, e.g. 1250
@@ -36,16 +36,17 @@ function deepSuperficialfromRipple = classification_deepSuperficial(session,vara
 % Part of the CellExplorer: https://CellExplorer.org
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 25-05-2020
+% Last edited: 21-12-2020
 
 p = inputParser;
 addParameter(p,'buzcode',false,@islogical); % Defines whether bz_FindRipples or ce_FindRipples is called
-addParameter(p,'saveMat',true,@islogical); % Defines whether bz_FindRipples or ce_FindRipples is called
-
+addParameter(p,'saveMat',true,@islogical); % Defines if a mat file is created
+addParameter(p,'saveFig',true,@islogical); % Defines if the summary figure is saved to basepath
 % Parsing inputs
 parse(p,varargin{:})
 buzcode = p.Results.buzcode;
 saveMat = p.Results.saveMat;
+saveFig = p.Results.saveFig;
 
 % Gets basepath and basename from session struct
 basepath = session.general.basePath;
@@ -198,9 +199,9 @@ for jj = 1:session.extracellular.nSpikeGroups
         deepSuperficial_ChDistance3(ripple_channels{jj}) = (1:size(ripple_average{jj},2))-threshold;
     end
     
-    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
     % Second algorithm (newest)
-    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
     % Seems to do much better across mouse and rat recordings where the
     % sharp wave can have very different shape and amplitude.
     
@@ -266,13 +267,11 @@ end
 deepSuperficial_ChDistance3 = deepSuperficial_ChDistance3 * VerticalSpacing;
 deepSuperficial_ChDistance = deepSuperficial_ChDistance * VerticalSpacing;
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Saving the result to basename.deepSuperficialfromRipple.channelinfo.mat  
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-deepSuperficialfromRipple.channels = 0:length(deepSuperficial_ChDistance)-1; % index 0
-deepSuperficialfromRipple.channelClass = deepSuperficial_ChClass;
-deepSuperficialfromRipple.channelDistance = deepSuperficial_ChDistance;
+% Saving the result to basename.deepSuperficialfromRipple.channelinfo.mat  
+deepSuperficialfromRipple.channel = [1:length(deepSuperficial_ChDistance)]'; % 1-indexed
+deepSuperficialfromRipple.channelClass = deepSuperficial_ChClass';
+deepSuperficialfromRipple.channelDistance = deepSuperficial_ChDistance';
 deepSuperficialfromRipple.ripple_power = ripple_power;
 deepSuperficialfromRipple.ripple_amplitude = ripple_amplitude;
 deepSuperficialfromRipple.ripple_average = ripple_average;
@@ -287,12 +286,11 @@ deepSuperficialfromRipple.processinginfo.function = 'classification_deepSuperfic
 deepSuperficialfromRipple.processinginfo.date = now;
 deepSuperficialfromRipple.processinginfo.params.verticalSpacing = VerticalSpacing;
 deepSuperficialfromRipple.processinginfo.params.spikeGroupsToExclude = spikeGroupsToExclude;
-save(fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']),'deepSuperficialfromRipple');
+if saveMat
+    save(fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']),'deepSuperficialfromRipple');
+end
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Plotting the average ripple with sharp wave across all spike groups
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
 figure
 for jj = 1:session.extracellular.nSpikeGroups
     subplot(2,ceil(session.extracellular.nSpikeGroups/2),jj)
@@ -333,6 +331,8 @@ for jj = 1:session.extracellular.nSpikeGroups
         ht3 = text(1.05,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
     end
 end
-if saveMat
+
+% Saving figure
+if saveFig
     saveas(gcf,'deepSuperficial_classification_fromRipples.png');
 end
