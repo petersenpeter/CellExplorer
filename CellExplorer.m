@@ -136,6 +136,7 @@ fig2_axislimit_x_reference = []; fig2_axislimit_y_reference = []; fig2_axislimit
 referenceData=[]; reference_cell_metrics = []; groundTruth_cell_metrics = []; groundTruthData=[]; customPlotOptions = {};
 
 timerVal = tic;
+timerHover = tic;
 spikes = []; events = []; states = [];
 createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal';
 createStruct1.Interpreter = 'none'; createStruct1.WindowStyle = 'modal';
@@ -1084,11 +1085,11 @@ function updateUI
     end
     
     % Updating title
-     if isfield(cell_metrics,'sessionName') && isfield(cell_metrics.general,'batch')
+    if isfield(cell_metrics,'sessionName') && isfield(cell_metrics.general,'batch')
         UI.title.String = ['Cell class: ', UI.preferences.cellTypes{clusClas(ii)},', ' , num2str(ii),'/', num2str(cell_metrics.general.cellCount),' (batch ',num2str(batchIDs),'/',num2str(length(cell_metrics.general.batch)),') - UID: ', num2str(cell_metrics.UID(ii)),'/',num2str(general.cellCount),', electrode group: ', num2str(cell_metrics.electrodeGroup(ii)),', session: ', cell_metrics.sessionName{ii},',  animal: ',cell_metrics.animal{ii}];
     else
         UI.title.String = ['Cell Class: ', UI.preferences.cellTypes{clusClas(ii)},', ', num2str(ii),'/', num2str(cell_metrics.general.cellCount),'  - electrode group: ', num2str(cell_metrics.electrodeGroup(ii))];
-     end
+    end
 
     %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 1
@@ -2101,9 +2102,11 @@ end
             end
             for k = 1:length(classes2plotSubset)
                 set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
-                xdata = repmat([cell_metrics.waveforms.time_zscored,nan(1,1)],length(set1),1)';
-                ydata = [cell_metrics.waveforms.(zscoreWaveforms1)(:,set1);nan(1,length(set1))];
-                line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
+                if ~isempty(set1)
+                    xdata = repmat([cell_metrics.waveforms.time_zscored,nan(1,1)],length(set1),1)';
+                    ydata = [cell_metrics.waveforms.(zscoreWaveforms1)(:,set1);nan(1,length(set1))];
+                    line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
+                end
             end
             
             % selected cell in black
@@ -2757,11 +2760,13 @@ end
                     ydata = cell_metrics.acg.narrow(:,ii)/max(cell_metrics.acg.narrow(:,ii));
                 elseif highlightCurrentCell
                     ydata = cell_metrics.acg.narrow(:,ii);
+                    if plotAcgYLog
+                        ydata(ydata < 0.1)=0.1;
+                    end
                 end
-                if plotAcgYLog
-                	ydata(ydata < 0.1)=0.1;
+                if highlightCurrentCell
+                    line([-100:100]/2,ydata, 'color', 'k','linewidth',1.5,'HitTest','off')
                 end
-                line([-100:100]/2,ydata, 'color', 'k','linewidth',1.5,'HitTest','off')
                 xticks([-50:10:50]),xlim([-50,50])
                 plotAxes.XLabel.String = 'Time (ms)';
             elseif strcmp(UI.preferences.acgType,'Narrow')
@@ -2989,7 +2994,7 @@ end
             % Precalculated firing rate map for the cell
             plotAxes.XLabel.String = 'Position (cm)';
             plotAxes.YLabel.String = 'Rate (Hz)';
-            plotAxes.Title.String = firingRateMapName;
+            plotAxes.Title.String = 'Firing Rate Map';
             if isfield(cell_metrics.firingRateMaps,firingRateMapName) && size(cell_metrics.firingRateMaps.(firingRateMapName),2)>=ii && ~isempty(cell_metrics.firingRateMaps.(firingRateMapName){ii})
                 firingRateMap = cell_metrics.firingRateMaps.(firingRateMapName){ii};
                 if isfield(general.firingRateMaps,firingRateMapName) & isfield(general.firingRateMaps.(firingRateMapName),'x_bins')
@@ -6939,7 +6944,7 @@ end
     function hoverCallback(~,~)
         if UI.preferences.hoverEffect == 1 && clickPlotRegular && UI.fig == get(groot,'CurrentFigure') 
             axnum = getAxisBelowCursor;
-            if ~isempty(axnum) && axnum < 10 && ~isempty(UI.params.subset)
+            if ~isempty(axnum) && axnum < 10 && ~isempty(UI.params.subset) && toc(timerHover) > UI.preferences.hoverTimer
                 handle34 = subfig_ax(axnum);
                 set(UI.fig,'CurrentAxes',handle34)
                 if ishandle(hover2highlight.handle1)
@@ -6958,9 +6963,10 @@ end
                 u = um_axes(1,1);
                 v = um_axes(1,2);
                 w = um_axes(1,3);
-                try 
-                    FromPlot(u,v,0,w,1);
+                try
+                    FromPlot(u,v,w,0,1);
                 end
+                timerHover = tic;
             end
         end
     end
@@ -6975,7 +6981,6 @@ end
         v = um_axes(1,2);
         w = um_axes(1,3);
         if clickPlotRegular
-            
             switch get(UI.fig, 'selectiontype')
                 case 'normal'
                     if ~isempty(UI.params.subset)
@@ -6985,6 +6990,12 @@ end
                     end
                 case 'alt'
                     if ~isempty(UI.params.subset)
+                        if ishandle(hover2highlight.handle1)
+                            set(hover2highlight.handle1,'Visible','off');
+                        end
+                        if ishandle(hover2highlight.handle3)
+                            set(hover2highlight.handle3,'Visible','off');
+                        end
                         HighlightFromPlot(u,v,w);
                     end
                 case 'extend'
@@ -7209,24 +7220,18 @@ end
         end
     end
 
-    function iii = FromPlot(u,v,highlight,w,hover)
+    function iii = FromPlot(u,v,w,highlight,hover)
         hover2highlight.handle1 = [];
         hover2highlight.handle2 = [];
         hover2highlight.handle3 = [];
         hover2highlight.handle4 = [];
         iii = 0;
-        if ~exist('highlight','var')
-            highlight = 0;
-        end
-        if ~exist('hover','var')
-            hover = 0;
+        if hover
+            colorLine = [0.8,0,0.8];
         end
         if highlight
             iLine = mod(iLine,7)+1;
             colorLine = UI.colorLine(iLine,:);
-        end
-        if hover
-            colorLine = [0.8,0,0.8];
         end
         axnum = find(ismember(subfig_ax, gca));
         if isempty(axnum)
@@ -7267,10 +7272,12 @@ end
                 iii = UI.params.subset(idx);
                 if highlight
                     line(plotX(iii),plotY(iii),plotZ(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-                elseif hover
-                    hover2highlight.handle1 = text(plotX(iii),plotY(iii),plotZ(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                end
+                if hover
+                    hover2highlight.handle1 = text(plotX(iii),plotY(iii),plotZ(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     hover2highlight.handle2 = line(plotX(iii),plotY(iii),plotZ(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
-                else
+                end
+                if ~(highlight | hover)
                     return
                 end
                 
@@ -7295,8 +7302,9 @@ end
             iii = UI.params.subset(idx);
             if highlight
                 line(plotX(iii),plotY(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-            elseif hover
-                hover2highlight.handle1 = text(plotX(iii),plotY(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+            end
+            if hover
+                hover2highlight.handle1 = text(plotX(iii),plotY(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                 hover2highlight.handle2 = line(plotX(iii),plotY(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
             end
             
@@ -7313,8 +7321,9 @@ end
             iii = UI.params.subset(idx);
             if highlight
                 line(plotX(iii),plotY(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-            elseif hover
-                hover2highlight.handle1 = text(plotX(iii),plotY1(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+            end
+            if hover
+                hover2highlight.handle1 = text(plotX(iii),plotY1(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                 hover2highlight.handle2 = line(plotX(iii),plotY1(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
             end
             
@@ -7326,8 +7335,9 @@ end
             
             if highlight
                 line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-            elseif hover
-                hover2highlight.handle1 = text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+            end
+            if hover
+                hover2highlight.handle1 = text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                 hover2highlight.handle2 = line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
             end
             
@@ -7336,8 +7346,9 @@ end
             iii = UI.params.subset(idx);
             if highlight
                 line(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-            elseif hover
-                hover2highlight.handle1 = text(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+            end
+            if hover
+                hover2highlight.handle1 = text(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                 hover2highlight.handle2 = line(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
             end
             
@@ -7354,14 +7365,14 @@ end
                     [~,idx] = min(hypot(tSNE_metrics.filtWaveform(UI.params.subset,1)-u,tSNE_metrics.filtWaveform(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'Raw waveforms (tSNE)'
                     [~,idx] = min(hypot(tSNE_metrics.rawWaveform(UI.params.subset,1)-u,tSNE_metrics.rawWaveform(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'Waveforms (single)'
@@ -7373,9 +7384,12 @@ end
                             [~,In] = min(hypot((out(1,:)-u)/x_scale,(out(2,:)-v)/y_scale));
                             
                             iii = out(3,In);
-                            if highlight || hover
-                                hover2highlight.handle1 = text(out(1,In),out(2,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                            if hover
+                                hover2highlight.handle1 = text(out(1,In),out(2,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                                 hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                            end
+                            if highlight
+                            	line(out(1,In),out(2,In),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
                             end
                         end
                     elseif hover==0
@@ -7404,9 +7418,12 @@ end
                             [~,In] = min(hypot((x2-u)/x_scale,(y3-v)/y_scale));
                             if In > length(y2)
                                 iii = out(3,In-length(y2));
-                                if highlight || hover
-                                    hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2)),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                if hover
+                                    hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2)),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                                     hover2highlight.handle4 = line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                                end
+                                if highlight
+                                    line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
                                 end
                                 In = find(UI.params.subset==iii);
                             else
@@ -7423,7 +7440,7 @@ end
                     end
                     if highlight || hover
                         hover2highlight.handle2 = line(cell_metrics.waveforms.time_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                 case 'Waveforms (raw single)'    
                     if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
@@ -7434,7 +7451,7 @@ end
                             [~,In] = min(hypot((out(1,:)-u)/x_scale,(out(2,:)-v)/y_scale));
                             iii = out(3,In);
                             if highlight || hover
-                                hover2highlight.handle1 = text(out(1,In),out(2,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                hover2highlight.handle1 = text(out(1,In),out(2,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                                 hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                             end
                         end
@@ -7460,9 +7477,12 @@ end
                             [~,In] = min(hypot((x2-u)/x_scale,(y3-v)/y_scale));
                             if In > length(y2)
                                 iii = out(3,In-length(y2));
-                                if highlight || hover
-                                    hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2)),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                if hover
+                                    hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2)),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                                     hover2highlight.handle4 = line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                                end
+                                if highlight
+                                    line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
                                 end
                                 In = find(UI.params.subset==iii);
                             else
@@ -7480,7 +7500,7 @@ end
                     
                     if highlight || hover
                         hover2highlight.handle2 = line(cell_metrics.waveforms.time_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'Waveforms (image)'
@@ -7491,7 +7511,7 @@ end
                             xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]'; % [1;1]*[round(v)-0.48,round(v)+0.48]
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
@@ -7531,7 +7551,7 @@ end
                     [~,idx] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
                     iii = subset1(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'Common Coordinate Framework'
@@ -7564,7 +7584,7 @@ end
                     if highlight
                         line(plotX22(iii),plotY22(iii),plotZ22(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
                     elseif hover
-                        hover2highlight.handle1 = text(plotX22(iii),plotY22(iii),plotZ22(iii),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(plotX22(iii),plotY22(iii),plotZ22(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                         hover2highlight.handle2 = line(plotX22(iii),plotY22(iii),plotZ22(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                     else
                         return
@@ -7574,28 +7594,28 @@ end
                     [~,idx] = min(hypot(tSNE_metrics.acg_narrow(UI.params.subset,1)-u,tSNE_metrics.acg_narrow(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.acg_narrow(iii,1),tSNE_metrics.acg_narrow(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.acg_narrow(iii,1),tSNE_metrics.acg_narrow(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'tSNE of wide ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_wide(UI.params.subset,1)-u,tSNE_metrics.acg_wide(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.acg_wide(iii,1),tSNE_metrics.acg_wide(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.acg_wide(iii,1),tSNE_metrics.acg_wide(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'tSNE of log ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_log10(UI.params.subset,1)-u,tSNE_metrics.acg_log10(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'tSNE of log ISIs'
                     [~,idx] = min(hypot(tSNE_metrics.isi_log10(UI.params.subset,1)-u,tSNE_metrics.isi_log10(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'CCGs (image)'
@@ -7619,7 +7639,7 @@ end
                                 xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                                 yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]'; % [1;1]*[round(v)-0.48,round(v)+0.48]
                                 hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                                hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                                hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                             end
                         end
                     end
@@ -7659,7 +7679,7 @@ end
                             xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]'; % [1;1]*[round(v)-0.48,round(v)+0.48]
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
@@ -7697,7 +7717,7 @@ end
                     if highlight || hover
                         [~,time_index] = min(abs(x2-u));
                         hover2highlight.handle2 = line(x2(:),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'ISIs (single)'
@@ -7732,7 +7752,7 @@ end
                     if highlight || hover
                         [~,time_index] = min(abs(x2-u));
                         hover2highlight.handle2 = line(x2(:),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'ISIs (image)'
@@ -7748,7 +7768,7 @@ end
                             xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]';
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
@@ -7763,7 +7783,7 @@ end
                     [~,time_index] = min(abs(UI.x_bins.thetaPhase-u));
                     if highlight || hover
                         hover2highlight.handle2 = line(UI.x_bins.thetaPhase,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(UI.x_bins.thetaPhase(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(UI.x_bins.thetaPhase(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'RCs_firingRateAcrossTime (all)'
@@ -7779,7 +7799,7 @@ end
                     [~,time_index] = min(abs(subsetPlots.xaxis-u));
                     if highlight || hover
                         hover2highlight.handle2 = line(subsetPlots.xaxis,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index),y1(time_index,In),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                     end
                     
                 case 'RCs_thetaPhase (image)'
@@ -7789,7 +7809,7 @@ end
                             xline = [[UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[UI.x_bins.thetaPhase(end),UI.x_bins.thetaPhase(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]';
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                 case 'Connectivity matrix'
@@ -7807,7 +7827,7 @@ end
                             xline = [[0,length(subset222),length(subset222),0]+0.5;[round(v)-0.5,round(v)-0.5,round(v)+0.5,round(v)+0.5]]';
                             yline = [[round(v)-0.5,round(v)-0.5,round(v)+0.5,round(v)+0.5];[0,length(subset222),length(subset222),0]+0.5]';
                             hover2highlight.handle2 = patch(xline,yline,'k','EdgeColor','none','HitTest','off','facealpha',0.1);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                 case 'RCs_firingRateAcrossTime (image)'
@@ -7826,7 +7846,7 @@ end
                             xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]';
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                         end
                     end
@@ -7836,7 +7856,7 @@ end
                         [~,idx] = min(hypot(subsetPlots.xaxis-u,subsetPlots.yaxis-v));
                         iii = subsetPlots.subset(idx);
                         if highlight || hover
-                            hover2highlight.handle1 = text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                            hover2highlight.handle1 = text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                         end
                     end
                 otherwise
@@ -7846,7 +7866,7 @@ end
                             iii = subsetPlots.subset((burstIndexSorted(round(v))));
                             if highlight || hover
                                 hover2highlight.handle2 = line(subsetPlots.xaxis([1,end]),[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
-                                hover2highlight.handle1 = text(u,round(v)+0.5,num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                                hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                             end
                         end
                     elseif any(strcmp(UI.monoSyn.disp,{'All','Selected','Upstream','Downstream','Up & downstream'})) && ~isempty(subsetPlots) && ~isempty(subsetPlots.subset)
@@ -7861,7 +7881,7 @@ end
                                 iii = subset1(In);
                                 if highlight || hover
                                     hover2highlight.handle2 = line(x1(:,1),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                                    hover2highlight.handle1 = text(x1(time_index),y1(time_index),num2str(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                    hover2highlight.handle1 = text(x1(time_index),y1(time_index),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
                                 end
                             end
                     end
@@ -7872,6 +7892,14 @@ end
             hover2highlight.handle2 = [];
             hover2highlight.handle3 = [];
             hover2highlight.handle4 = [];
+        end
+        function textLabel = getTextLabel(iii)
+            if hover
+%                 textLabel = [num2str(iii),' ',UI.preferences.cellTypes{clusClas(iii)}];
+                textLabel = {num2str(iii),UI.classes.labels{UI.classes.plot(iii)}};
+            else
+                textLabel = num2str(iii);
+            end
         end
     end
 
@@ -7898,7 +7926,19 @@ end
     function SelectFromPlot(u,v,w)
         % Called with a plot-click and goes to selected cells and updates
         % the GUI
-        iii = FromPlot(u,v,0,w);
+        if ishandle(hover2highlight.handle1)
+            set(hover2highlight.handle1,'Visible','off');
+        end
+        if ishandle(hover2highlight.handle2)
+            set(hover2highlight.handle2,'Visible','off');
+        end
+        if ishandle(hover2highlight.handle3)
+            set(hover2highlight.handle3,'Visible','off');
+        end
+        if ishandle(hover2highlight.handle4)
+            set(hover2highlight.handle4,'Visible','off');
+        end
+        iii = FromPlot(u,v,w,0,0);
         if iii>0
             ii = iii;
             UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
@@ -8109,7 +8149,7 @@ end
     end
 
     function HighlightFromPlot(u,v,w)
-        iii = FromPlot(u,v,1,w);
+        iii = FromPlot(u,v,w,1,0);
         if iii > 0
             UI.params.ClickedCells = unique([UI.params.ClickedCells,iii]);
             updateTableClickedCells
@@ -10082,7 +10122,7 @@ end
             u = um_axes(1,1);
             v = um_axes(1,2);
             w = um_axes(1,3);
-            iii = FromPlot(u,v,0,w);
+            iii = FromPlot(u,v,w,0,0);
             if iii>0
                 ii = iii;
                 UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
@@ -11659,7 +11699,9 @@ end
                     cell_session.cell_metrics.putativeConnections.inhibitory = mono_res.sig_con_inhibitory; % Vectors with cell pairs
                     cell_session.cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_session.cell_metrics.general.cellCount);
                     cell_session.cell_metrics.synapticEffect(cell_session.cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_session.cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
-                    cell_session.cell_metrics.synapticEffect(cell_session.cell_metrics.putativeConnections.inhibitory(:,1)) = repmat({'Inhibitory'},1,size(cell_session.cell_metrics.putativeConnections.inhibitory,1));
+                    if ~isempty(cell_session.cell_metrics.putativeConnections.inhibitory)
+                        cell_session.cell_metrics.synapticEffect(cell_session.cell_metrics.putativeConnections.inhibitory(:,1)) = repmat({'Inhibitory'},1,size(cell_session.cell_metrics.putativeConnections.inhibitory,1));
+                    end
                     cell_session.cell_metrics.synapticConnectionsOut = zeros(1,cell_session.cell_metrics.general.cellCount);
                     cell_session.cell_metrics.synapticConnectionsIn = zeros(1,cell_session.cell_metrics.general.cellCount);
                     [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,1),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,1)));
@@ -11682,13 +11724,14 @@ end
                         ia = ismember(cell_metrics.putativeConnections.excitatory(:,1), idx);
                         cell_metrics.putativeConnections.excitatory(ia,:) = [];
                         cell_metrics.putativeConnections.excitatory = [cell_metrics.putativeConnections.excitatory;idx(mono_res.sig_con_excitatory)];
-                        ia = ismember(cell_metrics.putativeConnections.inhibitory(:,1), idx);
-                        cell_metrics.putativeConnections.inhibitory(ia,:) = [];
-                        cell_metrics.putativeConnections.inhibitory = [cell_metrics.putativeConnections.inhibitory;idx(mono_res.sig_con_inhibitory)];
+                        if ~isempty(cell_session.cell_metrics.putativeConnections.inhibitory)
+                            ia = ismember(cell_metrics.putativeConnections.inhibitory(:,1), idx);
+                            cell_metrics.putativeConnections.inhibitory(ia,:) = [];
+                            cell_metrics.putativeConnections.inhibitory = [cell_metrics.putativeConnections.inhibitory;idx(mono_res.sig_con_inhibitory)];
+                            cell_metrics.synapticEffect(idx(cell_session.cell_metrics.putativeConnections.inhibitory(:,1))) = repmat({'Inhibitory'},1,size(cell_session.cell_metrics.putativeConnections.inhibitory,1));
+                        end
                         cell_metrics.synapticEffect(idx) = repmat({'Unknown'},1,cell_session.cell_metrics.general.cellCount);
                         cell_metrics.synapticEffect(idx(cell_session.cell_metrics.putativeConnections.excitatory(:,1))) = repmat({'Excitatory'},1,size(cell_session.cell_metrics.putativeConnections.excitatory,1));
-                        cell_metrics.synapticEffect(idx(cell_session.cell_metrics.putativeConnections.inhibitory(:,1))) = repmat({'Inhibitory'},1,size(cell_session.cell_metrics.putativeConnections.inhibitory,1));
-                        
                         cell_metrics.synapticConnectionsOut(idx) = cell_session.cell_metrics.synapticConnectionsOut;
                         cell_metrics.synapticConnectionsIn(idx) = cell_session.cell_metrics.synapticConnectionsIn;
                         
@@ -12109,15 +12152,19 @@ end
         [indx,~] = listdlg('PromptString','What benchmark do you want to perform?','ListString',{'Cell Exporer UI', 'Single plot figures', 'Cell metrics file loading','Reference data file loading'},'ListSize',[300,200],'InitialValue',1,'SelectionMode','many','Name','Benchmarks');
         if any(indx == 3)
             % Benchmarking file loading
-            x = cell_metrics.general.batch_benchmark.file_cell_count;
-            y1 = cell_metrics.general.batch_benchmark.file_load;
-            figure,
-            plot(x,y1,'.b','markersize',15)
-            P = polyfit(x,y1,1);
-            yfit = P(1)*x+P(2);
-            hold on;
-            plot(x,yfit,'r-');
-            title(['Benchmark of cell metrics file readings. ', num2str(1/P(1)),' cells per second']), xlabel('Cell count in metrics'), ylabel('Load time (seconds)'), axis tight
+            if isfield(cell_metrics.general,'batch_benchmark')
+                x = cell_metrics.general.batch_benchmark.file_cell_count;
+                y1 = cell_metrics.general.batch_benchmark.file_load;
+                figure,
+                plot(x,y1,'.b','markersize',15)
+                P = polyfit(x,y1,1);
+                yfit = P(1)*x+P(2);
+                hold on;
+                plot(x,yfit,'r-');
+                title(['Benchmark of cell metrics file readings. ', num2str(1/P(1)),' cells per second']), xlabel('Cell count in metrics'), ylabel('Load time (seconds)'), axis tight
+            else
+                warning('batch_benchmark data does not exist in the cell metrics data')
+            end
         end
         if any(indx == 4)
             % Benchmarking reference data file loading
@@ -12127,6 +12174,7 @@ end
                     defineReferenceData;
                 end
             end
+            if isfield(reference_cell_metrics.general,'batch_benchmark')
             x = reference_cell_metrics.general.batch_benchmark.file_cell_count;
             y1 = reference_cell_metrics.general.batch_benchmark.file_load;
             figure,
@@ -12136,6 +12184,9 @@ end
             hold on;
             plot(x,yfit,'r-');
             title(['Benchmark of reference cell metrics file readings. ', num2str(1/P(1)),' cells per second']), xlabel('Cell count in metrics'), ylabel('Load time (seconds)'), axis tight
+            else
+                warning('batch_benchmark data does not exist in the reference data')
+            end
         end
         if any(indx == 2)
             figure(UI.fig)
@@ -12156,7 +12207,7 @@ end
             
             x_mean = median(reshape(1000*diff(t_bench_single)',[numel(testGroups),size(t_bench_single,2)/numel(testGroups),size(t_bench_single,1)-1]),3);
             plot(testGroupsSizes,x_mean,'o-'), xlabel('Process'), ylabel('Processing time (ms)'), ylim([0,1200])
-            text(8000*ones(1,size(x_mean,2)),x_mean(6,:),plotOptions1,'HorizontalAlignment','center','VerticalAlignment','bottom')
+            text(8000*ones(1,size(x_mean,2)),x_mean(numel(testGroups),:),plotOptions1,'HorizontalAlignment','center','VerticalAlignment','bottom')
             figure(UI.fig)
         end
         if any(indx == 1)
@@ -12203,7 +12254,7 @@ end
             % Plotting benchmark figure
             figure(50),
             subplot(2,1,1)
-            plot(1000*diff(t_bench)); title('benchmarking UI'), xlabel('Test number'), ylabel('Processing time (ms)'), ylim([0,500])
+            plot(1000*diff(t_bench)); title('benchmarking UI'), xlabel('Test number'), ylabel('Processing time (ms)'), ylim([0,500]), set(gca, 'YScale', 'log')
             subplot(2,1,2)
             
             y1 = mean(1000*diff(t_bench));
@@ -12213,7 +12264,7 @@ end
             f1(2) = errorbarPatch(testGroupsSizes,y1(idx+length(idx)),y_std(idx+length(idx)),[0.2 0.8 0.2]);
             f1(3) = errorbarPatch(testGroupsSizes,y1(idx+length(idx)*2),y_std(idx+length(idx)*2),[0.2 0.2 0.8]);
             xlabel('Number of cells'), ylabel('Processing time (ms)'), ylim([0,800])
-            legend(f1,{'Layout: 1+3','Layout: 3+3','Layout: 3+6 simple',}), title('Average processing times')
+            legend(f1,{'Layout: 1+3','Layout: 3+3','Layout: 3+6 simple',}), title('Average processing times'), set(gca, 'YScale', 'log')
             figure(UI.fig)
         end
           
