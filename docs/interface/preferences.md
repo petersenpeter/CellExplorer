@@ -20,7 +20,7 @@ dl {
   }
   dd {
     margin: 0 0 0 210px;
-    margin-left: 210px;
+    margin-left: 4em;
     padding: 0 0 0.5em 0;
   }
 </style>
