@@ -53,13 +53,13 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Perform group action | [Perform group action](https://cellexplorer.org/interface/single-cell-plot-options/#group-action-plots) | 
 | Sticky cell selection | __boolean__: Cell selection is kept across calls | 
 | Reset sticky cell selection | Resets cell selection | 
-| Highlight cells by mouse over | __boolean__: a popup is shwon for the nearest cell (relative to the cursor) in the plots with the cell's id and group info (e.g. Cell type or other active grouping) | 
+| Highlight cells by mouse over | __boolean__: a pop-up is shown for the nearest cell (relative to the cursor) in the plots with the cell's id and group info (e.g. Cell type or other active grouping) | 
 
 ### Classification
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| Undo classification | Undos the last manual curation step (any curation of these types are tracked: cell-types, labels, tags, groups, brain regions, ground truth classification, Deep-Superficial) | 
+| Undo classification | Undoes the last manual curation step (any curation of these types are tracked: cell-types, labels, tags, groups, brain regions, ground truth classification, Deep-Superficial) | 
 | Assign brain region | Assign/alter assigned brain region of current cell | 
 | Assign label | Assign/alter label of current cell | 
 | Add new cell-type | Create new cell-type | 
@@ -81,58 +81,88 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Trilateration group data | __session/animal/all__ | 
 
 ### View
+TODO 
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| ok           | good | 
-| out of stock | good | 
-| ok           | good | 
-| ok           | good | 
+| Show regular Matlab menu bar | Hides the CellExplorer menu and shows the regular Matlab figure menu instead  | 
+| Show all traces | __boolean__ good | 
+| Show legend in spikes plot | __boolean__ good | 
+| Show linear fit in group plot | __boolean__ good | 
+| Show legend in firing rate maps | __boolean__ good | 
+| Show heatmap in firing rate maps  | __boolean__ good | 
+| Shown colorbar in heatmaps in firing rate maps | __boolean__ good | 
+| ISI normalization | __Rate/Occurrence/Instantaneous rate__ | 
+| Raincloud plot normalization | __Peak/Probability/Count__ | 
+| Generate significance matrix | Dialog allowing you to select a list of metrics for which a significance matrix  will be generated as described [here](https://cellexplorer.org/interface/capabilities/#significance-matrix) | 
+| Generate raincloud metrics figure | Dialog allowing you to select a list of metrics for which a raincloud plot will be generated for each of them as described [here](https://cellexplorer.org/interface/capabilities/#raincloud-plot) | 
+| Change marker size for group plots | Change the marker size in group plots: size 6-25 recommended. | 
+| Change colormap | Dialog allowing you to change the colormap | 
+| Change metric used for sorting image data | Dialog allowing you to change the metric used to sort cells in image data | 
+| Change metrics used for t-SNE plot | Dialog allowing you to change the metrics, parameters and recalculate the t-SNE data | 
+| Flip x and y axes in the custom plot | Flips selected x and y metrics for the custom plot | 
 
 ### ACG
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| ok           | good | 
-| out of stock | good | 
-| ok           | good | 
-| ok           | good | 
+| ACG time scale | __30ms/100ms/1sec/Log10__: adjusts the timescale of the ACG plots | 
+| Log y-axis | __boolean__ show log y_axis | 
+| Show ACG fit | Shows the [ACG fit](https://cellexplorer.org/pipeline/acg-fit/) in the ACG plots | 
 
 ### MonoSyn
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| ok           | good | 
-| out of stock | good | 
-| ok           | good | 
-| ok           | good | 
+| Show in custom plot  | __boolean__ Show monosynaptic connections in the custom plot | 
+| Show in classic plot | __boolean__ Show monosynaptic connections in the classic plot | 
+| Show in t-SNE plot | __boolean__ Show monosynaptic connections in the t-SNE plot | 
+| Plot excitatory connections | __boolean__ Show excitatory monosynaptic connections | 
+| Plot inhibitory connections | __boolean__ Show inhibitory monosynaptic connections | 
+| Synaptic filter | __None/Selected/Upstream/Downstream/Up & Downstream /All__: Which monosynaptic connection types to show. | 
+| Highlight excitatory cells | Highlight excitatory cells with triangles | 
+| Highlight inhibitory cells | Highlight inhibitory cells with squares | 
+| Highlight cells receiving excitatory input | Highlight cells receiving excitation with downward facing triangles | 
+| Highlight cells receiving inhibitory input | Highlight cells receiving inhibition with ? | 
+| Shown hollow gaussian in CCG plots | Show the significance level for the monosynaptic connections in the CCG plots (determined from a hollow gaussian) | 
+| Adjust monosynaptic connections | adjust monosynaptic connections for the current session using the `gui_MonoSyn.m` as described in the [Monosynaptic connections tutorial](https://cellexplorer.org/tutorials/monosynaptic-connections-tutorial/) | 
 
 ### Reference data
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| ok           | good | 
-| out of stock | good | 
-| ok           | good | 
-| ok           | good | 
+| Reference data plotting options | __No reference truth data/Image data/Scatter data/Histogram data__ Options described [here](https://cellexplorer.org/publicdata/reference-data/#plotting-options) | 
+| Opens reference data dialog | Opens the reference data dialog as described [here](https://cellexplorer.org/publicdata/reference-data/) and in [this tutorial](https://cellexplorer.org/tutorials/reference-data-tutorial/) (dialog shown below) | 
+| Adjust bin count for reference and ground truth plots | Adjust the bin count (default: 100) for image and histogram representations | 
+| Explore reference data | replaces current cell metrics data with the loaded reference data, allowing you to explore these cells natively in CellExplorer | 
 
 ### Ground truth
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| ok           | good | 
-| out of stock | good | 
-| ok           | good | 
-| ok           | good | 
+| Ground truth plotting options | __No ground truth data/Image data/Scatter data/Histogram data__ Options described [here](https://cellexplorer.org/publicdata/reference-data/#plotting-options) | 
+| Opens ground truth data dialog | Opens the ground truth dialog as described in [this tutorial](https://cellexplorer.org/tutorials/ground-truth-tutorial/) (dialog shown below) | 
+| Adjust bin count for reference and ground truth plots | Adjust the bin count (default: 100) for image and histogram representations | 
+| Show ground truth classification tab | Shows a tab with a list of ground truth cell-types in the right side-panel for manual curation (tagging). Please see this [Opto-tagging tutorial](https://cellexplorer.org/tutorials/optotagging-tutorial/#tagging-your-cells-in-cellexplorer) for further help | 
+| Save tagging to groundTruthData folder | Please see the [Opto-tagging tutorial](https://cellexplorer.org/tutorials/optotagging-tutorial/#saving-opto-taggedground-truth-cells-to-groundtruth-folder) to learn more | 
+| Explore groundTruth data | replaces current cell metrics data with the loaded ground truth data, allowing you to explore these cells natively in CellExplorer | 
+
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/10/GroundTruthCellsDialog_v2.png)
+
+### Group data
+
+| Elements     | Description       | 
+|:-------------|:------------------|
+| Open group data dialog | Shows the group data dialog for groups/tags/groundTruthClassification. In the dialog, group data can be selected, edited, highlighted, used as filters and actions can be performed from them. | 
+| Generate filters from group data | Takes group data (groups/tags/groundTruthClassification) and generates filters from them (check the drop-down in the left side panel in Group data and filters). Original group data can be overlapping, where a given cell can belong to many groups. In the filters generated, this is not preserved. Three new filter groups are created: `groups_from_tags`, `groups_from_groups` and `groups_from_groundTruthClassification` | 
 
 ### Table data
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| ok           | good | 
-| out of stock | good | 
-| ok           | good | 
-| ok           | good | 
+| Table data type | __Cell metrics/Cell list/None__:Show cell metrics (full list of metrics and values ) for current cell or list of cells (list of cells with a check box, id and two metrics for each cell) in table | 
+| Cell list metrics #1 and #2 | If cell list is shown in table, which metrics to show in the list () | 
+| Cell list sorting | Metric used to sort the cells in the table | 
 
 ### Spikes
 
