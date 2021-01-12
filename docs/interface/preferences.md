@@ -8,7 +8,6 @@ nav_order: 4
 .main-content dd{
     margin: 0 0 0 210px  !important;
     margin-left: 4em  !important;
-    padding: 0 0 0.5em 0;
 }
 dl {
     padding: 0.1em;
