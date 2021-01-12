@@ -59,7 +59,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| Undo classification | Undos the last manual curation step (any curation of these types are tracked: cell-types,) | 
+| Undo classification | Undos the last manual curation step (any curation of these types are tracked: cell-types, labels, tags, groups, brain regions, ground truth classification, Deep-Superficial) | 
 | Assign brain region | Assign/alter assigned brain region of current cell | 
 | Assign label | Assign/alter label of current cell | 
 | Add new cell-type | Create new cell-type | 
