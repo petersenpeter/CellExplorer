@@ -11,7 +11,7 @@ dl {
   dt {
     float: left;
     clear: left;
-    width: 150px;
+    width: 200px;
     text-align: right;
     color: black;
   }
@@ -19,7 +19,8 @@ dl {
     content: " ";
   }
   dd {
-    margin: 0 0 0 160px;
+    margin: 0 0 0 210px;
+    margin-left: 210px;
     padding: 0 0 0.5em 0;
   }
 </style>
