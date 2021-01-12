@@ -15,6 +15,7 @@ nav_order: 4
 
 
 ### CellExplorer
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | About CellExplorer | Show About window |
@@ -23,6 +24,7 @@ nav_order: 4
 | Quit               | Quit CellExplorer. This will save any manual curation to the output from the call, e.g. `cell_metrics = CellExplorer('metrics',cell_metrics);`. Closing the main window has the same effect. |
 
 ### File
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | Load session from file             | Opens a file dialog where you can select a cell metrics Matlab file to load | 
@@ -35,6 +37,7 @@ nav_order: 4
 ![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2020/05/UnitsSummaryLowRess.png){: .mt-4}
 
 ### Navigation
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | Go to cell | Shows a dialog allowing you to provide a cell id or session to go to | 
@@ -42,6 +45,7 @@ nav_order: 4
 
 
 ### Cell Selection
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | Polygon selection of cells from plots | Perform cell classification on a group of cells by drawing a polygon circling the points in either of the scatter plots, waveforms, or ACGs | 
@@ -51,6 +55,7 @@ nav_order: 4
 | Highlight cells by mouse over | good | 
 
 ### Classification
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | ok           | good | 
@@ -59,6 +64,7 @@ nav_order: 4
 | ok           | good | 
 
 ### Waveforms
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | ok           | good | 
@@ -67,6 +73,7 @@ nav_order: 4
 | ok           | good | 
 
 ### View
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | ok           | good | 
@@ -75,6 +82,7 @@ nav_order: 4
 | ok           | good | 
 
 ### ACG
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | ok           | good | 
@@ -83,6 +91,7 @@ nav_order: 4
 | ok           | good | 
 
 ### MonoSyn
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | ok           | good | 
@@ -91,6 +100,7 @@ nav_order: 4
 | ok           | good | 
 
 ### Reference data
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | ok           | good | 
@@ -99,6 +109,7 @@ nav_order: 4
 | ok           | good | 
 
 ### Ground truth
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | ok           | good | 
@@ -107,6 +118,7 @@ nav_order: 4
 | ok           | good | 
 
 ### Table data
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | ok           | good | 
@@ -115,6 +127,7 @@ nav_order: 4
 | ok           | good | 
 
 ### Spikes
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | Open spike data dialog | Open the [spike data dialog(https://cellexplorer.org/interface/spike-and-event-data/), also described in [this tutorial](https://cellexplorer.org/tutorials/plotting-spike-data/) | 
@@ -122,6 +135,7 @@ nav_order: 4
 ![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-spike-dialog.png)
 
 ### Session
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | View metadata for current session | Opens the session metadata window using `gui_session.m` (shown below). [Learn more about the session metadata](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) | 
@@ -130,6 +144,7 @@ nav_order: 4
 ![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_session-general.png)
 
 ### BuzLabDB
+
 This menu is for lab members that has credentials to the Buzsaki lab databank at [https://buzsakilab.com/wp/database/](https://buzsakilab.com/wp/database/). Please see this [CellExplorer database page](https://cellexplorer.org/publicdata/preparation/) for further info. 
 
 | Elements     | Description       | 
@@ -142,6 +157,7 @@ This menu is for lab members that has credentials to the Buzsaki lab databank at
 
 
 ### Help
+
 | Elements     | Description       | 
 |:-------------|:------------------|
 | Keyboard shortcuts   | Shows a window with the list of keyboard shortcuts | 
