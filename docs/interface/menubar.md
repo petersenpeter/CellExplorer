@@ -4,10 +4,11 @@ title: Menu Bar
 parent: Graphical interface
 nav_order: 4
 ---
-# Menu bar of CellExplorer
+# CellExplorer Menu Bar
 {: .no_toc}
+Here is a detailed description of each of the menu elements of CellExplorer. 
 
-## Table of contents
+## Menu Bar elements
 {: .no_toc .text-delta }
 
 1. TOC
