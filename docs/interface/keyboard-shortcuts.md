@@ -7,7 +7,7 @@ nav_order: 5
 <style>
 .main-content dd{
     margin: 0 0 0 110px !important;
-    margin-left: 1em  !important;
+    margin-left: 0.2em  !important;
 }
 dl {
     padding: 0.1em;
