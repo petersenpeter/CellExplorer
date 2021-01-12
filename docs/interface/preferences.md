@@ -19,8 +19,8 @@ dl {
     content: " ";
   }
   dd {
-    margin: 0 0 0 210px;
-    margin-left: 4em;
+    margin: 0 0 0 210px  !important;
+    margin-left: 4em  !important;
     padding: 0 0 0.5em 0;
   }
 </style>
