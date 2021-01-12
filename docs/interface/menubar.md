@@ -53,25 +53,32 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Perform group action | [Perform group action](https://cellexplorer.org/interface/single-cell-plot-options/#group-action-plots) | 
 | Sticky cell selection | __boolean__: Cell selection is kept across calls | 
 | Reset sticky cell selection | Resets cell selection | 
-| Highlight cells by mouse over | good | 
+| Highlight cells by mouse over | __boolean__: a popup is shwon for the nearest cell (relative to the cursor) in the plots with the cell's id and group info (e.g. Cell type or other active grouping) | 
 
 ### Classification
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| ok           | good | 
-| out of stock | good | 
-| ok           | good | 
-| ok           | good | 
+| Undo classification | Undos the last manual curation step (any curation of these types are tracked: cell-types,) | 
+| Assign brain region | Assign/alter assigned brain region of current cell | 
+| Assign label | Assign/alter label of current cell | 
+| Add new cell-type | Create new cell-type | 
+| Add new tag | Create a new group tag | 
+| Reclassify cells | Reclassifies the cells using the [standard classification from the Processing module](https://cellexplorer.org/pipeline/cell-type-classification/) | 
+| Agglomerative hierarchical cluster tree classification | Agglomerative hierarchical cluster tree classification. A dialog will be shown allowing you to select which metrics to include in the analysis | 
+| Adjust Deep-Superficial assignment for session | open the [Deep-Superficial GUI](https://cellexplorer.org/interface/capabilities/#interface-for-deep-superfial-classification-curation) via `gui_DeepSuperficial.m`. Please see the [Deep-Superficial tutorial](https://cellexplorer.org/tutorials/deep-superficial-tutorial/) for further info| 
 
 ### Waveforms
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| ok           | good | 
-| out of stock | good | 
-| ok           | good | 
-| ok           | good | 
+| Z-score waveforms | __boolean__: Waveforms z-scored or shown in absolute units in the waveform| 
+| Show waveform metrics | __boolean__: Show waveform metrics in the single waveform plots, including trough-to-peak, AB-ratio, trough-to-peak (derivative) | 
+| Channel map inset with waveforms | __No channelmap/Single units/Trilateration of units__:  | 
+| Show ACG inset with waveforms | __boolean__ | 
+| Waveform alignment | __Probe layout/Electrode groups__ | 
+| Waveform count across channels | __All channels/Best channels__ | 
+| Trilateration group data | __session/animal/all__ | 
 
 ### View
 
