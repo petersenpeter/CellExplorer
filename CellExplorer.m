@@ -43,7 +43,6 @@ function cell_metrics = CellExplorer(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 22-03-2020
 
 % Shortcuts to built-in functions:
 % Data handling: initializeSession, saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData, defineGroupData
@@ -91,64 +90,52 @@ plotCellIDs = p.Results.plotCellIDs;
 % Initialization of variables and figure
 % % % % % % % % % % % % % % % % % % % % % %
 
-UI = []; UI.preferences.plotZLog = 0; UI.preferences.plot3axis = 0; UI.preferences.plotXdata = 'firingRate'; UI.preferences.plotYdata = 'peakVoltage';
-UI.preferences.plotZdata = 'deepSuperficialDistance'; UI.preferences.metricsTableType = 'Metrics'; 
-UI.preferences.deepSuperficial = ''; UI.preferences.acgType = 'Normal'; UI.preferences.cellTypeColors = []; UI.preferences.monoSynDispIn = 'None';
-UI.preferences.layout = 3; UI.preferences.displayMenu = 0; UI.preferences.displayInhibitory = false; UI.preferences.displayExcitatory = false;
-UI.preferences.customCellPlotIn{1} = 'Waveforms (single)'; UI.preferences.customCellPlotIn{2} = 'ACGs (single)'; UI.preferences.troughToPeakSorted = [];
-UI.preferences.customCellPlotIn{3} = 'thetaPhaseResponse'; UI.preferences.customCellPlotIn{4} = 'firingRateMap'; UI.preferences.raster = 'cv2';
-UI.preferences.customCellPlotIn{5} = 'firingRateMap'; UI.preferences.customCellPlotIn{6} = 'firingRateMap'; UI.preferences.plotCountIn = 'GUI 3+3';
-UI.preferences.tSNE.calcNarrowAcg = true; UI.preferences.tSNE.calcFiltWaveform = true; UI.preferences.tSNE.metrics = ''; UI.preferences.acgYaxisLog = 1;
-UI.preferences.tSNE.calcWideAcg = true; UI.preferences.dispLegend = 1; UI.preferences.tags = {'good','bad','mua','noise','inverseSpike','Other'};
-UI.preferences.groundTruthMarkers = {'d','o','s','*','+','p'}; UI.preferences.groundTruth = {'PV+','NOS1+','GAT1+'};
-UI.preferences.plotWaveformMetrics = 1; UI.preferences.metricsTable = 1; 
-UI.preferences.stickySelection = false; UI.preferences.fieldsMenuMetricsToExlude  = {'tags','groundTruthClassification','groups','spikes'};
-UI.preferences.plotOptionsToExlude = {'acg_','waveforms_','isi_','responseCurves_thetaPhase','responseCurves_thetaPhase_zscored','responseCurves_firingRateAcrossTime','groups','tags','groundTruthClassification','spikes'}; UI.preferences.tSNE.dDistanceMetric = 'euclidean';
-UI.preferences.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','groups','spikes'}; UI.params.inbound = [];
-UI.preferences.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial','groups','spikes'};
-UI.preferences.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','electrodeGroup'});
-UI.preferences.firingRateMap.showHeatmap = false; UI.preferences.firingRateMap.showLegend = false; UI.preferences.firingRateMap.showHeatmapColorbar = false;
-UI.preferences.referenceData = 'None'; UI.preferences.groundTruthData = 'None'; UI.BatchMode = false; UI.params.ii_history = 1; UI.params.ClickedCells = [];
-UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoSyn.dispHollowGauss = false; UI.preferences.binCount = 100;
-UI.preferences.customPlotHistograms = 1; UI.tableData.Column1 = 'putativeCellType'; UI.tableData.Column2 = 'brainRegion'; UI.preferences.ACGLogIntervals = -3:0.04:1;
-UI.tableData.SortBy = 'cellID'; UI.plot.xTitle = ''; UI.plot.yTitle = ''; UI.plot.zTitle = '';  UI.preferences.alteredCellMetrics = 1;
+UI = []; UI.BatchMode = false; UI.params.ClickedCells = []; UI.params.inbound = [];
+UI.params.ii_history = 1; UI.lists.metrics = [];
+UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoSyn.dispHollowGauss = false;
+UI.params.ACGLogIntervals = -3:0.04:1; UI.tableData.Column1 = 'putativeCellType'; UI.tableData.Column2 = 'brainRegion'; 
+UI.tableData.SortBy = 'cellID'; UI.plot.xTitle = ''; UI.plot.yTitle = ''; UI.plot.zTitle = '';  UI.params.alteredCellMetrics = 1;
 UI.cells.excitatory = []; UI.cells.inhibitory = []; UI.cells.inhibitory_subset = []; UI.cells.excitatory_subset = [];
 UI.cells.excitatoryPostsynaptic = []; UI.cells.inhibitoryPostsynaptic = []; UI.params.outbound = []; 
-UI.zoom.global = cell(1,10); UI.zoom.globalLog = cell(1,10); UI.preferences.logMarkerSize = 0; 
+UI.zoom.global = cell(1,10); UI.zoom.globalLog = cell(1,10);  
 UI.params.chanCoords.x_factor = 40; UI.params.chanCoords.y_factor = 10; UI.colors.toggleButtons = [0. 0.3 0.7];
-UI.preferences.plotExcitatoryConnections = true; UI.preferences.plotInhibitoryConnections = true; 
 UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;0.4940, 0.1840, 0.5560;0.4660, 0.6740, 0.1880;0.3010, 0.7450, 0.9330;0.6350, 0.0780, 0.1840];
-UI.lists.metrics = [];
+UI.params.fieldsMenuMetricsToExlude  = {'tags','groundTruthClassification','groups','spikes'};
+UI.params.plotOptionsToExlude = {'acg_','waveforms_','isi_','responseCurves_thetaPhase','responseCurves_thetaPhase_zscored','responseCurves_firingRateAcrossTime','groups','tags','groundTruthClassification','spikes'}; 
+UI.params.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','groups','spikes'}; 
+UI.params.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial','groups','spikes'};
+UI.params.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','electrodeGroup'});
+UI.classes.plot2 = []; UI.classes.colors = []; UI.classes.colors2 = [];  UI.classes.colors3 = []; UI.classes.plot = []; UI.classes.plot11 = []; 
+UI.brainRegions.list = []; UI.brainRegions.acronym = []; UI.brainRegions.relational_tree = [];
 
-synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'}; ce_waitbar = []; colorStr = []; 
-iLine = 1; batchIDs = []; UI.classes.colors = []; UI.classes.colors2 = [];  UI.classes.colors3 = []; h_scatter = []; ccf_ratio = [-35.5,30];
-groups_ids = []; clusClas = []; plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = []; meanCCG = [];
-hover2highlight.handle1 = []; hover2highlight.handle2 = []; hover2highlight.handle3 = []; hover2highlight.handle4 = [];
-classes2plot = []; classes2plotSubset = []; table_metrics = []; ii = []; history_classification = [];
-brainRegions_list = []; brainRegions_acronym = []; relational_tree = []; cell_class_count = [];  plotOptions = ''; freeText = {''};
-plotAcgFit = 0; plotAcgYLog = 0; plotAcgZscore = 0; clasLegend = 0; GroupVal = 1; ColorVal = 1; UI.classes.plot = []; UI.classes.plot11 = []; groupData.groupsList = {'groups','tags','groundTruthClassification'};
-colorMenu = []; groups2plot = []; groups2plot2 = [];  connectivityGraph = []; UI.classes.plot2 = []; general = []; plotAverage_nbins = 40; table_fieldsNames = {};
-tSNE_metrics = [];  classificationTrackChanges = []; spikesPlots = {}; K = gausswin(10)*gausswin(10)'; K = 1.*K/sum(K(:));
-tableDataOrder = []; groundTruthSelection = []; subsetGroundTruth = [];
-idx_textFilter = []; groundTruthCelltypesList = {''}; db = {}; gt = {}; plotConnections = [1 1 1];
-clickPlotRegular = true; fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];
+plotConnections = [1 1 1]; plotAverage_nbins = 40; groupData.groupsList = {'groups','tags','groundTruthClassification'}; 
+synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'}; ccf_ratio = [-35.5,30];
+plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = [];
+fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];
 fig2_axislimit_x_reference = []; fig2_axislimit_y_reference = []; fig2_axislimit_x_groundTruth = []; fig2_axislimit_y_groundTruth = [];
-referenceData=[]; reference_cell_metrics = []; groundTruth_cell_metrics = []; groundTruthData=[]; customPlotOptions = {};
+ce_waitbar = []; colorStr = []; iLine = 1; h_scatter = []; groups_ids = []; clusClas = [];  meanCCG = [];
+hover2highlight = {}; clickPlotRegular = true; 
+classes2plot = []; classes2plotSubset = []; ii = []; history_classification = []; batchIDs = []; general = []; classificationTrackChanges = []; 
+cell_class_count = [];  plotOptions = ''; colorMenu = []; GroupVal = 1; ColorVal = 1; 
+plotAcgFit = 0; plotAcgYLog = 0; plotAcgZscore = 0; clasLegend = 0; groups2plot = []; groups2plot2 = []; connectivityGraph = []; 
+tSNE_metrics = [];  spikesPlots = {}; gauss2d = gausswin(10)*gausswin(10)'; gauss2d = 1.*gauss2d/sum(gauss2d(:));
+idx_textFilter = []; freeText = {''}; table_metrics = []; table_fieldsNames = {}; tableDataOrder = []; 
+groundTruthSelection = []; subsetGroundTruth = []; groundTruthCelltypesList = {''}; db = {}; gt = {}; 
+customPlotOptions = {}; timerInterface = tic; timerHover = tic;
 
-timerVal = tic;
-timerHover = tic;
 spikes = []; events = []; states = [];
+referenceData=[]; reference_cell_metrics = []; groundTruth_cell_metrics = []; groundTruthData=[]; 
+
 createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal';
 createStruct1.Interpreter = 'none'; createStruct1.WindowStyle = 'modal';
 polygon1.handle = gobjects(0); fig = 1;
 set(groot, 'DefaultFigureVisible', 'on','DefaultAxesLooseInset',[.01,.01,.01,.01],'DefaultTextInterpreter', 'none'), maxFigureSize = get(groot,'ScreenSize'); UI.preferences.figureSize = [50, 50, min([1500,maxFigureSize(3)-100]), min([1000,maxFigureSize(4)-100])];
-% set(0, 'DefaultTextInterpreter', 'none')
+
 if isempty(basename)
-    s = regexp(basepath, filesep, 'split');
-    basename = s{end};
+    basename = basenameFromBasepath(basepath);
 end
 
-CellExplorerVersion = 1.67;
+CellExplorerVersion = 1.68;
 
 UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none');
 hManager = uigetmodemanager(UI.fig);
@@ -278,38 +265,8 @@ else
         close(UI.fig)
         return
     end
-    [~,basename,~] = fileparts(basepath);
-    if exist(fullfile(basepath,[basename,'.session.mat']),'file')
-        disp(['CellExplorer: Loading ',basename,'.session.mat'])
-        load(fullfile(basepath,[basename,'.session.mat']),'session')
-        if exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
-            load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'cell_metrics');
-            cell_metrics.general.basepath = fullfile(basepath);
-            cell_metrics.general.saveAs = 'cell_metrics';
-            initializeSession;
-        else
-            cell_metrics = [];
-            disp('CellExplorer: No cell_metrics exist in base folder. Loading from database')
-            if enableDatabase
-                DatabaseSessionDialog;
-                if ~exist('cell_metrics','var') || isempty(cell_metrics)
-                    disp('No dataset selected - closing CellExplorer')
-                    if ishandle(UI.fig)
-                        close(UI.fig)
-                    end
-                    cell_metrics = [];
-                    return
-                end
-            else
-                warning('Neither basename.session.mat or basename.cell_metrics.mat exist in base folder')
-                if ishandle(UI.fig)
-                    close(UI.fig)
-                end
-                return
-            end
-        end
-        
-    elseif exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
+    basename = basenameFromBasepath(basepath);
+    if exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
         disp('Loading local cell_metrics')
         load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
         cell_metrics.general.basepath = basepath;
@@ -346,7 +303,7 @@ end
 UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'About CellExplorer',menuSelectedFcn,@AboutDialog);
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Edit preferences',menuSelectedFcn,@LoadPreferences,'Separator','on');
-uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Benchmarking',menuSelectedFcn,@runBenchMark,'Separator','on');
+uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Run benchmarks',menuSelectedFcn,@runBenchMark,'Separator','on');
 uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Quit',menuSelectedFcn,@exitCellExplorer,'Separator','on','Accelerator','W');
 
 % File
@@ -384,22 +341,39 @@ UI.menu.edit.reclassify_celltypes = uimenu(UI.menu.edit.topMenu,menuLabel,'Recla
 UI.menu.edit.performClassification = uimenu(UI.menu.edit.topMenu,menuLabel,'Agglomerative hierarchical cluster tree classification',menuSelectedFcn,@performClassification);
 UI.menu.edit.adjustDeepSuperficial = uimenu(UI.menu.edit.topMenu,menuLabel,'Adjust Deep-Superficial assignment for session',menuSelectedFcn,@adjustDeepSuperficial1,'Separator','on');
 
+% Waveforms
+UI.menu.waveforms.topMenu = uimenu(UI.fig,menuLabel,'Waveforms');
+UI.menu.waveforms.zscoreWaveforms = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Z-score waveforms',menuSelectedFcn,@adjustZscoreWaveforms);
+if UI.preferences.zscoreWaveforms; UI.menu.waveforms.zscoreWaveforms.Checked = 'on'; end 
+UI.menu.waveforms.showMetrics = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Show waveform metrics',menuSelectedFcn,@showWaveformMetrics);
+UI.menu.waveforms.showChannelMapMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Channel map inset','Separator','on');
+UI.menu.waveforms.showChannelMap.ops(1) = uimenu(UI.menu.waveforms.showChannelMapMenu,menuLabel,'No channelmap',menuSelectedFcn,@showChannelMap);
+UI.menu.waveforms.showChannelMap.ops(2) = uimenu(UI.menu.waveforms.showChannelMapMenu,menuLabel,'By peak channel',menuSelectedFcn,@showChannelMap);
+UI.menu.waveforms.showChannelMap.ops(3) = uimenu(UI.menu.waveforms.showChannelMapMenu,menuLabel,'By trilateration',menuSelectedFcn,@showChannelMap);
+if UI.preferences.plotInsetChannelMap; UI.menu.waveforms.showChannelMap.ops(UI.preferences.plotInsetChannelMap).Checked = 'on'; end
+UI.menu.waveforms.channelMapColoring = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Show group colors in channel map inset',menuSelectedFcn,@showChannelMap);
+UI.menu.waveforms.showInsetACG = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Show ACG inset',menuSelectedFcn,@showInsetACG,'Separator','on');
+if UI.preferences.plotInsetACG; UI.menu.waveforms.showInsetACG.Checked = 'on'; end
+UI.menu.waveforms.waveformsAcrossChannelsAlignmentMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Waveform alignment','Separator','on');
+UI.menu.waveforms.waveformsAcrossChannelsAlignment.ops(1) = uimenu(UI.menu.waveforms.waveformsAcrossChannelsAlignmentMenu,menuLabel,'Probe layout',menuSelectedFcn,@adjustWaveformsAcrossChannelsAlignment);
+UI.menu.waveforms.waveformsAcrossChannelsAlignment.ops(2) = uimenu(UI.menu.waveforms.waveformsAcrossChannelsAlignmentMenu,menuLabel,'Electrode groups',menuSelectedFcn,@adjustWaveformsAcrossChannelsAlignment);
+initGroupMenu('waveforms','waveformsAcrossChannelsAlignment')
+UI.menu.waveforms.plotChannelMapAllChannelsMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Waveform count across channels');
+UI.menu.waveforms.plotChannelMapAllChannels.ops(1) = uimenu(UI.menu.waveforms.plotChannelMapAllChannelsMenu,menuLabel,'All channels',menuSelectedFcn,@adjustPlotChannelMapAllChannels);
+UI.menu.waveforms.plotChannelMapAllChannels.ops(2) = uimenu(UI.menu.waveforms.plotChannelMapAllChannelsMenu,menuLabel,'Best channels',menuSelectedFcn,@adjustPlotChannelMapAllChannels);
+initGroupMenu('waveforms','plotChannelMapAllChannels')
+UI.menu.waveforms.trilatGroupDataMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Trilateration group data');
+UI.menu.waveforms.trilatGroupData.ops(1) = uimenu(UI.menu.waveforms.trilatGroupDataMenu,menuLabel,'session',menuSelectedFcn,@adjustTrilatGroupData);
+UI.menu.waveforms.trilatGroupData.ops(2) = uimenu(UI.menu.waveforms.trilatGroupDataMenu,menuLabel,'animal',menuSelectedFcn,@adjustTrilatGroupData);
+UI.menu.waveforms.trilatGroupData.ops(3) = uimenu(UI.menu.waveforms.trilatGroupDataMenu,menuLabel,'all',menuSelectedFcn,@adjustTrilatGroupData);
+initGroupMenu('waveforms','trilatGroupData')
+
+
 % View / display
 UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'View');
-UI.menu.display.showHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menubar',menuSelectedFcn,@ShowHideMenu,'Accelerator','M');
-UI.menu.display.showAllWaveforms = uimenu(UI.menu.display.topMenu,menuLabel,'Show all traces',menuSelectedFcn,@showAllWaveforms,'Separator','on');
-if UI.preferences.showAllWaveforms; UI.menu.display.showAllWaveforms.Checked = 'on'; end 
-UI.menu.display.zscoreWaveforms = uimenu(UI.menu.display.topMenu,menuLabel,'Z-score waveforms',menuSelectedFcn,@adjustZscoreWaveforms);
-if UI.preferences.zscoreWaveforms; UI.menu.display.zscoreWaveforms.Checked = 'on'; end 
-
-UI.menu.display.showMetrics = uimenu(UI.menu.display.topMenu,menuLabel,'Show waveform metrics',menuSelectedFcn,@showWaveformMetrics);
-UI.menu.display.showChannelMapMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Channel map inset with waveforms');
-UI.menu.display.showChannelMap.ops(1) = uimenu(UI.menu.display.showChannelMapMenu,menuLabel,'No channelmap',menuSelectedFcn,@showChannelMap);
-UI.menu.display.showChannelMap.ops(2) = uimenu(UI.menu.display.showChannelMapMenu,menuLabel,'Single units',menuSelectedFcn,@showChannelMap);
-UI.menu.display.showChannelMap.ops(3) = uimenu(UI.menu.display.showChannelMapMenu,menuLabel,'Trilateration of units',menuSelectedFcn,@showChannelMap);
-if UI.preferences.plotInsetChannelMap; UI.menu.display.showChannelMap.ops(UI.preferences.plotInsetChannelMap).Checked = 'on'; end
-UI.menu.display.showInsetACG = uimenu(UI.menu.display.topMenu,menuLabel,'Show ACG inset with waveforms',menuSelectedFcn,@showInsetACG);
-if UI.preferences.plotInsetACG; UI.menu.display.showInsetACG.Checked = 'on'; end
+UI.menu.display.showHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show regular Matlab menubar',menuSelectedFcn,@ShowHideMenu,'Accelerator','M');
+UI.menu.display.showAllTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Show all traces',menuSelectedFcn,@showAllTraces,'Separator','on');
+if UI.preferences.showAllTraces; UI.menu.display.showAllTraces.Checked = 'on'; end 
 UI.menu.display.dispLegend = uimenu(UI.menu.display.topMenu,menuLabel,'Show legend in spikes plot',menuSelectedFcn,@showLegends);
 if UI.preferences.dispLegend; UI.menu.display.dispLegend.Checked = 'on'; end
 UI.menu.display.plotLinearFits = uimenu(UI.menu.display.topMenu,menuLabel,'Show linear fit in group plot',menuSelectedFcn,@togglePlotLinearFits);
@@ -414,25 +388,12 @@ UI.menu.display.isiNormalizationMenu = uimenu(UI.menu.display.topMenu,menuLabel,
 UI.menu.display.isiNormalization.ops(1) = uimenu(UI.menu.display.isiNormalizationMenu,menuLabel,'Rate',menuSelectedFcn,@buttonACG_normalize);
 UI.menu.display.isiNormalization.ops(2) = uimenu(UI.menu.display.isiNormalizationMenu,menuLabel,'Occurrence',menuSelectedFcn,@buttonACG_normalize);
 UI.menu.display.isiNormalization.ops(3) = uimenu(UI.menu.display.isiNormalizationMenu,menuLabel,'Instantaneous rate',menuSelectedFcn,@buttonACG_normalize);
-initGroupMenu('isiNormalization')
+initGroupMenu('display','isiNormalization')
 UI.menu.display.rainCloudNormalizationMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Raincloud plot normalization');
 UI.menu.display.rainCloudNormalization.ops(1) = uimenu(UI.menu.display.rainCloudNormalizationMenu,menuLabel,'Peak',menuSelectedFcn,@adjustRainCloudNormalizationMenu);
 UI.menu.display.rainCloudNormalization.ops(2) = uimenu(UI.menu.display.rainCloudNormalizationMenu,menuLabel,'Probability',menuSelectedFcn,@adjustRainCloudNormalizationMenu);
 UI.menu.display.rainCloudNormalization.ops(3) = uimenu(UI.menu.display.rainCloudNormalizationMenu,menuLabel,'Count',menuSelectedFcn,@adjustRainCloudNormalizationMenu);
-initGroupMenu('rainCloudNormalization')
-UI.menu.display.waveformsAcrossChannelsAlignmentMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Waveform alignment');
-UI.menu.display.waveformsAcrossChannelsAlignment.ops(1) = uimenu(UI.menu.display.waveformsAcrossChannelsAlignmentMenu,menuLabel,'Probe layout',menuSelectedFcn,@adjustWaveformsAcrossChannelsAlignment);
-UI.menu.display.waveformsAcrossChannelsAlignment.ops(2) = uimenu(UI.menu.display.waveformsAcrossChannelsAlignmentMenu,menuLabel,'Electrode groups',menuSelectedFcn,@adjustWaveformsAcrossChannelsAlignment);
-initGroupMenu('waveformsAcrossChannelsAlignment')
-UI.menu.display.plotChannelMapAllChannelsMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Waveform count across channels');
-UI.menu.display.plotChannelMapAllChannels.ops(1) = uimenu(UI.menu.display.plotChannelMapAllChannelsMenu,menuLabel,'All channels',menuSelectedFcn,@adjustPlotChannelMapAllChannels);
-UI.menu.display.plotChannelMapAllChannels.ops(2) = uimenu(UI.menu.display.plotChannelMapAllChannelsMenu,menuLabel,'Best channels',menuSelectedFcn,@adjustPlotChannelMapAllChannels);
-initGroupMenu('plotChannelMapAllChannels')
-UI.menu.display.trilatGroupDataMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Trilateration group data');
-UI.menu.display.trilatGroupData.ops(1) = uimenu(UI.menu.display.trilatGroupDataMenu,menuLabel,'session',menuSelectedFcn,@adjustTrilatGroupData);
-UI.menu.display.trilatGroupData.ops(2) = uimenu(UI.menu.display.trilatGroupDataMenu,menuLabel,'animal',menuSelectedFcn,@adjustTrilatGroupData);
-UI.menu.display.trilatGroupData.ops(3) = uimenu(UI.menu.display.trilatGroupDataMenu,menuLabel,'all',menuSelectedFcn,@adjustTrilatGroupData);
-initGroupMenu('trilatGroupData')
+initGroupMenu('display','rainCloudNormalization')
 UI.menu.display.significanceMetricsMatrix = uimenu(UI.menu.display.topMenu,menuLabel,'Generate significance matrix',menuSelectedFcn,@SignificanceMetricsMatrix,'Accelerator','K','Separator','on');
 UI.menu.display.generateRainCloudsPlot = uimenu(UI.menu.display.topMenu,menuLabel,'Generate rain cloud metrics figure',menuSelectedFcn,@generateRainCloudPlot);
 UI.menu.display.markerSizeMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Change marker size for group plots',menuSelectedFcn,@defineMarkerSize,'Separator','on');
@@ -510,22 +471,22 @@ UI.menu.tableData.ops(1) = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell metr
 UI.menu.tableData.ops(2) = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell list',menuSelectedFcn,@buttonShowMetrics);
 UI.menu.tableData.ops(3) = uimenu(UI.menu.tableData.topMenu,menuLabel,'None',menuSelectedFcn,@buttonShowMetrics);
 UI.menu.tableData.column1 = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell list metric 1','Separator','on');
-for m = 1:length(UI.preferences.tableDataSortingList)
-    UI.menu.tableData.column1_ops(m) = uimenu(UI.menu.tableData.column1,menuLabel,UI.preferences.tableDataSortingList{m},menuSelectedFcn,@setColumn1_metric);
+for m = 1:length(UI.params.tableDataSortingList)
+    UI.menu.tableData.column1_ops(m) = uimenu(UI.menu.tableData.column1,menuLabel,UI.params.tableDataSortingList{m},menuSelectedFcn,@setColumn1_metric);
 end
-UI.menu.tableData.column1_ops(strcmp(UI.tableData.Column1,UI.preferences.tableDataSortingList)).Checked = 'on';
+UI.menu.tableData.column1_ops(strcmp(UI.tableData.Column1,UI.params.tableDataSortingList)).Checked = 'on';
 
 UI.menu.tableData.column2 = uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell list metric 2');
-for m = 1:length(UI.preferences.tableDataSortingList)
-    UI.menu.tableData.column2_ops(m) = uimenu(UI.menu.tableData.column2,menuLabel,UI.preferences.tableDataSortingList{m},menuSelectedFcn,@setColumn2_metric);
+for m = 1:length(UI.params.tableDataSortingList)
+    UI.menu.tableData.column2_ops(m) = uimenu(UI.menu.tableData.column2,menuLabel,UI.params.tableDataSortingList{m},menuSelectedFcn,@setColumn2_metric);
 end
-UI.menu.tableData.column2_ops(strcmp(UI.tableData.Column2,UI.preferences.tableDataSortingList)).Checked = 'on';
+UI.menu.tableData.column2_ops(strcmp(UI.tableData.Column2,UI.params.tableDataSortingList)).Checked = 'on';
 
 uimenu(UI.menu.tableData.topMenu,menuLabel,'Cell list sorting:','Separator','on');
-for m = 1:length(UI.preferences.tableDataSortingList)
-    UI.menu.tableData.sortingList(m) = uimenu(UI.menu.tableData.topMenu,menuLabel,UI.preferences.tableDataSortingList{m},menuSelectedFcn,@setTableDataSorting);
+for m = 1:length(UI.params.tableDataSortingList)
+    UI.menu.tableData.sortingList(m) = uimenu(UI.menu.tableData.topMenu,menuLabel,UI.params.tableDataSortingList{m},menuSelectedFcn,@setTableDataSorting);
 end
-UI.menu.tableData.sortingList(strcmp(UI.tableData.SortBy,UI.preferences.tableDataSortingList)).Checked = 'on';
+UI.menu.tableData.sortingList(strcmp(UI.tableData.SortBy,UI.params.tableDataSortingList)).Checked = 'on';
 
 % Spikes
 UI.menu.spikeData.topMenu = uimenu(UI.fig,menuLabel,'Spikes');
@@ -547,9 +508,9 @@ uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current animal subject on websit
 % Help
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
 uimenu(UI.menu.help.topMenu,menuLabel,'Keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','H');
-uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Accelerator','V');
-uimenu(UI.menu.help.topMenu,menuLabel,'Tutorials',menuSelectedFcn,@openWebsite);
-
+uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Accelerator','V','Separator','on');
+uimenu(UI.menu.help.topMenu,menuLabel,'Tutorials',menuSelectedFcn,@openWebsite,'Separator','on');
+uimenu(UI.menu.help.topMenu,menuLabel,'Graphical interface',menuSelectedFcn,@openWebsite);
 if UI.preferences.plotWaveformMetrics; UI.menu.display.showMetrics.Checked = 'on'; end
 
 if strcmp(UI.preferences.acgType,'Normal')
@@ -663,10 +624,6 @@ else
     UI.preferences.metricsTable=3; UI.table.Visible='Off';
     UI.menu.tableData.ops(3).Checked = 'On';
 end
-
-%% % % % % % % % % % % % % % % % % % % % % %
-% UI content
-% % % % % % % % % % % % % % % % % % % % % %
 
 % % % % % % % % % % % % % % % % % % % %
 % Message log and Benchmark            
@@ -881,7 +838,7 @@ cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 function updateUI
     
-    timerVal = tic;
+    timerInterface = tic;
     if ishandle(UI.fig)
         UI.benchmark.String = '';
     end
@@ -990,16 +947,16 @@ function updateUI
     % Regrouping cells if comparison checkbox is checked
     if ColorVal == 5 % major brain regions 
         if ~isfield(UI.params,'brainRegionsLevel') | ~isfield(UI.params,'subset_pre') | numel(UI.params.subset) ~= numel(UI.params.subset_pre) | UI.params.subset ~= UI.params.subset_pre
-            if isempty(relational_tree)
+            if isempty(UI.brainRegions.relational_tree)
                 load('brainRegions_relational_tree.mat','relational_tree');
             end
             kk = 1;
-            idx = find(relational_tree.graph_depth == UI.preferences.graph_depth);
-            brainRegionsLevel1 = relational_tree.acronyms(idx);
+            idx = find(UI.brainRegions.relational_tree.graph_depth == UI.preferences.graph_depth);
+            brainRegionsLevel1 = UI.brainRegions.relational_tree.acronyms(idx);
             UI.params.brainRegionsLevel = {};
             UI.classes.plotBrainRegions = ones(1,length(UI.classes.plot));
             for i = 1:numel(brainRegionsLevel1)
-                acronym_out = getBrainRegionChildren(brainRegionsLevel1{i},relational_tree);
+                acronym_out = getBrainRegionChildren(brainRegionsLevel1{i},UI.brainRegions.relational_tree);
                 idx2 = ismember(lower(cell_metrics.brainRegion(UI.params.subset)),lower([acronym_out,brainRegionsLevel1{i}]));
                 if any(idx2)
                     UI.classes.plotBrainRegions(UI.params.subset(idx2)) = kk;
@@ -1225,7 +1182,7 @@ function updateUI
                 for m = referenceData.selection
                     idx = find(referenceData.clusClas==m);
                     [z_referenceData_temp,~,~] = histcounts2(xdata(idx), ydata(idx),referenceData1.x,referenceData1.y,'norm','probability');
-                    referenceData1.z(:,:,:,m) = bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(m,:),1,1,[]));
+                    referenceData1.z(:,:,:,m) = bsxfun(@times,repmat(conv2(z_referenceData_temp,gauss2d,'same'),1,1,3),reshape(colors(m,:),1,1,[]));
                 end
                 referenceData1.x = referenceData1.x(1:end-1)+(referenceData1.x(2)-referenceData1.x(1))/2;
                 referenceData1.y = referenceData1.y(1:end-1)+(referenceData1.y(2)-referenceData1.y(1))/2;
@@ -1278,7 +1235,7 @@ function updateUI
                     for m = unique(groundTruthData.clusClas)
                         idx = find(groundTruthData.clusClas==m);
                         [z_referenceData_temp,~,~] = histcounts2(xdata(idx), ydata(idx),groundTruthData1.x,groundTruthData1.y,'norm','probability');
-                        groundTruthData1.z(:,:,:,m) = bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(m,:),1,1,[]));
+                        groundTruthData1.z(:,:,:,m) = bsxfun(@times,repmat(conv2(z_referenceData_temp,gauss2d,'same'),1,1,3),reshape(colors(m,:),1,1,[]));
                     end
                     groundTruthData1.x = groundTruthData1.x(1:end-1)+(groundTruthData1.x(2)-groundTruthData1.x(1))/2;
                     groundTruthData1.y = groundTruthData1.y(1:end-1)+(groundTruthData1.y(2)-groundTruthData1.y(1))/2;
@@ -1998,7 +1955,7 @@ function updateUI
     % % % % % % % % % % % % % % % % % % % % % %
     % Response including benchmarking the UI
 %     drawnow nocallbacks
-    UI.benchmark.String = [num2str(length(UI.params.subset)),'/',num2str(cell_metrics.general.cellCount), ' cells displayed. Processing time: ', num2str(toc(timerVal),3),' sec'];
+    UI.benchmark.String = [num2str(length(UI.params.subset)),'/',num2str(cell_metrics.general.cellCount), ' cells displayed. Processing time: ', num2str(toc(timerInterface),3),' sec'];
     
 end
 
@@ -2095,7 +2052,7 @@ end
                 zscoreWaveforms1 = 'filt_absolute';
                 plotAxes.YLabel.String = ['Waveforms (',char(181),'V)'];
             end
-            if UI.preferences.showAllWaveforms == 0 && length(UI.params.subset)>2000
+            if UI.preferences.showAllTraces == 0 && length(UI.params.subset)>2000
                 plotSubset = UI.params.subset(randsample(length(UI.params.subset),2000));
             else
                 plotSubset = UI.params.subset;
@@ -2301,7 +2258,7 @@ end
             plotAxes.XLabel.String = 'Time (ms)';
             
             plotAxes.Title.String = customPlotSelection;
-            if UI.preferences.showAllWaveforms == 0 && length(UI.params.subset)>2000
+            if UI.preferences.showAllTraces == 0 && length(UI.params.subset)>2000
                 plotSubset = UI.params.subset(randsample(length(UI.params.subset),2000));
             else
                 plotSubset = UI.params.subset;
@@ -2498,7 +2455,7 @@ end
             else
                 subsetPlots.xaxis = -250:10:250;
             end
-            if UI.preferences.showAllWaveforms == 0 && length(UI.params.subset)>2000
+            if UI.preferences.showAllTraces == 0 && length(UI.params.subset)>2000
                 plotSubset = UI.params.subset(randsample(length(UI.params.subset),2000));
             else
                 plotSubset = UI.params.subset;
@@ -2671,12 +2628,12 @@ end
                     plotAxes.YLabel.String = 'Rate (Hz)';
                     
                 elseif strcmp(UI.preferences.isiNormalization,'Firing rates')
-                    bar_from_patch(1./general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^UI.preferences.ACGLogIntervals))',col)
+                    bar_from_patch(1./general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^UI.params.ACGLogIntervals))',col)
                     xlim([0,1000])
                     plotAxes.XLabel.String = 'Instantaneous rate (Hz)';
                     plotAxes.YLabel.String = 'Occurrence';
                 else
-                    bar_from_patch(general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^UI.preferences.ACGLogIntervals))',col)
+                    bar_from_patch(general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^UI.params.ACGLogIntervals))',col)
                     xlim([0,10])
                     plotAxes.XLabel.String = 'Time (sec)';
                     plotAxes.YLabel.String = 'Occurrence';
@@ -2691,7 +2648,7 @@ end
             
         elseif strcmp(customPlotSelection,'ISIs (all)') % ISIs
             plotAxes.Title.String = customPlotSelection;
-            if UI.preferences.showAllWaveforms == 0 && length(UI.params.subset)>2000
+            if UI.preferences.showAllTraces == 0 && length(UI.params.subset)>2000
                 plotSubset = UI.params.subset(randsample(length(UI.params.subset),2000));
             else
                 plotSubset = UI.params.subset;
@@ -2707,12 +2664,12 @@ end
                         plotAxes.YLabel.String = 'Rate (Hz)';
                     elseif strcmp(UI.preferences.isiNormalization,'Firing rates')
                         xdata = repmat([1./general.isis.log10',nan(1,1)],length(set1),1)';
-                        ydata = [cell_metrics.isi.log10(:,set1).*(diff(10.^UI.preferences.ACGLogIntervals))';nan(1,length(set1))];
+                        ydata = [cell_metrics.isi.log10(:,set1).*(diff(10.^UI.params.ACGLogIntervals))';nan(1,length(set1))];
                         xlim1 = [0,1000];
                         plotAxes.XLabel.String = 'Instantaneous rate (Hz)';
                         plotAxes.YLabel.String = 'Occurrence';
                     else
-                        ydata = [cell_metrics.isi.log10(:,set1).*(diff(10.^UI.preferences.ACGLogIntervals))';nan(1,length(set1))];
+                        ydata = [cell_metrics.isi.log10(:,set1).*(diff(10.^UI.params.ACGLogIntervals))';nan(1,length(set1))];
                         xlim1 = [0,10];
                         plotAxes.XLabel.String = 'Time (sec)';
                         plotAxes.YLabel.String = 'Occurrence';
@@ -2723,9 +2680,9 @@ end
                     if strcmp(UI.preferences.isiNormalization,'Rate')
                         line(general.isis.log10,cell_metrics.isi.log10(:,ii), 'color', 'k','linewidth',1.5,'HitTest','off')
                     elseif strcmp(UI.preferences.isiNormalization,'Firing rates')
-                        line(1./general.isis.log10,cell_metrics.isi.log10(:,ii).*(diff(10.^UI.preferences.ACGLogIntervals))', 'color', 'k','linewidth',1.5,'HitTest','off')
+                        line(1./general.isis.log10,cell_metrics.isi.log10(:,ii).*(diff(10.^UI.params.ACGLogIntervals))', 'color', 'k','linewidth',1.5,'HitTest','off')
                     else
-                        line(general.isis.log10,cell_metrics.isi.log10(:,ii).*(diff(10.^UI.preferences.ACGLogIntervals))', 'color', 'k','linewidth',1.5,'HitTest','off')
+                        line(general.isis.log10,cell_metrics.isi.log10(:,ii).*(diff(10.^UI.params.ACGLogIntervals))', 'color', 'k','linewidth',1.5,'HitTest','off')
                     end
                 end
                 xlim(xlim1), set(plotAxes,'xscale','log')
@@ -2736,7 +2693,7 @@ end
             % All ACGs. Colored by to cell-type.
             plotAxes.YLabel.String = 'Rate (Hz)';
             plotAxes.Title.String = customPlotSelection;
-            if UI.preferences.showAllWaveforms == 0 && length(UI.params.subset)>2000
+            if UI.preferences.showAllTraces == 0 && length(UI.params.subset)>2000
                 plotSubset = UI.params.subset(randsample(length(UI.params.subset),2000));
             else
                 plotSubset = UI.params.subset;
@@ -4113,9 +4070,19 @@ end
         out = [chanCoords.x1(cellIds);chanCoords.y1(cellIds);cellIds];
         if plots
             line(chanCoords.x,chanCoords.y,'Marker','.','LineStyle','none','color','k','markersize',4,'HitTest','off')
-            line(chanCoords.x1(cellIds),chanCoords.y1(cellIds),'Marker','.','LineStyle','none','color',[0.5 0.5 0.5],'markersize',10,'HitTest','off')
-            plotPutativeConnections(chanCoords.x1,chanCoords.y1,'Selected')
-            line(chanCoords.x1(cellID),chanCoords.y1(cellID),'Marker','.','LineStyle','none','color',col,'markersize',17,'HitTest','off')
+            if UI.preferences.channelMapColoring
+                subset1 = cellIds;
+                for k = 1:length(classes2plotSubset)
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), subset1);
+                    line(chanCoords.x1(set1),chanCoords.y1(set1),'Marker','.','LineStyle','none','color',[UI.classes.colors(k,:),0.2],'markersize',10,'HitTest','off')
+                end
+                plotPutativeConnections(chanCoords.x1,chanCoords.y1,'Selected')
+                plotMarker(chanCoords.x1(cellID),chanCoords.y1(cellID))
+            else
+                line(chanCoords.x1(cellIds),chanCoords.y1(cellIds),'Marker','.','LineStyle','none','color',[0.5 0.5 0.5],'markersize',10,'HitTest','off')
+                plotPutativeConnections(chanCoords.x1,chanCoords.y1,'Selected')
+                line(chanCoords.x1(cellID),chanCoords.y1(cellID),'Marker','.','LineStyle','none','color',col,'markersize',17,'HitTest','off')
+            end
         end
         
         function chanCoords = reallign(chanCoords_x,chanCoords_y)
@@ -4469,22 +4436,22 @@ end
 
     function showWaveformMetrics(~,~)
         if UI.preferences.plotWaveformMetrics==0
-            UI.menu.display.showMetrics.Checked = 'on';
+            UI.menu.waveforms.showMetrics.Checked = 'on';
             UI.preferences.plotWaveformMetrics = 1;
         else
-            UI.menu.display.showMetrics.Checked = 'off';
+            UI.menu.waveforms.showMetrics.Checked = 'off';
             UI.preferences.plotWaveformMetrics = 0;
         end
         uiresume(UI.fig);
     end
     
-    function showAllWaveforms(~,~)
-        if UI.preferences.showAllWaveforms==0
-            UI.menu.display.showAllWaveforms.Checked = 'on';
-            UI.preferences.showAllWaveforms = 1;
+    function showAllTraces(~,~)
+        if UI.preferences.showAllTraces==0
+            UI.menu.display.showAllTraces.Checked = 'on';
+            UI.preferences.showAllTraces = 1;
         else
-            UI.menu.display.showAllWaveforms.Checked = 'off';
-            UI.preferences.showAllWaveforms = 0;
+            UI.menu.display.showAllTraces.Checked = 'off';
+            UI.preferences.showAllTraces = 0;
         end
         uiresume(UI.fig);
     end
@@ -4499,10 +4466,10 @@ end
     
     function adjustZscoreWaveforms(~,~)
         if UI.preferences.zscoreWaveforms==0
-            UI.menu.display.zscoreWaveforms.Checked = 'on';
+            UI.menu.waveforms.zscoreWaveforms.Checked = 'on';
             UI.preferences.zscoreWaveforms = 1;
         else
-            UI.menu.display.zscoreWaveforms.Checked = 'off';
+            UI.menu.waveforms.zscoreWaveforms.Checked = 'off';
             UI.preferences.zscoreWaveforms = 0;
         end
         uiresume(UI.fig);
@@ -4510,30 +4477,37 @@ end
     
     function showChannelMap(src,~)
         if src.Position == 1
-            UI.menu.display.showChannelMap.ops(1).Checked = 'on';
-            UI.menu.display.showChannelMap.ops(2).Checked = 'off';
-            UI.menu.display.showChannelMap.ops(3).Checked = 'off';
+            UI.menu.waveforms.showChannelMap.ops(1).Checked = 'on';
+            UI.menu.waveforms.showChannelMap.ops(2).Checked = 'off';
+            UI.menu.waveforms.showChannelMap.ops(3).Checked = 'off';
             UI.preferences.plotInsetChannelMap = 1;
         elseif src.Position == 2
-            UI.menu.display.showChannelMap.ops(1).Checked = 'off';
-            UI.menu.display.showChannelMap.ops(2).Checked = 'on';
-            UI.menu.display.showChannelMap.ops(3).Checked = 'off';
+            UI.menu.waveforms.showChannelMap.ops(1).Checked = 'off';
+            UI.menu.waveforms.showChannelMap.ops(2).Checked = 'on';
+            UI.menu.waveforms.showChannelMap.ops(3).Checked = 'off';
             UI.preferences.plotInsetChannelMap = 2;
         elseif src.Position == 3
-            UI.menu.display.showChannelMap.ops(1).Checked = 'off';
-            UI.menu.display.showChannelMap.ops(2).Checked = 'off';
-            UI.menu.display.showChannelMap.ops(3).Checked = 'on';
+            UI.menu.waveforms.showChannelMap.ops(1).Checked = 'off';
+            UI.menu.waveforms.showChannelMap.ops(2).Checked = 'off';
+            UI.menu.waveforms.showChannelMap.ops(3).Checked = 'on';
             UI.preferences.plotInsetChannelMap = 3;
+        end
+        if strcmp(UI.menu.waveforms.channelMapColoring.Checked,'off')
+            UI.menu.waveforms.channelMapColoring.Checked = 'on';
+            UI.preferences.channelMapColoring = true;
+        else
+            UI.menu.waveforms.channelMapColoring.Checked = 'off';
+            UI.preferences.channelMapColoring = false;
         end
         uiresume(UI.fig);
     end
     
     function showInsetACG(src,~)
-        if strcmp(UI.menu.display.showInsetACG.Checked,'off')
-            UI.menu.display.showInsetACG.Checked = 'on';
+        if strcmp(UI.menu.waveforms.showInsetACG.Checked,'off')
+            UI.menu.waveforms.showInsetACG.Checked = 'on';
             UI.preferences.plotInsetACG = 2;
         else
-            UI.menu.display.showInsetACG.Checked = 'off';
+            UI.menu.waveforms.showInsetACG.Checked = 'off';
             UI.preferences.plotInsetACG = 1;
         end
         uiresume(UI.fig);
@@ -4549,6 +4523,8 @@ end
         switch source
             case 'Tutorials'
                 web('https://CellExplorer.org/tutorials/tutorials/','-new','-browser')
+            case 'Graphical interface'
+                web('https://cellexplorer.org/interface/interface/','-new','-browser')
             otherwise
                 web('https://CellExplorer.org/','-new','-browser')
         end
@@ -5867,7 +5843,7 @@ end
         history_classification(hist_idx).deepSuperficial_num = cell_metrics.deepSuperficial_num(cellIDs);
         history_classification(hist_idx).deepSuperficialDistance = cell_metrics.deepSuperficialDistance(cellIDs);
         classificationTrackChanges = [classificationTrackChanges,cellIDs];
-        UI.preferences.alteredCellMetrics = 1;
+        UI.params.alteredCellMetrics = 1;
         if rem(hist_idx,UI.preferences.autoSaveFrequency) == 0
             autoSave_Cell_metrics(cell_metrics)
         end
@@ -6102,22 +6078,22 @@ end
     function buttonBrainRegion(~,~)
         saveStateToHistory(ii)
         
-        if isempty(brainRegions_list)
+        if isempty(UI.brainRegions.list)
             brainRegions = load('BrainRegions.mat'); brainRegions = brainRegions.BrainRegions;
-            brainRegions_list = strcat(brainRegions(:,1),' (',brainRegions(:,2),')');
-            brainRegions_acronym = brainRegions(:,2);
+            UI.brainRegions.list = strcat(brainRegions(:,1),' (',brainRegions(:,2),')');
+            UI.brainRegions.acronym = brainRegions(:,2);
             clear brainRegions;
         end
-        choice = brainRegionDlg(brainRegions_list,find(strcmp(cell_metrics.brainRegion{ii},brainRegions_acronym)));
+        choice = brainRegionDlg(UI.brainRegions.list,find(strcmp(cell_metrics.brainRegion{ii},UI.brainRegions.acronym)));
         if strcmp(choice,'')
             tf = 0;
         else
-            indx = find(strcmp(choice,brainRegions_list));
+            indx = find(strcmp(choice,UI.brainRegions.list));
             tf = 1;
         end
         
         if tf == 1
-            SelectedBrainRegion = brainRegions_acronym{indx};
+            SelectedBrainRegion = UI.brainRegions.acronym{indx};
             cell_metrics.brainRegion{ii} = SelectedBrainRegion;
             UI.pushbutton.brainRegion.String = ['Region: ', SelectedBrainRegion];
             [cell_metrics.brainRegion_num,ID] = findgroups(cell_metrics.brainRegion);
@@ -6481,19 +6457,19 @@ end
         uiresume(UI.fig);
     end
 
-    function initGroupMenu(setting)
+    function initGroupMenu(groupname,setting)
         if ischar(UI.preferences.(setting))
-            idx = find(ismember({UI.menu.display.(setting).ops(:).(menuLabel)},UI.preferences.(setting)));
+            idx = find(ismember({UI.menu.(groupname).(setting).ops(:).(menuLabel)},UI.preferences.(setting)));
         if isempty(idx)
-            UI.menu.display.(setting).ops(1).Checked = 'on';
+            UI.menu.(groupname).(setting).ops(1).Checked = 'on';
         else
-            UI.menu.display.(setting).ops(idx).Checked = 'on';
+            UI.menu.(groupname).(setting).ops(idx).Checked = 'on';
         end
         else
             if UI.preferences.(setting)
-                UI.menu.display.(setting).ops(1).Checked = 'on';
+                UI.menu.(groupname).(setting).ops(1).Checked = 'on';
             else
-                UI.menu.display.(setting).ops(2).Checked = 'on';
+                UI.menu.(groupname).(setting).ops(2).Checked = 'on';
             end
         end
     end
@@ -6541,19 +6517,19 @@ end
     function adjustTrilatGroupData(src,~)
         if src.Position == 1
             UI.preferences.trilatGroupData = 'session';
-            UI.menu.display.trilatGroupData.ops(1).Checked = 'on';
-            UI.menu.display.trilatGroupData.ops(2).Checked = 'off';
-            UI.menu.display.trilatGroupData.ops(3).Checked = 'off';
+            UI.menu.waveforms.trilatGroupData.ops(1).Checked = 'on';
+            UI.menu.waveforms.trilatGroupData.ops(2).Checked = 'off';
+            UI.menu.waveforms.trilatGroupData.ops(3).Checked = 'off';
         elseif src.Position == 2
             UI.preferences.trilatGroupData = 'animal';
-            UI.menu.display.trilatGroupData.ops(1).Checked = 'off';
-            UI.menu.display.trilatGroupData.ops(2).Checked = 'on';
-            UI.menu.display.trilatGroupData.ops(3).Checked = 'off';
+            UI.menu.waveforms.trilatGroupData.ops(1).Checked = 'off';
+            UI.menu.waveforms.trilatGroupData.ops(2).Checked = 'on';
+            UI.menu.waveforms.trilatGroupData.ops(3).Checked = 'off';
        elseif src.Position == 3
             UI.preferences.trilatGroupData = 'all';
-            UI.menu.display.trilatGroupData.ops(1).Checked = 'off';
-            UI.menu.display.trilatGroupData.ops(2).Checked = 'off';
-            UI.menu.display.trilatGroupData.ops(3).Checked = 'on';
+            UI.menu.waveforms.trilatGroupData.ops(1).Checked = 'off';
+            UI.menu.waveforms.trilatGroupData.ops(2).Checked = 'off';
+            UI.menu.waveforms.trilatGroupData.ops(3).Checked = 'on';
         end
         uiresume(UI.fig);
     end
@@ -6561,12 +6537,12 @@ end
     function adjustWaveformsAcrossChannelsAlignment(src,~)
         if src.Position == 1
             UI.preferences.waveformsAcrossChannelsAlignment = 'Probe layout';
-            UI.menu.display.waveformsAcrossChannelsAlignment.ops(1).Checked = 'on';
-            UI.menu.display.waveformsAcrossChannelsAlignment.ops(2).Checked = 'off';
+            UI.menu.waveforms.waveformsAcrossChannelsAlignment.ops(1).Checked = 'on';
+            UI.menu.waveforms.waveformsAcrossChannelsAlignment.ops(2).Checked = 'off';
         elseif src.Position == 2
             UI.preferences.waveformsAcrossChannelsAlignment = 'Electrode groups';
-            UI.menu.display.waveformsAcrossChannelsAlignment.ops(1).Checked = 'off';
-            UI.menu.display.waveformsAcrossChannelsAlignment.ops(2).Checked = 'on';
+            UI.menu.waveforms.waveformsAcrossChannelsAlignment.ops(1).Checked = 'off';
+            UI.menu.waveforms.waveformsAcrossChannelsAlignment.ops(2).Checked = 'on';
         end
         uiresume(UI.fig);
     end
@@ -6574,12 +6550,12 @@ end
     function adjustPlotChannelMapAllChannels(src,~)
         if src.Position == 1
             UI.preferences.plotChannelMapAllChannels = true;
-            UI.menu.display.plotChannelMapAllChannels.ops(1).Checked = 'on';
-            UI.menu.display.plotChannelMapAllChannels.ops(2).Checked = 'off';
+            UI.menu.waveforms.plotChannelMapAllChannels.ops(1).Checked = 'on';
+            UI.menu.waveforms.plotChannelMapAllChannels.ops(2).Checked = 'off';
         elseif src.Position == 2
             UI.preferences.plotChannelMapAllChannels = false;
-            UI.menu.display.plotChannelMapAllChannels.ops(1).Checked = 'off';
-            UI.menu.display.plotChannelMapAllChannels.ops(2).Checked = 'on';
+            UI.menu.waveforms.plotChannelMapAllChannels.ops(1).Checked = 'off';
+            UI.menu.waveforms.plotChannelMapAllChannels.ops(2).Checked = 'on';
         end
         uiresume(UI.fig);
     end
@@ -6982,7 +6958,7 @@ end
         w = um_axes(1,3);
         if clickPlotRegular
             switch get(UI.fig, 'selectiontype')
-                case 'normal'
+                case {'normal','open'}
                     if ~isempty(UI.params.subset)
                         SelectFromPlot(u,v,w);
                     else
@@ -7194,9 +7170,9 @@ end
                 if strcmp(UI.preferences.isiNormalization,'Rate')
                     line(general.isis.log10,cell_metrics.isi.log10(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
                 elseif strcmp(UI.preferences.isiNormalization,'Firing rates')
-                    line(1./general.isis.log10,cell_metrics.isi.log10(:,UI.params.ClickedCells).*(diff(10.^UI.preferences.ACGLogIntervals))','linewidth',2, 'HitTest','off')
+                    line(1./general.isis.log10,cell_metrics.isi.log10(:,UI.params.ClickedCells).*(diff(10.^UI.params.ACGLogIntervals))','linewidth',2, 'HitTest','off')
                 else
-                    line(general.isis.log10,cell_metrics.isi.log10(:,UI.params.ClickedCells).*(diff(10.^UI.preferences.ACGLogIntervals))','linewidth',2, 'HitTest','off')
+                    line(general.isis.log10,cell_metrics.isi.log10(:,UI.params.ClickedCells).*(diff(10.^UI.params.ACGLogIntervals))','linewidth',2, 'HitTest','off')
                 end
             end
         end
@@ -7740,9 +7716,9 @@ end
                     elseif strcmp(UI.preferences.isiNormalization,'Firing rates')
                         x2 = 1./general.isis.log10;
                         x1 = (1./general.isis.log10)*ones(1,length(UI.params.subset));
-                        y1 = cell_metrics.isi.log10(:,UI.params.subset).*(diff(10.^UI.preferences.ACGLogIntervals))';
+                        y1 = cell_metrics.isi.log10(:,UI.params.subset).*(diff(10.^UI.params.ACGLogIntervals))';
                     else
-                        y1 = cell_metrics.isi.log10(:,UI.params.subset).*(diff(10.^UI.preferences.ACGLogIntervals))';
+                        y1 = cell_metrics.isi.log10(:,UI.params.subset).*(diff(10.^UI.params.ACGLogIntervals))';
                     end
                     x_scale = range(log10(x1(:)));
                     y_scale = range(y1(:));
@@ -8328,9 +8304,9 @@ end
                                 y1 = cell_metrics.isi.log10(:,UI.params.subset);
                             elseif strcmp(UI.preferences.isiNormalization,'Firing rates')
                                 x1 = (1./general.isis.log10)*ones(1,length(UI.params.subset));
-                                y1 = cell_metrics.isi.log10(:,UI.params.subset).*(diff(10.^UI.preferences.ACGLogIntervals))';
+                                y1 = cell_metrics.isi.log10(:,UI.params.subset).*(diff(10.^UI.params.ACGLogIntervals))';
                             else
-                                y1 = cell_metrics.isi.log10(:,UI.params.subset).*(diff(10.^UI.preferences.ACGLogIntervals))';
+                                y1 = cell_metrics.isi.log10(:,UI.params.subset).*(diff(10.^UI.params.ACGLogIntervals))';
                             end
                             
                             In = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
@@ -8618,10 +8594,10 @@ end
         else
             UI.tableData.SortBy = src.Label;
         end
-        for i = 1:length(UI.preferences.tableDataSortingList)
+        for i = 1:length(UI.params.tableDataSortingList)
             UI.menu.tableData.sortingList(i).Checked = 'off';
         end
-        idx = find(strcmp(UI.tableData.SortBy,UI.preferences.tableDataSortingList));
+        idx = find(strcmp(UI.tableData.SortBy,UI.params.tableDataSortingList));
         UI.menu.tableData.sortingList(idx).Checked = 'on';
         if UI.preferences.metricsTable==2
             updateCellTableData
@@ -8926,10 +8902,10 @@ end
         else
             UI.tableData.Column1 = src.Label;
         end
-        for i = 1:length(UI.preferences.tableDataSortingList)
+        for i = 1:length(UI.params.tableDataSortingList)
             UI.menu.tableData.column1_ops(i).Checked = 'off';
         end
-        idx = find(strcmp(UI.tableData.Column1,UI.preferences.tableDataSortingList));
+        idx = find(strcmp(UI.tableData.Column1,UI.params.tableDataSortingList));
         UI.menu.tableData.column1_ops(idx).Checked = 'on';
         if UI.preferences.metricsTable==2
             UI.table.ColumnName = {'','#',UI.tableData.Column1,UI.tableData.Column2};
@@ -8943,10 +8919,10 @@ end
         else
             UI.tableData.Column2 = src.Label;
         end
-        for i = 1:length(UI.preferences.tableDataSortingList)
+        for i = 1:length(UI.params.tableDataSortingList)
             UI.menu.tableData.column2_ops(i).Checked = 'off';
         end
-        idx = find(strcmp(UI.tableData.Column2,UI.preferences.tableDataSortingList));
+        idx = find(strcmp(UI.tableData.Column2,UI.params.tableDataSortingList));
         UI.menu.tableData.column2_ops(idx).Checked = 'on';
         if UI.preferences.metricsTable==2
             UI.table.ColumnName = {'','#',UI.tableData.Column1,UI.tableData.Column2};
@@ -9708,7 +9684,7 @@ end
             updateCount
             updateTags
             updatePutativeCellType
-            UI.preferences.alteredCellMetrics = 1;
+            UI.params.alteredCellMetrics = 1;
             
             % Button Deep-Superficial
             UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
@@ -10210,7 +10186,7 @@ end
         % Fieldnames
         metrics_fieldsNames = fieldnames(cell_metrics);
         table_fieldsNames = metrics_fieldsNames(find(ismember(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),{'cell','double'})));
-        table_fieldsNames(find(contains(table_fieldsNames,UI.preferences.tableOptionsToExlude)))=[];
+        table_fieldsNames(find(contains(table_fieldsNames,UI.params.tableOptionsToExlude)))=[];
         
         % Cell type initialization
         UI.preferences.cellTypes = unique([UI.preferences.cellTypes,cell_metrics.putativeCellType],'stable');
@@ -10248,7 +10224,7 @@ end
         % Plotting menues initialization
         fieldsMenuCells = metrics_fieldsNames;
         fieldsMenuCells = fieldsMenuCells(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'cell'));
-        fieldsMenuCells(find(contains(fieldsMenuCells,UI.preferences.fieldsMenuMetricsToExlude)))=[];
+        fieldsMenuCells(find(contains(fieldsMenuCells,UI.params.fieldsMenuMetricsToExlude)))=[];
         fieldsMenuCells = sort(fieldsMenuCells);
         groups_ids = [];
         
@@ -10340,13 +10316,13 @@ end
             if isfield(cell_metrics.acg,'log10')
             statusUpdate('Initializing log10 ACGs')
             cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
-            cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.preferences.ACGLogIntervals)');
+            cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.params.ACGLogIntervals)');
             end
             
             if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')
             statusUpdate('Initializing log10 ACGs')
             cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
-            cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.preferences.ACGLogIntervals)');
+            cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.params.ACGLogIntervals)');
             end
             
             if isfield(cell_metrics.responseCurves,'thetaPhase')
@@ -10571,7 +10547,7 @@ end
         else
             monosynOptions = [];
         end
-        plotOptions(find(contains(plotOptions,UI.preferences.plotOptionsToExlude)))=[]; %
+        plotOptions(find(contains(plotOptions,UI.params.plotOptionsToExlude)))=[]; %
         plotOptions = unique([waveformOptions; waveformOptions2; acgOptions; monosynOptions; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
         
         % Initilizing views
@@ -10586,7 +10562,7 @@ end
         colorMenu = colorMenu(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'cell'));
         fields2keep = [];
         for i = 1:length(colorMenu)
-            if ~any(cell2mat(cellfun(@isnumeric,cell_metrics.(colorMenu{i}),'UniformOutput',false))) && ~contains(colorMenu{i},UI.preferences.menuOptionsToExlude )
+            if ~any(cell2mat(cellfun(@isnumeric,cell_metrics.(colorMenu{i}),'UniformOutput',false))) && ~contains(colorMenu{i},UI.params.menuOptionsToExlude )
                 fields2keep = [fields2keep,i];
             end
         end
@@ -10716,7 +10692,7 @@ end
         for i = temp
             idx = find(referenceData.clusClas==i);
             [z_referenceData_temp,~,~] = histcounts2(cell_metrics.troughToPeak(idx) * 1000, cell_metrics.burstIndex_Royer2012(idx),referenceData.x,referenceData.y,'norm','probability');
-            referenceData.z(:,:,:,i) = bsxfun(@times,repmat(conv2(z_referenceData_temp,K,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
+            referenceData.z(:,:,:,i) = bsxfun(@times,repmat(conv2(z_referenceData_temp,gauss2d,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
             
         end
         referenceData.x = referenceData.x(1:end-1)+diff(referenceData.x([1,2]));
@@ -10770,12 +10746,12 @@ end
         
         if isfield(cell_metrics.acg,'log10') && (~isfield(cell_metrics.acg,'log10_rate') || size(cell_metrics.acg.log10_rate,2) ~= size(cell_metrics.acg.log10,2))
             cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
-            cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.preferences.ACGLogIntervals)');
+            cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.params.ACGLogIntervals)');
         end
         
         if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')  && (~isfield(cell_metrics.isi,'log10_rate') || size(cell_metrics.isi.log10_rate,2) ~= size(cell_metrics.isi.log10,2))
             cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
-            cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.preferences.ACGLogIntervals)');
+            cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.params.ACGLogIntervals)');
         end
     end
 
@@ -11895,14 +11871,14 @@ end
 
     function filterCellsByText(~,~)
         if ~isempty(UI.textFilter.String) && ~strcmp(UI.textFilter.String,'Filter')
-            if isempty(freeText) || UI.preferences.alteredCellMetrics == 1
+            if isempty(freeText) || UI.params.alteredCellMetrics == 1
                 freeText = {''};
                 fieldsMenuCells = fieldnames(cell_metrics);
                 fieldsMenuCells = fieldsMenuCells(strcmp(struct2cell(structfun(@class, cell_metrics, 'UniformOutput', false)), 'cell'));
                 for j = 1:length(fieldsMenuCells)
                     freeText = strcat(freeText, {' '}, cell_metrics.(fieldsMenuCells{j}));
                 end
-                UI.preferences.alteredCellMetrics = 0;
+                UI.params.alteredCellMetrics = 0;
             end
             [newStr2,matches] = split(UI.textFilter.String,[" & "," | "," OR "," AND "]);
             idx_textFilter2 = zeros(length(newStr2),cell_metrics.general.cellCount);
@@ -11911,10 +11887,10 @@ end
                 if numel(newStr2{i})>11 && strcmp(newStr2{i}(1:12),'.brainRegion')
                     newStr = split(newStr2{i}(2:end),' ');
                     if numel(newStr)>1
-                        if isempty(relational_tree)
+                        if isempty(UI.brainRegions.relational_tree)
                             load('brainRegions_relational_tree.mat','relational_tree');
                         end
-                        acronym_out = getBrainRegionChildren(newStr{2},relational_tree);
+                        acronym_out = getBrainRegionChildren(newStr{2},UI.brainRegions.relational_tree);
                         idx_textFilter2(i,:) = ismember(lower(cell_metrics.brainRegion),lower([acronym_out,newStr{2}]));
                     end
                 elseif strcmp(newStr2{i}(1),'.')
@@ -12149,7 +12125,7 @@ end
         testGroupsSizes(idx) = [];
         nRepetitions = min([100,numel(UI.params.subset)]); 
 
-        [indx,~] = listdlg('PromptString','What benchmark do you want to perform?','ListString',{'Cell Exporer UI', 'Single plot figures', 'Cell metrics file loading','Reference data file loading'},'ListSize',[300,200],'InitialValue',1,'SelectionMode','many','Name','Benchmarks');
+        [indx,~] = listdlg('PromptString','Which benchmarks do you want to perform?','ListString',{'Cell Exporer UI', 'Single plot figures', 'Cell metrics file loading','Reference data file loading'},'ListSize',[300,200],'InitialValue',1,'SelectionMode','many','Name','Benchmarks');
         if any(indx == 3)
             % Benchmarking file loading
             if isfield(cell_metrics.general,'batch_benchmark')
@@ -12439,10 +12415,20 @@ end
             set(UI.fig, 'MenuBar', 'figure')
             UI.preferences.displayMenu = 1;
             UI.menu.display.showHideMenu.Checked = 'On';
+            fieldmenus = fieldnames(UI.menu);
+            fieldmenus(strcmpi(fieldmenus,'CellExplorer')) = [];
+            for i = 1:numel(fieldmenus)
+                UI.menu.(fieldmenus{i}).topMenu.Visible = 'off';
+            end
+            MsgLog('Regular MATLAB menubar shown. Press M to regain the CellExplorer menubar',2);
         else
             set(UI.fig, 'MenuBar', 'None')
             UI.preferences.displayMenu = 0;
             UI.menu.display.showHideMenu.Checked = 'Off';
+            fieldmenus = fieldnames(UI.menu);
+            for i = 1:numel(fieldmenus)
+                UI.menu.(fieldmenus{i}).topMenu.Visible = 'on';
+            end
         end
     end
 
