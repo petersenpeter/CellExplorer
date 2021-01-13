@@ -60,10 +60,10 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Elements     | Description       | 
 |:-------------|:------------------|
 | Undo classification | Undoes the last manual curation step (any curation of these types are tracked: cell-types, labels, tags, groups, brain regions, ground truth classification, Deep-Superficial) | 
-| Assign brain region | Assign/alter assigned brain region of current cell | 
+| Assign brain region | Assign/alter brain region of current cell | 
 | Assign label | Assign/alter label of current cell | 
 | Add new cell-type | Create new cell-type | 
-| Add new tag | Create a new group tag | 
+| Add new tag | Create new group tag | 
 | Reclassify cells | Reclassifies the cells using the [standard classification from the Processing module](https://cellexplorer.org/pipeline/cell-type-classification/) | 
 | Agglomerative hierarchical cluster tree classification | Agglomerative hierarchical cluster tree classification. A dialog will be shown allowing you to select which metrics to include in the analysis | 
 | Adjust Deep-Superficial assignment for session | open the [Deep-Superficial GUI](https://cellexplorer.org/interface/capabilities/#interface-for-deep-superfial-classification-curation) via `gui_DeepSuperficial.m`. Please see the [Deep-Superficial tutorial](https://cellexplorer.org/tutorials/deep-superficial-tutorial/) for further info| 
@@ -75,23 +75,23 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Z-score waveforms | __boolean__: Waveforms z-scored or shown in absolute units in the waveform| 
 | Show waveform metrics | __boolean__: Show waveform metrics in the single waveform plots, including trough-to-peak, AB-ratio, trough-to-peak (derivative) | 
 | Channel map inset with waveforms | __No channelmap/Single units/Trilateration of units__:  | 
-| Show ACG inset with waveforms | __boolean__ | 
+| Show group colors in channel map inset | __boolean__: Show group colors in channel map inset | 
+| Show ACG inset with waveforms | __boolean__: Show a small ACG inset in the waveform plot | 
 | Waveform alignment | __Probe layout/Electrode groups__ | 
 | Waveform count across channels | __All channels/Best channels__ | 
 | Trilateration group data | __session/animal/all__ | 
 
 ### View
-TODO 
 
 | Elements     | Description       | 
 |:-------------|:------------------|
 | Show regular Matlab menu bar | Hides the CellExplorer menu and shows the regular Matlab figure menu instead  | 
-| Show all traces | __boolean__ good | 
-| Show legend in spikes plot | __boolean__ good | 
-| Show linear fit in group plot | __boolean__ good | 
-| Show legend in firing rate maps | __boolean__ good | 
-| Show heatmap in firing rate maps  | __boolean__ good | 
-| Shown colorbar in heatmaps in firing rate maps | __boolean__ good | 
+| Show all traces | __boolean__ All traces are shown instead of the default maximum of 2000 (optimized for performance) | 
+| Show legend in spikes plot | __boolean__ Shows legend in  spikes plot (off by default to increase performance) | 
+| Show linear fit in group plot | __boolean__ Show a linear fit along thet 2D group data in the custom plot | 
+| Show legend in firing rate maps | __boolean__ Show legend in firing rate maps (off by default to increase performance) | 
+| Show heatmap in firing rate maps  | __boolean__ Show heatmap of trials in firing rate maps (headmap or lines) | 
+| Shown colorbar in heatmaps in firing rate maps | __boolean__ Show colorbar in heatmaps (off by default to increase performance) | 
 | ISI normalization | __Rate/Occurrence/Instantaneous rate__ | 
 | Raincloud plot normalization | __Peak/Probability/Count__ | 
 | Generate significance matrix | Dialog allowing you to select a list of metrics for which a significance matrix  will be generated as described [here](https://cellexplorer.org/interface/capabilities/#significance-matrix) | 
@@ -112,20 +112,20 @@ TODO
 
 ### MonoSyn
 
-| Elements     | Description       | 
+| Elements     | Description       |
 |:-------------|:------------------|
-| Show in custom plot  | __boolean__ Show monosynaptic connections in the custom plot | 
-| Show in classic plot | __boolean__ Show monosynaptic connections in the classic plot | 
-| Show in t-SNE plot | __boolean__ Show monosynaptic connections in the t-SNE plot | 
-| Plot excitatory connections | __boolean__ Show excitatory monosynaptic connections | 
-| Plot inhibitory connections | __boolean__ Show inhibitory monosynaptic connections | 
+| Show in custom plot  | __boolean__ Show monosynaptic connections in the custom plot |
+| Show in classic plot | __boolean__ Show monosynaptic connections in the classic plot |
+| Show in t-SNE plot | __boolean__ Show monosynaptic connections in the t-SNE plot |
+| Plot excitatory connections | __boolean__ Show excitatory monosynaptic connections |
+| Plot inhibitory connections | __boolean__ Show inhibitory monosynaptic connections |
 | Synaptic filter | __None/Selected/Upstream/Downstream/Up & Downstream /All__: Which monosynaptic connection types to show. | 
 | Highlight excitatory cells | Highlight excitatory cells with triangles | 
 | Highlight inhibitory cells | Highlight inhibitory cells with squares | 
 | Highlight cells receiving excitatory input | Highlight cells receiving excitation with downward facing triangles | 
-| Highlight cells receiving inhibitory input | Highlight cells receiving inhibition with ? | 
-| Shown hollow gaussian in CCG plots | Show the significance level for the monosynaptic connections in the CCG plots (determined from a hollow gaussian) | 
-| Adjust monosynaptic connections | adjust monosynaptic connections for the current session using the `gui_MonoSyn.m` as described in the [Monosynaptic connections tutorial](https://cellexplorer.org/tutorials/monosynaptic-connections-tutorial/) | 
+| Highlight cells receiving inhibitory input | Highlight cells receiving inhibition with asterisk | 
+| Shown hollow gaussian in CCG plots | Show the significance level for the monosynaptic connections in the CCG plots (determined from a hollow gaussian) |
+| Adjust monosynaptic connections | adjust monosynaptic connections for the current session using the `gui_MonoSyn.m` as described in the [Monosynaptic connections tutorial](https://cellexplorer.org/tutorials/monosynaptic-connections-tutorial/) |
 
 ### Reference data
 
