@@ -33,9 +33,17 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Restore classification from backup | Shows a dialog with a list of backup steps for the current session. Choose any backup point to restore to that state. Every time the cell metrics are processed again with `ProcessCellMetrics.m` and curation are saved via CellExplorer, a backup is created. Backups are stored in a subfolder with the data | 
 | Reload cell metrics                | Reload cell metrics from original files | 
 | Export main figure window          | [Exports the CellExplorer interface](https://cellexplorer.org/tutorials/export-figure/) | 
-| Generate supplementary figure      | Generates a [supplementary figure](https://cellexplorer.org/interface/capabilities/#export-supplementary-figure) optimized for publication (see figure below). You can select which metrics to show in panels in C and D | 
+| Generate supplementary figure      | Generates a [supplementary figure](https://cellexplorer.org/interface/capabilities/#export-supplementary-figure) optimized for publication (see figures below with the dialog and supplementary figure). You can select which metrics to show in panels in C and D | 
+| Generate summary figure            | Generates a summary figure, which is also generate by the processing module | 
+
+
+![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2021/01/supplementaryFigureDialog.png){: .mt-4}
 
 ![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2020/05/UnitsSummaryLowRess.png){: .mt-4}
+
+
+
+
 
 ### Navigation
 
