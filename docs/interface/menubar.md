@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Menu Bar
+title: Menu bar
 parent: Graphical interface
 nav_order: 4
 ---
@@ -93,7 +93,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-| Show regular Matlab menu bar | Hides the CellExplorer menu and shows the regular Matlab figure menu bar  | 
+| Show regular Matlab menu bar | __boolean__ Hides the CellExplorer menu and shows the regular Matlab figure menu bar  | 
 | Show all traces | __boolean__ All traces are shown instead of the default maximum of 2000 (on by default to increase performance) | 
 | Show legend in spikes plot | __boolean__ Shows legend in  spikes plot (off by default to increase performance) | 
 | Show linear fit in group plot | __boolean__ Show a linear fit along thet 2D group data in the custom plot | 
@@ -116,7 +116,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 |:-------------|:------------------|
 | ACG time scale | __30ms/100ms/1sec/Log10__: adjusts the timescale of the ACG plots | 
 | Log y-axis | __boolean__ Logarithmic y-axis | 
-| Show ACG fit | Shows the [ACG fit](https://cellexplorer.org/pipeline/acg-fit/) in the ACG plots | 
+| Show ACG fit | __boolean__ Shows the [ACG fit](https://cellexplorer.org/pipeline/acg-fit/) in the ACG plots | 
 
 ### MonoSyn
 
@@ -128,11 +128,11 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Plot excitatory connections | __boolean__ Show excitatory monosynaptic connections |
 | Plot inhibitory connections | __boolean__ Show inhibitory monosynaptic connections |
 | Synaptic filter | __None/Selected/Upstream/Downstream/Up & Downstream /All__: Which monosynaptic connection types to show. | 
-| Highlight excitatory cells | Highlight excitatory cells with triangles | 
-| Highlight inhibitory cells | Highlight inhibitory cells with squares | 
-| Highlight cells receiving excitatory input | Highlight cells receiving excitation with downward facing triangles | 
-| Highlight cells receiving inhibitory input | Highlight cells receiving inhibition with asterisks | 
-| Shown hollow gaussian in CCG plots | Show the significance level for the monosynaptic connections in the CCG plots (determined from a hollow gaussian) |
+| Highlight excitatory cells | __boolean__ Highlight excitatory cells with triangles | 
+| Highlight inhibitory cells | __boolean__ Highlight inhibitory cells with squares | 
+| Highlight cells receiving excitatory input | __boolean__ Highlight cells receiving excitation with downward facing triangles | 
+| Highlight cells receiving inhibitory input | __boolean__ Highlight cells receiving inhibition with asterisks | 
+| Shown hollow gaussian in CCG plots | __boolean__ Show the significance level for the monosynaptic connections in the CCG plots (determined from a hollow gaussian) |
 | Adjust monosynaptic connections | adjust monosynaptic connections for the current session using the `gui_MonoSyn.m` as described in the [Monosynaptic connections tutorial](https://cellexplorer.org/tutorials/monosynaptic-connections-tutorial/) |
 
 ### Reference data
@@ -170,7 +170,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 |:-------------|:------------------|
 | Table data type | __Cell metrics/Cell list/None__: Show cell metrics (full list of metrics and values) for current cell or list of cells (list of cells with a check box, id and two metrics for each cell) in table | 
 | Cell list metrics #1 and #2 | If cell list is shown in table, you can select what metrics to show in the list | 
-| Cell list sorting | The metric used to sort the cells in the table | 
+| Cell list sorting | __multiple options__ The metric used to sort the cells in the table | 
 
 ### Spikes
 
