@@ -157,6 +157,7 @@ if ~isfield(session,'spikeSorting')
         session.spikeSorting{1}.notes = '';
     else
         disp('No spike sorting data detected')
+        
     end
 end
 
@@ -192,7 +193,18 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Kilosort
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+if ~exist('relativePath','var')
+    kiloSortFolder = dir('Kilosort_*');
+    % Extract only those that are directories.
+    kiloSortFolder = kiloSortFolder(kiloSortFolder.isdir);
+    if ~isempty(kiloSortFolder)
+        relativePath = kiloSortFolder.name;
+    else
+        relativePath = ''; % Relative path to the clustered data (here assumed to be the basepath)
+    end
+end
 rezFile = dir(fullfile(basepath,relativePath,'rez*.mat'));
+rezFile = rezFile.name;
 session = loadKiloSortMetadata(session,rezFile);
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %

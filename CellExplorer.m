@@ -2225,6 +2225,7 @@ end
             plotAxes.YLabel.String = ['Cells (Sorting: ', UI.preferences.sortingMetric,')'];
             plotAxes.Title.String = customPlotSelection;
             % Sorted according to trough-to-peak
+            [~,UI.preferences.troughToPeakSorted] = sort(cell_metrics.(UI.preferences.sortingMetric)(UI.params.subset));
             [~,idx] = find(UI.params.subset(UI.preferences.troughToPeakSorted) == ii);
             
             imagesc(cell_metrics.waveforms.time_zscored, [1:length(UI.params.subset)], cell_metrics.waveforms.filt_zscored(:,UI.params.subset(UI.preferences.troughToPeakSorted))','HitTest','off'),
@@ -8734,11 +8735,12 @@ end
         else
             UI.params.putativeSubse_inh=[];
         end
+        UI.preferences.plotInsetChannelMap = 1;
         UI.classes.colors = UI.preferences.cellTypeColors(intersect(classes2plot,UI.classes.plot(UI.params.subset)),:);
         classes2plotSubset = unique(UI.classes.plot);
             
         if plotCellIDs==-1
-            plotOptions_all = {'Trilaterated position','Waveforms (all)','Waveforms (image)','ACGs (all)','ACGs (image)','ISIs (all)','ISIs (image)','RCs_firingRateAcrossTime (image)','RCs_firingRateAcrossTime (all)'};
+            plotOptions_all = {'Trilaterated position','Waveforms (all)','ACGs (all)','ACGs (image)','ISIs (all)','ISIs (image)','RCs_firingRateAcrossTime (image)','RCs_firingRateAcrossTime (all)'};
             plotOptions = plotOptions(ismember(plotOptions,plotOptions_all));
             if isfield(cell_metrics,'putativeConnections') && (isfield(cell_metrics.putativeConnections,'excitatory') || isfield(cell_metrics.putativeConnections,'inhibitory'))
                 plotOptions = [plotOptions;'Connectivity graph'; 'Connectivity matrix'];
@@ -10476,6 +10478,22 @@ end
         end
         waveformOptions = [waveformOptions;'Waveforms (image)'];
         
+        if isfield(tSNE_metrics,'filtWaveform')
+            waveformOptions = [waveformOptions;'Waveforms (tSNE)'];
+        end
+        if isfield(cell_metrics.waveforms,'raw')
+            waveformOptions = [waveformOptions;'Waveforms (raw single)';'Waveforms (raw all)'];
+            if isfield(tSNE_metrics,'rawWaveform')
+                waveformOptions = [waveformOptions;'Raw waveforms (tSNE)'];
+            end
+        end
+        
+        temp = fieldnames(cell_metrics.waveforms);
+        temp(ismember(temp,{'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time','bestChannels'}) | ~structfun(@iscell,cell_metrics.waveforms)) = [];
+        for i = 1:length(temp)
+            waveformOptions = [waveformOptions;['Waveforms (',temp{i},')']];
+        end
+        
         if isfield(cell_metrics,'trilat_x') && isfield(cell_metrics,'trilat_y')
             waveformOptions = [waveformOptions;'Trilaterated position'];
         end
@@ -10483,22 +10501,6 @@ end
             waveformOptions = [waveformOptions;'Common Coordinate Framework'];
         end
         
-        if isfield(tSNE_metrics,'filtWaveform')
-            waveformOptions = [waveformOptions;'Waveforms (tSNE)'];
-        end
-        if isfield(cell_metrics.waveforms,'raw')
-            waveformOptions2 = {'Waveforms (raw single)';'Waveforms (raw all)'};
-            if isfield(tSNE_metrics,'rawWaveform')
-                waveformOptions2 = [waveformOptions2;'Raw waveforms (tSNE)'];
-            end
-        else
-            waveformOptions2 = {};
-        end
-        temp = fieldnames(cell_metrics.waveforms);
-        temp(ismember(temp,{'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time','bestChannels'}) | ~structfun(@iscell,cell_metrics.waveforms)) = [];
-        for i = 1:length(temp)
-            waveformOptions2 = [waveformOptions2;['Waveforms (',temp{i},')']];
-        end
         acgOptions = {'ACGs (single)';'ACGs (all)';'ACGs (image)';'CCGs (image)'};
         if isfield(cell_metrics,'isi')
             acgOptions = [acgOptions;'ISIs (single)';'ISIs (all)';'ISIs (image)'];
@@ -10548,7 +10550,7 @@ end
             monosynOptions = [];
         end
         plotOptions(find(contains(plotOptions,UI.params.plotOptionsToExlude)))=[]; %
-        plotOptions = unique([waveformOptions; waveformOptions2; acgOptions; monosynOptions; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
+        plotOptions = unique([waveformOptions; acgOptions; monosynOptions; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
         
         % Initilizing views
         for i = 1:6

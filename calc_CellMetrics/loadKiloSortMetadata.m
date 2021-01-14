@@ -28,11 +28,11 @@ if exist(rezFile,'file')
     session.extracellular.spikeGroups.channels = session.extracellular.electrodeGroups.channels; % Spike groups
     chanCoords.x = rez.xcoords;
     chanCoords.y = rez.ycoords;
-    chanCoordsFile = fullfile(session.general.basePath,[session.general.basename,'.chanCoords.channelInfo.mat']);
+    chanCoordsFile = fullfile(session.general.basePath,[session.general.name,'.chanCoords.channelInfo.mat']);
     if ~exist(chanCoordsFile,'file')
         disp(['Generating chanCoords file from KiloSort rez structure : ' chanCoordsFile])
         save(chanCoordsFile,'chanCoords');
     end
 else
-    warning('rez*.mat file does not exist')
+    disp('rez*.mat file does not exist')
 end

@@ -160,6 +160,8 @@ end
 % File
 UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
 UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save session file',menuSelectedFcn,@(~,~)saveSessionFile,'Accelerator','S');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort',menuSelectedFcn,@(~,~)importKiloSort,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata via template script',menuSelectedFcn,@(~,~)importMetadataTemplate);
 uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI with changes',menuSelectedFcn,@(~,~)CloseMetricsWindow,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn,@(~,~)cancelMetricsWindow);
 
@@ -2489,6 +2491,38 @@ uiwait(UI.fig)
 %             errordlg(['xml file not accessible: ' xml_filepath],'Error')
             MsgLog(['xml file not accessible: ' xml_filepath],4)
         end
+    end
+    
+    function importKiloSort
+        if isfield(session,'spikeSorting') && isfield(session.spikeSorting{1},'relativePath')
+            relativePath = session.spikeSorting{1}.relativePath;
+        else
+            relativePath = ''; % Relative path to the clustered data (here assumed to be the basepath)
+        end
+        rezFile = dir(fullfile(basepath,relativePath,'rez*.mat'));
+        rezFile = fullfile(rezFile.folder,rezFile.name);
+        if exist(rezFile,'file')
+            MsgLog('Importing KiloSort metadata...',0)
+            session = loadKiloSortMetadata(session,rezFile);
+            updateChannelGroupsList
+            UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
+            UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
+            UIsetString(session.extracellular,'nChannels'); % Number of channels
+            MsgLog('KiloSort metadata imported via rez file',0)
+        else
+%             errordlg(['xml file not accessible: ' xml_filepath],'Error')
+            MsgLog(['rez file not accessible: ' xml_filepath],4)
+        end
+    end
+    
+    function importMetadataTemplate
+            MsgLog('Importing metadata using template',0)
+            session = sessionTemplate(session);
+            updateChannelGroupsList
+            UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
+            UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
+            UIsetString(session.extracellular,'nChannels'); % Number of channels
+            MsgLog('Metadata imported using template',0)
     end
     
     function syncChannelGroups
