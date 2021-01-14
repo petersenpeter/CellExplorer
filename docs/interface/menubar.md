@@ -37,9 +37,9 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Generate summary figure            | Generates a summary figure, which is also generate by the processing module | 
 
 
-![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2021/01/supplementaryFigureDialog.png){: .mt-4}
+![](https://buzsakilab.com/wp/wp-content/uploads/2021/01/supplementaryFigureDialog.png){: .mt-4}
 
-![raincloud cell types](https://buzsakilab.com/wp/wp-content/uploads/2020/05/UnitsSummaryLowRess.png){: .mt-4}
+![](https://buzsakilab.com/wp/wp-content/uploads/2020/05/UnitsSummaryLowRess.png){: .mt-4}
 
 
 

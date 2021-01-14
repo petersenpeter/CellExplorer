@@ -313,7 +313,8 @@ UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save classification',
 uimenu(UI.menu.file.topMenu,menuLabel,'Restore classification from backup',menuSelectedFcn,@restoreBackup);
 uimenu(UI.menu.file.topMenu,menuLabel,'Reload cell metrics',menuSelectedFcn,@reloadCellMetrics,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Export main figure window',menuSelectedFcn,@exportFigure,'Separator','on');
-uimenu(UI.menu.file.topMenu,menuLabel,'Generate supplementary figure',menuSelectedFcn,@plotSupplementaryFigureFromMenu);
+uimenu(UI.menu.file.topMenu,menuLabel,'Generate supplementary figure',menuSelectedFcn,@plotSupplementaryFigure);
+uimenu(UI.menu.file.topMenu,menuLabel,'Generate summary figure',menuSelectedFcn,@plotSummaryFigure);
 
 % Navigation
 UI.menu.navigation.topMenu = uimenu(UI.fig,menuLabel,'Navigation');
@@ -784,6 +785,7 @@ set(UI.panel.left, 'MinimumHeights',[25 230 10 10 50]);
 % Creates summary figures and closes the UI
 if summaryFigures
     MsgLog('Generating summary figures',-1)
+    UI.params.subset = 1:length(cell_metrics.cellID);
     plotSummaryFigures
 %     if ishandle(fig) & plotCellIDs ~= -1
 %         close(fig)
@@ -8604,8 +8606,13 @@ end
             updateCellTableData
         end
     end
-
-    function plotSupplementaryFigureFromMenu(~,~)
+    
+    function plotSummaryFigure(~,~)
+        plotCellIDs = -1;
+        plotSummaryFigures
+    end
+    
+    function plotSupplementaryFigure(~,~)
         axisScale = {'lin','log'};
         UI = gui_supplementaryPlot(UI);
         
@@ -8624,15 +8631,14 @@ end
             defaultAxesFontSize = 12;
             fig_pos = [0,0,1200,600];
         end
-        fig = figure('Name','CellExplorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','off','DefaultTextInterpreter', 'tex');
+        fig = figure('Name','CellExplorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','on','DefaultTextInterpreter', 'tex');
         % Scatter plot with trough to peak vs burst index
         ax1 = subplot('Position',[0.13 0.22 0.34 .75]); % Trough to peak vs burstiness
         hold on
-        uniqueGroups = unique(UI.classes.plot);
-        for i_groups = 1:size(UI.classes.colors,1)
+        uniqueGroups = unique(UI.classes.plot(UI.params.subset));
+        for i_groups = 1:numel(uniqueGroups)
             idx = UI.classes.plot(UI.params.subset) == uniqueGroups(i_groups);
-%             handle_ce_gscatter(i_groups) = line(cell_metrics.(UI.supplementaryFigure.metrics{1})(UI.params.subset(idx)), cell_metrics.(UI.supplementaryFigure.metrics{2})(UI.params.subset(idx)),'Marker','.','LineStyle','none','color',[UI.classes.colors(i_groups,:),0.5], 'MarkerSize',UI.preferences.markerSize,'HitTest','off');
-            handle_ce_gscatter(i_groups) = scatter(cell_metrics.(UI.supplementaryFigure.metrics{1})(UI.params.subset(idx)), cell_metrics.(UI.supplementaryFigure.metrics{2})(UI.params.subset(idx)),UI.preferences.markerSize+5,UI.classes.colors(i_groups,:), 'filled', 'HitTest','off');
+            handle_ce_gscatter(i_groups) = scatter(cell_metrics.(UI.supplementaryFigure.metrics{1})(UI.params.subset(idx)), cell_metrics.(UI.supplementaryFigure.metrics{2})(UI.params.subset(idx)),UI.preferences.markerSize+5,UI.classes.colors((i_groups),:), 'filled', 'HitTest','off');
             alpha(handle_ce_gscatter(i_groups),.8)
         end
 
@@ -8640,7 +8646,7 @@ end
         % Generating legend
         legendNames = UI.classes.labels(nanUnique(UI.classes.plot(UI.params.subset)));
         for i = 1:length(legendNames)
-            legendDots(i) = line(nan,nan,'Marker','.','LineStyle','none','color',UI.classes.colors(i,:), 'MarkerSize',20);
+            legendDots(i) = line(nan,nan,'Marker','.','LineStyle','none','color',UI.classes.colors((i),:), 'MarkerSize',20);
         end
         legend(legendDots,legendNames,'Location','southwest');
         subplot('Position',[0.13 0.01 0.34 .1])
@@ -8724,7 +8730,7 @@ end
             cellIDs = plotCellIDs(ids);
             highlight = 1;
         end
-        UI.params.subset = 1:length(cell_metrics.cellID);
+%         UI.params.subset = 1:length(cell_metrics.cellID);
         if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatory')
             UI.params.putativeSubse = find(sum(ismember(cell_metrics.putativeConnections.excitatory,UI.params.subset)')==2);
         else
@@ -8737,12 +8743,12 @@ end
         end
         UI.preferences.plotInsetChannelMap = 1;
         UI.classes.colors = UI.preferences.cellTypeColors(intersect(classes2plot,UI.classes.plot(UI.params.subset)),:);
-        classes2plotSubset = unique(UI.classes.plot);
+        classes2plotSubset = unique(UI.classes.plot(UI.params.subset));
             
         if plotCellIDs==-1
             plotOptions_all = {'Trilaterated position','Waveforms (all)','ACGs (all)','ACGs (image)','ISIs (all)','ISIs (image)','RCs_firingRateAcrossTime (image)','RCs_firingRateAcrossTime (all)'};
             plotOptions = plotOptions(ismember(plotOptions,plotOptions_all));
-            if isfield(cell_metrics,'putativeConnections') && (isfield(cell_metrics.putativeConnections,'excitatory') || isfield(cell_metrics.putativeConnections,'inhibitory'))
+            if ~UI.BatchMode && isfield(cell_metrics,'putativeConnections') && (isfield(cell_metrics.putativeConnections,'excitatory') || isfield(cell_metrics.putativeConnections,'inhibitory'))
                 plotOptions = [plotOptions;'Connectivity graph'; 'Connectivity matrix'];
             end
             plotCount = 3;
@@ -9231,19 +9237,6 @@ end
                             uiresume(UI.fig);
                         end
                     end
-%                     
-%                 elseif choice == 3
-%                     AddNewCellType
-%                     selectedClas = length(colored_string)-1; % Last entry is the not a a real cell type
-%                     if ~isempty(selectedClas)
-%                         saveStateToHistory(cellIDs)
-%                         clusClas(cellIDs) = selectedClas;
-%                         updateCellCount
-%                         MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.preferences.cellTypes{selectedClas}, ' from t-SNE visualization']);
-%                         updatePlotClas
-%                         updatePutativeCellType
-%                         uiresume(UI.fig);
-%                     end
                     
                 elseif choice == 3
                     Label = inputdlg({'Assign label to cell'},'Custom label',[1 40],{''});
@@ -9390,7 +9383,6 @@ end
                             k = k+1;
                         end
                         movegui(fig,'center'), set(fig,'visible','on')
-
                     else
                         MsgLog('There is no cross- and auto-correlograms matrix structure found for this dataset (Location general.ccg).',2)
                     end
@@ -9408,7 +9400,7 @@ end
                     exportPlots.popupmenu.savePath = uicontrol('Parent',exportPlots.dialog,'Style','popupmenu','Position',[155, 40, 140, 25],'Units','normalized','String',{'basepath','CellExplorer','Define path'},'HorizontalAlignment','left','Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[5, 5, 140, 30],'String','OK','Callback',@ClosePlot_dialog,'Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[155, 5, 140, 30],'String','Cancel','Callback',@(src,evnt)CancelPlot_dialog,'Units','normalized');
-                    
+
                 elseif choice > 14
                     % Plots any custom plot for selected cells in a single new figure with subplots
                     fig = figure('Name',['CellExplorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off','pos',UI.preferences.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off');
@@ -9543,7 +9535,7 @@ end
                             title(plotOptions{selectedActions(jjj)},'Interpreter', 'none')
                         end
                     end
-                    ce_savefigure(fig,savePath1,['CellExplorer_Cells_', num2str(cell_metrics.UID(cellIDs),'%d_')],saveFig)
+                    ce_savefigure(fig,savePath1,['CellExplorer_Cells_', num2str(cell_metrics.UID(cellIDs),'%d_')],0,saveFig)
                     
                 elseif choice == 13 && ~isempty(selectedActions)
                     
@@ -9606,10 +9598,9 @@ end
                         plotCharacteristics(cellIDs(j)), title('Characteristics')
                         
                         % Saving figure
-                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))],saveFig)
+                        ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0,saveFig)
                     end
                 end
-
             end
         end
         
