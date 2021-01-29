@@ -53,8 +53,8 @@ preferences.putativeCellType.acg_tau_rise_boundary = 6;     % acg_tau_rise > 6ms
 % Hippocampal preferences
 % % % % % % % % % % % % % % % % % % % %
 % Deep superficial 
-preferences.deepSuperficial.ripples_durations = [50 150]; % in ms
-preferences.deepSuperficial.ripples_passband = [120 180]; % in Hz
+preferences.deepSuperficial.ripples_durations = [20 150]; % in ms
+preferences.deepSuperficial.ripples_passband = [80 240]; % in Hz
 
 % Theta oscillation metrics
 preferences.theta.bins = [-1:0.05:1]*pi; % theta bins from -pi to pi

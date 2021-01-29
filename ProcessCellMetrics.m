@@ -801,7 +801,7 @@ if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(
             RippleNoiseChannel = double(LoadBinary([basename, '.lfp'],'nChannels',session.extracellular.nChannels,'channels',session.channelTags.RippleNoise.channels,'precision','int16','frequency',session.extracellular.srLfp)); % 0.000050354 *
             ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',preferences.deepSuperficial.ripples_durations,'passband',preferences.deepSuperficial.ripples_passband,'noise',RippleNoiseChannel);
         else
-            ripples = ce_FindRipples(session,'channel',session.channelTags.Ripple.channels-1,'durations',preferences.deepSuperficial.ripples_durations,'passband',preferences.deepSuperficial.ripples_passband);
+            ripples = ce_FindRipples(session,'durations',preferences.deepSuperficial.ripples_durations,'passband',preferences.deepSuperficial.ripples_passband);
         end
     end
 
