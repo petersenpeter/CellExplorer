@@ -204,8 +204,10 @@ if ~exist('relativePath','var')
     end
 end
 rezFile = dir(fullfile(basepath,relativePath,'rez*.mat'));
-rezFile = rezFile.name;
-session = loadKiloSortMetadata(session,rezFile);
+if ~isempty(rezFile)
+    rezFile = rezFile.name;
+    session = loadKiloSortMetadata(session,rezFile);
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % sessionInfo and xml (including skipped and dead channels)

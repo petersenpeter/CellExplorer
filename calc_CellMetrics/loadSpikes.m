@@ -112,8 +112,6 @@ if exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file') && ~parame
     if ~isfield(spikes,'processinginfo') || (isfield(spikes,'processinginfo') && spikes.processinginfo.version < 3 && strcmp(spikes.processinginfo.function,'loadSpikes') )
         parameters.forceReload = true;
         disp('spikes.mat structure not up to date. Reloading spikes.')
-    else
-        disp('loadSpikes: Loading existing spikes file')
     end
 elseif ~isempty(spikes)
     disp('loadSpikes: Using existing spikes file')

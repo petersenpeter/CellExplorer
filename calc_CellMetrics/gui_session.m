@@ -1,4 +1,4 @@
-function [session,parameters,statusExit] = gui_session(sessionIn,parameters)
+function [session,parameters,statusExit] = gui_session(sessionIn,parameters,activeTab)
 % Displays a GUI allowing you to edit parameters for the CellExplorer and metadata for a session
 %
 % INPUTS
@@ -58,12 +58,22 @@ if exist('sessionIn','var') && isstruct(sessionIn)
     else
         basepath = '';
     end
-elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'file')
-    disp(['Loading ' sessionIn]);
-    load(sessionIn,'session');
+elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'file') == 2
+    disp(['Loading from session file: ' sessionIn]);
+    load(fullfile(sessionIn),'session');
     [filepath,~,~] = fileparts(sessionIn);
     basepath = filepath;
     sessionIn = session;
+elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'dir') == 7
+    disp(['Loading from basepath: ' sessionIn]);
+     basepath = sessionIn;
+     [~,basename,~] = fileparts(sessionIn);
+     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
+         session = loadSession(basepath,basename);
+     else
+         session = sessionTemplate(basepath);
+     end
+     sessionIn = session;
 else
     basepath = pwd;
     [~,basename,~] = fileparts(pwd);
@@ -202,7 +212,7 @@ uimenu(UI.menu.help.topMenu,menuLabel,'Documentation of session metadata structu
 % % % % % % % % % % % % % % % % % % % %
 
 UI.uitabgroup = uitabgroup('Units','normalized','Position',[0 0.06 1 0.94],'Parent',UI.fig,'Units','normalized');
-if exist('parameters','var')
+if exist('parameters','var') && ~isempty(parameters)
     UI.tabs.parameters = uitab(UI.uitabgroup,'Title','CellExplorer');
 end
 UI.tabs.general = uitab(UI.uitabgroup,'Title','General','tooltip',sprintf('session.general: \nGeneral information about the dataset'));
@@ -225,7 +235,7 @@ UI.popupmenu.log = uicontrol('Style','popupmenu','String',{'Message log'},'Horiz
 
 % % % % % % % % % % % % % % % % % % % %
 % CellExplorer: Cell metrics parameters
-if exist('parameters','var')
+if exist('parameters','var') && ~isempty(parameters)
     % Include metrics
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Include metrics (default: all)', 'Position', [5, 500, 190, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     UI.listbox.includeMetrics = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[5 330 190 170],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metrics),'Units','normalized','tooltip',sprintf('Select metrics to process by type'));
@@ -459,6 +469,9 @@ uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[230, 10,
 % Loading session struct into gui
 importSessionStruct
 UI.fig.Visible = 'on';
+if exist('activeTab','var')
+    UI.uitabgroup.SelectedTab = UI.tabs.(activeTab);
+end
 uiLoaded = true;
 uiwait(UI.fig)
 
@@ -547,7 +560,7 @@ uiwait(UI.fig)
     end
     
     function importSessionStruct
-        if exist('parameters','var')
+        if exist('parameters','var') && ~isempty(parameters)
             for iParams = 1:length(UI.list.params)
                 UI.checkbox.params(iParams).Value = parameters.(UI.list.params{iParams});
             end
@@ -775,7 +788,7 @@ uiwait(UI.fig)
     
     function readBackFields
         % Saving parameters
-        if exist('parameters','var')
+        if exist('parameters','var') && ~isempty(parameters)
             for iParams = 1:length(UI.list.params)
                 parameters.(UI.list.params{iParams}) = logical(UI.checkbox.params(iParams).Value);
             end
@@ -2500,8 +2513,9 @@ uiwait(UI.fig)
             relativePath = ''; % Relative path to the clustered data (here assumed to be the basepath)
         end
         rezFile = dir(fullfile(basepath,relativePath,'rez*.mat'));
-        rezFile = fullfile(rezFile.folder,rezFile.name);
-        if exist(rezFile,'file')
+        
+        if ~isempty(rezFile)
+            rezFile = fullfile(rezFile.folder,rezFile.name);
             MsgLog('Importing KiloSort metadata...',0)
             session = loadKiloSortMetadata(session,rezFile);
             updateChannelGroupsList
@@ -2511,7 +2525,7 @@ uiwait(UI.fig)
             MsgLog('KiloSort metadata imported via rez file',0)
         else
 %             errordlg(['xml file not accessible: ' xml_filepath],'Error')
-            MsgLog(['rez file not accessible: ' xml_filepath],4)
+            MsgLog('rez file does not exist',4)
         end
     end
     

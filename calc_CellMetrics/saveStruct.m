@@ -4,6 +4,7 @@ function success = saveStruct(data,datatype,varargin)
 %
 % Example calls:
 % saveStruct(cell_metrics,'cellinfo','session',session);
+% saveStruct(ripples,'events','session',session);
 
 % By Peter Petersen
 % petersen.peter@gmail.com

@@ -16,6 +16,6 @@ if ~exist('basename')
         error(['No *.session.mat file exist in basepath: ' basepath])
     end
 else
-    load(fullfile(basepath,[basename,'.session.mat']))
+    load(fullfile(basepath,[basename,'.session.mat']),'session')
 end
 session.general.basePath = basepath;

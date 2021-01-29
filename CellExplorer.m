@@ -768,7 +768,6 @@ UI.tabs.dispTags_plus =  uitab(UI.panel.tabgroup2,'Title','+Tags','tooltip',spri
 UI.axis.legends = axes(UI.tabs.legends,'Position',[0 0 1 1]);
 set(UI.axis.legends,'ButtonDownFcn',@createLegend)
 
-
 % Display settings for tags_minus
 buttonPosition = getButtonLayout(UI.tabs.dispTags_minus,UI.preferences.tags,0);
 for m = 1:length(UI.preferences.tags)
@@ -6955,7 +6954,7 @@ end
         % and the coordinates (u,v) within the plot. Finally calls
         % according to which mouse button that was clicked.
         axnum = find(ismember(subfig_ax, gca));
-        um_axes = get(gca,'CurrentPoint');
+        um_axes = get(subfig_ax(axnum),'CurrentPoint');
         u = um_axes(1,1);
         v = um_axes(1,2);
         w = um_axes(1,3);
@@ -10057,11 +10056,11 @@ end
         end
     end
 
-    function rotateFig(axisTorate)
+    function rotateFig(axisToRotate)
         % activates a rotation mode for subfig1 while maintaining the keyboard shortcuts and click functionality for the remaining plots
 %         set(UI.fig,'CurrentAxes',UI.panel.subfig_ax(axisTorate).Children)
-        rotate3d(axisTorate,'on');
-        h = rotate3d(axisTorate);
+        rotate3d(axisToRotate,'on');
+        h = rotate3d(axisToRotate);
         h.Enable = 'on';
         setAllowAxesRotate(h,subfig_ax(2),false);
         set(h,'ButtonDownFilter',@myRotateFilter);
