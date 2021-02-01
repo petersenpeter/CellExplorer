@@ -18,20 +18,16 @@ CellExplorer used a single Matlab struct for handling all cell metrics called `c
 * `general` : struct
   * `basename` : name of the session
   * `basepath` : full path to the session
-  * `animal` : a struct containing metadata from an animal subject level, e.g.:  `sex`, `species`, `strain`, `geneticLine`.
+  * `animal` : a struct containing metadata from an animal subject level, e.g.:  `sex` (Male, Female, Unknown), `species` (Rat, Mouse,...), `strain` (Long Evans, C57B1/6,...).
   * `session` : a struct containing metadata from an animal subject level, e.g.:  `investigator`, `sessionType`, `SpikeSortingMethod`.
-  * `cellCount` : number of cells in the session
+  * `cellCount` : number of cells in the session.
   * The general field also contains timestamps for time-series metrics, states data, bins for average plots and PSTHs and axis labels.
   * `processinginfo` Contains processing info such as: the `date` of the processing , the `version` of the script, the `function` name, and the `username` and `hostname` from the computer that performed the processing.
     * `params` A struct containing the input parameters used by `ProcessCellMetrics`.
+  * `electrodeGroups`: electrode group: Shank number / spike group.
 * `brainRegion`: Brain region acronyms from [Allan institute Brain atlas](http://atlas.brain-map.org/atlas?atlas=1).
-* `animal`: Unique name of animal.
-* `sex`: Sex of the animal [Male, Female, Unknown]
-* `species`: Animal species [Rat, Mouse,...]
-* `strain`: Animal strain [Long Evans, C57B1/6,...]
-* `geneticLine`: Genetic line of the animal
-* `spikeGroup`: Spike group: Shank number / spike group. 
-* `labels`: Custom labels.
+* `sessionName`: Name of session (same as the `basename`).
+* `animal`: Name of animal subject.
 
 ## Spike events based metrics
 * `spikes`: struct containing spike times
