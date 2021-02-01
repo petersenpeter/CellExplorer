@@ -18,8 +18,12 @@ CellExplorer used a single Matlab struct for handling all cell metrics called `c
 * `general` : struct
   * `basename` : name of the session
   * `basepath` : full path to the session
+  * `animal` : a struct containing metadata from an animal subject level, e.g.:  `sex`, `species`, `strain`, `geneticLine`.
+  * `session` : a struct containing metadata from an animal subject level, e.g.:  `investigator`, `sessionType`, `SpikeSortingMethod`.
   * `cellCount` : number of cells in the session
-  * `processinginfo`. The general fields also contains a list of timestamps for time-series metrics. 
+  * The general field also contains timestamps for time-series metrics, states data, bins for average plots and PSTHs and axis labels.
+  * `processinginfo` Contains processing info such as: the `date` of the processing , the `version` of the script, the `function` name, and the `username` and `hostname` from the computer that performed the processing.
+    * `params` A struct containing the input parameters used by `ProcessCellMetrics`.
 * `brainRegion`: Brain region acronyms from [Allan institute Brain atlas](http://atlas.brain-map.org/atlas?atlas=1).
 * `animal`: Unique name of animal.
 * `sex`: Sex of the animal [Male, Female, Unknown]
