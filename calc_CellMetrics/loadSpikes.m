@@ -629,6 +629,7 @@ if parameters.forceReload
                 spikes.cluID(UID) = spike_clusters(i);
                 spikes.total(UID) = length(spikes.ts{UID});
                 spikes.amplitudes{UID} = double(spike_amplitudes(spikes.ids{UID}));
+                [~,spikes.maxWaveformCh1(UID)] = max(abs(rez.U(:,rez.iNeigh(1,spike_clusters(i)),1)));
                 UID = UID+1;
             end
             

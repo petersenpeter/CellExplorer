@@ -75,7 +75,7 @@ function [ripples] = ce_FindRipples(varargin)
 p = inputParser;
 addParameter(p,'thresholds',[2 5],@isnumeric)
 addParameter(p,'absoluteThresholds',false,@islogical)
-addParameter(p,'durations',[30 100],@isnumeric)
+addParameter(p,'durations',[20 150],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
 addParameter(p,'frequency',1250,@isnumeric)
 addParameter(p,'stdev',[],@isnumeric)
