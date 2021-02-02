@@ -49,8 +49,14 @@ if any(strcmp(datatype,supportedDataTypes))
         otherwise
             filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.mat']);
     end
-    temp = load(filename);
-    output = temp.(dataName);
+    dataStructure = load(filename);
+    if isfield(dataStructure,dataName)
+        output = dataStructure.(dataName);
+    else
+        temp = fieldnames(dataStructure);
+        output = dataStructure.(temp{1});
+        warning(['naming convention not upheld in loaded data: ' dataName,' => ',temp{1}])
+    end
 %     disp(['Successfully loaded ', filename])
 else
     error(['Not a valid datatype: ', datatype,', filename: ' filename])
