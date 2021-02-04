@@ -47,23 +47,24 @@ fit_params = fit_ACG(acg_metrics.acg_narrow);
 ```
 
 ### Calculate log ACGs
-The log ACGs are calculated with log bins from 1ms to 10sec:
+The log ACGs are calculated with log-scaled bins from 1ms to 10sec:
 ```m
 acg = calc_logACGs(spikes.times)
 ```
 
 ### Calculate log ISIs
-The log ISIs are calculated with log bins from 1ms to 100sec:
+The log ISIs are calculated with log-scaled bins from 1ms to 100sec:
 ```m
 isi = calc_logISIs(spikes.times);
 ```
 
 ### Monosynaptic connections
-`ce_MonoSynConvClick.m` is called to detect monosynaptic connections. One complete, the connections can be manually curated using  `gui_MonoSyn.m`. 
+`ce_MonoSynConvClick.m` is called to detect monosynaptic connections. Once complete, the connections can be manually curated using `gui_MonoSyn.m`. 
+
 ```m
 mono_res = ce_MonoSynConvClick(spikes);
 mono_res = gui_MonoSyn(mono_res);
-save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3');
+saveStruct(mono_res,'cellinfo','session',session)
 ```
 
 ### Calculate PSTHs for events
@@ -71,13 +72,13 @@ By providing an event struct, interval PSTHs can be created:
 ```m
 PSTH = calc_PSTH(event,spikes);
 ```
-You can provide optional parameters defining the alignment and windows size.
+You can provide optional parameters defining the alignment and the windows size.
 
 ### Deep-superficial classification of hippocampal recordings
 This metric has it own tutorial dedicated to it [here](https://cellexplorer.org/tutorials/deep-superficial-tutorial/), but briefly:
-1. Find ripples
+1. Detect ripples
 ```m
-ripples = bz_FindRipples(basepath,session.channelTags.Ripple.channels-1,'durations',[50 150],'saveMat',true);
+ripples = ce_FindRipples(session);
 ```
 2. Determine the depth
 ```m
