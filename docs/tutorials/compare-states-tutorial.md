@@ -21,9 +21,7 @@ intervals_pharmaco2 = [session.epochs{3}.startTime,session.epochs{3}.stopTime]; 
 
 % Now the metrics can be restricted to the three intervals by using the input: restrictToIntervals
 cell_metrics_control  = ProcessCellMetrics('session', session,'saveAs','cell_metrics_control','restrictToIntervals',intervals_control);
-
 cell_metrics_pharmaco1 = ProcessCellMetrics('session', session,'saveAs','cell_metrics_pharmaco1','restrictToIntervals',intervals_pharmaco1);
-
 cell_metrics_pharmaco2 = ProcessCellMetrics('session', session,'saveAs','cell_metrics_pharmaco2','restrictToIntervals',intervals_pharmaco2);
 ```
 
@@ -34,7 +32,6 @@ Notice how I used the `saveAs` input to create three separate metric struct for 
 
 ### Run CellExplorer on individual restricted dataset
 ```m
-
 cell_metrics_pharmaco1 = CellExplorer('metrics',cell_metrics_pharmaco1); 
 cell_metrics_pharmaco2 = CellExplorer('metrics',cell_metrics_pharmaco2); 
 
