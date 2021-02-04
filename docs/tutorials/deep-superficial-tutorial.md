@@ -2,7 +2,7 @@
 layout: default
 title: Deep-superficial
 parent: Tutorials
-nav_order: 6
+nav_order: 8
 ---
 # Deep-superficial tutorial
 {: .no_toc}
