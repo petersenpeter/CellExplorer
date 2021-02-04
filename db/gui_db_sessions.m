@@ -1,4 +1,11 @@
 function [basenames,basepaths,exitMode] = gui_db_sessions(basenames_in)
+    % Shows a list of sessions ffrom the Buzsaki lab databank
+    % This function is part of CellExplorer
+    %
+    % Example call
+    % [basenames,basepaths,exitMode] = gui_db_sessions
+    
+    % By Peter Petersen
     exitMode = 0;
     db = [];
     basenames = {};

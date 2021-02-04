@@ -57,52 +57,43 @@ end
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Init settings
+        UI.t1 = 0;
+        UI.forceNewData = true;
         UI.track = true;
         UI.t_total = [];
         UI.iEvent = 1;
         UI.t0_track = 0;
         UI.timerInterface = tic;
         UI.settings.fileRead = 'bof';
-        UI.settings.greyScaleTraces = 0;
+        UI.settings.greyScaleTraces = 1;
         UI.settings.plotEnergy = 0;
         UI.settings.energyWindow = 0.030; % in seconds
         UI.settings.detectEvents = false;
         UI.settings.eventThreshold = 100; % in µV
-        UI.settings.showSpikes = false;
-        UI.settings.useMetrics = false;
-        UI.settings.spikesBelowTrace = false;
-        UI.settings.showEvents = false;
         UI.settings.processing_steps = false;
-        UI.settings.eventData = [];
-        UI.settings.showEventsBelowTrace = false;
-        UI.settings.showEventsIntervals = false;
-        UI.settings.showTimeSeries = false;
-        UI.settings.timeseriesData = [];
-        UI.settings.showStates = false;
-        UI.settings.showBehavior = false;
-        UI.settings.statesData = [];
-        UI.settings.plotBehaviorLinearized = false;
-        UI.settings.showBehaviorBelowTrace = false;
-        UI.settings.behaviorData = [];
-        UI.settings.showTrials = false;
         UI.settings.scalingFactor = 50;
         UI.settings.windowSize = 2; % in seconds
         UI.settings.filterTraces = false;
         UI.settings.plotStyle = 2;
-        UI.settings.timeseries.lowerBoundary = 34;
-        UI.settings.timeseries.upperBoundary = 38;
         UI.settings.detectSpikes = false;
         UI.settings.spikesDetectionThreshold = -100; % in µV
         UI.settings.stream = false;
-        UI.settings.intan_showAnalog = false;
-        UI.settings.intan_showAux = false;
-        UI.settings.intan_showDigital = false;
-        UI.settings.showIntanBelowTrace = false;
         UI.settings.channelTags.hide = [];
         UI.settings.channelTags.filter = [];
         UI.settings.channelTags.highlight = [];
         UI.settings.showKilosort = false;
         UI.settings.colormap = 'hot';
+        UI.settings.hoverTimer = 0.045;  % in seconds
+        UI.iLine = 1;
+        UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;0.4940, 0.1840, 0.5560;0.4660, 0.6740, 0.1880;0.3010, 0.7450, 0.9330;0.6350, 0.0780, 0.1840];
+        UI.freeText = '';
+        
+        % Spikes settings
+        UI.settings.showSpikes = false;
+        UI.settings.useMetrics = false;
+        UI.settings.spikesBelowTrace = false;
+        UI.settings.useSpikesYData = false;
+        UI.settings.spikesYData = '';
         UI.tableData.Column1 = 'putativeCellType';
         UI.tableData.Column2 = 'firingRate';
         UI.params.subsetTable = [];
@@ -112,11 +103,35 @@ end
         UI.params.groupMetric = 'putativeCellType';
         UI.params.cellTypes = [];
         UI.params.cell_class_count = [];
-        UI.settings.hoverTimer = 0.045;  % in seconds
-        UI.iLine = 1;
-        UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;0.4940, 0.1840, 0.5560;0.4660, 0.6740, 0.1880;0.3010, 0.7450, 0.9330;0.6350, 0.0780, 0.1840];
-        UI.freeText = '';
         
+        % Event settings
+        UI.settings.showEvents = false;
+        UI.settings.eventData = [];
+        UI.settings.showEventsBelowTrace = false;
+        UI.settings.showEventsIntervals = false;
+        
+        % Timeseries settings
+        UI.settings.showTimeSeries = false;
+        UI.settings.timeseriesData = [];
+        UI.settings.timeseries.lowerBoundary = 34;
+        UI.settings.timeseries.upperBoundary = 38;
+        
+        % States settings
+        UI.settings.showStates = false;
+        UI.settings.statesData = [];
+        
+        % Behavior settings
+        UI.settings.showBehavior = false;
+        UI.settings.plotBehaviorLinearized = false;
+        UI.settings.showBehaviorBelowTrace = false;
+        UI.settings.behaviorData = [];
+        UI.settings.showTrials = false;
+        
+        % Intan settings
+        UI.settings.intan_showAnalog = false;
+        UI.settings.intan_showAux = false;
+        UI.settings.intan_showDigital = false;
+        UI.settings.showIntanBelowTrace = false; 
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating figure
@@ -144,6 +159,9 @@ end
         uimenu(UI.menu.session.topMenu,menuLabel,'View metadata',menuSelectedFcn,@viewSessionMetaData);
         uimenu(UI.menu.session.topMenu,menuLabel,'Open basepath',menuSelectedFcn,@openSessionDirectory,'Separator','on');
         
+        % Cell metrics 
+        UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'Cell metrics');
+        uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'View cell metrics in CellExplorer',menuSelectedFcn,@openCellExplorer);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating UI/panels
@@ -180,7 +198,7 @@ end
         UI.panel.general.detectSpikes = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect spikes (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.0 0.70 0.7 0.15],'Callback',@toogleDetectSpikes,'HorizontalAlignment','left');
         UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.71 0.70 0.28 0.15],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
         UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.55 0.5 0.15],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
-        UI.panel.general.greyScaleTraces = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Grey-scale', 'value', 0, 'Units','normalized', 'Position', [0.52 0.55 0.48 0.15],'Callback',@changeColorScale,'HorizontalAlignment','left');
+        UI.panel.general.greyScaleTraces = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Dim','Grey-scale'}, 'value', 1, 'Units','normalized', 'Position', [0.50 0.55 0.50 0.15],'Callback',@changeColorScale,'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.45 0.5 0.1],'HorizontalAlignment','center');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.45 0.5 0.1],'HorizontalAlignment','center');
         UI.panel.general.lowerBand  = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '400', 'Units','normalized', 'Position', [0.01 0.3 0.49 0.15],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
@@ -223,10 +241,10 @@ end
         % SECOND PANEL
         % Spikes
         UI.panel.spikes.main = uipanel('Parent',UI.panel.matfiles.main,'title','Spikes');
-        UI.panel.spikes.showSpikes = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Show spikes', 'value', 0, 'Units','normalized', 'Position', [0.0 0 0.5 1],'Callback',@toggleSpikes,'HorizontalAlignment','left');
-        UI.panel.spikes.showSpikesBelowTrace = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Below traces', 'value', 0, 'Units','normalized', 'Position', [0.5 0 0.5 1],'Callback',@showSpikesBelowTrace,'HorizontalAlignment','left');
-        %         uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', '  Cell sorting', 'Units','normalized', 'Position', [0 0.25 1 .2],'HorizontalAlignment','left');
-        %         UI.panel.spikes.metricsList = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0 0.05 1 0.2],'HorizontalAlignment','left','Enable','off');
+        UI.panel.spikes.showSpikes = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Show spikes', 'value', 0, 'Units','normalized', 'Position', [0.0 0.5 0.5 0.5],'Callback',@toggleSpikes,'HorizontalAlignment','left');
+        UI.panel.spikes.showSpikesBelowTrace = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Below traces', 'value', 0, 'Units','normalized', 'Position', [0.5 0.5 0.5 0.5],'Callback',@showSpikesBelowTrace,'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', '  Y-data', 'Units','normalized', 'Position', [0 0 1 0.5],'HorizontalAlignment','left');
+        UI.panel.spikes.setSpikesYData = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.3 0 0.7 0.5],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesYData);
         
         % Cell metrics
         UI.panel.cell_metrics.main = uipanel('Parent',UI.panel.matfiles.main,'title','Cell metrics');
@@ -296,7 +314,7 @@ end
         
         uicontrol('Parent',UI.panel.matfiles.main,'Style','pushbutton','Units','normalized','Position',[0 0 1 0.2],'String','Summary figure','Callback',@summaryFigure,'KeyPressFcn', @keyPress,'tooltip','Generate summary figure');
         
-        set(UI.panel.matfiles.main, 'Heights', [40 150 -60 -200 40 200 90 90 140 25],'MinimumHeights',[40 150 40 60 40 200 90 90 140 25]);
+        set(UI.panel.matfiles.main, 'Heights', [60 150 -60 -200 40 200 90 90 140 25],'MinimumHeights',[60 150 40 60 40 200 90 90 140 25]);
         
         % Lower info panel elements
         % UI.panel.lower = uipanel('Title','','TitlePosition','centertop','Position',[0 0 1 1],'Units','normalized','Parent',UI.panel.info);
@@ -406,8 +424,10 @@ end
 
     function plot_ephys
         % Plotting ephys data
-        if UI.settings.greyScaleTraces == 0
+        if UI.settings.greyScaleTraces == 1
             colors = UI.colors;
+        elseif UI.settings.greyScaleTraces == 2
+            colors = UI.colors*0.4;
         else
             colors = ones(size(UI.colors))*0.4;
             colors(1:2:end,:) = colors(1:2:end,:)-0.1;
@@ -418,33 +438,61 @@ end
                 MsgLog('Failed to load LFP data',4);
                 return
             end
-            fseek(UI.fid.lfp,round(t0*data.session.extracellular.nChannels*data.session.extracellular.srLfp*2),UI.settings.fileRead); % eof: end of file
-            ephys.raw = fread(UI.fid.lfp, [data.session.extracellular.nChannels, UI.samplesToDisplay],'int16')' * (UI.settings.scalingFactor*UI.settings.leastSignificantBit)/1000000;
-        else
+            sr = data.session.extracellular.srLfp;
+            fileID = UI.fid.lfp;
+        else %  dat file
             if UI.fid.ephys == -1
                 MsgLog('Failed to load raw data',4);
                 return
             end
-            fseek(UI.fid.ephys,round(t0*data.session.extracellular.nChannels*data.session.extracellular.sr*2),UI.settings.fileRead); % eof: end of file
-            ephys.raw = fread(UI.fid.ephys, [data.session.extracellular.nChannels, UI.samplesToDisplay],'int16')' * (UI.settings.scalingFactor*UI.settings.leastSignificantBit)/1000000;
+            sr = data.session.extracellular.sr;
+            fileID = UI.fid.ephys;
         end
+        
+        % Loading data
+        if t0>UI.t1 && t0 < UI.t1 + UI.settings.windowSize && ~UI.forceNewData
+            t_offset = t0-UI.t1;
+            newSamples = round(UI.samplesToDisplay*t_offset/UI.settings.windowSize);
+            existingSamples = UI.samplesToDisplay-newSamples;
+            % Keeping existing samples
+            ephys.raw(1:existingSamples,:) = ephys.raw(newSamples+1:UI.samplesToDisplay,:);
+            % Loading new samples
+            fseek(fileID,round((t0+UI.settings.windowSize-t_offset)*sr*2)*data.session.extracellular.nChannels,UI.settings.fileRead); % eof: end of file
+            ephys.raw(existingSamples+1:UI.samplesToDisplay,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
+        elseif t0 < UI.t1 && t0 > UI.t1 - UI.settings.windowSize && ~UI.forceNewData
+            t_offset = UI.t1-t0;
+            newSamples = round(UI.samplesToDisplay*t_offset/UI.settings.windowSize);
+            % Keeping existing samples
+            existingSamples = UI.samplesToDisplay-newSamples;
+            ephys.raw(newSamples+1:UI.samplesToDisplay,:) = ephys.raw(1:existingSamples,:);
+            % Loading new data
+            fseek(fileID,round(t0*sr*2)*data.session.extracellular.nChannels,UI.settings.fileRead); % eof: end of file
+            ephys.raw(1:newSamples,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
+        elseif t0==UI.t1 && ~UI.forceNewData
+        else
+            fseek(fileID,round(t0*data.session.extracellular.nChannels*sr*2),UI.settings.fileRead); % eof: end of file
+            ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],'int16'))'*UI.settings.leastSignificantBit;
+        end
+        
+        UI.t1 = t0;
+        UI.forceNewData = false;
         if isempty(ephys.raw)
             return
         end
         
-        if UI.settings.filterTraces & UI.settings.plotStyle == 4
-            if int_gt_0(UI.settings.filter.lowerBand)
-                [b1, a1] = butter(3, UI.settings.filter.higherBand/data.session.extracellular.srLfp*2, 'low');
-            elseif int_gt_0(UI.settings.filter.higherBand)
-                [b1, a1] = butter(3, UI.settings.filter.lowerBand/data.session.extracellular.srLfp*2, 'high');
+        if UI.settings.filterTraces && UI.settings.plotStyle == 4
+            if int_gt_0(UI.settings.filter.lowerBand) && ~int_gt_0(UI.settings.filter.higherBand)
+                [b1, a1] = butter(3, UI.settings.filter.higherBand/sr*2, 'low');
+            elseif int_gt_0(UI.settings.filter.higherBand) && ~int_gt_0(UI.settings.filter.lowerBand)
+                [b1, a1] = butter(3, UI.settings.filter.lowerBand/sr*2, 'high');
             else
-                [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/data.session.extracellular.srLfp*2, 'bandpass');
+                [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/sr*2, 'bandpass');
             end
-            ephys.traces = filtfilt(b1, a1, ephys.raw);
+            ephys.traces = filtfilt(b1, a1, ephys.raw * (UI.settings.scalingFactor)/1000000);
         elseif UI.settings.filterTraces
-            ephys.traces = filtfilt(UI.settings.filter.b1, UI.settings.filter.a1, ephys.raw);
+            ephys.traces = filtfilt(UI.settings.filter.b1, UI.settings.filter.a1, ephys.raw * (UI.settings.scalingFactor)/1000000);
         else
-            ephys.traces = ephys.raw;
+            ephys.traces = ephys.raw * (UI.settings.scalingFactor)/1000000;
         end
         
         if UI.settings.plotEnergy == 1
@@ -511,7 +559,7 @@ end
             else
                 [UI.settings.filter.b2, UI.settings.filter.a2] = butter(3, 500/data.session.extracellular.sr*2, 'high');
             end
-            ephys.filt = filtfilt(UI.settings.filter.b2, UI.settings.filter.a2, ephys.raw)/(UI.settings.scalingFactor/1000000);
+            ephys.filt = filtfilt(UI.settings.filter.b2, UI.settings.filter.a2, ephys.raw);
             
             raster = [];
             raster.x = [];
@@ -651,13 +699,17 @@ end
             raster.x = data.spikes.spindices(idx,1)-t1;
             idx2 = ceil(raster.x*size(ephys.traces,1)/UI.settings.windowSize);
             if UI.settings.spikesBelowTrace
-                if UI.settings.useMetrics
-                    [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric));
-                    [~,sortIdx] = sort(sortIdx);
+                if UI.settings.useSpikesYData
+                    raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1);
                 else
-                    sortIdx = 1:data.spikes.numcells;
+                    if UI.settings.useMetrics
+                        [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric));
+                        [~,sortIdx] = sort(sortIdx);
+                    else
+                        sortIdx = 1:data.spikes.numcells;
+                    end
+                    raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1);
                 end
-                raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1);
             else
                 idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(idx,2))');
                 raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
@@ -819,7 +871,20 @@ end
             filebrowser;
         end
     end
-
+    
+    function openCellExplorer(~,~)
+        % Opens CellExplorer for the current session
+        if ~isfield(data,'cell_metrics') && exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
+            data.cell_metrics = loadCellMetrics('session',data.session);
+        elseif ~exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
+            UI.panel.cell_metrics.useMetrics.Value = 0;
+            MsgLog('Cell_metrics does not exist',4);
+            return
+        end
+        data.cell_metrics = CellExplorer('metrics',data.cell_metrics);
+        toggleMetrics
+        uiresume(UI.fig);
+    end
     function ScrolltoZoomInPlot(~,evnt)
         handle34 = UI.plot_axis1;
         um_axes = get(handle34,'CurrentPoint');
@@ -1096,6 +1161,7 @@ end
         if isnumeric(string1) & string1>0
             UI.settings.windowSize = string1;
             initTraces
+            UI.forceNewData = true;
             uiresume(UI.fig);
         end
     end
@@ -1202,21 +1268,23 @@ end
             subfieldstypes = struct2cell(structfun(@class,data.spikes,'UniformOutput',false));
             subfieldssizes = struct2cell(structfun(@size,data.spikes,'UniformOutput',false));
             subfieldssizes = cell2mat(subfieldssizes);
-            idx = strcmp(subfieldstypes,'double') & all(subfieldssizes == [1,data.spikes.numcells],2);
+            idx = ismember(subfieldstypes,{'double','cell'}) & all(subfieldssizes == [1,data.spikes.numcells],2);
             spikes_fields = spikes_fields(idx);
-            UI.panel.spikes.metricsList.String = spikes_fields;
-            UI.panel.spikes.metricsList.Value = find(strcmp(spikes_fields,'UID'));
-            if isempty(UI.panel.spikes.metricsList.Value)
-                UI.panel.spikes.metricsList.Value = 1;
+            excluded_fields = {'times','ts','ts_eeg','maxWaveform_all','channels_all','peakVoltage_sorted','timeWaveform'};
+            spikes_fields = setdiff(spikes_fields,excluded_fields);
+            UI.panel.spikes.setSpikesYData.String = ['Default';spikes_fields];
+            UI.panel.spikes.setSpikesYData.Value = 1;
+            if isempty(UI.panel.spikes.setSpikesYData.Value)
+                UI.panel.spikes.setSpikesYData.Value = 1;
             end
             UI.params.subsetTable = 1:data.spikes.numcells;
             UI.params.subsetFilter = 1:data.spikes.numcells;
             UI.params.subsetCellType = 1:data.spikes.numcells;
-            UI.panel.spikes.metricsList.Enable = 'on';
+            UI.panel.spikes.setSpikesYData.Enable = 'on';
             initTraces;
         else
             UI.panel.spikes.showSpikes.Value = 0;
-            UI.panel.spikes.metricsList.Enable = 'off';
+            UI.panel.spikes.setSpikesYData.Enable = 'off';
             spikes_fields = {''};
         end
         uiresume(UI.fig);
@@ -1415,6 +1483,36 @@ end
         initTraces
         uiresume(UI.fig);
     end
+    
+    function setSpikesYData(~,~)
+        UI.settings.spikesYData = UI.panel.spikes.setSpikesYData.String{UI.panel.spikes.setSpikesYData.Value};
+        if UI.panel.spikes.setSpikesYData.Value > 1
+            UI.settings.useSpikesYData = true;
+            if numel(data.spikes.times)>0
+                if size(data.spikes.(UI.settings.spikesYData){1},2)==1
+                    groups = [];
+                    for i = 1:numel(data.spikes.(UI.settings.spikesYData))
+                        groups = [groups,data.spikes.(UI.settings.spikesYData){i}']; % from cell to array
+                    end
+                else
+                    groups = [data.spikes.(UI.settings.spikesYData){:}]; % from cell to array
+                end
+                [~,sortidx] = sort(cat(1,data.spikes.times{:})); % Sorting spikes
+                data.spikes.spindices(:,3) = groups(sortidx); % Combining spikes and sorted group ids
+                if contains(UI.settings.spikesYData,'phase')
+                    idx = (data.spikes.spindices(:,3) < 0);
+                    data.spikes.spindices(idx,3) = data.spikes.spindices(idx,3)+2*pi;
+                end
+            end
+            
+            % Getting limits
+            UI.settings.spikes_ylim = [min(data.spikes.spindices(:,3)),max(data.spikes.spindices(:,3))];
+        else
+            UI.settings.useSpikesYData = false;
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
 
     function initTraces
         % Determining data offsets
@@ -1464,7 +1562,6 @@ end
         channels = [UI.channels{UI.settings.electrodeGroupsToPlot}];
         UI.channelOrder = [UI.channels{UI.settings.electrodeGroupsToPlot}];
         nChannelsToPlot = numel(UI.channelOrder);
-        nChannelsToPlot
         UI.channelMap = zeros(1,data.session.extracellular.nChannels);
         [idx, idx2]= ismember([data.session.extracellular.electrodeGroups.channels{:}],channels);
         [~,temp] = sort([data.session.extracellular.electrodeGroups.channels{:}]);
@@ -1495,9 +1592,12 @@ end
         xlim(UI.plot_axis1,[0,UI.settings.windowSize]);
         UI.plot_axis1.XAxis.TickValues = [0:0.5:UI.settings.windowSize];
         UI.plot_axis1.XAxis.MinorTickValues = [0:0.01:UI.settings.windowSize];
-        UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
-        UI.fig.UserData.leastSignificantBit = UI.settings.leastSignificantBit;
         UI.fig.UserData.scalingFactor = UI.settings.scalingFactor;
+        if UI.settings.plotStyle == 3
+            UI.fig.UserData.rangeData = true;
+        else
+            UI.fig.UserData.rangeData = false;
+        end
     end
 
     function initData(basepath,basename)
@@ -1512,6 +1612,9 @@ end
             data.session = sessionTemplate(UI.data.basepath,'showGUI',true);
         end
         UI.colors = hsv(data.session.extracellular.nElectrodeGroups); % *0.8
+        
+        UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
+        UI.fig.UserData.leastSignificantBit = UI.settings.leastSignificantBit;
         
         updateChannelGroupsList
         updateChannelTags
@@ -1532,6 +1635,7 @@ end
             warning('NeuroScope2: Binary data does not exist')
             outcome = true;
         end
+        UI.forceNewData = true;
         
         % Detecting CellExplorer/Buzcode files
         UI.data.detectecFiles = detectCellExplorerFiles(UI.data.basepath,UI.data.basename);
@@ -1623,7 +1727,6 @@ end
 
     function editElectrodeGroups(~,~)
         UI.settings.electrodeGroupsToPlot = find([UI.table.electrodeGroups.Data{:,1}]);
-        UI.settings.electrodeGroupsToPlot
         initTraces
         uiresume(UI.fig);
     end
@@ -1631,6 +1734,7 @@ end
     function editChannelTags(~,evnt)
         if evnt.Indices(1,2) == 6 & isnumeric(str2num(evnt.NewData))
             data.session.channelTags.(UI.table.channeltags.Data{evnt.Indices(1,1),2}).channels = str2num(evnt.NewData);
+            initTraces
             uiresume(UI.fig);
         else
             UI.settings.channelTags.highlight = find([UI.table.channeltags.Data{:,3}]);
@@ -1654,7 +1758,6 @@ end
             classColorsHex = cellstr(classColorsHex(:,2:end));
             colored_string = strcat('<html><BODY bgcolor="',classColorsHex','">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</BODY></html>');
             UI.table.electrodeGroups.Data{evnt.Indices(1),2} = colored_string{evnt.Indices(1)};
-            UI.settings.electrodeGroupsToPlot
             initTraces
             uiresume(UI.fig);
         end
@@ -1680,6 +1783,7 @@ end
     function changePlotStyle(~,~)
         UI.settings.plotStyle = UI.panel.general.plotStyle.Value;
         initTraces
+        UI.forceNewData = true;
         uiresume(UI.fig);
     end
 
@@ -1709,9 +1813,9 @@ end
             UI.settings.filter.higherBand = str2num(UI.panel.general.higherBand.String);
             if int_gt_0(UI.settings.filter.lowerBand) && int_gt_0(UI.settings.filter.higherBand)
                 UI.settings.filterTraces = false;
-            elseif int_gt_0(UI.settings.filter.lowerBand)
+            elseif int_gt_0(UI.settings.filter.lowerBand) && ~int_gt_0(UI.settings.filter.higherBand)
                 [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, UI.settings.filter.higherBand/data.session.extracellular.sr*2, 'low');
-            elseif int_gt_0(UI.settings.filter.higherBand)
+            elseif int_gt_0(UI.settings.filter.higherBand) && ~int_gt_0(UI.settings.filter.lowerBand)
                 [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, UI.settings.filter.lowerBand/data.session.extracellular.sr*2, 'high');
             else
                 [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/data.session.extracellular.sr*2, 'bandpass');
