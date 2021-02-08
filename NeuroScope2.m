@@ -1,4 +1,4 @@
-function NeuroScope2(basepath,basename)
+function NeuroScope2(varargin)
 % NeuroScope2 (BETA) is a visualizer for electrophysiological recordings. It is inspired by the original Neuroscope (http://neurosuite.sourceforge.net/)
 % and made to mimic its features, but built upon Matlab and the data structure of CellExplorer making it much easier to hack/customize, fully
 % support Matlab mat-files, and faster. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
@@ -8,8 +8,12 @@ function NeuroScope2(basepath,basename)
 % - Live spike detection
 % - Plot multiple data streams together
 % - Plot CellExplorer/Buzcode structures: spikes, cell_metrics, events, timeseries, states, behavior, trials
+%
+% Example calls
+% NeuroScope2
 
 % By Peter Petersen
+
 
 % Global variables
 UI = []; % Struct with UI elements and settings
@@ -17,12 +21,29 @@ data = []; % External data loaded like spikes, events, states, behavior
 ephys = []; % Struct with ephys data for current shown time interval
 t0 = 0; % Timestamp the current window (in seconds)
 
-
+% Handling extra inputs
+p = inputParser;
+addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'basename',[],@isstr);
+addParameter(p,'session',[],@isstruct);
+addParameter(p,'events',[],@isstr);
+addParameter(p,'states',[],@isstr);
+addParameter(p,'behavior',[],@isstr);
+addParameter(p,'cellinfo',[],@isstr);
+addParameter(p,'channeltag',[],@isstr);   
+parse(p,varargin{:})
+parameters = p.Results;
+basepath = p.Results.basepath;
+basename = p.Results.basename;
+if isempty(basename)
+    basename = basenameFromBasepath(basepath);
+end
 int_gt_0 = @(n) (isempty(n)) || (n <= 0);
 
 % Initialization
 initUI
 initData(basepath,basename);
+initInputs
 initTraces
 
 % Main while loop of the interface
@@ -32,6 +53,7 @@ while t0>=0
         break
     else
         % Plot data
+        UI.selectedChannels = [];
         plotData;
         uiwait(UI.fig);
         t0 = max([0,min([t0,UI.t_total-UI.settings.windowSize])]);
@@ -87,6 +109,7 @@ end
         UI.iLine = 1;
         UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;0.4940, 0.1840, 0.5560;0.4660, 0.6740, 0.1880;0.3010, 0.7450, 0.9330;0.6350, 0.0780, 0.1840];
         UI.freeText = '';
+        UI.selectedChannels = [];
         
         % Spikes settings
         UI.settings.showSpikes = false;
@@ -135,6 +158,7 @@ end
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating figure
+        
         UI.fig = figure('Name','NeuroScope2','NumberTitle','off','renderer','opengl','KeyPressFcn', @keyPress,'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none', 'MenuBar', 'None'); % ,'windowscrollWheelFcn',@ScrolltoZoomInPlot ,'WindowButtonMotionFcn', @hoverCallback
         if ~verLessThan('matlab', '9.3')
             menuLabel = 'Text';
@@ -144,9 +168,14 @@ end
             menuSelectedFcn = 'Callback';
         end
         
-        
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating menu
+        
+        % NeuroScope2
+        UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'NeuroScope2');
+        uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'About NeuroScope2',menuSelectedFcn,@AboutDialog);
+        % uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Run benchmarks',menuSelectedFcn,@runBenchMark,'Separator','on');
+        uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Quit',menuSelectedFcn,@exitNeuroScope2,'Separator','on','Accelerator','W');
         
         % File
         UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
@@ -163,8 +192,17 @@ end
         UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'Cell metrics');
         uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'View cell metrics in CellExplorer',menuSelectedFcn,@openCellExplorer);
         
+        % BuzLabDB
+        UI.menu.BuzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
+        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Load session from BuzLabDB',menuSelectedFcn,@DatabaseSessionDialog,'Accelerator','D');
+        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Edit credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
+        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Edit repository paths',menuSelectedFcn,@editDBrepositories);
+        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current session on website',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
+        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current animal subject on website',menuSelectedFcn,@showAnimalInWebDB);
+        
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating UI/panels
+        
         UI.grid_panels = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0); % Flexib grid box
         UI.panel.left = uix.VBoxFlex('Parent',UI.grid_panels,'position',[0 0.66 0.26 0.31]); % Left panel
         
@@ -178,19 +216,20 @@ end
         set(UI.panel.center, 'Heights', [-1 20]); % set center panel size
         
         % Left panel tabs
-        UI.uitabgroup = uitabgroup('Units','normalized','Position',[0 0 1 1],'Parent',UI.panel.left,'Units','normalized');
-        UI.tabs.general = uitab(UI.uitabgroup,'Title','General','tooltip',sprintf('General'));
-        UI.panel.general.main  = uix.VBoxFlex('Parent',UI.tabs.general);
-        UI.tabs.spikes = uitab(UI.uitabgroup,'Title','Mat files','tooltip','CellExplorer/Buzcode files');
-        UI.panel.matfiles.main  = uix.VBoxFlex('Parent',UI.tabs.spikes);
-        
+        UI.uitabgroup = uiextras.TabPanel('Parent', UI.panel.left, 'Padding', 1,'FontSize',11 ,'TabSize',80);
+        UI.panel.general.main  = uix.VBoxFlex('Parent',UI.uitabgroup, 'Padding', 1);
+        UI.panel.matfiles.main  = uix.VBoxFlex('Parent',UI.uitabgroup, 'Padding', 1);        
+        UI.uitabgroup.TabNames = {'General', 'Mat files'};
+
         % % General tab elements
         % Navigation
         UI.panel.general.navigation = uipanel('Parent',UI.panel.general.main);
-        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.00 0.00 0.33 1],'String','<','Callback',@back,'KeyPressFcn', @keyPress,'tooltip','Go in time');
+        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.00 0.00 0.16 1],'String','<<','Callback',@back_fast,'KeyPressFcn', @keyPress,'tooltip','Fast backward in time'); 
+        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.17 0.00 0.16 1],'String','<','Callback',@back,'KeyPressFcn', @keyPress,'tooltip','Go back in time');
         uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0.5 0.33 0.5],'String',char(94),'Callback',@(src,evnt)increaseAmplitude,'KeyPressFcn', @keyPress,'tooltip','Increase amplitude of ephys data');
         uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0.00 0.33 0.5],'String','v','Callback',@(src,evnt)decreaseAmplitude,'KeyPressFcn', @keyPress,'tooltip','Decrease amplitude of ephys data');
-        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0.00 0.33 1],'String','>','Callback',@advance,'KeyPressFcn', @keyPress,'tooltip','Forward in time');
+        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0.00 0.16 1],'String','>','Callback',@advance,'KeyPressFcn', @keyPress,'tooltip','Forward in time');
+        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.84 0.00 0.16 1],'String','>>','Callback',@advance_fast,'KeyPressFcn', @keyPress,'tooltip','Fast forward in time');
         
         % Electrophysiology
         UI.panel.general.filter = uipanel('Parent',UI.panel.general.main,'title','Electrophysiology');
@@ -198,7 +237,7 @@ end
         UI.panel.general.detectSpikes = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect spikes (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.0 0.70 0.7 0.15],'Callback',@toogleDetectSpikes,'HorizontalAlignment','left');
         UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.71 0.70 0.28 0.15],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
         UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.55 0.5 0.15],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
-        UI.panel.general.greyScaleTraces = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Dim','Grey-scale'}, 'value', 1, 'Units','normalized', 'Position', [0.50 0.55 0.50 0.15],'Callback',@changeColorScale,'HorizontalAlignment','left');
+        UI.panel.general.greyScaleTraces = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 66%','Colors 33%','Grey-scale','Grey-scale 66%','Grey-scale 33%'}, 'value', 1, 'Units','normalized', 'Position', [0.50 0.55 0.50 0.15],'Callback',@changeColorScale,'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.45 0.5 0.1],'HorizontalAlignment','center');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.45 0.5 0.1],'HorizontalAlignment','center');
         UI.panel.general.lowerBand  = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '400', 'Units','normalized', 'Position', [0.01 0.3 0.49 0.15],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
@@ -222,6 +261,10 @@ end
         uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.33 0 0.33 1],'String','Save','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Save channel tags to session metadata');
         uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.67 0 0.32 1],'String','Delete','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Delete channel tag in session gui');
         
+        % Notes
+        UI.panel.notes.main = uipanel('Parent',UI.panel.general.main,'title','Session notes');
+        UI.panel.notes.text = uicontrol('Parent',UI.panel.notes.main,'Style', 'Edit', 'String', '','Units' ,'normalized', 'Position', [0, 0, 1, 1],'HorizontalAlignment','left', 'Min', 0, 'Max', 100,'Callback',@getNotes);
+        
         % Intan
         UI.panel.intan.main = uipanel('Title','Intan data','TitlePosition','centertop','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
         UI.panel.intan.showAnalog = uicontrol('Parent',UI.panel.intan.main,'Style','checkbox','Units','normalized','Position',[0 0.75 1 0.25], 'value', 0,'String','Show analog','Callback',@showIntan,'KeyPressFcn', @keyPress,'tooltip','Show analog data');
@@ -236,7 +279,7 @@ end
         UI.panel.kilosort.main = uipanel('Title','KiloSort','TitlePosition','centertop','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
         UI.panel.kilosort.showKilosort = uicontrol('Parent',UI.panel.kilosort.main,'Style','checkbox','Units','normalized','Position',[0 0 1 1], 'value', 0,'String','Show KiloSort data','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
         
-        set(UI.panel.general.main, 'Heights', [50 180 -200 50 -100 50 110 40],'MinimumHeights',[50 180 100 50 100 50 110 40]);
+        set(UI.panel.general.main, 'Heights', [50 180 -200 50 -100 50 100 110 40],'MinimumHeights',[50 180 100 50 100 50 50 110 40]);
         
         % SECOND PANEL
         % Spikes
@@ -256,7 +299,7 @@ end
         uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Filter', 'Units','normalized','Position', [0 0.17 1 0.13], 'HorizontalAlignment','left');
         UI.panel.cell_metrics.textFilter = uicontrol('Style','edit', 'Units','normalized','Position',[0.01 0.01 0.98 0.17],'String','','HorizontalAlignment','left','Parent',UI.panel.cell_metrics.main,'Callback',@filterCellsByText,'Enable','off','tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with AND // OR operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nFilter by parent brain regions as well, fx: ".brainRegion HIP"\nMake sure to include  spaces between fields and operators' ));
         
-        UI.listbox.cellTypes = uicontrol('Parent',UI.panel.matfiles.main,'Style','listbox', 'Units','normalized','Position',[0 0 1 0.3],'String',{''},'Enable','off','max',20,'min',1,'Value',1,'Callback',@setCellTypeSelectSubset,'KeyPressFcn', @keyPress,'tooltip','Filter putative cell types. Select to filter');
+        UI.listbox.cellTypes = uicontrol('Parent',UI.panel.matfiles.main,'Style','listbox', 'Units','normalized','Position',[0 0 1 0.3],'String',{'Putative cell-types'},'Enable','off','max',20,'min',0,'Value',[],'Callback',@setCellTypeSelectSubset,'KeyPressFcn', @keyPress,'tooltip','Filter putative cell types. Select to filter');
         
         % Table with list of cells
         UI.table.cells = uitable(UI.panel.matfiles.main,'Data', {false,'','',''},'Units','normalized','Position',[0 0.34 1 0.45],'ColumnWidth',{20 30 80 80},'columnname',{'','#',UI.tableData.Column1,UI.tableData.Column2},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editCellTable,'Enable','off');
@@ -266,7 +309,7 @@ end
         uicontrol('Parent',UI.panel.metricsButtons,'Style','pushbutton','Units','normalized','Position',[0.67 0.00 0.33 1],'String','Metrics','Callback',@metricsButtons,'KeyPressFcn', @keyPress,'tooltip','Show table with metrics');
         
         % Events
-        UI.panel.events.navigation = uipanel('Parent',UI.panel.matfiles.main,'title','Events');
+        UI.panel.events.navigation = uipanel('Parent',UI.panel.matfiles.main,'title','Events and manipulations');
         UI.panel.events.files = uicontrol('Parent',UI.panel.events.navigation,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0 0.85 1 0.13],'HorizontalAlignment','left','Callback',@setEventData);
         UI.panel.events.showEvents = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0 0.75 0.5 0.1], 'value', 0,'String','Show','Callback',@showEvents,'KeyPressFcn', @keyPress,'tooltip','Show events');
         UI.panel.events.processing_steps = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.5 0.75 0.5 0.1], 'value', 0,'String','Processing','Callback',@processing_steps,'KeyPressFcn', @keyPress,'tooltip','Show processing steps');
@@ -324,9 +367,9 @@ end
         UI.elements.lower.windowsSize = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', UI.settings.windowSize, 'Units','normalized', 'Position', [0.3 0 0.05 1],'HorizontalAlignment','left','tooltip','Window size (seconds)','Callback',@setWindowsSize);
         uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Scaling', 'Units','normalized', 'Position', [0.0 0 0.05 1],'HorizontalAlignment','left');
         UI.elements.lower.scaling = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', num2str(UI.settings.scalingFactor), 'Units','normalized', 'Position', [0.05 0 0.05 1],'HorizontalAlignment','left','tooltip','Ephys scaling','Callback',@setScaling);
-        UI.elements.lower.performance = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Performance', 'Units','normalized', 'Position', [0.25 0 0.05 1],'HorizontalAlignment','left');
-        UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider);
-        set(UI.panel.info, 'Widths', [70 60 120 60 60 60 130 -1],'MinimumWidths',[70 60 120 60 60 60 130  1]); % set grid panel size
+        UI.elements.lower.performance = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Performance', 'Units','normalized', 'Position', [0.25 0 0.05 1],'HorizontalAlignment','left','KeyPressFcn', @keyPress);
+        UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider,'KeyPressFcn', @keyPress);
+        set(UI.panel.info, 'Widths', [70 60 120 60 60 60 200 -1],'MinimumWidths',[70 60 120 60 60 60 180  1]); % set grid panel size
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
@@ -336,16 +379,8 @@ end
         UI.plot_axis1.XAxis.MinorTickValues = 0:0.01:2;
         set(0,'units','pixels');
         ce_dragzoom(UI.plot_axis1,'on');
-        %         set(ax,'ButtonDownFcn',@ClickPlot);
         UI.Pix_SS = get(0,'screensize');
         UI.Pix_SS = UI.Pix_SS(3)*2;
-        
-        if ~exist('basepath','var')
-            basepath = pwd;
-        end
-        if ~exist('basename','var')
-            basename = basenameFromBasepath(basepath);
-        end
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Maximazing figure to full screen
@@ -424,13 +459,11 @@ end
 
     function plot_ephys
         % Plotting ephys data
-        if UI.settings.greyScaleTraces == 1
-            colors = UI.colors;
-        elseif UI.settings.greyScaleTraces == 2
-            colors = UI.colors*0.4;
-        else
-            colors = ones(size(UI.colors))*0.4;
-            colors(1:2:end,:) = colors(1:2:end,:)-0.1;
+        if UI.settings.greyScaleTraces < 4
+            colors = UI.colors/UI.settings.greyScaleTraces;
+        elseif UI.settings.greyScaleTraces >=4
+            colors = ones(size(UI.colors))/(UI.settings.greyScaleTraces-3);
+            colors(1:2:end,:) = colors(1:2:end,:)-0.1*(7-UI.settings.greyScaleTraces);
         end
         
         if UI.settings.plotStyle == 4 % lfp file
@@ -449,33 +482,40 @@ end
             fileID = UI.fid.ephys;
         end
         
-        % Loading data
-        if t0>UI.t1 && t0 < UI.t1 + UI.settings.windowSize && ~UI.forceNewData
-            t_offset = t0-UI.t1;
-            newSamples = round(UI.samplesToDisplay*t_offset/UI.settings.windowSize);
-            existingSamples = UI.samplesToDisplay-newSamples;
-            % Keeping existing samples
-            ephys.raw(1:existingSamples,:) = ephys.raw(newSamples+1:UI.samplesToDisplay,:);
-            % Loading new samples
-            fseek(fileID,round((t0+UI.settings.windowSize-t_offset)*sr*2)*data.session.extracellular.nChannels,UI.settings.fileRead); % eof: end of file
-            ephys.raw(existingSamples+1:UI.samplesToDisplay,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
-        elseif t0 < UI.t1 && t0 > UI.t1 - UI.settings.windowSize && ~UI.forceNewData
-            t_offset = UI.t1-t0;
-            newSamples = round(UI.samplesToDisplay*t_offset/UI.settings.windowSize);
-            % Keeping existing samples
-            existingSamples = UI.samplesToDisplay-newSamples;
-            ephys.raw(newSamples+1:UI.samplesToDisplay,:) = ephys.raw(1:existingSamples,:);
-            % Loading new data
-            fseek(fileID,round(t0*sr*2)*data.session.extracellular.nChannels,UI.settings.fileRead); % eof: end of file
-            ephys.raw(1:newSamples,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
-        elseif t0==UI.t1 && ~UI.forceNewData
+        if strcmp(UI.settings.fileRead,'bof')
+            % Loading data
+            if t0>UI.t1 && t0 < UI.t1 + UI.settings.windowSize && ~UI.forceNewData
+                t_offset = t0-UI.t1;
+                newSamples = round(UI.samplesToDisplay*t_offset/UI.settings.windowSize);
+                existingSamples = UI.samplesToDisplay-newSamples;
+                % Keeping existing samples
+                ephys.raw(1:existingSamples,:) = ephys.raw(newSamples+1:UI.samplesToDisplay,:);
+                % Loading new samples
+                fseek(fileID,round((t0+UI.settings.windowSize-t_offset)*sr)*data.session.extracellular.nChannels*2,'bof'); % bof: beginning of file
+                ephys.raw(existingSamples+1:UI.samplesToDisplay,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
+            elseif t0 < UI.t1 && t0 > UI.t1 - UI.settings.windowSize && ~UI.forceNewData
+                t_offset = UI.t1-t0;
+                newSamples = round(UI.samplesToDisplay*t_offset/UI.settings.windowSize);
+                % Keeping existing samples
+                existingSamples = UI.samplesToDisplay-newSamples;
+                ephys.raw(newSamples+1:UI.samplesToDisplay,:) = ephys.raw(1:existingSamples,:);
+                % Loading new data
+                fseek(fileID,round(t0*sr)*data.session.extracellular.nChannels*2,'bof');
+                ephys.raw(1:newSamples,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
+            elseif t0==UI.t1 && ~UI.forceNewData
+            else
+                fseek(fileID,round(t0*sr)*data.session.extracellular.nChannels*2,'bof');
+                ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],'int16'))'*UI.settings.leastSignificantBit;
+            end
+            UI.forceNewData = false;
+            
         else
-            fseek(fileID,round(t0*data.session.extracellular.nChannels*sr*2),UI.settings.fileRead); % eof: end of file
+            fseek(fileID,ceil(-UI.settings.windowSize*sr)*data.session.extracellular.nChannels*2,'eof'); % eof: end of file
             ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],'int16'))'*UI.settings.leastSignificantBit;
+            UI.forceNewData = true;
         end
         
         UI.t1 = t0;
-        UI.forceNewData = false;
         if isempty(ephys.raw)
             return
         end
@@ -790,7 +830,7 @@ end
         if UI.settings.showEventsIntervals
             statesData = data.events.(UI.settings.eventData).timestamps(idx,:)-t1;
             p1 = patch(double([statesData,flip(statesData,2)])',[ydata(1);ydata(1);ydata(2);ydata(2)]*ones(1,size(statesData,1)),'r','EdgeColor','r','HitTest','off');
-            alpha(p1,0.3);
+            alpha(p1,0.1);
         end
         if isfield(data.events.(UI.settings.eventData),'detectorParams')
             detector_channel = data.events.(UI.settings.eventData).detectorParams.channel;
@@ -885,6 +925,76 @@ end
         toggleMetrics
         uiresume(UI.fig);
     end
+    
+    function AboutDialog(~,~)
+        if ismac
+            fig_size = [50, 50, 300, 130];
+            pos_image = [20 72 268 46];
+            pos_text = 110;
+        else
+            fig_size = [50, 50, 320, 150];
+            pos_image = [20 88 268 46];
+            pos_text = 110;
+        end
+        
+        [logog_path,~,~] = fileparts(which('CellExplorer.m'));
+        logo = imread(fullfile(logog_path,'logoCellExplorer.png'));
+        AboutWindow.dialog = figure('Position', fig_size,'Name','About NeuroScope2', 'MenuBar', 'None','NumberTitle','off','visible','off', 'resize', 'off'); movegui(AboutWindow.dialog,'center'), set(AboutWindow.dialog,'visible','on')
+        [img, ~, alphachannel] = imread(fullfile(logog_path,'logoCellExplorer.png'));
+        image(img, 'AlphaData', alphachannel,'ButtonDownFcn',@openWebsite);
+        AboutWindow.image = gca;
+        set(AboutWindow.image,'Color','none','Units','Pixels') , hold on, axis off
+        AboutWindow.image.Position = pos_image;
+        text(0,pos_text,{'\bfNeuroScope2\rm - a part of CellExplorer','By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\bf\color[rgb]{0. 0.2 0.5}https://CellExplorer.org/\rm'},'HorizontalAlignment','left','VerticalAlignment','top','ButtonDownFcn',@openWebsite, 'interpreter','tex')
+    end
+    
+    function exitNeuroScope2(~,~)
+    	close(UI.fig);
+    end
+        
+    function DatabaseSessionDialog(~,~)
+        % Load sessions from the database.
+        % Dialog is shown with sessions from the database with calculated cell metrics.
+        % Then selected session is loaded from the database
+        
+        [basenames,basepaths] = gui_db_sessions(basename);
+        try
+            if ~isempty(basenames)
+                data = [];
+                basepath = basepaths{1};
+                basename = basenames{1};
+                initData(basepath,basename);
+                initTraces;
+                uiresume(UI.fig);
+                MsgLog(['Session loaded succesful: ' basename],2)
+            end
+        catch
+            MsgLog(['Failed to loaded session: ' basename],4)
+        end
+    end
+    
+    function editDBcredentials(~,~)
+        edit db_credentials.m
+    end
+    
+    function editDBrepositories(~,~)
+        edit db_local_repositories.m
+    end
+    
+    function openSessionInWebDB(~,~)
+        % Opens the current session in the Buzsaki lab web database
+        web(['https://buzsakilab.com/wp/sessions/?frm_search=', basename],'-new','-browser')
+    end
+
+    function showAnimalInWebDB(~,~)
+        % Opens the current animal in the Buzsaki lab web database
+        if isfield(data.session.animal,'name')
+            web(['https://buzsakilab.com/wp/animals/?frm_search=', data.session.animal.name],'-new','-browser')
+        else
+            web('https://buzsakilab.com/wp/animals/','-new','-browser')
+        end
+    end
+    
     function ScrolltoZoomInPlot(~,evnt)
         handle34 = UI.plot_axis1;
         um_axes = get(handle34,'CurrentPoint');
@@ -1079,39 +1189,47 @@ end
                 case 'slash'
                     maxPowerEvent
             end
-            %         elseif strcmp(event.Modifier,'control')
-            %             switch event.Key
-            %                 case 'space'
-            %                     streamData2
-            %             end
+        elseif strcmp(event.Modifier,'control')
+            switch event.Key
+                case 'space'
+                    streamData2
+            end
         end
     end
 
     function streamData
-        % Streams the data from t0 updating every twice per window size
+        % Streams  data from t0, updating traces twice per window size
         if ~UI.settings.stream
             UI.settings.stream = true;
             UI.settings.fileRead = 'bof';
             while UI.settings.stream
                 t0 = t0+0.5*UI.settings.windowSize;
                 plotData
+                UI.streamingText = text(UI.plot_axis1,UI.settings.windowSize/2,1,'Streaming','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color','w');
                 pause(0.5*UI.settings.windowSize)
             end
         end
         UI.settings.fileRead = 'bof';
+        if ishandle(UI.streamingText)
+            delete(UI.streamingText)
+        end
     end
     function streamData2
-        % Stream from the end of an active file
+        % Stream from the end of an active file, updating traces twice per window size
         if ~UI.settings.stream
             UI.settings.stream = true;
             UI.settings.fileRead = 'eof';
             while UI.settings.stream
                 t0 = UI.t_total-UI.settings.windowSize;
                 plotData
+                UI.streamingText = text(UI.plot_axis1,UI.settings.windowSize/2,1,'Streaming: end of file','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color','w');
                 pause(0.5*UI.settings.windowSize)
             end
         end
         UI.settings.fileRead = 'bof';
+        if ishandle(UI.streamingText)
+            delete(UI.streamingText)
+        end
     end
     function goToTimestamp(~,~)
         % Go to a specific timestamp via dialog
@@ -1225,11 +1343,20 @@ end
         end
     end
 
+    function getNotes(~,~)
+        data.session.general.notes = UI.panel.notes.text.String;
+    end
+    
     function buttonsChannelTags(src,~)
         % handles the three buttons under the channel tags table
         switch src.String
             case 'Add'
-                answer = inputdlg({'Tag name','Channels','Groups'},'Customer', [1 30; 1 30; 1 30]);
+                if isempty(UI.selectedChannels)
+                    selectedChannels = '';
+                else
+                    selectedChannels = num2str(UI.selectedChannels);
+                end
+                answer = inputdlg({'Tag name (e.g. Bad, Ripple, Theta)','Channels','Groups'},'Add channel tag', [1 50; 1 50; 1 50],{'',selectedChannels,''});
                 if ~isempty(answer) && ~strcmp(answer{1},'') && isvarname(answer{1}) && ~ismember(answer{1},fieldnames(data.session.channelTags))
                     if ~isempty(answer{2}) && isnumeric(str2num(answer{2})) && all(str2num(answer{2}))>0 && str2num(answer{2})
                         data.session.channelTags.(answer{1}).channels = str2num(answer{2});
@@ -1600,6 +1727,27 @@ end
         end
     end
 
+    function initInputs
+        % Handling channeltags
+        if ~isempty(parameters.channeltag)
+            idx = find(strcmp(parameters.channeltag,{UI.table.channeltags.Data{:,2}}));
+            if ~isempty(idx)
+                UI.table.channeltags.Data(idx,3) = {true};
+                UI.settings.channelTags.highlight = find([UI.table.channeltags.Data{:,3}]);
+                initTraces
+            end
+        end
+        if ~isempty(parameters.events)
+            idx = find(strcmp(parameters.events,UI.panel.events.files.String));
+            if ~isempty(idx)
+                UI.panel.events.files.Value = idx;
+                UI.settings.eventData = UI.panel.events.files.String{UI.panel.events.files.Value};
+                UI.settings.showEvents = false;
+                showEvents
+            end
+        end
+    end
+    
     function initData(basepath,basename)
         % Initialize the data
         UI.data.basepath = basepath;
@@ -1615,6 +1763,11 @@ end
         
         UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
         UI.fig.UserData.leastSignificantBit = UI.settings.leastSignificantBit;
+        
+        % Getting notes
+        if isfield(data.session.general,'notes')
+            UI.panel.notes.text.String = data.session.general.notes;
+        end
         
         updateChannelGroupsList
         updateChannelTags
@@ -1712,7 +1865,9 @@ end
                 In = unique(floor(In/size(x1,1)))+1;
                 In = channels(In);
                 highlightTraces(In,[])
-                UI.elements.lower.performance.String = ['Channel: ',num2str(In)];
+                UI.selectedChannels = unique([In,UI.selectedChannels],'stable');
+                UI.elements.lower.performance.String = ['Channel(s): ',num2str(UI.selectedChannels)];
+                
             case 'open'
                 set(UI.plot_axis1,'XLim',[0,UI.settings.windowSize],'YLim',[0,1]);
             otherwise
@@ -2006,6 +2161,8 @@ end
         else
             UI.settings.showEventsIntervals = false;
         end
+        initTraces
+        uiresume(UI.fig);
     end
     function nextEvent(~,~)
         if ~UI.settings.showEvents

@@ -2,6 +2,8 @@ function [ripples] = ce_FindRipples(varargin)
 %FindRipples - Find hippocampal ripples (100~200Hz oscillations).
 %
 % USAGE
+%    [ripples] = ripples = ce_FindRipples(session,<options>);
+%    OR
 %    [ripples] = ce_FindRipples(lfp.data,lfp.timestamps,<options>)
 %    OR
 %    [ripples] = ce_FindRipples(basepath,channel,<options>)

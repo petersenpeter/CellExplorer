@@ -3,8 +3,9 @@ function success = saveStruct(data,datatype,varargin)
 % TODO: Perform validation of the content before saving
 %
 % Example calls:
-% saveStruct(cell_metrics,'cellinfo','session',session);
-% saveStruct(ripples,'events','session',session);
+% saveStruct(cell_metrics,'cellinfo','session',session); % Saving cell metrics
+% saveStruct(ripples,'events','session',session); % Saving ripples
+% saveStruct(session); Saving session metadata struct
 
 % By Peter Petersen
 % petersen.peter@gmail.com

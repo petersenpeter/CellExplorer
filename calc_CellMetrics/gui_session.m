@@ -210,7 +210,6 @@ uimenu(UI.menu.help.topMenu,menuLabel,'Documentation of session metadata structu
 %% % % % % % % % % % % % % % % % % % % %
 % Initializing tabs
 % % % % % % % % % % % % % % % % % % % %
-
 UI.uitabgroup = uitabgroup('Units','normalized','Position',[0 0.06 1 0.94],'Parent',UI.fig,'Units','normalized');
 if exist('parameters','var') && ~isempty(parameters)
     UI.tabs.parameters = uitab(UI.uitabgroup,'Title','CellExplorer');

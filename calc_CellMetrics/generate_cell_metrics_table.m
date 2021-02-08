@@ -24,6 +24,6 @@ function generate_cell_metrics_table(cell_metrics)
         end
     end
     tableData = struct2table(tableData);
-    fig = uifigure('Name','Cell metrics','pos',[0,0,1200,800],'visible','off');
+    fig = uifigure('Name','Cell metrics','pos',[0,0,min([1200,numel(UI.lists.metrics)*150]),800],'visible','off');
     uitable(fig,'Data', tableData,'Units','normalized','Position',[0 0 1 1],'columnname',columnname,'RowName',[],'ColumnEditable',false,'ColumnSortable',true);
     movegui(fig,'center'), set(fig,'visible','on')

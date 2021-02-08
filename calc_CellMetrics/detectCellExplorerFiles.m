@@ -3,6 +3,7 @@ function data = detectCellExplorerFiles(basepath,basename)
     
     % By Peter Petersen
     
+    data = {};
     containers = {'events','timeseries','cellinfo','manipulation','channelinfo','behavior','states'};
     for i = 1:numel(containers)
         fileList = dir(fullfile(basepath,[basename '.*.',containers{i},'.mat']));
