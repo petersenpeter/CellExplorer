@@ -21,7 +21,7 @@ data = []; % External data loaded like spikes, events, states, behavior
 ephys = []; % Struct with ephys data for current shown time interval
 t0 = 0; % Timestamp the current window (in seconds)
 
-% Handling extra inputs
+% Handling inputs
 p = inputParser;
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'basename',[],@isstr);
@@ -56,6 +56,7 @@ while t0>=0
         UI.selectedChannels = [];
         plotData;
         uiwait(UI.fig);
+        UI.settings.stream = false;
         t0 = max([0,min([t0,UI.t_total-UI.settings.windowSize])]);
         if UI.track && UI.t0_track(end) ~= t0
             UI.t0_track = [UI.t0_track,t0];
@@ -82,7 +83,7 @@ end
         UI.t1 = 0;
         UI.forceNewData = true;
         UI.track = true;
-        UI.t_total = [];
+        UI.t_total = 0;
         UI.iEvent = 1;
         UI.t0_track = 0;
         UI.timerInterface = tic;
@@ -655,7 +656,11 @@ end
 
     function plotAnalog(signal,sr)
         % Plotting analog traces
-        fseek(UI.fid.timeSeries.(signal),round(t0*data.session.timeSeries.(signal).nChannels*sr*2),UI.settings.fileRead); % eof: end of file
+        if strcmp(UI.settings.fileRead,'bof')
+            fseek(UI.fid.timeSeries.(signal),round(t0*sr)*data.session.timeSeries.(signal).nChannels*2,'bof'); % eof: end of file
+        else
+            fseek(UI.fid.timeSeries.(signal),ceil(-UI.settings.windowSize*sr)*data.session.timeSeries.(signal).nChannels*2,'eof'); % eof: end of file
+        end
         traces_analog = fread(UI.fid.timeSeries.(signal), [data.session.timeSeries.(signal).nChannels, UI.samplesToDisplay],'uint16')';
         if UI.settings.showIntanBelowTrace
             line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowSize,traces_analog(UI.dispSamples,:)./2^16*diff(UI.dataRange.intan)+UI.dataRange.intan(1), 'HitTest','off','Marker','none','LineStyle','-','linewidth',1);
@@ -666,7 +671,11 @@ end
 
     function plotDigital(signal,sr)
         % Plotting digital traces
-        fseek(UI.fid.timeSeries.(signal),round(t0*sr*2),UI.settings.fileRead);
+        if strcmp(UI.settings.fileRead,'bof')
+            fseek(UI.fid.timeSeries.(signal),round(t0*sr)*2,'bof');
+        else
+            fseek(UI.fid.timeSeries.(signal),ceil(-UI.settings.windowSize*sr)*2,'eof');
+        end
         traces_digital = fread(UI.fid.timeSeries.(signal), [UI.samplesToDisplay],'uint16')';
         traces_digital2 = [];
         for i = 1:data.session.timeSeries.dig.nChannels
@@ -1206,7 +1215,11 @@ end
                 t0 = t0+0.5*UI.settings.windowSize;
                 plotData
                 UI.streamingText = text(UI.plot_axis1,UI.settings.windowSize/2,1,'Streaming','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color','w');
-                pause(0.5*UI.settings.windowSize)
+                for i = 1:10
+                    if UI.settings.stream
+                        pause(0.05*UI.settings.windowSize)
+                    end
+                end
             end
         end
         UI.settings.fileRead = 'bof';
@@ -1223,7 +1236,11 @@ end
                 t0 = UI.t_total-UI.settings.windowSize;
                 plotData
                 UI.streamingText = text(UI.plot_axis1,UI.settings.windowSize/2,1,'Streaming: end of file','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color','w');
-                pause(0.5*UI.settings.windowSize)
+                for i = 1:10
+                    if UI.settings.stream
+                        pause(0.05*UI.settings.windowSize)
+                    end
+                end
             end
         end
         UI.settings.fileRead = 'bof';
@@ -1850,6 +1867,7 @@ end
     end
 
     function ClickPlot(~,~)
+        UI.settings.stream = false;
         % handles clicks on the main axes
         switch get(UI.fig, 'selectiontype')
             %             case 'normal' % left mouse button
@@ -2554,31 +2572,33 @@ end
 
     function showIntan(src,~) % Intan data
         if strcmp(src.String,'Show analog')
-            if UI.panel.intan.showAnalog.Value == 1 & exist(fullfile(basename,UI.panel.intan.filenameAnalog.String),'file')
+            if UI.panel.intan.showAnalog.Value == 1 && ~isempty(UI.panel.intan.filenameAnalog.String) && exist(fullfile(basename,UI.panel.intan.filenameAnalog.String),'file')
                 UI.settings.intan_showAnalog = true;
                 UI.fid.timeSeries.adc = fopen(fullfile(basename,UI.panel.intan.filenameAnalog.String), 'r');
                 
             elseif UI.panel.intan.showAnalog.Value == 1
-                UI.panel.intan.intan_showAnalog.Value = 0;
+                UI.panel.intan.showAnalog.Value = 0;
                 MsgLog('Failed to load Analog file',4);
             else
                 UI.settings.intan_showAnalog = false;
+                UI.panel.intan.showAnalog.Value = 0;
             end
         end
         if strcmp(src.String,'Show aux')
-            if UI.panel.intan.showAux.Value == 1 & exist(fullfile(basename,UI.panel.intan.filenameAux.String),'file')
+            if UI.panel.intan.showAux.Value == 1 && ~isempty(UI.panel.intan.filenameAux.String) && exist(fullfile(basename,UI.panel.intan.filenameAux.String),'file')
                 UI.settings.intan_showAux = true;
                 UI.fid.timeSeries.aux = fopen(fullfile(basename,UI.panel.intan.filenameAux.String), 'r');
             elseif UI.panel.intan.showAux.Value == 1
                 UI.panel.intan.showAux.Value = 0;
+                UI.settings.intan_showAux = false;
                 MsgLog('Failed to load aux file',4);
             else
                 UI.settings.intan_showAux = false;
-                
+                UI.panel.intan.showAux.Value = 0;                
             end
         end
         if strcmp(src.String,'Show digital')
-            if UI.panel.intan.showDigital.Value == 1 & exist(fullfile(basename,UI.panel.intan.filenameDigital.String),'file')
+            if UI.panel.intan.showDigital.Value == 1 && ~isempty(UI.panel.intan.filenameDigital.String) && exist(fullfile(basename,UI.panel.intan.filenameDigital.String),'file')
                 UI.settings.intan_showDigital = true;
                 UI.fid.timeSeries.dig = fopen(fullfile(basename,UI.panel.intan.filenameDigital.String), 'r');
             elseif UI.panel.intan.showDigital.Value == 1
@@ -2586,6 +2606,7 @@ end
                 MsgLog('Failed to load digital file',4);
             else
                 UI.settings.intan_showDigital = false;
+                UI.panel.intan.showDigital.Value = 0;
             end
         end
         initTraces
