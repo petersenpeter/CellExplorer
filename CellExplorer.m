@@ -949,7 +949,8 @@ function updateUI
     if ColorVal == 5 % major brain regions 
         if ~isfield(UI.params,'brainRegionsLevel') | ~isfield(UI.params,'subset_pre') | numel(UI.params.subset) ~= numel(UI.params.subset_pre) | UI.params.subset ~= UI.params.subset_pre
             if isempty(UI.brainRegions.relational_tree)
-                load('brainRegions_relational_tree.mat','relational_tree');
+                temp = load('brainRegions_relational_tree.mat','relational_tree');
+                UI.brainRegions.relational_tree = temp.relational_tree;
             end
             kk = 1;
             idx = find(UI.brainRegions.relational_tree.graph_depth == UI.preferences.graph_depth);
@@ -11880,7 +11881,8 @@ end
                     newStr = split(newStr2{i}(2:end),' ');
                     if numel(newStr)>1
                         if isempty(UI.brainRegions.relational_tree)
-                            load('brainRegions_relational_tree.mat','relational_tree');
+                             temp = load('brainRegions_relational_tree.mat','relational_tree');
+                             UI.brainRegions.relational_tree = temp.relational_tree;
                         end
                         acronym_out = getBrainRegionChildren(newStr{2},UI.brainRegions.relational_tree);
                         idx_textFilter2(i,:) = ismember(lower(cell_metrics.brainRegion),lower([acronym_out,newStr{2}]));

@@ -11,6 +11,8 @@ function NeuroScope2(varargin)
 %
 % Example calls
 % NeuroScope2
+% NeuroScope2('basepath',basepath)
+% NeuroScope2('session',session)
 
 % By Peter Petersen
 
@@ -30,7 +32,7 @@ addParameter(p,'events',[],@isstr);
 addParameter(p,'states',[],@isstr);
 addParameter(p,'behavior',[],@isstr);
 addParameter(p,'cellinfo',[],@isstr);
-addParameter(p,'channeltag',[],@isstr);   
+addParameter(p,'channeltag',[],@isstr);
 parse(p,varargin{:})
 parameters = p.Results;
 basepath = p.Results.basepath;
@@ -38,6 +40,12 @@ basename = p.Results.basename;
 if isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
+
+if ~isempty(parameters.session)
+    basename = parameters.session.general.name;
+    basepath = parameters.session.general.basePath;
+end
+
 int_gt_0 = @(n) (isempty(n)) || (n <= 0);
 
 % Initialization
@@ -66,6 +74,7 @@ while t0>=0
     UI.timerInterface = tic;
 end
 
+% Closing all file readers
 fclose('all');
 if ishandle(UI.fig)
     % Closing main figure if open
@@ -87,6 +96,11 @@ end
         UI.iEvent = 1;
         UI.t0_track = 0;
         UI.timerInterface = tic;
+        UI.settings.colormap = 'hsv';
+        UI.settings.windowSize = 1; % in seconds
+        UI.settings.scalingFactor = 50;
+        UI.settings.plotStyle = 2;
+        UI.settings.stream = false;
         UI.settings.fileRead = 'bof';
         UI.settings.greyScaleTraces = 1;
         UI.settings.plotEnergy = 0;
@@ -94,19 +108,13 @@ end
         UI.settings.detectEvents = false;
         UI.settings.eventThreshold = 100; % in µV
         UI.settings.processing_steps = false;
-        UI.settings.scalingFactor = 50;
-        UI.settings.windowSize = 2; % in seconds
         UI.settings.filterTraces = false;
-        UI.settings.plotStyle = 2;
         UI.settings.detectSpikes = false;
         UI.settings.spikesDetectionThreshold = -100; % in µV
-        UI.settings.stream = false;
         UI.settings.channelTags.hide = [];
         UI.settings.channelTags.filter = [];
         UI.settings.channelTags.highlight = [];
         UI.settings.showKilosort = false;
-        UI.settings.colormap = 'hot';
-        UI.settings.hoverTimer = 0.045;  % in seconds
         UI.iLine = 1;
         UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;0.4940, 0.1840, 0.5560;0.4660, 0.6740, 0.1880;0.3010, 0.7450, 0.9330;0.6350, 0.0780, 0.1840];
         UI.freeText = '';
@@ -201,6 +209,11 @@ end
         uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current session on website',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
         uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current animal subject on website',menuSelectedFcn,@showAnimalInWebDB);
         
+        % Display settings
+        UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
+        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap',menuSelectedFcn,@changeColormap);
+        
+        
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating UI/panels
         
@@ -277,7 +290,7 @@ end
         UI.panel.intan.showIntanBelowTrace = uicontrol('Parent',UI.panel.intan.main,'Style','checkbox','Units','normalized','Position',[0 0 1 0.25], 'value', 0,'String','Below traces','Callback',@showIntanBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show intan data below traces');
         uicontrol('Parent',UI.panel.intan.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.5 0.25],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit input channels');
         % KiloSort
-        UI.panel.kilosort.main = uipanel('Title','KiloSort','TitlePosition','centertop','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
+        UI.panel.kilosort.main = uipanel('Title','Processed data','TitlePosition','centertop','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
         UI.panel.kilosort.showKilosort = uicontrol('Parent',UI.panel.kilosort.main,'Style','checkbox','Units','normalized','Position',[0 0 1 1], 'value', 0,'String','Show KiloSort data','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
         
         set(UI.panel.general.main, 'Heights', [50 180 -200 50 -100 50 100 110 40],'MinimumHeights',[50 180 100 50 100 50 50 110 40]);
@@ -395,6 +408,8 @@ end
 
     function plotData
         % Generates all data plots
+        
+        % Deletes existing plot data
         delete(UI.plot_axis1.Children)
         set(UI.plot_axis1,'XLim',[0,UI.settings.windowSize],'YLim',[0,1])
         
@@ -596,9 +611,9 @@ end
         % Detecting and plotting spikes
         if UI.settings.detectSpikes
             if UI.settings.plotStyle == 4
-                [UI.settings.filter.b2, UI.settings.filter.a2] = butter(3, 500/data.session.extracellular.srLfp*2, 'high');
+                [UI.settings.filter.b2, UI.settings.filter.a2] = butter(3, 500/(data.session.extracellular.srLfp/2), 'high');
             else
-                [UI.settings.filter.b2, UI.settings.filter.a2] = butter(3, 500/data.session.extracellular.sr*2, 'high');
+                [UI.settings.filter.b2, UI.settings.filter.a2] = butter(3, 500/(data.session.extracellular.sr/2), 'high');
             end
             ephys.filt = filtfilt(UI.settings.filter.b2, UI.settings.filter.a2, ephys.raw);
             
@@ -1375,10 +1390,10 @@ end
                 end
                 answer = inputdlg({'Tag name (e.g. Bad, Ripple, Theta)','Channels','Groups'},'Add channel tag', [1 50; 1 50; 1 50],{'',selectedChannels,''});
                 if ~isempty(answer) && ~strcmp(answer{1},'') && isvarname(answer{1}) && ~ismember(answer{1},fieldnames(data.session.channelTags))
-                    if ~isempty(answer{2}) && isnumeric(str2num(answer{2})) && all(str2num(answer{2}))>0 && str2num(answer{2})
+                    if ~isempty(answer{2}) && isnumeric(str2num(answer{2})) && all(str2num(answer{2})>0)
                         data.session.channelTags.(answer{1}).channels = str2num(answer{2});
                     end
-                    if ~isempty(answer{3}) && isnumeric(str2num(answer{3})) && all(str2num(answer{3}))>0 && str2num(answer{3})
+                    if ~isempty(answer{3}) && isnumeric(str2num(answer{3})) && all(str2num(answer{3})>0)
                         data.session.channelTags.(answer{1}).electrodeGroups = str2num(answer{3});
                     end
                     updateChannelTags
@@ -1776,7 +1791,9 @@ end
         elseif ~isfield(data,'session')
             data.session = sessionTemplate(UI.data.basepath,'showGUI',true);
         end
-        UI.colors = hsv(data.session.extracellular.nElectrodeGroups); % *0.8
+        % UI.settings.colormap
+        UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+%         UI.colors = hsv(data.session.extracellular.nElectrodeGroups); % *0.8
         
         UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
         UI.fig.UserData.leastSignificantBit = UI.settings.leastSignificantBit;
@@ -1788,17 +1805,17 @@ end
         
         updateChannelGroupsList
         updateChannelTags
-        UI.fig.Name = ['NeuroScope2: ', UI.data.basename, '   (basepath: ', UI.data.basepath, ')'];
+        UI.fig.Name = ['NeuroScope2   -   session: ', UI.data.basename, ', basepath: ', UI.data.basepath];
         UI.fid.ephys = fopen(fullfile(basepath,[UI.data.basename '.dat']), 'r');
         UI.fid.lfp = fopen(fullfile(basepath,[UI.data.basename '.lfp']), 'r');
         s1 = dir(fullfile(basepath,[UI.data.basename '.dat']));
         s2 = dir(fullfile(basepath,[UI.data.basename '.lfp']));
         if ~isempty(s1)
             filesize = s1.bytes;
-            UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.sr*2);
+            UI.t_total = filesize/(data.session.extracellular.nChannels*(data.session.extracellular.sr/2));
         elseif ~isempty(s2)
             filesize = s2.bytes;
-            UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.srLfp*2);
+            UI.t_total = filesize/(data.session.extracellular.nChannels*(data.session.extracellular.srLfp/2));
             UI.settings.plotStyle = 4;
             UI.panel.general.plotStyle.Value = UI.settings.plotStyle;
         else
@@ -1857,10 +1874,10 @@ end
         s2 = dir(fullfile(basepath,[UI.data.basename '.lfp']));
         if ~isempty(s1)
             filesize = s1.bytes;
-            UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.sr*2);
+            UI.t_total = filesize/(data.session.extracellular.nChannels*(data.session.extracellular.sr/2));
         elseif ~isempty(s2)
             filesize = s2.bytes;
-            UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.srLfp*2);
+            UI.t_total = filesize/(data.session.extracellular.nChannels*(data.session.extracellular.srLfp/2));
         end
         t0 = valid_t0((UI.t_total-UI.settings.windowSize)*src.Value/100);
         uiresume(UI.fig);
@@ -1922,11 +1939,11 @@ end
         if ~isempty(evnt.Indices) && size(evnt.Indices,1) == 1 && evnt.Indices(2) == 2
             colorpick = UI.colors(evnt.Indices(1),:);
             try
-                colorpick = uisetcolor(colorpick,'Electrodegroup color');
+                colorpick = uisetcolor(colorpick,'Electrode group color');
+                UI.colors(evnt.Indices(1),:) = colorpick;
             catch
                 MsgLog('Failed to load color palet',3);
             end
-            UI.colors(evnt.Indices(1),:) = colorpick;
             classColorsHex = rgb2hex(UI.colors);
             classColorsHex = cellstr(classColorsHex(:,2:end));
             colored_string = strcat('<html><BODY bgcolor="',classColorsHex','">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</BODY></html>');
@@ -1987,11 +2004,11 @@ end
             if int_gt_0(UI.settings.filter.lowerBand) && int_gt_0(UI.settings.filter.higherBand)
                 UI.settings.filterTraces = false;
             elseif int_gt_0(UI.settings.filter.lowerBand) && ~int_gt_0(UI.settings.filter.higherBand)
-                [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, UI.settings.filter.higherBand/data.session.extracellular.sr*2, 'low');
+                [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, UI.settings.filter.higherBand/(data.session.extracellular.sr/2), 'low');
             elseif int_gt_0(UI.settings.filter.higherBand) && ~int_gt_0(UI.settings.filter.lowerBand)
-                [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, UI.settings.filter.lowerBand/data.session.extracellular.sr*2, 'high');
+                [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, UI.settings.filter.lowerBand/(data.session.extracellular.sr/2), 'high');
             else
-                [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/data.session.extracellular.sr*2, 'bandpass');
+                [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/(data.session.extracellular.sr/2), 'bandpass');
             end
         end
         uiresume(UI.fig);
@@ -2671,17 +2688,25 @@ end
         UI.panel.timeseries.lowerBoundary.String = num2str(UI.settings.timeseries.lowerBoundary);
         uiresume(UI.fig);
     end
-
-%     function hoverCallback(~,~)
-%         if UI.fig == get(groot,'CurrentFigure') && toc(timerHover) > UI.settings.hoverTimer
-%             um_axes = get(UI.plot_axis1,'CurrentPoint');
-%             u = um_axes(1,1);
-%             %                 v = um_axes(1,2);
-%             %                 w = um_axes(1,3);
-%             UI.elements.lower.cursor.String = num2str(u+t0);
-%             timerHover = tic;
-%         end
-%     end
+    
+    function changeColormap(~,~)
+        colormapList = {'hot','parula','jet','hsv','cool','spring','summer','autumn','winter','gray','bone','copper','pink'};
+        temp = find(strcmp(UI.settings.colormap,colormapList));
+        [idx,~] = listdlg('PromptString','Select colormap','ListString',colormapList,'ListSize',[250,400],'InitialValue',temp,'SelectionMode','single','Name','Colormap');
+        if ~isempty(idx)
+            UI.settings.colormap = colormapList{idx};
+            
+            % Generating colormap
+            UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+            
+            % Updating table colors
+            classColorsHex = rgb2hex(UI.colors);
+            classColorsHex = cellstr(classColorsHex(:,2:end));
+            UI.table.electrodeGroups.Data(:,2) = strcat('<html><BODY bgcolor="',classColorsHex','">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</BODY></html>');
+            
+            uiresume(UI.fig);
+        end
+    end
 
     function loadFromFile(~,~)
         % Shows a file dialog allowing you to select session via a .dat/.mat/.xml to load

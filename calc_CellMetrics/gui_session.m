@@ -172,22 +172,18 @@ UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
 UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save session file',menuSelectedFcn,@(~,~)saveSessionFile,'Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort',menuSelectedFcn,@(~,~)importKiloSort,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata via template script',menuSelectedFcn,@(~,~)importMetadataTemplate);
+uimenu(UI.menu.file.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML,'Separator','on','Accelerator','I');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import bad channels from xml file',menuSelectedFcn,@importBadChannelsFromXML,'Accelerator','S');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import time series from Intan info.rhd',menuSelectedFcn,@importMetaFromIntan,'Accelerator','T');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import merge points (*.mergePoints.events.mat)',menuSelectedFcn,@importEpochsIntervalsFromMergePoints,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import epoch info from parent sessions',menuSelectedFcn,@importFromFiles);
 uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI with changes',menuSelectedFcn,@(~,~)CloseMetricsWindow,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn,@(~,~)cancelMetricsWindow);
 
-% Epochs
-UI.menu.epochs.topMenu = uimenu(UI.fig,menuLabel,'Epochs');
-uimenu(UI.menu.epochs.topMenu,menuLabel,'Import merge points (*.mergePoints.events.mat)',menuSelectedFcn,@importEpochsIntervalsFromMergePoints);
-uimenu(UI.menu.epochs.topMenu,menuLabel,'Import epoch info from parent sessions',menuSelectedFcn,@importFromFiles);
-
 % Extracellular
 UI.menu.extracellular.topMenu = uimenu(UI.fig,menuLabel,'Extracellular');
-
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Verify electrode group(s)',menuSelectedFcn,@verifyElectrodeGroup);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Sync electrode groups',menuSelectedFcn,@(~,~)syncChannelGroups);
-uimenu(UI.menu.extracellular.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML,'Separator','on','Accelerator','I');
-uimenu(UI.menu.extracellular.topMenu,menuLabel,'Import bad channels from xml file',menuSelectedFcn,@importBadChannelsFromXML,'Accelerator','S');
-uimenu(UI.menu.extracellular.topMenu,menuLabel,'Import time series from Intan info.rhd',menuSelectedFcn,@importMetaFromIntan,'Accelerator','T');
 
 % CellExplorer
 UI.menu.CellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
