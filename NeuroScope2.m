@@ -1,4 +1,5 @@
 function NeuroScope2(varargin)
+% % % % % % % % % % % % % % % % % % % % % % % % %
 % NeuroScope2 (BETA) is a visualizer for electrophysiological recordings. It is inspired by the original Neuroscope (http://neurosuite.sourceforge.net/)
 % and made to mimic its features, but built upon Matlab and the data structure of CellExplorer making it much easier to hack/customize, fully
 % support Matlab mat-files, and faster. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
@@ -13,9 +14,9 @@ function NeuroScope2(varargin)
 % NeuroScope2
 % NeuroScope2('basepath',basepath)
 % NeuroScope2('session',session)
-
+%
 % By Peter Petersen
-
+% % % % % % % % % % % % % % % % % % % % % % % % %
 
 % Global variables
 UI = []; % Struct with UI elements and settings
@@ -23,27 +24,42 @@ data = []; % External data loaded like spikes, events, states, behavior
 ephys = []; % Struct with ephys data for current shown time interval
 t0 = 0; % Timestamp the current window (in seconds)
 
-% Handling inputs
-p = inputParser;
-addParameter(p,'basepath',pwd,@isstr);
-addParameter(p,'basename',[],@isstr);
-addParameter(p,'session',[],@isstruct);
-addParameter(p,'events',[],@isstr);
-addParameter(p,'states',[],@isstr);
-addParameter(p,'behavior',[],@isstr);
-addParameter(p,'cellinfo',[],@isstr);
-addParameter(p,'channeltag',[],@isstr);
-parse(p,varargin{:})
-parameters = p.Results;
-basepath = p.Results.basepath;
-basename = p.Results.basename;
-if isempty(basename)
-    basename = basenameFromBasepath(basepath);
-end
-
-if ~isempty(parameters.session)
-    basename = parameters.session.general.name;
-    basepath = parameters.session.general.basePath;
+if isdeployed % Handles inputs if NeuroScope is run as a deployed app
+    if ~isempty(varargin) % If a file name is provided it will try to load it.
+        filename = varargin{1};
+        [basepath1,file1] = fileparts(varargin{1});
+    else % Else it will ask for a file to load
+        [file1,basepath1] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select a file with the basename in it from the basepath');
+    end
+    if ~isequal(file1,0)
+        basepath = basepath1;
+        temp1 = strsplit(file1,'.');
+        basename = temp1{1};
+    else
+        return
+    end
+else
+    % Handling inputs
+    p = inputParser;
+    addParameter(p,'basepath',pwd,@isstr);
+    addParameter(p,'basename',[],@isstr);
+    addParameter(p,'session',[],@isstruct);
+    addParameter(p,'events',[],@isstr);
+    addParameter(p,'states',[],@isstr);
+    addParameter(p,'behavior',[],@isstr);
+    addParameter(p,'cellinfo',[],@isstr);
+    addParameter(p,'channeltag',[],@isstr);
+    parse(p,varargin{:})
+    parameters = p.Results;
+    basepath = p.Results.basepath;
+    basename = p.Results.basename;
+    if isempty(basename)
+        basename = basenameFromBasepath(basepath);
+    end
+    if ~isempty(parameters.session)
+        basename = parameters.session.general.name;
+        basepath = parameters.session.general.basePath;
+    end
 end
 
 int_gt_0 = @(n) (isempty(n)) || (n <= 0);
@@ -188,8 +204,9 @@ end
         
         % File
         UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
-        uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
-        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportPlotData);
+        uimenu(UI.menu.file.topMenu,menuLabel,'Load session from folder',menuSelectedFcn,@loadFromFolder,'Accelerator','O');
+        uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile);
+        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportPlotData,'Separator','on');
         uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file',menuSelectedFcn,@exportPlotData);
         
         % Session
@@ -199,7 +216,7 @@ end
         
         % Cell metrics 
         UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'Cell metrics');
-        uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'View cell metrics in CellExplorer',menuSelectedFcn,@openCellExplorer);
+%         uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'View cell metrics in CellExplorer',menuSelectedFcn,@openCellExplorer);
         
         % BuzLabDB
         UI.menu.BuzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
@@ -936,19 +953,19 @@ end
         end
     end
     
-    function openCellExplorer(~,~)
-        % Opens CellExplorer for the current session
-        if ~isfield(data,'cell_metrics') && exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
-            data.cell_metrics = loadCellMetrics('session',data.session);
-        elseif ~exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
-            UI.panel.cell_metrics.useMetrics.Value = 0;
-            MsgLog('Cell_metrics does not exist',4);
-            return
-        end
-        data.cell_metrics = CellExplorer('metrics',data.cell_metrics);
-        toggleMetrics
-        uiresume(UI.fig);
-    end
+%     function openCellExplorer(~,~)
+%         % Opens CellExplorer for the current session
+%         if ~isfield(data,'cell_metrics') && exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
+%             data.cell_metrics = loadCellMetrics('session',data.session);
+%         elseif ~exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
+%             UI.panel.cell_metrics.useMetrics.Value = 0;
+%             MsgLog('Cell_metrics does not exist',4);
+%             return
+%         end
+%         data.cell_metrics = CellExplorer('metrics',data.cell_metrics);
+%         toggleMetrics
+%         uiresume(UI.fig);
+%     end
     
     function AboutDialog(~,~)
         if ismac
@@ -1761,7 +1778,7 @@ end
 
     function initInputs
         % Handling channeltags
-        if ~isempty(parameters.channeltag)
+        if exist('parameters','var') && ~isempty(parameters.channeltag)
             idx = find(strcmp(parameters.channeltag,{UI.table.channeltags.Data{:,2}}));
             if ~isempty(idx)
                 UI.table.channeltags.Data(idx,3) = {true};
@@ -1769,7 +1786,7 @@ end
                 initTraces
             end
         end
-        if ~isempty(parameters.events)
+        if exist('parameters','var') &&~isempty(parameters.events)
             idx = find(strcmp(parameters.events,UI.panel.events.files.String));
             if ~isempty(idx)
                 UI.panel.events.files.Value = idx;
@@ -2589,9 +2606,9 @@ end
 
     function showIntan(src,~) % Intan data
         if strcmp(src.String,'Show analog')
-            if UI.panel.intan.showAnalog.Value == 1 && ~isempty(UI.panel.intan.filenameAnalog.String) && exist(fullfile(basename,UI.panel.intan.filenameAnalog.String),'file')
+            if UI.panel.intan.showAnalog.Value == 1 && ~isempty(UI.panel.intan.filenameAnalog.String) && exist(fullfile(basepath,UI.panel.intan.filenameAnalog.String),'file')
                 UI.settings.intan_showAnalog = true;
-                UI.fid.timeSeries.adc = fopen(fullfile(basename,UI.panel.intan.filenameAnalog.String), 'r');
+                UI.fid.timeSeries.adc = fopen(fullfile(basepath,UI.panel.intan.filenameAnalog.String), 'r');
                 
             elseif UI.panel.intan.showAnalog.Value == 1
                 UI.panel.intan.showAnalog.Value = 0;
@@ -2602,9 +2619,9 @@ end
             end
         end
         if strcmp(src.String,'Show aux')
-            if UI.panel.intan.showAux.Value == 1 && ~isempty(UI.panel.intan.filenameAux.String) && exist(fullfile(basename,UI.panel.intan.filenameAux.String),'file')
+            if UI.panel.intan.showAux.Value == 1 && ~isempty(UI.panel.intan.filenameAux.String) && exist(fullfile(basepath,UI.panel.intan.filenameAux.String),'file')
                 UI.settings.intan_showAux = true;
-                UI.fid.timeSeries.aux = fopen(fullfile(basename,UI.panel.intan.filenameAux.String), 'r');
+                UI.fid.timeSeries.aux = fopen(fullfile(basepath,UI.panel.intan.filenameAux.String), 'r');
             elseif UI.panel.intan.showAux.Value == 1
                 UI.panel.intan.showAux.Value = 0;
                 UI.settings.intan_showAux = false;
@@ -2615,9 +2632,9 @@ end
             end
         end
         if strcmp(src.String,'Show digital')
-            if UI.panel.intan.showDigital.Value == 1 && ~isempty(UI.panel.intan.filenameDigital.String) && exist(fullfile(basename,UI.panel.intan.filenameDigital.String),'file')
+            if UI.panel.intan.showDigital.Value == 1 && ~isempty(UI.panel.intan.filenameDigital.String) && exist(fullfile(basepath,UI.panel.intan.filenameDigital.String),'file')
                 UI.settings.intan_showDigital = true;
-                UI.fid.timeSeries.dig = fopen(fullfile(basename,UI.panel.intan.filenameDigital.String), 'r');
+                UI.fid.timeSeries.dig = fopen(fullfile(basepath,UI.panel.intan.filenameDigital.String), 'r');
             elseif UI.panel.intan.showDigital.Value == 1
                 UI.panel.intan.showDigital.Value = 0;
                 MsgLog('Failed to load digital file',4);
@@ -2690,7 +2707,7 @@ end
     end
     
     function changeColormap(~,~)
-        colormapList = {'hot','parula','jet','hsv','cool','spring','summer','autumn','winter','gray','bone','copper','pink'};
+        colormapList = {'hot','parula','jet','hsv','cool','spring','summer','autumn','winter','gray','bone','copper','pink','lines','colorcube','prism','white'};
         temp = find(strcmp(UI.settings.colormap,colormapList));
         [idx,~] = listdlg('PromptString','Select colormap','ListString',colormapList,'ListSize',[250,400],'InitialValue',temp,'SelectionMode','single','Name','Colormap');
         if ~isempty(idx)
@@ -2708,9 +2725,39 @@ end
         end
     end
 
+    function loadFromFolder(~,~)
+        % Shows a file dialog allowing you to select session via a .dat/.mat/.xml to load
+        path1 = uigetdir(pwd,'Please select the data folder');
+        if ~isequal(path1,0)
+            file1 = dir(fullfile(path1,'*.session.mat'));
+            file2 = dir(fullfile(path1,'*.xml'));
+            file3 = dir(fullfile(path1,'*.lfp'));
+            file4 = dir(fullfile(path1,'*.dat'));
+            if ~isempty(file1)
+                file = file1.name;
+            elseif ~isempty(file2)
+                file = file2.name;
+            elseif ~isempty(file3)
+                file = file3.name;
+            elseif ~isempty(file4)
+                file = file4.name;
+            else
+                MsgLog('Session could not load succesful. Please try to specify a file instead',4)
+            end
+            temp = strsplit(file,'.');
+            data = [];
+            basepath = path1;
+            basename = temp{1};
+            initData(basepath,basename);
+            initTraces;
+            uiresume(UI.fig);
+            MsgLog(['Session loaded succesful: ' basename],2)
+        end
+    end
+    
     function loadFromFile(~,~)
         % Shows a file dialog allowing you to select session via a .dat/.mat/.xml to load
-        [file,path] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select a session file');
+        [file,path] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select any file with the basename in it');
         if ~isequal(file,0)
             temp = strsplit(file,'.');
             data = [];
