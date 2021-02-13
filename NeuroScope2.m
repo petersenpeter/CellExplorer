@@ -24,11 +24,11 @@ data = []; % External data loaded like spikes, events, states, behavior
 ephys = []; % Struct with ephys data for current shown time interval
 t0 = 0; % Timestamp the current window (in seconds)
 
-if isdeployed % Handles inputs if NeuroScope is run as a deployed app
-    if ~isempty(varargin) % If a file name is provided it will try to load it.
+if isdeployed % If NeuroScope2 is run as a deployed app
+    if ~isempty(varargin) % If a file name is provided it will load it.
         filename = varargin{1};
         [basepath1,file1] = fileparts(varargin{1});
-    else % Else it will ask for a file to load
+    else % Else a file dialog will be show
         [file1,basepath1] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select a file with the basename in it from the basepath');
     end
     if ~isequal(file1,0)
@@ -39,7 +39,7 @@ if isdeployed % Handles inputs if NeuroScope is run as a deployed app
         return
     end
 else
-    % Handling inputs
+    % Handling inputs if run from Matlab
     p = inputParser;
     addParameter(p,'basepath',pwd,@isstr);
     addParameter(p,'basename',[],@isstr);
@@ -79,7 +79,18 @@ while t0>=0
         % Plot data
         UI.selectedChannels = [];
         plotData;
+        
+        % Update UI text and slider
+        UI.elements.lower.time.String = num2str(t0);        
+        UI.elements.lower.slider.Value = min([t0/(UI.t_total-UI.settings.windowSize)*100,100]);
+        if UI.settings.debug
+            drawnow
+        end
+        UI.elements.lower.performance.String = ['  Processing: ' num2str(toc(UI.timerInterface),3) ' s'];
+        
         uiwait(UI.fig);
+        
+        % Tracking viewed timestamps in file
         UI.settings.stream = false;
         t0 = max([0,min([t0,UI.t_total-UI.settings.windowSize])]);
         if UI.track && UI.t0_track(end) ~= t0
@@ -135,6 +146,7 @@ end
         UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;0.4940, 0.1840, 0.5560;0.4660, 0.6740, 0.1880;0.3010, 0.7450, 0.9330;0.6350, 0.0780, 0.1840];
         UI.freeText = '';
         UI.selectedChannels = [];
+        UI.settings.debug = false;
         
         % Spikes settings
         UI.settings.showSpikes = false;
@@ -142,6 +154,7 @@ end
         UI.settings.spikesBelowTrace = false;
         UI.settings.useSpikesYData = false;
         UI.settings.spikesYData = '';
+        UI.settings.colorIndividualUnit = true;
         UI.tableData.Column1 = 'putativeCellType';
         UI.tableData.Column2 = 'firingRate';
         UI.params.subsetTable = [];
@@ -151,6 +164,7 @@ end
         UI.params.groupMetric = 'putativeCellType';
         UI.params.cellTypes = [];
         UI.params.cell_class_count = [];
+        
         
         % Event settings
         UI.settings.showEvents = false;
@@ -228,9 +242,20 @@ end
         
         % Display settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
-        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap',menuSelectedFcn,@changeColormap);
+        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
+        UI.menu.display.colorIndividualUnit = uimenu(UI.menu.display.topMenu,menuLabel,'Color individual unit raster',menuSelectedFcn,@colorIndividualUnit);
+        if UI.settings.colorIndividualUnit
+            UI.menu.display.colorIndividualUnit.Checked = 'on';
+        end
+        UI.menu.display.debug = uimenu(UI.menu.display.topMenu,menuLabel,'Debug','Separator','on',menuSelectedFcn,@toggleDebug);
         
-        
+        % Help
+        UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
+        uimenu(UI.menu.help.topMenu,menuLabel,'Keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','K');
+        uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Accelerator','V','Separator','on');
+%         uimenu(UI.menu.help.topMenu,menuLabel,'Tutorials',menuSelectedFcn,@openWebsite,'Separator','on');
+%         uimenu(UI.menu.help.topMenu,menuLabel,'Graphical interface',menuSelectedFcn,@openWebsite);
+
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating UI/panels
         
@@ -268,7 +293,7 @@ end
         UI.panel.general.detectSpikes = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect spikes (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.0 0.70 0.7 0.15],'Callback',@toogleDetectSpikes,'HorizontalAlignment','left');
         UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.71 0.70 0.28 0.15],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
         UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.55 0.5 0.15],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
-        UI.panel.general.greyScaleTraces = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 66%','Colors 33%','Grey-scale','Grey-scale 66%','Grey-scale 33%'}, 'value', 1, 'Units','normalized', 'Position', [0.50 0.55 0.50 0.15],'Callback',@changeColorScale,'HorizontalAlignment','left');
+        UI.panel.general.greyScaleTraces = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 75%','Colors 50%','Colors 25%','Grey-scale','Grey-scale 75%','Grey-scale 50%','Grey-scale 25%'}, 'value', 1, 'Units','normalized', 'Position', [0.50 0.55 0.50 0.15],'Callback',@changeColorScale,'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.45 0.5 0.1],'HorizontalAlignment','center');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.45 0.5 0.1],'HorizontalAlignment','center');
         UI.panel.general.lowerBand  = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '400', 'Units','normalized', 'Position', [0.01 0.3 0.49 0.15],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
@@ -306,6 +331,7 @@ end
         UI.panel.intan.filenameDigital = uicontrol('Parent',UI.panel.intan.main,'Style', 'Edit', 'String', 'digitalin.dat', 'Units','normalized', 'Position', [0.5 0.25 0.49 0.25],'Callback',@showIntan,'HorizontalAlignment','left','tooltip','Filename of analog file','Enable','off');
         UI.panel.intan.showIntanBelowTrace = uicontrol('Parent',UI.panel.intan.main,'Style','checkbox','Units','normalized','Position',[0 0 1 0.25], 'value', 0,'String','Below traces','Callback',@showIntanBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show intan data below traces');
         uicontrol('Parent',UI.panel.intan.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.5 0.25],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit input channels');
+        
         % KiloSort
         UI.panel.kilosort.main = uipanel('Title','Processed data','TitlePosition','centertop','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
         UI.panel.kilosort.showKilosort = uicontrol('Parent',UI.panel.kilosort.main,'Style','checkbox','Units','normalized','Position',[0 0 1 1], 'value', 0,'String','Show KiloSort data','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
@@ -376,7 +402,7 @@ end
         UI.panel.behavior.main = uipanel('Parent',UI.panel.matfiles.main,'title','Behavior');
         UI.panel.behavior.files = uicontrol('Parent',UI.panel.behavior.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0 0.79 1 0.19],'HorizontalAlignment','left','Callback',@setBehaviorData);
         UI.panel.behavior.showBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.60 1 0.19], 'value', 0,'String','Behavior','Callback',@showBehavior,'KeyPressFcn', @keyPress,'tooltip','Show behavior');
-        UI.panel.behavior.previousBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.49 0.60 0.24 0.19],'String','<','Callback',@nextBehavior,'KeyPressFcn', @keyPress,'tooltip','Previous');
+        UI.panel.behavior.previousBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.49 0.60 0.24 0.19],'String','<','Callback',@previousBehavior,'KeyPressFcn', @keyPress,'tooltip','Previous');
         UI.panel.behavior.nextBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.75 0.60 0.24 0.19],'String','>','Callback',@nextBehavior,'KeyPressFcn', @keyPress,'tooltip','Next','BusyAction','cancel');
         UI.panel.behavior.plotBehaviorLinearized = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.41 0.5 0.19], 'value', 0,'String','Linearize','Callback',@plotBehaviorLinearized,'KeyPressFcn', @keyPress,'tooltip','Show linearized behavior');
         UI.panel.behavior.showBehaviorBelowTrace = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[00.5 0.41 0.5 0.19], 'value', 0,'String','Below traces','Callback',@showBehaviorBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show behavior data below traces');
@@ -482,21 +508,16 @@ end
         if UI.settings.showTrials
             plotTrials(t0,t0+UI.settings.windowSize,'w')
         end
-        
-        % Update UI text and slider
-        UI.elements.lower.time.String = num2str(t0);
-        UI.elements.lower.performance.String = ['  Processing: ' num2str(toc(UI.timerInterface),3) ' s'];
-        UI.elements.lower.slider.Value = min([t0/(UI.t_total-UI.settings.windowSize)*100,100]);
     end
 
 
     function plot_ephys
         % Plotting ephys data
-        if UI.settings.greyScaleTraces < 4
+        if UI.settings.greyScaleTraces < 5
             colors = UI.colors/UI.settings.greyScaleTraces;
-        elseif UI.settings.greyScaleTraces >=4
-            colors = ones(size(UI.colors))/(UI.settings.greyScaleTraces-3);
-            colors(1:2:end,:) = colors(1:2:end,:)-0.1*(7-UI.settings.greyScaleTraces);
+        elseif UI.settings.greyScaleTraces >=5
+            colors = ones(size(UI.colors))/(UI.settings.greyScaleTraces-4);
+            colors(1:2:end,:) = colors(1:2:end,:)-0.1*(9-UI.settings.greyScaleTraces);
         end
         
         if UI.settings.plotStyle == 4 % lfp file
@@ -809,6 +830,14 @@ end
                         k = k+1;
                     end
                 end
+            elseif UI.settings.colorIndividualUnit
+                uid = data.spikes.spindices(idx,2);
+                unique_uids = unique(uid);
+                uid_colormap = eval([UI.settings.colormap,'(',num2str(numel(unique_uids)),')']);
+                for i = 1:numel(unique_uids)
+                    idx_uids = uid == unique_uids(i);
+                    line(raster.x(idx_uids), raster.y(idx_uids),'Marker','|','LineStyle','none','color',uid_colormap(i,:), 'HitTest','off');
+                end
             else
                 line(raster.x, raster.y,'Marker','|','LineStyle','none','color',colorIn, 'HitTest','off');
             end
@@ -986,7 +1015,7 @@ end
         AboutWindow.image = gca;
         set(AboutWindow.image,'Color','none','Units','Pixels') , hold on, axis off
         AboutWindow.image.Position = pos_image;
-        text(0,pos_text,{'\bfNeuroScope2\rm - a part of CellExplorer','By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\bf\color[rgb]{0. 0.2 0.5}https://CellExplorer.org/\rm'},'HorizontalAlignment','left','VerticalAlignment','top','ButtonDownFcn',@openWebsite, 'interpreter','tex')
+        text(0,pos_text,{'\bfNeuroScope2\rm - part of CellExplorer','By Peter Petersen.', 'Developed in the Buzsaki laboratory at NYU, USA.','\bf\color[rgb]{0. 0.2 0.5}https://CellExplorer.org/\rm'},'HorizontalAlignment','left','VerticalAlignment','top','ButtonDownFcn',@openWebsite, 'interpreter','tex')
     end
     
     function exitNeuroScope2(~,~)
@@ -1237,6 +1266,56 @@ end
             end
         end
     end
+    
+    function HelpDialog(~,~)
+        if ismac; scs  = 'Cmd + '; else; scs  = 'Ctrl + '; end
+        shortcutList = { '','<html><b>Navigation</b></html>';
+            '> (right arrow)','Forward in time'; 
+            '< (left arrow)','Backward in time';
+            'shift + > (right arrow)','Fast forward in time'; 
+            'shift + < (left arrow)','Fast backward in time';
+            'g','Go to timestamp';
+            'Numpad0','Go to t = 0s'; 
+            'Backspace','Go to previous time point'; 
+            
+            '   ',''; 
+            '','<html><b>Display settings</b></html>';
+            [char(94) ' (up arrow) / N'],'increase ephys amplitude'; 
+            'v (down arrow) / M','Decrease ephys amplitude';
+            'Q','Increase window duration'; 
+            'A','Decrease window duration';
+            'H','Highlight ephys channel(s)';
+            
+            '   ',''; 
+            '','<html><b>Data streaming</b></html>';
+            'shift + space','Stream data from current time'; 
+            'ctrl + space','Stream data from end of file'; 
+            
+            '   ',''; 
+            '','<html><b>Mat files</b></html>';
+            'S','Toggle spikes';
+            'E','Toggle events';
+            'T','Toggle timeseries';
+            '. (dot)','Go to next event';
+            ', (comma)','Go to previous event';
+            '/ (slash/period)','Go to random event';
+            'F','Flag event';
+            
+            '   ',''; 
+            '','<html><b>Other shortcuts</b></html>';
+            [scs,'O'],'Open session from file'; 
+            [scs,'C'],'Open the file directory of the selected cell'; 
+            [scs,'D'],'Opens session from BuzLabDB';
+            [scs,'V'],'Visit the CellExplorer website in your browser';
+            '',''; '','<html><b>Visit the CellExplorer website for further help and documentation</html></b>'; };
+        if ismac
+            dimensions = [450,(size(shortcutList,1)+1)*17.5];
+        else
+            dimensions = [450,(size(shortcutList,1)+1)*18.5];
+        end
+        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','NeuroScope2: keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(HelpWindow.dialog,'center'), set(HelpWindow.dialog,'visible','on')
+        HelpWindow.sessionList = uitable(HelpWindow.dialog,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{100 345},'columnname',{'Shortcut','Action'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');
+    end
 
     function streamData
         % Streams  data from t0, updating traces twice per window size
@@ -1336,18 +1415,20 @@ end
     function increaseWindowsSize(~,~)
         % Increase the window size
         windowSize_old = UI.settings.windowSize;
-        UI.settings.windowSize = min([UI.settings.windowSize*2,10]);
+        UI.settings.windowSize = min([UI.settings.windowSize*2,20]);
         xlim(UI.plot_axis1,[0,UI.settings.windowSize])
         initTraces
+        UI.forceNewData = true;
         uiresume(UI.fig);
     end
 
     function decreaseWindowsSize(~,~)
         % Decrease the window size
         windowSize_old = UI.settings.windowSize;
-        UI.settings.windowSize = max([UI.settings.windowSize/2,0.5]);
+        UI.settings.windowSize = max([UI.settings.windowSize/2,0.125]);
         xlim(UI.plot_axis1,[0,UI.settings.windowSize])
         initTraces
+        UI.forceNewData = true;
         uiresume(UI.fig);
     end
 
@@ -1810,7 +1891,6 @@ end
         end
         % UI.settings.colormap
         UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
-%         UI.colors = hsv(data.session.extracellular.nElectrodeGroups); % *0.8
         
         UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
         UI.fig.UserData.leastSignificantBit = UI.settings.leastSignificantBit;
@@ -2399,9 +2479,9 @@ end
     function previousStates(~,~)
         if UI.settings.showStates
             timestamps = getTimestampsFromStates;
-            idx = find(timestamps<t0+UI.settings.windowSize/2,1,'last');
+            idx = find(timestamps<t0,1,'last');
             if ~isempty(idx)
-                t0 = timestamps(idx)-UI.settings.windowSize/2;
+                t0 = timestamps(idx);
                 UI.panel.states.statesNumber.String = num2str(idx);
                 uiresume(UI.fig);
             end
@@ -2411,9 +2491,9 @@ end
     function nextStates(~,~)
         if UI.settings.showStates
             timestamps = getTimestampsFromStates;
-            idx = find(timestamps>t0+UI.settings.windowSize/2,1);
+            idx = find(timestamps>t0,1);
             if ~isempty(idx)
-                t0 = timestamps(idx)-UI.settings.windowSize/2;
+                t0 = timestamps(idx);
                 UI.panel.states.statesNumber.String = num2str(idx);
                 uiresume(UI.fig);
             end
@@ -2462,7 +2542,15 @@ end
 
     function nextBehavior(~,~)
         if UI.settings.showBehavior
-            t0 = data.behavior.(UI.settings.behaviorData).time(1)-UI.settings.windowSize/2;
+            t0 = data.behavior.(UI.settings.behaviorData).time(end)-UI.settings.windowSize;
+            
+            uiresume(UI.fig);
+        end
+    end
+    
+    function previousBehavior(~,~)
+        if UI.settings.showBehavior
+            t0 = data.behavior.(UI.settings.behaviorData).time(1);
             uiresume(UI.fig);
         end
     end
@@ -2524,8 +2612,11 @@ end
 
     function nextTrial(~,~)
         if UI.settings.showTrials
-            idx = find(data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start)>t0+UI.settings.windowSize/2,1);
-            t0 = data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start(idx))-UI.settings.windowSize/2;
+            idx = find(data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start)>t0,1);
+            if isempty(idx)
+                idx = 1;
+            end
+            t0 = data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start(idx));
             UI.panel.behavior.trialNumber.String = num2str(idx);
             uiresume(UI.fig);
         end
@@ -2533,8 +2624,11 @@ end
 
     function previousTrial(~,~)
         if UI.settings.showTrials
-            idx = find(data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start)<t0+UI.settings.windowSize/2,1,'last');
-            t0 = data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start(idx))-UI.settings.windowSize/2;
+            idx = find(data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start)<t0,1,'last');
+            if isempty(idx)
+                idx = numel(data.behavior.trials.start);
+            end
+            t0 = data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start(idx));
             UI.panel.behavior.trialNumber.String = num2str(idx);
             uiresume(UI.fig);
         end
@@ -2724,7 +2818,27 @@ end
             uiresume(UI.fig);
         end
     end
-
+    
+    function colorIndividualUnit(~,~)
+       UI.settings.colorIndividualUnit = ~UI.settings.colorIndividualUnit;
+        if UI.settings.colorIndividualUnit
+            UI.menu.display.colorIndividualUnit.Checked = 'on';
+        else
+            UI.menu.display.colorIndividualUnit.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+    
+    function toggleDebug(~,~)
+        UI.settings.debug = ~UI.settings.debug;
+        if UI.settings.debug
+            UI.menu.display.debug.Checked = 'on';
+        else
+            UI.menu.display.debug.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+    
     function loadFromFolder(~,~)
         % Shows a file dialog allowing you to select session via a .dat/.mat/.xml to load
         path1 = uigetdir(pwd,'Please select the data folder');
@@ -2742,7 +2856,7 @@ end
             elseif ~isempty(file4)
                 file = file4.name;
             else
-                MsgLog('Session could not load succesful. Please try to specify a file instead',4)
+                MsgLog('Failed to load session. Please try to specify a file instead',4)
             end
             temp = strsplit(file,'.');
             data = [];
@@ -2767,6 +2881,23 @@ end
             initTraces;
             uiresume(UI.fig);
             MsgLog(['Session loaded succesful: ' basename],2)
+        end
+    end
+    
+    function openWebsite(src,~)
+        % Opens the CellExplorer website in your browser
+        if isprop(src,'Text')
+            source = src.Text;
+        else
+            source = '';
+        end
+        switch source
+            case 'Tutorials'
+                web('https://CellExplorer.org/tutorials/tutorials/','-new','-browser')
+            case 'Graphical interface'
+                web('https://cellexplorer.org/interface/interface/','-new','-browser')
+            otherwise
+                web('https://CellExplorer.org/','-new','-browser')
         end
     end
 
