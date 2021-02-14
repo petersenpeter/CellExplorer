@@ -6,7 +6,7 @@ nav_order: 9
 ---
 {: .no_toc}
 # NeuroScope2 (beta)
-NeuroScope2 is a data viewer for raw and processed extracellular data acquired using multisite silicon probes, tetrodes or single wires. It is written in Matlab, maintaining many of the original functions of [NeuroScope](http://neurosuite.sourceforge.net/), but with many enhancements. It can be used to explore existing data and to live stream data being collected and can handle multiple data streams simultaneously - e.g. digital, analog, and aux channels from Intan - together with the raw ephys data. As NeuroScope is written in MATLAB, it is hackable, adaptable and easily expandable. It is much faster than the original NeuroScope, and functions fully within the data types of CellExplorer, using the `session` struct for metadata.
+NeuroScope2 is a data viewer for raw and processed extracellular data acquired using multisite silicon probes, tetrodes or single wires. It is written in Matlab, maintaining many of the original functions of [NeuroScope](http://neurosuite.sourceforge.net/), but with many enhancements. It can be used to explore existing data and to stream data being collected and can handle multiple data streams simultaneously - e.g. digital, analog, and aux channels from Intan - together with the raw ephys data. As NeuroScope is written in MATLAB, it is hackable, adaptable and easily expandable. It is much faster than the original NeuroScope, and functions fully within the data types of CellExplorer, using the `session` struct for metadata.
 
 <a href="https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope_screenshot.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope_screenshot_lowress.jpg)</a>
 
@@ -18,7 +18,7 @@ NeuroScope2 is a data viewer for raw and processed extracellular data acquired u
 {:toc}
 
 ## Features
-The interface is user-friendly, with a single side panel for accessing most functions. You can zoom, navigate, measure, highlight, and select traces directly with your mouse cursor, making manual inspection very intuitive and efficient. NeuroScope2 can also perform basic data processing (that works on a live data stream as well), e.g. bandpass filter traces, perform temporal smoothing, perform spike and events detection directly on the raw or processed traces. Channel tags can be used to highlight and filter (+/-) channels.
+The interface is user-friendly, with a single side panel for accessing most functions. You can zoom, navigate, measure, highlight, and select traces directly with your mouse cursor, making manual inspection very intuitive and efficient. NeuroScope2 can also perform basic data processing (that works on a data being collected as well), e.g. bandpass filter traces, perform temporal smoothing, perform spike and events detection directly on the raw or processed traces. Channel tags can be used to highlight and filter (+/-) channels.
 
 You can view CellExplorer, Buzcode, and other .mat structures:
 * [Session metadata](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata)
