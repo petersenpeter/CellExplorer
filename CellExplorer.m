@@ -106,9 +106,9 @@ UI.params.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassific
 UI.params.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial','groups','spikes'};
 UI.params.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','electrodeGroup'});
 UI.classes.plot2 = []; UI.classes.colors = []; UI.classes.colors2 = [];  UI.classes.colors3 = []; UI.classes.plot = []; UI.classes.plot11 = []; 
-UI.brainRegions.list = []; UI.brainRegions.acronym = []; UI.brainRegions.relational_tree = [];
+UI.brainRegions.list = []; UI.brainRegions.acronym = []; UI.brainRegions.relational_tree = []; UI.groupData1.groupsList = {'groups','tags','groundTruthClassification'};
 
-plotConnections = [1 1 1]; plotAverage_nbins = 40; groupData.groupsList = {'groups','tags','groundTruthClassification'}; 
+plotConnections = [1 1 1]; plotAverage_nbins = 40; 
 synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'}; ccf_ratio = [-35.5,30];
 plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = [];
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];
@@ -895,26 +895,26 @@ function updateUI
     
     % Group data
     % Filters tagged cells ('tags','groups','groundTruthClassification')
-    if ~isempty(groupData)
+    if ~isempty(UI.groupData1)
         dataTypes = {'tags','groups','groundTruthClassification'};
         filter_pos = [];
         filter_neg = [];
         for jjj = 1:numel(dataTypes)
-            if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'plus_filter') && any(struct2array(groupData.(dataTypes{jjj}).plus_filter))
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'plus_filter')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).plus_filter);
+            if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'plus_filter') && any(struct2array(UI.groupData1.(dataTypes{jjj}).plus_filter))
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'plus_filter')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).plus_filter);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).plus_filter.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj})  && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj}))
+                        if UI.groupData1.(dataTypes{jjj}).plus_filter.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj})  && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj}))
                             filter_pos = [filter_pos,cell_metrics.(dataTypes{jjj}).(fields1{jj})];
                         end
                     end
                 end
             end
-            if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'minus_filter') && any(struct2array(groupData.(dataTypes{jjj}).minus_filter))
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'minus_filter')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).minus_filter);
+            if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'minus_filter') && any(struct2array(UI.groupData1.(dataTypes{jjj}).minus_filter))
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'minus_filter')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).minus_filter);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).minus_filter.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj}) && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj}))
+                        if UI.groupData1.(dataTypes{jjj}).minus_filter.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj}) && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj}))
                             filter_neg = [filter_neg,cell_metrics.(dataTypes{jjj}).(fields1{jj})];
                         end
                     end
@@ -1638,14 +1638,14 @@ function updateUI
         
         % Ground truth cell types
         % Plots tagged cells ('tags','groups','groundTruthClassification')
-        if ~isempty(groupData)
+        if ~isempty(UI.groupData1)
             dataTypes = {'tags','groups','groundTruthClassification'};
             for jjj = 1:numel(dataTypes)
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'highlight')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).highlight);
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
-                            idx_groupData = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                            idx_UI.groupData1 = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX(idx_groupData), plotY(idx_groupData), plotZ(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
                     end
@@ -3700,13 +3700,13 @@ end
 
     function plotGroudhTruthCells(plotX1,plotY1)
         % Plots tagged cells ('tags','groups','groundTruthClassification')
-        if ~isempty(groupData)
+        if ~isempty(UI.groupData1)
             dataTypes = {'tags','groups','groundTruthClassification'};
             for jjj = 1:numel(dataTypes)
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'highlight')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).highlight);
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
                             idx_groupData = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX1(idx_groupData), plotY1(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
@@ -3746,13 +3746,13 @@ end
         end
         
         % Plots tagged cells ('tags','groups','groundTruthClassification')
-        if ~isempty(groupData)
+        if ~isempty(UI.groupData1)
             dataTypes = {'tags','groups','groundTruthClassification'};
             for jjj = 1:numel(dataTypes)
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'highlight')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).highlight);
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
                             idx_groupData = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX1(idx_groupData), plotY1(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
@@ -4944,313 +4944,11 @@ end
 %         UI.popupmenu.groups.String = colorMenu; % buttonGroups(1)
         MsgLog(['Group filters created succesfully. Check the "group data and filters" dropdown menu in the left side panel.'],[1,2]);
     end
+    
     function defineGroupData(~,~)
-        if ~isfield(groupData,'groupToList')
-            groupData.groupToList = 'tags';
-            groupDataSelect = 2;
-        else
-            groupDataSelect = find(ismember(groupData.groupsList,groupData.groupToList));
-        end
-        
-        updateGroupList
-        drawnow nocallbacks;
-        groupData.dialog = dialog('Position', [300, 300, 840, 465],'Name','Group data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(groupData.dialog,'center'), set(groupData.dialog,'visible','on') % 'MenuBar', 'None','NumberTitle','off'
-        groupData.VBox = uix.VBox( 'Parent', groupData.dialog, 'Spacing', 5, 'Padding', 0 );
-        groupData.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',groupData.VBox);
-        groupData.sessionList = uitable(groupData.VBox,'Data',UI.groupData.dataTable,'Position',[10, 50, 740, 457],'ColumnWidth',{65,45,45,100,460 75,45},'columnname',{'Highlight','+filter','-filter','Group name','List of cells','Cell count','Select'},'RowName',[],'ColumnEditable',[true true true true true false true],'Units','normalized','CellEditCallback',@editTable);
-        groupData.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',groupData.VBox);
-        set(groupData.VBox, 'Heights', [50 -1 35]);
-        uicontrol('Parent',groupData.panel.top,'Style','text','Position',[13, 25, 170, 20],'Units','normalized','String','Group data','HorizontalAlignment','left','Units','normalized');
-        uicontrol('Parent',groupData.panel.top,'Style','text','Position',[203, 25, 120, 20],'Units','normalized','String','Sort by','HorizontalAlignment','left','Units','normalized');
-        uicontrol('Parent',groupData.panel.top,'Style','text','Position',[333, 25, 170, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
-
-        groupData.popupmenu.groupData = uicontrol('Parent',groupData.panel.top,'Style','popupmenu','Position',[10, 5, 180, 22],'Units','normalized','String',groupData.groupsList,'HorizontalAlignment','left','Callback',@(src,evnt)ChangeGroupToList,'Units','normalized','Value',groupDataSelect);
-        groupData.popupmenu.sorting = uicontrol('Parent',groupData.panel.top,'Style','popupmenu','Position',[200, 5, 120, 22],'Units','normalized','String',{'Group name','Count'},'HorizontalAlignment','left','Callback',@(src,evnt)filterGroupData,'Units','normalized');
-        groupData.popupmenu.filter = uicontrol('Parent',groupData.panel.top,'Style', 'Edit', 'String', '', 'Position', [330, 5, 170, 25],'Callback',@(src,evnt)filterGroupData,'HorizontalAlignment','left','Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[10, 5, 120, 30],'String','Highlight all','Callback',@(src,evnt)button_groupData_selectAll,'Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[140, 5, 120, 30],'String','Clear all','Callback',@(src,evnt)button_groupData_deselectAll,'Units','normalized');
-%         groupData.summaryText = uicontrol('Parent',groupData.panel.bottom,'Style','text','Position',[270, 5, 300, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
-        uicontrol('Parent',groupData.panel.top,'Style','pushbutton','Position',[620, 5, 100, 30],'String','+ New','Callback',@(src,evnt)newGroup,'Units','normalized');
-        uicontrol('Parent',groupData.panel.top,'Style','pushbutton','Position',[730, 5, 100, 30],'String','Delete','Callback',@(src,evnt)deleteGroup,'Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[620, 5, 100, 30],'String','Actions','Callback',@(src,evnt)CreateGroupAction,'Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[730, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseDialog,'Units','normalized');
-        groupData.popupmenu.performGroundTruthClassification = uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[270, 5, 110, 30],'String','Show G/T tab','Callback',@(src,evnt)performGroundTruthClassification,'Units','normalized','visible','Off');
-        groupData.popupmenu.importGroundTruth = uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[390, 5, 110, 30],'String','Export GT','Callback',@(src,evnt)importGroundTruth,'Units','normalized','visible','Off');
-
-        toggleGroundTruthButtons
-        updateGroupDataCount
-        filterGroupData
-        uicontrol(groupData.popupmenu.filter)
-        uiwait(groupData.dialog)
-        
-        function CreateGroupAction
-            oldField = find([groupData.sessionList.Data{:,end}]);
-            if ~isempty(oldField)
-                field = groupData.sessionList.Data(oldField,4);
-                affectedCells = [];
-                for i = 1:numel(oldField)
-                    affectedCells = [affectedCells,cell_metrics.(groupData.groupToList).(field{i})];
-                end
-                UI.params.ClickedCells = affectedCells;
-                delete(groupData.dialog);
-                updateUI2
-                GroupAction(UI.params.ClickedCells);
-            end
-        end
-        function ChangeGroupToList
-            groupData.groupToList = groupData.groupsList{groupData.popupmenu.groupData.Value};
-            toggleGroundTruthButtons
-            updateGroupList
-            filterGroupData
-        end
-        function updateUI2
-            for i = 1:numel(UI.preferences.tags)
-                if  isfield(groupData,'tags') && isfield(groupData.tags,'minus_filter') && isfield(groupData.tags.minus_filter,UI.preferences.tags{i})
-                    UI.togglebutton.dispTags(i).Value = groupData.tags.minus_filter.(UI.preferences.tags{i});
-                    UI.togglebutton.dispTags(i).FontWeight = 'bold';
-                    UI.togglebutton.dispTags(i).ForegroundColor = UI.colors.toggleButtons;
-                else 
-                    UI.togglebutton.dispTags(i).Value = 0;
-                    UI.togglebutton.dispTags(i).FontWeight = 'normal';
-                    UI.togglebutton.dispTags(i).ForegroundColor = [0 0 0];
-                end
-                if isfield(groupData,'tags') && isfield(groupData.tags,'plus_filter') && isfield(groupData.tags.plus_filter,UI.preferences.tags{i})
-                    UI.togglebutton.dispTags2(i).Value = groupData.tags.plus_filter.(UI.preferences.tags{i});
-                    UI.togglebutton.dispTags2(i).FontWeight = 'bold';
-                    UI.togglebutton.dispTags2(i).ForegroundColor = UI.colors.toggleButtons;
-                else
-                    UI.togglebutton.dispTags2(i).Value = 0;
-                    UI.togglebutton.dispTags2(i).FontWeight = 'normal';
-                    UI.togglebutton.dispTags2(i).ForegroundColor = [0 0 0];
-                end
-
-            end
-        end
-        function toggleGroundTruthButtons
-            if strcmp(groupData.groupToList,'groundTruthClassification')
-                groupData.popupmenu.performGroundTruthClassification.Visible = 'On';
-                groupData.popupmenu.importGroundTruth.Visible = 'On';
-            else
-                groupData.popupmenu.performGroundTruthClassification.Visible = 'Off';
-                groupData.popupmenu.importGroundTruth.Visible = 'Off';
-            end
-        end
-        
-        function newGroup
-            opts.Interpreter = 'tex';
-            NewTag = inputdlg({'Name of new group','Cells in group'},'Add group',[1 40],{'',''},opts);
-            if ~isempty(NewTag) && ~isempty(NewTag{1}) && ~any(strcmp(NewTag{1},UI.groupData.(groupData.groupToList)))
-                if isvarname(NewTag{1})
-                    if ~isempty(NewTag{2})
-                        try
-                            temp = eval(['[',NewTag{2},']']);
-                            if isnumeric(eval(['[',NewTag{2},']']))
-                                cell_metrics.(groupData.groupToList).(NewTag{1}) = eval(['[',NewTag{2},']']);
-                                idx_ids = cell_metrics.(groupData.groupToList).(NewTag{1}) < 1 | cell_metrics.(groupData.groupToList).(NewTag{1}) > cell_metrics.general.cellCount;
-                                cell_metrics.(groupData.groupToList).(NewTag{1})(idx_ids) = [];
-                                saveStateToHistory(cell_metrics.(groupData.groupToList).(NewTag{1}));
-                            end
-                        end
-                    else
-                        cell_metrics.(groupData.groupToList).(NewTag{1}) = [];
-                    end
-                    updateGroupList
-                    filterGroupData
-                    MsgLog(['New group added: ' NewTag{1}]);
-                    if strcmp(groupData.groupToList,'tags')
-                        UI.preferences.tags = [UI.preferences.tags,NewTag{1}];
-                        initTags
-                        updateTags
-                    end
-                else
-                    MsgLog(['Tag not added. Must be a valid variable name : ' NewTag{1}],4);
-                end
-            end
-        end
-        
-        function deleteGroup
-            oldField = find([groupData.sessionList.Data{:,end}]);
-            if ~isempty(oldField)
-                field = groupData.sessionList.Data(oldField,4);
-                affectedCells = [];
-                for i = 1:numel(oldField)
-                    affectedCells = [affectedCells,cell_metrics.(groupData.groupToList).(field{i})];
-                end
-                if ~isempty(affectedCells)
-                    saveStateToHistory(affectedCells)
-                end
-                cell_metrics.(groupData.groupToList) = rmfield(cell_metrics.(groupData.groupToList),field);
-                updateGroupList
-                filterGroupData
-                if strcmp(groupData.groupToList,'tags')
-                    UI.preferences.tags(ismember(UI.preferences.tags,field)) = [];
-                    initTags
-                    updateTags
-                end
-            end
-        end
-        
-        function editTable(hObject,callbackdata)
-            row = callbackdata.Indices(1);
-            column = callbackdata.Indices(2);
-            if any(column == [1,2,3,7])
-                groupData.sessionList.Data{row,column} = callbackdata.EditData;
-                if column == 1
-                    groupData.(groupData.groupToList).highlight.(groupData.sessionList.Data{row,4}) = callbackdata.EditData;
-                elseif column == 2
-                    groupData.(groupData.groupToList).plus_filter.(groupData.sessionList.Data{row,4}) = callbackdata.EditData;
-                elseif column == 3
-                    groupData.(groupData.groupToList).minus_filter.(groupData.sessionList.Data{row,4}) = callbackdata.EditData;
-                end
-            elseif column == 4 && isvarname(groupData.sessionList.Data{row,column}) && ~ismember(groupData.sessionList.Data{row,column},UI.groupData.(groupData.groupToList))
-                
-                newField = callbackdata.EditData;
-                oldField = callbackdata.PreviousData;
-                cells_altered = cell_metrics.(groupData.groupToList).(oldField);
-                if ~isempty(cells_altered)
-                    saveStateToHistory(cells_altered)
-                end
-                [cell_metrics.(groupData.groupToList).(newField)] = cell_metrics.(groupData.groupToList).(oldField);
-                cell_metrics.(groupData.groupToList) = rmfield(cell_metrics.(groupData.groupToList),oldField);
-                updateGroupList;
-                filterGroupData;
-                
-                if strcmp(groupData.groupToList,'tags')
-                    UI.preferences.tags(ismember(UI.preferences.tags,oldField)) = [];
-                    UI.preferences.tags = [UI.preferences.tags,newField];
-                    initTags
-                    updateTags
-                end
-            elseif column == 5
-
-                numericValue = groupData.sessionList.Data{row,column};
-                preValue = cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4});
-                try
-                    temp = eval(['[',numericValue,']']);
-                    if ~isempty(numericValue) && isnumeric(eval(['[',numericValue,']']))
-                        cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4}) = eval(['[',numericValue,']']);
-                        idx_ids = cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4}) < 1 | cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4}) > cell_metrics.general.cellCount;
-                        cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4})(idx_ids) = [];
-                    end
-                end
-                cells_altered = unique([preValue,cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4})]);
-                if ~isempty(cells_altered)
-                    saveStateToHistory(cells_altered)
-                end
-                updateGroupList
-                filterGroupData
-                if strcmp(groupData.groupToList,'tags')
-                    updateTags
-                end
-            else
-                updateGroupList
-                filterGroupData
-            end
-        end
-        
-        function updateGroupList
-            % Loading group data
-            UI.groupData = [];
-            if isfield(cell_metrics,groupData.groupToList)
-                cell_metrics.(groupData.groupToList) = orderfields(cell_metrics.(groupData.groupToList));
-                UI.groupData.(groupData.groupToList) = fieldnames(cell_metrics.(groupData.groupToList));
-                % Generating table data
-                UI.groupData.Counts = struct2cell(structfun(@(X) num2str(length(X)),cell_metrics.(groupData.groupToList),'UniformOutput',false));
-                UI.groupData.sessionEnumerator = cellstr(num2str([1:length(UI.groupData.(groupData.groupToList))]'));
-                UI.groupData.cellList = cellfun(@num2str,struct2cell(cell_metrics.(groupData.groupToList)),'UniformOutput',false);
-                UI.groupData.dataTable = {};
-                UI.groupData.dataTable(:,[4,5,6]) = [UI.groupData.(groupData.groupToList),UI.groupData.cellList,UI.groupData.Counts];
-                UI.groupData.dataTable(:,1) = {false};
-                UI.groupData.dataTable(:,2) = {false};
-                UI.groupData.dataTable(:,3) = {false};
-                UI.groupData.dataTable(:,7) = {false};
-                UI.groupData.sessionList = strcat(UI.groupData.(groupData.groupToList),{' '},UI.groupData.cellList);
-                if isfield(groupData,groupData.groupToList)  && isfield(groupData.(groupData.groupToList),'highlight')
-                    fields1 = fieldnames(groupData.(groupData.groupToList).highlight);
-                    for i = 1:numel(fields1)
-                        if groupData.(groupData.groupToList).highlight.(fields1{i}) == 1
-                            UI.groupData.dataTable(ismember(UI.groupData.dataTable(:,4),fields1{i}),1) = {true};
-                        end
-                    end
-                end
-                if isfield(groupData,groupData.groupToList)  && isfield(groupData.(groupData.groupToList),'plus_filter')
-                    fields1 = fieldnames(groupData.(groupData.groupToList).plus_filter);
-                    for i = 1:numel(fields1)
-                        if groupData.(groupData.groupToList).plus_filter.(fields1{i}) == 1
-                            UI.groupData.dataTable(ismember(UI.groupData.dataTable(:,4),fields1{i}),2) = {true};
-                        end
-                    end
-                end
-                if isfield(groupData,groupData.groupToList)  && isfield(groupData.(groupData.groupToList),'minus_filter')
-                    fields1 = fieldnames(groupData.(groupData.groupToList).minus_filter);
-                    for i = 1:numel(fields1)
-                        if groupData.(groupData.groupToList).minus_filter.(fields1{i}) == 1
-                            UI.groupData.dataTable(ismember(UI.groupData.dataTable(:,4),fields1{i}),3) = {true};
-                        end
-                    end
-                end
-            else
-                UI.groupData.sessionList = {};
-                UI.groupData.dataTable = {false,'',false,false,false,'',''};
-                UI.groupData.(groupData.groupToList) = '';
-            end
-            
-        end
-        
-%         function UpdateSummaryText
-%             groupData.summaryText.String = [num2str(size(groupData.sessionList.Data,1)),' group(s)'];
-%         end
-        function updateGroupDataCount
-            groupDataCount = [numel(fieldnames(cell_metrics.(groupData.groupsList{1}))),numel(fieldnames(cell_metrics.(groupData.groupsList{2}))),numel(fieldnames(cell_metrics.(groupData.groupsList{3})))];
-            groupData.popupmenu.groupData.String = strcat(groupData.groupsList,' (',cellstr(num2str(groupDataCount'))',')');
-        end
-        function filterGroupData
-            if ~isempty(groupData.popupmenu.filter.String) && ~strcmp(groupData.popupmenu.filter.String,'Filter')
-                newStr2 = split(groupData.popupmenu.filter.String,{' & ',' AND '});
-                idx_textFilter2 = zeros(length(newStr2),size(UI.groupData.dataTable,1));
-                for i = 1:length(newStr2)
-                    newStr3 = split(newStr2{i},{' | ',' OR ',});
-                    idx_textFilter2(i,:) = contains(UI.groupData.sessionList,newStr3,'IgnoreCase',true);
-                end
-                idx1 = find(sum(idx_textFilter2,1)==length(newStr2));
-            else
-                idx1 = 1:size(UI.groupData.dataTable,1);
-            end
-            if groupData.popupmenu.sorting.Value == 2
-                [~,idx2] = sort(str2double([UI.groupData.dataTable(:,end-1)]),'descend');
-            else
-                [~,idx2] = sort(UI.groupData.dataTable(:,4));
-            end
-            idx2 = intersect(idx2,idx1,'stable');
-            groupData.sessionList.Data = UI.groupData.dataTable(idx2,:);
-%             UpdateSummaryText;
-            updateGroupDataCount
-        end
-        
-        function button_groupData_selectAll
-            groupData.sessionList.Data(:,1) = {true};
-            for i = 1:size(groupData.sessionList.Data,1)
-                groupData.(groupData.groupToList).highlight.(groupData.sessionList.Data{i,4}) = 1;
-            end
-        end
-        
-        function button_groupData_deselectAll
-            groupData.sessionList.Data(:,1) = {false};
-            groupData.sessionList.Data(:,2) = {false};
-            groupData.sessionList.Data(:,3) = {false};
-            for i = 1:size(groupData.sessionList.Data,1)
-                groupData.(groupData.groupToList).highlight.(groupData.sessionList.Data{i,4}) = 0;
-                groupData.(groupData.groupToList).minus_filter.(groupData.sessionList.Data{i,4}) = 0;
-                groupData.(groupData.groupToList).plus_filter.(groupData.sessionList.Data{i,4}) = 0;
-            end
-        end
-        
-        function CloseDialog
-            % Closes the dialog
-            delete(groupData.dialog);
-            updateUI2
-            uiresume(UI.fig);
-        end
+        [cell_metrics,UI] = dialog_metrics_groupData(cell_metrics,UI);
+        initTags
+        updateTags
     end
 
     function assignGroup(cellIDsIn,field)
@@ -5998,7 +5696,7 @@ end
     end
 
     function buttonTags_minus(input)
-        groupData.tags.minus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags(input).Value;
+        UI.groupData1.tags.minus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags(input).Value;
         if UI.togglebutton.dispTags(input).Value == 1
             UI.togglebutton.dispTags(input).FontWeight = 'bold';
             UI.togglebutton.dispTags(input).ForegroundColor = UI.colors.toggleButtons;
@@ -6010,7 +5708,7 @@ end
     end
 
     function buttonTags_plus(input)
-        groupData.tags.plus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags2(input).Value;
+        UI.groupData1.tags.plus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags2(input).Value;
         if UI.togglebutton.dispTags2(input).Value == 1
             UI.togglebutton.dispTags2(input).FontWeight = 'bold';
             UI.togglebutton.dispTags2(input).ForegroundColor = UI.colors.toggleButtons;
@@ -6244,13 +5942,13 @@ end
                 end
         end
         % Group data
-        if ~isempty(groupData)
+        if ~isempty(UI.groupData1)
             dataTypes = {'tags','groups','groundTruthClassification'};
             for jjj = 1:numel(dataTypes)
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'highlight')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).highlight);
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))                            
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))                            
                             line(0, nLegends,'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'LineWidth', 1.5, 'MarkerSize',8,'HitTest','off');
                             text(0.2,nLegends,[fields1{jj},' (',dataTypes{jjj},')'], 'interpreter', 'none','HitTest','off')
                             nLegends = nLegends - 1;
@@ -10133,8 +9831,11 @@ end
             cell_metrics.groups = struct();
         end
         meanCCG = [];
+        
         % Init group data
-        clear groupData
+        UI.groupData1 = [];
+        UI.groupData1.groupsList = {'groups','tags','groundTruthClassification'};
+        
         % Updates format of tags if outdated
         cell_metrics = verifyGroupFormat(cell_metrics,'tags');
         if ~isfield(cell_metrics, 'tags')
@@ -10156,7 +9857,6 @@ end
             cell_metrics.groundTruthClassification = struct();
         end
         
-        groupData.groupsList = {'groups','tags','groundTruthClassification'};
         % Init ground truth cell list
         % groundTruthInMetrics = unique([cell_metrics.groundTruthClassification{:}]);
         groundTruthInMetrics = fieldnames(cell_metrics.groundTruthClassification)';
@@ -11484,7 +11184,7 @@ end
     end
 
     function loadGroundTruth(~,~)
-        groupData.groupToList = 'groundTruthClassification';
+        UI.groupData1.groupToList = 'groundTruthClassification';
         performGroundTruthClassification
         defineGroupData
     end
@@ -12242,7 +11942,7 @@ end
         timerVal1 = tic;
         t_bench = [];
         for j = 1:numel(testGroups)
-            groupData.groups.plus_filter.(testGroups{j}) = 1;
+            UI.groupData1.groups.plus_filter.(testGroups{j}) = 1;
             pause(0.5)
             for i = 1:nRepetitions
                 ii = cell_metrics.groups.(testGroups{j})(i);
@@ -12250,7 +11950,7 @@ end
                 drawnow nocallbacks;
                 t_bench(i,j) = toc(timerVal1);
             end
-            groupData.groups.plus_filter.(testGroups{j}) = 0;
+            UI.groupData1.groups.plus_filter.(testGroups{j}) = 0;
         end
     end
         function t_bench = runBenchMarkSinglePlot(plotOptionsIn)
@@ -12260,7 +11960,7 @@ end
             timerVal1 = tic;
             t_bench = [];
             for j = 1:numel(testGroups)
-                groupData.groups.plus_filter.(testGroups{j}) = 1;
+                UI.groupData1.groups.plus_filter.(testGroups{j}) = 1;
 %                 ii = 1;
                 figure(UI.fig)
                 updateUI
@@ -12304,7 +12004,7 @@ end
                     drawnow nocallbacks;
                     t_bench(i_rep,j) = toc(timerVal1);
                 end
-                groupData.groups.plus_filter.(testGroups{j}) = 0;
+                UI.groupData1.groups.plus_filter.(testGroups{j}) = 0;
             end
             close(testFig1)
         end

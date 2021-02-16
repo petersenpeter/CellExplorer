@@ -1903,8 +1903,8 @@ Initialize(varargin{:})
             'FaceAlpha', mRbFaceAlpha, ...
             'LineWidth', 0.5, ...
             'LineStyle', '-'); 
-        set(mRubberBand.obj(3), 'Color', 'w','FontSize',14,'VerticalAlignment','bottom','BackgroundColor',[0 0 0 0.7],'Margin',1);
-        set(mRubberBand.obj(4), 'Color', 'w','FontSize',14,'VerticalAlignment','top','HorizontalAlignment','right','BackgroundColor',[0 0 0 0.7],'Margin',1);
+        set(mRubberBand.obj(3), 'Color', 'w','FontSize',14,'VerticalAlignment','bottom','BackgroundColor',[0 0 0 0.7],'Margin',0.1);
+        set(mRubberBand.obj(4), 'Color', 'w','FontSize',14,'VerticalAlignment','top','HorizontalAlignment','right','BackgroundColor',[0 0 0 0.7],'Margin',0.1);
     end
 %--------------------------------------------------------------------------
 
