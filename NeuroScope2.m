@@ -141,15 +141,17 @@ end
         UI.settings.channelTags.filter = [];
         UI.settings.channelTags.highlight = [];
         UI.settings.showKilosort = false;
+        UI.preferences.displayMenu = 0;
         UI.groupData1.groupsList = {'groups','tags','groundTruthClassification'}; 
         UI.preferences.tags = {'Good','Bad','Noise','InverseSpike'};
         UI.preferences.groundTruth = {'PV','NOS1','GAT1','SST','Axoaxonic','CellType_A'};
         UI.iLine = 1;
-        UI.colorLine = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.9290, 0.6940, 0.1250;0.4940, 0.1840, 0.5560;0.4660, 0.6740, 0.1880;0.3010, 0.7450, 0.9330;0.6350, 0.0780, 0.1840];
-        UI.colorLine = [UI.colorLine;UI.colorLine;UI.colorLine];
+        UI.colorLine = lines(256);
         UI.freeText = '';
         UI.selectedChannels = [];
         UI.settings.debug = false;
+        UI.settings.background = 'k';
+        UI.settings.xtickColor = 'w';
         % Only Matlab 2020b and forward supports vertical marker
         if verLessThan('matlab','9.9') 
             UI.settings.rasterMarker = 'o';
@@ -163,7 +165,7 @@ end
         UI.settings.spikesBelowTrace = false;
         UI.settings.useSpikesYData = false;
         UI.settings.spikesYData = '';
-        UI.settings.spikesColormap = 'hsv'; % 'hsv'
+        UI.settings.spikesColormap = 'hsv';
         UI.tableData.Column1 = 'putativeCellType';
         UI.tableData.Column2 = 'firingRate';
         UI.params.subsetTable = [];
@@ -216,6 +218,7 @@ end
             menuLabel = 'Label';
             menuSelectedFcn = 'Callback';
         end
+        uix.tracking('off')
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating menu
@@ -232,6 +235,16 @@ end
         uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile);
         uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportPlotData,'Separator','on');
         uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file',menuSelectedFcn,@exportPlotData);
+        uimenu(UI.menu.file.topMenu,menuLabel,'Export figure via the export setup dialog',menuSelectedFcn,@exportPlotData,'Separator','on');
+%         if ~verLessThan('matlab','9.8') 
+%             % Only Matlab 2020a and forward supports vertical marker
+%             uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportPlotData,'Separator','on');
+%             uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file',menuSelectedFcn,@exportPlotData);
+%         else
+%             uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportFigure,'Separator','on');
+%             uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file',menuSelectedFcn,@exportFigure);
+%         end
+%         uimenu(UI.menu.file.topMenu,menuLabel,'Export main dialog',menuSelectedFcn,@exportFigure,'Separator','on');
         
         % Session
         UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
@@ -252,13 +265,15 @@ end
         uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current session on website',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
         uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current animal subject on website',menuSelectedFcn,@showAnimalInWebDB);
         
-        % Display settings
+        % View
         UI.menu.view.topMenu = uimenu(UI.fig,menuLabel,'View');
         UI.menu.view.summaryFigure = uimenu(UI.menu.view.topMenu,menuLabel,'Summary figure',menuSelectedFcn,@summaryFigure);
          
-        % Display settings
+        % Settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
         UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
+        UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background/xtick color',menuSelectedFcn,@changeBackgroundColor);
+        UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu','Separator','on',menuSelectedFcn,@ShowHideMenu);
         UI.menu.display.debug = uimenu(UI.menu.display.topMenu,menuLabel,'Debug','Separator','on',menuSelectedFcn,@toggleDebug);
         
         % Help
@@ -443,7 +458,7 @@ end
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
-        UI.plot_axis1 = axes('Parent',UI.panel.plots,'Units','Normalize','Position',[0 0 1 1],'ButtonDownFcn',@ClickPlot,'XColor','w','TickLength',[0.005, 0.001],'XMinorTick','on','XLim',[0,UI.settings.windowDuration],'YLim',[0,1],'Color','k','YTickLabel',[],'Clipping','off');
+        UI.plot_axis1 = axes('Parent',UI.panel.plots,'Units','Normalize','Position',[0 0 1 1],'ButtonDownFcn',@ClickPlot,'Color',UI.settings.background,'XColor',UI.settings.xtickColor,'TickLength',[0.005, 0.001],'XMinorTick','on','XLim',[0,UI.settings.windowDuration],'YLim',[0,1],'YTickLabel',[],'Clipping','off');
         hold on
         UI.plot_axis1.XAxis.MinorTick = 'on';
         UI.plot_axis1.XAxis.MinorTickValues = 0:0.01:2;
@@ -524,9 +539,16 @@ end
         end
     end
 
-
     function plot_ephys
-        % Plotting ephys data
+        % Loading and plotting ephys data
+        % There are four plot styles, for optimized plotting performance
+        % 1. Downsampled: Shows every 16th sample of the raw data (no filter or averaging)
+        % 2. Range: Shows a sample count optimized to the screen resolution. For each sample the max and the min is plotted of data in that temporal range
+        % 3. Raw: Raw data at full sampling rate
+        % 4. LFP: .LFP file, typically the raw data has been downpass filtered and downsampled to 1250Hz before this. All samples are shown.
+        %
+        % Only data thas is not currently displayed will be loaded.
+        
         if UI.settings.greyScaleTraces < 5
             colors = UI.colors/UI.settings.greyScaleTraces;
         elseif UI.settings.greyScaleTraces >=5
@@ -837,7 +859,7 @@ end
                 idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(idx,2))');
                 raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
             end
-            if UI.settings.spikesGroupColors == 3 %UI.settings.useMetrics
+            if UI.settings.spikesGroupColors == 3
                 % UI.params.sortingMetric = 'putativeCellType';
                 putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
                 UI.colors_metrics = hsv(numel(putativeCellTypes));
@@ -851,7 +873,7 @@ end
                         k = k+1;
                     end
                 end
-            elseif UI.settings.spikesGroupColors == 1 % UI.settings.colorIndividualUnit
+            elseif UI.settings.spikesGroupColors == 1
                 uid = data.spikes.spindices(idx,2);
                 unique_uids = unique(uid);
                 uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(unique_uids)),')']);
@@ -1255,10 +1277,9 @@ end
                     advance
                 case 'leftarrow'
                     back
-                case 'n'
-                    increaseAmplitude
                 case 'm'
-                    decreaseAmplitude
+                    % Hide/show menubar
+                    ShowHideMenu
                 case 'q'
                     increaseWindowsSize
                 case 'a'
@@ -1330,6 +1351,28 @@ end
         end
     end
     
+    function ShowHideMenu(~,~)
+        % Hide/show menubar
+        if UI.preferences.displayMenu == 0
+            set(UI.fig, 'MenuBar', 'figure')
+            UI.preferences.displayMenu = 1;
+            UI.menu.display.showHideMenu.Checked = 'On';
+            fieldmenus = fieldnames(UI.menu);
+            fieldmenus(strcmpi(fieldmenus,'NeuroScope2')) = [];
+            for i = 1:numel(fieldmenus)
+                UI.menu.(fieldmenus{i}).topMenu.Visible = 'off';
+            end
+            MsgLog('Regular MATLAB menubar shown. Press M to regain the NeuroScope2 menubar',2);
+        else
+            set(UI.fig, 'MenuBar', 'None')
+            UI.preferences.displayMenu = 0;
+            UI.menu.display.showHideMenu.Checked = 'Off';
+            fieldmenus = fieldnames(UI.menu);
+            for i = 1:numel(fieldmenus)
+                UI.menu.(fieldmenus{i}).topMenu.Visible = 'on';
+            end
+        end
+    end
     function HelpDialog(~,~)
         if ismac; scs  = 'Cmd + '; else; scs  = 'Ctrl + '; end
         shortcutList = { '','<html><b>Navigation</b></html>';
@@ -1343,8 +1386,8 @@ end
             
             '   ',''; 
             '','<html><b>Display settings</b></html>';
-            [char(94) ' (up arrow) / N'],'increase ephys amplitude'; 
-            'v (down arrow) / M','Decrease ephys amplitude';
+            [char(94) ' (up arrow)'],'increase ephys amplitude'; 
+            'v (down arrow)','Decrease ephys amplitude';
             'Q','Increase window duration'; 
             'A','Decrease window duration';
             'H','Highlight ephys channel(s)';
@@ -1858,6 +1901,7 @@ end
     end
 
     function initTraces
+        set(UI.fig,'Renderer','opengl');
         % Determining data offsets
         UI.offsets.intan    = 0.10 * (UI.settings.showIntanBelowTrace & (UI.settings.intan_showAnalog | UI.settings.intan_showAux | UI.settings.intan_showDigital));
         UI.offsets.trials   = 0.02 * (UI.settings.showTrials);
@@ -1976,11 +2020,7 @@ end
             data.session = sessionTemplate(UI.data.basepath,'showGUI',true);
         end
         % UI.settings.colormap
-        if strcmp(UI.settings.colormap,'default')
-            UI.colors = UI.colorLine(1:data.session.extracellular.nElectrodeGroups,:);
-        else
-            UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
-        end
+        UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
         
         UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
         UI.fig.UserData.leastSignificantBit = UI.settings.leastSignificantBit;
@@ -2663,7 +2703,6 @@ end
     function nextBehavior(~,~)
         if UI.settings.showBehavior
             t0 = data.behavior.(UI.settings.behaviorData).time(end)-UI.settings.windowDuration;
-            
             uiresume(UI.fig);
         end
     end
@@ -2677,15 +2716,34 @@ end
 
     function summaryFigure(~,~)
         % Spike data
-        summaryfig = figure('name','Summary figure');
-        ax1 = axes(summaryfig,'XLim',[0,UI.t_total],'title','Summary figure','YLim',[0,1],'YTickLabel',[]); hold on, xlabel('Time (s)'), % ce_dragzoom(ax1)
+        summaryfig = figure('name','Summary figure','Position',[50 50 1200 900],'visible','off');
+        ax1 = axes(summaryfig,'XLim',[0,UI.t_total],'title','Summary figure','YLim',[0,1],'YTickLabel',[],'Color','k','Position',[0.05 0.05 0.9 0.9],'XColor','k','TickDir','out'); hold on, title('Summary figure'), xlabel('Time (s)'), % ce_dragzoom(ax1)
+        
         if UI.settings.showSpikes
-            plotSpikeData(0,UI.t_total,'k')
+            dataRange_spikes = UI.dataRange.spikes;
+            temp = reshape(struct2array(UI.dataRange),2,[]);
+            if ~UI.settings.spikesBelowTrace && ~isempty(temp(2,temp(2,:)<1))
+                UI.dataRange.spikes(1) = max(temp(2,temp(2,:)<1));
+            end
+            UI.dataRange.spikes(2) = 0.97;
+            spikesBelowTrace = UI.settings.spikesBelowTrace;
+            UI.settings.spikesBelowTrace = true;
+            
+            plotSpikeData(0,UI.t_total,'w')
+            
+            UI.dataRange.spikes = dataRange_spikes;
+            UI.settings.spikesBelowTrace = spikesBelowTrace;
+            
+        end
+        
+        % KiloSort data
+        if UI.settings.showKilosort
+            plotKilosortData(t0,t0+UI.settings.windowDuration,'c')
         end
         
         % Event data
         if UI.settings.showEvents
-            plotEventData(0,UI.t_total,'k','m')
+            plotEventData(0,UI.t_total,'w','m')
         end
         
         % Time series
@@ -2705,9 +2763,22 @@ end
         
         % Trials
         if UI.settings.showTrials
-            plotTrials(0,UI.t_total,'k')
+            plotTrials(0,UI.t_total,'w')
         end
+        
+        % Plotting epochs
+        if isfield(data.session,'epochs')
+            for i = 1:numel(data.session.epochs)
+                p1 = patch([data.session.epochs{i}.startTime data.session.epochs{i}.stopTime  data.session.epochs{i}.stopTime data.session.epochs{i}.startTime],[0.97 0.97 0.999 0.999],'w','EdgeColor','w','HitTest','off');
+            alpha(p1,0.7);
+%                 plot([data.session.epochs{i}.startTime data.session.epochs{i}.stopTime],[0.95 0.95],'w','linewidth',2);
+                text(data.session.epochs{i}.startTime,0.999,{data.session.epochs{i}.name;data.session.epochs{i}.behavioralParadigm},'color','k','FontWeight', 'Bold','VerticalAlignment', 'top','Margin',0.1,'interpreter','none') % ,'BackgroundColor',[0 0 0 0.7]
+            end
+        end
+        % Plotting current timepoint
         plot([t0;t0],[ax1.YLim(1);ax1.YLim(2)],'--b');
+        
+        movegui(summaryfig,'center'), set(summaryfig,'visible','on')
     end
 
     function showTrials(~,~)
@@ -2898,14 +2969,57 @@ end
         text(UI.plot_axis1,0.005,0.955,['  ',num2str(0.05/(UI.settings.scalingFactor)*1000,3),' mV'],'FontWeight', 'Bold','VerticalAlignment', 'middle','HorizontalAlignment','left','color','w')
         drawnow
         if strcmp(src.Text,'Export to .png file')
-            exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.png']))
+            if ~verLessThan('matlab','9.8') 
+                exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.png']))
+            else
+                set(UI.fig,'Units','Inches');
+                set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
+                saveas(UI.fig,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.png']));
+            end
             MsgLog(['The .png file was saved to the basepath: ' basename],2);
-        else
-            exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.pdf']),'ContentType','vector')
+        elseif strcmp(src.Text,'Export to .pdf file')
+            if ~verLessThan('matlab','9.8') 
+                exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.pdf']),'ContentType','vector')
+            else
+                % renderer is set to painter (vector graphics)
+                set(UI.fig,'Units','Inches','Renderer','painters');
+                set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
+                saveas(UI.fig,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.pdf']));
+                set(UI.fig,'Renderer','opengl');
+            end
             MsgLog(['The .pdf file was saved to the basepath: ' basename],2);
+        else
+            % renderer is set to painter (vector graphics)
+            set(UI.fig,'Units','Inches','Renderer','painters');
+            set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
+            exportsetupdlg(UI.fig)
         end
     end
 
+%     function exportFigure(src,~)
+%         % Export main window as .png, .pdf, or opens the export figure dialog
+%         % First the size of the printed figure is resized to the current size of the figure
+%         if strcmp(src.Text,'Export to .png file')
+%             set(UI.fig,'Units','Inches');
+%             set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
+%             saveas(UI.fig,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.png']));
+%             MsgLog(['The .png file was saved to the basepath: ' basename],2);
+%         elseif strcmp(src.Text,'Export to .pdf file')
+%             % renderer is set to painter (vector graphics)
+%             set(UI.fig,'Units','Inches','Renderer','painters');
+%             set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
+%             file = uiputfile('*.pdf','Save to pdf file');
+%             saveas(UI.fig,file);
+%             MsgLog(['The .pdf file was saved to the basepath: ' basename],2);
+%             set(UI.fig,'Renderer','opengl');
+%         else
+%             % renderer is set to painter (vector graphics)
+%             set(UI.fig,'Units','Inches','Renderer','painters');
+%             set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
+%             exportsetupdlg(UI.fig)
+%         end
+%     end
+    
     function setTimeSeriesBoundary(~,~)
         UI.settings.timeseries.lowerBoundary = str2num(UI.panel.timeseries.lowerBoundary.String);
         UI.settings.timeseries.upperBoundary = str2num(UI.panel.timeseries.upperBoundary.String);
@@ -2921,17 +3035,13 @@ end
     end
     
     function changeColormap(~,~)
-        colormapList = {'default','hot','parula','jet','hsv','cool','spring','summer','autumn','winter','gray','bone','copper','pink','lines','colorcube','prism','white'};
+        colormapList = {'lines','hsv','jet','colorcube','prism','parula','hot','cool','spring','summer','autumn','winter','gray','bone','copper','pink','white'};
         temp = find(strcmp(UI.settings.colormap,colormapList));
         [idx,~] = listdlg('PromptString','Select colormap','ListString',colormapList,'ListSize',[250,400],'InitialValue',temp,'SelectionMode','single','Name','Colormap');
         if ~isempty(idx)
             UI.settings.colormap = colormapList{idx};
             % Generating colormap
-            if idx == 1
-                UI.colors = UI.colorLine(1:data.session.extracellular.nElectrodeGroups,:);
-            else
-                UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
-            end
+            UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
 
             % Updating table colors
             classColorsHex = rgb2hex(UI.colors);
@@ -2942,6 +3052,18 @@ end
         end
     end
     
+    function changeBackgroundColor(~,~)
+        try
+            colorpick = uisetcolor(UI.plot_axis1.Color,'Background color');
+            UI.settings.background = colorpick;
+            UI.plot_axis1.Color = UI.settings.background;
+            
+            colorpick = uisetcolor(UI.plot_axis1.XColor,'X-tick color');
+            UI.settings.xtickColor = colorpick;
+            UI.plot_axis1.XColor = UI.settings.xtickColor;
+        end
+    end
+        
     function toggleDebug(~,~)
         UI.settings.debug = ~UI.settings.debug;
         if UI.settings.debug
@@ -2956,25 +3078,9 @@ end
         % Shows a file dialog allowing you to select session via a .dat/.mat/.xml to load
         path1 = uigetdir(pwd,'Please select the data folder');
         if ~isequal(path1,0)
-            file1 = dir(fullfile(path1,'*.session.mat'));
-            file2 = dir(fullfile(path1,'*.xml'));
-            file3 = dir(fullfile(path1,'*.lfp'));
-            file4 = dir(fullfile(path1,'*.dat'));
-            if ~isempty(file1)
-                file = file1.name;
-            elseif ~isempty(file2)
-                file = file2.name;
-            elseif ~isempty(file3)
-                file = file3.name;
-            elseif ~isempty(file4)
-                file = file4.name;
-            else
-                MsgLog('Failed to load session. Please try to specify a file instead',4)
-            end
-            temp = strsplit(file,'.');
+            basename = basenameFromBasepath(path1);
             data = [];
             basepath = path1;
-            basename = temp{1};
             initData(basepath,basename);
             initTraces;
             uiresume(UI.fig);
@@ -3005,7 +3111,7 @@ end
             source = '';
         end
         switch source
-            case 'Tutorial on session metadata'
+            case 'Tutorial on metadata'
                 web('https://cellexplorer.org/tutorials/metadata-tutorial/','-new','-browser')
             case 'Documentation on session metadata'
                 web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
