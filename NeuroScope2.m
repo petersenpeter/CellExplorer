@@ -23,7 +23,7 @@ UI = []; % Struct with UI elements and settings
 data = []; % External data loaded like spikes, events, states, behavior
 ephys = []; % Struct with ephys data for current shown time interval
 t0 = 0; % Timestamp the current window (in seconds)
-
+spikes_raster = []; % Global spike raster (used for highlighting)
 if isdeployed % If NeuroScope2 is run as a deployed app
     if ~isempty(varargin) % If a file name is provided it will load it.
         filename = varargin{1};
@@ -78,6 +78,7 @@ while t0>=0
     else
         % Plotting data
         UI.selectedChannels = [];
+        UI.selectedUnits = [];
         plotData;
         
         % Update UI text and slider
@@ -111,7 +112,7 @@ end
 % Embedded functions
 % % % % % % % % % % % % % % % % % % % % % %
 
-    function initUI % Initialize the UI (settings, parameters, figure, panels, axis, menu)
+    function initUI % Initialize the UI (settings, parameters, figure, menu, panels, axis)
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Init settings
@@ -122,7 +123,7 @@ end
         UI.iEvent = 1;
         UI.t0_track = 0;
         UI.timerInterface = tic;
-        UI.settings.colormap = 'hsv'; % Use 'default' for Matlab line colors, otherwise any Matlab colormap, e.g. 'hsv'
+        UI.settings.colormap = 'hsv'; % any Matlab colormap, e.g. 'hsv' or 'lines'
         UI.settings.windowDuration = 1; % in seconds
         UI.settings.scalingFactor = 50;
         UI.settings.plotStyle = 2;
@@ -141,6 +142,7 @@ end
         UI.settings.channelTags.filter = [];
         UI.settings.channelTags.highlight = [];
         UI.settings.showKilosort = false;
+        UI.settings.normalClick = true;
         UI.preferences.displayMenu = 0;
         UI.groupData1.groupsList = {'groups','tags','groundTruthClassification'}; 
         UI.preferences.tags = {'Good','Bad','Noise','InverseSpike'};
@@ -152,7 +154,7 @@ end
         UI.settings.debug = false;
         UI.settings.background = 'k';
         UI.settings.xtickColor = 'w';
-        % Only Matlab 2020b and forward supports vertical marker
+        % Only Matlab 2020b and forward supports vertical markers unfortunately
         if verLessThan('matlab','9.9') 
             UI.settings.rasterMarker = 'o';
         else
@@ -210,7 +212,7 @@ end
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating figure
         
-        UI.fig = figure('Name','NeuroScope2','NumberTitle','off','renderer','opengl','KeyPressFcn', @keyPress,'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none', 'MenuBar', 'None'); % ,'windowscrollWheelFcn',@ScrolltoZoomInPlot ,'WindowButtonMotionFcn', @hoverCallback
+        UI.fig = figure('Name','NeuroScope2','NumberTitle','off','renderer','opengl','KeyPressFcn', @keyPress,'KeyReleaseFcn',@keyRelease,'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none', 'MenuBar', 'None');
         if ~verLessThan('matlab', '9.3')
             menuLabel = 'Text';
             menuSelectedFcn = 'MenuSelectedFcn';
@@ -236,15 +238,6 @@ end
         uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportPlotData,'Separator','on');
         uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file',menuSelectedFcn,@exportPlotData);
         uimenu(UI.menu.file.topMenu,menuLabel,'Export figure via the export setup dialog',menuSelectedFcn,@exportPlotData,'Separator','on');
-%         if ~verLessThan('matlab','9.8') 
-%             % Only Matlab 2020a and forward supports vertical marker
-%             uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportPlotData,'Separator','on');
-%             uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file',menuSelectedFcn,@exportPlotData);
-%         else
-%             uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportFigure,'Separator','on');
-%             uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file',menuSelectedFcn,@exportFigure);
-%         end
-%         uimenu(UI.menu.file.topMenu,menuLabel,'Export main dialog',menuSelectedFcn,@exportFigure,'Separator','on');
         
         % Session
         UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
@@ -278,7 +271,7 @@ end
         
         % Help
         UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
-        uimenu(UI.menu.help.topMenu,menuLabel,'Keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','K');
+        uimenu(UI.menu.help.topMenu,menuLabel,'Mouse and keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','K');
         uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Accelerator','V','Separator','on');
         uimenu(UI.menu.help.topMenu,menuLabel,'Tutorial on metadata',menuSelectedFcn,@openWebsite,'Separator','on');
         uimenu(UI.menu.help.topMenu,menuLabel,'Documentation on session metadata',menuSelectedFcn,@openWebsite);
@@ -445,7 +438,6 @@ end
         set(UI.panel.matfiles.main, 'Heights', [80 150 -60 -200 40 200 90 90 140],'MinimumHeights',[80 150 40 60 40 200 90 90 140]);
         
         % Lower info panel elements
-        % UI.panel.lower = uipanel('Title','','TitlePosition','centertop','Position',[0 0 1 1],'Units','normalized','Parent',UI.panel.info);
         uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Time (s)', 'Units','normalized', 'Position', [0.1 0 0.05 1],'HorizontalAlignment','left');
         UI.elements.lower.time = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.15 0 0.05 1],'HorizontalAlignment','left','tooltip','Current timestamp (seconds)','Callback',@setTime);
         uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Window duration (s)', 'Units','normalized', 'Position', [0.25 0 0.05 1],'HorizontalAlignment','left');
@@ -839,6 +831,80 @@ end
         % Plots spikes
         units2plot = find(ismember(data.spikes.maxWaveformCh1,[UI.channels{UI.settings.electrodeGroupsToPlot}]));
         idx = ismember(data.spikes.spindices(:,2),units2plot) & ismember(data.spikes.spindices(:,2),UI.params.subsetTable ) & ismember(data.spikes.spindices(:,2),UI.params.subsetCellType) & ismember(data.spikes.spindices(:,2),UI.params.subsetFilter) & ismember(data.spikes.spindices(:,2),UI.params.subsetGroups)  & data.spikes.spindices(:,1) > t1 & data.spikes.spindices(:,1) < t2;
+        spikes_raster = [];
+        if any(idx)
+            spikes_raster.x = data.spikes.spindices(idx,1)-t1;
+            spikes_raster.UID = data.spikes.spindices(idx,2);
+            idx2 = ceil(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
+            if UI.settings.spikesBelowTrace
+                if UI.settings.useSpikesYData
+                    spikes_raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1);
+                else
+                    if UI.settings.useMetrics
+                        [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric));
+                        [~,sortIdx] = sort(sortIdx);
+                    else
+                        sortIdx = 1:data.spikes.numcells;
+                    end
+                    spikes_raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1);
+                end
+            else
+                idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(idx,2))');
+                spikes_raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
+            end
+            if UI.settings.spikesGroupColors == 3
+                % UI.params.sortingMetric = 'putativeCellType';
+                putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
+                UI.colors_metrics = hsv(numel(putativeCellTypes));
+                k = 1;
+                for i = 1:numel(putativeCellTypes)
+                    idx2 = find(ismember(data.cell_metrics.(UI.params.groupMetric),putativeCellTypes{i}));
+                    idx3 = ismember(data.spikes.spindices(idx,2),idx2);
+                    if any(idx3)
+                        line(spikes_raster.x(idx3), spikes_raster.y(idx3),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',UI.colors_metrics(i,:), 'HitTest','off');
+                        text(1/400,0.005+(k-1)*0.012+UI.dataRange.spikes(1),putativeCellTypes{i},'color',UI.colors_metrics(i,:)*0.8,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized')
+                        k = k+1;
+                    end
+                end
+            elseif UI.settings.spikesGroupColors == 1
+                uid = data.spikes.spindices(idx,2);
+                unique_uids = unique(uid);
+                uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(unique_uids)),')']);
+                for i = 1:numel(unique_uids)
+                    idx_uids = uid == unique_uids(i);
+                    line(spikes_raster.x(idx_uids), spikes_raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off');
+                end
+            else
+                line(spikes_raster.x, spikes_raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorIn, 'HitTest','off');
+            end
+            
+            
+            % Highlights cells ('tags','groups','groundTruthClassification')
+            if ~isempty(UI.groupData1)
+                uids_toHighlight = [];
+                dataTypes = {'tags','groups','groundTruthClassification'};
+                for jjj = 1:numel(dataTypes)
+                    if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
+                        fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
+                        for jj = 1:numel(fields1)
+                            if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(data.cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(units2plot,data.cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                                idx_groupData1 = intersect(units2plot,data.cell_metrics.(dataTypes{jjj}).(fields1{jj}));
+                                uids_toHighlight = [uids_toHighlight,idx_groupData1];
+                            end
+                        end
+                    end
+                end
+                if ~isempty(uids_toHighlight)
+                    highlightUnits(unique(uids_toHighlight),t1,t2);
+                end
+            end
+        end
+    end
+    
+    function highlightUnits(units2plot,t1,t2)
+        
+        % Plots spikes
+        idx = ismember(data.spikes.spindices(:,2),units2plot) & ismember(data.spikes.spindices(:,2),UI.params.subsetTable ) & ismember(data.spikes.spindices(:,2),UI.params.subsetCellType) & ismember(data.spikes.spindices(:,2),UI.params.subsetFilter) & ismember(data.spikes.spindices(:,2),UI.params.subsetGroups)  & data.spikes.spindices(:,1) > t1 & data.spikes.spindices(:,1) < t2;
         if any(idx)
             raster = [];
             raster.x = data.spikes.spindices(idx,1)-t1;
@@ -859,30 +925,19 @@ end
                 idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(idx,2))');
                 raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
             end
-            if UI.settings.spikesGroupColors == 3
-                % UI.params.sortingMetric = 'putativeCellType';
-                putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
-                UI.colors_metrics = hsv(numel(putativeCellTypes));
-                k = 1;
-                for i = 1:numel(putativeCellTypes)
-                    idx2 = find(ismember(data.cell_metrics.(UI.params.groupMetric),putativeCellTypes{i}));
-                    idx3 = ismember(data.spikes.spindices(idx,2),idx2);
-                    if any(idx3)
-                        line(raster.x(idx3), raster.y(idx3),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',UI.colors_metrics(i,:), 'HitTest','off');
-                        text(1/400,0.005+(k-1)*0.012+UI.dataRange.spikes(1),putativeCellTypes{i},'color',UI.colors_metrics(i,:)*0.8,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized')
-                        k = k+1;
-                    end
-                end
-            elseif UI.settings.spikesGroupColors == 1
-                uid = data.spikes.spindices(idx,2);
-                unique_uids = unique(uid);
-                uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(unique_uids)),')']);
-                for i = 1:numel(unique_uids)
-                    idx_uids = uid == unique_uids(i);
-                    line(raster.x(idx_uids), raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off');
-                end
+            
+            uid = data.spikes.spindices(idx,2);
+            unique_uids = unique(uid);
+            uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(unique_uids)),')']);
+            if numel(unique_uids) == 1
+                UI.iLine = mod(UI.iLine,7)+1;
+                colorLine = UI.colorLine(UI.iLine,:);
+                line(raster.x, raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorLine, 'HitTest','off','linewidth',3);
             else
-                line(raster.x, raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorIn, 'HitTest','off');
+            for i = 1:numel(unique_uids)
+                idx_uids = uid == unique_uids(i);
+                line(raster.x(idx_uids), raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off','linewidth',3);
+            end
             end
         end
     end
@@ -1327,8 +1382,11 @@ end
                     flagEvent
                 case 'slash'
                     randomEvent
+                case 'shift'
+                    UI.settings.normalClick = false;
             end
         elseif strcmp(event.Modifier,'shift')
+            UI.settings.normalClick = false;
             switch event.Key
                 case 'space'
                     streamData
@@ -1348,6 +1406,12 @@ end
                 case 'space'
                     streamData2
             end
+        end
+    end
+    
+    function keyRelease(~, event)
+        if strcmp(event.Key,'shift')
+            UI.settings.normalClick = true;
         end
     end
     
@@ -1375,7 +1439,18 @@ end
     end
     function HelpDialog(~,~)
         if ismac; scs  = 'Cmd + '; else; scs  = 'Ctrl + '; end
-        shortcutList = { '','<html><b>Navigation</b></html>';
+        shortcutList = { 
+            '','<html><b>Mouse actions</b></html>';
+            'Left mouse button','Pan traces'; 
+            'Right mouse button','Rubber band zoom';
+            'Middle button','Highlight ephys trace';
+            'Middle button+shift','Highlight unit spike raster';
+            'Double click','Reset zoom';
+            'Scroll in','Zoom in';
+            'Scroll out','Zoom out';
+            
+            '   ',''; 
+            '','<html><b>Navigation</b></html>';
             '> (right arrow)','Forward in time'; 
             '< (left arrow)','Backward in time';
             'shift + > (right arrow)','Fast forward in time'; 
@@ -1419,7 +1494,7 @@ end
         else
             dimensions = [450,(size(shortcutList,1)+1)*18.5];
         end
-        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','NeuroScope2: keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(HelpWindow.dialog,'center'), set(HelpWindow.dialog,'visible','on')
+        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','NeuroScope2: mouse and keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(HelpWindow.dialog,'center'), set(HelpWindow.dialog,'visible','on')
         HelpWindow.sessionList = uitable(HelpWindow.dialog,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{100 345},'columnname',{'Shortcut','Action'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');
     end
 
@@ -2144,16 +2219,25 @@ end
             %
             case 'extend' % middle mouse button
                 um_axes = get(UI.plot_axis1,'CurrentPoint');
-                channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
-                x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration)';
-                y1 = (ephys.traces(:,channels)-UI.channelScaling(:,channels));
-                [~,In] = min(hypot((x1(:)-um_axes(1,1)),(y1(:)-um_axes(1,2))));
-                In = unique(floor(In/size(x1,1)))+1;
-                In = channels(In);
-                highlightTraces(In,[])
-                UI.selectedChannels = unique([In,UI.selectedChannels],'stable');
-                UI.elements.lower.performance.String = ['Channel(s): ',num2str(UI.selectedChannels)];
-                
+                if UI.settings.normalClick
+                    channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
+                    x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration)';
+                    y1 = (ephys.traces(:,channels)-UI.channelScaling(:,channels));
+                    [~,In] = min(hypot((x1(:)-um_axes(1,1)),(y1(:)-um_axes(1,2))));
+                    In = unique(floor(In/size(x1,1)))+1;
+                    In = channels(In);
+                    highlightTraces(In,[])
+                    UI.selectedChannels = unique([In,UI.selectedChannels],'stable');
+                    UI.elements.lower.performance.String = ['Channel(s): ',num2str(UI.selectedChannels)];
+                elseif UI.settings.showSpikes && ~UI.settings.normalClick
+                    [~,In] = min(hypot((spikes_raster.x(:)-um_axes(1,1)),(spikes_raster.y(:)-um_axes(1,2))));
+                    UID = spikes_raster.UID(In);
+                    if ~isempty(UID)
+                        highlightUnits(UID,t0,t0+UI.settings.windowDuration);
+                        UI.selectedUnits = unique([UID,UI.selectedUnits],'stable');
+                        UI.elements.lower.performance.String = ['Unit(s) selected: ',num2str(UI.selectedUnits)];
+                    end
+                end
             case 'open'
                 set(UI.plot_axis1,'XLim',[0,UI.settings.windowDuration],'YLim',[0,1]);
             otherwise
