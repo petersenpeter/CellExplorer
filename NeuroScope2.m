@@ -1532,10 +1532,14 @@ end
             UI.settings.fileRead = 'bof';
             while UI.settings.stream
                 t0 = t0+0.5*UI.settings.windowDuration;
+                t0 = max([0,min([t0,UI.t_total-UI.settings.windowDuration])]);
                 if ~ishandle(UI.fig)
                     return
                 end
                 plotData
+                % Update UI text and slider
+                UI.elements.lower.time.String = num2str(t0);
+                UI.elements.lower.performance.String = ['  Streaming...'];
                 UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Streaming','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color','w');
                 for i = 1:10
                     if UI.settings.stream
@@ -1543,6 +1547,7 @@ end
                     end
                 end
             end
+            UI.elements.lower.performance.String = '';
         end
         UI.settings.fileRead = 'bof';
         if ishandle(UI.streamingText)
@@ -1733,6 +1738,9 @@ end
         % Toggle spikes data
         if ~isfield(data,'spikes') && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
             data.spikes = loadSpikes('session',data.session);
+            if ~isfield(data.spikes,'spindices')
+                data.spikes.spindices = generateSpinDices(data.spikes.times);
+            end
         elseif ~exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
             UI.panel.spikes.showSpikes.Value = 0;
             MsgLog('Spikes does not exist',4);
@@ -3209,7 +3217,7 @@ end
             if ~verLessThan('matlab','9.8') 
                 exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.pdf']),'ContentType','vector')
             else
-                % renderer is set to painter (vector graphics)
+                % Renderer is set to painter (vector graphics)
                 set(UI.fig,'Units','Inches','Renderer','painters');
                 set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
                 saveas(UI.fig,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.pdf']));
