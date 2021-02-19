@@ -4,16 +4,16 @@ function NeuroScope2(varargin)
 % and made to mimic its features, but built upon Matlab and the data structure of CellExplorer making it much easier to hack/customize, fully
 % support Matlab mat-files, and faster. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
 %
-% Major features
+% Major features:
 % - Live trace filter
 % - Live spike detection
 % - Plot multiple data streams together
 % - Plot CellExplorer/Buzcode structures: spikes, cell_metrics, events, timeseries, states, behavior, trials
 %
-% Example calls
-% NeuroScope2
-% NeuroScope2('basepath',basepath)
-% NeuroScope2('session',session)
+% Example calls:
+%    NeuroScope2
+%    NeuroScope2('basepath',basepath)
+%    NeuroScope2('session',session)
 %
 % By Peter Petersen
 % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -835,8 +835,15 @@ end
 
     function plotSpikeData(t1,t2,colorIn)
         % Plots spikes
-        units2plot = find(ismember(data.spikes.maxWaveformCh1,[UI.channels{UI.settings.electrodeGroupsToPlot}]));
-        idx = ismember(data.spikes.spindices(:,2),units2plot) & ismember(data.spikes.spindices(:,2),UI.params.subsetTable ) & ismember(data.spikes.spindices(:,2),UI.params.subsetCellType) & ismember(data.spikes.spindices(:,2),UI.params.subsetFilter) & ismember(data.spikes.spindices(:,2),UI.params.subsetGroups)  & data.spikes.spindices(:,1) > t1 & data.spikes.spindices(:,1) < t2;
+        
+        % Determining which units to plot from various filters
+        units2plot = [find(ismember(data.spikes.maxWaveformCh1,[UI.channels{UI.settings.electrodeGroupsToPlot}])),UI.params.subsetTable,UI.params.subsetCellType,UI.params.subsetFilter,UI.params.subsetGroups];
+        units2plot = find(histcounts(units2plot,1:data.spikes.numcells+1)==5);
+        
+        % Finding the spikes in the spindices to plot by index
+        idx = find(data.spikes.spindices(:,1) > t1 & data.spikes.spindices(:,1) < t2);
+        idx = idx(ismember(data.spikes.spindices(idx,2),units2plot));
+        
         spikes_raster = [];
         if any(idx)
             spikes_raster.x = data.spikes.spindices(idx,1)-t1;
