@@ -556,6 +556,7 @@ end
         
         if UI.settings.plotStyle == 4 % lfp file
             if UI.fid.lfp == -1
+                UI.settings.stream = false;
                 MsgLog('Failed to load LFP data',4);
                 return
             end
@@ -563,6 +564,7 @@ end
             fileID = UI.fid.lfp;
         else %  dat file
             if UI.fid.ephys == -1
+                UI.settings.stream = false;
                 MsgLog('Failed to load raw data',4);
                 return
             end
@@ -1530,6 +1532,9 @@ end
             UI.settings.fileRead = 'bof';
             while UI.settings.stream
                 t0 = t0+0.5*UI.settings.windowDuration;
+                if ~ishandle(UI.fig)
+                    return
+                end
                 plotData
                 UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Streaming','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color','w');
                 for i = 1:10
@@ -1551,6 +1556,9 @@ end
             UI.settings.fileRead = 'eof';
             while UI.settings.stream
                 t0 = UI.t_total-UI.settings.windowDuration;
+                if ~ishandle(UI.fig)
+                    return
+                end
                 plotData
                 UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Streaming: end of file','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color','w');
                 for i = 1:10
@@ -1567,6 +1575,7 @@ end
     end
     function goToTimestamp(~,~)
         % Go to a specific timestamp via dialog
+        UI.settings.stream = false;
         answer = inputdlg('Go go timepoint:','Sample', [1 50]);
         if ~isempty(answer)
             t0 = valid_t0(str2num(answer{1}));
@@ -1576,6 +1585,7 @@ end
 
     function advance(~,~)
         % Advance the traces with 1/4 window size
+        UI.settings.stream = false;
         t0 = t0+0.25*UI.settings.windowDuration;
         uiresume(UI.fig);
     end
@@ -1583,23 +1593,27 @@ end
     function back(~,~)
         % Go back 1/4 window size in time
         t0 = max([t0-0.25*UI.settings.windowDuration,0]);
+        UI.settings.stream = false;
         uiresume(UI.fig);
     end
 
     function advance_fast(~,~)
         % Advance the traces with 1/4 window size
+        UI.settings.stream = false;
         t0 = t0+UI.settings.windowDuration;
         uiresume(UI.fig);
     end
 
     function back_fast(~,~)
         % Go back 1/4 window size in time
+        UI.settings.stream = false;
         t0 = max([t0-UI.settings.windowDuration,0]);
         uiresume(UI.fig);
     end
 
     function setTime(~,~)
         % Go to a specific timestamp
+        UI.settings.stream = false;
         string1 = str2num(UI.elements.lower.time.String);
         if isnumeric(string1) & string1>=0
             t0 = valid_t0(string1);
@@ -2146,7 +2160,7 @@ end
         if ~isfield(data,'session') & exist(fullfile(basepath,[basename,'.session.mat']))
             data.session = loadSession(UI.data.basepath,UI.data.basename);
         elseif ~isfield(data,'session')
-            data.session = sessionTemplate(UI.data.basepath,'showGUI',true,'basename',basename);
+            data.session = sessionTemplate(UI.data.basepath,'showGUI',false,'basename',basename);
         end
         % UI.settings.colormap
         UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
@@ -2256,6 +2270,7 @@ end
     end
 
     function moveSlider(src,~)
+        UI.settings.stream = false;
         s1 = dir(fullfile(basepath,[UI.data.basename '.dat']));
         s2 = dir(fullfile(basepath,[UI.data.basename '.lfp']));
         if ~isempty(s1)
@@ -2621,6 +2636,7 @@ end
         uiresume(UI.fig);
     end
     function nextEvent(~,~)
+        UI.settings.stream = false;
         if ~UI.settings.showEvents
             showEvents
         end
@@ -2639,6 +2655,7 @@ end
     end
 
     function gotoEvents(~,~)
+        UI.settings.stream = false;
         if ~UI.settings.showEvents
             showEvents
         end
@@ -2650,6 +2667,7 @@ end
         end
     end
     function previousEvent(~,~)
+        UI.settings.stream = false;
         if ~UI.settings.showEvents
             showEvents
         end
@@ -2668,6 +2686,7 @@ end
     end
 
     function randomEvent(~,~)
+        UI.settings.stream = false;
         if ~UI.settings.showEvents
             showEvents
         end
@@ -2678,6 +2697,7 @@ end
     end
 
     function nextPowerEvent(~,~)
+        UI.settings.stream = false;
         if ~UI.settings.showEvents
             showEvents
         end
@@ -2692,6 +2712,7 @@ end
     end
 
     function previousPowerEvent(~,~)
+        UI.settings.stream = false;
         if ~UI.settings.showEvents
             showEvents
         end
@@ -2706,16 +2727,20 @@ end
     end
 
     function maxPowerEvent(~,~)
+        UI.settings.stream = false;
         if ~UI.settings.showEvents
             showEvents
         end
-        [~,UI.iEvent] = max(data.events.(UI.settings.eventData).peakNormedPower);
-        UI.panel.events.eventNumber.String = num2str(UI.iEvent);
-        t0 = data.events.(UI.settings.eventData).time(UI.iEvent)-UI.settings.windowDuration/2;
-        uiresume(UI.fig);
+        if UI.settings.showEvents
+            [~,UI.iEvent] = max(data.events.(UI.settings.eventData).peakNormedPower);
+            UI.panel.events.eventNumber.String = num2str(UI.iEvent);
+            t0 = data.events.(UI.settings.eventData).time(UI.iEvent)-UI.settings.windowDuration/2;
+            uiresume(UI.fig);
+        end
     end
 
     function flagEvent(~,~)
+        UI.settings.stream = false;
         if UI.settings.showEvents
             if ~isfield(data.events.(UI.settings.eventData),'flagged')
                 data.events.(UI.settings.eventData).flagged = [];
@@ -2735,6 +2760,7 @@ end
     end
     
     function addEvent(~,~)
+        UI.settings.stream = false;
         if UI.settings.showEvents
             if ~isfield(data.events.(UI.settings.eventData),'added')
                 data.events.(UI.settings.eventData).added = [];
@@ -2823,6 +2849,7 @@ end
     end
 
     function previousStates(~,~)
+        UI.settings.stream = false;
         if UI.settings.showStates
             timestamps = getTimestampsFromStates;
             idx = find(timestamps<t0,1,'last');
@@ -2835,6 +2862,7 @@ end
     end
 
     function nextStates(~,~)
+        UI.settings.stream = false;
         if UI.settings.showStates
             timestamps = getTimestampsFromStates;
             idx = find(timestamps>t0,1);
@@ -2847,6 +2875,7 @@ end
     end
 
     function gotoState(~,~)
+        UI.settings.stream = false;
         if UI.settings.showStates
             timestamps = getTimestampsFromStates;
             idx =  str2num(UI.panel.states.statesNumber.String);
@@ -2856,6 +2885,7 @@ end
             end
         end
     end
+    
     function timestamps = getTimestampsFromStates
         timestamps = [];
         if isfield(data.states.(UI.settings.statesData),'ints')
@@ -2887,6 +2917,7 @@ end
     end
 
     function nextBehavior(~,~)
+        UI.settings.stream = false;
         if UI.settings.showBehavior
             t0 = data.behavior.(UI.settings.behaviorData).time(end)-UI.settings.windowDuration;
             uiresume(UI.fig);
@@ -2894,6 +2925,7 @@ end
     end
     
     function previousBehavior(~,~)
+        UI.settings.stream = false;
         if UI.settings.showBehavior
             t0 = data.behavior.(UI.settings.behaviorData).time(1);
             uiresume(UI.fig);
@@ -2901,6 +2933,7 @@ end
     end
 
     function summaryFigure(~,~)
+        UI.settings.stream = false;
         % Spike data
         summaryfig = figure('name','Summary figure','Position',[50 50 1200 900],'visible','off');
         ax1 = axes(summaryfig,'XLim',[0,UI.t_total],'title','Summary figure','YLim',[0,1],'YTickLabel',[],'Color','k','Position',[0.05 0.05 0.9 0.9],'XColor','k','TickDir','out'); hold on, title('Summary figure'), xlabel('Time (s)'), % ce_dragzoom(ax1)
@@ -2991,6 +3024,7 @@ end
     end
 
     function nextTrial(~,~)
+        UI.settings.stream = false;
         if UI.settings.showTrials
             idx = find(data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start)>t0,1);
             if isempty(idx)
@@ -3003,6 +3037,7 @@ end
     end
 
     function previousTrial(~,~)
+        UI.settings.stream = false;
         if UI.settings.showTrials
             idx = find(data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start)<t0,1,'last');
             if isempty(idx)
@@ -3015,6 +3050,7 @@ end
     end
 
     function gotoTrial(~,~)
+        UI.settings.stream = false;
         if UI.settings.showTrials
             idx = str2num(UI.panel.behavior.trialNumber.String);
             if ~isempty(idx) && isnumeric(idx) && idx>0 && idx<=numel(data.behavior.trials.start)
@@ -3151,6 +3187,7 @@ end
     end
 
     function exportPlotData(src,~)
+        UI.settings.stream = false;
         timestamp = datestr(now, '_dd-mm-yyyy_HH.MM.SS');
         % Adding text elemenets with timestamps and windows size
         text(UI.plot_axis1,0,1,[' t  = ', num2str(t0), ' s'],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left','color','w','Units','normalized')
@@ -3186,30 +3223,6 @@ end
             exportsetupdlg(UI.fig)
         end
     end
-
-%     function exportFigure(src,~)
-%         % Export main window as .png, .pdf, or opens the export figure dialog
-%         % First the size of the printed figure is resized to the current size of the figure
-%         if strcmp(src.Text,'Export to .png file')
-%             set(UI.fig,'Units','Inches');
-%             set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
-%             saveas(UI.fig,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.png']));
-%             MsgLog(['The .png file was saved to the basepath: ' basename],2);
-%         elseif strcmp(src.Text,'Export to .pdf file')
-%             % renderer is set to painter (vector graphics)
-%             set(UI.fig,'Units','Inches','Renderer','painters');
-%             set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
-%             file = uiputfile('*.pdf','Save to pdf file');
-%             saveas(UI.fig,file);
-%             MsgLog(['The .pdf file was saved to the basepath: ' basename],2);
-%             set(UI.fig,'Renderer','opengl');
-%         else
-%             % renderer is set to painter (vector graphics)
-%             set(UI.fig,'Units','Inches','Renderer','painters');
-%             set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
-%             exportsetupdlg(UI.fig)
-%         end
-%     end
     
     function setTimeSeriesBoundary(~,~)
         UI.settings.timeseries.lowerBoundary = str2num(UI.panel.timeseries.lowerBoundary.String);
@@ -3277,6 +3290,7 @@ end
     
     function loadFromFolder(~,~)
         % Shows a file dialog allowing you to select session via a .dat/.mat/.xml to load
+        UI.settings.stream = false;
         path1 = uigetdir(pwd,'Please select the data folder');
         if ~isequal(path1,0)
             basename = basenameFromBasepath(path1);
@@ -3290,6 +3304,7 @@ end
     end
     
     function loadFromFile(~,~)
+        UI.settings.stream = false;
         % Shows a file dialog allowing you to select session via a .dat/.mat/.xml to load
         [file,path] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select any file with the basename in it');
         if ~isequal(file,0)
@@ -3330,7 +3345,7 @@ end
         % 3: Show warning in Command Window
         % 4: Show warning dialog
         % -1: disp only
-        
+        UI.settings.stream = false;
         timestamp = datestr(now, 'dd-mm-yyyy HH:MM:SS');
         message2 = sprintf('[%s] %s', timestamp, message);
         %         if ~exist('priority','var') || (exist('priority','var') && any(priority >= 0))
