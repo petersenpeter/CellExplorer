@@ -14,6 +14,7 @@ function session = sessionTemplate(input1,varargin)
 
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
+addParameter(p,'basename',[],@isstr);
 addParameter(p,'importSkippedChannels',true,@islogical); % Import skipped channels from the xml as bad channels
 addParameter(p,'importSyncedChannels',true,@islogical); % Import channel not synchronized between anatomical and spike groups as bad channels
 addParameter(p,'noPrompts',true,@islogical); % Show the session gui if requested
@@ -21,6 +22,7 @@ addParameter(p,'showGUI',false,@islogical); % Show the session gui if requested
 
 % Parsing inputs
 parse(p,input1,varargin{:})
+basename = p.Results.basename;
 importSkippedChannels = p.Results.importSkippedChannels;
 importSyncedChannels = p.Results.importSyncedChannels;
 noPrompts = p.Results.noPrompts;
@@ -41,7 +43,10 @@ elseif isstruct(input1)
 end
 
 % Loading existing basename.session.mat file if exist
-[~,basename,~] = fileparts(basepath);
+if isempty(basename)
+    basename = basenameFromBasepath(basepath);
+%     [~,basename,~] = fileparts(basepath);
+end
 if ~exist('session','var') && exist(fullfile(basepath,[basename,'.session.mat']),'file')
     disp('Loading existing basename.session.mat file')
     session = loadSession(basepath,basename);
@@ -59,7 +64,7 @@ pathPieces = regexp(basepath, filesep, 'split'); % Assumes file structure: anima
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % From the provided path, the session name, clustering path will be implied
 session.general.basePath =  basepath; % Full path
-session.general.name = pathPieces{end}; % Session name / basename
+session.general.name = basename; % Session name / basename
 session.general.version = 5; % Metadata version
 session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
 

@@ -1645,7 +1645,7 @@ function updateUI
                     fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
                         if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
-                            idx_UI.groupData1 = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
+                            idx_groupData1 = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX(idx_groupData), plotY(idx_groupData), plotZ(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
                     end
@@ -1653,7 +1653,6 @@ function updateUI
             end
         end
         
-
         % Activating rotation
         rotateFig(subfig_ax(1))
 
