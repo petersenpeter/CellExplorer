@@ -108,7 +108,7 @@ end
 if isfield(session,'analysisTags') && isfield(session.analysisTags,'probesVerticalSpacing')
     VerticalSpacing = session.analysisTags.probesVerticalSpacing;
 else
-    disp('No vertical spacing defined. Defaults to 20um')
+    warning('No vertical spacing defined. Defaults to 20um')
     VerticalSpacing = 20;
 end
 
@@ -130,7 +130,7 @@ elseif any(strcmp(Layout,{'poly5','poly 5'}))
 else
     % If no probe design is provided, it assumes use a convolution length of 3
     conv_length = 3; 
-    warning('No probe layout defined. Dafaults channel convolution length set to 3');
+    warning('No probe layout defined. Channel convolution length set to 3');
 end
 
 ripple_average = [];
