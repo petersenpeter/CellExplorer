@@ -281,8 +281,8 @@ end
          
         % Settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
-        UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
-        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
+        %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
+        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background/xtick color',menuSelectedFcn,@changeBackgroundColor);
         UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu','Separator','on',menuSelectedFcn,@ShowHideMenu);
         UI.menu.display.debug = uimenu(UI.menu.display.topMenu,menuLabel,'Debug','Separator','on',menuSelectedFcn,@toggleDebug);
@@ -319,7 +319,7 @@ end
         % % % % % % % % % % % % % % % % % % % % % %
         % 1. PANEL: General elements
         % Navigation
-        UI.panel.general.navigation = uipanel('Parent',UI.panel.general.main);
+        UI.panel.general.navigation = uipanel('Parent',UI.panel.general.main,'title','Navigation');
         uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.15 0.98],'String','<<','Callback',@back_fast,'KeyPressFcn', @keyPress,'tooltip','Fast backward in time'); 
         uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.17 0.01 0.15 0.98],'String','<','Callback',@back,'KeyPressFcn', @keyPress,'tooltip','Go back in time');
         uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.33 0.5 0.34 0.49],'String',char(94),'Callback',@(src,evnt)increaseAmplitude,'KeyPressFcn', @keyPress,'tooltip','Increase amplitude of ephys data');
@@ -328,23 +328,22 @@ end
         uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.84 0.01 0.15 0.98],'String','>>','Callback',@advance_fast,'KeyPressFcn', @keyPress,'tooltip','Fast forward in time');
         
         % Electrophysiology
-        UI.panel.general.filter = uipanel('Parent',UI.panel.general.main,'title','Electrophysiology');
+        UI.panel.general.filter = uipanel('Parent',UI.panel.general.main,'title','Extracellular traces');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot style', 'Units','normalized', 'Position', [0.01 0.87 0.3 0.1],'HorizontalAlignment','left');
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Trace colors', 'Units','normalized', 'Position', [0.01 0.74 0.3 0.1],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot colors', 'Units','normalized', 'Position', [0.01 0.74 0.3 0.1],'HorizontalAlignment','left');
         UI.panel.general.plotStyle = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Downsampled','Range','Raw','LFP','Image'}, 'value', UI.settings.plotStyle, 'Units','normalized', 'Position', [0.3 0.86 0.69 0.12],'Callback',@changePlotStyle,'HorizontalAlignment','left');
         UI.panel.general.colorScale = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 75%','Colors 50%','Colors 25%','Grey-scale','Grey-scale 75%','Grey-scale 50%','Grey-scale 25%'}, 'value', 1, 'Units','normalized', 'Position', [0.3 0.73 0.69 0.12],'Callback',@changeColorScale,'HorizontalAlignment','left');
-        UI.panel.general.detectSpikes = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect spikes (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.0 0.61 0.7 0.11],'Callback',@toogleDetectSpikes,'HorizontalAlignment','left');
-        UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.71 0.60 0.28 0.12],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
-        UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.49 0.5 0.11],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
-        
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.39 0.5 0.09],'HorizontalAlignment','center');
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.39 0.5 0.09],'HorizontalAlignment','center');
-        UI.panel.general.lowerBand  = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '400', 'Units','normalized', 'Position', [0.01 0.26 0.48 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
-        UI.panel.general.higherBand = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.5 0.26 0.49 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
-        UI.panel.general.plotEnergy = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Smooth traces; sec)', 'value', 0, 'Units','normalized', 'Position', [0. 0.135 0.7 0.12],'Callback',@plotEnergy,'HorizontalAlignment','left');
-        UI.panel.general.energyWindow = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.energyWindow), 'Units','normalized', 'Position', [0.7 0.135 0.29 0.12],'Callback',@plotEnergy,'HorizontalAlignment','center','tooltip','Smoothing window (seconds)');
-        UI.panel.general.detectEvents = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect events (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.0 0.01 0.7 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','left');
-        UI.panel.general.eventThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.eventThreshold), 'Units','normalized', 'Position', [0.7 0.01 0.29 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','center','tooltip',['Event detection threshold (',char(181),'V)']);
+        UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.62 0.5 0.11],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.52 0.5 0.09],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.52 0.5 0.09],'HorizontalAlignment','center');
+        UI.panel.general.lowerBand  = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '400', 'Units','normalized', 'Position', [0.01 0.39 0.48 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
+        UI.panel.general.higherBand = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.5 0.39 0.49 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
+        UI.panel.general.plotEnergy = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Trace smoothing (sec)', 'value', 0, 'Units','normalized', 'Position', [0.01 0.26 0.68 0.12],'Callback',@plotEnergy,'HorizontalAlignment','left');
+        UI.panel.general.energyWindow = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.energyWindow), 'Units','normalized', 'Position', [0.7 0.26 0.29 0.12],'Callback',@plotEnergy,'HorizontalAlignment','center','tooltip','Smoothing window (seconds)');
+        UI.panel.general.detectEvents = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect events (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.01 0.135 0.68 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','left');
+        UI.panel.general.eventThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.eventThreshold), 'Units','normalized', 'Position', [0.7 0.135 0.29 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','center','tooltip',['Event detection threshold (',char(181),'V)']);
+        UI.panel.general.detectSpikes = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect spikes (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.68 0.12],'Callback',@toogleDetectSpikes,'HorizontalAlignment','left');
+        UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.7 0.01 0.29 0.12],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
         
         % Electrode groups
         UI.panel.electrodeGroupsList = uipanel('Parent',UI.panel.general.main,'title','Electrode groups');
@@ -380,7 +379,7 @@ end
         uicontrol('Parent',UI.panel.intan.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.24],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit input channels');
             
         % Defining flexible panel heights
-        set(UI.panel.general.main, 'Heights', [55 210 -200 35 -100 35 100 50 110],'MinimumHeights',[55 210 100 35 100 35 50 50 110]);
+        set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 50 120],'MinimumHeights',[65 210 100 35 100 35 50 50 120]);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 2. PANEL: Spikes related metrics
@@ -408,8 +407,9 @@ end
         UI.listbox.cellTypes = uicontrol('Parent',UI.panel.cellTypes.main,'Style','listbox', 'Units','normalized','Position',[0 0 1 1],'String',{''},'Enable','off','max',20,'min',0,'Value',[],'Callback',@setCellTypeSelectSubset,'KeyPressFcn', @keyPress,'tooltip','Filter putative cell types. Select to filter');
         
         % Table with list of cells
-        UI.table.cells = uitable(UI.panel.spikedata.main,'Data', {false,'','',''},'Units','normalized','Position',[0 0.34 1 0.45],'ColumnWidth',{20 30 80 80},'columnname',{'','#',UI.tableData.Column1,UI.tableData.Column2},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editCellTable,'Enable','off');
-        UI.panel.metricsButtons = uipanel('Parent',UI.panel.spikedata.main,'title','Electrode groups','title','Cells and metrics','Position',[0 0.3 1 0.04]);
+        UI.panel.cellTable.main = uipanel('Parent',UI.panel.spikedata.main,'title','List of cells');
+        UI.table.cells = uitable(UI.panel.cellTable.main,'Data', {false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 25 93 60},'columnname',{'','#','Cell type','Rate (Hz)'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editCellTable,'Enable','off');
+        UI.panel.metricsButtons = uipanel('Parent',UI.panel.spikedata.main);
         uicontrol('Parent',UI.panel.metricsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.32 0.98],'String','All','Callback',@metricsButtons,'KeyPressFcn', @keyPress,'tooltip','Show all cells');
         uicontrol('Parent',UI.panel.metricsButtons,'Style','pushbutton','Units','normalized','Position',[0.34 0.01 0.32 0.98],'String','None','Callback',@metricsButtons,'KeyPressFcn', @keyPress,'tooltip','Hide all cells');
         uicontrol('Parent',UI.panel.metricsButtons,'Style','pushbutton','Units','normalized','Position',[0.67 0.01 0.32 0.98],'String','Metrics','Callback',@metricsButtons,'KeyPressFcn', @keyPress,'tooltip','Show table with metrics');
@@ -419,7 +419,7 @@ end
         UI.panel.kilosort.showKilosort = uicontrol('Parent',UI.panel.kilosort.main,'Style','checkbox','Units','normalized','Position',[0 0 1 1], 'value', 0,'String','Show spikes from KiloSort','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
 
         % Defining flexible panel heights
-        set(UI.panel.spikedata.main, 'Heights', [95 170 100 -200 45 45],'MinimumHeights',[95 170 60 60 45 45]);
+        set(UI.panel.spikedata.main, 'Heights', [95 170 100 -200 35 45],'MinimumHeights',[95 170 60 60 35 45]);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 3. PANEL: Other datatypes
@@ -884,17 +884,17 @@ end
         units2plot = find(histcounts(units2plot,1:data.spikes.numcells+1)==5);
         
         % Finding the spikes in the spindices to plot by index
-        idx = find(data.spikes.spindices(:,1) > t1 & data.spikes.spindices(:,1) < t2);
-        idx = idx(ismember(data.spikes.spindices(idx,2),units2plot));
+        spin_idx = find(data.spikes.spindices(:,1) > t1 & data.spikes.spindices(:,1) < t2);
+        spin_idx = spin_idx(ismember(data.spikes.spindices(spin_idx,2),units2plot));
         
         spikes_raster = [];
-        if any(idx)
-            spikes_raster.x = data.spikes.spindices(idx,1)-t1;
-            spikes_raster.UID = data.spikes.spindices(idx,2);
-            idx2 = ceil(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
+        if any(spin_idx)
+            spikes_raster.x = data.spikes.spindices(spin_idx,1)-t1;
+            spikes_raster.UID = data.spikes.spindices(spin_idx,2);
+            idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
             if UI.settings.spikesBelowTrace
                 if UI.settings.useSpikesYData
-                    spikes_raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1);
+                    spikes_raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(spin_idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1);
                 else
                     if UI.settings.useMetrics
                         [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric));
@@ -902,10 +902,10 @@ end
                     else
                         sortIdx = 1:data.spikes.numcells;
                     end
-                    spikes_raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1);
+                    spikes_raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(spin_idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1);
                 end
             else
-                idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(idx,2))');
+                idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
                 spikes_raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
             end
             if UI.settings.spikesGroupColors == 3
@@ -915,7 +915,7 @@ end
                 k = 1;
                 for i = 1:numel(putativeCellTypes)
                     idx2 = find(ismember(data.cell_metrics.(UI.params.groupMetric),putativeCellTypes{i}));
-                    idx3 = ismember(data.spikes.spindices(idx,2),idx2);
+                    idx3 = ismember(data.spikes.spindices(spin_idx,2),idx2);
                     if any(idx3)
                         line(spikes_raster.x(idx3), spikes_raster.y(idx3),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',UI.colors_metrics(i,:), 'HitTest','off');
                         text(1/400,0.005+(k-1)*0.012+UI.dataRange.spikes(1),putativeCellTypes{i},'color',UI.colors_metrics(i,:)*0.8,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized')
@@ -923,7 +923,7 @@ end
                     end
                 end
             elseif UI.settings.spikesGroupColors == 1
-                uid = data.spikes.spindices(idx,2);
+                uid = data.spikes.spindices(spin_idx,2);
                 unique_uids = unique(uid);
                 uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(unique_uids)),')']);
                 for i = 1:numel(unique_uids)
@@ -1005,7 +1005,7 @@ end
         if any(idx)
             raster = [];
             raster.x = data.spikes_kilosort.spindices(idx,1)-t1;
-            idx2 = ceil(raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
+            idx2 = round(raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
             if UI.settings.spikesBelowTrace
                 sortIdx = 1:data.spikes_kilosort.numcells;
                 raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes_kilosort.spindices(idx,2))/(data.spikes_kilosort.numcells))+UI.dataRange.spikes(1);

@@ -47,12 +47,19 @@ Intan files are treated as time series. To load the files you must specify the m
 <a href="https://buzsakilab.com/wp/wp-content/uploads/2021/02/timeseries_intan.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2021/02/timeseries_intan.png)</a>
 
 ## Loading a new dataset
-A new dataset can be loaded from the File menu. Select any file from the basepath of the session that contains the basename, `basename.*`. 
+A new dataset can be loaded from the File menu. Select any file from the basepath of the session that contains the basename, `basename.*`.
 
-## Compiled versions of NeuroScope2
+## Compiled version of NeuroScope2
 NeuroScope2 can be compiled to a NeuroScope2.exe and NeuroScope2.app for Windows and Mac respectively. These can be run without having Matlab installed, or just be used independently on a system with Matlab. If Matlab is installed on your system you only need the app (NeuroScope2.exe or NeuroScope2.app), but if you are using it on a system without Matlab, you have to install the dependencies first.
 
 In Windows you can further make the compiled NeuroScope2 the default program to open e.g. .dat files, such that you can double click any .dat file to open it directly in NeuroScope2.
 
-You can download compiled versions of NeuroScope2 for [Windows](https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope2_Windows.zip) and [Mac](https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope2_Mac.zip).
+You can download compiled versions of NeuroScope2 for [Windows](https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope2_Windows.zip) and [Mac](https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope2_Mac.zip). These compiled version are not necessary the latest version of NeuroScope2.
 
+### Compile NeuroScope2 yourself
+Follow these direction for compiling NeuroScope2 yourself:
+* Run `deploytool` In Matlab's Command Window. 
+* Select Application Compiler in the shown dialog. 
+* In the Application compiler window, Add NeuroScope2.m as a main compiler file. 
+* Add the GUI Layout Toolbox 2.3.4 in the "Files required by your application" section. The toolbox is included with CellExplorer and located in the toolboxes folder. Matlab will automatically detect other dependencies and add them to the application.
+* Thats it. You can now run the compiled application independently without a local Matlab license.
