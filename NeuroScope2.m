@@ -20,15 +20,16 @@ function NeuroScope2(varargin)
 
 % Global variables
 UI = []; % Struct with UI elements and settings
-data = []; % External data loaded like spikes, events, states, behavior
-ephys = []; % Struct with ephys data for current shown time interval
-t0 = 0; % Timestamp the current window (in seconds)
-spikes_raster = []; % Global spike raster (used for highlighting)
-if isdeployed % If NeuroScope2 is run as a deployed app
+data = []; % Contains all external data loaded like data.spikes, data.events, data.states, data.behavior
+ephys = []; % Struct with ephys data for current shown time interval, e.g. ephys.raw (raw unprocessed data), ephys.traces (processed data)
+t0 = 0; % Timestamp of the start of the current window (in seconds)
+spikes_raster = []; % Spike raster (used for highlighting, to minimize computations)
+
+if isdeployed % Check for if NeuroScope2 is running as a deployed app (compiled .exe or .app for windows and mac respectively)
     if ~isempty(varargin) % If a file name is provided it will load it.
         filename = varargin{1};
         [basepath1,file1] = fileparts(varargin{1});
-    else % Else a file dialog will be show
+    else % Otherwise a file load dialog will be shown
         [file1,basepath1] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select a file with the basename in it from the basepath');
     end
     if ~isequal(file1,0)
@@ -119,15 +120,15 @@ end
         UI.t1 = 0;
         UI.forceNewData = true;
         UI.track = true;
-        UI.t_total = 0;
-        UI.iEvent = 1;
+        UI.t_total = 0; % Length of the recording in seconds
+        
         UI.t0_track = 0;
         UI.timerInterface = tic;
         UI.settings.colormap = 'hsv'; % any Matlab colormap, e.g. 'hsv' or 'lines'
         UI.settings.windowDuration = 1; % in seconds
         UI.settings.scalingFactor = 50;
         UI.settings.plotStyle = 2;
-        UI.settings.stream = false;
+        UI.settings.stream = false; 
         UI.settings.fileRead = 'bof';
         UI.settings.greyScaleTraces = 1;
         UI.settings.columnTraces = false;
@@ -191,6 +192,7 @@ end
         UI.params.groupMetric = 'putativeCellType';
         
         % Event settings
+        UI.settings.iEvent = 1;
         UI.settings.showEvents = false;
         UI.settings.eventData = [];
         UI.settings.showEventsBelowTrace = false;
@@ -246,6 +248,8 @@ end
         UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
         uimenu(UI.menu.file.topMenu,menuLabel,'Load session from folder',menuSelectedFcn,@loadFromFolder);
         uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
+        UI.menu.file.recentSessions.main = uimenu(UI.menu.file.topMenu,menuLabel,'Recent sessions...','Separator','on');
+        
         uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportPlotData,'Separator','on');
         uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file',menuSelectedFcn,@exportPlotData);
         uimenu(UI.menu.file.topMenu,menuLabel,'Export figure via the export setup dialog',menuSelectedFcn,@exportPlotData,'Separator','on');
@@ -253,7 +257,9 @@ end
         % Session
         UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
         uimenu(UI.menu.session.topMenu,menuLabel,'View metadata',menuSelectedFcn,@viewSessionMetaData);
+        uimenu(UI.menu.session.topMenu,menuLabel,'Save metadata',menuSelectedFcn,@saveSessionMetadata);
         uimenu(UI.menu.session.topMenu,menuLabel,'Open basepath',menuSelectedFcn,@openSessionDirectory,'Separator','on');
+        
         
         % Cell metrics 
         UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'Cell metrics');
@@ -296,7 +302,7 @@ end
         
         UI.panel.center = uix.VBox( 'Parent', UI.grid_panels, 'Spacing', 0, 'Padding', 0 ); % Center flex box
         % UI.panel.right = uix.VBoxFlex('Parent',UI.grid_panels,'position',[0 0.66 0.26 0.31]); % Right panel
-        set(UI.grid_panels, 'Widths', [200 -1],'MinimumWidths',[80 1]); % set grid panel size
+        set(UI.grid_panels, 'Widths', [220 -1],'MinimumWidths',[100 1]); % set grid panel size
         
         % Separation of the center box into three panels: title panel, plot panel and lower info panel
         UI.panel.plots = uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.center,'BackgroundColor','k'); % Main plot panel
@@ -310,7 +316,8 @@ end
         UI.panel.other.main  = uix.VBox('Parent',UI.uitabgroup, 'Padding', 1);
         UI.uitabgroup.TabNames = {'General', 'Spikes','Other'};
 
-        % % General tab elements
+        % % % % % % % % % % % % % % % % % % % % % %
+        % 1. PANEL: General elements
         % Navigation
         UI.panel.general.navigation = uipanel('Parent',UI.panel.general.main);
         uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.15 0.98],'String','<<','Callback',@back_fast,'KeyPressFcn', @keyPress,'tooltip','Fast backward in time'); 
@@ -322,37 +329,44 @@ end
         
         % Electrophysiology
         UI.panel.general.filter = uipanel('Parent',UI.panel.general.main,'title','Electrophysiology');
-        UI.panel.general.plotStyle = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Downsampled','Range','Raw','LFP'}, 'value', UI.settings.plotStyle, 'Units','normalized', 'Position', [0.01 0.85 0.98 0.15],'Callback',@changePlotStyle,'HorizontalAlignment','left');
-        UI.panel.general.detectSpikes = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect spikes (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.0 0.70 0.7 0.15],'Callback',@toogleDetectSpikes,'HorizontalAlignment','left');
-        UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.71 0.70 0.28 0.15],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
-        UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.55 0.5 0.145],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
-        UI.panel.general.greyScaleTraces = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 75%','Colors 50%','Colors 25%','Grey-scale','Grey-scale 75%','Grey-scale 50%','Grey-scale 25%'}, 'value', 1, 'Units','normalized', 'Position', [0.50 0.55 0.49 0.15],'Callback',@changeColorScale,'HorizontalAlignment','left');
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.45 0.5 0.1],'HorizontalAlignment','center');
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.45 0.5 0.1],'HorizontalAlignment','center');
-        UI.panel.general.lowerBand  = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '400', 'Units','normalized', 'Position', [0.01 0.3 0.48 0.145],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
-        UI.panel.general.higherBand = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.5 0.3 0.49 0.145],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
-        UI.panel.general.plotEnergy = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Smooth traces; sec)', 'value', 0, 'Units','normalized', 'Position', [0. 0.15 0.7 0.145],'Callback',@plotEnergy,'HorizontalAlignment','left');
-        UI.panel.general.energyWindow = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.energyWindow), 'Units','normalized', 'Position', [0.7 0.15 0.29 0.145],'Callback',@plotEnergy,'HorizontalAlignment','center','tooltip','Smoothing window (seconds)');
-        UI.panel.general.detectEvents = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect events (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.0 0 0.7 0.145],'Callback',@toogleDetectEvents,'HorizontalAlignment','left');
-        UI.panel.general.eventThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.eventThreshold), 'Units','normalized', 'Position', [0.7 0 0.29 0.145],'Callback',@toogleDetectEvents,'HorizontalAlignment','center','tooltip',['Event detection threshold (',char(181),'V)']);
+        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot style', 'Units','normalized', 'Position', [0.01 0.87 0.3 0.1],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Trace colors', 'Units','normalized', 'Position', [0.01 0.74 0.3 0.1],'HorizontalAlignment','left');
+        UI.panel.general.plotStyle = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Downsampled','Range','Raw','LFP','Image'}, 'value', UI.settings.plotStyle, 'Units','normalized', 'Position', [0.3 0.86 0.69 0.12],'Callback',@changePlotStyle,'HorizontalAlignment','left');
+        UI.panel.general.colorScale = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 75%','Colors 50%','Colors 25%','Grey-scale','Grey-scale 75%','Grey-scale 50%','Grey-scale 25%'}, 'value', 1, 'Units','normalized', 'Position', [0.3 0.73 0.69 0.12],'Callback',@changeColorScale,'HorizontalAlignment','left');
+        UI.panel.general.detectSpikes = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect spikes (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.0 0.61 0.7 0.11],'Callback',@toogleDetectSpikes,'HorizontalAlignment','left');
+        UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.71 0.60 0.28 0.12],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
+        UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.49 0.5 0.11],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
+        
+        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.39 0.5 0.09],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.39 0.5 0.09],'HorizontalAlignment','center');
+        UI.panel.general.lowerBand  = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '400', 'Units','normalized', 'Position', [0.01 0.26 0.48 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
+        UI.panel.general.higherBand = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.5 0.26 0.49 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
+        UI.panel.general.plotEnergy = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Smooth traces; sec)', 'value', 0, 'Units','normalized', 'Position', [0. 0.135 0.7 0.12],'Callback',@plotEnergy,'HorizontalAlignment','left');
+        UI.panel.general.energyWindow = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.energyWindow), 'Units','normalized', 'Position', [0.7 0.135 0.29 0.12],'Callback',@plotEnergy,'HorizontalAlignment','center','tooltip','Smoothing window (seconds)');
+        UI.panel.general.detectEvents = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect events (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.0 0.01 0.7 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','left');
+        UI.panel.general.eventThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.eventThreshold), 'Units','normalized', 'Position', [0.7 0.01 0.29 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','center','tooltip',['Event detection threshold (',char(181),'V)']);
         
         % Electrode groups
-        UI.table.electrodeGroups = uitable(UI.panel.general.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0.55 1 0.25],'ColumnWidth',{20 20 45 220},'columnname',{'','','Group','Channels        '},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editElectrodeGroups,'CellSelectionCallback',@ClicktoSelectFromTable);
-        UI.panel.electrodeGroupsButtons = uipanel('Parent',UI.panel.general.main,'title','Electrode groups');
-        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.323 0.98],'String','All','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Select all groups');
-        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.34 0.01 0.32 0.98],'String','None','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Deselect all groups');
-        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.67 0.01 0.32 0.98],'String','Edit','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Edit groups');
+        UI.panel.electrodeGroupsList = uipanel('Parent',UI.panel.general.main,'title','Electrode groups');
+        UI.table.electrodeGroups = uitable(UI.panel.electrodeGroupsList,'Data',{false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 20 45 150},'columnname',{'','','Group','Channels        '},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editElectrodeGroups,'CellSelectionCallback',@ClicktoSelectFromTable);
+        UI.panel.electrodeGroupsButtons = uipanel('Parent',UI.panel.general.main);
+        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.98],'String','Show all','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Select all groups');
+        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.98],'String','Show none','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Deselect all groups');
         
         % Channel tags
-        UI.table.channeltags = uitable(UI.panel.general.main,'Data', {'','',false,false,false,'',''},'Units','normalized','Position',[0 0.45 1 0.1],'ColumnWidth',{20 60 20 20 20 55 55},'columnname',{'','Tags','o','+','÷','Channels','Groups'},'RowName',[],'ColumnEditable',[false false true true true true false],'CellEditCallback',@editChannelTags,'CellSelectionCallback',@ClicktoSelectFromTable2);
-        UI.panel.channelTagsButtons = uipanel('Parent',UI.panel.general.main,'title','Channel tags');
-        uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.32 0.98],'String','Add','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Add channel tag');
-        uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.34 0.01 0.32 0.98],'String','Save','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Save channel tags to session metadata');
-        uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.67 0.01 0.32 0.98],'String','Delete','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Delete channel tag in session gui');
+        UI.panel.channelTagsList = uipanel('Parent',UI.panel.general.main,'title','Channel tags');
+        UI.table.channeltags = uitable(UI.panel.channelTagsList,'Data', {'','',false,false,false,'',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 60 20 20 20 55 55},'columnname',{'','Tags','o','+','÷','Channels','Groups'},'RowName',[],'ColumnEditable',[false false true true true true false],'CellEditCallback',@editChannelTags,'CellSelectionCallback',@ClicktoSelectFromTable2);
+        UI.panel.channelTagsButtons = uipanel('Parent',UI.panel.general.main);
+        uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.98],'String','New tag','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Add channel tag');
+        uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.98],'String','Delete tag','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Delete channel tag in session gui');
         
         % Notes
         UI.panel.notes.main = uipanel('Parent',UI.panel.general.main,'title','Session notes');
         UI.panel.notes.text = uicontrol('Parent',UI.panel.notes.main,'Style', 'Edit', 'String', '','Units' ,'normalized', 'Position', [0, 0, 1, 1],'HorizontalAlignment','left', 'Min', 0, 'Max', 100,'Callback',@getNotes);
+        
+        UI.panel.channelTagsButtons = uipanel('Parent',UI.panel.general.main,'title','Session metadata');
+        uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.98],'String','Save','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Save session metadata');
+        uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.98],'String','View','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','View session metadata');
         
         % Intan
         UI.panel.intan.main = uipanel('Title','Intan data','TitlePosition','centertop','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
@@ -366,8 +380,9 @@ end
         uicontrol('Parent',UI.panel.intan.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.24],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit input channels');
             
         % Defining flexible panel heights
-        set(UI.panel.general.main, 'Heights', [55 180 -200 50 -100 50 100 110],'MinimumHeights',[55 180 100 50 100 50 50 110]);
+        set(UI.panel.general.main, 'Heights', [55 210 -200 35 -100 35 100 50 110],'MinimumHeights',[55 210 100 35 100 35 50 50 110]);
         
+        % % % % % % % % % % % % % % % % % % % % % %
         % 2. PANEL: Spikes related metrics
         % Spikes
         UI.panel.spikes.main = uipanel('Parent',UI.panel.spikedata.main,'title','Spikes');
@@ -406,6 +421,7 @@ end
         % Defining flexible panel heights
         set(UI.panel.spikedata.main, 'Heights', [95 170 100 -200 45 45],'MinimumHeights',[95 170 60 60 45 45]);
         
+        % % % % % % % % % % % % % % % % % % % % % %
         % 3. PANEL: Other datatypes
         % Events
         UI.panel.events.navigation = uipanel('Parent',UI.panel.other.main,'title','Events and manipulations');
@@ -445,8 +461,8 @@ end
         UI.panel.behavior.main = uipanel('Parent',UI.panel.other.main,'title','Behavior');
         UI.panel.behavior.files = uicontrol('Parent',UI.panel.behavior.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.79 0.98 0.19],'HorizontalAlignment','left','Callback',@setBehaviorData);
         UI.panel.behavior.showBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.60 1 0.19], 'value', 0,'String','Behavior','Callback',@showBehavior,'KeyPressFcn', @keyPress,'tooltip','Show behavior');
-        UI.panel.behavior.previousBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.49 0.60 0.24 0.19],'String','<','Callback',@previousBehavior,'KeyPressFcn', @keyPress,'tooltip','Start');
-        UI.panel.behavior.nextBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.75 0.60 0.24 0.19],'String','>','Callback',@nextBehavior,'KeyPressFcn', @keyPress,'tooltip','End','BusyAction','cancel');
+        UI.panel.behavior.previousBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.49 0.60 0.24 0.19],'String','| <','Callback',@previousBehavior,'KeyPressFcn', @keyPress,'tooltip','Start');
+        UI.panel.behavior.nextBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.75 0.60 0.24 0.19],'String','> |','Callback',@nextBehavior,'KeyPressFcn', @keyPress,'tooltip','End','BusyAction','cancel');
         UI.panel.behavior.plotBehaviorLinearized = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.41 0.5 0.19], 'value', 0,'String','Linearize','Callback',@plotBehaviorLinearized,'KeyPressFcn', @keyPress,'tooltip','Show linearized behavior');
         UI.panel.behavior.showBehaviorBelowTrace = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[00.5 0.41 0.5 0.19], 'value', 0,'String','Below traces','Callback',@showBehaviorBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show behavior data below traces');
         UI.panel.behavior.showTrials = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.22 1 0.19], 'value', 0,'String','Trials','Callback',@showTrials,'KeyPressFcn', @keyPress,'tooltip','Show trial data');
@@ -458,6 +474,7 @@ end
         % Defining flexible panel heights
         set(UI.panel.other.main, 'Heights', [200 95 95 140],'MinimumHeights',[220 100 100 150]);
         
+        % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
         uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Time (s)', 'Units','normalized', 'Position', [0.1 0 0.05 0.8],'HorizontalAlignment','left');
         UI.elements.lower.time = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.15 0 0.05 1],'HorizontalAlignment','left','tooltip','Current timestamp (seconds)','Callback',@setTime);
@@ -651,14 +668,18 @@ end
             end
         end
         
-        if UI.settings.plotStyle == 1 % Low sampled values (Faster plotting)
+        if UI.settings.plotStyle == 1 
+            % Low sampled values (Faster plotting)
             for iShanks = UI.settings.electrodeGroupsToPlot
                 channels = UI.channels{iShanks};
                 [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
                 line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelScaling(UI.dispSamples,channels),'color',colors(iShanks,:), 'HitTest','off');
             end
         elseif UI.settings.plotStyle == 2 && (UI.settings.windowDuration>=UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange) % Range values per sample (ala Neuroscope1)
-            ephys_traces2 = reshape(ephys.traces,UI.settings.plotStyleRangeSamples*UI.settings.windowDuration,[]);
+            % Range data (low sampled values with min and max per interval)
+            excess_samples = rem(size(ephys.traces,1),ceil(UI.settings.plotStyleRangeSamples*UI.settings.windowDuration));
+            ephys_traces3 = ephys.traces(1:end-excess_samples,:);
+            ephys_traces2 = reshape(ephys_traces3,ceil(UI.settings.plotStyleRangeSamples*UI.settings.windowDuration),[]);
             ephys.traces_min = reshape(min(ephys_traces2),[],size(ephys.traces,2));
             ephys.traces_max = reshape(max(ephys_traces2),[],size(ephys.traces,2));
             for iShanks = UI.settings.electrodeGroupsToPlot
@@ -675,13 +696,19 @@ end
                 timeLine(:,end+1,:) = timeLine(:,end,:);
                 line(UI.plot_axis1,timeLine(:)',tist(:)','color',colors(iShanks,:)','LineStyle','-', 'HitTest','off');
             end
+        elseif UI.settings.plotStyle == 5 
+            % Image representation
+            timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
+            multiplier = [size(ephys.traces,1)-1:-1:0]/(size(ephys.traces,1)-1)*0.9+0.05;
+            imagesc(UI.plot_axis1,timeLine,multiplier,ephys.traces(:,UI.channelOrder)')
         else
+            % Raw data
             timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
             for iShanks = UI.settings.electrodeGroupsToPlot
                 channels = UI.channels{iShanks};
                 if ~isempty(channels)
-                    [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
-                    line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelScaling(:,channels),'color',colors(iShanks,:),'LineStyle','-', 'HitTest','off');
+%                     [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
+                    line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelScaling(1,channels),'color',colors(iShanks,:),'LineStyle','-', 'HitTest','off');
                 end
             end
         end
@@ -756,7 +783,6 @@ end
         end
     end
 
-
     function plotAnalog(signal,sr)
         % Plotting analog traces
         if strcmp(UI.settings.fileRead,'bof')
@@ -810,12 +836,12 @@ end
         
         if size(UI.channelScaling,2)>0
             if UI.settings.plotStyle == 1
-                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelScaling(UI.dispSamples,channels), 'HitTest','off','linewidth',1.2,'color',colorLine);
+                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelScaling(1,channels), 'HitTest','off','linewidth',1.2,'color',colorLine);
             elseif UI.settings.plotStyle == 2 && (UI.settings.windowDuration>=UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange)
                 tist = [];
                 timeLine = [];
-                tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelScaling([1:size(ephys.traces_min,1)],channels);
-                tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelScaling([1:size(ephys.traces_min,1)],channels);
+                tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelScaling(1,channels);
+                tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelScaling(1,channels);
                 tist(:,end+1,:) = nan;
                 timeLine1 = repmat([1:size(ephys.traces_min,1)]/size(ephys.traces_min,1)*UI.settings.windowDuration,numel(channels),1)';
                 timeLine(1,:,:) = timeLine1;
@@ -824,7 +850,7 @@ end
                 line(UI.plot_axis1,timeLine(:)',tist(:)','LineStyle','-', 'HitTest','off','linewidth',1.2,'color',colorLine);
             else
                 timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
-                line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelScaling(:,channels),'LineStyle','-', 'HitTest','off','linewidth',1.2,'color',colorLine);
+                line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelScaling(1,channels),'LineStyle','-', 'HitTest','off','linewidth',1.2,'color',colorLine);
             end
         end
     end
@@ -1118,7 +1144,7 @@ end
             filebrowser;
         end
     end
-    
+
     function defineGroupData(~,~)
         if isfield(data,'cell_metrics')
             [data.cell_metrics,UI] = dialog_metrics_groupData(data.cell_metrics,UI);
@@ -1645,7 +1671,8 @@ end
         % Set the window size
         string1 = str2num(UI.elements.lower.windowsSize.String);
         if isnumeric(string1) & string1>0
-            UI.settings.windowDuration = string1;
+            UI.settings.windowDuration = round(string1*1000)/1000;
+            UI.elements.lower.windowsSize.String = num2str(UI.settings.windowDuration);
             initTraces
             UI.forceNewData = true;
             uiresume(UI.fig);
@@ -1699,13 +1726,13 @@ end
     function buttonsElectrodeGroups(src,~)
         % handles the three buttons under the electrode groups table
         switch src.String
-            case 'None'
+            case 'Show none'
                 UI.table.electrodeGroups.Data(:,1) = {false};
                 editElectrodeGroups
-            case 'All'
+            case 'Show all'
                 UI.table.electrodeGroups.Data(:,1) = {true};
                 editElectrodeGroups
-            case 'Edit'
+            otherwise
                 data.session = gui_session(data.session,[],'extracellular');
                 initData(basepath,basename);
                 initTraces;
@@ -1720,7 +1747,7 @@ end
     function buttonsChannelTags(src,~)
         % handles the three buttons under the channel tags table
         switch src.String
-            case 'Add'
+            case 'New tag'
                 if isempty(UI.selectedChannels)
                     selectedChannels = '';
                 else
@@ -1737,18 +1764,22 @@ end
                     updateChannelTags
                     uiresume(UI.fig);
                 end
-            case 'Save'
-                session = data.session;
-                saveStruct(session);
-                MsgLog('Channel tags saved with session metadata',2);
-            case 'Delete'
+            case 'Delete tag'
                 data.session = gui_session(data.session,[],'channelTags');
                 initData(basepath,basename);
                 initTraces;
                 uiresume(UI.fig);
+            otherwise % 'Save'
+                saveSessionMetadata
         end
     end
 
+    function saveSessionMetadata(~,~)
+        session = data.session;
+        saveStruct(session);
+        MsgLog('Session metadata saved',2);
+    end
+    
     function toggleSpikes(~,~)
         % Toggle spikes data
         if ~isfield(data,'spikes') && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
@@ -2126,10 +2157,10 @@ end
             multiplier = [0:nChannelsToPlot-1]/(nChannelsToPlot-1)*(0.9-0.9*offset)+0.05*(1-offset);
         end
         if UI.settings.plotStyle == 4
-            UI.channelScaling = ones(UI.settings.windowDuration*data.session.extracellular.srLfp,1)*multiplier;
+            UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.srLfp),1)*multiplier;
             UI.samplesToDisplay = UI.settings.windowDuration*data.session.extracellular.srLfp;
         else
-            UI.channelScaling = ones(UI.settings.windowDuration*data.session.extracellular.sr,1)*multiplier;
+            UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.sr),1)*multiplier;
             UI.samplesToDisplay = UI.settings.windowDuration*data.session.extracellular.sr;
         end
 
@@ -2290,6 +2321,39 @@ end
         else
             UI.panel.intan.filenameDigital.String = '';
         end
+        
+        setRecentSessions
+    end
+    
+    function setRecentSessions
+        [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
+        CellExplorer_path = fullfile(CellExplorer_path,'calc_CellMetrics');
+        if exist(fullfile(CellExplorer_path,'data_NeuroScope2.mat'))
+            load(fullfile(CellExplorer_path,'data_NeuroScope2.mat'),'recentSessions');
+            sameSession = (ismember(recentSessions.basepaths,basepath) & ismember(recentSessions.basenames,basename));
+            recentSessions.basepaths(sameSession) = [];
+            recentSessions.basenames(sameSession) = [];
+            recentSessions.basepaths{end+1} = basepath;
+            recentSessions.basenames{end+1} = basename;
+        else
+            recentSessions.basepaths{1} = basepath;
+            recentSessions.basenames{1} = basename;
+        end
+        if ~verLessThan('matlab', '9.3')
+            menuLabel = 'Text';
+            menuSelectedFcn = 'MenuSelectedFcn';
+        else
+            menuLabel = 'Label';
+            menuSelectedFcn = 'Callback';
+        end
+        if isfield(UI.menu.file.recentSessions,'ops')
+            delete(UI.menu.file.recentSessions.ops);
+            UI.menu.file.recentSessions.ops = [];
+        end
+        for i = numel(recentSessions.basepaths):-1:1
+            UI.menu.file.recentSessions.ops(i) = uimenu(UI.menu.file.recentSessions.main,menuLabel,fullfile(recentSessions.basepaths{i}, recentSessions.basenames{i}),menuSelectedFcn,@loadFromRecentFiles);
+        end
+        save(fullfile(CellExplorer_path,'data_NeuroScope2.mat'),'recentSessions');
     end
 
     function moveSlider(src,~)
@@ -2437,7 +2501,7 @@ end
     end
 
     function changeColorScale(~,~)
-        UI.settings.greyScaleTraces = UI.panel.general.greyScaleTraces.Value;
+        UI.settings.greyScaleTraces = UI.panel.general.colorScale.Value;
         uiresume(UI.fig);
     end
 
@@ -2587,7 +2651,7 @@ end
                 end
             end
             UI.settings.showEvents = true;
-            UI.panel.events.eventNumber.String = num2str(UI.iEvent);
+            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
             UI.panel.events.showEvents.Value = 1;
             UI.panel.events.eventCount.String = ['nEvents: ' num2str(numel(data.events.(UI.settings.eventData).time))];
             if ~isfield(data.events.(UI.settings.eventData),'flagged')
@@ -2668,11 +2732,11 @@ end
         else
             idx = 1:numel(data.events.(UI.settings.eventData).time);
         end
-        UI.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)>t0+UI.settings.windowDuration/2,1);
-        UI.iEvent = idx(UI.iEvent1);
-        if ~isempty(UI.iEvent)
-            UI.panel.events.eventNumber.String = num2str(UI.iEvent);
-            t0 = data.events.(UI.settings.eventData).time(UI.iEvent)-UI.settings.windowDuration/2;
+        UI.settings.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)>t0+UI.settings.windowDuration/2,1);
+        UI.settings.iEvent = idx(UI.settings.iEvent1);
+        if ~isempty(UI.settings.iEvent)
+            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
             uiresume(UI.fig);
         end
     end
@@ -2682,10 +2746,10 @@ end
         if ~UI.settings.showEvents
             showEvents
         end
-        UI.iEvent = str2num(UI.panel.events.eventNumber.String);
-        if ~isempty(UI.iEvent) && isnumeric(UI.iEvent) && UI.iEvent <= numel(data.events.(UI.settings.eventData).time) && UI.iEvent > 0
-            UI.panel.events.eventNumber.String = num2str(UI.iEvent);
-            t0 = data.events.(UI.settings.eventData).time(UI.iEvent)-UI.settings.windowDuration/2;
+        UI.settings.iEvent = str2num(UI.panel.events.eventNumber.String);
+        if ~isempty(UI.settings.iEvent) && isnumeric(UI.settings.iEvent) && UI.settings.iEvent <= numel(data.events.(UI.settings.eventData).time) && UI.settings.iEvent > 0
+            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
             uiresume(UI.fig);
         end
     end
@@ -2699,11 +2763,11 @@ end
         else
             idx = 1:numel(data.events.(UI.settings.eventData).time);
         end
-        UI.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)<t0+UI.settings.windowDuration/2,1,'last');
-        UI.iEvent = idx(UI.iEvent1);
-        if ~isempty(UI.iEvent)
-            UI.panel.events.eventNumber.String = num2str(UI.iEvent);
-            t0 = data.events.(UI.settings.eventData).time(UI.iEvent)-UI.settings.windowDuration/2;
+        UI.settings.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)<t0+UI.settings.windowDuration/2,1,'last');
+        UI.settings.iEvent = idx(UI.settings.iEvent1);
+        if ~isempty(UI.settings.iEvent)
+            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
             uiresume(UI.fig);
         end
     end
@@ -2713,9 +2777,9 @@ end
         if ~UI.settings.showEvents
             showEvents
         end
-        UI.iEvent = ceil(numel(data.events.(UI.settings.eventData).time)*rand(1));
-        UI.panel.events.eventNumber.String = num2str(UI.iEvent);
-        t0 = data.events.(UI.settings.eventData).time(UI.iEvent)-UI.settings.windowDuration/2;
+        UI.settings.iEvent = ceil(numel(data.events.(UI.settings.eventData).time)*rand(1));
+        UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+        t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
         uiresume(UI.fig);
     end
 
@@ -2725,11 +2789,11 @@ end
             showEvents
         end
         [~,idx] = sort(data.events.(UI.settings.eventData).peakNormedPower,'descend');
-        test = find(idx==UI.iEvent);
+        test = find(idx==UI.settings.iEvent);
         if ~isempty(test) && test < numel(idx) && test >= 1
-            UI.iEvent = idx(test+1);
-            UI.panel.events.eventNumber.String = num2str(UI.iEvent);
-            t0 = data.events.(UI.settings.eventData).time(UI.iEvent)-UI.settings.windowDuration/2;
+            UI.settings.iEvent = idx(test+1);
+            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
             uiresume(UI.fig);
         end
     end
@@ -2740,11 +2804,11 @@ end
             showEvents
         end
         [~,idx] = sort(data.events.(UI.settings.eventData).peakNormedPower,'descend');
-        test = find(idx==UI.iEvent);
+        test = find(idx==UI.settings.iEvent);
         if ~isempty(test) &&  test <= numel(idx) && test > 1
-            UI.iEvent = idx(test-1);
-            UI.panel.events.eventNumber.String = num2str(UI.iEvent);
-            t0 = data.events.(UI.settings.eventData).time(UI.iEvent)-UI.settings.windowDuration/2;
+            UI.settings.iEvent = idx(test-1);
+            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
             uiresume(UI.fig);
         end
     end
@@ -2755,9 +2819,9 @@ end
             showEvents
         end
         if UI.settings.showEvents
-            [~,UI.iEvent] = max(data.events.(UI.settings.eventData).peakNormedPower);
-            UI.panel.events.eventNumber.String = num2str(UI.iEvent);
-            t0 = data.events.(UI.settings.eventData).time(UI.iEvent)-UI.settings.windowDuration/2;
+            [~,UI.settings.iEvent] = max(data.events.(UI.settings.eventData).peakNormedPower);
+            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
             uiresume(UI.fig);
         end
     end
@@ -2905,7 +2969,7 @@ end
             timestamps = getTimestampsFromStates;
             idx =  str2num(UI.panel.states.statesNumber.String);
             if ~isempty(idx) && isnumeric(idx) && idx>0 && idx<=numel(timestamps)
-                t0 = timestamps(idx)-UI.settings.windowDuration/2;
+                t0 = timestamps(idx);
                 uiresume(UI.fig);
             end
         end
@@ -3079,7 +3143,7 @@ end
         if UI.settings.showTrials
             idx = str2num(UI.panel.behavior.trialNumber.String);
             if ~isempty(idx) && isnumeric(idx) && idx>0 && idx<=numel(data.behavior.trials.start)
-                t0 = data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start(idx))-UI.settings.windowDuration/2;
+                t0 = data.behavior.(UI.settings.behaviorData).time(data.behavior.trials.start(idx));
                 uiresume(UI.fig);
             end
         end
@@ -3342,6 +3406,16 @@ end
             uiresume(UI.fig);
             MsgLog(['Session loaded succesful: ' basename],2)
         end
+    end
+    
+    function loadFromRecentFiles(src,~)
+        UI.settings.stream = false;
+        data = [];
+        [basepath,basename,~] = fileparts(src.Text);
+        initData(basepath,basename);
+        initTraces;
+        uiresume(UI.fig);
+        MsgLog(['Session loaded succesful: ' basename],2)
     end
     
     function openWebsite(src,~)
