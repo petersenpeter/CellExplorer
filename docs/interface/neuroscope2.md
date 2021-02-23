@@ -50,11 +50,11 @@ Intan files are treated as time series. To load the files you must specify the m
 A new dataset can be loaded from the File menu. Select any file from the basepath of the session that contains the basename, `basename.*`.
 
 ## Compiled version of NeuroScope2
-NeuroScope2 can be compiled to a NeuroScope2.exe and NeuroScope2.app for Windows and Mac respectively. These can be run without having Matlab installed, or just be used independently on a system with Matlab. If Matlab is installed on your system you only need the app (NeuroScope2.exe or NeuroScope2.app), but if you are using it on a system without Matlab, you have to install the dependencies first.
+NeuroScope2 can be compiled to a NeuroScope2.exe and NeuroScope2.app for Windows and Mac respectively. These can be run without having Matlab installed, or just be used independently on a system with Matlab. If Matlab is installed on your system you only need the app (NeuroScope2.exe or NeuroScope2.app), but if you are using it on a system without Matlab, you have to install the dependencies first (use the MyAppInstaller_web included with the zip files below).
 
 In Windows you can further make the compiled NeuroScope2 the default program to open e.g. .dat files, such that you can double click any .dat file to open it directly in NeuroScope2.
 
-You can download compiled versions of NeuroScope2 for [Windows](https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope2_Windows.zip) and [Mac](https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope2_Mac.zip). These compiled version are not necessary the latest version of NeuroScope2.
+You can download compiled versions of NeuroScope2 for [Windows](https://buzsakilab.com/CellExplorer/NeuroScope2_Windows.zip) and [Mac](https://buzsakilab.com/CellExplorer/NeuroScope2_Mac.zip). These compiled version are not necessarily the latest version of NeuroScope2.
 
 ### Compile NeuroScope2 yourself
 Follow these direction for compiling NeuroScope2 yourself:
@@ -62,4 +62,6 @@ Follow these direction for compiling NeuroScope2 yourself:
 * Select Application Compiler in the shown dialog. 
 * In the Application compiler window, Add NeuroScope2.m as a main compiler file. 
 * Add the GUI Layout Toolbox 2.3.4 in the "Files required by your application" section. The toolbox is included with CellExplorer and located in the toolboxes folder. Matlab will automatically detect other dependencies and add them to the application.
-* Thats it. You can now run the compiled application independently without a local Matlab license.
+* That's it. You can now run the compiled NeuroScope2 application on a system without a Matlab installation or license.
+* If you use these files on a new system, you need to install the distribution file (MyAppInstaller_web) that is generated when compiling NeuroScope2.
+
