@@ -11562,7 +11562,9 @@ end
     end
 
     function filterCellsByText(~,~)
-        if ~isempty(UI.textFilter.String) && ~strcmp(UI.textFilter.String,'Filter')
+        if isnumeric(str2num(UI.textFilter.String)) && ~isempty(UI.textFilter.String) && ~isempty(str2num(UI.textFilter.String))
+                idx_textFilter = str2num(UI.textFilter.String);
+        elseif ~isempty(UI.textFilter.String) && ~strcmp(UI.textFilter.String,'Filter')
             if isempty(freeText) || UI.params.alteredCellMetrics == 1
                 freeText = {''};
                 fieldsMenuCells = fieldnames(cell_metrics);
