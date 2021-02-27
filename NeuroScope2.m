@@ -16,6 +16,7 @@ function NeuroScope2(varargin)
 %    NeuroScope2('session',session)
 %
 % By Peter Petersen
+% Last edited: 26-02-2021
 % % % % % % % % % % % % % % % % % % % % % % % % %
 
 % Global variables
@@ -424,19 +425,19 @@ end
         % % % % % % % % % % % % % % % % % % % % % %
         % 3. PANEL: Other datatypes
         % Events
-        UI.panel.events.navigation = uipanel('Parent',UI.panel.other.main,'title','Events and manipulations');
+        UI.panel.events.navigation = uipanel('Parent',UI.panel.other.main,'title','Events');
         UI.panel.events.files = uicontrol('Parent',UI.panel.events.navigation,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.85 0.98 0.13],'HorizontalAlignment','left','Callback',@setEventData);
-        UI.panel.events.showEvents = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0 0.75 0.5 0.1], 'value', 0,'String','Show','Callback',@showEvents,'KeyPressFcn', @keyPress,'tooltip','Show events');
-        UI.panel.events.processing_steps = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.5 0.75 0.5 0.1], 'value', 0,'String','Processing','Callback',@processing_steps,'KeyPressFcn', @keyPress,'tooltip','Show processing steps');
-        UI.panel.events.showEventsBelowTrace = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0 0.65 0.5 0.1], 'value', 0,'String','Below traces','Callback',@showEventsBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show events below traces');
-        UI.panel.events.showEventsIntervals = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.5 0.65 0.5 0.1], 'value', 0,'String','Intervals','Callback',@showEventsIntervals,'KeyPressFcn', @keyPress,'tooltip','Show events intervals');
+        UI.panel.events.showEvents = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0 0.75 0.5 0.1], 'value', 0,'String','Show events','Callback',@showEvents,'KeyPressFcn', @keyPress,'tooltip','Show events');
+        UI.panel.events.showEventsBelowTrace = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.5 0.75 0.5 0.1], 'value', 0,'String','Below traces','Callback',@showEventsBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show events below traces');
+        UI.panel.events.showEventsIntervals = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0 0.65 0.5 0.1], 'value', 0,'String','Intervals','Callback',@showEventsIntervals,'KeyPressFcn', @keyPress,'tooltip','Show events intervals');
+        UI.panel.events.processing_steps = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.5 0.65 0.5 0.1], 'value', 0,'String','Processing','Callback',@processing_steps,'KeyPressFcn', @keyPress,'tooltip','Show processing steps');
         UI.panel.events.eventNumber = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.485 0.485 0.14],'HorizontalAlignment','center','tooltip','Event number','Callback',@gotoEvents);
-        UI.panel.events.eventCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nEvents', 'Units','normalized', 'Position', [0.505 0.485 0.48 0.14],'HorizontalAlignment','center','Enable','off');
+        UI.panel.events.eventCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nEvents', 'Units','normalized', 'Position', [0.505 0.485 0.485 0.14],'HorizontalAlignment','center','Enable','off');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.33 0.32 0.14],'String','<','Callback',@previousEvent,'KeyPressFcn', @keyPress,'tooltip','Previous event');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0.33 0.32 0.14],'String','?','Callback',@(src,evnt)randomEvent,'KeyPressFcn', @keyPress,'tooltip','Random event');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0.33 0.32 0.14],'String','>','Callback',@nextEvent,'KeyPressFcn', @keyPress,'tooltip','Next event');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.17 0.48 0.14],'String','Flag event','Callback',@flagEvent,'KeyPressFcn', @keyPress,'tooltip','Flag selected event');
-        UI.panel.events.flagCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nFlags', 'Units','normalized', 'Position', [0.51 0.17 0.48 0.14],'HorizontalAlignment','center','Enable','off');
+        UI.panel.events.flagCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nFlags', 'Units','normalized', 'Position', [0.505 0.17 0.485 0.14],'HorizontalAlignment','center','Enable','off');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.14],'String','Manual events','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.14],'String','Save events','Callback',@saveEvent,'KeyPressFcn', @keyPress,'tooltip','Save events');
         
@@ -452,24 +453,24 @@ end
         UI.panel.states.main = uipanel('Parent',UI.panel.other.main,'title','States');
         UI.panel.states.files = uicontrol('Parent',UI.panel.states.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.67 0.98 0.31],'HorizontalAlignment','left','Callback',@setStatesData);
         UI.panel.states.showStates = uicontrol('Parent',UI.panel.states.main,'Style','checkbox','Units','normalized','Position',[0 0.35 1 0.33], 'value', 0,'String','Show states','Callback',@showStates,'KeyPressFcn', @keyPress,'tooltip','Show states data');
-        UI.panel.states.previousStates = uicontrol('Parent',UI.panel.states.main,'Style','pushbutton','Units','normalized','Position',[0.5 0.35 0.235 0.32],'String','<','Callback',@previousStates,'KeyPressFcn', @keyPress,'tooltip','Previous state');
+        UI.panel.states.previousStates = uicontrol('Parent',UI.panel.states.main,'Style','pushbutton','Units','normalized','Position',[0.505 0.35 0.24 0.32],'String','<','Callback',@previousStates,'KeyPressFcn', @keyPress,'tooltip','Previous state');
         UI.panel.states.nextStates = uicontrol('Parent',UI.panel.states.main,'Style','pushbutton','Units','normalized','Position',[0.755 0.35 0.235 0.32],'String','>','Callback',@nextStates,'KeyPressFcn', @keyPress,'tooltip','Next state');
-        UI.panel.states.statesNumber = uicontrol('Parent',UI.panel.states.main,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.01 0.48 0.32],'HorizontalAlignment','center','tooltip','State number','Callback',@gotoState);
-        UI.panel.states.statesCount = uicontrol('Parent',UI.panel.states.main,'Style', 'Edit', 'String', 'nStates', 'Units','normalized', 'Position', [0.51 0.01 0.48 0.32],'HorizontalAlignment','center','Enable','off');
+        UI.panel.states.statesNumber = uicontrol('Parent',UI.panel.states.main,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.01 0.485 0.32],'HorizontalAlignment','center','tooltip','State number','Callback',@gotoState);
+        UI.panel.states.statesCount = uicontrol('Parent',UI.panel.states.main,'Style', 'Edit', 'String', 'nStates', 'Units','normalized', 'Position', [0.505 0.01 0.485 0.32],'HorizontalAlignment','center','Enable','off');
         
         % Behavior
         UI.panel.behavior.main = uipanel('Parent',UI.panel.other.main,'title','Behavior');
         UI.panel.behavior.files = uicontrol('Parent',UI.panel.behavior.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.79 0.98 0.19],'HorizontalAlignment','left','Callback',@setBehaviorData);
-        UI.panel.behavior.showBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.60 1 0.19], 'value', 0,'String','Behavior','Callback',@showBehavior,'KeyPressFcn', @keyPress,'tooltip','Show behavior');
-        UI.panel.behavior.previousBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.49 0.60 0.24 0.19],'String','| <','Callback',@previousBehavior,'KeyPressFcn', @keyPress,'tooltip','Start');
-        UI.panel.behavior.nextBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.75 0.60 0.24 0.19],'String','> |','Callback',@nextBehavior,'KeyPressFcn', @keyPress,'tooltip','End','BusyAction','cancel');
-        UI.panel.behavior.plotBehaviorLinearized = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.41 0.5 0.19], 'value', 0,'String','Linearize','Callback',@plotBehaviorLinearized,'KeyPressFcn', @keyPress,'tooltip','Show linearized behavior');
-        UI.panel.behavior.showBehaviorBelowTrace = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[00.5 0.41 0.5 0.19], 'value', 0,'String','Below traces','Callback',@showBehaviorBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show behavior data below traces');
+        UI.panel.behavior.showBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.60 1 0.19], 'value', 0,'String','Show behavior','Callback',@showBehavior,'KeyPressFcn', @keyPress,'tooltip','Show behavior');
+        UI.panel.behavior.previousBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.505 0.60 0.24 0.19],'String','| <','Callback',@previousBehavior,'KeyPressFcn', @keyPress,'tooltip','Start');
+        UI.panel.behavior.nextBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.755 0.60 0.235 0.19],'String','> |','Callback',@nextBehavior,'KeyPressFcn', @keyPress,'tooltip','End','BusyAction','cancel');
+        UI.panel.behavior.showBehaviorBelowTrace = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.41 0.5 0.19], 'value', 0,'String','Below traces','Callback',@showBehaviorBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show behavior data below traces');
+        UI.panel.behavior.plotBehaviorLinearized = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0.5 0.41 0.5 0.19], 'value', 0,'String','Linearize','Callback',@plotBehaviorLinearized,'KeyPressFcn', @keyPress,'tooltip','Show linearized behavior');
         UI.panel.behavior.showTrials = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.22 1 0.19], 'value', 0,'String','Trials','Callback',@showTrials,'KeyPressFcn', @keyPress,'tooltip','Show trial data');
-        UI.panel.behavior.previousTrial = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.49 0.22 0.24 0.19],'String','<','Callback',@previousTrial,'KeyPressFcn', @keyPress,'tooltip','Previous trial');
-        UI.panel.behavior.nextTrial = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.75 0.22 0.24 0.19],'String','>','Callback',@nextTrial,'KeyPressFcn', @keyPress,'tooltip','Next trial');
-        UI.panel.behavior.trialNumber = uicontrol('Parent',UI.panel.behavior.main,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.01 0.48 0.20],'HorizontalAlignment','center','tooltip','Trial number','Callback',@gotoTrial);
-        UI.panel.behavior.trialCount = uicontrol('Parent',UI.panel.behavior.main,'Style', 'Edit', 'String', 'nTrials', 'Units','normalized', 'Position', [0.51 0.01 0.48 0.20],'HorizontalAlignment','center','Enable','off');
+        UI.panel.behavior.previousTrial = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.505 0.22 0.24 0.19],'String','<','Callback',@previousTrial,'KeyPressFcn', @keyPress,'tooltip','Previous trial');
+        UI.panel.behavior.nextTrial = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.755 0.22 0.235 0.19],'String','>','Callback',@nextTrial,'KeyPressFcn', @keyPress,'tooltip','Next trial');
+        UI.panel.behavior.trialNumber = uicontrol('Parent',UI.panel.behavior.main,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.01 0.485 0.20],'HorizontalAlignment','center','tooltip','Trial number','Callback',@gotoTrial);
+        UI.panel.behavior.trialCount = uicontrol('Parent',UI.panel.behavior.main,'Style', 'Edit', 'String', 'nTrials', 'Units','normalized', 'Position', [0.505 0.01 0.485 0.20],'HorizontalAlignment','center','Enable','off');
         
         % Defining flexible panel heights
         set(UI.panel.other.main, 'Heights', [200 95 95 140],'MinimumHeights',[220 100 100 150]);
@@ -891,8 +892,8 @@ end
         if any(spin_idx)
             spikes_raster.x = data.spikes.spindices(spin_idx,1)-t1;
             spikes_raster.UID = data.spikes.spindices(spin_idx,2);
-            idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
             if UI.settings.spikesBelowTrace
+                idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
                 if UI.settings.useSpikesYData
                     spikes_raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(spin_idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1);
                 else
@@ -905,8 +906,30 @@ end
                     spikes_raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(spin_idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1);
                 end
             else
-                idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
-                spikes_raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
+                % Aligning timestamps and determining trace value for each spike
+                if UI.settings.plotStyle == 1
+                    idx2 = round(spikes_raster.x*UI.nDispSamples/UI.settings.windowDuration);
+                    idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
+                    traces = ephys.traces(UI.dispSamples,:)-UI.channelScaling(1,:);
+                    idx3 = sub2ind(size(traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
+                    spikes_raster.y = traces(idx3);
+                
+                elseif UI.settings.plotStyle == 2 && (UI.settings.windowDuration>=UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange)
+                    idx2 = round(spikes_raster.x*size(ephys.traces_min,1)/UI.settings.windowDuration);
+                    traces = ephys.traces_min-UI.channelScaling(1,:);
+                    idx3 = sub2ind(size(traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
+                    spikes_raster.y = traces(idx3);
+                elseif UI.settings.plotStyle == 5
+                    idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
+                    idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
+                    idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
+                    spikes_raster.y = -UI.channelScaling(idx3);
+                else
+                    idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
+                    idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
+                    idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
+                    spikes_raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
+                end
             end
             if UI.settings.spikesGroupColors == 3
                 % UI.params.sortingMetric = 'putativeCellType';
@@ -1213,9 +1236,15 @@ end
             pos_text = 110;
         end
         
-        [logog_path,~,~] = fileparts(which('CellExplorer.m'));
-        logo = imread(fullfile(logog_path,'logoCellExplorer.png'));
         AboutWindow.dialog = figure('Position', fig_size,'Name','About NeuroScope2', 'MenuBar', 'None','NumberTitle','off','visible','off', 'resize', 'off'); movegui(AboutWindow.dialog,'center'), set(AboutWindow.dialog,'visible','on')
+        if isdeployed
+%             logo = imread(fullfile(MCR_CACHE_ROOT,'logoCellExplorer.png'));
+%             logo = imread(fullfile(MCR_CACHE_ROOT,'logoCellExplorer.png'));
+            logog_path = '';
+        else
+            [logog_path,~,~] = fileparts(which('CellExplorer.m'));
+%             logo = imread(fullfile(logog_path,'logoCellExplorer.png'));
+        end
         [img, ~, alphachannel] = imread(fullfile(logog_path,'logoCellExplorer.png'));
         image(img, 'AlphaData', alphachannel,'ButtonDownFcn',@openWebsite);
         AboutWindow.image = gca;
@@ -1787,6 +1816,9 @@ end
             if ~isfield(data.spikes,'spindices')
                 data.spikes.spindices = generateSpinDices(data.spikes.times);
             end
+            if ~isfield(data.spikes,'maxWaveformCh1')
+                data.spikes.maxWaveformCh1 = data.spikes.maxWaveformCh+1;
+            end
         elseif ~exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
             UI.panel.spikes.showSpikes.Value = 0;
             MsgLog('Spikes does not exist',4);
@@ -2326,8 +2358,12 @@ end
     end
     
     function setRecentSessions
-        [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
-        CellExplorer_path = fullfile(CellExplorer_path,'calc_CellMetrics');
+        if isdeployed
+            CellExplorer_path = pwd;
+        else
+            [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
+            CellExplorer_path = fullfile(CellExplorer_path,'calc_CellMetrics');
+        end
         if exist(fullfile(CellExplorer_path,'data_NeuroScope2.mat'))
             load(fullfile(CellExplorer_path,'data_NeuroScope2.mat'),'recentSessions');
             sameSession = (ismember(recentSessions.basepaths,basepath) & ismember(recentSessions.basenames,basename));
@@ -2350,7 +2386,7 @@ end
             delete(UI.menu.file.recentSessions.ops);
             UI.menu.file.recentSessions.ops = [];
         end
-        for i = numel(recentSessions.basepaths):-1:1
+        for i = min([numel(recentSessions.basepaths),15]):-1:1
             UI.menu.file.recentSessions.ops(i) = uimenu(UI.menu.file.recentSessions.main,menuLabel,fullfile(recentSessions.basepaths{i}, recentSessions.basenames{i}),menuSelectedFcn,@loadFromRecentFiles);
         end
         save(fullfile(CellExplorer_path,'data_NeuroScope2.mat'),'recentSessions');
@@ -3025,7 +3061,7 @@ end
         UI.settings.stream = false;
         % Spike data
         summaryfig = figure('name','Summary figure','Position',[50 50 1200 900],'visible','off');
-        ax1 = axes(summaryfig,'XLim',[0,UI.t_total],'title','Summary figure','YLim',[0,1],'YTickLabel',[],'Color','k','Position',[0.05 0.05 0.9 0.9],'XColor','k','TickDir','out'); hold on, title('Summary figure'), xlabel('Time (s)'), % ce_dragzoom(ax1)
+        ax1 = axes(summaryfig,'XLim',[0,UI.t_total],'title','Summary figure','YLim',[0,1],'YTickLabel',[],'Color','k','Position',[0.05 0.05 0.9 0.9],'XColor','k','TickDir','out'); hold on, ylabel('Summary figure'), xlabel('Time (s)'), % ce_dragzoom(ax1)
         
         if UI.settings.showSpikes
             dataRange_spikes = UI.dataRange.spikes;
@@ -3078,11 +3114,11 @@ end
         if isfield(data.session,'epochs')
             for i = 1:numel(data.session.epochs)
                 if isfield(data.session.epochs{i},'startTime') && isfield(data.session.epochs{i},'stopTime')
-                    p1 = patch([data.session.epochs{i}.startTime data.session.epochs{i}.stopTime  data.session.epochs{i}.stopTime data.session.epochs{i}.startTime],[0.97 0.97 0.999 0.999],'w','EdgeColor','w','HitTest','off');
-                    alpha(p1,0.7);
+                    p1 = patch([data.session.epochs{i}.startTime data.session.epochs{i}.stopTime  data.session.epochs{i}.stopTime data.session.epochs{i}.startTime],[0.992 0.992 0.999 0.999],'w','EdgeColor','w','HitTest','off');
+                    alpha(p1,0.8);
                 end
                 if isfield(data.session.epochs{i},'startTime') && isfield(data.session.epochs{i},'behavioralParadigm')
-                    text(data.session.epochs{i}.startTime,0.999,{data.session.epochs{i}.name;data.session.epochs{i}.behavioralParadigm},'color','k','FontWeight', 'Bold','VerticalAlignment', 'top','Margin',0.1,'interpreter','none') % ,'BackgroundColor',[0 0 0 0.7]
+                    text(data.session.epochs{i}.startTime,1,{data.session.epochs{i}.name;data.session.epochs{i}.behavioralParadigm},'color','k','VerticalAlignment', 'bottom','Margin',1,'interpreter','none') % 
                 end
             end
         end
