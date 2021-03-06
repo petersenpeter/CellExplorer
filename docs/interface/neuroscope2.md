@@ -36,7 +36,7 @@ You can also view KiloSort spike data from a `rez.mat` file.
 The screenshot above shows a 128 channels recording with two ripple events highlighted, the spike raster below is color coded and sorted by putative cell types.
 
 ### Interface elements
-
+The interface consist of side panel and a main plot axis. Below the main axis are further navigational elements. The side-panel has three tabs focused on 1. the raw data, plotting styles and settings, and general metadata, 2. spikes data and 3. other data types, including events, time series, states and behavior.
 
 ## Metadata
 NeuroScope2 uses the [session struct](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) for session level metadata. Please see [this tutorial](https://cellexplorer.org/tutorials/metadata-tutorial/) on how to generate and fill out the metadata. Metadata can be imported from an existing `basename.xml` file (NeuroSuite), from Intan's `info.rhd` file, from KiloSort's `rez.mat` file and from a `basename.sessionInfo.mat` (Buzcode) file.

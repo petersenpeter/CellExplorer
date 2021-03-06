@@ -109,6 +109,7 @@ if ishandle(UI.fig)
     % Closing main figure if open
     close(UI.fig);
 end
+trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracking of usage
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Embedded functions
@@ -152,7 +153,8 @@ end
         UI.colorLine = lines(256);
         UI.freeText = '';
         UI.selectedChannels = [];
-        UI.settings.debug = false;
+        UI.settings.debug = false; % For performance testing at this point
+        UI.settings.extraSpacing = true; % Adds spacing between the electrode groups traces
         
         % Trace processing
         UI.settings.plotEnergy = 0;
@@ -165,7 +167,7 @@ end
 
         % Performance settings
         UI.settings.plotStyleDynamicRange = true; % If true, all samples will be shown below a temporal threshold in range mode (default: 1.2 sec)
-        UI.settings.plotStyleDynamicThreshold = 1.2; % in seconds, threhold for switch between range and raw data presentation
+        UI.settings.plotStyleDynamicThreshold = 1.2; % in seconds, threhold for switch between range and raw data presentation (Matlab plots fast up to a certain number of points)
         UI.settings.plotStyleRangeSamples = 4; % resamples per second of data. Default: 4; Higher valie will show less data points
         
         % Spikes settings
@@ -335,11 +337,15 @@ end
         UI.panel.general.plotStyle = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Downsampled','Range','Raw','LFP','Image'}, 'value', UI.settings.plotStyle, 'Units','normalized', 'Position', [0.3 0.86 0.69 0.12],'Callback',@changePlotStyle,'HorizontalAlignment','left');
         UI.panel.general.colorScale = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 75%','Colors 50%','Colors 25%','Grey-scale','Grey-scale 75%','Grey-scale 50%','Grey-scale 25%'}, 'value', 1, 'Units','normalized', 'Position', [0.3 0.73 0.69 0.12],'Callback',@changeColorScale,'HorizontalAlignment','left');
         UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.62 0.5 0.11],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
+        UI.panel.general.extraSpacing = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Group spacing', 'value', 0, 'Units','normalized', 'Position', [0.5 0.62 0.5 0.11],'Callback',@extraSpacing,'HorizontalAlignment','left');
+        if UI.settings.extraSpacing
+            UI.panel.general.extraSpacing.Value = 1;
+        end
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.52 0.5 0.09],'HorizontalAlignment','center');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.52 0.5 0.09],'HorizontalAlignment','center');
         UI.panel.general.lowerBand  = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '400', 'Units','normalized', 'Position', [0.01 0.39 0.48 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
         UI.panel.general.higherBand = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.5 0.39 0.49 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
-        UI.panel.general.plotEnergy = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Trace smoothing (sec)', 'value', 0, 'Units','normalized', 'Position', [0.01 0.26 0.68 0.12],'Callback',@plotEnergy,'HorizontalAlignment','left');
+        UI.panel.general.plotEnergy = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Absolute smoothing (sec)', 'value', 0, 'Units','normalized', 'Position', [0.01 0.26 0.68 0.12],'Callback',@plotEnergy,'HorizontalAlignment','left');
         UI.panel.general.energyWindow = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.energyWindow), 'Units','normalized', 'Position', [0.7 0.26 0.29 0.12],'Callback',@plotEnergy,'HorizontalAlignment','center','tooltip','Smoothing window (seconds)');
         UI.panel.general.detectEvents = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect events (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.01 0.135 0.68 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','left');
         UI.panel.general.eventThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.eventThreshold), 'Units','normalized', 'Position', [0.7 0.135 0.29 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','center','tooltip',['Event detection threshold (',char(181),'V)']);
@@ -395,15 +401,15 @@ end
         
         % Cell metrics
         UI.panel.cell_metrics.main = uipanel('Parent',UI.panel.spikedata.main,'title','Cell metrics');
-        UI.panel.cell_metrics.useMetrics = uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'checkbox','String','Use metrics', 'value', 0, 'Units','normalized','Position', [0 0.85 0.5 0.15], 'Callback',@toggleMetrics,'HorizontalAlignment','left');
-        UI.panel.cell_metrics.defineGroupData = uicontrol('Parent',UI.panel.cell_metrics.main,'Style','pushbutton','Units','normalized','Position',[0.5 0.82 0.49 0.18],'String','Groups','Callback',@defineGroupData,'KeyPressFcn', @keyPress,'tooltip','Fast backward in time','Enable','off'); 
-        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Grouping', 'Units','normalized','Position', [0 0.74 0.5 0.13],'HorizontalAlignment','left');
-        UI.panel.cell_metrics.groupMetric = uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'popup', 'String', {''}, 'Units','normalized','Position', [0.01 0.6 0.98 0.15],'HorizontalAlignment','left','Enable','off','Callback',@setGroupMetric);
-        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Sorting','Units','normalized','Position', [0 0.47 1 0.13],'HorizontalAlignment','left');
-        UI.panel.cell_metrics.sortingMetric = uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'popup', 'String', {''}, 'Units','normalized','Position', [0.01 0.32 0.98 0.15],'HorizontalAlignment','left','Enable','off','Callback',@setSortingMetric);
+        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Color groups', 'Units','normalized','Position', [0 0.74 0.5 0.13],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Sorting (below traces)','Units','normalized','Position', [0 0.47 1 0.13],'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Filter', 'Units','normalized','Position', [0 0.17 1 0.13], 'HorizontalAlignment','left');
+        UI.panel.cell_metrics.useMetrics = uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'checkbox','String','Use metrics', 'value', 0, 'Units','normalized','Position', [0 0.85 0.5 0.15], 'Callback',@toggleMetrics,'HorizontalAlignment','left');
+        UI.panel.cell_metrics.defineGroupData = uicontrol('Parent',UI.panel.cell_metrics.main,'Style','pushbutton','Units','normalized','Position',[0.5 0.82 0.49 0.18],'String','Group data','Callback',@defineGroupData,'KeyPressFcn', @keyPress,'tooltip','Fast backward in time','Enable','off'); 
+        UI.panel.cell_metrics.groupMetric = uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'popup', 'String', {''}, 'Units','normalized','Position', [0.01 0.6 0.98 0.15],'HorizontalAlignment','left','Enable','off','Callback',@setGroupMetric);
+        UI.panel.cell_metrics.sortingMetric = uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'popup', 'String', {''}, 'Units','normalized','Position', [0.01 0.32 0.98 0.15],'HorizontalAlignment','left','Enable','off','Callback',@setSortingMetric);
         UI.panel.cell_metrics.textFilter = uicontrol('Style','edit', 'Units','normalized','Position',[0.01 0.01 0.98 0.17],'String','','HorizontalAlignment','left','Parent',UI.panel.cell_metrics.main,'Callback',@filterCellsByText,'Enable','off','tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with AND // OR operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nFilter by parent brain regions as well, fx: ".brainRegion HIP"\nMake sure to include  spaces between fields and operators' ));
-        
+
         UI.panel.cellTypes.main = uipanel('Parent',UI.panel.spikedata.main,'title','Putative cell types');
         UI.listbox.cellTypes = uicontrol('Parent',UI.panel.cellTypes.main,'Style','listbox', 'Units','normalized','Position',[0 0 1 1],'String',{''},'Enable','off','max',20,'min',0,'Value',[],'Callback',@setCellTypeSelectSubset,'KeyPressFcn', @keyPress,'tooltip','Filter putative cell types. Select to filter');
         
@@ -674,7 +680,7 @@ end
             for iShanks = UI.settings.electrodeGroupsToPlot
                 channels = UI.channels{iShanks};
                 [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
-                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelScaling(UI.dispSamples,channels),'color',colors(iShanks,:), 'HitTest','off');
+                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelScaling(1,channels),'color',colors(iShanks,:), 'HitTest','off');
             end
         elseif UI.settings.plotStyle == 2 && (UI.settings.windowDuration>=UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange) % Range values per sample (ala Neuroscope1)
             % Range data (low sampled values with min and max per interval)
@@ -688,8 +694,8 @@ end
                 timeLine = [];
                 channels = UI.channels{iShanks};
                 [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
-                tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelScaling([1:size(ephys.traces_min,1)],channels);
-                tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelScaling([1:size(ephys.traces_min,1)],channels);
+                tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelScaling(1,channels);
+                tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelScaling(1,channels);
                 tist(:,end+1,:) = nan;
                 timeLine1 = repmat([1:size(ephys.traces_min,1)]/size(ephys.traces_min,1)*UI.settings.windowDuration,numel(channels),1)';
                 timeLine(1,:,:) = timeLine1;
@@ -798,7 +804,7 @@ end
             line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,traces_analog(UI.dispSamples,:)./2^16, 'HitTest','off','Marker','none','LineStyle','-','linewidth',1.5);
         end
         for i = 1:data.session.timeSeries.(signal).nChannels
-            text(UI.settings.windowDuration-1/400,0.005+(UI.settings.textOffset+i-1)*0.012+UI.dataRange.intan(1),UI.settings.traceLabels.(signal){i},'color',UI.colorLine(i,:),'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','right')
+            text(UI.settings.windowDuration*(1-1/400),0.005+(UI.settings.textOffset+i-1)*0.012+UI.dataRange.intan(1),UI.settings.traceLabels.(signal){i},'color',UI.colorLine(i,:),'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','right')
         end
         UI.settings.textOffset = UI.settings.textOffset + data.session.timeSeries.(signal).nChannels;
     end
@@ -821,7 +827,7 @@ end
             line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,0.98*traces_digital2(UI.dispSamples,:)+0.005, 'HitTest','off','Marker','none','LineStyle','-');
         end
         for i = 1:data.session.timeSeries.(signal).nChannels
-            text(UI.settings.windowDuration-1/400,0.005+(UI.settings.textOffset+i-1)*0.012+UI.dataRange.intan(1),UI.settings.traceLabels.(signal){i},'color',UI.colorLine(i,:),'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','right')
+            text(UI.settings.windowDuration*(1-1/400),0.005+(UI.settings.textOffset+i-1)*0.012+UI.dataRange.intan(1),UI.settings.traceLabels.(signal){i},'color',UI.colorLine(i,:),'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','right')
         end
         UI.settings.textOffset = UI.settings.textOffset + data.session.timeSeries.(signal).nChannels;
     end
@@ -2185,9 +2191,17 @@ end
         UI.channelMap(channels_1(find(idx))) = channels(idx2(idx2~=0));
         if nChannelsToPlot == 1
             multiplier = 0.5*ones(1,UI.channelOrder);
+        elseif UI.settings.extraSpacing && ~isempty(UI.settings.electrodeGroupsToPlot) && UI.settings.plotStyle < 5
+            nChannelsInGroups = cellfun(@numel,UI.channels(UI.settings.electrodeGroupsToPlot));
+            channelList = [];
+            for i = 1:numel(UI.settings.electrodeGroupsToPlot)
+                channelList = [channelList,(0:nChannelsInGroups(i)-1)+numel(channelList)+i*1.5];
+            end
+            multiplier = (channelList-1)/(channelList(end)-1)*(0.9-0.9*offset)+0.05*(1-offset);
         else
             multiplier = [0:nChannelsToPlot-1]/(nChannelsToPlot-1)*(0.9-0.9*offset)+0.05*(1-offset);
         end
+
         if UI.settings.plotStyle == 4
             UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.srLfp),1)*multiplier;
             UI.samplesToDisplay = UI.settings.windowDuration*data.session.extracellular.srLfp;
@@ -2446,7 +2460,7 @@ end
                 if UI.settings.normalClick
                     channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
                     x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration)';
-                    y1 = (ephys.traces(:,channels)-UI.channelScaling(:,channels));
+                    y1 = (ephys.traces(:,channels)-UI.channelScaling(1,channels));
                     [~,In] = min(hypot((x1(:)-um_axes(1,1)),(y1(:)-um_axes(1,2))));
                     In = unique(floor(In/size(x1,1)))+1;
                     In = channels(In);
@@ -2550,6 +2564,16 @@ end
         uiresume(UI.fig);
     end
 
+    function extraSpacing(~,~)
+        if UI.panel.general.extraSpacing.Value == 1
+            UI.settings.extraSpacing = true;
+        else
+            UI.settings.extraSpacing = false;
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
+    
     function changeTraceFilter(src,~)
         if strcmp(src.Style,'edit')
             UI.panel.general.filterToggle.Value = 1;

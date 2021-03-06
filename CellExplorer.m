@@ -135,7 +135,7 @@ if isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
 
-CellExplorerVersion = 1.68;
+CellExplorerVersion = 1.69;
 
 UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none');
 hManager = uigetmodemanager(UI.fig);
@@ -830,6 +830,7 @@ if ishandle(UI.fig)
     % Closing CellExplorer figure if still open
     close(UI.fig);
 end
+trackGoogleAnalytics('CellExplorer',CellExplorerVersion,'metrics',cell_metrics); % Anonymous tracking of usage
 cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 
