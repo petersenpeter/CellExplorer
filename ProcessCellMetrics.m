@@ -426,7 +426,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         end
         cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
         if isfield(spikes{spkExclu},'peakVoltage_expFitLengthConstant')
-            cell_metrics.peakVoltage_expFitLengthConstant = spikes{spkExclu}.peakVoltage_expFitLengthConstant;
+            cell_metrics.peakVoltage_expFitLengthConstant = spikes{spkExclu}.peakVoltage_expFitLengthConstant(:)';
         end
         for j = 1:numel(field2copy)
             if isfield(spikes{spkExclu},field2copy{j})
@@ -475,13 +475,15 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                     disp('  Using default probesLayout: poly2')
                     session.analysisTags.probesLayout = 'poly2';
                 end
-                disp('  Creating channelmap')
-                chanMap = createChannelMap(session);
+                disp('  Generating channelmap')
+                chanMap = generateChannelMap(session);
             end
             chanCoords.x = chanMap.xcoords(:);
             chanCoords.y = chanMap.ycoords(:);
             saveStruct(chanCoords,'channelInfo','session',session);
         end
+        chanCoords.x = chanCoords.x(:);
+        chanCoords.y = chanCoords.y(:);
         cell_metrics.general.chanCoords = chanCoords;
         % Fit exponential
         fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});

@@ -19,23 +19,23 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters,acti
 
 % By Peter Petersen 
 % petersen.peter@gmail.com
-% Last edited: 08-07-2020
+% Last edited: 08-03-2021
 
 % Lists
 sortingMethodList = {'KiloSort', 'KiloSort2','SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik','MountainSort','IronClust','MClust','Wave_clus'}; % Spike sorting methods
 sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus'}; % Spike sorting formats
 inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
 sessionTypesList = {'Chronic', 'Acute'}; % session types
-
+layout = {};
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
 
 % Parameters in cell metrics pipeline
-UI.list.params = {'forceReload','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','getWaveformsFromDat'};
+UI.list.params = {'forceReload','forceReloadSpikes','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','getWaveformsFromDat'};
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Database initialization
-if exist('db_load_settings') == 2
+if exist('db_load_settings','file') == 2
     db_settings = db_load_settings;
     if ~strcmp(db_settings.credentials.username,'user')
         enableDatabase = 1;
@@ -152,7 +152,7 @@ statusExit = 0;
 % % % % % % % % % % % % % % % % % % % %
 
 % Creating figure for the GUI
-UI.fig = figure('units','pixels','position',[50,50,780,580],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','visible','off');
+UI.fig = figure('units','pixels','position',[50,50,780,550],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','visible','off');
 movegui(UI.fig,'center')
 
 %% % % % % % % % % % % % % % % % % % % % % %
@@ -185,6 +185,8 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn
 UI.menu.extracellular.topMenu = uimenu(UI.fig,menuLabel,'Extracellular');
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Verify electrode group(s)',menuSelectedFcn,@verifyElectrodeGroup);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Sync electrode groups',menuSelectedFcn,@(~,~)syncChannelGroups);
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate channel map',menuSelectedFcn,@(~,~)generateChannelMap,'Separator','on');
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate common coordinates',menuSelectedFcn,@(~,~)generateCommonCoordinates(session));
 
 % CellExplorer
 UI.menu.CellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
@@ -196,7 +198,9 @@ if enableDatabase
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Upload metadata to DB',menuSelectedFcn,@(~,~)buttonUploadToDB,'Accelerator','U');
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Download metadata from DB',menuSelectedFcn,@(~,~)buttonUpdateFromDB,'Accelerator','D');
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Edit credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
-uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Edit repository paths',menuSelectedFcn,@editDBrepositories);
+    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Edit repository paths',menuSelectedFcn,@editDBrepositories);
+    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Update metadata model',menuSelectedFcn,@(~,~)db_load_metadata_model,'Separator','on');
+    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Get animal metadata',menuSelectedFcn,@(~,~)getAnimalMetadata);
 end
 
 % Help
@@ -215,8 +219,8 @@ set(UI.grid_panels, 'Widths', [150 -1],'MinimumWidths',[100 1]); % set grid pane
 % UI.panel.title = uix.BoxPanel('Parent',UI.panel.center,'title','');
 UI.panel.title = uicontrol('Parent',UI.panel.center,'Style', 'text', 'String', '','ForegroundColor','w','HorizontalAlignment','center', 'fontweight', 'bold','Units','normalized','BackgroundColor',[0. 0.3 0.7],'FontSize',11);
 UI.panel.main = uipanel('Parent',UI.panel.center); % Main plot panel
-UI.panel.bottom  = uix.HBox('Parent',UI.panel.center, 'Padding', 3); % Lower info panel
-set(UI.panel.center, 'Heights', [20 -1 30]); % set center panel size
+% UI.panel.bottom  = uix.HBox('Parent',UI.panel.center, 'Padding', 3); % Lower info panel
+set(UI.panel.center, 'Heights', [20 -1]); % set center panel size
 
 tabsList = {'general','epochs','animal','extracellular','spikeSorting','brainRegions','channelTags','inputs','behaviors'};
 tabsList2 = {'General','Epochs','Animal subject','Extracellular','Spike sorting','Brain regions','Tags','Inputs & time series','Tracking'};
@@ -225,19 +229,19 @@ if exist('parameters','var') && ~isempty(parameters)
     tabsList2 = ['CellExplorer',tabsList2];
 end
 UI.panel.title2 = uicontrol('Parent',UI.panel.left,'Style', 'text', 'String', 'Groups','ForegroundColor','w','HorizontalAlignment','center', 'fontweight', 'bold','Units','normalized','BackgroundColor',[0. 0.3 0.7],'FontSize',11);
-for i = 1:numel(tabsList)
-    UI.buttons.(tabsList{i}) = uicontrol('Parent',UI.panel.left,'Style','togglebutton','Units','normalized','String',tabsList2{i},'Callback',@changeTab,'KeyPressFcn', @keyPress,'tooltip','Fast backward in time');
-    UI.tabs.(tabsList{i}) = uipanel('Parent',UI.panel.main,'Visible','off','Units','normalized','Position',[0 0 600 600],'BorderType','none');
+for iTabs = 1:numel(tabsList)
+    UI.buttons.(tabsList{iTabs}) = uicontrol('Parent',UI.panel.left,'Style','togglebutton','Units','normalized','String',tabsList2{iTabs},'Callback',@changeTab,'KeyPressFcn', @keyPress,'tooltip','Fast backward in time');
+    UI.tabs.(tabsList{iTabs}) = uipanel('Parent',UI.panel.main,'Visible','off','Units','normalized','Position',[0 0 600 600],'BorderType','none');
 end
 uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.left);
 UI.button.ok = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[10, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI whlie keeping changes. \nDoes not save to file'));
 UI.button.save = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized','Interruptible','off','tooltip',sprintf('Save to session.mat file'));
 UI.button.cancel = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[230, 5, 100, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI without keeping any changes'));
 
-set(UI.panel.left, 'Heights', [20,32*ones(size(tabsList)),-1,30,30,30],'MinimumHeights',[20,32*ones(size(tabsList)),5,30,30,30]);
+set(UI.panel.left, 'Heights', [20,32*ones(size(tabsList)),-1,30,30,30],'MinimumHeights',[20,32*ones(size(tabsList)),5,30,30,30],'Spacing', 3);
 
 % Buttons
-UI.popupmenu.log = uicontrol('Parent',UI.panel.bottom,'Style','popupmenu','String',{'Message log'},'HorizontalAlignment','left','FontSize',10,'Position',[340, 10, 270, 20],'Units','normalized');
+% UI.popupmenu.log = uicontrol('Parent',UI.panel.bottom,'Style','popupmenu','String',{'Message log'},'HorizontalAlignment','left','FontSize',10,'Position',[340, 10, 270, 20],'Units','normalized');
 % set(UI.panel.bottom, 'Widths', [-1],'MinimumWidths',[60]);
 
 % % % % % % % % % % % % % % % % % % % %
@@ -319,19 +323,20 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
 % Epochs
 tableData = {false,'','',''};
 % uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 90, 619, 435],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 10, 110, 30],'String','Add epoch','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[10, 50, 110, 30],'String','Edit epoch','Callback',@(src,evnt)editEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[130, 10 110, 30],'String','Delete epoch(s)','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[130, 50, 110, 30],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
+UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 44, 619, 475],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit','Callback',@(src,evnt)editEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[235, 5 110, 32],'String','Delete','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[350, 5, 110, 32],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
 % UI.button.importEpochsIntervalsFromMergePoints = uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 50, 130, 30],'String','Import merge points','Callback',@importEpochsIntervalsFromMergePoints,'Units','normalized');
 % uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[360, 10 130, 30],'String','Import children','Callback',@importFromFiles,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 50, 110, 30],'String','Move up','Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 10 110, 30],'String','Move down','Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 5, 50, 32],'String',char(8593),'Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[555, 5 50, 32],'String',char(8595),'Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
 
 
 % % % % % % % % % % % % % % % % % % % % %
 % Animal
+
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Name', 'Position', [10, 500, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.name = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 475, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Name of animal subject'));
 
@@ -347,29 +352,67 @@ UI.edit.strain = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', ''
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Genetic line', 'Position', [10, 400, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.geneticLine = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Genetic line of animal subject (e.g. Wild type)'));
 
+
 UI.animalMetadata = uitabgroup('units','pixels','Position',[0, 0, 619, 365],'Parent',UI.tabs.animal,'Units','normalized');
 
-UI.tabs.probes = uitab(UI.animalMetadata,'Title','Probes');
-UI.list.tableData = {false,'','','','','','',''};
-UI.table.electrodes = uitable(UI.tabs.probes,'Data',UI.list.tableData,'Position',[1, 1, 619, 364],'ColumnWidth',{20 240 100 70 60 80 60 60 80},'columnname',{'','Probes','Company','nChannels','nShanks','Brain region','AP (mm)','ML (mm)','Depth (mm)'},'RowName',[],'ColumnEditable',[true false false false false false false false],'Units','normalized');
+% Implanted probes tab
+layout.probeImplants.name = 'probeImplants';
+layout.probeImplants.title = 'Probe implants';
+layout.probeImplants.field_names = {'probe','brainRegion','ap','ml','depth','ap_angle','ml_angle','rotation'};
+layout.probeImplants.field_title = {'Probe','Brain region','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle','Rotation'};
+layout.probeImplants.field_required = [true true false false false false false false];
+layout.probeImplants.field_type = {'probes','brainRegions','text','text','text','text','text','text'};
+layout.probeImplants.field_style = {'popup','popup','edit','edit','edit','edit','edit','edit'};
+layout.probeImplants.field_relationship = {'probes','brainRegions','text','text','text','text','text','text'};
+layout.probeImplants.column_widths = {290 80 60 60 80 60 60 60};
+layout.probeImplants.column_format = {'char','char','numeric','numeric','numeric','numeric','numeric','numeric'};
+layout.probeImplants.column_editable = [false false true true true true true true];
+layout.probeImplants.probes.display = {'supplier','descriptiveName'};
+generateTabdata(layout.probeImplants)
 
-UI.tabs.surgeries = uitab(UI.animalMetadata,'Title','Surgeries');
-surgeries.field_names = {'date','start_time','end_time','weight','Type of Surgery','room','persons_involved','anesthesia','analgesics','antibiotics','complications','notes'};
-surgeries.field_title = {'Date','Start time','End time','Weight (g)','Type of Surgery','Room','Persons involved','Anesthesia','Analgesics','Antibiotics','Complications','Notes'};
-surgeries.field_widths = {20 80 80 70 60 100 60 100 80 80 80 90 80};
-UI.table.surgeries = uitable(UI.tabs.surgeries,'Data',UI.list.tableData,'Position',[1, 1, 619, 364],'ColumnWidth',surgeries.field_widths,'columnname',{'',surgeries.field_title{:}},'RowName',[],'ColumnEditable',[true false(1,numel(surgeries.field_title))],'Units','normalized');
+% Optic fibers tab
+layout.opticFiberImplants.name = 'opticFiberImplants';
+layout.opticFiberImplants.title = 'Optic fibers implants';
+layout.opticFiberImplants.field_names = {'opticFiber','brainRegion','ap','ml','depth','ap_angle','ml_angle','notes'};
+layout.opticFiberImplants.field_title = {'Optic fiber','Target region','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle','Notes'};
+layout.opticFiberImplants.field_required = [true false false false false false false false];
+layout.opticFiberImplants.field_type = {'opticfibers','brainRegions','text','text','text','text','text','text'};
+layout.opticFiberImplants.field_style = {'popup','popup','edit','edit','edit','edit','edit','edit'};
+layout.opticFiberImplants.field_relationship = {'opticfibers','brainRegions','text','text','text','text','text','text'};
+layout.opticFiberImplants.column_format = {'char','char','numeric','numeric','numeric','numeric','numeric','char'};
+layout.opticFiberImplants.column_editable = [false false true true true true true true];
+layout.opticFiberImplants.column_widths = {180 80 70 70 80 70 70 70};
+layout.opticFiberImplants.opticfibers.display = {'supplier','opticFiber'};
+layout.opticFiberImplants.opticfibers.save = {'supplier','opticFiber'};
+generateTabdata(layout.opticFiberImplants)
 
-UI.tabs.virusinjections = uitab(UI.animalMetadata,'Title','Virus injections');
-virusinjections.field_names = {'virus','targetRegion','injectionSchema','notes','injectionVolume','injectionRate','apCoordinates','mlCoordinates','depth','apAngle','mlAngle'};
-virusinjections.field_title = {'Virus','Target region','Injection schema','Notes','Injection volume (nL)','Injection rate (nL/s)','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle'};
-virusinjections.field_widths = {20 80 80 100 60 120 120 60 60 80 60 60};
-UI.table.surgeries = uitable(UI.tabs.virusinjections,'Data',UI.list.tableData,'Position',[1, 1, 619, 364],'ColumnWidth',virusinjections.field_widths,'columnname',{'',virusinjections.field_title{:}},'RowName',[],'ColumnEditable',[true false(1,numel(virusinjections.field_title))],'Units','normalized');
+% Surgeries tab
+layout.surgeries.name = 'surgeries';
+layout.surgeries.title = 'Surgeries';
+layout.surgeries.field_names = {'date','start_time','end_time','weight','type_of_surgery','room','persons_involved','anesthesia','analgesics','antibiotics','complications','notes'};
+layout.surgeries.field_title = {'Date','Start time','End time','Weight (g)','Type of Surgery','Room','Persons involved','Anesthesia','Analgesics','Antibiotics','Complications','Notes'};
+layout.surgeries.field_required = [true true true false false false false false false false false false];
+layout.surgeries.field_type = {'text','text','text','text',{'Chronic','Acute'},'text','text','text','text','text','text','text'};
+layout.surgeries.field_style = {'edit','edit','edit','edit','popup','edit','edit','edit','edit','edit','edit','edit'};
+layout.surgeries.field_relationship = {'text','text','text','text','text','text','text','text','text','text','text','text'};
+layout.surgeries.column_format = {'char','char','char','numeric',{'Chronic','Acute'},'char','char','char','char','char','char','char'};
+layout.surgeries.column_editable = [true true true true true true true true true true true true];
+layout.surgeries.column_widths = {80 80 70 60 100 60 100 80 80 80 90 80};
+generateTabdata(layout.surgeries)
 
-UI.tabs.opticfibers = uitab(UI.animalMetadata,'Title','Optic fibers');
-opticfibers.field_names = {'opticFiber','targetRegion','apCoordinates','mlCoordinates','depth','apAngle','mlAngle','notes'};
-opticfibers.field_title = {'Optic fiber','Target region','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle','Notes'};
-opticfibers.field_widths = {20 80 80 70 70 80 80 80 100};
-UI.table.surgeries = uitable(UI.tabs.opticfibers,'Data',UI.list.tableData,'Position',[1, 1, 619, 364],'ColumnWidth',opticfibers.field_widths,'columnname',{'',opticfibers.field_title{:}},'RowName',[],'ColumnEditable',[true false(1,numel(opticfibers.field_title))],'Units','normalized');
+% Virus injections tab
+layout.virusInjections.name = 'virusInjections';
+layout.virusInjections.title = 'Virus injections';
+layout.virusInjections.field_names = {'virus','brainRegion','injection_schema','notes','injection_volume','injection_rate','ap','ml','depth','ap_angle','ml_angle'};
+layout.virusInjections.field_title = {'Virus','Target region','Injection schema','Notes','Injection volume (nL)','Injection rate (nL/s)','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle'};
+layout.virusInjections.field_required = [true true false false false false false false false false false];
+layout.virusInjections.field_type = {'text','brainRegions',{'Unknown','Gradual','Pulses'},'text','text','text','text','text','text','text','text'};
+layout.virusInjections.field_style = {'edit','popup','popup','edit','edit','edit','edit','edit','edit','edit','edit'};
+layout.virusInjections.field_relationship = {'text','brainRegions','text','text','text','text','text','text','text','text','text'};
+layout.virusInjections.column_format = {'char','char',{'Unknown','Gradual','Pulses'},'char','numeric','numeric','numeric','numeric','numeric','numeric','numeric'};
+layout.virusInjections.column_editable = [true false true true true true true true true true true];
+layout.virusInjections.column_widths = {80 80 100 60 120 120 60 60 80 60 60};
+generateTabdata(layout.virusInjections)
 
 % UI.tabs.injections = uitab(UI.animalMetadata,'Title','Injections');
 
@@ -404,92 +447,87 @@ UI.edit.srLfp = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'Strin
 
 UI.channelGroups = uitabgroup('units','pixels','Position',[0, 0, 619, 365],'Parent',UI.tabs.extracellular,'Units','normalized');
 
-% Electrode groups
-UI.tabs.electrodeGroups = uitab(UI.channelGroups,'Title','Electrode groups');
-UI.list.tableData = {false,'','',''};
-UI.table.electrodeGroups = uitable(UI.tabs.electrodeGroups,'Data',UI.list.tableData,'Position',[0, 50, 620, 315],'ColumnWidth',{20 50 400 115},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[10, 10, 110, 32],'String','Add group','Callback',@(src,evnt)addElectrodeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[130, 10, 110, 32],'String','Edit group','Callback',@(src,evnt)editElectrodeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.electrodeGroups,'Style','pushbutton','Position',[250, 10, 130, 32],'String','Delete group(s)','Callback',@(src,evnt)deleteElectrodeGroup,'Units','normalized');
-
-% Spike groups
-UI.tabs.spikeGroups = uitab(UI.channelGroups,'Title','Spike groups');
-UI.list.tableData = {false,'','',''};
-UI.table.spikeGroups = uitable(UI.tabs.spikeGroups,'Data',UI.list.tableData,'Position',[1, 50, 619, 315],'ColumnWidth',{20 50 400 115},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[10, 10, 110, 32],'String','Add group','Callback',@(src,evnt)addSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[130, 10, 110, 32],'String','Edit group','Callback',@(src,evnt)editSpikeGroup,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeGroups,'Style','pushbutton','Position',[250, 10, 130, 32],'String','Delete group(s)','Callback',@(src,evnt)deleteSpikeGroup,'Units','normalized');
-
-% Channel layout
-% TODO
+% Electrode and spike groups
+groups = {'electrodeGroups','spikeGroups'};
+titles = {'Electrode groups','Spike groups'};
+for iGroups = 1:2
+    UI.tabs.(groups{iGroups}) = uitab(UI.channelGroups,'Title',titles{iGroups});
+    UI.list.tableData = {false,'','',''};
+    UI.table.(groups{iGroups}) = uitable(UI.tabs.(groups{iGroups}),'Data',UI.list.tableData,'Position',[1, 45, 619, 320],'Tag','electrodeGroups','ColumnWidth',{20 45 400 120},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false true true],'Units','normalized','CellEditCallback',@editElectrodeTableData);
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[5, 5, 110, 32],'Tag',groups{iGroups},'String','Add','Callback',@addElectrodeGroup,'Units','normalized');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[120, 5, 110, 32],'Tag',groups{iGroups},'String','Edit','Callback',@addElectrodeGroup,'Units','normalized');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[235, 5, 130, 32],'Tag',groups{iGroups},'String','Delete','Callback',@deleteElectrodeGroup,'Units','normalized');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[510, 5, 50, 32],'Tag',groups{iGroups},'String',char(8593),'Callback',@moveElectrodes,'Units','normalized');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[565, 5, 50, 32],'Tag',groups{iGroups},'String',char(8595),'Callback',@moveElectrodes,'Units','normalized');
+end
 
 % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
 
 tableData = {false,'','',''};
-UI.table.spikeSorting = uitable(UI.tabs.spikeSorting,'Data',tableData,'Position',[1, 50, 619, 475],'ColumnWidth',{20 58 58 160 75 80 50 50 60},'columnname',{'','Method','Format','Relative path','Channels','Spike sorter','Notes','Metrics','Currated'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[10, 10, 110, 30],'String','Add sorting','Callback',@(src,evnt)addSpikeSorting,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[130, 10, 110, 30],'String','Edit sorting','Callback',@(src,evnt)editSpikeSorting,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[250, 10, 130, 30],'String','Delete sorting(s)','Callback',@(src,evnt)deleteSpikeSorting,'Units','normalized');
+UI.table.spikeSorting = uitable(UI.tabs.spikeSorting,'Data',tableData,'Position',[1, 45, 619, 475],'ColumnWidth',{20 58 58 160 75 80 50 50 60},'columnname',{'','Method','Format','Relative path','Channels','Spike sorter','Notes','Metrics','Currated'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add sorting','Callback',@(src,evnt)addSpikeSorting,'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit sorting','Callback',@(src,evnt)editSpikeSorting,'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[235, 5, 130, 32],'String','Delete sorting(s)','Callback',@(src,evnt)deleteSpikeSorting,'Units','normalized');
 % uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[330, 10, 160, 30],'String','Import sorting?','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Brain regions
 
 UI.list.tableData = {false,'','','',''};
-UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 50, 619, 475],'ColumnWidth',{20 70 280 95 147},'columnname',{'','Region','Channels','Electrode groups','Notes'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[10, 10, 110, 30],'String','Add region','Callback',@(src,evnt)addRegion,'Units','normalized');
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[130, 10, 110, 30],'String','Edit region','Callback',@(src,evnt)editRegion,'Units','normalized');
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[250, 10, 120, 30],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion,'Units','normalized');
+UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 45, 619, 475],'ColumnWidth',{20 70 280 95 147},'columnname',{'','Region','Channels','Electrode groups','Notes'},'RowName',[],'ColumnEditable',[true false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add region','Callback',@(src,evnt)addRegion,'Units','normalized');
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit region','Callback',@(src,evnt)editRegion,'Units','normalized');
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[235, 5, 120, 32],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Channel tags
 
 tableData = {false,'','',''};
-UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 619, 225],'ColumnWidth',{20 130 315 147},'columnname',{'','Channel tag','Channels','Electrode groups'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 260, 110, 30],'String','Add tag','Callback',@(src,evnt)addTag,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[130, 260, 110, 30],'String','Edit tag','Callback',@(src,evnt)editTag,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[250, 260, 110, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized');
+UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 619, 220],'ColumnWidth',{20 130 315 147},'columnname',{'','Channel tag','Channels','Electrode groups'},'RowName',[],'ColumnEditable',[true false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add tag','Callback',@(src,evnt)addTag,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit tag','Callback',@(src,evnt)editTag,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 260, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized');
 % uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[470, 260, 140, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Analysis tags
 
 tableData = {false,'','',''};
-UI.table.analysis = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 50, 619, 200],'ColumnWidth',{20 250 342},'columnname',{'','Analysis tag','Value'},'RowName',[],'ColumnEditable',[true false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[10, 10, 110, 30],'String','Add tag','Callback',@(src,evnt)addAnalysis,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[130, 10, 110, 30],'String','Edit tag','Callback',@(src,evnt)editAnalysis,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[250, 10, 110, 30],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized');
+UI.table.analysis = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 45, 619, 210],'ColumnWidth',{20 250 342},'columnname',{'','Analysis tag','Value'},'RowName',[],'ColumnEditable',[true false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tag','Callback',@(src,evnt)addAnalysis,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tag','Callback',@(src,evnt)editAnalysis,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized');
 % uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[340, 10, 110, 30],'String','Duplicate tag','Callback',@(src,evnt)duplicateAnalysis,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Inputs
 
 tableData = {false,'','',''};
-UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 619, 225],'ColumnWidth',{20 120 75 70 140 187},'columnname',{'','Input tag','Channels','Type','Equipment','Description'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 260, 110, 30],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[130, 260, 110, 30],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[250, 260, 110, 30],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
+UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 619, 220],'ColumnWidth',{20 120 75 70 140 187},'columnname',{'','Input tag','Channels','Type','Equipment','Description'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 260, 110, 32],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Time series
 
 tableData = {false,'','',''};
-UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 50, 619, 200],'ColumnWidth',{20 90 105 60 70 40 60 90 78},'columnname',{'','Time series tag','File name', 'Precision', 'nChannels', 'sr', 'nSamples', 'least significant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[10, 10, 110, 30],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[130, 10, 110, 30],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[250, 10, 120, 30],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
+UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 45, 619, 210],'ColumnWidth',{20 90 105 60 70 40 60 90 78},'columnname',{'','Time series tag','File name', 'Precision', 'nChannels', 'sr', 'nSamples', 'least significant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false false false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 5, 120, 32],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
 % UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[500, 10, 110, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % BehavioralTracking
 
 tableData = {false,'','',''};
-UI.table.behaviors = uitable(UI.tabs.behaviors,'Data',tableData,'Position',[1, 50, 619, 475],'ColumnWidth',{20 180 100 50 80 75 107},'columnname',{'','Filenames','Equipment','Epoch','Type','Frame rate','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[10, 10, 110, 30],'String','Add tracking','Callback',@(src,evnt)addBehavior,'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[130, 10, 110, 30],'String','Edit tracking','Callback',@(src,evnt)editBehavior,'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[250, 10, 110, 30],'String','Delete tracking(s)','Callback',@(src,evnt)deleteBehavior,'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[370, 10, 110, 30],'String','Duplicate tracking','Callback',@(src,evnt)duplicateBehavior,'Units','normalized');
+UI.table.behaviors = uitable(UI.tabs.behaviors,'Data',tableData,'Position',[1, 45, 619, 475],'ColumnWidth',{20 180 100 50 80 75 107},'columnname',{'','Filenames','Equipment','Epoch','Type','Frame rate','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false],'Units','normalized');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tracking','Callback',@(src,evnt)addBehavior,'Units','normalized');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tracking','Callback',@(src,evnt)editBehavior,'Units','normalized');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tracking(s)','Callback',@(src,evnt)deleteBehavior,'Units','normalized');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[350, 5, 110, 32],'String','Duplicate tracking','Callback',@(src,evnt)duplicateBehavior,'Units','normalized');
 
 % Loading session struct into gui
 importSessionStruct
@@ -522,13 +560,251 @@ uiwait(UI.fig)
         session.general.name = session.animal.name;
         try
             save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
-            MsgLog(['Animal metadata template saved to: ' fullfile(filepath1, filename1)],0)
+            MsgLog(['Animal metadata template saved to: ' fullfile(filepath1, filename1)],2)
         catch
             MsgLog(['Failed to save ',filename1,'. Location not available'],4)
         end
     end
     
-    function changeTab(src,evnt)
+    function generateTabdata(metadataStruct)
+        UI.list.tableData = {};
+        UI.tabs.(metadataStruct.name) = uitab(UI.animalMetadata,'Title',metadataStruct.title);
+        UI.tabs.panels.(metadataStruct.name).main = uix.VBox( 'Parent', UI.tabs.(metadataStruct.name), 'Padding', 0); % Center flex box
+        UI.tabs.panels.(metadataStruct.name).table = uix.HBox('Parent',UI.tabs.panels.(metadataStruct.name).main, 'Padding', 0); % Main plot panel
+        UI.tabs.panels.(metadataStruct.name).buttons  = uix.HBox('Parent',UI.tabs.panels.(metadataStruct.name).main, 'Padding', 3); % Lower info panel
+        set(UI.tabs.panels.(metadataStruct.name).main, 'Heights', [-1 39]); % set center panel size
+        UI.table.(metadataStruct.name) = uitable(UI.tabs.panels.(metadataStruct.name).table,'Data',UI.list.tableData,'Tag',metadataStruct.name,'Units','normalized','Position',[0, 0, 1, 1],'ColumnWidth',[20, metadataStruct.column_widths],'columnname',{'',metadataStruct.field_title{:}},'ColumnFormat',{'logical',metadataStruct.column_format{:}},'RowName',[],'ColumnEditable',[true metadataStruct.column_editable],'Units','normalized','CellEditCallback',@editTableData);
+        updateAnimalMeta(metadataStruct.name)
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[10, 0, 110, 32],'String','Add','Callback',@animalMeta,'Units','normalized');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Edit','Callback',@animalMeta,'Units','normalized');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Duplicate','Callback',@animalMeta,'Units','normalized');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[250, 0, 130, 32],'String','Delete','Callback',@animalMeta,'Units','normalized');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','text','String','');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8593),'Callback',@moveIt,'Units','normalized');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8595),'Callback',@moveIt,'Units','normalized');
+        set(UI.tabs.panels.(metadataStruct.name).buttons, 'Widths', [110 110 110 110 -1 50 50],'MinimumWidths',[110 110 110 110 10 50 50],'Spacing', 3);
+    end
+    
+    function editTableData(src,evnt)
+        if evnt.Indices(1,2)>1
+            session.animal.(src.Tag){evnt.Indices(1,1)}.(layout.(src.Tag).field_names{evnt.Indices(1,2)-1}) = evnt.NewData;
+        end
+    end
+    
+    function moveIt(src,~)
+        if~isempty(UI.table.(src.Tag).Data) && ~isempty(find([UI.table.(src.Tag).Data{:,1}], 1)) && sum([UI.table.(src.Tag).Data{:,1}])>0
+            cell2move = [UI.table.(src.Tag).Data{:,1}];
+            newOrder = 1:length(session.animal.(src.Tag));
+            if strcmp(src.String,char(8595))
+                offset = cumsumWithReset2(cell2move);
+                newOrder1 = newOrder+offset;
+            else
+                offset = cumsumWithReset(cell2move);
+                newOrder1 = newOrder-offset;
+            end
+            [~,newOrder] = sort(newOrder1);
+            session.animal.(src.Tag) = session.animal.(src.Tag)(newOrder);
+            updateAnimalMeta(src.Tag)
+            UI.table.(src.Tag).Data(find(ismember(newOrder,find(cell2move))),1) = {true};
+        else
+            helpdlg('Please select the entry/entries to move','Error')
+        end
+    end
+    
+    function animalMeta(src,~)
+        animalMetaType = layout.(src.Tag);
+        if isfield(session.animal,(src.Tag))
+            entry = numel(session.animal.(src.Tag))+1;
+        else
+            entry = 1;
+        end
+        
+        switch src.String
+            case {'Add','Edit'}
+                % Add a new entry
+                if strcmp(src.String,'Edit')
+                    if ~isempty(UI.table.(src.Tag).Data) && ~isempty(find([UI.table.(src.Tag).Data{:,1}], 1)) && sum([UI.table.(src.Tag).Data{:,1}])==1
+                        entry = find([UI.table.(src.Tag).Data{:,1}]);
+                    else
+                        helpdlg(['Please select an entry to edit'],'Error')
+                        return
+                    end
+                end
+                % Opens dialog
+                UI.dialog.animal = dialog('Position', [300, 330, 330, numel(animalMetaType.field_names)*50+50],'Name',animalMetaType.title,'WindowStyle','modal'); movegui(UI.dialog.animal,'center')
+
+                % Filling in dialog
+                for i = 1:numel(animalMetaType.field_names)
+                    if animalMetaType.field_required(i)
+                        string_title = [animalMetaType.field_title{i},' *'];
+                    else
+                        string_title = animalMetaType.field_title{i};
+                    end
+                    titles1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'text', 'String', string_title, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50+25, 300, 20],'HorizontalAlignment','left');
+                    
+                    if strcmp(animalMetaType.field_style{i},'edit')
+                        if strcmp(src.String,'Edit') & isfield(session.animal.(src.Tag){entry},animalMetaType.field_names{i})
+                            string1 = session.animal.(src.Tag){entry}.(animalMetaType.field_names{i});
+                        else 
+                            string1 = '';
+                        end
+                        fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'Edit','Tag',animalMetaType.field_names{i}, 'String', string1, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left');
+                    
+                    elseif strcmp(animalMetaType.field_style{i},'popup')
+                        
+                    if ~strcmp(animalMetaType.field_relationship{i},'text') && strcmp(animalMetaType.field_type{i},'brainRegions')
+                        % Add new brain region to session struct
+                        brainRegions = load('BrainRegions.mat'); brainRegions = brainRegions.BrainRegions;
+                        brainRegions_list = strcat(brainRegions(:,2),' (',brainRegions(:,1),')');
+                        
+                        if strcmp(src.String,'Edit')
+                            value1 = find(strcmp(brainRegions(:,2),session.animal.(src.Tag){entry}.(animalMetaType.field_names{i})));
+                            if isempty(value1)
+                                value1 = 1;
+                            end
+                        else
+                            value1 = 1;
+                        end
+                        
+                        fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'popupmenu','Tag',animalMetaType.field_names{i}, 'String', brainRegions_list, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left','value',value1);
+                        
+                    elseif ~strcmp(animalMetaType.field_relationship{i},'text')
+                        if ~exist('db_metadata_model','var')
+                            load('db_metadata_model.mat','db_metadata_model');
+                        end
+                        display = animalMetaType.(animalMetaType.field_relationship{i}).display;
+                        list1 = cellfun(@(X) X.(display{1}), db_metadata_model.(animalMetaType.field_relationship{i}),'UniformOutput', false);
+                        for j = 2:numel(display)
+                            list1 = strcat(list1," - ",cellfun(@(X) X.(display{j}), db_metadata_model.(animalMetaType.field_relationship{i}),'UniformOutput', false));
+                        end
+                        
+                        [list1,list_sorting] = sort(list1);
+                        list_sorting1.(animalMetaType.field_names{i}) = list_sorting;
+                        if strcmp(src.String,'Edit')
+                            list2 = cellfun(@(X) X.(animalMetaType.field_names{i}), db_metadata_model.(animalMetaType.field_relationship{i}),'UniformOutput', false);
+                            value1 = find(strcmp(list2(list_sorting),session.animal.(src.Tag){entry}.(animalMetaType.field_names{i})));
+                            if isempty(value1)
+                                value1 = 1;
+                            end
+                        else
+                            value1 = 1;
+                        end
+                        fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'popupmenu','Tag',animalMetaType.field_names{i}, 'String', list1, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left','value',value1);
+                        
+                        
+                    else
+                        if strcmp(src.String,'Edit')
+                            value1 = find(strcmp(animalMetaType.field_type{i},session.animal.(src.Tag){entry}.(animalMetaType.field_names{i})));
+                            if isempty(value1)
+                                value1 = 1;
+                            end
+                        else
+                            value1 = 1;
+                        end
+                        fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'popupmenu','Tag',animalMetaType.field_names{i}, 'String', animalMetaType.field_type{i}, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left','value',value1);
+                        
+                    end
+                    
+                    end
+                end
+                uicontrol('Parent',UI.dialog.animal,'Style','pushbutton','Position',[10, 10, 150, 30],'String','Save','Callback',@(src,evnt)close_dialog);
+                uicontrol('Parent',UI.dialog.animal,'Style','pushbutton','Position',[170, 10, 150, 30],'String','Cancel','Callback',@(src,evnt)cancel_dialog);
+                
+            case 'Duplicate'
+                % Duplicate an existing
+                if ~isempty(UI.table.(src.Tag).Data) && ~isempty(find([UI.table.(src.Tag).Data{:,1}], 1)) && sum([UI.table.(src.Tag).Data{:,1}])==1
+                    entry_old = find([UI.table.(src.Tag).Data{:,1}]);
+                    entry_new = numel(session.animal.(src.Tag))+1;
+                    session.animal.(src.Tag){entry_new} = session.animal.(src.Tag){entry_old};
+                    updateAnimalMeta(src.Tag)
+                else
+                    helpdlg('Please select entry to duplicate','Error')
+                end
+            case 'Delete'
+                % Deletes selected entries
+                if ~isempty(UI.table.(src.Tag).Data) && ~isempty(find([UI.table.(src.Tag).Data{:,1}], 1))
+                    entry = find([UI.table.(src.Tag).Data{:,1}]);
+                    session.animal.(src.Tag)(entry) = [];
+                    updateAnimalMeta(src.Tag)
+                else
+                    helpdlg('Please select entry/entries to delete','Error')
+                end
+        end
+        
+        function close_dialog
+            for i = 1:numel(animalMetaType.field_names)
+                if animalMetaType.field_required(i) && isempty(fields1.(animalMetaType.field_names{i}).String)
+                    titles1.(animalMetaType.field_names{i}).ForegroundColor = [1 0 0];
+                    titles1.(animalMetaType.field_names{i}).FontWeight = 'bold';
+                    helpdlg(['Please fill out required field: ' animalMetaType.field_title{i}],'Error');
+                    return
+                end
+                if strcmp(animalMetaType.field_style{i},'edit')
+                    if strcmp(animalMetaType.column_format{i},'numeric')
+                        session.animal.(src.Tag){entry}.(animalMetaType.field_names{i}) = str2num(fields1.(animalMetaType.field_names{i}).String);
+                    else
+                        session.animal.(src.Tag){entry}.(animalMetaType.field_names{i}) = fields1.(animalMetaType.field_names{i}).String;
+                    end
+                    
+                elseif strcmp(animalMetaType.field_style{i},'popup')
+                    if strcmp(fields1.(animalMetaType.field_names{i}).Tag,'brainRegion')
+                        session.animal.(src.Tag){entry}.(animalMetaType.field_names{i}) = brainRegions{fields1.(animalMetaType.field_names{i}).Value,2};
+                    elseif ~strcmp(animalMetaType.field_relationship{i},'text')
+                        if ~exist('db_metadata_model','var')
+                            load('db_metadata_model.mat','db_metadata_model');
+                        end
+                        fields2copy = db_metadata_model.(animalMetaType.field_relationship{i}){list_sorting1.(animalMetaType.field_names{i})(fields1.(animalMetaType.field_names{i}).Value)};
+                        fields = fieldnames(fields2copy);
+                        fields(strcmp(fields,'id')) = [];
+                        for j = 1:numel(fields)
+                            session.animal.(src.Tag){entry}.(fields{j}) = fields2copy.(fields{j});
+                        end
+                    else
+                        session.animal.(src.Tag){entry}.(animalMetaType.field_names{i}) = fields1.(animalMetaType.field_names{i}).String{fields1.(animalMetaType.field_names{i}).Value};
+                    end
+                end
+            end
+            updateAnimalMeta(src.Tag)
+            delete(UI.dialog.animal)
+        end
+        
+        function cancel_dialog
+            delete(UI.dialog.animal)
+        end
+    end
+    
+    function updateAnimalMeta(datatype)
+       % Updates table data
+        if isfield(session.animal,datatype) && ~isempty(session.animal.(datatype))
+            animalMetaType = layout.(datatype);
+            tableData = {};
+            nEntries = numel(session.animal.(datatype));
+            for fn = 1:nEntries
+                tableData{fn,1} = false;
+                for i = 1:numel(animalMetaType.field_names)
+                    if iscell(animalMetaType.field_type{i}) || strcmp(animalMetaType.field_type{i},'text') || strcmp(animalMetaType.field_type{i},'brainRegions')
+                        if isfield(session.animal.(datatype){fn},animalMetaType.field_names{i})
+                            tableData{fn,i+1} = session.animal.(datatype){fn}.(animalMetaType.field_names{i});
+                        else
+                            tableData{fn,i+1} = '';
+                        end
+                    else
+                        display = animalMetaType.(animalMetaType.field_relationship{i}).display;
+                        text1 = session.animal.(datatype){fn}.(display{1});
+                        for j = 2:numel(display)
+                            text1 = [text1,' - ',session.animal.(datatype){fn}.(display{j})];
+                        end
+                        tableData{fn,i+1} = text1;
+                    end
+                end
+            end
+            UI.table.(datatype).Data = tableData;
+        else
+            UI.table.(datatype).Data = {};
+        end
+    end
+    
+    function changeTab(src,~)
         UI.tabs.(tabsList{UI.activeTab}).Visible = 'off';
         UI.buttons.(tabsList{UI.activeTab}).Value = 0;
         UI.buttons.(tabsList{UI.activeTab}).FontWeight = 'normal';
@@ -546,7 +822,6 @@ uiwait(UI.fig)
     function importEpochsIntervalsFromMergePoints(~,~)
         % Epochs derived from MergePoints
         if exist(fullfile(UI.edit.basepath.String,[UI.edit.session.String,'.MergePoints.events.mat']),'file')
-            MsgLog('Importing epochs intervals from merge points',0)
             temp = load(fullfile(UI.edit.basepath.String,[UI.edit.session.String,'.MergePoints.events.mat']));
             for i = 1:size(temp.MergePoints.foldernames,2)
                 session.epochs{i}.name = temp.MergePoints.foldernames{i};
@@ -554,10 +829,9 @@ uiwait(UI.fig)
                 session.epochs{i}.stopTime = temp.MergePoints.timestamps(i,2);
             end
             updateEpochsList
-            MsgLog('Epochs updated',0)
+            MsgLog('Epochs updated',2)
         else
             MsgLog(['No ', UI.edit.session.String,'.MergePoints.events.mat',' exist in basepath'],2)
-%             msgbox(['No ', UI.edit.session.String,'.MergePoints.events.mat',' exist in basepath'],'Error');
         end
     end
 
@@ -582,7 +856,7 @@ uiwait(UI.fig)
                     elseif exist(filepath2,'file')
                         temp_ = dir(filepath2);
                     end
-                    if exist(filepath1) || exist(filepath2)
+                    if exist(filepath1,'file') || exist(filepath2,'file')
                         session.epochs{i}.stopTime = temp_.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
                         if i == 1
                             session.epochs{i}.startTime = 0;
@@ -600,7 +874,7 @@ uiwait(UI.fig)
         end
     end
 
-    function openInWebDB(src,evnt)
+    function openInWebDB(src,~)
         switch src.String
             case 'View db session'
                 % Opens session in the Buzsaki lab web database
@@ -620,7 +894,7 @@ uiwait(UI.fig)
     function importMetaFromIntan(~,~)
         session = loadIntanMetadata(session);
         updateTimeSeriesList
-        MsgLog('Updated from intan',0)
+        MsgLog('Updated from intan',2)
     end
     
     function importSessionStruct
@@ -698,10 +972,8 @@ uiwait(UI.fig)
         UIsetString(session.extracellular,'fileName');
         UIsetString(session.extracellular,'equipment');
         UIsetString(session.extracellular,'srLfp');
-        updateChannelGroupsList
-        if isfield(session.extracellular,'electrodes')
-            updateElectrodeList
-        end
+        updateChannelGroupsList('electrodeGroups')
+        updateChannelGroupsList('spikeGroups')
         updateSpikeSortingList
         updateBrainRegionList
         updateTagList
@@ -711,6 +983,16 @@ uiwait(UI.fig)
         updateTimeSeriesList
     end
     
+    function getAnimalMetadata
+        db_animal_metadata = db_load_animal_metadata(session.animal.name);
+        db_animal_metadata_fields = fieldnames(db_animal_metadata);
+        for i = 1:numel(db_animal_metadata_fields)
+            session.animal.(db_animal_metadata_fields{i}) = db_animal_metadata.(db_animal_metadata_fields{i});
+            updateAnimalMeta(db_animal_metadata_fields{i})
+            MsgLog('Animal metadata updated from database',2)
+        end
+    end
+    
     function buttonUpdateFromDB
         answer = questdlg('Are you sure you want to update the session struct from the database?', 'Update session from DB', 'Yes','Cancel','Cancel');
         % Handle response
@@ -718,12 +1000,13 @@ uiwait(UI.fig)
             MsgLog('Updating...',0)
             success = updateFromDB;
             if success
-                MsgLog('Updated from db',0)
+                MsgLog('Updated from db',2)
             else
                 MsgLog('Database tools not available',4)
             end
         end
     end
+    
     function editDBcredentials(~,~)
         edit db_credentials.m
     end
@@ -731,7 +1014,7 @@ uiwait(UI.fig)
     function editDBrepositories(~,~)
         edit db_local_repositories.m
     end
-    function buttonHelp(src,evnt)
+    function buttonHelp(src,~)
         if strcmp(src.(menuLabel),'Tutorial on session metadata')
             web('https://cellexplorer.org/tutorials/metadata-tutorial/','-new','-browser')
         else
@@ -739,21 +1022,21 @@ uiwait(UI.fig)
         end
     end
     
-    function performStructVerification(src,evnt)
+    function performStructVerification(~,~)
         readBackFields;
         verifySessionStruct(session);
     end
     
     function buttonUploadToDB
         listing = fieldnames(session);
-        [indx,tf] = listdlg('PromptString','Select the data types to upload to the database','ListString',listing,'SelectionMode','multiple','ListSize',[300,220],'InitialValue',1,'Name','Upload session changes to DB');
+        [indx,~] = listdlg('PromptString','Select the data types to upload to the database','ListString',listing,'SelectionMode','multiple','ListSize',[300,220],'InitialValue',1,'Name','Upload session changes to DB');
         if ~isempty(indx)
             MsgLog('Uploading to db',0)
             readBackFields;
             try
                 success = db_upload_session(session,'fields',listing(indx));
                 if success
-                    MsgLog('Upload complete',0)
+                    MsgLog('Upload complete',2)
                 else
                     MsgLog('Database tools not available',4)
                 end
@@ -818,7 +1101,7 @@ uiwait(UI.fig)
         readBackFields;
         try
             save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
-            MsgLog(['Session struct saved: ' fullfile(filepath1, filename1)],0)
+            MsgLog(['Session struct saved: ' fullfile(filepath1, filename1)],2)
         catch
             MsgLog(['Failed to save ',filename1,'. Location not available'],4)
         end
@@ -972,62 +1255,32 @@ uiwait(UI.fig)
         end
     end
 
-    function updateChannelGroupsList
-        % Updates the list of electrode groups
+    function updateChannelGroupsList(group)
+        % Updates the list of electrode/spike groups
         tableData = {};
-        if isfield(session.extracellular,'electrodeGroups')
-            if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.electrodeGroups,'channels') && isnumeric(session.extracellular.electrodeGroups.channels)
-                session.extracellular.electrodeGroups.channels = num2cell(session.extracellular.electrodeGroups.channels,2)';
+        if isfield(session.extracellular,group)
+            if isfield(session.extracellular,group) && isfield(session.extracellular.(group),'channels') && isnumeric(session.extracellular.(group).channels)
+                session.extracellular.(group).channels = num2cell(session.extracellular.(group).channels,2)';
             end
             
-           if ~isempty(session.extracellular.electrodeGroups.channels) && ~isempty(session.extracellular.electrodeGroups.channels{1})
-                nTotal = numel(session.extracellular.electrodeGroups.channels);
+           if ~isempty(session.extracellular.(group).channels) && ~isempty(session.extracellular.(group).channels{1})
+                nTotal = numel(session.extracellular.(group).channels);
             else
                 nTotal = 0;
             end
             for fn = 1:nTotal
                 tableData{fn,1} = false;
-                tableData{fn,2} = [num2str(fn),' (',num2str(length(session.extracellular.electrodeGroups.channels{fn})),')'];
-                tableData{fn,3} = num2str(session.extracellular.electrodeGroups.channels{fn});
-                if isfield(session.extracellular.electrodeGroups,'label') && size(session.extracellular.electrodeGroups.label,2)>=fn
-                    tableData{fn,4} = session.extracellular.electrodeGroups.label{fn};
+                tableData{fn,2} = [num2str(fn),' (',num2str(length(session.extracellular.(group).channels{fn})),')'];
+                tableData{fn,3} = num2str(session.extracellular.(group).channels{fn});
+                if isfield(session.extracellular.(group),'label') && size(session.extracellular.(group).label,2)>=fn
+                    tableData{fn,4} = session.extracellular.(group).label{fn};
                 else
                     tableData{fn,4} = '';
                 end
             end
-            UI.table.electrodeGroups.Data = tableData;
+            UI.table.(group).Data = tableData;
         else
-            UI.table.electrodeGroups.Data = {false,'','',''};
-        end
-        
-        % Updates the list of spike groups
-        tableData = {};
-        if isfield(session.extracellular,'spikeGroups')
-            if isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels') && isnumeric(session.extracellular.spikeGroups.channels)
-                session.extracellular.spikeGroups.channels = num2cell(session.extracellular.spikeGroups.channels,2);
-            end
-            if ~isempty(session.extracellular.spikeGroups.channels) && ~isempty(session.extracellular.spikeGroups.channels{1})
-                nTotal = numel(session.extracellular.spikeGroups.channels);
-            else
-                nTotal = 0;
-            end
-            for fn = 1:nTotal
-                tableData{fn,1} = false;
-                tableData{fn,2} = [num2str(fn),' (',num2str(length(session.extracellular.spikeGroups.channels{fn})),')'];
-                if isnumeric(session.extracellular.spikeGroups.channels)
-                    tableData{fn,3} = num2str(session.extracellular.spikeGroups.channels(fn,:));
-                else
-                    tableData{fn,3} = num2str(session.extracellular.spikeGroups.channels{fn});
-                end
-                if isfield(session.extracellular.spikeGroups,'label') && size(session.extracellular.spikeGroups.label,2)>=fn
-                    tableData{fn,4} = session.extracellular.spikeGroups.label{fn};
-                else
-                    tableData{fn,4} = '';
-                end
-            end
-            UI.table.spikeGroups.Data = tableData;
-        else
-            UI.table.spikeGroups.Data = {false,'','',''};
+            UI.table.(group).Data = {false,'','',''};
         end
     end
     
@@ -1197,13 +1450,6 @@ uiwait(UI.fig)
         else
             UI.table.spikeSorting.Data = {};
         end
-        
-%         if isfield(session,'spikeSorting') && ~isempty(session.spikeSorting) && isfield(session.spikeSorting{1},'relativePath')
-%             session.general.clusteringPath = session.spikeSorting{1}.relativePath;
-%         else 
-%             session.general.clusteringPath = '';
-%         end
-%         UI.edit.clusteringpath.String = session.general.clusteringPath;
     end
 
     function updateAnalysisList
@@ -1269,7 +1515,7 @@ uiwait(UI.fig)
             session.brainRegions = rmfield(session.brainRegions,{spikesPlotFieldnames{find([UI.table.brainRegion.Data{:,1}])}});
             updateBrainRegionList
         else
-            errordlg(['Please select the region(s) to delete'],'Error')
+            helpdlg('Please select the region(s) to delete','Error')
         end
     end
 
@@ -1278,7 +1524,7 @@ uiwait(UI.fig)
         brainRegions = load('BrainRegions.mat'); brainRegions = brainRegions.BrainRegions;
         brainRegions_list = strcat(brainRegions(:,1),' (',brainRegions(:,2),')');
         brainRegions_acronym = brainRegions(:,2);
-        if exist('regionIn')
+        if exist('regionIn','var')
             InitBrainRegion = find(strcmp(regionIn,brainRegions_acronym));
             if isfield(session.brainRegions.(regionIn),'channels')
                 initChannels = num2str(session.brainRegions.(regionIn).channels);
@@ -1299,7 +1545,7 @@ uiwait(UI.fig)
         UI.dialog.brainRegion = dialog('Position', [300, 300, 600, 400],'Name','Brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
         
         uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 373, 600, 20],'HorizontalAlignment','left');
-        brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 350, 600, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
+        brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 330, 600, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
         if exist('regionIn','var')
             brainRegionsTextfield.Enable = 'off';
         end
@@ -1343,7 +1589,7 @@ uiwait(UI.fig)
                         try
                             session.brainRegions.(SelectedBrainRegion).channels = eval(['[',brainRegionsChannels.String,']']);
                         catch
-                            errordlg(['Channels not not formatted correctly'],'Error')
+                            helpdlg('Channels not not formatted correctly','Error')
                             uicontrol(brainRegionsChannels);
                         end
                     end
@@ -1351,7 +1597,7 @@ uiwait(UI.fig)
                         try
                             session.brainRegions.(SelectedBrainRegion).electrodeGroups = eval(['[',brainRegionsElectrodeGroups.String,']']);
                         catch
-                            errordlg(['Spike groups not formatted correctly'],'Error')
+                            helpdlg('Spike groups not formatted correctly','Error')
                             uicontrol(brainRegionsElectrodeGroups);
                         end
                     end
@@ -1373,7 +1619,7 @@ uiwait(UI.fig)
             fieldtoedit = spikesPlotFieldnames{find([UI.table.brainRegion.Data{:,1}])};
             addRegion(fieldtoedit)
         else
-            errordlg(['Please select the region to edit'],'Error')
+            helpdlg('Please select the region to edit','Error')
         end
     end
 
@@ -1388,7 +1634,7 @@ uiwait(UI.fig)
             end
             updateTagList
         else
-            errordlg(['Please select the channel tag(s) to delete'],'Error')
+            helpdlg('Please select the channel tag(s) to delete','Error')
         end
     end
 
@@ -1439,7 +1685,7 @@ uiwait(UI.fig)
                     try
                         session.channelTags.(SelectedTag).channels = eval(['[',tagsChannels.String,']']);
                     catch
-                       errordlg(['Channels not not formatted correctly'],'Error')
+                       helpdlg('Channels not not formatted correctly','Error')
                         uicontrol(tagsChannels);
                         return
                     end
@@ -1450,7 +1696,7 @@ uiwait(UI.fig)
                     try
                         session.channelTags.(SelectedTag).electrodeGroups = eval(['[',tagsElectrodeGroups.String,']']);
                     catch
-                        errordlg(['Spike groups not formatted correctly'],'Error')
+                        helpdlg('Spike groups not formatted correctly','Error')
                         uicontrol(tagsElectrodeGroups);
                         return
                     end
@@ -1474,7 +1720,7 @@ uiwait(UI.fig)
             fieldtoedit = spikesPlotFieldnames{find([UI.table.tags.Data{:,1}])};
             addTag(fieldtoedit)
         else
-            errordlg(['Please select the channel tag to edit'],'Error')
+            helpdlg('Please select the channel tag to edit','Error')
         end
     end
 
@@ -1488,7 +1734,7 @@ uiwait(UI.fig)
             session.inputs = rmfield(session.inputs,{spikesPlotFieldnames{find([UI.table.inputs.Data{:,1}])}});
             updateInputsList
         else
-            errordlg(['Please select the input(s) to delete'],'Error')
+            helpdlg('Please select the input(s) to delete','Error')
         end
     end
 
@@ -1558,7 +1804,7 @@ uiwait(UI.fig)
                     try
                         session.inputs.(Selectedinput).channels = eval(['[',inputsChannels.String,']']);
                     catch
-                        errordlg(['Channels not not formatted correctly'],'Error')
+                        helpdlg('Channels not not formatted correctly','Error')
                         uicontrol(inputsChannels);
                         return
                     end
@@ -1589,7 +1835,7 @@ uiwait(UI.fig)
             fieldtoedit = spikesPlotFieldnames{find([UI.table.inputs.Data{:,1}])};
             addInput(fieldtoedit)
         else
-            errordlg(['Please select the input to edit'],'Error')
+            helpdlg('Please select the input to edit','Error')
         end
     end
 
@@ -1606,7 +1852,7 @@ uiwait(UI.fig)
             updateEpochsList
             UI.table.epochs.Data(find(ismember(newOrder,find(cell2move))),1) = {true};
         else
-            errordlg(['Please select the epoch(s) to move'],'Error')
+            helpdlg('Please select the epoch(s) to move','Error')
         end
     end
     
@@ -1621,7 +1867,7 @@ uiwait(UI.fig)
             updateEpochsList
             UI.table.epochs.Data(find(ismember(newOrder,find(cell2move))),1) = {true};
         else
-            errordlg(['Please select the epoch(s) to move'],'Error')
+            helpdlg('Please select the epoch(s) to move','Error')
         end
     end
     
@@ -1660,14 +1906,13 @@ uiwait(UI.fig)
             session.epochs(find([UI.table.epochs.Data{:,1}])) = [];
             updateEpochsList
         else
-            errordlg(['Please select the epoch(s) to delete'],'Error')
+            helpdlg('Please select the epoch(s) to delete','Error')
         end
     end
 
     function addEpoch(epochIn)
         % Add new epoch to session struct
         if exist('epochIn','var')
-            InitEpoch = epochIn;
             % name
             if isfield(session.epochs{epochIn},'name')
                 InitName = session.epochs{epochIn}.name;
@@ -1756,7 +2001,7 @@ uiwait(UI.fig)
         uiwait(UI.dialog.epochs);
         
         function CloseEpochs_dialog
-            if ~strcmp(epochsName.String,'') isvarname(epochsName.String)
+            if ~strcmp(epochsName.String,'') && isvarname(epochsName.String)
                 SelectedEpoch = epochIn;
                 if ~isempty(epochsName.String)
                     session.epochs{SelectedEpoch}.name = epochsName.String;
@@ -1795,7 +2040,7 @@ uiwait(UI.fig)
             fieldtoedit = find([UI.table.epochs.Data{:,1}]);
             addEpoch(fieldtoedit)
         else
-            errordlg(['Please select the epoch to edit'],'Error')
+            helpdlg('Please select the epoch to edit','Error')
         end
     end
 
@@ -1808,7 +2053,7 @@ uiwait(UI.fig)
             updateEpochsList
             addEpoch(length(session.epochs));
         else
-            errordlg(['Please select the epoch to duplicate'],'Error')
+            helpdlg('Please select the epoch to duplicate','Error')
         end
     end
 
@@ -1820,14 +2065,13 @@ uiwait(UI.fig)
             session.behavioralTracking(find([UI.table.behaviors.Data{:,1}])) = [];
             updateBehaviorsList
         else
-            errordlg(['Please select the behavior(s) to delete'],'Error')
+            helpdlg('Please select the behavior(s) to delete','Error')
         end
     end
 
     function addBehavior(behaviorIn)
         % Add new behavior to session struct
         if exist('behaviorIn','var')
-            InitBehavior = behaviorIn;
             % filenames
             if isfield(session.behavioralTracking{behaviorIn},'filenames')
                 InitFilenames = session.behavioralTracking{behaviorIn}.filenames;
@@ -1908,7 +2152,7 @@ uiwait(UI.fig)
         uiwait(UI.dialog.behaviors);
         
         function CloseBehaviors_dialog
-            if ~strcmp(behaviorsFileNames.String,'') isvarname(behaviorsFileNames.String)
+            if ~strcmp(behaviorsFileNames.String,'') && isvarname(behaviorsFileNames.String)
                 SelectedBehavior = behaviorIn;
                 if ~isempty(behaviorsFileNames.String)
                     session.behavioralTracking{SelectedBehavior}.filenames = behaviorsFileNames.String;
@@ -1944,7 +2188,7 @@ uiwait(UI.fig)
             fieldtoedit = find([UI.table.behaviors.Data{:,1}]);
             addBehavior(fieldtoedit)
         else
-            errordlg(['Please select the behavior to edit'],'Error')
+            helpdlg('Please select the behavior to edit','Error')
         end
     end
 
@@ -1957,7 +2201,7 @@ uiwait(UI.fig)
             updateBehaviorsList;
             addBehavior(length(session.behavioralTracking));
         else
-            errordlg(['Please select the tracking to duplicate'],'Error')
+            helpdlg('Please select the tracking to duplicate','Error')
         end
     end
 
@@ -1969,14 +2213,13 @@ uiwait(UI.fig)
             session.spikeSorting(find([UI.table.spikeSorting.Data{:,1}])) = [];
             updateSpikeSortingList
         else
-            errordlg(['Please select the sorting(s) to delete'],'Error')
+            helpdlg('Please select the sorting(s) to delete','Error')
         end
     end
 
     function addSpikeSorting(behaviorIn)
         % Add new behavior to session struct
         if exist('behaviorIn','var')
-            InitBehavior = behaviorIn;
             % method
             if isfield(session.spikeSorting{behaviorIn},'method')
                 InitMethod = session.spikeSorting{behaviorIn}.method;
@@ -2098,7 +2341,7 @@ uiwait(UI.fig)
                 delete(UI.dialog.spikeSorting);
                 updateSpikeSortingList;
             else
-                errordlg(['Please format the relative path correctly'],'Error')
+                helpdlg('Please format the relative path correctly','Error')
             end
         end
         
@@ -2113,7 +2356,7 @@ uiwait(UI.fig)
             fieldtoedit = find([UI.table.spikeSorting.Data{:,1}]);
             addSpikeSorting(fieldtoedit)
         else
-            errordlg(['Please select the sorting to edit'],'Error')
+            helpdlg('Please select the sorting to edit','Error')
         end
     end
 
@@ -2127,7 +2370,7 @@ uiwait(UI.fig)
             session.analysisTags = rmfield(session.analysisTags,{spikesPlotFieldnames{find([UI.table.analysis.Data{:,1}])}});
             updateAnalysisList
         else
-            errordlg(['Please select the analysis tag(s) to delete'],'Error')
+            helpdlg(['Please select the analysis tag(s) to delete'],'Error')
         end
     end
 
@@ -2173,7 +2416,7 @@ uiwait(UI.fig)
                             session.analysisTags.(SelectedTag) = eval(['[',analysisValue.String,']']);
                         end
                     catch
-                       errordlg(['Values not not formatted correctly'],'Error')
+                       helpdlg('Values not not formatted correctly','Error')
                         uicontrol(analysisValue);
                         return
                     end
@@ -2195,7 +2438,7 @@ uiwait(UI.fig)
             fieldtoedit = spikesPlotFieldnames{find([UI.table.analysis.Data{:,1}])};
             addAnalysis(fieldtoedit)
         else
-            errordlg(['Please select the analysis tag to edit'],'Error')
+            helpdlg('Please select the analysis tag to edit','Error')
         end
     end
     
@@ -2208,7 +2451,7 @@ uiwait(UI.fig)
             session.timeSeries = rmfield(session.timeSeries,{spikesPlotFieldnames{find([UI.table.timeSeries.Data{:,1}])}});
             updateTimeSeriesList
         else
-            errordlg(['Please select the time series(s) to delete'],'Error')
+            helpdlg(['Please select the time series(s) to delete'],'Error')
         end
     end
 
@@ -2335,7 +2578,7 @@ uiwait(UI.fig)
                 delete(UI.dialog.timeSeries);
                 updateTimeSeriesList;
             else
-                errordlg('Please provide a filename','Error')
+                helpdlg('Please provide a filename','Error')
             end
         end
 
@@ -2352,40 +2595,56 @@ uiwait(UI.fig)
             fieldtoedit = spikesPlotFieldnames{find([UI.table.timeSeries.Data{:,1}])};
             addTimeSeries(fieldtoedit)
         else
-            errordlg(['Please select the time series to edit'],'Error')
+            helpdlg('Please select the time series to edit','Error')
         end
     end
 
 %% Extracellular spike groups
     
-    function deleteElectrodeGroup
-        % Deletes any electrode groups
-        if ~isempty(UI.table.electrodeGroups.Data) && ~isempty(find([UI.table.electrodeGroups.Data{:,1}], 1))
-            session.extracellular.electrodeGroups.channels([UI.table.electrodeGroups.Data{:,1}]) = [];
-            session.extracellular.nElectrodeGroups = size(session.extracellular.electrodeGroups.channels,2);
-            updateChannelGroupsList
+    function deleteElectrodeGroup(src,~)
+        group = src.Tag;
+        % Deletes group(s)
+        if ~isempty(UI.table.(group).Data) && ~isempty(find([UI.table.(group).Data{:,1}], 1))
+            session.extracellular.(group).channels([UI.table.(group).Data{:,1}]) = [];
+            if strcmp(group,'electrodeGroups')
+                session.extracellular.nElectrodeGroups = size(session.extracellular.(group).channels,2);
+            else
+                session.extracellular.nSpikeGroups = size(session.extracellular.(group).channels,2);
+            end
+            updateChannelGroupsList(group)
         else
-            errordlg(['Please select the electrode group(s) to delete'],'Error')
+            helpdlg('Please select the group(s) to delete','Error')
         end
     end
 
-    function addElectrodeGroup(regionIn)
+    function addElectrodeGroup(src,~)
+        group = src.Tag;
+        button = src.String;
+         % Select electrode group for edit
+        if strcmp(button,'Edit') && ~isempty(UI.table.(group).Data) && ~isempty(find([UI.table.(group).Data{:,1}], 1)) && sum([UI.table.(group).Data{:,1}]) == 1
+            fieldtoedit = find([UI.table.(group).Data{:,1}]);
+            regionIn = fieldtoedit;
+        elseif strcmp(button,'Edit')
+            helpdlg('Please select one group to edit','Error')
+            return
+        end
+        
         % Add new electrode group
         if exist('regionIn','var')
             initElectrodeGroups = num2str(regionIn);
-            if isnumeric(session.extracellular.electrodeGroups.channels)
-                initChannels = num2str(session.extracellular.electrodeGroups.channels(regionIn,:));
+            if isnumeric(session.extracellular.(group).channels)
+                initChannels = num2str(session.extracellular.(group).channels(regionIn,:));
             else
-                initChannels = num2str(session.extracellular.electrodeGroups.channels{regionIn});
+                initChannels = num2str(session.extracellular.(group).channels{regionIn});
             end
-            if isfield(session.extracellular.electrodeGroups,'label') & size(session.extracellular.electrodeGroups.label,2)>=regionIn & ~isempty(session.extracellular.electrodeGroups.label{regionIn})
-                initLabel = session.extracellular.electrodeGroups.label{regionIn};
+            if isfield(session.extracellular.(group),'label') && size(session.extracellular.(group).label,2)>=regionIn && ~isempty(session.extracellular.(group).label{regionIn})
+                initLabel = session.extracellular.(group).label{regionIn};
             else
                 initLabel = '';
             end
         else
-            if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.electrodeGroups,'channels') 
-                initElectrodeGroups = num2str(size(session.extracellular.electrodeGroups.channels,2)+1);
+            if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.(group),'channels') 
+                initElectrodeGroups = num2str(size(session.extracellular.(group).channels,2)+1);
             else
                 initElectrodeGroups = 1;
                 session.extracellular.nElectrodeGroups = 0;
@@ -2395,143 +2654,83 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.electrodeGroups = dialog('Position', [300, 300, 500, 200],'Name','Electrode group','WindowStyle','modal'); movegui(UI.dialog.electrodeGroups,'center')
+        UI.dialog.electrodes = dialog('Position', [300, 300, 500, 200],'Name','Electrode group','WindowStyle','modal'); movegui(UI.dialog.electrodes,'center')
         
-        uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'text', 'String', ['Electrode group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 173, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 150, 480, 25],'HorizontalAlignment','left','enable', 'off');
+        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Group (nGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 173, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 150, 480, 25],'HorizontalAlignment','left','enable', 'off');
         
-        uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsChannels = uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsChannels = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'text', 'String', 'Label', 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsLabel = uicontrol('Parent',UI.dialog.electrodeGroups,'Style', 'Edit', 'String', initLabel, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', 'Label', 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsLabel = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initLabel, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.electrodeGroups,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save electrode group','Callback',@(src,evnt)CloseSpikeGroups_dialog);
-        uicontrol('Parent',UI.dialog.electrodeGroups,'Style','pushbutton','Position',[250, 10, 240, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikeGroups_dialog);
+        uicontrol('Parent',UI.dialog.electrodes,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save','Callback',@(src,evnt)save_and_close_dialog);
+        uicontrol('Parent',UI.dialog.electrodes,'Style','pushbutton','Position',[250, 10, 240, 30],'String','Cancel','Callback',@(src,evnt)cancel_dialog);
         
         uicontrol(spikeGroupsChannels);
-        uiwait(UI.dialog.electrodeGroups);
+        uiwait(UI.dialog.electrodes);
         
-        function CloseSpikeGroups_dialog
+        function save_and_close_dialog
             spikeGroup = str2double(spikeGroupsSpikeGroups.String);
             if ~isempty(spikeGroupsChannels.String)
                 try
-                    session.extracellular.electrodeGroups.channels{spikeGroup} = eval(['[',spikeGroupsChannels.String,']']);
+                    session.extracellular.(group).channels{spikeGroup} = eval(['[',spikeGroupsChannels.String,']']);
                 catch
-                    errordlg(['Channels not not formatted correctly'],'Error')
+                    helpdlg(['Channels not not formatted correctly'],'Error')
                     uicontrol(spikeGroupsChannels);
                     return
                 end
             end
-            session.extracellular.electrodeGroups.label{spikeGroup} = spikeGroupsLabel.String;
-            delete(UI.dialog.electrodeGroups);
-            session.extracellular.nElectrodeGroups = size(session.extracellular.electrodeGroups,2);
-            updateChannelGroupsList;
+            session.extracellular.(group).label{spikeGroup} = spikeGroupsLabel.String;
+            delete(UI.dialog.electrodes);
+            if strcmp(group,'electrodeGroups')
+                session.extracellular.nElectrodeGroups = size(session.extracellular.(group),2);
+            else
+                session.extracellular.nSpikeGroups = size(session.extracellular.(group),2);
+            end
+            updateChannelGroupsList(group)
         end
-        function CancelSpikeGroups_dialog
-            delete(UI.dialog.electrodeGroups);
+        
+        function cancel_dialog
+            delete(UI.dialog.electrodes);
         end
     end
 
-    function deleteSpikeGroup
-        % Deletes any selected tags
-        if ~isempty(UI.table.spikeGroups.Data) && ~isempty(find([UI.table.spikeGroups.Data{:,1}], 1))
-            session.extracellular.spikeGroups.channels([UI.table.spikeGroups.Data{:,1}]) = [];
-            session.extracellular.nSpikeGroups = size(session.extracellular.spikeGroups.channels,2);
-            updateChannelGroupsList
+    function moveElectrodes(src,~)
+        if~isempty(UI.table.(src.Tag).Data) && ~isempty(find([UI.table.(src.Tag).Data{:,1}], 1)) && sum([UI.table.(src.Tag).Data{:,1}])>0
+            cell2move = [UI.table.(src.Tag).Data{:,1}];
+            newOrder = 1:length(session.extracellular.(src.Tag).channels);
+            if strcmp(src.String,char(8595))
+                offset = cumsumWithReset2(cell2move);
+                newOrder1 = newOrder+offset;
+            else
+                offset = cumsumWithReset(cell2move);
+                newOrder1 = newOrder-offset;
+            end
+            [~,newOrder] = sort(newOrder1);
+            session.extracellular.(src.Tag).channels = session.extracellular.(src.Tag).channels(newOrder);
+            updateChannelGroupsList(src.Tag)
+            UI.table.(src.Tag).Data(find(ismember(newOrder,find(cell2move))),1) = {true};
         else
-            errordlg(['Please select the spike group(s) to delete'],'Error')
+            helpdlg('Please select the group(s) to move','Error')
         end
     end
     
-    function addSpikeGroup(regionIn)
-        % Add new tag to session struct
-        if exist('regionIn','var')
-            initSpikeGroups = num2str(regionIn);
-            if isnumeric(session.extracellular.spikeGroups.channels)
-                initChannels = num2str(session.extracellular.spikeGroups.channels(regionIn,:));
-            else
-                initChannels = num2str(session.extracellular.spikeGroups.channels{regionIn});
+    function editElectrodeTableData(src,evnt)
+        edit_group = evnt.Indices(1,1);
+        if evnt.Indices(1,2)==3
+            try
+                session.extracellular.(src.Tag).channels{edit_group} = eval(['[',evnt.NewData,']']);
+            catch
+                helpdlg('Channels not not formatted correctly','Error')
             end
-            if isfield(session.extracellular.spikeGroups,'label') & size(session.extracellular.spikeGroups.label,2)>=regionIn & ~isempty(session.extracellular.spikeGroups.label{regionIn})
-                initLabel = session.extracellular.spikeGroups.label{regionIn};
-            else
-                initLabel = '';
-            end
-        else
-            if isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels') 
-                initSpikeGroups = num2str(size(session.extracellular.spikeGroups.channels,2)+1);
-            else
-                initSpikeGroups = 1;
-                session.extracellular.nSpikeGroups = 0;
-            end
-            initChannels = '';
-            initLabel = '';
+            updateChannelGroupsList(src.Tag)
+        elseif evnt.Indices(1,2)==4
+            session.extracellular.(src.Tag).label{edit_group} = evnt.NewData;
         end
-        if ~isfield(session.extracellular,'nSpikeGroups') && isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels')
-            session.extracellular.nSpikeGroups = numel(session.extracellular.spikeGroups.channels)
-        elseif ~isfield(session.extracellular,'nSpikeGroups') 
-            session.extracellular.nSpikeGroups = 0;
-        end
-        % Opens dialog
-        UI.dialog.spikeGroups = dialog('Position', [300, 300, 500, 200],'Name','Spike group','WindowStyle','modal'); movegui(UI.dialog.spikeGroups,'center')
-        
-        uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', ['Spike group (nSpikeGroups = ',num2str(session.extracellular.nSpikeGroups),')'], 'Position', [10, 173, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'Edit', 'String', initSpikeGroups, 'Position', [10, 150, 480, 25],'HorizontalAlignment','left','enable', 'off');
-        
-        uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsChannels = uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
-        
-        uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'text', 'String', 'Label', 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsLabel = uicontrol('Parent',UI.dialog.spikeGroups,'Style', 'Edit', 'String', initLabel, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
-        
-        uicontrol('Parent',UI.dialog.spikeGroups,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save spike group','Callback',@(src,evnt)CloseSpikeGroups_dialog);
-        uicontrol('Parent',UI.dialog.spikeGroups,'Style','pushbutton','Position',[250, 10, 240, 30],'String','Cancel','Callback',@(src,evnt)CancelSpikeGroups_dialog);
-        
-        uicontrol(spikeGroupsChannels);
-        uiwait(UI.dialog.spikeGroups);
-        
-        function CloseSpikeGroups_dialog
-            spikeGroup = str2double(spikeGroupsSpikeGroups.String);
-            if ~isempty(spikeGroupsChannels.String)
-                try
-                    session.extracellular.spikeGroups.channels{spikeGroup} = eval(['[',spikeGroupsChannels.String,']']);
-                catch
-                    errordlg(['Channels not not formatted correctly'],'Error')
-                    uicontrol(spikeGroupsChannels);
-                    return
-                end
-            end
-            session.extracellular.spikeGroups.label{spikeGroup} = spikeGroupsLabel.String;
-            delete(UI.dialog.spikeGroups);
-            session.extracellular.nSpikeGroups = size(session.extracellular.spikeGroups,2);
-            updateChannelGroupsList;
-        end
-        function CancelSpikeGroups_dialog
-            delete(UI.dialog.spikeGroups);
-        end
-    end
+    end    
 
-    function editElectrodeGroup
-        % Selected electrode group is parsed to the addElectrodeGroup dialog for edits
-        if ~isempty(UI.table.electrodeGroups.Data) && ~isempty(find([UI.table.electrodeGroups.Data{:,1}], 1)) && sum([UI.table.electrodeGroups.Data{:,1}]) == 1
-            fieldtoedit = find([UI.table.electrodeGroups.Data{:,1}]);
-            addElectrodeGroup(fieldtoedit)
-        else
-            errordlg(['Please select the electrode group to edit'],'Error')
-        end
-    end
-
-    function editSpikeGroup
-        % Selected spike group is parsed to the addSpikeGroup dialog for edits
-        if ~isempty(UI.table.spikeGroups.Data) && ~isempty(find([UI.table.spikeGroups.Data{:,1}], 1)) && sum([UI.table.spikeGroups.Data{:,1}]) == 1
-            fieldtoedit = find([UI.table.spikeGroups.Data{:,1}]);
-            addSpikeGroup(fieldtoedit)
-        else
-            errordlg(['Please select the spike group to edit'],'Error')
-        end
-    end
-    
     function verifyElectrodeGroup(~,~)
         if isfield(session.extracellular,'electrodeGroups')
             if isnumeric(session.extracellular.electrodeGroups.channels)
@@ -2542,11 +2741,11 @@ uiwait(UI.fig)
             uniqueChannels = length(unique(channels));
             nChannels = length(channels);
             if nChannels ~= session.extracellular.nChannels
-                errordlg(['Channel count in electrode groups (', num2str(nChannels), ') does not corresponds to nChannels (',num2str(session.extracellular.nChannels),')'],'Error')
+                helpdlg(['Channel count in electrode groups (', num2str(nChannels), ') does not corresponds to nChannels (',num2str(session.extracellular.nChannels),')'],'Error')
             elseif uniqueChannels ~= session.extracellular.nChannels
-                errordlg('The unique channel count does not corresponds to nChannels','Error')
+                helpdlg('The unique channel count does not corresponds to nChannels','Error')
             elseif any(sort(channels) ~= [1:session.extracellular.nChannels])
-                errordlg('Channels are not ranging from 1 : nChannels','Error')
+                helpdlg('Channels are not ranging from 1 : nChannels','Error')
             else
                 msgbox('Channels verified succesfully!');
             end
@@ -2565,9 +2764,8 @@ uiwait(UI.fig)
             UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
             UIsetString(session.extracellular,'nChannels'); % Number of channels
-            MsgLog('XML imported',0)
+            MsgLog('XML imported',2)
         else
-%             errordlg(['xml file not accessible: ' xml_filepath],'Error')
             MsgLog(['xml file not accessible: ' xml_filepath],4)
         end
     end
@@ -2588,9 +2786,8 @@ uiwait(UI.fig)
             UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
             UIsetString(session.extracellular,'nChannels'); % Number of channels
-            MsgLog('KiloSort metadata imported via rez file',0)
+            MsgLog('KiloSort metadata imported via rez file',2)
         else
-%             errordlg(['xml file not accessible: ' xml_filepath],'Error')
             MsgLog('rez file does not exist',4)
         end
     end
@@ -2602,7 +2799,7 @@ uiwait(UI.fig)
             UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
             UIsetString(session.extracellular,'nChannels'); % Number of channels
-            MsgLog('Metadata imported using template',0)
+            MsgLog('Metadata imported using template',2)
     end
     
     function syncChannelGroups
@@ -2613,6 +2810,36 @@ uiwait(UI.fig)
             session.extracellular.electrodeGroups = session.extracellular.spikeGroups;
         end
         updateChannelGroupsList
+    end
+    
+    function generateChannelMap
+        [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
+        if isfield(session.animal,'probes') && exist(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'file')
+            disp('Loading predefined chanCoords')
+            load(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'chanCoords');
+        else
+            chanMap = createChannelMap(session);
+            chanCoords.x = chanMap.xcoords(:);
+            chanCoords.y = chanMap.ycoords(:);
+            chanCoords.source = chanMap.source;
+            chanCoords.layout = chanMap.layout;
+            chanCoords.shankSpacing = chanMap.shankSpacing;
+        end
+        x_range = range(chanCoords.x);
+        y_range = range(chanCoords.y);
+        if x_range > y_range
+            fig_width = 1600;
+            fig_height = ceil(fig_width*y_range/x_range)+200;
+        else
+            fig_height = 1000;
+            fig_width = ceil(fig_height*x_range/y_range)+200;
+        end
+        fig1 = figure('Name','Channel map','position',[5,5,fig_width,fig_height]); movegui(fig1,'center')
+        plot(chanCoords.x,chanCoords.y,'.k'), hold on
+        text(chanCoords.x,chanCoords.y,num2str([1:numel(chanCoords.x)]'),'VerticalAlignment', 'bottom','HorizontalAlignment','center');
+        title({' ','Channel map',' '}), xlabel('X (um)'), ylabel('Y (um)'), 
+        % Saving chanCoords to basename.chanCoords.channelInfo.mat file
+        saveStruct(chanCoords,'channelInfo','session',session);
     end
 
     function importBadChannelsFromXML(~,~)
@@ -2651,7 +2878,6 @@ uiwait(UI.fig)
             end
             updateTagList
         else
-%             errordlg(['xml file not accessible: ' xml_filepath],'Error')
             MsgLog(['xml file not accessible: ' xml_filepath],4)
         end
     end
@@ -2669,10 +2895,12 @@ uiwait(UI.fig)
         
         timestamp = datestr(now, 'HH:MM:SS');
         message2 = sprintf('[%s] %s', timestamp, message);
-        if ~exist('priority','var') || (exist('priority','var') && any(priority >= 0))
-            UI.popupmenu.log.String = [UI.popupmenu.log.String;message2];
-            UI.popupmenu.log.Value = length(UI.popupmenu.log.String);
-        end
+        %         if ~exist('priority','var') || (exist('priority','var') && any(priority >= 0))
+        %             UI.popupmenu.log.String = [UI.popupmenu.log.String;message2];
+        %             UI.popupmenu.log.Value = length(UI.popupmenu.log.String);
+        %         end
+        dialog1.Interpreter = 'none';
+        dialog1.WindowStyle = 'modal';
         if exist('priority','var')
             if any(priority < 0)
                 disp(message2)
@@ -2681,7 +2909,7 @@ uiwait(UI.fig)
                 disp(message)
             end
             if any(priority == 2)
-                msgbox(message,'Message',createStruct);
+                msgbox(message,'Message',dialog1);
             end
             if any(priority == 3)
                 warning(message)
