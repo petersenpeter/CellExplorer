@@ -143,7 +143,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         UI.settings.background = 'k';
         UI.settings.xtickColor = 'w';
         UI.settings.showChannelNumbers = false;
-        % Only Matlab 2020b and forward supports vertical markers unfortunately
+        % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9') 
             UI.settings.rasterMarker = 'o';
         else
@@ -166,9 +166,9 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         UI.settings.spikesDetectionThreshold = -100; % in µV
 
         % Performance settings
-        UI.settings.plotStyleDynamicRange = true; % If true, all samples will be shown below a temporal threshold in range mode (default: 1.2 sec)
-        UI.settings.plotStyleDynamicThreshold = 1.2; % in seconds, threhold for switch between range and raw data presentation (Matlab plots fast up to a certain number of points)
-        UI.settings.plotStyleRangeSamples = 4; % resamples per second of data. Default: 4; Higher valie will show less data points
+        UI.settings.plotStyleDynamicRange = true; % If true, in the range plot mode, all samples will be shown below a temporal threshold (default: 1.2 sec)
+        UI.settings.plotStyleDynamicThreshold = 1.2; % in seconds, threshold for switching between range and raw data presentation (Matlab plots linearly fast up to a certain number of points after which the performance drops and the range plotting style becomes faster)
+        UI.settings.plotStyleRangeSamples = 4; % average samples per second of data. Default: 4; Higher value will show less data points
         
         % Spikes settings
         UI.settings.showSpikes = false;
@@ -262,7 +262,6 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         uimenu(UI.menu.session.topMenu,menuLabel,'View metadata',menuSelectedFcn,@viewSessionMetaData);
         uimenu(UI.menu.session.topMenu,menuLabel,'Save metadata',menuSelectedFcn,@saveSessionMetadata);
         uimenu(UI.menu.session.topMenu,menuLabel,'Open basepath',menuSelectedFcn,@openSessionDirectory,'Separator','on');
-        
         
         % Cell metrics 
         UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'Cell metrics');
@@ -492,7 +491,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         UI.elements.lower.scaling = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', num2str(UI.settings.scalingFactor), 'Units','normalized', 'Position', [0.05 0 0.05 1],'HorizontalAlignment','left','tooltip','Ephys scaling','Callback',@setScaling);
         UI.elements.lower.performance = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Performance', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','left','KeyPressFcn', @keyPress);
         UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider,'KeyPressFcn', @keyPress);
-        set(UI.panel.info, 'Widths', [70 60 120 60 60 60 250 -1],'MinimumWidths',[70 60 120 60 60 60 180  1]); % set grid panel size
+        set(UI.panel.info, 'Widths', [70 60 120 60 60 60 280 -1],'MinimumWidths',[70 60 120 60 60 60 250  1]); % set grid panel size
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
@@ -655,6 +654,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             return
         end
         
+        ephys.traces = ephys.raw;
         if UI.settings.filterTraces && UI.settings.plotStyle == 4
             if int_gt_0(UI.settings.filter.lowerBand) && ~int_gt_0(UI.settings.filter.higherBand)
                 [b1, a1] = butter(3, UI.settings.filter.higherBand/sr*2, 'low');
@@ -663,11 +663,11 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             else
                 [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/sr*2, 'bandpass');
             end
-            ephys.traces = filtfilt(b1, a1, ephys.raw * (UI.settings.scalingFactor)/1000000);
+            ephys.traces(:,UI.channelOrder) = filtfilt(b1, a1, ephys.raw(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         elseif UI.settings.filterTraces
-            ephys.traces = filtfilt(UI.settings.filter.b1, UI.settings.filter.a1, ephys.raw * (UI.settings.scalingFactor)/1000000);
+            ephys.traces(:,UI.channelOrder) = filtfilt(UI.settings.filter.b1, UI.settings.filter.a1, ephys.raw(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         else
-            ephys.traces = ephys.raw * (UI.settings.scalingFactor)/1000000;
+            ephys.traces(:,UI.channelOrder) = ephys.raw(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000;
         end
         
         if UI.settings.plotEnergy == 1
@@ -676,7 +676,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             else
                 sr = data.session.extracellular.sr;
             end
-            for i = 1:size(ephys.traces,2)
+            for i = UI.channelOrder
                 ephys.traces(:,i) = 2*smooth(abs(ephys.traces(:,i)),round(UI.settings.energyWindow*sr),'moving');
             end
         end
@@ -686,7 +686,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             for iShanks = UI.settings.electrodeGroupsToPlot
                 channels = UI.channels{iShanks};
                 [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
-                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelScaling(1,channels),'color',colors(iShanks,:), 'HitTest','off');
+                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelOffset(channels),'color',colors(iShanks,:), 'HitTest','off');
             end
         elseif UI.settings.plotStyle == 2 && (UI.settings.windowDuration>=UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange) % Range values per sample (ala Neuroscope1)
             % Range data (low sampled values with min and max per interval)
@@ -700,8 +700,8 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                 timeLine = [];
                 channels = UI.channels{iShanks};
                 [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
-                tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelScaling(1,channels);
-                tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelScaling(1,channels);
+                tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelOffset(channels);
+                tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelOffset(channels);
                 tist(:,end+1,:) = nan;
                 timeLine1 = repmat([1:size(ephys.traces_min,1)]/size(ephys.traces_min,1)*UI.settings.windowDuration,numel(channels),1)';
                 timeLine(1,:,:) = timeLine1;
@@ -721,7 +721,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                 channels = UI.channels{iShanks};
                 if ~isempty(channels)
 %                     [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
-                    line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelScaling(1,channels),'color',colors(iShanks,:),'LineStyle','-', 'HitTest','off');
+                    line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelOffset(channels),'color',colors(iShanks,:),'LineStyle','-', 'HitTest','off');
                 end
             end
         end
@@ -738,30 +738,31 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         end
         
         % Detecting and plotting spikes
-        if UI.settings.detectSpikes
+        if UI.settings.detectSpikes && ~isempty(UI.channelOrder)
             if UI.settings.plotStyle == 4
                 [UI.settings.filter.b2, UI.settings.filter.a2] = butter(3, 500/(data.session.extracellular.srLfp/2), 'high');
             else
                 [UI.settings.filter.b2, UI.settings.filter.a2] = butter(3, 500/(data.session.extracellular.sr/2), 'high');
             end
-            ephys.filt = filtfilt(UI.settings.filter.b2, UI.settings.filter.a2, ephys.raw);
+            ephys.filt = ephys.raw;
+            ephys.filt(:,UI.channelOrder) = filtfilt(UI.settings.filter.b2, UI.settings.filter.a2, ephys.raw(:,UI.channelOrder));
             
             raster = [];
             raster.x = [];
             raster.y = [];
+            
             for i = 1:size(ephys.filt,2)
                 idx = find(diff(ephys.filt(:,i) < UI.settings.spikesDetectionThreshold)==1)+1;
                 if ~isempty(idx)
                     raster.x = [raster.x;idx];
-                    %                     raster.y = [raster.y;i*ones(numel(idx),1)];
-                    raster.y = [raster.y;ephys.traces(idx,i)-UI.channelScaling(idx,i)];
+                    if UI.settings.plotStyle == 5
+                        raster.y = [raster.y;-UI.channelScaling(idx,i)];
+                    else
+                        raster.y = [raster.y;ephys.traces(idx,i)-UI.channelScaling(idx,i)];
+                    end
                 end
-            end
-            [~,ia] = sort(UI.channelOrder);
-            ia = -0.9*((ia-1)/(numel(UI.channelOrder)-1))-0.05+1;
-            ia2 = 1:data.session.extracellular.nChannels;
-            isx = find(ismember(ia2,[UI.channels{UI.settings.electrodeGroupsToPlot}]));
-            ia2(isx) = ia;
+            end               
+                
             if UI.settings.showSpikes
                 markerType = 'o';
             else
@@ -771,7 +772,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         end
         
         % Detecting and plotting events
-        if UI.settings.detectEvents
+        if UI.settings.detectEvents && ~isempty(UI.channelOrder)
             raster = [];
             raster.x = [];
             raster.y = [];
@@ -798,9 +799,9 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         % Plotting channel numbers
         if UI.settings.showChannelNumbers
             if UI.settings.plotStyle < 5
-                text(-0.001*UI.settings.windowDuration*ones(1,numel(UI.channelOrder)),ephys.traces(1,UI.channelOrder)-UI.channelScaling(1,UI.channelOrder),cellstr(num2str(UI.channelOrder')),'color','w','VerticalAlignment', 'middle','HorizontalAlignment','right')
+                text(-0.001*UI.settings.windowDuration*ones(1,numel(UI.channelOrder)),ephys.traces(1,UI.channelOrder)-UI.channelOffset(UI.channelOrder),cellstr(num2str(UI.channelOrder')),'color','w','VerticalAlignment', 'middle','HorizontalAlignment','right')
             else
-                text(-0.001*UI.settings.windowDuration*ones(1,numel(UI.channelOrder)),-UI.channelScaling(1,UI.channelOrder),cellstr(num2str(UI.channelOrder')),'color','w','VerticalAlignment', 'middle','HorizontalAlignment','right')
+                text(-0.001*UI.settings.windowDuration*ones(1,numel(UI.channelOrder)),-UI.channelOffset(UI.channelOrder),cellstr(num2str(UI.channelOrder')),'color','w','VerticalAlignment', 'middle','HorizontalAlignment','right')
             end
         end
     end
@@ -856,14 +857,14 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             colorLine = UI.colorLine(UI.iLine,:);
         end
         
-        if size(UI.channelScaling,2)>0
+        if ~isempty(UI.channelOrder)
             if UI.settings.plotStyle == 1
-                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelScaling(1,channels), 'HitTest','off','linewidth',1.2,'color',colorLine);
+                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelOffset(channels), 'HitTest','off','linewidth',1.2,'color',colorLine);
             elseif UI.settings.plotStyle == 2 && (UI.settings.windowDuration>=UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange)
                 tist = [];
                 timeLine = [];
-                tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelScaling(1,channels);
-                tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelScaling(1,channels);
+                tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelOffset(channels);
+                tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelOffset(channels);
                 tist(:,end+1,:) = nan;
                 timeLine1 = repmat([1:size(ephys.traces_min,1)]/size(ephys.traces_min,1)*UI.settings.windowDuration,numel(channels),1)';
                 timeLine(1,:,:) = timeLine1;
@@ -872,7 +873,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                 line(UI.plot_axis1,timeLine(:)',tist(:)','LineStyle','-', 'HitTest','off','linewidth',1.2,'color',colorLine);
             else
                 timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
-                line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelScaling(1,channels),'LineStyle','-', 'HitTest','off','linewidth',1.2,'color',colorLine);
+                line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelOffset(channels),'LineStyle','-', 'HitTest','off','linewidth',1.2,'color',colorLine);
             end
         end
     end
@@ -931,14 +932,14 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                 if UI.settings.plotStyle == 1
                     idx2 = round(spikes_raster.x*UI.nDispSamples/UI.settings.windowDuration);
                     idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
-                    traces = ephys.traces(UI.dispSamples,:)-UI.channelScaling(1,:);
+                    traces = ephys.traces(UI.dispSamples,:)-UI.channelOffset(:);
                     idx3 = sub2ind(size(traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
                     spikes_raster.y = traces(idx3);
                 
                 elseif UI.settings.plotStyle == 2 && (UI.settings.windowDuration>=UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange)
                     idx2 = round(spikes_raster.x*size(ephys.traces_min,1)/UI.settings.windowDuration);
                     idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
-                    traces = ephys.traces_min-UI.channelScaling(1,:);
+                    traces = ephys.traces_min-UI.channelOffset(:);
                     idx3 = sub2ind(size(traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
                     spikes_raster.y = traces(idx3);
                 elseif UI.settings.plotStyle == 5
@@ -1666,11 +1667,13 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                 streamToc = toc(streamTic);
                 pauseBins = ones(1,10) * 0.05*UI.settings.windowDuration;
                 pauseBins(cumsum(pauseBins)-streamToc<0) = [];
+                if ~isempty(pauseBins)
                 pauseBins(end) = pauseBins(1)-rem(streamToc,pauseBins(end));
                 for i = 1:numel(pauseBins)
                     if UI.settings.stream
                         pause(pauseBins(i))
                     end
+                end
                 end
             end
             UI.elements.lower.performance.String = '';
@@ -2247,31 +2250,28 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         channels_1 = [data.session.extracellular.electrodeGroups.channels{:}];
         UI.channelMap(channels_1(find(idx))) = channels(idx2(idx2~=0));
         if nChannelsToPlot == 1
-            multiplier = 0.5*ones(1,UI.channelOrder);
+            channelOffset = 0.5*ones(1,UI.channelOrder);
         elseif UI.settings.extraSpacing && ~isempty(UI.settings.electrodeGroupsToPlot) && UI.settings.plotStyle < 5
             nChannelsInGroups = cellfun(@numel,UI.channels(UI.settings.electrodeGroupsToPlot));
             channelList = [];
             for i = 1:numel(UI.settings.electrodeGroupsToPlot)
                 channelList = [channelList,(0:nChannelsInGroups(i)-1)+numel(channelList)+i*1.5];
             end
-            multiplier = (channelList-1)/(channelList(end)-1)*(0.9-0.9*offset)+0.05*(1-offset);
+            channelOffset = (channelList-1)/(channelList(end)-1)*(0.9-0.9*offset)+0.05*(1-offset);
         else
-            multiplier = [0:nChannelsToPlot-1]/(nChannelsToPlot-1)*(0.9-0.9*offset)+0.05*(1-offset);
+            channelOffset = [0:nChannelsToPlot-1]/(nChannelsToPlot-1)*(0.9-0.9*offset)+0.05*(1-offset);
         end
+        UI.channelOffset = zeros(1,data.session.extracellular.nChannels);
+        UI.channelOffset(UI.channelOrder) = channelOffset-1;
 
         if UI.settings.plotStyle == 4
-            UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.srLfp),1)*multiplier;
+            UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.srLfp),1)*UI.channelOffset;
             UI.samplesToDisplay = UI.settings.windowDuration*data.session.extracellular.srLfp;
         else
-            UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.sr),1)*multiplier;
+            UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.sr),1)*UI.channelOffset;
             UI.samplesToDisplay = UI.settings.windowDuration*data.session.extracellular.sr;
         end
 
-        if nChannelsToPlot == 1
-            UI.channelScaling(:,1:UI.channelOrder) = UI.channelScaling-1;
-        else
-            UI.channelScaling(:,UI.channelOrder) = UI.channelScaling-1;
-        end
         UI.dispSamples = floor(linspace(1,UI.samplesToDisplay,UI.Pix_SS));
         UI.nDispSamples = numel(UI.dispSamples);
         UI.elements.lower.windowsSize.String = num2str(UI.settings.windowDuration);
@@ -2505,6 +2505,9 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                     UI.elements.lower.performance.String = ['Event added: ',num2str(t_event),' sec'];
                     UI.settings.addEventonClick = false;
                     uiresume(UI.fig);
+                else % Otherwise show cursor time
+                    um_axes = get(UI.plot_axis1,'CurrentPoint');
+                    UI.elements.lower.performance.String = ['Cursor: ',num2str(um_axes(1,1)+t0),' sec'];
                 end
                 
             case 'alt' % right mouse button
@@ -2530,7 +2533,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                 if UI.settings.normalClick
                     channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
                     x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration)';
-                    y1 = (ephys.traces(:,channels)-UI.channelScaling(1,channels));
+                    y1 = (ephys.traces(:,channels)-UI.channelOffset(channels));
                     [~,In] = min(hypot((x1(:)-um_axes(1,1)),(y1(:)-um_axes(1,2))));
                     In = unique(floor(In/size(x1,1)))+1;
                     In = channels(In);
