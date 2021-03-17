@@ -17,6 +17,9 @@ cd(basepath)
 ```m
 session = sessionTemplate(basepath,'showGUI',true);
 ```
+
+![ProcessCellMetrics_gui](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_ProcessCellMetrics.png)
+
 3. Run the cell metrics pipeline `ProcessCellMetrics` using the session struct as input
 ```m
 cell_metrics = ProcessCellMetrics('session', session);

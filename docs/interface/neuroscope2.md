@@ -66,7 +66,7 @@ A new dataset can also be loaded from the File menu in NeuroScope2. Select `Load
 ### Display Intan's digital and analog files
 Intan files are treated as time series and the metadata is stored in the session struct. To load the files you must first specify required metadata e.g. filename, number of channels, sampling rate. The metadata can be imported from Intan's `info.rhd`. In the session GUI `gui_session.m` go to the File menu and select __Import time series from Intan info.rhd__, this will import the metadata as shown in the screenshot below. Save the changes and close the gui.
 
-<a href="https://buzsakilab.com/wp/wp-content/uploads/2021/02/timeseries_intan.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2021/02/timeseries_intan.png)</a>
+<a href="https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_inputs.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_inputs.png)</a>
 
 ## Compiled versions of NeuroScope2
 NeuroScope2 can be compiled to a NeuroScope2.exe and a NeuroScope2.app for Windows and Mac respectively. The compiled versions can be used without a Matlab license and without having Matlab installed, but they can also be used independently on a system with Matlab. If Matlab is installed on your system you only need the application (NeuroScope2.exe or NeuroScope2.app), but if you want to use it on a system without Matlab, you have to use the installer (see the MyAppInstaller_web file included with the zip files below).
