@@ -5,7 +5,7 @@ function optitrack = optitrack2buzcode(session,LengthUnit,arena, apply_head_disp
 plot_on = 1;
 saveMat = 1;
 basepath = session.general.basePath;
-basename = session.general.baseName;
+basename = session.general.name;
 switch nargin
     case 4
         disp('')

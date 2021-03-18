@@ -17,21 +17,22 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters,acti
 
 % gui_session is part of CellExplorer: https://cellexplorer.org/
 
-% By Peter Petersen 
-% petersen.peter@gmail.com
-% Last edited: 08-03-2021
-
 % Lists
-sortingMethodList = {'KiloSort', 'KiloSort2','SpyKING CIRCUS', 'Klustakwik', 'MaskedKlustakwik','MountainSort','IronClust','MClust','Wave_clus'}; % Spike sorting methods
-sortingFormatList = {'Phy', 'KiloSort', 'SpyKING CIRCUS', 'Klustakwik', 'KlustaViewa', 'Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus'}; % Spike sorting formats
-inputsTypeList = {'adc', 'aux','dat', 'dig'}; % input data types
-sessionTypesList = {'Chronic', 'Acute'}; % session types
-layout = {};
+UI.list.sortingMethod = {'KiloSort','KiloSort2','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','MountainSort','IronClust','MClust','Wave_clus'}; % Spike sorting methods
+UI.list.sortingFormat = {'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus'}; % Spike sorting formats
+UI.list.inputsType = {'adc','aux','dat','dig'}; % input data types
+UI.list.sessionTypes = {'Acute','Chronic','Unknown'}; % session types
+UI.list.species = {'Rat', 'Mouse','Red-eared Turtles','Unknown'}; % animal species
+UI.list.strain = {'C57B1/6','B6/FVB Hybrid','BALB/cJ','Red-eared slider','DBA2/J','Brown Norway','Fischer 344','Long Evans','Sprague Dawleys','Wistar','Unknown'}; % animal strains
+UI.list.strain_species = {'Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Unknown'}; % animal strains parent in species
+
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
 
 % Parameters in cell metrics pipeline
 UI.list.params = {'forceReload','forceReloadSpikes','summaryFigures','saveMat','saveBackup','debugMode','submitToDatabase','keepCellClassification','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','getWaveformsFromDat'};
+
+layout = {};
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Database initialization
@@ -185,8 +186,8 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn
 UI.menu.extracellular.topMenu = uimenu(UI.fig,menuLabel,'Extracellular');
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Verify electrode group(s)',menuSelectedFcn,@verifyElectrodeGroup);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Sync electrode groups',menuSelectedFcn,@(~,~)syncChannelGroups);
-uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate channel map',menuSelectedFcn,@(~,~)generateChannelMap,'Separator','on');
-uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate common coordinates',menuSelectedFcn,@(~,~)generateCommonCoordinates(session));
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate channel map',menuSelectedFcn,@(~,~)generateChannelMap1,'Separator','on');
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate common coordinates',menuSelectedFcn,@(~,~)generateCommonCoordinates1);
 
 % CellExplorer
 UI.menu.CellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
@@ -223,14 +224,14 @@ UI.panel.main = uipanel('Parent',UI.panel.center); % Main plot panel
 set(UI.panel.center, 'Heights', [20 -1]); % set center panel size
 
 tabsList = {'general','epochs','animal','extracellular','spikeSorting','brainRegions','channelTags','inputs','behaviors'};
-tabsList2 = {'General','Epochs','Animal subject','Extracellular','Spike sorting','Brain regions','Tags','Inputs & time series','Tracking'};
+tabsList2 = {'General','Epochs','Animal subject','Extracellular','Spike sorting','Brain regions','Tags','Inputs & time series','Behavioral tracking'};
 if exist('parameters','var') && ~isempty(parameters)
     tabsList = ['parameters',tabsList];
     tabsList2 = ['CellExplorer',tabsList2];
 end
 UI.panel.title2 = uicontrol('Parent',UI.panel.left,'Style', 'text', 'String', 'Groups','ForegroundColor','w','HorizontalAlignment','center', 'fontweight', 'bold','Units','normalized','BackgroundColor',[0. 0.3 0.7],'FontSize',11);
 for iTabs = 1:numel(tabsList)
-    UI.buttons.(tabsList{iTabs}) = uicontrol('Parent',UI.panel.left,'Style','togglebutton','Units','normalized','String',tabsList2{iTabs},'Callback',@changeTab,'KeyPressFcn', @keyPress,'tooltip','Fast backward in time');
+    UI.buttons.(tabsList{iTabs}) = uicontrol('Parent',UI.panel.left,'Style','togglebutton','Units','normalized','String',tabsList2{iTabs},'Callback',@changeTab);
     UI.tabs.(tabsList{iTabs}) = uipanel('Parent',UI.panel.main,'Visible','off','Units','normalized','Position',[0 0 600 600],'BorderType','none');
 end
 uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.left);
@@ -282,7 +283,7 @@ uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Basepath', 'Posit
 UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 425, 600, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The path to the dataset'));
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', sessionTypesList, 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Session type'));
+UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', UI.list.sessionTypes, 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Session type'));
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Duration', 'Position', [300, 398, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.duration = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 375, 310, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Duration of the session (seconds)'));
@@ -344,10 +345,10 @@ uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Sex', 'Position', 
 UI.edit.sex = uicontrol('Parent',UI.tabs.animal,'Style', 'popup', 'String', {'Unknown','Male','Female'}, 'Position', [300, 475, 310, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Sex of animal subject'));
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Species', 'Position', [10, 450, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.species = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 425, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Species of animal subject\nE.g. Rats and Mouse'));
+UI.edit.species = uicontrol('Parent',UI.tabs.animal,'Style', 'popup', 'String', UI.list.species, 'Position', [10, 425, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Species of animal subject\nE.g. Rats and Mouse'),'Callback',@(src,evnt)updateStrain);
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Strain', 'Position', [300, 450, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.strain = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [300, 425, 310, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Strain of animal subject'));
+UI.edit.strain = uicontrol('Parent',UI.tabs.animal,'Style', 'popup', 'String', UI.list.strain, 'Position', [300, 425, 310, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Strain of animal subject'));
 
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Genetic line', 'Position', [10, 400, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.geneticLine = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Genetic line of animal subject (e.g. Wild type)'));
@@ -940,7 +941,7 @@ uiwait(UI.fig)
         end
         
         if isfield(session.general,'sessionType') && ~isempty(session.general.sessionType)
-            UI.edit.sessionType.Value = find(strcmp(session.general.sessionType,sessionTypesList));
+            UI.edit.sessionType.Value = find(strcmp(session.general.sessionType,UI.list.sessionTypes));
         end
         if isfield(session.general,'repositories') && ~isempty(session.general.repositories)
             if iscell(session.general.repositories)
@@ -961,8 +962,8 @@ uiwait(UI.fig)
         updateEpochsList
         UIsetString(session.animal,'name');
         UIsetValue(UI.edit.sex,session.animal.sex)
-        UIsetString(session.animal,'species');
-        UIsetString(session.animal,'strain');
+        UIsetValue(UI.edit.species,session.animal.species)
+        updateStrain
         UIsetString(session.animal,'geneticLine');
         UIsetString(session.extracellular,'nChannels');
         UIsetString(session.extracellular,'sr');
@@ -981,6 +982,11 @@ uiwait(UI.fig)
         updateBehaviorsList
         updateAnalysisList
         updateTimeSeriesList
+    end
+    
+    function updateStrain
+       UI.edit.strain.String = UI.list.strain(strcmp(UI.list.strain_species,UI.edit.species.String{UI.edit.species.Value})); 
+       UIsetValue(UI.edit.strain,session.animal.strain);
     end
     
     function getAnimalMetadata
@@ -1158,7 +1164,7 @@ uiwait(UI.fig)
         session.general.location = UI.edit.location.String;
         session.general.experimenters = UI.edit.experimenters.String;
         session.general.notes = UI.edit.notes.String;
-        session.general.sessionType = sessionTypesList{UI.edit.sessionType.Value};
+        session.general.sessionType = UI.list.sessionTypes{UI.edit.sessionType.Value};
         if ~isfield(session.general,'entryID') || isempty(session.general.entryID)
             session.general.investigator = UI.edit.investigator.String;
             session.general.repositories = UI.edit.repositories.String;
@@ -1166,8 +1172,8 @@ uiwait(UI.fig)
         end
         session.animal.name = UI.edit.name.String;
         session.animal.sex = UI.edit.sex.String{UI.edit.sex.Value};
-        session.animal.species = UI.edit.species.String;
-        session.animal.strain = UI.edit.strain.String;
+        session.animal.species = UI.edit.species.String{UI.edit.species.Value};
+        session.animal.strain = UI.edit.strain.String{UI.edit.strain.Value};
         session.animal.geneticLine = UI.edit.geneticLine.String;
         
         % Extracellular
@@ -1785,7 +1791,7 @@ uiwait(UI.fig)
         inputsChannels = uicontrol('Parent',UI.dialog.inputs,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 230, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Input type', 'Position', [250, 123, 240, 20],'HorizontalAlignment','left');
-        inputsType = uicontrol('Parent',UI.dialog.inputs,'Style', 'popup', 'String', inputsTypeList , 'Position', [250, 100, 240, 25],'HorizontalAlignment','left');
+        inputsType = uicontrol('Parent',UI.dialog.inputs,'Style', 'popup', 'String', UI.list.inputsType , 'Position', [250, 100, 240, 25],'HorizontalAlignment','left');
         UIsetValue(inputsType,initInputType)
         
         uicontrol('Parent',UI.dialog.inputs,'Style', 'text', 'String', 'Description', 'Position', [10, 73, 230, 20],'HorizontalAlignment','left');
@@ -2290,11 +2296,11 @@ uiwait(UI.fig)
         UI.dialog.spikeSorting = dialog('Position', [300, 300, 500, 225],'Name','Spike sorting','WindowStyle','modal'); movegui(UI.dialog.spikeSorting,'center')
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting method', 'Position', [10, 198, 230, 20],'HorizontalAlignment','left');
-        spikeSortingMethod = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', sortingMethodList, 'Position', [10, 175, 230, 25],'HorizontalAlignment','left');
+        spikeSortingMethod = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingMethod, 'Position', [10, 175, 230, 25],'HorizontalAlignment','left');
         UIsetValue(spikeSortingMethod,InitMethod)
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting format', 'Position', [250, 198, 240, 20],'HorizontalAlignment','left');
-        spikeSortinFormat = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', sortingFormatList, 'Position', [250, 175, 240, 25],'HorizontalAlignment','left');
+        spikeSortinFormat = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingFormat, 'Position', [250, 175, 240, 25],'HorizontalAlignment','left');
         UIsetValue(spikeSortinFormat,initFormat) 
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Relative path', 'Position', [10, 148, 230, 20],'HorizontalAlignment','left');
@@ -2520,7 +2526,7 @@ uiwait(UI.fig)
         timeSeriesFileName = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'edit', 'String', InitFileName, 'Position', [10, 200, 230, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Type (tag name)', 'Position', [250, 225, 240, 20],'HorizontalAlignment','left');
-        timeSeriesType = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'popup', 'String', inputsTypeList, 'Position', [250, 200, 240, 25],'HorizontalAlignment','left');
+        timeSeriesType = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'popup', 'String', UI.list.inputsType, 'Position', [250, 200, 240, 25],'HorizontalAlignment','left');
         UIsetValue(timeSeriesType,initType) 
         if exist('behaviorIn','var')
             timeSeriesType.Enable = 'off';
@@ -2812,13 +2818,16 @@ uiwait(UI.fig)
         updateChannelGroupsList
     end
     
-    function generateChannelMap
+    function generateCommonCoordinates1
+        generateCommonCoordinates(session)
+    end 
+    function generateChannelMap1
         [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
         if isfield(session.animal,'probes') && exist(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'file')
             disp('Loading predefined chanCoords')
             load(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'chanCoords');
         else
-            chanMap = createChannelMap(session);
+            chanMap = generateChannelMap(session);
             chanCoords.x = chanMap.xcoords(:);
             chanCoords.y = chanMap.ycoords(:);
             chanCoords.source = chanMap.source;
