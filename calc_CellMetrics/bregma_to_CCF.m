@@ -92,9 +92,6 @@ if plots
     plot3(ccf1.x,ccf1.z,ccf1.y,'or')
     plot3(surface_coordinates(1),surface_coordinates(3),surface_coordinates(2),'xr')
     plot3(implantVector(:,1),implantVector(:,3),implantVector(:,2),'k')
-    % plot3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,'ob'),
-    xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal,
-    set(gca, 'ZDir','reverse')
-    ax = gca;
-    line(ax, brainGridData(:,1), brainGridData(:,3), brainGridData(:,2), 'Color', [0 0 0 0.3], 'HitTest','off');
+    xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse')
+    line(gca, brainGridData(:,1), brainGridData(:,3), brainGridData(:,2), 'Color', [0 0 0 0.3], 'HitTest','off'); title('Mouse brain')
 end

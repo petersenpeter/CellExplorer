@@ -32,7 +32,7 @@ cell_metrics = ProcessCellMetrics('session', session,'showGUI',true)
 cell_metrics = ProcessCellMetrics
 ```
 
-![ProcessCellMetrics_gui](https://buzsakilab.com/wp/wp-content/uploads/2021/02/ProcessCellMetrics_gui.png)
+![ProcessCellMetrics_gui](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_ProcessCellMetrics.png)
 
 One important thing to clarify is that in `ProcessCellMetrics` the regular spikes struct is split into two structures: [spikes{1}](https://github.com/petersenpeter/CellExplorer/blob/master/ProcessCellMetrics.m#L251) that contains all spikes, and [spikes{2}](https://github.com/petersenpeter/CellExplorer/blob/master/ProcessCellMetrics.m#L326) that excludes timestamps during manipulations. This allows for greater flexibility when handling various types of manipulations that can have very different effects on the calculated metrics.
 

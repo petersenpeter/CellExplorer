@@ -37,6 +37,7 @@ switch lower(table)
     case 'persons';                 formidable_id = 110;
     case 'laboratories';            formidable_id = 117;
     case 'siliconprobes';           formidable_id = 20;
+    case 'probes';                  formidable_id = 20;
     case 'species';                 formidable_id = 115;
     case 'strains';                 formidable_id = 9;
     case 'tasks';                   formidable_id = 85;
@@ -51,13 +52,13 @@ switch lower(table)
     case 'microdrives';             formidable_id = 196;
     case 'microdriveadjustments';   formidable_id = 197;
     otherwise
-        warning('Please specify an existing tables as input table. See ''edit db_load_table'' for more info')
+        warning(['Please specify an existing tables as input table. See ''edit db_load_table'' for more info: ' lower(table)])
         return
 end
 
 db_out = [];
 db_settings = db_load_settings;
-options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','Get','Timeout',20);
+options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','Get','Timeout',20,'KeyName','token','KeyValue','VARB-7A5B-P1SM-XQWS');
 options.CertificateFilename=('');
 
 if nargin==1
@@ -96,9 +97,14 @@ if ~isempty(bz_db)
                 db_out.(fieldname12).General.EntryKey = entrylist{j};
             elseif any(strcmp(lower(table),{'surgeries','probeimplants','manipulationimplants','opticfiberimplants','virusinjections','histology','impedancemeasures','weightings'}))
                 fieldname12 = ['animal_',bz_db.(entrylist{j}).meta.Animal];
-                db_out.(fieldname12).((table)) = bz_db.(entrylist{j}).meta;
-                db_out.(fieldname12).((table)).Id = bz_db.(entrylist{j}).id;
-                db_out.(fieldname12).((table)).EntryKey = entrylist{j};
+                if isempty(db_out) || ~isfield(db_out,fieldname12) || ~isfield(db_out.(fieldname12),table) ||  ~isfield(db_out.(fieldname12),table)
+                    k = 1;
+                else
+                    k = numel(db_out.(fieldname12).(table))+1;
+                end
+                db_out.(fieldname12).((table)){k} = bz_db.(entrylist{j}).meta;
+                db_out.(fieldname12).((table)){k}.Id = bz_db.(entrylist{j}).id;
+                db_out.(fieldname12).((table)){k}.EntryKey = entrylist{j};
             else %if any(strcmp(lower(table),{'species','strains','siliconprobes','projects'}))
                 label = ['id_', bz_db.(entrylist{j}).id];
                 db_out.(label) = bz_db.(entrylist{j}).meta;
@@ -123,8 +129,8 @@ if ~isempty(bz_db)
                 animalNames = fieldnames(db_out2);
                 for iiii = 1:size(animallist,1)
                     for iii = 1:size(fieldnames(db_out2),1)
-                        if strcmp(db_out2.(animalNames{iii}).(sublist{ii}).Animal,animallist{iiii})
-                            db_out.(['animal_',animallist{iiii}]).(sublist{ii}) = db_out2.(animalNames{iii}).(sublist{ii});
+                        if strcmp(db_out2.(animalNames{iii}).(sublist{ii}){1}.Animal,animallist{iiii}(8:end))
+                            db_out.(['animal_',animallist{iiii}(8:end)]).(sublist{ii}) = db_out2.(animalNames{iii}).(sublist{ii});
                         end
                     end
                 end

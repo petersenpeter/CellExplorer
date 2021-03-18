@@ -31,9 +31,5 @@ verifySessionStruct(session);
 ```
 This will show a small figure, with missing required fields highlighted in red, and unused optional fields in blue.
 
-Below is a screenshot of the metadata interface, and a short video showing the various tabs, with metadata entered.
-![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_session-general.png)
-
-<video width="100%" height="auto" controls="controls">
-  <source src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/MetadataTutorial.mp4" type="video/mp4">
-</video>
+Below is a screenshot of the metadata interface with metadata entered.
+![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_general.png)

@@ -1,4 +1,4 @@
-function b = trilat(X,A,beta0,plots,waveforms_in)
+function b = trilat(X,Y,A,beta0,plots,waveforms_in)
 % Trilateration estimation of unit location 
 % 
 % Implementation sources:
@@ -6,7 +6,8 @@ function b = trilat(X,A,beta0,plots,waveforms_in)
 % https://gis.stackexchange.com/questions/40660/trilateration-algorithm-for-n-amount-of-points
 % -------
 % Input:
-% X:        (n,2)-Matrix with x,y coordinates of n electrode sites
+% X:        (n,1)-Matrix with x coordinates of n electrode sites
+% Y:        (n,1)-Matrix with y coordinates of n electrode sites
 % A:        Spike amplitude vector in µV with n elements
 % plots:    Display spatial location relative to the electrode sites (boolean and optional)
 % waveforms_in: (n,m)-Matrix with average m-length waveforms from n sites (optional)
@@ -18,19 +19,25 @@ function b = trilat(X,A,beta0,plots,waveforms_in)
 % By Peter Petersen
 % petersen.peter@gmail.com
 
-if nargin < 2
+% Making sure the dimension of the input is correct
+X = X(:);
+Y = Y(:);
+A = A(:);
+
+if nargin < 3
         plots = 0;
         waveforms_in = [];
 end
+
 d = 1000*A.^(-2);
-tbl = table(X, d');
+tbl = table([X,Y],d);
 weights = (1000*(A-min(A)+0.0001).^(-2)).^(-2);
 % beta0 = [20, -100]; % initial position
 
-modelfun = @(b,X)(((b(1)-X(:,1)).^2+(b(2)-X(:,2)).^2).^(1/2));
+modelfun = @(b,X1)(((b(1)-X1(:,1)).^2+(b(2)-X1(:,2)).^2).^(1/2));
 opts = statset('TolFun',1e-3);
 % mdl = fitnlm(X,y,modelfun,beta0,'Options',opts);
-mdl = fitnlm(tbl,modelfun,beta0, 'Weights', weights.','Options',opts);
+mdl = fitnlm(tbl,modelfun,beta0, 'Weights', weights,'Options',opts);
 b = mdl.Coefficients{1:2,{'Estimate'}};
 
 if plots
@@ -38,10 +45,10 @@ if plots
     subplot(1,2,1)
     viscircles(X, d,'color',[0,0,0,0.1]), hold on
     scatter(b(1),b(2), 70, [0 0 1], 'filled')
-    scatter(X(:,1),X(:,2), 70, [0 0 0], 'filled')
+    scatter(X,Y, 70, [0 0 0], 'filled')
     hold off
     subplot(2,2,2)
-    dist1 = (((b(1)-X(:,1)).^2+(b(2)-X(:,2)).^2).^(1/2));
+    dist1 = (((b(1)-X).^2+(b(2)-Y).^2).^(1/2));
     plot(dist1,A,'o'),set(gca, 'XScale', 'log')
     
     % legend({'Recording sites'})

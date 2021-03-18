@@ -187,7 +187,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | View metadata for current session | Opens the session metadata window using `gui_session.m` (shown below). [Learn more about the session metadata](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) | 
 | Open directory of current session | Show the data directory of the current session in your file browser | 
 
-![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-gui_session-general.png)
+![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_general.png)
 
 ### BuzLabDB
 

@@ -62,7 +62,7 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   cell_metrics : structure described in details at: https://cellexplorer.org/datastructure/standard-cell-metrics/
 
 %   By Peter Petersen
-%   Last edited: 15-12-2020
+%   Last edited: 27-02-2021
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Parsing parameters
@@ -426,7 +426,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         end
         cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
         if isfield(spikes{spkExclu},'peakVoltage_expFitLengthConstant')
-            cell_metrics.peakVoltage_expFitLengthConstant = spikes{spkExclu}.peakVoltage_expFitLengthConstant;
+            cell_metrics.peakVoltage_expFitLengthConstant = spikes{spkExclu}.peakVoltage_expFitLengthConstant(:)';
         end
         for j = 1:numel(field2copy)
             if isfield(spikes{spkExclu},field2copy{j})
@@ -475,13 +475,15 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                     disp('  Using default probesLayout: poly2')
                     session.analysisTags.probesLayout = 'poly2';
                 end
-                disp('  Creating channelmap')
-                chanMap = createChannelMap(session);
+                disp('  Generating channelmap')
+                chanMap = generateChannelMap(session);
             end
             chanCoords.x = chanMap.xcoords(:);
             chanCoords.y = chanMap.ycoords(:);
             saveStruct(chanCoords,'channelInfo','session',session);
         end
+        chanCoords.x = chanCoords.x(:);
+        chanCoords.y = chanCoords.y(:);
         cell_metrics.general.chanCoords = chanCoords;
         % Fit exponential
         fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
@@ -507,7 +509,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 
                 bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:16));
                 beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
-                trilat_pos = trilat([cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels)],peakVoltage(idx(1:16)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
+                trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels),peakVoltage(idx(1:16)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
                 cell_metrics.trilat_x(j) = trilat_pos(1);
                 cell_metrics.trilat_y(j) = trilat_pos(2);
                 
@@ -565,38 +567,40 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     if exist(ccf_file,'file') %&& (~all(isfield(cell_metrics,{'ccf_x','ccf_y','ccf_z'})) || parameters.forceReload == true)
         dispLog('Importing common coordinate framework');
         load(ccf_file,'ccf');
-        cell_metrics.general.ccf = ccf;
-        cell_metrics.ccf_x = cell_metrics.general.ccf.x(cell_metrics.maxWaveformCh1)';
-        cell_metrics.ccf_y = cell_metrics.general.ccf.y(cell_metrics.maxWaveformCh1)';
-        cell_metrics.ccf_z = cell_metrics.general.ccf.z(cell_metrics.maxWaveformCh1)';
-        for j = 1:cell_metrics.general.cellCount
-            if ~isnan(cell_metrics.peakVoltage(j))
-                peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
-                [~,idx] = sort(peakVoltage,'descend');
-                bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:16));
-                beta0 = [cell_metrics.general.ccf.x(bestChannels(1)),cell_metrics.general.ccf.y(bestChannels(1)),cell_metrics.general.ccf.z(bestChannels(1))]; % initial position
-                if isnan(beta0)
+        if all(isfield(ccf,{'x','y','z'}))
+            cell_metrics.general.ccf = ccf;
+            cell_metrics.ccf_x = cell_metrics.general.ccf.x(cell_metrics.maxWaveformCh1)';
+            cell_metrics.ccf_y = cell_metrics.general.ccf.y(cell_metrics.maxWaveformCh1)';
+            cell_metrics.ccf_z = cell_metrics.general.ccf.z(cell_metrics.maxWaveformCh1)';
+            for j = 1:cell_metrics.general.cellCount
+                if ~isnan(cell_metrics.peakVoltage(j))
+                    peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
+                    [~,idx] = sort(peakVoltage,'descend');
+                    bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:16));
+                    beta0 = [cell_metrics.general.ccf.x(bestChannels(1)),cell_metrics.general.ccf.y(bestChannels(1)),cell_metrics.general.ccf.z(bestChannels(1))]; % initial position
+                    if isnan(beta0)
+                        cell_metrics.ccf_x(j) = nan;
+                        cell_metrics.ccf_y(j) = nan;
+                        cell_metrics.ccf_z(j) = nan;
+                    else
+                        trilat_pos = trilat3([cell_metrics.general.ccf.x(bestChannels),cell_metrics.general.ccf.y(bestChannels),cell_metrics.general.ccf.z(bestChannels)],peakVoltage(idx(1:16)),beta0,0);
+                        cell_metrics.ccf_x(j) = trilat_pos(1);
+                        cell_metrics.ccf_y(j) = trilat_pos(2);
+                        cell_metrics.ccf_z(j) = trilat_pos(3);
+                    end
+                else
                     cell_metrics.ccf_x(j) = nan;
                     cell_metrics.ccf_y(j) = nan;
-                	cell_metrics.ccf_z(j) = nan;
-                else
-                    trilat_pos = trilat3([cell_metrics.general.ccf.x(bestChannels),cell_metrics.general.ccf.y(bestChannels),cell_metrics.general.ccf.z(bestChannels)],peakVoltage(idx(1:16)),beta0,0);
-                    cell_metrics.ccf_x(j) = trilat_pos(1);
-                    cell_metrics.ccf_y(j) = trilat_pos(2);
-                    cell_metrics.ccf_z(j) = trilat_pos(3);
+                    cell_metrics.ccf_z(j) = nan;
                 end
-            else
-                cell_metrics.ccf_x(j) = nan;
-                cell_metrics.ccf_y(j) = nan;
-                cell_metrics.ccf_z(j) = nan;
             end
-        end
-        figure
-        plot3(cell_metrics.general.ccf.x,cell_metrics.general.ccf.z,cell_metrics.general.ccf.y,'.k'), hold on
-        plot3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,'ob'),
-        xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse')
-        if exist('plotBrainGrid.m','file')
-            plotAllenBrainGrid, hold on
+            figure
+            plot3(cell_metrics.general.ccf.x,cell_metrics.general.ccf.z,cell_metrics.general.ccf.y,'.k'), hold on
+            plot3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,'ob'),
+            xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse')
+            if exist('plotBrainGrid.m','file')
+                plotAllenBrainGrid, hold on
+            end
         end
     end
 end
@@ -1595,6 +1599,7 @@ if parameters.summaryFigures
 end
 
 dispLog(['Cell metrics calculations complete. Elapsed time is ', num2str(toc(timerCalcMetrics),5),' seconds.'])
+trackGoogleAnalytics('ProcessCellMetrics',2.1); % Anonymous tracking of usage
 
 function dispLog(message)
     timestamp = datestr(now, 'dd-mm-yyyy HH:MM:SS');

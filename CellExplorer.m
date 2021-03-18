@@ -91,7 +91,7 @@ plotCellIDs = p.Results.plotCellIDs;
 % % % % % % % % % % % % % % % % % % % % % %
 
 UI = []; UI.BatchMode = false; UI.params.ClickedCells = []; UI.params.inbound = [];
-UI.params.ii_history = 1; UI.lists.metrics = [];
+UI.params.ii_history = 1; UI.lists.metrics = []; UI.params.hoverStyle = 2;
 UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoSyn.dispHollowGauss = false;
 UI.params.ACGLogIntervals = -3:0.04:1; UI.tableData.Column1 = 'putativeCellType'; UI.tableData.Column2 = 'brainRegion'; 
 UI.tableData.SortBy = 'cellID'; UI.plot.xTitle = ''; UI.plot.yTitle = ''; UI.plot.zTitle = '';  UI.params.alteredCellMetrics = 1;
@@ -106,9 +106,9 @@ UI.params.menuOptionsToExlude = {'putativeCellType','tags','groundTruthClassific
 UI.params.tableOptionsToExlude = {'putativeCellType','tags','groundTruthClassification','brainRegion','labels','deepSuperficial','groups','spikes'};
 UI.params.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage','firingRate','troughToPeak','synapticConnectionsOut','synapticConnectionsIn','animal','sessionName','cv2','brainRegion','electrodeGroup'});
 UI.classes.plot2 = []; UI.classes.colors = []; UI.classes.colors2 = [];  UI.classes.colors3 = []; UI.classes.plot = []; UI.classes.plot11 = []; 
-UI.brainRegions.list = []; UI.brainRegions.acronym = []; UI.brainRegions.relational_tree = [];
+UI.brainRegions.list = []; UI.brainRegions.acronym = []; UI.brainRegions.relational_tree = []; UI.groupData1.groupsList = {'groups','tags','groundTruthClassification'};
 
-plotConnections = [1 1 1]; plotAverage_nbins = 40; groupData.groupsList = {'groups','tags','groundTruthClassification'}; 
+plotConnections = [1 1 1]; plotAverage_nbins = 40; 
 synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'}; ccf_ratio = [-35.5,30];
 plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = [];
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];
@@ -135,7 +135,7 @@ if isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
 
-CellExplorerVersion = 1.68;
+CellExplorerVersion = 1.69;
 
 UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none');
 hManager = uigetmodemanager(UI.fig);
@@ -328,7 +328,7 @@ uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Perform group action [space]',me
 UI.menu.cellSelection.stickySelection = uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Sticky cell selection',menuSelectedFcn,@toggleStickySelection,'Separator','on');
 UI.menu.cellSelection.stickySelectionReset = uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Reset sticky selection',menuSelectedFcn,@toggleStickySelectionReset);
 UI.menu.cellSelection.hoverEffect = uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Highlight cells by mouse hover',menuSelectedFcn,@adjustHoverEffect,'Separator','on');
-if UI.preferences.hoverEffect; UI.menu.cellSelection.hoverEffect.Checked = 'on'; end 
+if UI.preferences.hoverEffect; UI.menu.cellSelection.hoverEffect.Checked = 'on'; end
 
 % Classification
 UI.menu.edit.topMenu = uimenu(UI.fig,menuLabel,'Classification');
@@ -640,9 +640,9 @@ set(UI.panel.centerBottom, 'Widths', [-600 -300], 'Spacing', 5);
 % % % % % % % % % % % % % % % % % % % %
 
 % Navigation buttons
-uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0 0 0.33 1],'String','<','Callback',@back,'KeyPressFcn', {@keyPress},'tooltip','Go to previous cell (i-1)');
+uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0 0 0.33 1],'String',char(8592),'Callback',@back,'KeyPressFcn', {@keyPress},'tooltip','Go to previous cell (i-1)');
 uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0 0.33 1],'String','GoTo','Callback',@(src,evnt)goToCell,'KeyPressFcn', {@keyPress},'tooltip','Open a dialog to provide specific cell id');
-UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0 0.33 1],'String','>','Callback',@advance,'KeyPressFcn', {@keyPress},'tooltip','Go to next cell (i+1)');
+UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0 0.33 1],'String',char(8594),'Callback',@advance,'KeyPressFcn', {@keyPress},'tooltip','Go to next cell (i+1)');
 
 % % % % % % % % % % % % % % % % % % % %
 % Cell assignments panel (right side)  
@@ -830,6 +830,7 @@ if ishandle(UI.fig)
     % Closing CellExplorer figure if still open
     close(UI.fig);
 end
+trackGoogleAnalytics('CellExplorer',CellExplorerVersion,'metrics',cell_metrics); % Anonymous tracking of usage
 cell_metrics = saveCellMetricsStruct(cell_metrics);
 
 
@@ -895,26 +896,26 @@ function updateUI
     
     % Group data
     % Filters tagged cells ('tags','groups','groundTruthClassification')
-    if ~isempty(groupData)
+    if ~isempty(UI.groupData1)
         dataTypes = {'tags','groups','groundTruthClassification'};
         filter_pos = [];
         filter_neg = [];
         for jjj = 1:numel(dataTypes)
-            if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'plus_filter') && any(struct2array(groupData.(dataTypes{jjj}).plus_filter))
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'plus_filter')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).plus_filter);
+            if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'plus_filter') && any(struct2array(UI.groupData1.(dataTypes{jjj}).plus_filter))
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'plus_filter')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).plus_filter);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).plus_filter.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj})  && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj}))
+                        if UI.groupData1.(dataTypes{jjj}).plus_filter.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj})  && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj}))
                             filter_pos = [filter_pos,cell_metrics.(dataTypes{jjj}).(fields1{jj})];
                         end
                     end
                 end
             end
-            if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'minus_filter') && any(struct2array(groupData.(dataTypes{jjj}).minus_filter))
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'minus_filter')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).minus_filter);
+            if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'minus_filter') && any(struct2array(UI.groupData1.(dataTypes{jjj}).minus_filter))
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'minus_filter')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).minus_filter);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).minus_filter.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj}) && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj}))
+                        if UI.groupData1.(dataTypes{jjj}).minus_filter.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj}) && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj}))
                             filter_neg = [filter_neg,cell_metrics.(dataTypes{jjj}).(fields1{jj})];
                         end
                     end
@@ -1339,11 +1340,11 @@ function updateUI
                 if ~isempty(UI.params.subset(G==1)) && ~isempty(UI.params.subset(G==2))
                     if ~all(plotX(UI.params.subset(G==1))) && ~all(plotX(UI.params.subset(G==2)))
                         [h,p] = kstest2(plotX(UI.params.subset(G==1)),plotX(UI.params.subset(G==2)));
-                        text(0.97,0.02,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Rotation',90,'Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',1)
+                        text(0.97,0.02,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Rotation',90,'Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
                     end
                     if ~all(plotY(UI.params.subset(G==1))) && ~all(plotY(UI.params.subset(G==2)))
                         [h,p] = kstest2(plotY(UI.params.subset(G==1)),plotY(UI.params.subset(G==2)));
-                        text(0.02,0.97,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',1)
+                        text(0.02,0.97,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
                     end
                 end
             end
@@ -1638,14 +1639,14 @@ function updateUI
         
         % Ground truth cell types
         % Plots tagged cells ('tags','groups','groundTruthClassification')
-        if ~isempty(groupData)
+        if ~isempty(UI.groupData1)
             dataTypes = {'tags','groups','groundTruthClassification'};
             for jjj = 1:numel(dataTypes)
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'highlight')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).highlight);
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
-                            idx_groupData = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                            idx_groupData1 = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX(idx_groupData), plotY(idx_groupData), plotZ(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
                     end
@@ -1653,7 +1654,6 @@ function updateUI
             end
         end
         
-
         % Activating rotation
         rotateFig(subfig_ax(1))
 
@@ -3123,7 +3123,7 @@ end
                     if isfield(general.responseCurves.firingRateAcrossTime,'boundaries_labels')
                         boundaries_labels = general.responseCurves.firingRateAcrossTime.boundaries_labels;
                         if length(boundaries_labels) == length(boundaries)
-                            text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',1);
+                            text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',0.5);
                         end
                     end
                     line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off');
@@ -3159,7 +3159,7 @@ end
                         if isfield(general.responseCurves.(responseCurvesName),'boundaries_labels')
                             boundaries_labels = general.responseCurves.(responseCurvesName).boundaries_labels;
                             if length(boundaries_labels) == length(boundaries)
-                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',1);
+                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',0.5);
                             end
                         end
                         line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off');
@@ -3276,7 +3276,7 @@ end
                         if isfield(general.responseCurves.(responseCurvesName),'boundaries_labels')
                             boundaries_labels = general.responseCurves.(responseCurvesName).boundaries_labels;
                             if length(boundaries_labels) == length(boundaries)
-                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none', 'Color', 'k','BackgroundColor',[1 1 1 0.7],'margin',1);
+                                text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none', 'Color', 'k','BackgroundColor',[1 1 1 0.7],'margin',0.5);
                             end
                         end
                         line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off','linewidth',1.5);
@@ -3568,7 +3568,7 @@ end
                     boundaries = general.(customPlotSelection).boundaries;
                     if isfield(general.(customPlotSelection),'boundaries_labels')
                         boundaries_labels = general.(customPlotSelection).boundaries_labels;
-                        text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',1);
+                        text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off');
                 end
@@ -3657,7 +3657,7 @@ end
                     end
                 end
                 k_states = k_states - .1;
-                text(ax6(1),k_states*ax6(4),[stateData{j}, ' (',num2str(numel(stateNames)),')'],'VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+                text(ax6(1),k_states*ax6(4),[stateData{j}, ' (',num2str(numel(stateNames)),')'],'VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
                 ylim([k_states*ax6(4),ax6(4)])
             end
             ax6 = axis;
@@ -3670,14 +3670,14 @@ end
                 states1  = cell_metrics.general.restrictToIntervals;
                 patch(double([states1,flip(states1,2)])',k_states*ax6(4)+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1,1)),[0.2 0.2 0.8],'EdgeColor',[0.2 0.2 0.8],'HitTest','off')
                 k_states = k_states - .1;
-                text(ax6(1),k_states*ax6(4),'restrictToIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+                text(ax6(1),k_states*ax6(4),'restrictToIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
 %                 ylim([k_states*ax6(4),ax6(4)])
             end
             if isfield(cell_metrics.general,'excludeIntervals')
                 states1  = cell_metrics.general.excludeIntervals;
                 patch(double([states1,flip(states1,2)])',k_states*ax6(4)+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1,1)),[0.2 0.2 0.8],'EdgeColor',[0.2 0.2 0.8],'HitTest','off')
                 k_states = k_states - .1;
-                text(ax6(1),k_states*ax6(4),'excludeIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+                text(ax6(1),k_states*ax6(4),'excludeIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
             end
             ylim([k_states*ax6(4)+ax6(3),ax6(4)])
             ax6 = axis;
@@ -3700,13 +3700,13 @@ end
 
     function plotGroudhTruthCells(plotX1,plotY1)
         % Plots tagged cells ('tags','groups','groundTruthClassification')
-        if ~isempty(groupData)
+        if ~isempty(UI.groupData1)
             dataTypes = {'tags','groups','groundTruthClassification'};
             for jjj = 1:numel(dataTypes)
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'highlight')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).highlight);
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
                             idx_groupData = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX1(idx_groupData), plotY1(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
@@ -3746,13 +3746,13 @@ end
         end
         
         % Plots tagged cells ('tags','groups','groundTruthClassification')
-        if ~isempty(groupData)
+        if ~isempty(UI.groupData1)
             dataTypes = {'tags','groups','groundTruthClassification'};
             for jjj = 1:numel(dataTypes)
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'highlight')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).highlight);
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
                             idx_groupData = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX1(idx_groupData), plotY1(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
@@ -4944,313 +4944,11 @@ end
 %         UI.popupmenu.groups.String = colorMenu; % buttonGroups(1)
         MsgLog(['Group filters created succesfully. Check the "group data and filters" dropdown menu in the left side panel.'],[1,2]);
     end
+    
     function defineGroupData(~,~)
-        if ~isfield(groupData,'groupToList')
-            groupData.groupToList = 'tags';
-            groupDataSelect = 2;
-        else
-            groupDataSelect = find(ismember(groupData.groupsList,groupData.groupToList));
-        end
-        
-        updateGroupList
-        drawnow nocallbacks;
-        groupData.dialog = dialog('Position', [300, 300, 840, 465],'Name','Group data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(groupData.dialog,'center'), set(groupData.dialog,'visible','on') % 'MenuBar', 'None','NumberTitle','off'
-        groupData.VBox = uix.VBox( 'Parent', groupData.dialog, 'Spacing', 5, 'Padding', 0 );
-        groupData.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',groupData.VBox);
-        groupData.sessionList = uitable(groupData.VBox,'Data',UI.groupData.dataTable,'Position',[10, 50, 740, 457],'ColumnWidth',{65,45,45,100,460 75,45},'columnname',{'Highlight','+filter','-filter','Group name','List of cells','Cell count','Select'},'RowName',[],'ColumnEditable',[true true true true true false true],'Units','normalized','CellEditCallback',@editTable);
-        groupData.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',groupData.VBox);
-        set(groupData.VBox, 'Heights', [50 -1 35]);
-        uicontrol('Parent',groupData.panel.top,'Style','text','Position',[13, 25, 170, 20],'Units','normalized','String','Group data','HorizontalAlignment','left','Units','normalized');
-        uicontrol('Parent',groupData.panel.top,'Style','text','Position',[203, 25, 120, 20],'Units','normalized','String','Sort by','HorizontalAlignment','left','Units','normalized');
-        uicontrol('Parent',groupData.panel.top,'Style','text','Position',[333, 25, 170, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
-
-        groupData.popupmenu.groupData = uicontrol('Parent',groupData.panel.top,'Style','popupmenu','Position',[10, 5, 180, 22],'Units','normalized','String',groupData.groupsList,'HorizontalAlignment','left','Callback',@(src,evnt)ChangeGroupToList,'Units','normalized','Value',groupDataSelect);
-        groupData.popupmenu.sorting = uicontrol('Parent',groupData.panel.top,'Style','popupmenu','Position',[200, 5, 120, 22],'Units','normalized','String',{'Group name','Count'},'HorizontalAlignment','left','Callback',@(src,evnt)filterGroupData,'Units','normalized');
-        groupData.popupmenu.filter = uicontrol('Parent',groupData.panel.top,'Style', 'Edit', 'String', '', 'Position', [330, 5, 170, 25],'Callback',@(src,evnt)filterGroupData,'HorizontalAlignment','left','Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[10, 5, 120, 30],'String','Highlight all','Callback',@(src,evnt)button_groupData_selectAll,'Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[140, 5, 120, 30],'String','Clear all','Callback',@(src,evnt)button_groupData_deselectAll,'Units','normalized');
-%         groupData.summaryText = uicontrol('Parent',groupData.panel.bottom,'Style','text','Position',[270, 5, 300, 25],'Units','normalized','String','','HorizontalAlignment','center','Units','normalized');
-        uicontrol('Parent',groupData.panel.top,'Style','pushbutton','Position',[620, 5, 100, 30],'String','+ New','Callback',@(src,evnt)newGroup,'Units','normalized');
-        uicontrol('Parent',groupData.panel.top,'Style','pushbutton','Position',[730, 5, 100, 30],'String','Delete','Callback',@(src,evnt)deleteGroup,'Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[620, 5, 100, 30],'String','Actions','Callback',@(src,evnt)CreateGroupAction,'Units','normalized');
-        uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[730, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseDialog,'Units','normalized');
-        groupData.popupmenu.performGroundTruthClassification = uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[270, 5, 110, 30],'String','Show G/T tab','Callback',@(src,evnt)performGroundTruthClassification,'Units','normalized','visible','Off');
-        groupData.popupmenu.importGroundTruth = uicontrol('Parent',groupData.panel.bottom,'Style','pushbutton','Position',[390, 5, 110, 30],'String','Export GT','Callback',@(src,evnt)importGroundTruth,'Units','normalized','visible','Off');
-
-        toggleGroundTruthButtons
-        updateGroupDataCount
-        filterGroupData
-        uicontrol(groupData.popupmenu.filter)
-        uiwait(groupData.dialog)
-        
-        function CreateGroupAction
-            oldField = find([groupData.sessionList.Data{:,end}]);
-            if ~isempty(oldField)
-                field = groupData.sessionList.Data(oldField,4);
-                affectedCells = [];
-                for i = 1:numel(oldField)
-                    affectedCells = [affectedCells,cell_metrics.(groupData.groupToList).(field{i})];
-                end
-                UI.params.ClickedCells = affectedCells;
-                delete(groupData.dialog);
-                updateUI2
-                GroupAction(UI.params.ClickedCells);
-            end
-        end
-        function ChangeGroupToList
-            groupData.groupToList = groupData.groupsList{groupData.popupmenu.groupData.Value};
-            toggleGroundTruthButtons
-            updateGroupList
-            filterGroupData
-        end
-        function updateUI2
-            for i = 1:numel(UI.preferences.tags)
-                if  isfield(groupData,'tags') && isfield(groupData.tags,'minus_filter') && isfield(groupData.tags.minus_filter,UI.preferences.tags{i})
-                    UI.togglebutton.dispTags(i).Value = groupData.tags.minus_filter.(UI.preferences.tags{i});
-                    UI.togglebutton.dispTags(i).FontWeight = 'bold';
-                    UI.togglebutton.dispTags(i).ForegroundColor = UI.colors.toggleButtons;
-                else 
-                    UI.togglebutton.dispTags(i).Value = 0;
-                    UI.togglebutton.dispTags(i).FontWeight = 'normal';
-                    UI.togglebutton.dispTags(i).ForegroundColor = [0 0 0];
-                end
-                if isfield(groupData,'tags') && isfield(groupData.tags,'plus_filter') && isfield(groupData.tags.plus_filter,UI.preferences.tags{i})
-                    UI.togglebutton.dispTags2(i).Value = groupData.tags.plus_filter.(UI.preferences.tags{i});
-                    UI.togglebutton.dispTags2(i).FontWeight = 'bold';
-                    UI.togglebutton.dispTags2(i).ForegroundColor = UI.colors.toggleButtons;
-                else
-                    UI.togglebutton.dispTags2(i).Value = 0;
-                    UI.togglebutton.dispTags2(i).FontWeight = 'normal';
-                    UI.togglebutton.dispTags2(i).ForegroundColor = [0 0 0];
-                end
-
-            end
-        end
-        function toggleGroundTruthButtons
-            if strcmp(groupData.groupToList,'groundTruthClassification')
-                groupData.popupmenu.performGroundTruthClassification.Visible = 'On';
-                groupData.popupmenu.importGroundTruth.Visible = 'On';
-            else
-                groupData.popupmenu.performGroundTruthClassification.Visible = 'Off';
-                groupData.popupmenu.importGroundTruth.Visible = 'Off';
-            end
-        end
-        
-        function newGroup
-            opts.Interpreter = 'tex';
-            NewTag = inputdlg({'Name of new group','Cells in group'},'Add group',[1 40],{'',''},opts);
-            if ~isempty(NewTag) && ~isempty(NewTag{1}) && ~any(strcmp(NewTag{1},UI.groupData.(groupData.groupToList)))
-                if isvarname(NewTag{1})
-                    if ~isempty(NewTag{2})
-                        try
-                            temp = eval(['[',NewTag{2},']']);
-                            if isnumeric(eval(['[',NewTag{2},']']))
-                                cell_metrics.(groupData.groupToList).(NewTag{1}) = eval(['[',NewTag{2},']']);
-                                idx_ids = cell_metrics.(groupData.groupToList).(NewTag{1}) < 1 | cell_metrics.(groupData.groupToList).(NewTag{1}) > cell_metrics.general.cellCount;
-                                cell_metrics.(groupData.groupToList).(NewTag{1})(idx_ids) = [];
-                                saveStateToHistory(cell_metrics.(groupData.groupToList).(NewTag{1}));
-                            end
-                        end
-                    else
-                        cell_metrics.(groupData.groupToList).(NewTag{1}) = [];
-                    end
-                    updateGroupList
-                    filterGroupData
-                    MsgLog(['New group added: ' NewTag{1}]);
-                    if strcmp(groupData.groupToList,'tags')
-                        UI.preferences.tags = [UI.preferences.tags,NewTag{1}];
-                        initTags
-                        updateTags
-                    end
-                else
-                    MsgLog(['Tag not added. Must be a valid variable name : ' NewTag{1}],4);
-                end
-            end
-        end
-        
-        function deleteGroup
-            oldField = find([groupData.sessionList.Data{:,end}]);
-            if ~isempty(oldField)
-                field = groupData.sessionList.Data(oldField,4);
-                affectedCells = [];
-                for i = 1:numel(oldField)
-                    affectedCells = [affectedCells,cell_metrics.(groupData.groupToList).(field{i})];
-                end
-                if ~isempty(affectedCells)
-                    saveStateToHistory(affectedCells)
-                end
-                cell_metrics.(groupData.groupToList) = rmfield(cell_metrics.(groupData.groupToList),field);
-                updateGroupList
-                filterGroupData
-                if strcmp(groupData.groupToList,'tags')
-                    UI.preferences.tags(ismember(UI.preferences.tags,field)) = [];
-                    initTags
-                    updateTags
-                end
-            end
-        end
-        
-        function editTable(hObject,callbackdata)
-            row = callbackdata.Indices(1);
-            column = callbackdata.Indices(2);
-            if any(column == [1,2,3,7])
-                groupData.sessionList.Data{row,column} = callbackdata.EditData;
-                if column == 1
-                    groupData.(groupData.groupToList).highlight.(groupData.sessionList.Data{row,4}) = callbackdata.EditData;
-                elseif column == 2
-                    groupData.(groupData.groupToList).plus_filter.(groupData.sessionList.Data{row,4}) = callbackdata.EditData;
-                elseif column == 3
-                    groupData.(groupData.groupToList).minus_filter.(groupData.sessionList.Data{row,4}) = callbackdata.EditData;
-                end
-            elseif column == 4 && isvarname(groupData.sessionList.Data{row,column}) && ~ismember(groupData.sessionList.Data{row,column},UI.groupData.(groupData.groupToList))
-                
-                newField = callbackdata.EditData;
-                oldField = callbackdata.PreviousData;
-                cells_altered = cell_metrics.(groupData.groupToList).(oldField);
-                if ~isempty(cells_altered)
-                    saveStateToHistory(cells_altered)
-                end
-                [cell_metrics.(groupData.groupToList).(newField)] = cell_metrics.(groupData.groupToList).(oldField);
-                cell_metrics.(groupData.groupToList) = rmfield(cell_metrics.(groupData.groupToList),oldField);
-                updateGroupList;
-                filterGroupData;
-                
-                if strcmp(groupData.groupToList,'tags')
-                    UI.preferences.tags(ismember(UI.preferences.tags,oldField)) = [];
-                    UI.preferences.tags = [UI.preferences.tags,newField];
-                    initTags
-                    updateTags
-                end
-            elseif column == 5
-
-                numericValue = groupData.sessionList.Data{row,column};
-                preValue = cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4});
-                try
-                    temp = eval(['[',numericValue,']']);
-                    if ~isempty(numericValue) && isnumeric(eval(['[',numericValue,']']))
-                        cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4}) = eval(['[',numericValue,']']);
-                        idx_ids = cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4}) < 1 | cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4}) > cell_metrics.general.cellCount;
-                        cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4})(idx_ids) = [];
-                    end
-                end
-                cells_altered = unique([preValue,cell_metrics.(groupData.groupToList).(groupData.sessionList.Data{row,4})]);
-                if ~isempty(cells_altered)
-                    saveStateToHistory(cells_altered)
-                end
-                updateGroupList
-                filterGroupData
-                if strcmp(groupData.groupToList,'tags')
-                    updateTags
-                end
-            else
-                updateGroupList
-                filterGroupData
-            end
-        end
-        
-        function updateGroupList
-            % Loading group data
-            UI.groupData = [];
-            if isfield(cell_metrics,groupData.groupToList)
-                cell_metrics.(groupData.groupToList) = orderfields(cell_metrics.(groupData.groupToList));
-                UI.groupData.(groupData.groupToList) = fieldnames(cell_metrics.(groupData.groupToList));
-                % Generating table data
-                UI.groupData.Counts = struct2cell(structfun(@(X) num2str(length(X)),cell_metrics.(groupData.groupToList),'UniformOutput',false));
-                UI.groupData.sessionEnumerator = cellstr(num2str([1:length(UI.groupData.(groupData.groupToList))]'));
-                UI.groupData.cellList = cellfun(@num2str,struct2cell(cell_metrics.(groupData.groupToList)),'UniformOutput',false);
-                UI.groupData.dataTable = {};
-                UI.groupData.dataTable(:,[4,5,6]) = [UI.groupData.(groupData.groupToList),UI.groupData.cellList,UI.groupData.Counts];
-                UI.groupData.dataTable(:,1) = {false};
-                UI.groupData.dataTable(:,2) = {false};
-                UI.groupData.dataTable(:,3) = {false};
-                UI.groupData.dataTable(:,7) = {false};
-                UI.groupData.sessionList = strcat(UI.groupData.(groupData.groupToList),{' '},UI.groupData.cellList);
-                if isfield(groupData,groupData.groupToList)  && isfield(groupData.(groupData.groupToList),'highlight')
-                    fields1 = fieldnames(groupData.(groupData.groupToList).highlight);
-                    for i = 1:numel(fields1)
-                        if groupData.(groupData.groupToList).highlight.(fields1{i}) == 1
-                            UI.groupData.dataTable(ismember(UI.groupData.dataTable(:,4),fields1{i}),1) = {true};
-                        end
-                    end
-                end
-                if isfield(groupData,groupData.groupToList)  && isfield(groupData.(groupData.groupToList),'plus_filter')
-                    fields1 = fieldnames(groupData.(groupData.groupToList).plus_filter);
-                    for i = 1:numel(fields1)
-                        if groupData.(groupData.groupToList).plus_filter.(fields1{i}) == 1
-                            UI.groupData.dataTable(ismember(UI.groupData.dataTable(:,4),fields1{i}),2) = {true};
-                        end
-                    end
-                end
-                if isfield(groupData,groupData.groupToList)  && isfield(groupData.(groupData.groupToList),'minus_filter')
-                    fields1 = fieldnames(groupData.(groupData.groupToList).minus_filter);
-                    for i = 1:numel(fields1)
-                        if groupData.(groupData.groupToList).minus_filter.(fields1{i}) == 1
-                            UI.groupData.dataTable(ismember(UI.groupData.dataTable(:,4),fields1{i}),3) = {true};
-                        end
-                    end
-                end
-            else
-                UI.groupData.sessionList = {};
-                UI.groupData.dataTable = {false,'',false,false,false,'',''};
-                UI.groupData.(groupData.groupToList) = '';
-            end
-            
-        end
-        
-%         function UpdateSummaryText
-%             groupData.summaryText.String = [num2str(size(groupData.sessionList.Data,1)),' group(s)'];
-%         end
-        function updateGroupDataCount
-            groupDataCount = [numel(fieldnames(cell_metrics.(groupData.groupsList{1}))),numel(fieldnames(cell_metrics.(groupData.groupsList{2}))),numel(fieldnames(cell_metrics.(groupData.groupsList{3})))];
-            groupData.popupmenu.groupData.String = strcat(groupData.groupsList,' (',cellstr(num2str(groupDataCount'))',')');
-        end
-        function filterGroupData
-            if ~isempty(groupData.popupmenu.filter.String) && ~strcmp(groupData.popupmenu.filter.String,'Filter')
-                newStr2 = split(groupData.popupmenu.filter.String,{' & ',' AND '});
-                idx_textFilter2 = zeros(length(newStr2),size(UI.groupData.dataTable,1));
-                for i = 1:length(newStr2)
-                    newStr3 = split(newStr2{i},{' | ',' OR ',});
-                    idx_textFilter2(i,:) = contains(UI.groupData.sessionList,newStr3,'IgnoreCase',true);
-                end
-                idx1 = find(sum(idx_textFilter2,1)==length(newStr2));
-            else
-                idx1 = 1:size(UI.groupData.dataTable,1);
-            end
-            if groupData.popupmenu.sorting.Value == 2
-                [~,idx2] = sort(str2double([UI.groupData.dataTable(:,end-1)]),'descend');
-            else
-                [~,idx2] = sort(UI.groupData.dataTable(:,4));
-            end
-            idx2 = intersect(idx2,idx1,'stable');
-            groupData.sessionList.Data = UI.groupData.dataTable(idx2,:);
-%             UpdateSummaryText;
-            updateGroupDataCount
-        end
-        
-        function button_groupData_selectAll
-            groupData.sessionList.Data(:,1) = {true};
-            for i = 1:size(groupData.sessionList.Data,1)
-                groupData.(groupData.groupToList).highlight.(groupData.sessionList.Data{i,4}) = 1;
-            end
-        end
-        
-        function button_groupData_deselectAll
-            groupData.sessionList.Data(:,1) = {false};
-            groupData.sessionList.Data(:,2) = {false};
-            groupData.sessionList.Data(:,3) = {false};
-            for i = 1:size(groupData.sessionList.Data,1)
-                groupData.(groupData.groupToList).highlight.(groupData.sessionList.Data{i,4}) = 0;
-                groupData.(groupData.groupToList).minus_filter.(groupData.sessionList.Data{i,4}) = 0;
-                groupData.(groupData.groupToList).plus_filter.(groupData.sessionList.Data{i,4}) = 0;
-            end
-        end
-        
-        function CloseDialog
-            % Closes the dialog
-            delete(groupData.dialog);
-            updateUI2
-            uiresume(UI.fig);
-        end
+        [cell_metrics,UI] = dialog_metrics_groupData(cell_metrics,UI);
+        initTags
+        updateTags
     end
 
     function assignGroup(cellIDsIn,field)
@@ -5998,7 +5696,7 @@ end
     end
 
     function buttonTags_minus(input)
-        groupData.tags.minus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags(input).Value;
+        UI.groupData1.tags.minus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags(input).Value;
         if UI.togglebutton.dispTags(input).Value == 1
             UI.togglebutton.dispTags(input).FontWeight = 'bold';
             UI.togglebutton.dispTags(input).ForegroundColor = UI.colors.toggleButtons;
@@ -6010,7 +5708,7 @@ end
     end
 
     function buttonTags_plus(input)
-        groupData.tags.plus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags2(input).Value;
+        UI.groupData1.tags.plus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags2(input).Value;
         if UI.togglebutton.dispTags2(input).Value == 1
             UI.togglebutton.dispTags2(input).FontWeight = 'bold';
             UI.togglebutton.dispTags2(input).ForegroundColor = UI.colors.toggleButtons;
@@ -6244,13 +5942,13 @@ end
                 end
         end
         % Group data
-        if ~isempty(groupData)
+        if ~isempty(UI.groupData1)
             dataTypes = {'tags','groups','groundTruthClassification'};
             for jjj = 1:numel(dataTypes)
-                if isfield(groupData,dataTypes{jjj}) && isfield(groupData.(dataTypes{jjj}),'highlight')
-                    fields1 = fieldnames(groupData.(dataTypes{jjj}).highlight);
+                if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
+                    fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if groupData.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))                            
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))                            
                             line(0, nLegends,'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'LineWidth', 1.5, 'MarkerSize',8,'HitTest','off');
                             text(0.2,nLegends,[fields1{jj},' (',dataTypes{jjj},')'], 'interpreter', 'none','HitTest','off')
                             nLegends = nLegends - 1;
@@ -7216,6 +6914,7 @@ end
         if isempty(axnum)
             axnum = 1;
         end
+
         if axnum == 1 && UI.preferences.customPlotHistograms == 3
             [azimuth,elevation] = view;
                 r  = 10000;
@@ -7249,12 +6948,17 @@ end
                 distance = point_to_line_distance([plotX11; plotY11; plotZ11]'./[x_scale y_scale z_scale], [u,v,w]./[x_scale y_scale z_scale], ([u,v,w]./[x_scale y_scale z_scale]+[x1,y1,z1]));
                 [~,idx] = min(distance);
                 iii = UI.params.subset(idx);
+                if strcmp(subfig_ax(axnum).YScale,'linear')
+                    text_offset = diff(ylim)/80;
+                else
+                    text_offset = plotY(iii)/20;
+                end
                 if highlight
                     line(plotX(iii),plotY(iii),plotZ(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
                 end
                 if hover
-                    hover2highlight.handle1 = text(plotX(iii),plotY(iii),plotZ(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
-                    hover2highlight.handle2 = line(plotX(iii),plotY(iii),plotZ(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                    hover2highlight.handle1 = text(plotX(iii),plotY(iii)+text_offset,plotZ(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                    hover2highlight.handle2 = line(plotX(iii),plotY(iii),plotZ(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
                 end
                 if ~(highlight | hover)
                     return
@@ -7279,12 +6983,17 @@ end
                 [~,idx] = min(hypot((plotX(UI.params.subset)-u)/x_scale,(plotY(UI.params.subset)-v)/y_scale));
             end
             iii = UI.params.subset(idx);
+            if strcmp(subfig_ax(axnum).YScale,'linear')
+                text_offset = diff(ylim)/80;
+            else
+                text_offset = plotY(iii)/20;
+            end
             if highlight
                 line(plotX(iii),plotY(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
             end
             if hover
-                hover2highlight.handle1 = text(plotX(iii),plotY(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
-                hover2highlight.handle2 = line(plotX(iii),plotY(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                hover2highlight.handle1 = text(plotX(iii),plotY(iii)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                hover2highlight.handle2 = line(plotX(iii),plotY(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
             end
             
         elseif axnum == 1 && UI.preferences.customPlotHistograms == 4
@@ -7298,12 +7007,17 @@ end
                 [~,idx] = min(hypot((plotX(UI.params.subset)-u)/x_scale,(plotY1(UI.params.subset)-v)/y_scale));
             end
             iii = UI.params.subset(idx);
+            if strcmp(subfig_ax(axnum).YScale,'linear')
+                text_offset = diff(ylim)/80;
+            else
+                text_offset = plotY(iii)/20;
+            end
             if highlight
                 line(plotX(iii),plotY(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
             end
             if hover
-                hover2highlight.handle1 = text(plotX(iii),plotY1(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
-                hover2highlight.handle2 = line(plotX(iii),plotY1(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                hover2highlight.handle1 = text(plotX(iii),plotY1(iii)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                hover2highlight.handle2 = line(plotX(iii),plotY1(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
             end
             
         elseif axnum == 2
@@ -7316,8 +7030,8 @@ end
                 line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
             end
             if hover
-                hover2highlight.handle1 = text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
-                hover2highlight.handle2 = line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                hover2highlight.handle1 = text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii)*1.15,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                hover2highlight.handle2 = line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
             end
             
         elseif axnum == 3
@@ -7327,12 +7041,16 @@ end
                 line(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
             end
             if hover
-                hover2highlight.handle1 = text(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
-                hover2highlight.handle2 = line(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                hover2highlight.handle1 = text(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2)+diff(ylim)/80,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                hover2highlight.handle2 = line(tSNE_metrics.plot(iii,1),tSNE_metrics.plot(iii,2),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
             end
             
         elseif any(axnum == [4,5,6,7,8,9])
-            
+            if strcmp(subfig_ax(axnum).YScale,'linear')
+                text_offset = diff(ylim)/80;
+            else
+                text_offset = v/10;
+            end
             selectedOption = UI.preferences.customPlot{axnum-3};
             if numel(UI.subsetPlots)>= axnum-3
             subsetPlots = UI.subsetPlots{axnum-3};
@@ -7344,14 +7062,14 @@ end
                     [~,idx] = min(hypot(tSNE_metrics.filtWaveform(UI.params.subset,1)-u,tSNE_metrics.filtWaveform(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'Raw waveforms (tSNE)'
                     [~,idx] = min(hypot(tSNE_metrics.rawWaveform(UI.params.subset,1)-u,tSNE_metrics.rawWaveform(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'Waveforms (single)'
@@ -7364,7 +7082,7 @@ end
                             
                             iii = out(3,In);
                             if hover
-                                hover2highlight.handle1 = text(out(1,In),out(2,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                hover2highlight.handle1 = text(out(1,In),out(2,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                                 hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                             end
                             if highlight
@@ -7398,7 +7116,7 @@ end
                             if In > length(y2)
                                 iii = out(3,In-length(y2));
                                 if hover
-                                    hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2)),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                    hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2))+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                                     hover2highlight.handle4 = line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                                 end
                                 if highlight
@@ -7419,7 +7137,7 @@ end
                     end
                     if highlight || hover
                         hover2highlight.handle2 = line(cell_metrics.waveforms.time_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                 case 'Waveforms (raw single)'    
                     if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
@@ -7430,7 +7148,7 @@ end
                             [~,In] = min(hypot((out(1,:)-u)/x_scale,(out(2,:)-v)/y_scale));
                             iii = out(3,In);
                             if highlight || hover
-                                hover2highlight.handle1 = text(out(1,In),out(2,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                hover2highlight.handle1 = text(out(1,In),out(2,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                                 hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                             end
                         end
@@ -7457,7 +7175,7 @@ end
                             if In > length(y2)
                                 iii = out(3,In-length(y2));
                                 if hover
-                                    hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2)),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                    hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2))+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                                     hover2highlight.handle4 = line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                                 end
                                 if highlight
@@ -7479,7 +7197,7 @@ end
                     
                     if highlight || hover
                         hover2highlight.handle2 = line(cell_metrics.waveforms.time_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'Waveforms (image)'
@@ -7490,7 +7208,7 @@ end
                             xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]'; % [1;1]*[round(v)-0.48,round(v)+0.48]
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
@@ -7530,7 +7248,7 @@ end
                     [~,idx] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
                     iii = subset1(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'Common Coordinate Framework'
@@ -7563,7 +7281,7 @@ end
                     if highlight
                         line(plotX22(iii),plotY22(iii),plotZ22(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
                     elseif hover
-                        hover2highlight.handle1 = text(plotX22(iii),plotY22(iii),plotZ22(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(plotX22(iii),plotY22(iii)+text_offset,plotZ22(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                         hover2highlight.handle2 = line(plotX22(iii),plotY22(iii),plotZ22(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                     else
                         return
@@ -7573,28 +7291,28 @@ end
                     [~,idx] = min(hypot(tSNE_metrics.acg_narrow(UI.params.subset,1)-u,tSNE_metrics.acg_narrow(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.acg_narrow(iii,1),tSNE_metrics.acg_narrow(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.acg_narrow(iii,1),tSNE_metrics.acg_narrow(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'tSNE of wide ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_wide(UI.params.subset,1)-u,tSNE_metrics.acg_wide(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.acg_wide(iii,1),tSNE_metrics.acg_wide(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.acg_wide(iii,1),tSNE_metrics.acg_wide(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'tSNE of log ACGs'
                     [~,idx] = min(hypot(tSNE_metrics.acg_log10(UI.params.subset,1)-u,tSNE_metrics.acg_log10(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'tSNE of log ISIs'
                     [~,idx] = min(hypot(tSNE_metrics.isi_log10(UI.params.subset,1)-u,tSNE_metrics.isi_log10(UI.params.subset,2)-v));
                     iii = UI.params.subset(idx);
                     if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'CCGs (image)'
@@ -7618,7 +7336,7 @@ end
                                 xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                                 yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]'; % [1;1]*[round(v)-0.48,round(v)+0.48]
                                 hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                                hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                                hover2highlight.handle1 = text(u,round(v)+0.5+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                             end
                         end
                     end
@@ -7658,7 +7376,7 @@ end
                             xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]'; % [1;1]*[round(v)-0.48,round(v)+0.48]
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
@@ -7696,7 +7414,7 @@ end
                     if highlight || hover
                         [~,time_index] = min(abs(x2-u));
                         hover2highlight.handle2 = line(x2(:),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'ISIs (single)'
@@ -7731,7 +7449,7 @@ end
                     if highlight || hover
                         [~,time_index] = min(abs(x2-u));
                         hover2highlight.handle2 = line(x2(:),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(x2(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'ISIs (image)'
@@ -7747,7 +7465,7 @@ end
                             xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]';
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                     
@@ -7762,7 +7480,7 @@ end
                     [~,time_index] = min(abs(UI.x_bins.thetaPhase-u));
                     if highlight || hover
                         hover2highlight.handle2 = line(UI.x_bins.thetaPhase,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(UI.x_bins.thetaPhase(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(UI.x_bins.thetaPhase(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'RCs_firingRateAcrossTime (all)'
@@ -7778,7 +7496,7 @@ end
                     [~,time_index] = min(abs(subsetPlots.xaxis-u));
                     if highlight || hover
                         hover2highlight.handle2 = line(subsetPlots.xaxis,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index),y1(time_index,In),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'RCs_thetaPhase (image)'
@@ -7788,7 +7506,7 @@ end
                             xline = [[UI.x_bins.thetaPhase(1),UI.x_bins.thetaPhase(end)],[UI.x_bins.thetaPhase(end),UI.x_bins.thetaPhase(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]';
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                 case 'Connectivity matrix'
@@ -7806,7 +7524,7 @@ end
                             xline = [[0,length(subset222),length(subset222),0]+0.5;[round(v)-0.5,round(v)-0.5,round(v)+0.5,round(v)+0.5]]';
                             yline = [[round(v)-0.5,round(v)-0.5,round(v)+0.5,round(v)+0.5];[0,length(subset222),length(subset222),0]+0.5]';
                             hover2highlight.handle2 = patch(xline,yline,'k','EdgeColor','none','HitTest','off','facealpha',0.1);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                     end
                 case 'RCs_firingRateAcrossTime (image)'
@@ -7825,7 +7543,7 @@ end
                             xline = [[Xdata(1),Xdata(end)],[Xdata(end),Xdata(1)]]';
                             yline = [[round(v)-0.48,round(v)-0.48,round(v)+0.48,round(v)+0.48]]';
                             hover2highlight.handle2 = patch(xline,yline,'w','EdgeColor','w','HitTest','off','facealpha',0.5,'linewidth',2);
-                            hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                            hover2highlight.handle1 = text(u,round(v)+0.5+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                         end
                         end
                     end
@@ -7835,7 +7553,7 @@ end
                         [~,idx] = min(hypot(subsetPlots.xaxis-u,subsetPlots.yaxis-v));
                         iii = subsetPlots.subset(idx);
                         if highlight || hover
-                            hover2highlight.handle1 = text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                            hover2highlight.handle1 = text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                         end
                     end
                 otherwise
@@ -7845,7 +7563,7 @@ end
                             iii = subsetPlots.subset((burstIndexSorted(round(v))));
                             if highlight || hover
                                 hover2highlight.handle2 = line(subsetPlots.xaxis([1,end]),[1;1]*[round(v)-0.48,round(v)+0.48],'color','w','linewidth',2,'HitTest','off');
-                                hover2highlight.handle1 = text(u,round(v)+0.5,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
+                                hover2highlight.handle1 = text(u,round(v)+0.5+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',1);
                             end
                         end
                     elseif any(strcmp(UI.monoSyn.disp,{'All','Selected','Upstream','Downstream','Up & downstream'})) && ~isempty(subsetPlots) && ~isempty(subsetPlots.subset)
@@ -7860,7 +7578,7 @@ end
                                 iii = subset1(In);
                                 if highlight || hover
                                     hover2highlight.handle2 = line(x1(:,1),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                                    hover2highlight.handle1 = text(x1(time_index),y1(time_index),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 14,'BackgroundColor',[1 1 1 0.7],'margin',1);
+                                    hover2highlight.handle1 = text(x1(time_index),y1(time_index)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                                 end
                             end
                     end
@@ -7873,9 +7591,10 @@ end
             hover2highlight.handle4 = [];
         end
         function textLabel = getTextLabel(iii)
-            if hover
-%                 textLabel = [num2str(iii),' ',UI.preferences.cellTypes{clusClas(iii)}];
-                textLabel = {num2str(iii),UI.classes.labels{UI.classes.plot(iii)}};
+            if hover && UI.params.hoverStyle == 1
+                textLabel = num2str(iii);
+            elseif hover && UI.params.hoverStyle == 2
+                textLabel = [num2str(iii),': ',UI.classes.labels{UI.classes.plot(iii)}];
             else
                 textLabel = num2str(iii);
             end
@@ -10133,8 +9852,11 @@ end
             cell_metrics.groups = struct();
         end
         meanCCG = [];
+        
         % Init group data
-        clear groupData
+        UI.groupData1 = [];
+        UI.groupData1.groupsList = {'groups','tags','groundTruthClassification'};
+        
         % Updates format of tags if outdated
         cell_metrics = verifyGroupFormat(cell_metrics,'tags');
         if ~isfield(cell_metrics, 'tags')
@@ -10156,7 +9878,6 @@ end
             cell_metrics.groundTruthClassification = struct();
         end
         
-        groupData.groupsList = {'groups','tags','groundTruthClassification'};
         % Init ground truth cell list
         % groundTruthInMetrics = unique([cell_metrics.groundTruthClassification{:}]);
         groundTruthInMetrics = fieldnames(cell_metrics.groundTruthClassification)';
@@ -11484,7 +11205,7 @@ end
     end
 
     function loadGroundTruth(~,~)
-        groupData.groupToList = 'groundTruthClassification';
+        UI.groupData1.groupToList = 'groundTruthClassification';
         performGroundTruthClassification
         defineGroupData
     end
@@ -11863,7 +11584,9 @@ end
     end
 
     function filterCellsByText(~,~)
-        if ~isempty(UI.textFilter.String) && ~strcmp(UI.textFilter.String,'Filter')
+        if isnumeric(str2num(UI.textFilter.String)) && ~isempty(UI.textFilter.String) && ~isempty(str2num(UI.textFilter.String))
+                idx_textFilter = str2num(UI.textFilter.String);
+        elseif ~isempty(UI.textFilter.String) && ~strcmp(UI.textFilter.String,'Filter')
             if isempty(freeText) || UI.params.alteredCellMetrics == 1
                 freeText = {''};
                 fieldsMenuCells = fieldnames(cell_metrics);
@@ -12242,7 +11965,7 @@ end
         timerVal1 = tic;
         t_bench = [];
         for j = 1:numel(testGroups)
-            groupData.groups.plus_filter.(testGroups{j}) = 1;
+            UI.groupData1.groups.plus_filter.(testGroups{j}) = 1;
             pause(0.5)
             for i = 1:nRepetitions
                 ii = cell_metrics.groups.(testGroups{j})(i);
@@ -12250,7 +11973,7 @@ end
                 drawnow nocallbacks;
                 t_bench(i,j) = toc(timerVal1);
             end
-            groupData.groups.plus_filter.(testGroups{j}) = 0;
+            UI.groupData1.groups.plus_filter.(testGroups{j}) = 0;
         end
     end
         function t_bench = runBenchMarkSinglePlot(plotOptionsIn)
@@ -12260,7 +11983,7 @@ end
             timerVal1 = tic;
             t_bench = [];
             for j = 1:numel(testGroups)
-                groupData.groups.plus_filter.(testGroups{j}) = 1;
+                UI.groupData1.groups.plus_filter.(testGroups{j}) = 1;
 %                 ii = 1;
                 figure(UI.fig)
                 updateUI
@@ -12304,7 +12027,7 @@ end
                     drawnow nocallbacks;
                     t_bench(i_rep,j) = toc(timerVal1);
                 end
-                groupData.groups.plus_filter.(testGroups{j}) = 0;
+                UI.groupData1.groups.plus_filter.(testGroups{j}) = 0;
             end
             close(testFig1)
         end

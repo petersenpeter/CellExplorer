@@ -22,7 +22,10 @@ if exist(rezFile,'file')
     kcoords_ids = unique(rez.ops.kcoords);
     session.extracellular.nElectrodeGroups = numel(kcoords_ids);
     for i = 1:numel(kcoords_ids)
-        session.extracellular.electrodeGroups.channels{i} = rez.ops.chanMap(find(rez.ops.kcoords == kcoords_ids(i)))';
+        session.extracellular.electrodeGroups.channels{i} = rez.ops.chanMap(find(rez.ops.kcoords == kcoords_ids(i)));
+        if size(session.extracellular.electrodeGroups.channels{i},1)>1
+            session.extracellular.electrodeGroups.channels{i} = session.extracellular.electrodeGroups.channels{i}';
+        end
     end
     session.extracellular.nSpikeGroups = session.extracellular.nElectrodeGroups; % Number of spike groups
     session.extracellular.spikeGroups.channels = session.extracellular.electrodeGroups.channels; % Spike groups

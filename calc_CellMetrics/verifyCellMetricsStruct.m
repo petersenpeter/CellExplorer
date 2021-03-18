@@ -18,25 +18,20 @@ function verifyCellMetricsStruct(cell_metrics)
     
     % Verifying struct type
     if ~any(ismember(cell_metrics_types((ismember(cell_metrics_fieldnames,cell_metrics_type_struct))),'struct'))
-        error(['struct field not formatted correctly in cell_metrics'])
+        error('struct field not formatted correctly in cell_metrics')
     end
     % Verifying numeric type
     if ~any(ismember(cell_metrics_types((ismember(cell_metrics_fieldnames,cell_metrics_type_numeric))),'double'))
-        error(['numeric field not formatted correctly in cell_metrics'])
+        error('numeric field not formatted correctly in cell_metrics')
     end
     % Verifying cell type
     if ~any(ismember(cell_metrics_types((ismember(cell_metrics_fieldnames,cell_metrics_type_cell))),'cell'))
-        error(['cell array field not formatted correctly in cell_metrics'])
+        error('cell array field not formatted correctly in cell_metrics')
     end
     % Verifying field sizes
-    if any(cell_metrics_sizes(cell_metrics_numeric_cell,1) ~= 1) || any(cell_metrics_sizes(cell_metrics_numeric_cell,2) ~= cell_metrics.general.cellCount)
-        if any(cell_metrics_sizes(cell_metrics_numeric_cell,1) ~= 1)
-            cell_metrics_fieldnames(cell_metrics_sizes(cell_metrics_numeric_cell,1) ~= 1)
-        end
-        if any(cell_metrics_sizes(cell_metrics_numeric_cell,2) ~= cell_metrics.general.cellCount)
-            cell_metrics_fieldnames(cell_metrics_sizes(cell_metrics_numeric_cell,2) ~= cell_metrics.general.cellCount)
-        end
-        error(['cell_metrics field not formatted correctly: field sizes not correct'])
+    if any(any(cell_metrics_sizes(cell_metrics_numeric_cell,:) ~= [1,cell_metrics.general.cellCount]))
+        cell_metrics
+        error('cell_metrics: One or more numeric field/cell not dimensionalized correct')
     end
     % Verifying struct fields
     for i = 1:length(fields_struct)
