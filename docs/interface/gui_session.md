@@ -33,7 +33,7 @@ The tabs correspond to fields in the session metadata struct:
 * Inputs and time series: contains description of inputs and time series data. 
 * Behavioral tracking: describes any behavioral tracking, e.g. video files or types other behavioral tracking data. 
 
-## Running the session metadata gui
+## Open the session metadata GUI
 In Matlab go to the basepath of the session you want to open. Now run the session metadata GUI:
 ```m
 session = gui_session
