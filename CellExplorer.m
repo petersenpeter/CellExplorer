@@ -48,43 +48,66 @@ function cell_metrics = CellExplorer(varargin)
 % Data handling: initializeSession, saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData, defineGroupData
 % UI: hoverCallback, updateUI, customPlot, plotGroupData, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics plotSummaryFigures
 
-p = inputParser;
-
-addParameter(p,'metrics',[],@isstruct);         % cell_metrics struct
-addParameter(p,'basepath',pwd,@isstr);          % Path to session (base directory)
-addParameter(p,'session',[],@isstruct);
-addParameter(p,'basename','',@isstr);
-addParameter(p,'sessionID',[],@isnumeric);
-addParameter(p,'sessionName',[],@isstr);
-
-% Batch input
-addParameter(p,'sessionIDs',{},@iscell);
-addParameter(p,'sessions',{},@iscell);
-addParameter(p,'basepaths',{},@iscell);
-
-% Extra inputs
-addParameter(p,'SWR',{},@iscell);
-addParameter(p,'summaryFigures',false,@islogical); % Creates summary figures
-addParameter(p,'plotCellIDs',[],@isnumeric); % Defines which cell ids to plot in the summary figures
-
-% Parsing inputs
-parse(p,varargin{:})
-metrics = p.Results.metrics;
-id = p.Results.sessionID;
-sessionName = p.Results.sessionName;
-session = p.Results.session;
-basepath = p.Results.basepath;
-basename = p.Results.basepaths;
-
-% Batch inputs
-sessionIDs = p.Results.sessionIDs;
-sessionsin = p.Results.sessions;
-basepaths = p.Results.basepaths;
-
-% Extra inputs
-SWR_in = p.Results.SWR;
-summaryFigures = p.Results.summaryFigures;
-plotCellIDs = p.Results.plotCellIDs;
+if isdeployed % Check for if CellExplorer is running as a deployed app (compiled .exe or .app for windows and mac respectively)
+    if ~isempty(varargin) % If a file name is provided it will load it.
+        filename = varargin{1};
+        [basepath1,file1] = fileparts(varargin{1});
+    else % Otherwise a file load dialog will be shown
+        [file1,basepath1] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select a file with the basename in it from the basepath');
+    end
+    if ~isequal(file1,0)
+        basepath = basepath1;
+        temp1 = strsplit(file1,'.');
+        basename = temp1{1};
+    else
+        return
+    end
+    metrics = [];
+    id = [];
+    sessionName = [];
+    session = [];
+    sessionIDs = {};
+    sessionsin = {};
+    summaryFigures = false;
+    plotCellIDs = [];
+    basepaths = {};
+else
+    p = inputParser;
+    
+    addParameter(p,'metrics',[],@isstruct);         % cell_metrics struct
+    addParameter(p,'basepath',pwd,@isstr);          % Path to session (base directory)
+    addParameter(p,'session',[],@isstruct);
+    addParameter(p,'basename','',@isstr);
+    addParameter(p,'sessionID',[],@isnumeric);
+    addParameter(p,'sessionName',[],@isstr);
+    
+    % Batch input
+    addParameter(p,'sessionIDs',{},@iscell);
+    addParameter(p,'sessions',{},@iscell);
+    addParameter(p,'basepaths',{},@iscell);
+    
+    % Extra inputs
+    addParameter(p,'summaryFigures',false,@islogical); % Creates summary figures
+    addParameter(p,'plotCellIDs',[],@isnumeric); % Defines which cell ids to plot in the summary figures
+    
+    % Parsing inputs
+    parse(p,varargin{:})
+    metrics = p.Results.metrics;
+    id = p.Results.sessionID;
+    sessionName = p.Results.sessionName;
+    session = p.Results.session;
+    basepath = p.Results.basepath;
+    basename = p.Results.basepaths;
+    
+    % Batch inputs
+    sessionIDs = p.Results.sessionIDs;
+    sessionsin = p.Results.sessions;
+    basepaths = p.Results.basepaths;
+    
+    % Extra inputs
+    summaryFigures = p.Results.summaryFigures;
+    plotCellIDs = p.Results.plotCellIDs;
+end
 
 %% % % % % % % % % % % % % % % % % % % % % %
 % Initialization of variables and figure
@@ -4241,7 +4264,6 @@ end
                 else
                     return
                 end
-                SWR_in = {};
                 statusUpdate('Initializing session(s)')
                 initializeSession
                 if ishandle(ce_waitbar)
@@ -9469,11 +9491,12 @@ end
                     [file,SavePath] = uiputfile('cell_metrics.mat','Save metrics');
                 end
                 if SavePath ~= 0
+                    saveMetrics(cell_metrics,fullfile(SavePath,file));
                     try
-                        saveMetrics(cell_metrics,fullfile(SavePath,file));
+                        
                     catch exception
                         disp(exception.identifier)
-                        MsgLog(['Failed to save file - see Command Window for details'],[3,4]);
+                        MsgLog('Failed to save file - see Command Window for details',[3,4]);
                     end
                 end
             case 'Cancel'
@@ -9503,7 +9526,12 @@ end
         if nargin > 1
             try
                 structSize = whos('cell_metrics');
-                if structSize.bytes/1000000000 > 2
+                if numel(structSize)>1
+                    bytes = structSize(1).bytes;
+                else
+                    bytes = structSize.bytes;
+                end
+                if bytes/1000000000 > 2
                     save(file, 'cell_metrics', '-v7.3','-nocompression')
                 else
                     save(file, 'cell_metrics');
@@ -9912,29 +9940,24 @@ end
         UI.classes.labels = UI.preferences.cellTypes;
         
         % SWR profile initialization
-        if isempty(SWR_in)
-            if isfield(cell_metrics.general,'SWR_batch') && ~isempty(cell_metrics.general.SWR_batch)
-                
-            elseif ~UI.BatchMode
-                if isfield(cell_metrics.general,'SWR')
-                    cell_metrics.general.SWR_batch = cell_metrics.general.SWR;
-                else
-                    cell_metrics.general.SWR_batch = [];
-                end
+        if isfield(cell_metrics.general,'SWR_batch') && ~isempty(cell_metrics.general.SWR_batch)
+            
+        elseif ~UI.BatchMode
+            if isfield(cell_metrics.general,'SWR')
+                cell_metrics.general.SWR_batch = cell_metrics.general.SWR;
             else
                 cell_metrics.general.SWR_batch = [];
-                for i = 1:length(cell_metrics.general.basepaths)
-                    if isfield(cell_metrics.general.batch{i},'SWR')
-                        cell_metrics.general.SWR_batch{i} = cell_metrics.general.batch{i}.SWR;
-                    else
-                        cell_metrics.general.SWR_batch{i} = [];
-                    end
-                end
             end
         else
-            cell_metrics.general.SWR_batch = SWR_in;
+            cell_metrics.general.SWR_batch = [];
+            for i = 1:length(cell_metrics.general.basepaths)
+                if isfield(cell_metrics.general.batch{i},'SWR')
+                    cell_metrics.general.SWR_batch{i} = cell_metrics.general.batch{i}.SWR;
+                else
+                    cell_metrics.general.SWR_batch{i} = [];
+                end
+            end
         end
-        
         % Plotting menues initialization
         fieldsMenuCells = metrics_fieldsNames;
         fieldsMenuCells = fieldsMenuCells(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'cell'));
@@ -9991,9 +10014,10 @@ end
         
         % Generating extra fields if necessary
         if ~cell_metrics.general.initialized | ~isfield(cell_metrics.waveforms,{'filt_zscored','filt_absolute'})
+            
+            statusUpdate('Initializing session')
             % waveform initialization
             filtWaveform = [];
-            statusUpdate('Initializing filtered waveforms')
             for i = 1:length(cell_metrics.waveforms.filt)
                 if isempty(cell_metrics.waveforms.filt{i}) || any(isnan(cell_metrics.waveforms.filt{i}))
                     filtWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
@@ -10006,7 +10030,6 @@ end
             
             % 'All raw waveforms'
             if isfield(cell_metrics.waveforms,'raw')
-            statusUpdate('Initializing raw waveforms')
             rawWaveform = [];
             for i = 1:length(cell_metrics.waveforms.raw)
                 if isempty(cell_metrics.waveforms.raw{i}) || any(isnan(cell_metrics.waveforms.raw{i}))
@@ -10021,26 +10044,20 @@ end
             end
             
             % ACGs
-            statusUpdate('Initializing wide ACGs')
             cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide);
-
-            statusUpdate('Initializing narrow ACGs')
             cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow);
             
             if isfield(cell_metrics.acg,'log10')
-            statusUpdate('Initializing log10 ACGs')
             cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
             cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.params.ACGLogIntervals)');
             end
             
             if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')
-            statusUpdate('Initializing log10 ACGs')
             cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
             cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.params.ACGLogIntervals)');
             end
             
             if isfield(cell_metrics.responseCurves,'thetaPhase')
-                statusUpdate('Initializing response curves')
                 thetaPhaseCurves = nan(length(UI.x_bins.thetaPhase),cell_metrics.general.cellCount);
                 for i = 1:length(cell_metrics.responseCurves.thetaPhase)
                     if isempty(cell_metrics.responseCurves.thetaPhase{i}) || any(isnan(cell_metrics.responseCurves.thetaPhase{i}))
@@ -10117,7 +10134,6 @@ end
                 end
             end
         end
-        
         % Loading and defining labels
         UI = metrics_labels(UI);
         % Setting initial settings for plots, popups and listboxes
@@ -10147,7 +10163,6 @@ end
             UI.monoSyn.disp = 'None';
         end
         
-        
         % History function initialization
         if isfield(cell_metrics.general,'classificationTrackChanges') && ~isempty(cell_metrics.general.classificationTrackChanges)
             classificationTrackChanges = cell_metrics.general.classificationTrackChanges;
@@ -10171,7 +10186,7 @@ end
         history_classification(1).brainRegion = cell_metrics.brainRegion;
         history_classification(1).brainRegion_num = cell_metrics.brainRegion_num;
         history_classification(1).deepSuperficial_num = cell_metrics.deepSuperficial_num;
-        
+
         % Cell count for menu
         updateCellCount
         
@@ -10199,7 +10214,6 @@ end
                 waveformOptions = [waveformOptions;'Raw waveforms (tSNE)'];
             end
         end
-        
         temp = fieldnames(cell_metrics.waveforms);
         temp(ismember(temp,{'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time','bestChannels'}) | ~structfun(@iscell,cell_metrics.waveforms)) = [];
         for i = 1:length(temp)
@@ -10239,13 +10253,19 @@ end
                 responseCurvesOptions = [responseCurvesOptions;['RCs_',responseCurvesFields{i}];['RCs_',responseCurvesFields{i},' (image)'];['RCs_',responseCurvesFields{i},' (all)']];
             end
         end
+        
         if isfield(cell_metrics,'spikes')
             responseCurvesOptions = [responseCurvesOptions;'raster_'];
         end
+        
         % Custom plot options
-        customPlotOptions = what('customPlots');
-        customPlotOptions = cellfun(@(X) X(1:end-2),customPlotOptions.m,'UniformOutput', false);
-        customPlotOptions(strcmpi(customPlotOptions,'template')) = [];
+        if isdeployed
+            customPlotOptions = {};
+        else
+            customPlotOptions = what('customPlots');
+            customPlotOptions = cellfun(@(X) X(1:end-2),customPlotOptions.m,'UniformOutput', false);
+            customPlotOptions(strcmpi(customPlotOptions,'template')) = [];
+        end
         
         % cell_metricsFieldnames = fieldnames(cell_metrics,'-full');
         structFieldsType = metrics_fieldsNames(find(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'struct')));
@@ -10335,12 +10355,16 @@ end
         UI.fig.Name = ['CellExplorer v' num2str(CellExplorerVersion), ': ',cell_metrics.general.basename];
         
         % Initialize spike plot options
-        customSpikePlotOptions = what('customSpikesPlots');
-        customSpikePlotOptions = cellfun(@(X) X(1:end-2),customSpikePlotOptions.m,'UniformOutput', false);
-        customSpikePlotOptions(strcmpi(customSpikePlotOptions,'spikes_template')) = [];
-        spikesPlots = {};
-        for i = 1:length(customSpikePlotOptions)
-            spikesPlots.(customSpikePlotOptions{i}) = customSpikesPlots.(customSpikePlotOptions{i});
+        if isdeployed
+            spikesPlots = {};
+        else
+            customSpikePlotOptions = what('customSpikesPlots');
+            customSpikePlotOptions = cellfun(@(X) X(1:end-2),customSpikePlotOptions.m,'UniformOutput', false);
+            customSpikePlotOptions(strcmpi(customSpikePlotOptions,'spikes_template')) = [];
+            spikesPlots = {};
+            for i = 1:length(customSpikePlotOptions)
+                spikesPlots.(customSpikePlotOptions{i}) = customSpikesPlots.(customSpikePlotOptions{i});
+            end
         end
         cell_metrics.general.initialized = 1;
     end
@@ -10545,7 +10569,6 @@ end
                 end
                 return
             end
-            SWR_in = {};
             
             statusUpdate('Initializing session(s)')
             initializeSession

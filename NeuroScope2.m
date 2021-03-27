@@ -1,8 +1,8 @@
 function NeuroScope2(varargin)
 % % % % % % % % % % % % % % % % % % % % % % % % %
 % NeuroScope2 (BETA) is a visualizer for electrophysiological recordings. It is inspired by the original Neuroscope (http://neurosuite.sourceforge.net/)
-% and made to mimic its features, but built upon Matlab and the data structure of CellExplorer making it much easier to hack/customize, fully
-% support Matlab mat-files, and faster. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
+% and made to mimic its features, but built upon Matlab and the data structure of CellExplorer, making it much easier to hack/customize, fully
+% support Matlab mat-files, and faster than the original NeuroScope. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
 %
 % Major features:
 % - Live trace filter
@@ -18,6 +18,7 @@ function NeuroScope2(varargin)
 % By Peter Petersen
 % % % % % % % % % % % % % % % % % % % % % % % % %
 
+
 % Global variables
 UI = []; % Struct with UI elements and settings
 data = []; % Contains all external data loaded like data.spikes, data.events, data.states, data.behavior
@@ -27,17 +28,20 @@ spikes_raster = []; % Spike raster (used for highlighting, to minimize computati
 
 if isdeployed % Check for if NeuroScope2 is running as a deployed app (compiled .exe or .app for windows and mac respectively)
     if ~isempty(varargin) % If a file name is provided it will load it.
-        filename = varargin{1};
-        [basepath1,file1] = fileparts(varargin{1});
+        [basepath,basename,ext] = fileparts(varargin{1});
+        if isequal(basepath,0)
+            UI.priority = ext;
+            return
+        end
     else % Otherwise a file load dialog will be shown
-        [file1,basepath1] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select a file with the basename in it from the basepath');
-    end
-    if ~isequal(file1,0)
-        basepath = basepath1;
-        temp1 = strsplit(file1,'.');
-        basename = temp1{1};
-    else
-        return
+        [file1,basepath] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select a file with the basename in it from the basepath');
+        if ~isequal(file1,0)
+            temp1 = strsplit(file1,'.');
+            basename = temp1{1};
+            UI.priority = temp1{2};
+        else
+            return
+        end
     end
 else
     % Handling inputs if run from Matlab
@@ -77,9 +81,9 @@ while t0>=0
     if ~ishandle(UI.fig)
         break
     else
-        % Plotting data
         UI.selectedChannels = [];
         UI.selectedUnits = [];
+        % Plotting data
         plotData;
         
         % Update UI text and slider
@@ -118,22 +122,19 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Init settings
-        UI.t1 = 0;
         UI.forceNewData = true;
-        UI.track = true;
-        UI.t_total = 0; % Length of the recording in seconds
-        
-        UI.t0_track = 0;
         UI.timerInterface = tic;
         UI.settings.colormap = 'hsv'; % any Matlab colormap, e.g. 'hsv' or 'lines'
         UI.settings.windowDuration = 1; % in seconds
         UI.settings.scalingFactor = 50;
         UI.settings.plotStyle = 2;
-        UI.settings.stream = false; 
+        UI.settings.plotSorting = 2;
+        UI.settings.plotColorGroups = 1;
+         
         UI.settings.fileRead = 'bof';
         UI.settings.greyScaleTraces = 1;
         UI.settings.columnTraces = false;
-        UI.preferences.displayMenu = 0;
+        UI.settings.displayMenu = 0;
         UI.settings.channelTags.hide = [];
         UI.settings.channelTags.filter = [];
         UI.settings.channelTags.highlight = [];
@@ -253,8 +254,8 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
         UI.menu.file.recentSessions.main = uimenu(UI.menu.file.topMenu,menuLabel,'Recent sessions...','Separator','on');
         
-        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file',menuSelectedFcn,@exportPlotData,'Separator','on');
-        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file',menuSelectedFcn,@exportPlotData);
+        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file (image)',menuSelectedFcn,@exportPlotData,'Separator','on');
+        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file (vector graphics)',menuSelectedFcn,@exportPlotData);
         uimenu(UI.menu.file.topMenu,menuLabel,'Export figure via the export setup dialog',menuSelectedFcn,@exportPlotData,'Separator','on');
         
         % Session
@@ -444,7 +445,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0.33 0.32 0.14],'String',char(8594),'Callback',@nextEvent,'KeyPressFcn', @keyPress,'tooltip','Next event');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.17 0.485 0.14],'String','Flag event','Callback',@flagEvent,'KeyPressFcn', @keyPress,'tooltip','Flag selected event');
         UI.panel.events.flagCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nFlags', 'Units','normalized', 'Position', [0.505 0.17 0.485 0.14],'HorizontalAlignment','center','Enable','off');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.14],'String','Manual events','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.14],'String','Manual event','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.14],'String','Save events','Callback',@saveEvent,'KeyPressFcn', @keyPress,'tooltip','Save events');
         
         % Time series
@@ -483,15 +484,15 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
-        uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Time (s)', 'Units','normalized', 'Position', [0.1 0 0.05 0.8],'HorizontalAlignment','left');
-        UI.elements.lower.time = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.15 0 0.05 1],'HorizontalAlignment','left','tooltip','Current timestamp (seconds)','Callback',@setTime);
-        uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Window duration (s)', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','left');
-        UI.elements.lower.windowsSize = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', UI.settings.windowDuration, 'Units','normalized', 'Position', [0.3 0 0.05 1],'HorizontalAlignment','left','tooltip','Window size (seconds)','Callback',@setWindowsSize);
-        uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Scaling', 'Units','normalized', 'Position', [0.0 0 0.05 0.8],'HorizontalAlignment','left');
-        UI.elements.lower.scaling = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', num2str(UI.settings.scalingFactor), 'Units','normalized', 'Position', [0.05 0 0.05 1],'HorizontalAlignment','left','tooltip','Ephys scaling','Callback',@setScaling);
+        uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Time (s)', 'Units','normalized', 'Position', [0.1 0 0.05 0.8],'HorizontalAlignment','center');
+        UI.elements.lower.time = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.15 0 0.05 1],'HorizontalAlignment','right','tooltip','Current timestamp (seconds)','Callback',@setTime);
+        uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Window duration (s)', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','center');
+        UI.elements.lower.windowsSize = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', UI.settings.windowDuration, 'Units','normalized', 'Position', [0.3 0 0.05 1],'HorizontalAlignment','right','tooltip','Window size (seconds)','Callback',@setWindowsSize);
+        uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Scaling', 'Units','normalized', 'Position', [0.0 0 0.05 0.8],'HorizontalAlignment','center');
+        UI.elements.lower.scaling = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', num2str(UI.settings.scalingFactor), 'Units','normalized', 'Position', [0.05 0 0.05 1],'HorizontalAlignment','right','tooltip','Ephys scaling','Callback',@setScaling);
         UI.elements.lower.performance = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Performance', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','left','KeyPressFcn', @keyPress);
         UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider,'KeyPressFcn', @keyPress);
-        set(UI.panel.info, 'Widths', [70 60 120 60 60 60 280 -1],'MinimumWidths',[70 60 120 60 60 60 250  1]); % set grid panel size
+        set(UI.panel.info, 'Widths', [70 80 120 60 60 60 280 -1],'MinimumWidths',[70 80 120 60 60 60 250  1]); % set grid panel size
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
@@ -572,7 +573,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         
         % Behavior
         if UI.settings.showBehavior
-            plotBehavior(t0,t0+UI.settings.windowDuration,'m')
+            plotBehavior(t0,t0+UI.settings.windowDuration,[0.5 0.5 0.5])
         end
         
         % Trials
@@ -583,12 +584,12 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
 
     function plot_ephys
         % Loading and plotting ephys data
-        % There are four plot styles, for optimized plotting performance
+        % There are five plot styles, for optimized plotting performance
         % 1. Downsampled: Shows every 16th sample of the raw data (no filter or averaging)
-        % 2. Range: Shows a sample count optimized to the screen resolution. For each sample the max and the min is plotted of data in that temporal range
+        % 2. Range: Shows a sample count optimized for the screen resolution. For each sample the max and the min is plotted of data in the corresponding temporal range
         % 3. Raw: Raw data at full sampling rate
         % 4. LFP: .LFP file, typically the raw data has been downpass filtered and downsampled to 1250Hz before this. All samples are shown.
-        %
+        % 5. Image: Raw data displaued with the imagesc function
         % Only data thas is not currently displayed will be loaded.
         
         if UI.settings.greyScaleTraces < 5
@@ -720,7 +721,6 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             for iShanks = UI.settings.electrodeGroupsToPlot
                 channels = UI.channels{iShanks};
                 if ~isempty(channels)
-%                     [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
                     line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelOffset(channels),'color',colors(iShanks,:),'LineStyle','-', 'HitTest','off');
                 end
             end
@@ -882,6 +882,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         % Plots behavior
         idx = find((data.behavior.(UI.settings.behaviorData).time > t1 & data.behavior.(UI.settings.behaviorData).time < t2));
         if ~isempty(idx)
+            % PLots behavior data on top of the ephys
             if UI.settings.plotBehaviorLinearized
                 if UI.settings.showBehaviorBelowTrace
                     line(data.behavior.(UI.settings.behaviorData).time(idx)-t1,data.behavior.(UI.settings.behaviorData).pos_linearized(idx)/data.behavior.(UI.settings.behaviorData).pos_linearized_limits(2)*diff(UI.dataRange.behavior)+UI.dataRange.behavior(1), 'Color', colorIn, 'HitTest','off','Marker','none','LineStyle','-','linewidth',2)
@@ -889,13 +890,72 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                     line(data.behavior.(UI.settings.behaviorData).time(idx)-t1,data.behavior.(UI.settings.behaviorData).pos_linearized(idx)/data.behavior.(UI.settings.behaviorData).pos_linearized_limits(2), 'Color', colorIn, 'HitTest','off','Marker','none','LineStyle','-','linewidth',2)
                 end
             else
+                % Shows behavior data in a small inset plot in the lower right corner
                 p1 = patch([5*(t2-t1)/6,(t2-t1),(t2-t1),5*(t2-t1)/6]-0.01,[0 0 0.25 0.25]+0.01,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
                 alpha(p1,0.4);
                 line((data.behavior.(UI.settings.behaviorData).pos(1,idx)-data.behavior.xlim(1))/diff(data.behavior.xlim)*(t2-t1)/6+5*(t2-t1)/6-0.01,(data.behavior.(UI.settings.behaviorData).pos(2,idx)-data.behavior.ylim(1))/diff(data.behavior.ylim)*0.25+0.01, 'Color', colorIn, 'HitTest','off','Marker','none','LineStyle','-','linewidth',2)
                 idx2 = [idx(1),idx(round(end/4)),idx(round(end/2)),idx(round(3*end/4))];
                 line((data.behavior.(UI.settings.behaviorData).pos(1,idx2)-data.behavior.xlim(1))/diff(data.behavior.xlim)*(t2-t1)/6+5*(t2-t1)/6-0.01,(data.behavior.(UI.settings.behaviorData).pos(2,idx2)-data.behavior.ylim(1))/diff(data.behavior.ylim)*0.25+0.01, 'Color', [0.9,0.5,0.9], 'HitTest','off','Marker','o','LineStyle','none','linewidth',0.5,'MarkerFaceColor',[0.9,0.5,0.9],'MarkerEdgeColor',[0.9,0.5,0.9]);
                 line((data.behavior.(UI.settings.behaviorData).pos(1,idx(end))-data.behavior.xlim(1))/diff(data.behavior.xlim)*(t2-t1)/6+5*(t2-t1)/6-0.01,(data.behavior.(UI.settings.behaviorData).pos(2,idx(end))-data.behavior.ylim(1))/diff(data.behavior.ylim)*0.25+0.01, 'Color', [1,0.7,1], 'HitTest','off','Marker','s','LineStyle','none','linewidth',0.5,'MarkerFaceColor',[1,0.7,1],'MarkerEdgeColor',[1,0.7,1]);
+                
+                % Showing spikes in the 2D behavior plot
+                if UI.settings.showSpikes && ~isempty(spikes_raster)
+                    if UI.settings.spikesGroupColors == 3
+                        % UI.params.sortingMetric = 'putativeCellType';
+                        putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
+                        UI.colors_metrics = hsv(numel(putativeCellTypes));
+                        k = 1;
+                        for i = 1:numel(putativeCellTypes)
+                            idx2 = find(ismember(data.cell_metrics.(UI.params.groupMetric),putativeCellTypes{i}));
+                            idx3 = ismember(spikes_raster.UID,idx2);
+                            if any(idx3)
+                                plotBehaviorEvents(spikes_raster.x(idx3)+t1,UI.colors_metrics(i,:),'o');
+                                k = k+1;
+                            end
+                        end
+                    elseif UI.settings.spikesGroupColors == 1
+%                         uid = data.spikes.spindices(spikes_raster.spin_idx,2);
+                        unique_uids = unique(spikes_raster.UID);
+                        uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(unique_uids)),')']);
+                        for i = 1:numel(unique_uids)
+                            idx_uids = spikes_raster.UID == unique_uids(i);
+                            plotBehaviorEvents(spikes_raster.x(idx_uids)+t1,uid_colormap(i,:),'o')
+                        end
+                    else
+                        plotBehaviorEvents(spikes_raster.x+t1,'w','o')
+                    end
+                end
+                
+                % Showing events in the 2D behavior plot
+                if UI.settings.showEvents
+                    idx = find(data.events.(UI.settings.eventData).time >= t1 & data.events.(UI.settings.eventData).time <= t2);
+                    % Plotting flagged events in a different color
+                    if isfield(data.events.(UI.settings.eventData),'flagged')
+                        idx2 = ismember(idx,data.events.(UI.settings.eventData).flagged);
+                        if any(idx2)
+                            plotBehaviorEvents(data.events.(UI.settings.eventData).time(idx(idx2)),'m','s')
+                        end
+                        idx(idx2) = [];
+                    end
+                    % Plotting events
+                    if any(idx)
+                        plotBehaviorEvents(data.events.(UI.settings.eventData).time(idx),colorIn,'s')
+                    end
+                    
+                    % Plotting added events
+                    if isfield(data.events.(UI.settings.eventData),'added') && ~isempty(isfield(data.events.(UI.settings.eventData),'added'))
+                        idx3 = find(data.events.(UI.settings.eventData).added >= t1 & data.events.(UI.settings.eventData).added <= t2);
+                        if any(idx3)
+                            plotBehaviorEvents(data.events.(UI.settings.eventData).added(idx3),'c','s')
+                        end
+                    end
+                end
             end
+        end
+        
+        function plotBehaviorEvents(timestamps,markerColor,markerStyle)
+            pos_data = interp1(data.behavior.(UI.settings.behaviorData).time,data.behavior.(UI.settings.behaviorData).pos',timestamps);
+            line((pos_data(:,1)-data.behavior.xlim(1))/diff(data.behavior.xlim)*(t2-t1)/6+5*(t2-t1)/6-0.01,(pos_data(:,2)-data.behavior.ylim(1))/diff(data.behavior.ylim)*0.25+0.01, 'Color', markerColor,'Marker',markerStyle,'LineStyle','none','linewidth',1,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor, 'HitTest','off');
         end
     end
 
@@ -912,6 +972,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         
         spikes_raster = [];
         if any(spin_idx)
+%             spikes_raster.spin_idx = spin_idx;
             spikes_raster.x = data.spikes.spindices(spin_idx,1)-t1;
             spikes_raster.UID = data.spikes.spindices(spin_idx,2);
             if UI.settings.spikesBelowTrace
@@ -939,7 +1000,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                 elseif UI.settings.plotStyle == 2 && (UI.settings.windowDuration>=UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange)
                     idx2 = round(spikes_raster.x*size(ephys.traces_min,1)/UI.settings.windowDuration);
                     idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
-                    traces = ephys.traces_min-UI.channelOffset(:);
+                    traces = ephys.traces_min-UI.channelOffset;
                     idx3 = sub2ind(size(traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
                     spikes_raster.y = traces(idx3);
                 elseif UI.settings.plotStyle == 5
@@ -1540,9 +1601,9 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
     end
     function ShowHideMenu(~,~)
         % Hide/show menubar
-        if UI.preferences.displayMenu == 0
+        if UI.settings.displayMenu == 0
             set(UI.fig, 'MenuBar', 'figure')
-            UI.preferences.displayMenu = 1;
+            UI.settings.displayMenu = 1;
             UI.menu.display.showHideMenu.Checked = 'On';
             fieldmenus = fieldnames(UI.menu);
             fieldmenus(strcmpi(fieldmenus,'NeuroScope2')) = [];
@@ -1552,7 +1613,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             MsgLog('Regular MATLAB menubar shown. Press M to regain the NeuroScope2 menubar',2);
         else
             set(UI.fig, 'MenuBar', 'None')
-            UI.preferences.displayMenu = 0;
+            UI.settings.displayMenu = 0;
             UI.menu.display.showHideMenu.Checked = 'Off';
             fieldmenus = fieldnames(UI.menu);
             for i = 1:numel(fieldmenus)
@@ -2239,7 +2300,13 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             end
         end
         channels = [UI.channels{UI.settings.electrodeGroupsToPlot}];
-        UI.channelOrder = [UI.channels{UI.settings.electrodeGroupsToPlot}];
+        if UI.settings.plotSorting == 1
+            UI.channelOrder = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
+        elseif UI.settings.plotSorting == 2
+            UI.channelOrder = [UI.channels{UI.settings.electrodeGroupsToPlot}];
+%         elseif UI.settings.plotSorting == 3
+%             
+        end
         nChannelsToPlot = numel(UI.channelOrder);
         UI.channelMap = zeros(1,data.session.extracellular.nChannels);
         [idx, idx2]= ismember([data.session.extracellular.electrodeGroups.channels{:}],channels);
@@ -2305,6 +2372,28 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
     end
     
     function initData(basepath,basename)
+        
+        % Init data settings
+        UI.settings.stream = false;
+        UI.t1 = 0;
+        UI.track = true;
+        UI.t_total = 0; % Length of the recording in seconds
+        UI.t0_track = 0;
+        UI.settings.showKilosort = false;
+        UI.settings.normalClick = true;
+        UI.settings.channelTags.hide = [];
+        UI.settings.channelTags.filter = [];
+        UI.settings.channelTags.highlight = [];
+        UI.settings.showSpikes = false;
+        UI.settings.useMetrics = false;
+        UI.settings.showEvents = false;
+        UI.settings.showTimeSeries = false;
+        UI.settings.showStates = false;
+        UI.settings.showBehavior = false;
+        UI.settings.intan_showAnalog = false;
+        UI.settings.intan_showAux = false;
+        UI.settings.intan_showDigital = false;
+        
         % Initialize the data
         UI.data.basepath = basepath;
         UI.data.basename = basename;
@@ -2346,8 +2435,17 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         UI.fid.lfp = fopen(UI.data.fileNameLFP, 'r');
         s2 = dir(UI.data.fileNameLFP);
             
-            
-        if ~isempty(s1)
+        if ~isfield(UI,'priority')
+            UI.priority = 'dat';
+        elseif strcmpi(UI.priority,'dat')
+            UI.settings.plotStyle = 2;
+            UI.panel.general.plotStyle.Value = UI.settings.plotStyle;
+        elseif strcmpi(UI.priority,'lfp')
+            UI.settings.plotStyle = 4;
+            UI.panel.general.plotStyle.Value = UI.settings.plotStyle;
+        end
+        
+        if ~isempty(s1) && ~strcmp(UI.priority,'lfp')
             filesize = s1.bytes;
             UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.sr*2);
         elseif ~isempty(s2)
@@ -2520,6 +2618,9 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                         t_event = data.events.(UI.settings.eventData).added(idx3(idx));
                         data.events.(UI.settings.eventData).added(idx3(idx)) = [];
                         UI.elements.lower.performance.String = ['Event deleted: ',num2str(t_event),' sec'];
+                        UI.settings.addEventonClick = false;
+                        uiresume(UI.fig);
+                    else
                         UI.settings.addEventonClick = false;
                         uiresume(UI.fig);
                     end
@@ -3208,18 +3309,25 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             plotTrials(0,UI.t_total,'w')
         end
         
-        % Plotting epochs
+        %Plotting epochs
         if isfield(data.session,'epochs')
+            colors = 1-(1-lines(numel(data.session.epochs)))*0.7;
             for i = 1:numel(data.session.epochs)
                 if isfield(data.session.epochs{i},'startTime') && isfield(data.session.epochs{i},'stopTime')
-                    p1 = patch([data.session.epochs{i}.startTime data.session.epochs{i}.stopTime  data.session.epochs{i}.stopTime data.session.epochs{i}.startTime],[0.992 0.992 0.999 0.999],'w','EdgeColor','w','HitTest','off');
+                    p1 = patch(ax1,[data.session.epochs{i}.startTime data.session.epochs{i}.stopTime  data.session.epochs{i}.stopTime data.session.epochs{i}.startTime],[0.990 0.990 0.999 0.999],colors(i,:),'EdgeColor',colors(i,:)*0.5,'HitTest','off');
                     alpha(p1,0.8);
                 end
-                if isfield(data.session.epochs{i},'startTime') && isfield(data.session.epochs{i},'behavioralParadigm')
+                if isfield(data.session.epochs{i},'startTime') && isfield(data.session.epochs{i},'name') && isfield(data.session.epochs{i},'behavioralParadigm')
                     text(data.session.epochs{i}.startTime,1,{data.session.epochs{i}.name;data.session.epochs{i}.behavioralParadigm},'color','k','VerticalAlignment', 'bottom','Margin',1,'interpreter','none','HitTest','off') % 
+%                     text(ax1,data.session.epochs{i}.startTime,1,[' ',num2str(i)],'color','k','VerticalAlignment', 'top','Margin',1,'interpreter','none','HitTest','off','fontweight', 'bold')
+                elseif isfield(data.session.epochs{i},'startTime') && isfield(data.session.epochs{i},'name')
+                    text(ax1,data.session.epochs{i}.startTime,1,[' ',data.session.epochs{i}.name],'color','k','VerticalAlignment', 'bottom','Margin',1,'interpreter','none','HitTest','off','fontweight', 'bold')
+                elseif isfield(data.session.epochs{i},'startTime')
+                    text(ax1,data.session.epochs{i}.startTime,1,[' ',num2str(i)],'color','k','VerticalAlignment', 'bottom','Margin',1,'interpreter','none','HitTest','off','fontweight', 'bold')
                 end
             end
         end
+        
         % Plotting current timepoint
         plot([t0;t0],[ax1.YLim(1);ax1.YLim(2)],'--b');
         
@@ -3419,7 +3527,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
         plot([0.005,0.005],[0.93,0.98],'-w','linewidth',3)
         text(UI.plot_axis1,0.005,0.955,['  ',num2str(0.05/(UI.settings.scalingFactor)*1000,3),' mV'],'FontWeight', 'Bold','VerticalAlignment', 'middle','HorizontalAlignment','left','color','w')
         drawnow
-        if strcmp(src.Text,'Export to .png file')
+        if strcmp(src.Text,'Export to .png file (image)')
             if ~verLessThan('matlab','9.8') 
                 exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.png']))
             else
@@ -3428,7 +3536,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
                 saveas(UI.fig,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.png']));
             end
             MsgLog(['The .png file was saved to the basepath: ' basename],2);
-        elseif strcmp(src.Text,'Export to .pdf file')
+        elseif strcmp(src.Text,'Export to .pdf file (vector graphics)')
             if ~verLessThan('matlab','9.8') 
                 exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope_',timestamp, '.pdf']),'ContentType','vector')
             else
@@ -3535,6 +3643,7 @@ trackGoogleAnalytics('NeuroScope2',1,'session',data.session); % Anonymous tracki
             data = [];
             basepath = path;
             basename = temp{1};
+            UI.priority = temp{2};
             initData(basepath,basename);
             initTraces;
             uiresume(UI.fig);

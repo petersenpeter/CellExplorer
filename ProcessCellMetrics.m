@@ -211,11 +211,12 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if parameters.showGUI
-    dispLog('Showing GUI for adjusting parameters and session meta data')
+    dispLog('Showing GUI for adjusting parameters and session metadata')
     session.general.basePath = basepath;
+    parameters.preferences = preferences;
     [session,parameters,status] = gui_session(session,parameters);
     if status==0
-        disp('  Metrics calculations canceled by user')
+        dispLog('Metrics calculations canceled by user')
         return
     end
     basename = session.general.name;
