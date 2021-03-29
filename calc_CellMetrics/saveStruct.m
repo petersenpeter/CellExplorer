@@ -34,8 +34,7 @@ if ~isempty(session)
     basename = session.general.name;
     basepath = session.general.basePath;
 elseif isempty(basename)
-    s = regexp(basepath, filesep, 'split');
-    basename = s{end};
+    basename = basenameFromBasepath(basepath);
 end
 
 % Validation

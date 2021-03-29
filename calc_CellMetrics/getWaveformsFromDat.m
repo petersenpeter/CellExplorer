@@ -266,9 +266,10 @@ if ishandle(fig1)
     fig1.Name = [basename, ': Waveform extraction complete. ',num2str(i),' cells processed.  ', num2str(round(toc(timerVal)/60)) ' minutes total'];
     
     % Saving a summary figure for all cells
-    saveFig1.path = 1; saveFig1.fileFormat = 1; saveFig1.save = 1;
     timestamp = datestr(now, '_dd-mm-yyyy_HH.MM.SS');
-    ce_savefigure(fig1,basepath,[basename, '.getWaveformsFromDat' timestamp],0,saveFig1)
-    disp(['getWaveformsFromDat: Summary figure saved to ', fullfile(basepath, 'SummaryFigures', [basename, '.getWaveformsFromDat', timestamp]),'.png'])
+    try
+        ce_savefigure(fig1,basepath,[basename, '.getWaveformsFromDat' timestamp])
+        disp(['getWaveformsFromDat: Summary figure saved to ', fullfile(basepath, 'SummaryFigures', [basename, '.getWaveformsFromDat', timestamp]),'.png'])
+    end
 end
 end

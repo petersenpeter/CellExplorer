@@ -42,24 +42,13 @@ nChannels2 = nChannels+1;
 disp(['Reading out digital channels (nChannels=', num2str(nChannels),')'])
 
 % digital_output_ch = (bitand(digital_word, 2^ch) > 0); % ch has a value of 0-15 here
-binaryData = []:
+binaryData = [];
 for k = 1:nChannels
     binaryData = bitget(m.Data,k);
-    bitChange = diff(binaryData);
+    bitChange = diff(int16(binaryData));
     intanDig.on{k} = find(bitChange == 1)/sr;
     intanDig.off{k} = find(bitChange == -1)/sr;
-
 end
-% for k = 1:nChannels
-%     disp(['Reading channel ' num2str(nChannels+1-k)])
-%     tester(:,nChannels2-k) = (digital_word2 - 2^(nChannels-k))>=0;
-%     digital_word2 = digital_word2 - tester(:,nChannels2-k)*2^(nChannels-k);
-%     test = tester(:,nChannels2-k) == 1;
-%     test2 = diff(test);
-%     intanDig.on{nChannels2-k} = find(test2 == 1)/sr;
-%     intanDig.off{nChannels2-k} = find(test2 == -1)/sr;
-% end
-% clear digital_word2 tester test test2
 
 % Attaching info about how the data was processed
 intanDig.processinginfo.function = 'intanDigital2buzcode';
@@ -68,6 +57,7 @@ intanDig.processinginfo.date = now;
 intanDig.processinginfo.params.basepath = session.general.basePath;
 intanDig.processinginfo.params.basename = session.general.baseName;
 intanDig.processinginfo.params.filename_full = filename_full;
+
 try
     intanDig.processinginfo.username = char(java.lang.System.getProperty('user.name'));
     intanDig.processinginfo.hostname = char(java.net.InetAddress.getLocalHost.getHostName);
@@ -78,5 +68,3 @@ end
 % Saving data
 disp('Saving digital channels')
 saveStruct(intanDig,'digitalseries','session',session);
-
-disp('Loading digital channels: Complete')
