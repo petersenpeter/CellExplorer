@@ -241,20 +241,17 @@ Any other field can be added to the struct containing states data. The `*.states
 This is a data container for behavioral tracking data. A MATLAB struct `behaviorName` stored in a .mat file: `basename.behaviorName.behavior.mat` with the following fields:
 * `timestamps`:  array of timestamps that match the data subfields (in seconds).
 * `sr`: sampling rate (Hz).
-* SpatialSeries: several options as defined below, each with optional subfields:
+* SpatialSeries: several options (position, pupil, orientation) as defined below, each with optional subfields:
   * `units`: defines the units of the data.
   * `resolution`: The smallest meaningful difference (in specified unit) between values in data.
   * `referenceFrame`: description defining what the zero-position is.
   * `coordinateSystem`: position: cartesian[default] or polar. orientation: euler or quaternion[default].
-* `position`: spatial position defined by: x, x/y or x/y/z axis default units: meters).
+* `position`: .x, .y, and .z spatial position. Default units: cm.
+  * `linearized`: a projection of spatial parameters into a 1 dimensional representation:
 * `speed`: a 1D representation of the running speed (cm/s).
+* `acceleration`: a 1D representation of the acceleration (cm^2/s).
 * `orientation`: .x, .y, .z, and .w (default units: radians)
 * `pupil`: pupil-tracking data: .x, .y, .diameter.
-* `linearized`: a projection of spatial parameters into a 1 dimensional representation:
-  * `position`: a 1D linearized version of the position data. 
-  * `speed`: behavioral speed of the linearized behavior. 
-  * `acceleration`: behavioral acceleration of the linearized behavior.
-* `events`: behaviorally derived events, .e.g. as an animal passed a specific position or consumes reward. 
 * `epochs`: behaviorally derived epochs.
 * `trials`: behavioral trials defined as intervals or continuous vector with numeric trial numbers.
 * `states`: e.g. spatially defined regions like central arm or waiting area in a maze. Can be binary or numeric.
@@ -276,7 +273,7 @@ A MATLAB struct `trials` stored in a .mat file: `basename.trials.behavior.mat`. 
 * `timeSeries`: can contain any derived time traces averaged onto trial e.g. temperature. Use nan values for undefined trials.
 * `processinginfo`: a struct with information about how the .mat file was generated including the name of the function, version, date and parameters.
 
-Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath. Trialwise data should live in this container, while trial-intervals can be stored in other behavior structs.
+Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath. Trial-wise data should live in this container, while trial-intervals can be stored in other behavior structs.
 
 ### Intracellular time series
 This is a data container for intracellular recordings. Any MATLAB struct `intracellularName` containing intracellular data would be stored in a .mat file: `basename.intracellularName.intracellular.mat`. It contains fields inherited from timeSeries with the following fields:

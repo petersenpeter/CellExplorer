@@ -100,16 +100,16 @@ optitrack.sr = optitrack_temp.FrameRate;
 optitrack.position.x = optitrack_temp.position3D(1,:);
 optitrack.position.y = optitrack_temp.position3D(2,:);
 optitrack.position.z = optitrack_temp.position3D(3,:);
-optitrack.position.speed = animal_speed;
-optitrack.position.acceleration = animal_acceleration;
 optitrack.position.units = 'centimeters';
 optitrack.position.referenceFrame = 'global';
 optitrack.position.coordinateSystem = 'cartesian';
+optitrack.speed = animal_speed;
+optitrack.acceleration = animal_acceleration;
 optitrack.orientation.x = optitrack_temp.Xr;
 optitrack.orientation.y = optitrack_temp.Yr;
 optitrack.orientation.z = optitrack_temp.Zr;
 optitrack.orientation.rotationType = optitrack_temp.RotationType;
-
+optitrack.nSamples = numel(optitrack.timestamps);
 % Attaching info about how the data was processed
 optitrack.processinginfo.function = 'optitrack2buzcode';
 optitrack.processinginfo.version = 1;

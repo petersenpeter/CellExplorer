@@ -17,8 +17,8 @@ The session GUI allows you to view and manually enter session level metadata thr
 1. TOC
 {:toc}
 
-## Tabs
-The tabs correspond to fields in the session metadata struct:
+## Side menu
+The side menu correspond to fields in the session metadata struct:
 
 * General: general information about the session like name, date, time, location and experimenters. 
 * Epochs: temporal aspects of the recording, describing the state of the animal through its environment, the task it is meant to perform and any manipulations. 
