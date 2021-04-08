@@ -6,6 +6,4 @@ CellExplorer is a graphical user interface (GUI) and standardized pipeline for e
 Peter C. Petersen, Joshua H. Siegle, Nicholas A. Steinmetz, Sara Mahallati, György Buzsáki. CellExplorer: a graphical user interface and a standardized pipeline for visualizing and characterizing single neurons. bioRxiv 2020.05.07.083436; doi: [https://doi.org/10.1101/2020.05.07.083436](https://doi.org/10.1101/2020.05.07.083436).
 
 ### Video demonstration
-<video width="100%" height="auto" controls="controls">
-  <source src="https://buzsakilab.com/CellExplorer/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
-</video>
+https://www.youtube.com/watch?v=GR1glNhcGIY
