@@ -76,7 +76,7 @@ $$
   * `raw_std`: Std of the the raw spike waveform from channel with max amplitude.
   * `filt_all`: Filtered spike waveform from all/subset of channel. 
   * `raw_all`: Filtered spike waveform from all/subset of channel. 
-  * `channels_all`: List of channels used in `filt_all` and `raw_all.` Default: all channels.
+  * `channels_all`: List of channels used in `filt_all` and `raw_all.` Default: 1:nChannels.
 * `maxWaveformCh`: Max channel zero-indexed: The channel with the largest amplitude.
 * `maxWaveformCh1`: Max channel one-indexed: The channel with the largest amplitude.
 * `troughToPeak`: Trough-to-peak latency is defined from the trough to the following peak of the waveform. 

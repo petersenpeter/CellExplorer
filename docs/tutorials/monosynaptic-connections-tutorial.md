@@ -8,7 +8,6 @@ nav_order: 5
 {: .no_toc}
 This tutorial will guide you through the manual curation process of the monosynaptic connections. Monosynaptic connections, both excitatory and inhibitory connections, are determined in the pipeline. You can visualize the connections and perform manual curation in a graphical interface. 
 
-
 ### Implementation
 The Processing module will automatically perform these action, but if you want to detect monosynaptic connections in a dataset independently use below script
 ```m
