@@ -17,7 +17,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 
 ### CellExplorer
 
-| Elements &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;     | Description       | 
+| <div style="width:200px">Elements</div> | Description       | 
 |:-------------|:------------------|
 | About CellExplorer | Shows dialog with basic info about CellExplorer |
 | Edit preferences   | Opens [CellExplorer preferences](https://cellexplorer.org/interface/preferences/), which are stored in `preferences_CellExplorer.m` | 
@@ -26,7 +26,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 
 ### File
 
-| Elements     | Description       | 
+| <div style="width:200px">Elements</div> | Description       | 
 |:-------------|:------------------|
 | Load session from file             | Opens a file dialog where you can select a cell metrics Matlab file to load | 
 | Save classification                | Saves any manual curation to the original cell metrics files. This also works in batch mode, allowing you to save any changes back to the original cell metrics calculated per session. | 
@@ -47,7 +47,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 
 ### Navigation
 
-| Elements &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;     | Description       | 
+| <div style="width:200px">Elements</div> | Description       | 
 |:-------------|:------------------|
 | Go to cell | Shows a dialog allowing you to provide a cell id or session to go to | 
 | Go to previously selected cell (backspace)| Go to previously selected cell | 
@@ -55,7 +55,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 
 ### Cell Selection
 
-| Elements     | Description       | 
+| <div style="width:200px">Elements</div> | Description       | 
 |:-------------|:------------------|
 | Polygon selection of cells from plots | Draw a polygon circling the points/lines in any of the plots to perform an action on the circled cells | 
 | Perform group action | [Perform group action](https://cellexplorer.org/interface/single-cell-plot-options/#group-action-plots) on selected cells. If no cells are currently selected, a selection dialog will be shown | 
