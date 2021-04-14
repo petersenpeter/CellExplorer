@@ -54,4 +54,6 @@ cell_metrics_idxs1 = loadCellMetrics('cell_metrics',cell_metrics,'putativeCellTy
 ```m
 cell_metrics_idxs2 = loadCellMetrics('cell_metrics',cell_metrics,'groundTruthClassification',{'Axoaxonic'});
 ```
+
+
 The cell metrics follows the definition [here](https://cellexplorer.org/datastructure/standard-cell-metrics/). E. g. the filtered waveforms are stored in the field `cell_metrics.waveforms.filt`, and the firing rates in the field: `cell_metrics.firingRate`.

@@ -17,7 +17,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 
 ### CellExplorer
 
-| Elements     | Description       | 
+| Elements &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;     | Description       | 
 |:-------------|:------------------|
 | About CellExplorer | Shows dialog with basic info about CellExplorer |
 | Edit preferences   | Opens [CellExplorer preferences](https://cellexplorer.org/interface/preferences/), which are stored in `preferences_CellExplorer.m` | 
@@ -47,7 +47,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 
 ### Navigation
 
-| Elements     | Description       | 
+| Elements &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;     | Description       | 
 |:-------------|:------------------|
 | Go to cell | Shows a dialog allowing you to provide a cell id or session to go to | 
 | Go to previously selected cell (backspace)| Go to previously selected cell | 

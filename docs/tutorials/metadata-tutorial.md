@@ -33,6 +33,6 @@ Below is a screenshot of the metadata interface with metadata entered:
 ```m
 verifySessionStruct(session);
 ```
-This will show a table, with missing required fields highlighted in red, and unused optional fields in blue. The verification can also be run from the session GUI. 
+This will show a table, with missing required fields highlighted in red, and unused optional fields in blue. The verification can also be run from the session GUI:
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2021/04/verification.png" width="70%"></p>{: .mt-4}
+<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2021/04/verification.png" width="75%"></p>{: .mt-4}
