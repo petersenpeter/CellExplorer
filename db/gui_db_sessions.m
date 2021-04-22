@@ -80,7 +80,15 @@ function [basenames,basepaths,exitMode] = gui_db_sessions(basenames_in,textfilte
         end
 
         if loadDB.popupmenu.sorting.Value == 2 % Cell count
-            cellCount = cell2mat( cellfun(@(x) x.spikeSorting.cellCount,db.sessions,'UniformOutput',false));
+            cellCount = [];
+            for i = 1:numel(db.sessions)
+                if ~isempty(db.sessions{i}.spikeSorting.cellCount)
+                cellCount(i) = db.sessions{i}.spikeSorting.cellCount;
+                else
+                    cellCount(i) = 0;
+                end
+            end
+%             cellCount = cell2mat( cellfun(@(x) x.spikeSorting.cellCount,db.sessions,'UniformOutput',false));
             [~,idx2] = sort(cellCount(db.index),'descend');
         elseif loadDB.popupmenu.sorting.Value == 3 % Animal
             [~,idx2] = sort(db.animals(db.index));

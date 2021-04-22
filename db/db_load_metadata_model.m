@@ -10,7 +10,7 @@ db_metadata_model.views_id.strains = 17630;
 % db.virusconstructs = {};
 % db.people = {};
 % db.laboratories = {};
-% db.cell_types = {};
+
 % db.environmenttypes = {};
 % db.tasks = {};
 % db.stimuli = {};

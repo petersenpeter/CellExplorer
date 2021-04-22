@@ -86,7 +86,8 @@ end
 % This section will set some default extracellular parameters. You can comment this out if you are importing these parameters another way. 
 % Extracellular parameters from a Neuroscope xml and buzcode sessionInfo file will be imported as well
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'sr')) || isempty(session.extracellular.sr))
-    session.extracellular.sr = 20000;           % Sampling rate
+    session.extracellular.sr = 20000;           % Sampling rate of raw data
+    session.extracellular.srLfp = 1250;         % Sampling rate of LFP data
     session.extracellular.nChannels = 64;       % number of channels
     session.extracellular.fileName = '';        % (optional) file name of raw data if different from basename.dat
     session.extracellular.electrodeGroups.channels = {[1:session.extracellular.nChannels]}; %creating a default list of channels. Please change according to your own layout. 

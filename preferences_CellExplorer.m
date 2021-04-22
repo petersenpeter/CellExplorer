@@ -15,9 +15,9 @@
 UI.preferences.customCellPlotIn{1} = 'Waveforms (single)';
 UI.preferences.customCellPlotIn{2} = 'ACGs (single)'; 
 UI.preferences.customCellPlotIn{3} = 'RCs_firingRateAcrossTime';
-UI.preferences.customCellPlotIn{4} = 'Waveforms (single)';
-UI.preferences.customCellPlotIn{5} = 'CCGs (image)';
-UI.preferences.customCellPlotIn{6} = 'sharpWaveRipple';
+UI.preferences.customCellPlotIn{4} = 'Waveforms (all)';
+UI.preferences.customCellPlotIn{5} = 'ACGs (all)';
+UI.preferences.customCellPlotIn{6} = 'Connectivity graph';
 
 UI.preferences.acgType = 'Normal';                 % Normal (100ms), Wide (1s), Narrow (30ms), Log10
 UI.preferences.acgYaxisLog = 1;
@@ -36,8 +36,11 @@ UI.preferences.plotInsetChannelMap = 3;            % Show a channel map inset wi
 UI.preferences.plotInsetACG = 0;                   % Show a ACG plot inset with waveforms.
 UI.preferences.plotChannelMapAllChannels = true;   % Boolean. Show a select set of channels or all 
 UI.preferences.waveformsAcrossChannelsAlignment = 'Probe layout'; % 'Probe layout', 'Electrode groups'
+UI.preferences.peakVoltage_all_sorting = 'channelOrder'; % 'channelOrder', 'amplitude', 'none'
+UI.preferences.peakVoltage_session = true;         %
 UI.preferences.colormap = 'hot';                   % colormap of image plots
-UI.preferences.showAllTraces = 0;               % Show all traces or a random subset (maxi 2000; faster UI)
+UI.preferences.colormapStates = 'lines';           % colormap of states plots
+UI.preferences.showAllTraces = 0;                  % Show all traces or a random subset (maxi 2000; faster UI)
 UI.preferences.zscoreWaveforms = 1;                % Show zscored or full amplitude waveforms
 UI.preferences.trilatGroupData = 'session';        % 'session','animal','all'
 UI.preferences.hoverEffect = 1;                    % Highlights cells by hovering the mouse
@@ -73,12 +76,13 @@ UI.preferences.tags = {'Good','Bad','Noise','InverseSpike'};
 UI.preferences.groundTruth = {'PV','NOS1','GAT1','SST','Axoaxonic','CellType_A'};
 UI.preferences.groupDataMarkers = ce_append(["o","d","s","*","+"],["m","k","g"]'); 
 
-UI.preferences.groundTruthMarkers = {'om','d','sm','*k','+k','+m','om','dm','sg','*m'}; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
+UI.preferences.putativeConnectingMarkers = {'k','m','c','b'}; % 1) Excitatory, 2) Inhibitory, 3) Receiving Excitation, 4) receiving Inhibition, 
+UI.preferences.groundTruthMarker = 'o'; % Supports any Matlab marker symbols: https://www.mathworks.com/help/matlab/creating_plots/create-line-plot-with-markers.html
 UI.preferences.groundTruthColors = [[.9,.2,.2];[.2,.2,.9];[0.2,0.9,0.9];[0.9,0.2,0.9];[.2,.9,.2];[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8]];
 UI.preferences.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
 
 % tSNE representation
-UI.preferences.tSNE.metrics = {'firingRate','thetaModulationIndex','burstIndex_Mizuseki2012','troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','acg_tau_burst','acg_h','acg_tau_decay','cv2','burstIndex_Doublets','troughtoPeakDerivative'};
+UI.preferences.tSNE.metrics = {'troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','firingRate'};
 UI.preferences.tSNE.dDistanceMetric = 'chebychev'; % default: 'euclidean'
 UI.preferences.tSNE.exaggeration = 10;             % default: 15
 UI.preferences.tSNE.standardize = true;           % boolean
@@ -86,13 +90,6 @@ UI.preferences.tSNE.NumPCAComponents = 0;
 UI.preferences.tSNE.LearnRate = 1000;
 UI.preferences.tSNE.Perplexity = 30;
 UI.preferences.tSNE.InitialY = 'Random';
-
-UI.preferences.tSNE.calcWideAcg = false;           % boolean
-UI.preferences.tSNE.calcNarrowAcg = false;         % boolean
-UI.preferences.tSNE.calcLogAcg = false;            % boolean
-UI.preferences.tSNE.calcLogIsi = false;            % boolean
-UI.preferences.tSNE.calcFiltWaveform = false;      % boolean
-UI.preferences.tSNE.calcRawWaveform = false;       % boolean
 
 % Highlight excitatory / inhibitory cells
 UI.preferences.displayInhibitory = false;          % boolean

@@ -25,17 +25,17 @@ cell_metrics.corticalLayer = {'layer 5','layer 4','layer 2','layer 2/3','layer 1
 ```
 
 __Add numeric values to your cell metrics.__
-Let's say you want to add the preferred orientation of [a drifting grating presented to cells in the visual cortex](https://allensdk.readthedocs.io/en/latest/visual_coding_neuropixels.html#precomputed-stimulus-metrics). This will be stored as a char cell array with a value for each cell, e.g.:
+Let's say you want to add the preferred orientation of [a drifting grating presented to cells in the visual cortex](https://allensdk.readthedocs.io/en/latest/visual_coding_neuropixels.html#precomputed-stimulus-metrics). This will be stored as numeric values, e.g.:
 ```m
 cell_metrics.pref_ori_dg = [90,25,45,80,30]; % For nCells = 5
 ```
 
-If you open multiple sessions in CellExplorer, the custom metrics will automatically be imported. Cells without numeric values will have NaN values assigned and empty strings for missing char fields. The fields will appear in the dropdowns for the custom group plot.
+If you open multiple sessions in CellExplorer, the custom metrics will automatically be imported. Cells without numeric values will have NaN values assigned and empty strings for missing char fields. The fields will appear in the drop-down menus in the custom group plot.
 
 You can incorporate calculations/import of metrics into the `ProcessCellMetrics` script by using the [custom calculation implementation](https://cellexplorer.org/pipeline/custom-calculations/).
 
 ### Custom plot (e.g. spike triggered average response)
-Response curves, event histograms, firing rate maps, manipulations and other plots should be saved into predefined subfields. To categorize, a few field names (plot types) are available:
+Response curves, event histograms, firing rate maps, manipulations, and other plots should be saved into predefined subfields. To categorize, a few field names (plot types) are available:
 1. responseCurves (e.g. thetaPhase)  
 2. events (any ´sessionName.*.events.mat´ file in the basepath will create an event response curve aligned at event start).
 3. manipulations (any ´sessionName.*.manipulation.mat´ file in the basepath will create an event response curve per cell aligned at event start).

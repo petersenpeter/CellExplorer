@@ -36,7 +36,7 @@ The side menu is organized accordingly to fields in the session metadata struct:
 ## Open the session metadata GUI
 In Matlab go to the basepath of the session you want to open. Now run the session metadata GUI:
 ```m
-session = gui_session
+session = gui_session;
 ```
 
 The script will detect and load `basename.session.mat` in the folder. If it is missing, it will show a dialog allowing you to generate the metadata Matlab struct using the template script `sessionTemplate`. The template script will detect and import metadata from:
@@ -48,4 +48,9 @@ The script will detect and load `basename.session.mat` in the folder. If it is m
 Once you have the sessions struct in the Matlab Workspace you can specify the session struct when opening `gui_session`:
 ```m
 session = gui_session(session);
+```
+
+You can also provide a basepath as a input:
+```m
+session = gui_session(basepath);
 ```

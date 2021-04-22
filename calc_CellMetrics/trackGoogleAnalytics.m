@@ -4,8 +4,8 @@ p = inputParser;
 addParameter(p,'metrics',[],@isstruct); % cell_metrics struct
 addParameter(p,'session',[],@isstruct); % session metadata struct
 parse(p,varargin{:})
-metrics = p.Results.metrics;
-session = p.Results.session;
+% metrics = p.Results.metrics;
+% session = p.Results.session;
 
 try
     trackingID = "UA-166238697-1"; % CellExplorer google analytics tracking ID

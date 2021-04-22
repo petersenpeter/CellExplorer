@@ -142,9 +142,10 @@ else
     end
 end
 
-% Importing session metadata from DB if metadata is out of data
+% The session must have a field specifying the version as some changes to the structure has broken compatibility with earlier standard
 if ~isfield(session.general,'version') || session.general.version<4
     if isfield(session.general,'entryID')
+        % Importing session metadata from DB if metadata is out of data
         disp('Metadata not up to date. Downloading from server')
         success = updateFromDB;
         if success == 0
@@ -325,13 +326,13 @@ UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String',
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', UI.list.sessionTypes, 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Session type'));
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Duration', 'Position', [300, 398, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Duration (sec)', 'Position', [300, 398, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.duration = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 375, 310, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Duration of the session (seconds)'));
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Date', 'Position', [10, 348, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Date (yyyy-mm-dd)', 'Position', [10, 348, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.date = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 325, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Date of the session (YYYY-MM-DD)'));
 
-uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Time', 'Position', [300, 348, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Time (hh:mm:ss)', 'Position', [300, 348, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.time = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [300, 325, 310, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Time of the session start (24 hour; HH:MM:SS)'));
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Location', 'Position', [10, 298, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
@@ -357,7 +358,7 @@ UI.edit.sessionID = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String'
 UI.edit.sessionDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[470, 180, 140, 25],'String','View db session','Callback',@openInWebDB,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 600, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 600, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 100);
+UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 600, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 200);
 
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -365,7 +366,7 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
 
 tableData = {false,'','',''};
 % uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 45, 619, 475],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false false false false false false false false false],'Units','normalized');
+UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 45, 619, 475],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false true true true true true true true true],'ColumnFormat',{'logical','numeric','char','numeric','numeric','char','char','char','char','char'},'Units','normalized','CellEditCallback',@editEpochsTableData);
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit','Callback',@(src,evnt)editEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[235, 5 110, 32],'String','Delete','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
@@ -1645,7 +1646,7 @@ uiwait(UI.fig)
                         try
                             session.brainRegions.(SelectedBrainRegion).channels = eval(['[',brainRegionsChannels.String,']']);
                         catch
-                            helpdlg('Channels not not formatted correctly','Error')
+                            helpdlg('Channels not formatted correctly','Error')
                             uicontrol(brainRegionsChannels);
                         end
                     end
@@ -1741,7 +1742,7 @@ uiwait(UI.fig)
                     try
                         session.channelTags.(SelectedTag).channels = eval(['[',tagsChannels.String,']']);
                     catch
-                       helpdlg('Channels not not formatted correctly','Error')
+                       helpdlg('Channels not formatted correctly','Error')
                         uicontrol(tagsChannels);
                         return
                     end
@@ -1860,7 +1861,7 @@ uiwait(UI.fig)
                     try
                         session.inputs.(Selectedinput).channels = eval(['[',inputsChannels.String,']']);
                     catch
-                        helpdlg('Channels not not formatted correctly','Error')
+                        helpdlg('Channels not formatted correctly','Error')
                         uicontrol(inputsChannels);
                         return
                     end
@@ -2041,10 +2042,10 @@ uiwait(UI.fig)
         uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Manipulation', 'Position', [250, 173, 240, 20],'HorizontalAlignment','left');
         epochsManipulation = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initManipulation, 'Position', [250, 150, 240, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Start time', 'Position', [10, 123, 230, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Start time (sec)', 'Position', [10, 123, 230, 20],'HorizontalAlignment','left');
         epochsStartTime = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initStartTime, 'Position', [10, 100, 230, 25],'HorizontalAlignment','left');
         
-        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Stop time', 'Position', [250, 123, 240, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Stop time (sec)', 'Position', [250, 123, 240, 20],'HorizontalAlignment','left');
         epochsStopTime = uicontrol('Parent',UI.dialog.epochs,'Style', 'Edit', 'String', initStopTime, 'Position', [250, 100, 240, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.epochs,'Style', 'text', 'String', 'Notes', 'Position', [10, 73, 440, 20],'HorizontalAlignment','left');
@@ -2472,7 +2473,7 @@ uiwait(UI.fig)
                             session.analysisTags.(SelectedTag) = eval(['[',analysisValue.String,']']);
                         end
                     catch
-                       helpdlg('Values not not formatted correctly','Error')
+                       helpdlg('Values not formatted correctly','Error')
                         uicontrol(analysisValue);
                         return
                     end
@@ -2733,7 +2734,7 @@ uiwait(UI.fig)
                 try
                     session.extracellular.(group).channels{spikeGroup} = eval(['[',spikeGroupsChannels.String,']']);
                 catch
-                    helpdlg(['Channels not not formatted correctly'],'Error')
+                    helpdlg(['Channels not formatted correctly'],'Error')
                     uicontrol(spikeGroupsChannels);
                     return
                 end
@@ -2773,13 +2774,51 @@ uiwait(UI.fig)
         end
     end
     
+    function editEpochsTableData(src,evnt)
+        % {'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'}
+        edit_group = evnt.Indices(1,1);
+        if evnt.Indices(1,2)==3
+            session.epochs{edit_group}.name = evnt.NewData;
+        elseif evnt.Indices(1,2)==4
+            try
+                newNumber = eval(['[',evnt.EditData,']']);
+                if isnumeric(newNumber) && numel(newNumber)==1
+                    session.epochs{edit_group}.startTime = newNumber;
+                end
+            catch
+                helpdlg('Start time not formatted correctly','Error')
+            end
+            updateEpochsList
+        elseif evnt.Indices(1,2)==5
+            try
+                newNumber = eval(['[',evnt.EditData,']']);
+                if isnumeric(newNumber) && numel(newNumber)==1
+                    session.epochs{edit_group}.stopTime = newNumber;
+                end
+            catch
+                helpdlg('Stop time not formatted correctly','Error')
+            end
+            updateEpochsList
+        elseif evnt.Indices(1,2)==6
+            session.epochs{edit_group}.behavioralParadigm = evnt.NewData;
+        elseif evnt.Indices(1,2)==7
+            session.epochs{edit_group}.environment = evnt.NewData;
+        elseif evnt.Indices(1,2)==8
+            session.epochs{edit_group}.manipulation = evnt.NewData;
+        elseif evnt.Indices(1,2)==9
+            session.epochs{edit_group}.stimulus = evnt.NewData;
+        elseif evnt.Indices(1,2)==10
+            session.epochs{edit_group}.notes = evnt.NewData;
+        end
+    end    
+        
     function editElectrodeTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
         if evnt.Indices(1,2)==3
             try
                 session.extracellular.(src.Tag).channels{edit_group} = eval(['[',evnt.NewData,']']);
             catch
-                helpdlg('Channels not not formatted correctly','Error')
+                helpdlg('Channels not formatted correctly','Error')
             end
             updateChannelGroupsList(src.Tag)
         elseif evnt.Indices(1,2)==4
@@ -2799,7 +2838,7 @@ uiwait(UI.fig)
             try
                 session.spikeSorting{edit_group}.channels = eval(['[',evnt.EditData,']']);
             catch
-                helpdlg('Channels not not formatted correctly','Error')
+                helpdlg('Channels not formatted correctly','Error')
             end
             updateSpikeSortingList
         elseif evnt.Indices(1,2)==6
@@ -3040,6 +3079,8 @@ uiwait(UI.fig)
             session.extracellular.spikeGroups = session.extracellular.electrodeGroups;
         elseif strcmp(answer,'spike groups -> electrode groups') && isfield(session.extracellular,'spikeGroups')
             session.extracellular.electrodeGroups = session.extracellular.spikeGroups;
+        elseif strcmp(answer,'Cancel')
+            return
         end
         updateChannelGroupsList
     end

@@ -22,7 +22,7 @@ supplementaryFigure.waveformNormalization = uicontrol('Parent',supplementaryFigu
 
 % Group data normalization
 uicontrol('Parent',supplementaryFigure.tabs.histograms(2),'Style', 'text', 'String', 'Group data normalization', 'Position', [20, 40, 140, 15],'HorizontalAlignment','left');
-supplementaryFigure.groupDataNormalization = uicontrol('Parent',supplementaryFigure.tabs.histograms(2),'Style', 'popupmenu', 'String', {'By peak','By probability'}, 'Value',UI.supplementaryFigure.groupDataNormalization,'Position', [10, 10, 140, 25],'HorizontalAlignment','left');
+supplementaryFigure.groupDataNormalization = uicontrol('Parent',supplementaryFigure.tabs.histograms(2),'Style', 'popupmenu', 'String', {'Peak','Probability','Count'}, 'Value',UI.supplementaryFigure.groupDataNormalization,'Position', [10, 10, 140, 25],'HorizontalAlignment','left');
 
 % Histograms
 for iMetrics = 1:numel(UI.supplementaryFigure.metrics)
