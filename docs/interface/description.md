@@ -20,31 +20,22 @@ The interface consists of 4-9 main plots. The top row is dedicated to population
 ### Navigation and cell selection
 The Navigation panel allows you can navigate and select which cell to display.
 + `Left arrow`: navigate to the next cell.
-
 + `Right arrow`: navigate to the previous cell.
-
 + `GoTo`: Opens a dialog box that allows you go to a specific cell, or session when visualizing a batch of sessions.
-
 *Mouse actions in plots*
-+ `Left mouse click`: go to nearest cell. 
++ `Left mouse click`: Pan the plot around the location of the mouse cursor. In the 3D group plot a `Left mouse click` allows you to rotate the 3D plot.
++ `Mouse scroll wheel`: zoom in or out at the location of the mouse cursor.
++ `Middle mouse click`: go to nearest cell. 
 + `Right mouse click`: select nearest cell. Cell point/trace is highlighted and Cell ID is displayed for selected cell(s).
-+ `Middle mouse click`: activate a group selection function allowing you to draw a polygon (with left mouse clicks) to select multiple cells (finish with a right mouse click; delete points with middle mouse click).
-+ `Mouse scroll wheel`: zoom in or out at the location of the mouse cursor. When zooming on an axis outs, only that axis will change.
-
-In the 3D group plot the mouse keys are altered. `Left mouse click` allows you to rotate the 3D plot, `right mouse click` go to nearest cell, `middle mouse click` selects nearest cell. 
 
 ### Cell Assignment
-The Cell Assignment panel allows you to perform relevant types of cell-assignments such as cell-type, Deep/Superficial, assign brain region or label.
-
+The Cell Assignment panel allows you to perform relevant types of cell-assignments such as cell-type, Deep/Superficial, assign brain region or label. The cell assignments are saved to the cell_metrics structure.
+ 
 + `Cell-type list`: You can assign/alter cell-type of the current cell by clicking a cell-type on the list. 
-
 + `O Polygon`: Perform cell classification on a group of cells by drawing a polygon circling the points in either of the scatter plots, waveforms, or ACGs. 
-
-+ `+ Cell-type`: Allows you to add a new cell type.
-
++ `+ Cell-type`: Allows you to add a new cell-type.
 + `Region`: Brain region assignment of the selected cell according to the Allan Institute Brain Atlas.
-
-+ `Label`: Assign a label to the selected cell. Labels are saved to the cell_metrics structure.
++ `Label`: Assign a label to the selected cell.
 
 ### Display Settings
 The Display Settings panel allows you to customize the plots in CellExplorer. 
