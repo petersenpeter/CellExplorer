@@ -86,8 +86,10 @@ while t0>=0
     else
         UI.selectedChannels = [];
         UI.selectedUnits = [];
+        
         % Plotting data
         plotData;
+        
         % Updating epoch axes
         if ishandle(epoch_plotElements.t0)
             delete(epoch_plotElements.t0)
@@ -247,6 +249,12 @@ end
         UI.settings.intan_showAux = false;
         UI.settings.intan_showDigital = false;
         UI.settings.showIntanBelowTrace = false;
+        
+        % Spectrogram
+        UI.settings.spectrogram.show = false;
+        UI.settings.spectrogram.channel = 7;
+        UI.settings.spectrogram.freq_range = [4:2:250];
+        UI.settings.spectrogram.window = 0.2;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating figure
@@ -514,8 +522,17 @@ end
         UI.panel.behavior.trialNumber = uicontrol('Parent',UI.panel.behavior.main,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.01 0.485 0.20],'HorizontalAlignment','center','tooltip','Trial number','Callback',@gotoTrial);
         UI.panel.behavior.trialCount = uicontrol('Parent',UI.panel.behavior.main,'Style', 'Edit', 'String', 'nTrials', 'Units','normalized', 'Position', [0.505 0.01 0.485 0.20],'HorizontalAlignment','center','Enable','off');
         
+        % Spectrogram
+        UI.panel.spectrogram.main = uipanel('Parent',UI.panel.other.main,'title','Spectrogram');
+        UI.panel.spectrogram.showSpectrogram = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'checkbox','String','Show spectrogram', 'value', 0, 'Units','normalized', 'Position', [0.01 0.67 0.99 0.32],'Callback',@toggleSpectrogram,'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Channel to use', 'Units','normalized', 'Position', [0.01 0.34 0.49 0.32],'HorizontalAlignment','left');
+        UI.panel.spectrogram.spectrogramChannel = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.channel), 'Units','normalized', 'Position', [0.505 0.34 0.485 0.32],'Callback',@toggleSpectrogram,'HorizontalAlignment','center','Enable','off');
+        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Window width (sec)', 'Units','normalized', 'Position', [0.01 0.01 0.49 0.32],'HorizontalAlignment','left');
+        UI.panel.spectrogram.spectrogramWindow = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.window), 'Units','normalized', 'Position', [0.505 0.01 0.485 0.32],'Callback',@toggleSpectrogram,'HorizontalAlignment','center','Enable','off');
+        
+        
         % Defining flexible panel heights
-        set(UI.panel.other.main, 'Heights', [200 95 95 140],'MinimumHeights',[220 100 100 150]);
+        set(UI.panel.other.main, 'Heights', [200 95 95 140 95],'MinimumHeights',[220 100 100 150 100]);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -576,6 +593,11 @@ end
         % Spike data
         if UI.settings.showSpikes
             plotSpikeData(t0,t0+UI.settings.windowDuration,'w')
+        end
+        
+        % Spectrogram
+        if UI.settings.spectrogram.show
+            plotSpectrogram
         end
         
         % States data
@@ -962,12 +984,12 @@ end
                 end
             else
                 % Shows behavior data in a small inset plot in the lower right corner
-                p1 = patch([5*(t2-t1)/6,(t2-t1),(t2-t1),5*(t2-t1)/6]-0.01,[0 0 0.25 0.25]+0.01,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
+                p1 = patch([5*(t2-t1)/6,(t2-t1),(t2-t1),5*(t2-t1)/6]-0.01,[0 0 0.25 0.25]+0.01+UI.ephys_offset,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
                 alpha(p1,0.4);
-                line((data.behavior.(UI.settings.behaviorData).position.x(idx)-data.behavior.(UI.settings.behaviorData).limits.x(1))/diff(data.behavior.(UI.settings.behaviorData).limits.x)*(t2-t1)/6+5*(t2-t1)/6-0.01,(data.behavior.(UI.settings.behaviorData).position.y(idx)-data.behavior.(UI.settings.behaviorData).limits.y(1))/diff(data.behavior.(UI.settings.behaviorData).limits.y)*0.25+0.01, 'Color', colorIn, 'HitTest','off','Marker','none','LineStyle','-','linewidth',2)
+                line((data.behavior.(UI.settings.behaviorData).position.x(idx)-data.behavior.(UI.settings.behaviorData).limits.x(1))/diff(data.behavior.(UI.settings.behaviorData).limits.x)*(t2-t1)/6+5*(t2-t1)/6-0.01,(data.behavior.(UI.settings.behaviorData).position.y(idx)-data.behavior.(UI.settings.behaviorData).limits.y(1))/diff(data.behavior.(UI.settings.behaviorData).limits.y)*0.25+0.01+UI.ephys_offset, 'Color', colorIn, 'HitTest','off','Marker','none','LineStyle','-','linewidth',2)
                 idx2 = [idx(1),idx(round(end/4)),idx(round(end/2)),idx(round(3*end/4))];
-                line((data.behavior.(UI.settings.behaviorData).position.x(idx2)-data.behavior.(UI.settings.behaviorData).limits.x(1))/diff(data.behavior.(UI.settings.behaviorData).limits.x)*(t2-t1)/6+5*(t2-t1)/6-0.01,(data.behavior.(UI.settings.behaviorData).position.y(idx2)-data.behavior.(UI.settings.behaviorData).limits.y(1))/diff(data.behavior.(UI.settings.behaviorData).limits.y)*0.25+0.01, 'Color', [0.9,0.5,0.9], 'HitTest','off','Marker','o','LineStyle','none','linewidth',0.5,'MarkerFaceColor',[0.9,0.5,0.9],'MarkerEdgeColor',[0.9,0.5,0.9]);
-                line((data.behavior.(UI.settings.behaviorData).position.x(idx(end))-data.behavior.(UI.settings.behaviorData).limits.x(1))/diff(data.behavior.(UI.settings.behaviorData).limits.x)*(t2-t1)/6+5*(t2-t1)/6-0.01,(data.behavior.(UI.settings.behaviorData).position.y(idx(end))-data.behavior.(UI.settings.behaviorData).limits.y(1))/diff(data.behavior.(UI.settings.behaviorData).limits.y)*0.25+0.01, 'Color', [1,0.7,1], 'HitTest','off','Marker','s','LineStyle','none','linewidth',0.5,'MarkerFaceColor',[1,0.7,1],'MarkerEdgeColor',[1,0.7,1]);
+                line((data.behavior.(UI.settings.behaviorData).position.x(idx2)-data.behavior.(UI.settings.behaviorData).limits.x(1))/diff(data.behavior.(UI.settings.behaviorData).limits.x)*(t2-t1)/6+5*(t2-t1)/6-0.01,(data.behavior.(UI.settings.behaviorData).position.y(idx2)-data.behavior.(UI.settings.behaviorData).limits.y(1))/diff(data.behavior.(UI.settings.behaviorData).limits.y)*0.25+0.01+UI.ephys_offset, 'Color', [0.9,0.5,0.9], 'HitTest','off','Marker','o','LineStyle','none','linewidth',0.5,'MarkerFaceColor',[0.9,0.5,0.9],'MarkerEdgeColor',[0.9,0.5,0.9]);
+                line((data.behavior.(UI.settings.behaviorData).position.x(idx(end))-data.behavior.(UI.settings.behaviorData).limits.x(1))/diff(data.behavior.(UI.settings.behaviorData).limits.x)*(t2-t1)/6+5*(t2-t1)/6-0.01,(data.behavior.(UI.settings.behaviorData).position.y(idx(end))-data.behavior.(UI.settings.behaviorData).limits.y(1))/diff(data.behavior.(UI.settings.behaviorData).limits.y)*0.25+0.01+UI.ephys_offset, 'Color', [1,0.7,1], 'HitTest','off','Marker','s','LineStyle','none','linewidth',0.5,'MarkerFaceColor',[1,0.7,1],'MarkerEdgeColor',[1,0.7,1]);
                 
                 % Showing spikes in the 2D behavior plot
                 if UI.settings.showSpikes && ~isempty(spikes_raster)
@@ -1027,7 +1049,7 @@ end
         function plotBehaviorEvents(timestamps,markerColor,markerStyle)
             pos_x = interp1(data.behavior.(UI.settings.behaviorData).timestamps,data.behavior.(UI.settings.behaviorData).position.x,timestamps);
             pos_y = interp1(data.behavior.(UI.settings.behaviorData).timestamps,data.behavior.(UI.settings.behaviorData).position.y,timestamps);
-            line((pos_x-data.behavior.(UI.settings.behaviorData).limits.x(1))/diff(data.behavior.(UI.settings.behaviorData).limits.x)*(t2-t1)/6+5*(t2-t1)/6-0.01,(pos_y-data.behavior.(UI.settings.behaviorData).limits.y(1))/diff(data.behavior.(UI.settings.behaviorData).limits.y)*0.25+0.01, 'Color', markerColor,'Marker',markerStyle,'LineStyle','none','linewidth',1,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor, 'HitTest','off');
+            line((pos_x-data.behavior.(UI.settings.behaviorData).limits.x(1))/diff(data.behavior.(UI.settings.behaviorData).limits.x)*(t2-t1)/6+5*(t2-t1)/6-0.01,(pos_y-data.behavior.(UI.settings.behaviorData).limits.y(1))/diff(data.behavior.(UI.settings.behaviorData).limits.y)*0.25+0.01+UI.ephys_offset, 'Color', markerColor,'Marker',markerStyle,'LineStyle','none','linewidth',1,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor, 'HitTest','off');
         end
     end
 
@@ -1246,37 +1268,44 @@ end
     function plotEventData(t1,t2,colorIn1,colorIn2)
         % Plot events
         ydata = UI.dataRange.events';
+        if ~UI.settings.showEventsBelowTrace && UI.settings.processing_steps
+            ydata2 = [0;1];
+        else
+            ydata2 = ydata;     
+        end
+            
         if UI.settings.showEventsBelowTrace && UI.settings.showEvents
             linewidth = 1.5;
         else
             linewidth = 0.8;
         end
+        
         idx = find(data.events.(UI.settings.eventData).time >= t1 & data.events.(UI.settings.eventData).time <= t2);
         % Plotting flagged events in a different color
         if isfield(data.events.(UI.settings.eventData),'flagged')
             idx2 = ismember(idx,data.events.(UI.settings.eventData).flagged);
             if any(idx2)
-                line([1;1]*data.events.(UI.settings.eventData).time(idx(idx2))'-t1,ydata*ones(1,sum(idx2)),'Marker','none','LineStyle','-','color','m', 'HitTest','off','linewidth',linewidth);
+                line([1;1]*data.events.(UI.settings.eventData).time(idx(idx2))'-t1,ydata2*ones(1,sum(idx2)),'Marker','none','LineStyle','-','color','m', 'HitTest','off','linewidth',linewidth);
             end
             idx(idx2) = [];
         end
         % Plotting events 
         if any(idx)
-            line([1;1]*data.events.(UI.settings.eventData).time(idx)'-t1,ydata*ones(1,numel(idx)),'Marker','none','LineStyle','-','color',colorIn1, 'HitTest','off','linewidth',linewidth);
+            line([1;1]*data.events.(UI.settings.eventData).time(idx)'-t1,ydata2*ones(1,numel(idx)),'Marker','none','LineStyle','-','color',colorIn1, 'HitTest','off','linewidth',linewidth);
         end
         
         % Plotting added events 
         if isfield(data.events.(UI.settings.eventData),'added') && ~isempty(isfield(data.events.(UI.settings.eventData),'added'))
             idx3 = find(data.events.(UI.settings.eventData).added >= t1 & data.events.(UI.settings.eventData).added <= t2);
             if any(idx3)
-                line([1;1]*data.events.(UI.settings.eventData).added(idx3)'-t1,ydata*ones(1,numel(idx3)),'Marker','none','LineStyle','--','color','c', 'HitTest','off','linewidth',linewidth);
+                line([1;1]*data.events.(UI.settings.eventData).added(idx3)'-t1,ydata2*ones(1,numel(idx3)),'Marker','none','LineStyle','--','color','c', 'HitTest','off','linewidth',linewidth);
             end
         end
             
         if UI.settings.processing_steps && isfield(data.events.(UI.settings.eventData),'processing_steps')
             fields2plot = fieldnames(data.events.(UI.settings.eventData).processing_steps);
             UI.colors_processing_steps = hsv(numel(fields2plot));
-            ydata1 = [0;0.005]+0.04*UI.settings.showStates;
+            ydata1 = [0;0.005]+ydata(1);
             for i = 1:numel(fields2plot)
                 idx = find(data.events.(UI.settings.eventData).processing_steps.(fields2plot{i}) >= t1 & data.events.(UI.settings.eventData).processing_steps.(fields2plot{i}) <= t2);
                 if any(idx)
@@ -1299,7 +1328,7 @@ end
         else
             detector_channel = [];
         end
-        if ~isempty(detector_channel)
+        if ~isempty(detector_channel) && ismember(detector_channel,UI.channelOrder)
             highlightTraces(detector_channel+1,'w')
         end
     end
@@ -1319,10 +1348,27 @@ end
         patch_range = UI.dataRange.trials;
         if any(idx)
             intervals = intervals(idx,:)-t1;
+            intervals(intervals<0) = 0; intervals(intervals>t2-t1) = t2-t1;
             p1 = patch(double([intervals,flip(intervals,2)])',[patch_range(1);patch_range(1);patch_range(2);patch_range(2)]*ones(1,size(intervals,1)),'g','EdgeColor','g','HitTest','off');
             alpha(p1,0.3);
             text(intervals(:,1),patch_range(2)*ones(1,size(intervals,1)),strcat({' Trial '}, num2str(find(idx))),'FontWeight', 'Bold','Color','w','margin',0.1,'VerticalAlignment', 'top')
         end
+    end
+    
+    function plotSpectrogram
+        if UI.settings.plotStyle == 4
+            sr = data.session.extracellular.srLfp;
+        else
+            sr = data.session.extracellular.sr;
+        end
+        spectrogram_range = UI.dataRange.spectrogram;
+        f_list = [0:20:250];
+        [s, f, t] = spectrogram(ephys.traces(:,UI.settings.spectrogram.channel)*5, round(sr*UI.settings.spectrogram.window) ,round(sr*UI.settings.spectrogram.window*0.95), UI.settings.spectrogram.freq_range, sr);
+        idx = find(ismember(f,f_list));
+        multiplier = [0:size(s,1)-1]/(size(s,1)-1)*diff(spectrogram_range)+spectrogram_range(1);
+        image(UI.plot_axis1,t,multiplier,200*log10(abs(s)), 'HitTest','off');
+        text(t(1)*ones(size(idx)),multiplier(idx),num2str(f(idx)),'FontWeight', 'Bold','color','w','margin',1, 'HitTest','off','HorizontalAlignment','left','BackgroundColor',[0 0 0 0.5]);
+        highlightTraces(UI.settings.spectrogram.channel,'m')        
     end
 
     function plotTemporalStates(t1,t2)
@@ -2189,6 +2235,41 @@ end
         end
         uiresume(UI.fig);
     end
+    
+    function toggleSpectrogram(~,~)
+        if UI.panel.spectrogram.showSpectrogram.Value == 1
+            % Channel to use
+            UI.panel.spectrogram.spectrogramChannel.Enable = 'on';
+            channelnumber = str2num(UI.panel.spectrogram.spectrogramChannel.String);
+            if isnumeric(channelnumber) && channelnumber>0 && channelnumber<=data.session.extracellular.nChannels
+                UI.settings.spectrogram.channel = channelnumber;
+                UI.settings.spectrogram.show = true;
+            else
+                UI.settings.spectrogram.show = false;
+                MsgLog('Spectrogram channel not valid',4);
+                return
+            end
+            
+            % Window width
+            UI.panel.spectrogram.spectrogramWindow.Enable = 'on';
+            window1 = str2num(UI.panel.spectrogram.spectrogramWindow.String);
+            if isnumeric(window1) && window1>0 && window1<UI.settings.windowDuration
+                UI.settings.spectrogram.window = window1;
+                UI.settings.spectrogram.show = true;
+                UI.panel.spectrogram.window.Enable = 'on';
+            else
+                UI.settings.spectrogram.show = false;
+                MsgLog('Spectrogram window width not valid',4);
+                return
+            end
+        else
+            UI.settings.spectrogram.show = false;
+            UI.panel.spectrogram.spectrogramChannel.Enable = 'off';
+            UI.panel.spectrogram.spectrogramWindow.Enable = 'off';
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
 
     function setSortingMetric(~,~)
         UI.params.sortingMetric = UI.panel.cell_metrics.sortingMetric.String{UI.panel.cell_metrics.sortingMetric.Value};
@@ -2386,7 +2467,8 @@ end
         UI.offsets.trials   = 0.02 * (UI.settings.showTrials);
         UI.offsets.behavior = 0.08 * (UI.settings.showBehaviorBelowTrace && UI.settings.plotBehaviorLinearized && UI.settings.showBehavior);
         UI.offsets.states   = 0.04 * (UI.settings.showStates);
-        UI.offsets.events   = 0.04 * (UI.settings.showEventsBelowTrace && UI.settings.showEvents);
+        UI.offsets.spectrogram = 0.25 * (UI.settings.spectrogram.show);
+        UI.offsets.events   = 0.04 * ((UI.settings.showEventsBelowTrace || UI.settings.processing_steps) && UI.settings.showEvents);
         UI.offsets.kilosort = 0.08 * (UI.settings.showKilosort && UI.settings.kilosortBelowTrace);
         UI.offsets.spikes   = 0.08 * (UI.settings.spikesBelowTrace && UI.settings.showSpikes);
         UI.offsets.populationRate = 0.08 * (UI.settings.showSpikes && UI.settings.showPopulationRate && UI.settings.populationRateBelowTrace);
@@ -2455,7 +2537,7 @@ end
         end
         UI.channelOffset = zeros(1,data.session.extracellular.nChannels);
         UI.channelOffset(UI.channelOrder) = channelOffset-1;
-
+        UI.ephys_offset = offset;
         if UI.settings.plotStyle == 4
             UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.srLfp),1)*UI.channelOffset;
             UI.samplesToDisplay = UI.settings.windowDuration*data.session.extracellular.srLfp;
@@ -2521,6 +2603,7 @@ end
         UI.settings.intan_showAnalog = false;
         UI.settings.intan_showAux = false;
         UI.settings.intan_showDigital = false;
+        UI.settings.spectrogram.show = false;
         UI.panel.spikes.showSpikes.Value = 0;
         UI.panel.cell_metrics.useMetrics.Value = 0;
         UI.panel.spikes.populationRate.Value = 0;
@@ -3111,6 +3194,7 @@ end
         else
             UI.settings.processing_steps = false;
         end
+        initTraces
         uiresume(UI.fig);
     end
 
@@ -3440,7 +3524,7 @@ end
                 data.behavior.(UI.settings.behaviorData) = temp;
                 data.behavior.(UI.settings.behaviorData).limits.x = [min(data.behavior.(UI.settings.behaviorData).position.x),max(data.behavior.(UI.settings.behaviorData).position.x)];
                 data.behavior.(UI.settings.behaviorData).limits.y = [min(data.behavior.(UI.settings.behaviorData).position.y),max(data.behavior.(UI.settings.behaviorData).position.y)];
-                if ~isfield(data.behavior.(UI.settings.behaviorData).limits,'linearized')
+                if ~isfield(data.behavior.(UI.settings.behaviorData).limits,'linearized') && isfield(data.behavior.(UI.settings.behaviorData).position,'linearized')
                     data.behavior.(UI.settings.behaviorData).limits.linearized = [min(data.behavior.(UI.settings.behaviorData).position.linearized),max(data.behavior.(UI.settings.behaviorData).position.linearized)];
                 end
                 if ~isfield(data.behavior.(UI.settings.behaviorData),'sr')
@@ -3895,12 +3979,18 @@ end
     
     function loadFromRecentFiles(src,~)
         UI.settings.stream = false;
-        data = [];
-        [basepath,basename,~] = fileparts(src.Text);
-        initData(basepath,basename);
-        initTraces;
-        uiresume(UI.fig);
-        MsgLog(['Session loaded succesful: ' basename],2)
+        [basepath1,basename1,~] = fileparts(src.Text);
+        if exist(basepath1,'dir')
+            data = [];
+            basepath = basepath1;
+            basename = basename1;
+            initData(basepath,basename);
+            initTraces;
+            uiresume(UI.fig);
+            MsgLog(['Session loaded succesful: ' basename],2)
+        else
+            MsgLog(['Basepath does not exist: ' basepath1],4)
+        end
     end
     
     function openWebsite(src,~)
