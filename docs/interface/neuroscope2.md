@@ -71,7 +71,7 @@ Intan files are treated as time series and the metadata is stored in the session
 ## Compiled versions of NeuroScope2
 NeuroScope2 can be compiled to a NeuroScope2.exe and a NeuroScope2.app for Windows and Mac respectively. The compiled versions can be used without a Matlab license and without having Matlab installed, but they can also be used independently on a system with Matlab. If Matlab is installed on your system you only need the application (NeuroScope2.exe or NeuroScope2.app), but if you want to use it on a system without Matlab, you have to use the installer (see the MyAppInstaller_web file included with the zip files below).
 
-You can download compiled versions of NeuroScope2 for [Windows](https://buzsakilab.com/CellExplorer/NeuroScope2_Windows.zip) and [Mac](https://buzsakilab.com/CellExplorer/NeuroScope2_Mac.zip). These compiled version are not necessarily the latest version of NeuroScope2.
+You can download compiled versions of NeuroScope2 for [Windows](https://buzsakilab.com/CellExplorer/NeuroScope2_Win.zip) and [Mac](https://buzsakilab.com/CellExplorer/NeuroScope2_Mac.zip). The compiled versions are not necessarily the latest version of NeuroScope2.
 
 On Windows you can further make the compiled [NeuroScope2 the default program](https://helpdeskgeek.com/how-to/how-to-change-the-default-program-to-open-a-file-with/) to open .dat files (or another file type), such that you can double click any .dat file to open it directly in NeuroScope2, bypassing Matlab. 
 

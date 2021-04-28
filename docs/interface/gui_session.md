@@ -54,3 +54,8 @@ You can also provide a basepath as a input:
 ```m
 session = gui_session(basepath);
 ```
+## Compiled versions of gui_session
+gui_session can be compiled to a gui_session.exe and a gui_session.app for Windows and Mac respectively. The compiled versions can be used without a Matlab license and without having Matlab installed, but they can also be used independently on a system with Matlab. If Matlab is installed on your system you only need the application (gui_session.exe or gui_session.app), but if you want to use it on a system without Matlab, you have to use the installer (see the gui_session_Installer_web file included with the zip files below).
+
+You can download compiled versions of gui_session for [Windows](https://buzsakilab.com/CellExplorer/gui_session_Win.zip) and [Mac](https://buzsakilab.com/CellExplorer/gui_session_Mac.zip). The compiled versions are not necessarily the latest version of gui_session.
+
