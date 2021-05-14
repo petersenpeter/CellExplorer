@@ -52,6 +52,9 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   cell_metrics = ProcessCellMetrics                             % Load from current path, assumed to be a basepath
 %   cell_metrics = ProcessCellMetrics('session',session)          % Load session from session struct
 %   cell_metrics = ProcessCellMetrics('basepath',basepath)        % Load from basepath
+%   cell_metrics = ProcessCellMetrics('basepath',basepath,'includeInhibitoryConnections',true) % Load from basepath
+%   cell_metrics = ProcessCellMetrics('basepath',basepath,'metrics',{'waveform_metrics'}) % Load from basepath
+%
 %   cell_metrics = ProcessCellMetrics('sessionName','rec1')       % Load session from database session name
 %   cell_metrics = ProcessCellMetrics('sessionID',10985)          % Load session from database session id
 %
@@ -92,7 +95,7 @@ addParameter(p,'includeInhibitoryConnections',false,@islogical);
 addParameter(p,'showGUI',false,@islogical);
 addParameter(p,'forceReload',false,@islogical);
 addParameter(p,'forceReloadSpikes',false,@islogical);
-addParameter(p,'submitToDatabase',true,@islogical);
+addParameter(p,'submitToDatabase',false,@islogical);
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 addParameter(p,'saveBackup',true,@islogical);
@@ -211,11 +214,12 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if parameters.showGUI
-    dispLog('Showing GUI for adjusting parameters and session meta data')
+    dispLog('Showing GUI for adjusting parameters and session metadata')
     session.general.basePath = basepath;
+    parameters.preferences = preferences;
     [session,parameters,status] = gui_session(session,parameters);
     if status==0
-        disp('  Metrics calculations canceled by user')
+        dispLog('Metrics calculations canceled by user')
         return
     end
     basename = session.general.name;
@@ -764,7 +768,7 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
         cell_metrics.synapticConnectionsIn = cell_metrics.synapticConnectionsIn(1:cell_metrics.general.cellCount);
         
         % Connection strength
-        disp('  Determining MonoSynaptic connection strengths (transmission probabilities)')
+        disp('  Determining transmission probabilities')
         ccg2 = mono_res.ccgR;
         ccg2(isnan(ccg2)) =  0;
         
@@ -1277,15 +1281,7 @@ cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges = [0:firingRate
 cell_metrics.general.responseCurves.firingRateAcrossTime.x_bins = cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges(1:end-1)+firingRateAcrossTime_binsize/2;
 
 if isfield(session,'epochs')
-    for j = 1:length(session.epochs)
-        if isfield(session.epochs{j},'behavioralParadigm') && isfield(session.epochs{j},'stopTime')
-            cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries(j) = session.epochs{j}.stopTime;
-            cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries_labels{j} = session.epochs{j}.behavioralParadigm;
-        elseif isfield(session.epochs{j},'stopTime')
-            cell_metrics.general.responseCurves.firingRateAcrossTime.boundaries(j) = session.epochs{j}.stopTime;
-        end
-    end
-
+    cell_metrics.general.epochs = session.epochs;
 end
 
 if isfield(session,'brainRegions') && ~isempty(session.brainRegions)

@@ -1,20 +1,20 @@
-function [cell_metrics,UI] = dialog_metrics_groupData(cell_metrics,UI)
+function [cell_metrics,UI,ClickedCells] = dialog_metrics_groupData(cell_metrics,UI)
         if ~isfield(UI.groupData1,'groupToList')
             UI.groupData1.groupToList = 'tags';
             groupDataSelect = 2;
         else
             groupDataSelect = find(ismember(UI.groupData1.groupsList,UI.groupData1.groupToList));
         end
-        
+        ClickedCells = [];
         updateGroupList
         drawnow nocallbacks;
-        UI.groupData1.dialog = dialog('Position', [300, 300, 840, 465],'Name','Cell metrics group data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(UI.groupData1.dialog,'center'), set(UI.groupData1.dialog,'visible','on') % 'MenuBar', 'None','NumberTitle','off'
+        UI.groupData1.dialog = dialog('Position', [300, 300, 840, 465],'Name','Cell metrics group tags','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(UI.groupData1.dialog,'center'), set(UI.groupData1.dialog,'visible','on') % 'MenuBar', 'None','NumberTitle','off'
         UI.groupData1.VBox = uix.VBox( 'Parent', UI.groupData1.dialog, 'Spacing', 5, 'Padding', 0 );
         UI.groupData1.panel.top = uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.groupData1.VBox);
         UI.groupData1.sessionList = uitable(UI.groupData1.VBox,'Data',UI.groupData.dataTable,'Position',[10, 50, 740, 457],'ColumnWidth',{65,45,45,100,460 75,45},'columnname',{'Highlight','+filter','-filter','Group name','List of cells','Cell count','Select'},'RowName',[],'ColumnEditable',[true true true true true false true],'Units','normalized','CellEditCallback',@editTable);
         UI.groupData1.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.groupData1.VBox);
         set(UI.groupData1.VBox, 'Heights', [50 -1 35]);
-        uicontrol('Parent',UI.groupData1.panel.top,'Style','text','Position',[13, 25, 170, 20],'Units','normalized','String','Group data','HorizontalAlignment','left','Units','normalized');
+        uicontrol('Parent',UI.groupData1.panel.top,'Style','text','Position',[13, 25, 170, 20],'Units','normalized','String','Group tags','HorizontalAlignment','left','Units','normalized');
         uicontrol('Parent',UI.groupData1.panel.top,'Style','text','Position',[203, 25, 120, 20],'Units','normalized','String','Sort by','HorizontalAlignment','left','Units','normalized');
         uicontrol('Parent',UI.groupData1.panel.top,'Style','text','Position',[333, 25, 170, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
 
@@ -28,7 +28,7 @@ function [cell_metrics,UI] = dialog_metrics_groupData(cell_metrics,UI)
         uicontrol('Parent',UI.groupData1.panel.bottom,'Style','pushbutton','Position',[620, 5, 100, 30],'String','Actions','Callback',@(src,evnt)CreateGroupAction,'Units','normalized');
         uicontrol('Parent',UI.groupData1.panel.bottom,'Style','pushbutton','Position',[730, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseDialog,'Units','normalized');
         UI.groupData1.popupmenu.performGroundTruthClassification = uicontrol('Parent',UI.groupData1.panel.bottom,'Style','pushbutton','Position',[270, 5, 110, 30],'String','Show G/T tab','Callback',@(src,evnt)performGroundTruthClassification,'Units','normalized','visible','Off');
-        UI.groupData1.popupmenu.importGroundTruth = uicontrol('Parent',UI.groupData1.panel.bottom,'Style','pushbutton','Position',[390, 5, 110, 30],'String','Export GT','Callback',@(src,evnt)importGroundTruth,'Units','normalized','visible','Off');
+%         UI.groupData1.popupmenu.importGroundTruth = uicontrol('Parent',UI.groupData1.panel.bottom,'Style','pushbutton','Position',[390, 5, 110, 30],'String','Export GT','Callback',@(src,evnt)importGroundTruth,'Units','normalized','visible','Off');
 
         toggleGroundTruthButtons
         updateGroupDataCount
@@ -44,12 +44,12 @@ function [cell_metrics,UI] = dialog_metrics_groupData(cell_metrics,UI)
                 for i = 1:numel(oldField)
                     affectedCells = [affectedCells,cell_metrics.(UI.groupData1.groupToList).(field{i})];
                 end
-                UI.params.ClickedCells = affectedCells;
+                ClickedCells = affectedCells;
                 delete(UI.groupData1.dialog);
                 updateUI2
-                GroupAction(UI.params.ClickedCells);
             end
         end
+        
         function ChangeGroupToList
             UI.groupData1.groupToList = UI.groupData1.groupsList{UI.groupData1.popupmenu.groupData.Value};
             toggleGroundTruthButtons

@@ -48,49 +48,73 @@ function cell_metrics = CellExplorer(varargin)
 % Data handling: initializeSession, saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData, defineGroupData
 % UI: hoverCallback, updateUI, customPlot, plotGroupData, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics plotSummaryFigures
 
-p = inputParser;
-
-addParameter(p,'metrics',[],@isstruct);         % cell_metrics struct
-addParameter(p,'basepath',pwd,@isstr);          % Path to session (base directory)
-addParameter(p,'session',[],@isstruct);
-addParameter(p,'basename','',@isstr);
-addParameter(p,'sessionID',[],@isnumeric);
-addParameter(p,'sessionName',[],@isstr);
-
-% Batch input
-addParameter(p,'sessionIDs',{},@iscell);
-addParameter(p,'sessions',{},@iscell);
-addParameter(p,'basepaths',{},@iscell);
-
-% Extra inputs
-addParameter(p,'SWR',{},@iscell);
-addParameter(p,'summaryFigures',false,@islogical); % Creates summary figures
-addParameter(p,'plotCellIDs',[],@isnumeric); % Defines which cell ids to plot in the summary figures
-
-% Parsing inputs
-parse(p,varargin{:})
-metrics = p.Results.metrics;
-id = p.Results.sessionID;
-sessionName = p.Results.sessionName;
-session = p.Results.session;
-basepath = p.Results.basepath;
-basename = p.Results.basepaths;
-
-% Batch inputs
-sessionIDs = p.Results.sessionIDs;
-sessionsin = p.Results.sessions;
-basepaths = p.Results.basepaths;
-
-% Extra inputs
-SWR_in = p.Results.SWR;
-summaryFigures = p.Results.summaryFigures;
-plotCellIDs = p.Results.plotCellIDs;
+if isdeployed % Check for if CellExplorer is running as a deployed app (compiled .exe or .app for windows and mac respectively)
+    if ~isempty(varargin) % If a file name is provided it will load it.
+        filename = varargin{1};
+        [basepath1,file1] = fileparts(varargin{1});
+    else % Otherwise a file load dialog will be shown
+        [file1,basepath1] = uigetfile('*.mat;*.dat;*.lfp;*.xml','Please select a file with the basename in it from the basepath');
+    end
+    if ~isequal(file1,0)
+        basepath = basepath1;
+        temp1 = strsplit(file1,'.');
+        basename = temp1{1};
+    else
+        return
+    end
+    metrics = [];
+    id = [];
+    sessionName = [];
+    session = [];
+    sessionIDs = {};
+    sessionsin = {};
+    summaryFigures = false;
+    plotCellIDs = [];
+    basepaths = {};
+else
+    p = inputParser;
+    
+    addParameter(p,'metrics',[],@isstruct);         % cell_metrics struct
+    addParameter(p,'basepath',pwd,@isstr);          % Path to session (base directory)
+    addParameter(p,'session',[],@isstruct);
+    addParameter(p,'basename','',@isstr);
+    addParameter(p,'sessionID',[],@isnumeric);
+    addParameter(p,'sessionName',[],@isstr);
+    
+    % Batch input
+    addParameter(p,'sessionIDs',{},@iscell);
+    addParameter(p,'sessions',{},@iscell);
+    addParameter(p,'basepaths',{},@iscell);
+    
+    % Extra inputs
+    addParameter(p,'summaryFigures',false,@islogical); % Creates summary figures
+    addParameter(p,'plotCellIDs',[],@isnumeric); % Defines which cell ids to plot in the summary figures
+    
+    % Parsing inputs
+    parse(p,varargin{:})
+    metrics = p.Results.metrics;
+    id = p.Results.sessionID;
+    sessionName = p.Results.sessionName;
+    session = p.Results.session;
+    basepath = p.Results.basepath;
+    basename = p.Results.basepaths;
+    
+    % Batch inputs
+    sessionIDs = p.Results.sessionIDs;
+    sessionsin = p.Results.sessions;
+    basepaths = p.Results.basepaths;
+    
+    % Extra inputs
+    summaryFigures = p.Results.summaryFigures;
+    plotCellIDs = p.Results.plotCellIDs;
+end
 
 %% % % % % % % % % % % % % % % % % % % % % %
 % Initialization of variables and figure
 % % % % % % % % % % % % % % % % % % % % % %
 
-UI = []; UI.BatchMode = false; UI.params.ClickedCells = []; UI.params.inbound = [];
+UI = []; UI.BatchMode = false; UI.params.ClickedCells = []; UI.params.inbound = []; 
+UI.drag.mouse = false; UI.drag.startX = []; UI.drag.startY = []; UI.drag.axnum = []; UI.drag.pan = []; UI.scroll = true;
 UI.params.ii_history = 1; UI.lists.metrics = []; UI.params.hoverStyle = 2;
 UI.params.incoming = []; UI.params.outgoing = []; UI.monoSyn.disp = ''; UI.monoSyn.dispHollowGauss = false;
 UI.params.ACGLogIntervals = -3:0.04:1; UI.tableData.Column1 = 'putativeCellType'; UI.tableData.Column2 = 'brainRegion'; 
@@ -135,9 +159,9 @@ if isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
 
-CellExplorerVersion = 1.69;
+CellExplorerVersion = 1.70;
 
-UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none');
+UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none'); % ,'WindowButtonDownFcn',@mousebuttonPress,'WindowButtonUpFcn',@mousebuttonRelease
 hManager = uigetmodemanager(UI.fig);
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -312,14 +336,9 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@
 UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save classification',menuSelectedFcn,@saveDialog,'Separator','on','Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Restore classification from backup',menuSelectedFcn,@restoreBackup);
 uimenu(UI.menu.file.topMenu,menuLabel,'Reload cell metrics',menuSelectedFcn,@reloadCellMetrics,'Separator','on');
-uimenu(UI.menu.file.topMenu,menuLabel,'Export main figure window',menuSelectedFcn,@exportFigure,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Export figure dialog',menuSelectedFcn,@exportFigure,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Generate supplementary figure',menuSelectedFcn,@plotSupplementaryFigure);
 uimenu(UI.menu.file.topMenu,menuLabel,'Generate summary figure',menuSelectedFcn,@plotSummaryFigure);
-
-% Navigation
-UI.menu.navigation.topMenu = uimenu(UI.fig,menuLabel,'Navigation');
-UI.menu.navigation.goToCell = uimenu(UI.menu.navigation.topMenu,menuLabel,'Go to cell',menuSelectedFcn,@goToCell,'Accelerator','F');
-UI.menu.navigation.previousSelectedCell = uimenu(UI.menu.navigation.topMenu,menuLabel,'Go to previous select cell [backspace]',menuSelectedFcn,@ii_history_reverse);
 
 % Cell selection
 UI.menu.cellSelection.topMenu = uimenu(UI.fig,menuLabel,'Cell selection');
@@ -338,7 +357,7 @@ UI.menu.edit.buttonLabel = uimenu(UI.menu.edit.topMenu,menuLabel,'Assign label',
 UI.menu.edit.addCellType = uimenu(UI.menu.edit.topMenu,menuLabel,'Add new cell-type',menuSelectedFcn,@AddNewCellType,'Separator','on');
 UI.menu.edit.addTag = uimenu(UI.menu.edit.topMenu,menuLabel,'Add new tag',menuSelectedFcn,@addTag);
 
-UI.menu.edit.reclassify_celltypes = uimenu(UI.menu.edit.topMenu,menuLabel,'Reclassify cells',menuSelectedFcn,@reclassify_celltypes,'Accelerator','R','Separator','on');
+UI.menu.edit.reclassify_celltypes = uimenu(UI.menu.edit.topMenu,menuLabel,'Reclassify cells',menuSelectedFcn,@reclassify_celltypes,'Separator','on');
 UI.menu.edit.performClassification = uimenu(UI.menu.edit.topMenu,menuLabel,'Agglomerative hierarchical cluster tree classification',menuSelectedFcn,@performClassification);
 UI.menu.edit.adjustDeepSuperficial = uimenu(UI.menu.edit.topMenu,menuLabel,'Adjust Deep-Superficial assignment for session',menuSelectedFcn,@adjustDeepSuperficial1,'Separator','on');
 
@@ -368,8 +387,14 @@ UI.menu.waveforms.trilatGroupData.ops(1) = uimenu(UI.menu.waveforms.trilatGroupD
 UI.menu.waveforms.trilatGroupData.ops(2) = uimenu(UI.menu.waveforms.trilatGroupDataMenu,menuLabel,'animal',menuSelectedFcn,@adjustTrilatGroupData);
 UI.menu.waveforms.trilatGroupData.ops(3) = uimenu(UI.menu.waveforms.trilatGroupDataMenu,menuLabel,'all',menuSelectedFcn,@adjustTrilatGroupData);
 initGroupMenu('waveforms','trilatGroupData')
-
-
+UI.menu.waveforms.peakVoltage_session = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Population in Peak voltage plot',menuSelectedFcn,@showSessionPeakVoltage,'Separator','on');
+if UI.preferences.peakVoltage_session; UI.menu.waveforms.peakVoltage_session.Checked = 'on'; end
+UI.menu.waveforms.peakVoltage_all_sortingMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Peak voltage channel sorting');
+UI.menu.waveforms.peakVoltage_all_sorting.ops(1) = uimenu(UI.menu.waveforms.peakVoltage_all_sortingMenu,menuLabel,'Channel order',menuSelectedFcn,@adjustPeakVoltage_all_sorting);
+UI.menu.waveforms.peakVoltage_all_sorting.ops(2) = uimenu(UI.menu.waveforms.peakVoltage_all_sortingMenu,menuLabel,'Amplitude',menuSelectedFcn,@adjustPeakVoltage_all_sorting);
+UI.menu.waveforms.peakVoltage_all_sorting.ops(3) = uimenu(UI.menu.waveforms.peakVoltage_all_sortingMenu,menuLabel,'None',menuSelectedFcn,@adjustPeakVoltage_all_sorting);
+initGroupMenu('waveforms','peakVoltage_all_sorting')
+                    
 % View / display
 UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'View');
 UI.menu.display.showHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show regular Matlab menubar',menuSelectedFcn,@ShowHideMenu,'Accelerator','M');
@@ -390,18 +415,23 @@ UI.menu.display.isiNormalization.ops(1) = uimenu(UI.menu.display.isiNormalizatio
 UI.menu.display.isiNormalization.ops(2) = uimenu(UI.menu.display.isiNormalizationMenu,menuLabel,'Occurrence',menuSelectedFcn,@buttonACG_normalize);
 UI.menu.display.isiNormalization.ops(3) = uimenu(UI.menu.display.isiNormalizationMenu,menuLabel,'Instantaneous rate',menuSelectedFcn,@buttonACG_normalize);
 initGroupMenu('display','isiNormalization')
-UI.menu.display.rainCloudNormalizationMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Raincloud plot normalization');
+UI.menu.display.rainCloudNormalizationMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Histogram/raincloud normalization');
 UI.menu.display.rainCloudNormalization.ops(1) = uimenu(UI.menu.display.rainCloudNormalizationMenu,menuLabel,'Peak',menuSelectedFcn,@adjustRainCloudNormalizationMenu);
 UI.menu.display.rainCloudNormalization.ops(2) = uimenu(UI.menu.display.rainCloudNormalizationMenu,menuLabel,'Probability',menuSelectedFcn,@adjustRainCloudNormalizationMenu);
 UI.menu.display.rainCloudNormalization.ops(3) = uimenu(UI.menu.display.rainCloudNormalizationMenu,menuLabel,'Count',menuSelectedFcn,@adjustRainCloudNormalizationMenu);
 initGroupMenu('display','rainCloudNormalization')
+UI.menu.display.rasterMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Spike raster y-data');
+UI.menu.display.raster.ops(1) = uimenu(UI.menu.display.rasterMenu,menuLabel,'CV2',menuSelectedFcn,@adjustSpikeRasterMenu);
+UI.menu.display.raster.ops(2) = uimenu(UI.menu.display.rasterMenu,menuLabel,'ISIs',menuSelectedFcn,@adjustSpikeRasterMenu);
+UI.menu.display.raster.ops(3) = uimenu(UI.menu.display.rasterMenu,menuLabel,'Random',menuSelectedFcn,@adjustSpikeRasterMenu);
+initGroupMenu('display','raster')
 UI.menu.display.significanceMetricsMatrix = uimenu(UI.menu.display.topMenu,menuLabel,'Generate significance matrix',menuSelectedFcn,@SignificanceMetricsMatrix,'Accelerator','K','Separator','on');
 UI.menu.display.generateRainCloudsPlot = uimenu(UI.menu.display.topMenu,menuLabel,'Generate rain cloud metrics figure',menuSelectedFcn,@generateRainCloudPlot);
 UI.menu.display.markerSizeMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Change marker size for group plots',menuSelectedFcn,@defineMarkerSize,'Separator','on');
 UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap',menuSelectedFcn,@changeColormap);
 UI.menu.display.sortingMetric = uimenu(UI.menu.display.topMenu,menuLabel,'Change metric used for sorting image data',menuSelectedFcn,@editSortingMetric);
 UI.menu.display.redefineMetrics = uimenu(UI.menu.display.topMenu,menuLabel,'Change metrics used for t-SNE plot',menuSelectedFcn,@tSNE_redefineMetrics,'Accelerator','T');
-UI.menu.display.flipXY = uimenu(UI.menu.display.topMenu,menuLabel,'Flip x and y axes in the custom plot',menuSelectedFcn,@flipXY,'Separator','on');
+UI.menu.display.flipXY = uimenu(UI.menu.display.topMenu,menuLabel,'Flip x and y axes in the custom group plot',menuSelectedFcn,@flipXY,'Separator','on');
 
 % ACG
 UI.menu.ACG.topMenu = uimenu(UI.fig,menuLabel,'ACG');
@@ -460,10 +490,9 @@ uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Show ground truth classification t
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Save tagging to groundTruthData folder',menuSelectedFcn,@importGroundTruth);
 uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Explore groundTruth data',menuSelectedFcn,@exploreGroundTruth,'Separator','on');
 
-
 % Group data
-UI.menu.groupData.topMenu = uimenu(UI.fig,menuLabel,'Group data');
-UI.menu.display.defineGroupData = uimenu(UI.menu.groupData.topMenu,menuLabel,'Open group data dialog',menuSelectedFcn,@defineGroupData,'Accelerator','G');
+UI.menu.groupData.topMenu = uimenu(UI.fig,menuLabel,'Group tags');
+UI.menu.display.defineGroupData = uimenu(UI.menu.groupData.topMenu,menuLabel,'Open group tags dialog',menuSelectedFcn,@defineGroupData,'Accelerator','G');
 UI.menu.display.generateFilterbyGroupData = uimenu(UI.menu.groupData.topMenu,menuLabel,'Generate filter from group data',menuSelectedFcn,@generateFilterbyGroupData,'Separator','on');
 
 % Table menu
@@ -690,8 +719,8 @@ UI.togglebutton.tag(m) = uicontrol('Parent',UI.tabs.tags,'Style','togglebutton',
 % % % % % % % % % % % % % % % % % % % %
 
 % Custom plot
-uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 10 45 10],'Units','normalized','String','Custom plot style','HorizontalAlignment','center');
-UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 82 144 10],'Units','normalized','String',{'2D scatter plot','+ Histograms','3D scatter plot','Raincloud plot'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)customPlotStyle,'KeyPressFcn', {@keyPress},'tooltip','Plot style of custom group plot');
+uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 10 45 10],'Units','normalized','String','Custom group plot style','HorizontalAlignment','center');
+UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 82 144 10],'Units','normalized','String',{'2D scatter plot','2D + Histograms','3D scatter plot','Raincloud plot'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)customPlotStyle,'KeyPressFcn', {@keyPress},'tooltip','Plot style of custom group plot');
 
 % Custom plotting menues
 UI.panel.buttonGroup1 = uix.HBox('Parent',UI.panel.custom);
@@ -700,7 +729,7 @@ UI.checkbox.logx = uicontrol('Parent',UI.panel.buttonGroup1,'Style','checkbox','
 UI.popupmenu.xData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 62 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.preferences.plotXdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotX(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on x axis');
 set(UI.panel.buttonGroup1, 'Widths', [-1 70], 'Spacing', 5);
 
-UI.panel.buttonGroup2 = uix.HBox('Parent',UI.panel.custom);
+UI.panel.buttonGroup2 = uix.HBox('Parent',UI.panel.custom);                        
 uicontrol('Parent',UI.panel.buttonGroup2,'Style','text','Position',[0.25 0 0.5 1],'Units','normalized','String','  Y data','HorizontalAlignment','left');
 UI.checkbox.logy = uicontrol('Parent',UI.panel.buttonGroup2,'Style','checkbox','Position',[0.5 0 0.5 1],'Units','normalized','String','Log Y','HorizontalAlignment','right','Callback',@(src,evnt)buttonPlotYLog(),'KeyPressFcn', {@keyPress},'tooltip','Toggle y axis linear/log');
 UI.popupmenu.yData = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 42 144 10],'Units','normalized','String',UI.lists.metrics,'Value',find(strcmp(UI.lists.metrics,UI.preferences.plotYdata)),'HorizontalAlignment','left','Callback',@(src,evnt)buttonPlotY(),'KeyPressFcn', {@keyPress},'tooltip','Metric data on y axis');
@@ -806,7 +835,7 @@ else
     set(UI.fig,'visible','on')
     drawnow nocallbacks; frame_h = get(UI.fig,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks;
 end
-
+DragMouseBegin
 %% % % % % % % % % % % % % % % % % % % % % %
 % Main loop of UI
 % % % % % % % % % % % % % % % % % % % % % %
@@ -870,6 +899,12 @@ function updateUI
     % Resetting zoom levels for subplots
     UI.zoom.global = cell(1,10);
     UI.zoom.globalLog = cell(1,10);
+    UI.drag.mouse = false;
+    
+    % Updating cell specific fields
+    UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
+    UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
+    UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
     
     % Updating putative cell type listbox
     UI.listbox.cellClassification.Value = clusClas(ii);
@@ -1050,6 +1085,11 @@ function updateUI
     else
         UI.title.String = ['Cell Class: ', UI.preferences.cellTypes{clusClas(ii)},', ', num2str(ii),'/', num2str(cell_metrics.general.cellCount),'  - electrode group: ', num2str(cell_metrics.electrodeGroup(ii))];
     end
+    
+    % Enabling axes panning
+    UI.drag.pan.Enable = 'on';
+    enableInteractions
+    UI.pan.allow = true(1,9);
 
     %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 1
@@ -1067,23 +1107,33 @@ function updateUI
 
     % Deletes all children from the panel
     delete(UI.panel.subfig_ax(1).Children)
+    
     % Creating new chield
     subfig_ax(1) = axes('Parent',UI.panel.subfig_ax(1));
     
-    % Regular plot without histograms
+    
+    % % % % % Regular plot with/without histograms
+    
     if any(UI.preferences.customPlotHistograms == [1,2])
         if UI.preferences.customPlotHistograms == 2 || strcmp(UI.preferences.referenceData, 'Histogram') || strcmp(UI.preferences.groundTruthData, 'Histogram')
             % Double kernel-histogram with scatter plot
             clear h_scatter
-            h_scatter(2) = subplot(4,4,16); hold on % x axis
-            h_scatter(2).Position = [0.30 0 0.685 0.21];
-            h_scatter(3) = subplot(4,4,1); hold on % y axis
-            h_scatter(3).Position = [0 0.30 0.21 0.675];
-            subfig_ax(1) = subplot(4,4,4); hold on
-            subfig_ax(1).Position = [0.30 0.30 0.685 0.675];
+            set(subfig_ax(1),'Position', [0.30 0.30 0.685 0.675]);
+            h_scatter(2) = axes('Parent',UI.panel.subfig_ax(1),'Position', [0.30 0.01 0.685 0.2], 'visible', 'on','Xticklabels',[]);
+            h_scatter(3) = axes('Parent',UI.panel.subfig_ax(1),'Position', [0.01 0.30 0.2 0.675], 'visible', 'on','Xticklabels',[]);
+            h_scatter(2).YLabel.String = UI.preferences.rainCloudNormalization;
+            h_scatter(3).YLabel.String = UI.preferences.rainCloudNormalization;
+            hold([subfig_ax(1) h_scatter(2) h_scatter(3)],'on')
+            set(UI.fig,'CurrentAxes',subfig_ax(1))
+%             h_scatter(2) = subplot(4,4,16); hold on % x axis
+%             h_scatter(2).Position = [0.30 0 0.685 0.21];
+%             h_scatter(3) = subplot(4,4,1); hold on % y axis
+%             h_scatter(3).Position = [0 0.30 0.21 0.675];
+%             subfig_ax(1) = subplot(4,4,4); hold on
+%             subfig_ax(1).Position = [0.30 0.30 0.685 0.675];
             view(h_scatter(3),[90 -90])
-            set(h_scatter(2), 'visible', 'off');
-            set(h_scatter(3), 'visible', 'off');
+%             set(h_scatter(2), 'visible', 'off');
+%             set(h_scatter(3), 'visible', 'off');
             if UI.checkbox.logx.Value == 1
                 set(h_scatter(2), 'XScale', 'log')
             else
@@ -1119,7 +1169,8 @@ function updateUI
             set(subfig_ax(1), 'YScale', 'linear')
         end
         
-        % 2D plot
+        % % % % % 2D plot
+
         set(subfig_ax(1),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on, axis tight
         view([0 90]);
         if UI.checkbox.logx.Value == 1
@@ -1209,7 +1260,7 @@ function updateUI
             % Ground truth data
             if strcmp(UI.preferences.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
-                ce_gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), UI.classes.colors3,8,'o');
+                ce_gscatter(groundTruth_cell_metrics.(UI.plot.xTitle)(idx), groundTruth_cell_metrics.(UI.plot.yTitle)(idx), groundTruthData.clusClas(idx), UI.classes.colors3,8,UI.preferences.groundTruthMarker);
             elseif strcmp(UI.preferences.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
                 if ~exist('groundTruthData1','var') || ~isfield(groundTruthData1,'z') || ~strcmp(groundTruthData1.x_field,UI.plot.xTitle) || ~strcmp(groundTruthData1.y_field,UI.plot.yTitle) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
                     
@@ -1362,31 +1413,18 @@ function updateUI
                 xlim(fig1_axislimit_x), ylim(fig1_axislimit_y)
             end
             xlim11 = xlim;
-            xlim12 = ylim;
+            ylim11 = ylim;
             
         if UI.preferences.customPlotHistograms == 2
             plotClas_subset = UI.classes.plot(UI.params.subset);
             ids = nanUnique(plotClas_subset);
+            ids_count = histc(plotClas_subset, ids);
             
+    
             for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
                 temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
-                idx = find(plotClas_subset==ids(m));
                 if length(temp1)>1
-                    X1 = plotX(temp1);
-                    if UI.checkbox.logx.Value
-                        X1 = X1(X1>0 & ~isinf(X1) & ~isnan(X1));
-                        if ~all(isnan(X1))
-                            [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
-                            Xi = 10.^Xi;
-                            area(Xi, f/max(f), 'FaceColor', UI.classes.colors(m,:), 'EdgeColor', UI.classes.colors(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(2)); hold on
-                        end
-                    else
-                        X1 = X1(~isinf(X1) & ~isnan(X1));
-                        if ~isempty(X1)
-                            [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
-                            area(Xi, f/max(f), 'FaceColor', UI.classes.colors(m,:), 'EdgeColor', UI.classes.colors(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(2)); hold on
-                        end
-                    end
+                    densityPlot(plotX(temp1),h_scatter(2),UI.classes.colors(m,:),UI.classes.colors(m,:),UI.checkbox.logx.Value)
                 end
             end
             if UI.preferences.plotLinearFits
@@ -1396,77 +1434,77 @@ function updateUI
             
             for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
                 temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
-                idx = find(plotClas_subset==ids(m));
                 if length(temp1)>1
-                    X1 = plotY(temp1);
-                    if UI.checkbox.logy.Value
-                        X1 = X1(X1>0 & ~isinf(X1) & ~isnan(X1));
-                        X1 = X1(X1>0);
-                        if ~all(isnan(X1))
-                            [f, Xi, u] = ksdensity(log10(X1), 'bandwidth', []);
-                            Xi = 10.^Xi;
-                            area(Xi,f/max(f), 'FaceColor', UI.classes.colors(m,:), 'EdgeColor', UI.classes.colors(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(3)); hold on
-                        end
-                    else
-                        X1 = X1(~isinf(X1) & ~isnan(X1));
-                        if ~isempty(X1)
-                            [f, Xi, u] = ksdensity(X1, 'bandwidth', []);
-                            area(Xi,f/max(f), 'FaceColor', UI.classes.colors(m,:), 'EdgeColor', UI.classes.colors(m,:), 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', h_scatter(3)); hold on
-                        end
-                    end
+                    densityPlot(plotY(temp1),h_scatter(3),UI.classes.colors(m,:),UI.classes.colors(m,:),UI.checkbox.logy.Value)
                 end
             end
-            xlim(h_scatter(3),xlim12)
+            xlim(h_scatter(3),ylim11)
         end
         if strcmp(UI.preferences.groundTruthData, 'Histogram') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
-                if UI.checkbox.logx.Value == 1
-                    groundTruthData1.x = linspace(log10(nanmin([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)])),log10(nanmax([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)])),UI.preferences.binCount);
-                    xdata = log10(groundTruth_cell_metrics.(UI.plot.xTitle));
-                else
-                    groundTruthData1.x = linspace(nanmin([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)]),nanmax([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)]),UI.preferences.binCount);
-                    xdata = groundTruth_cell_metrics.(UI.plot.xTitle);
-                end
-                if UI.checkbox.logy.Value == 1
-                    groundTruthData1.y = linspace(log10(nanmin([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)])),log10(nanmax([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)])),UI.preferences.binCount);
-                    ydata = log10(groundTruth_cell_metrics.(UI.plot.yTitle));
-                else
-                    groundTruthData1.y = linspace(nanmin([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)]),nanmax([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)]),UI.preferences.binCount);
-                    ydata = groundTruth_cell_metrics.(UI.plot.yTitle);
-                end
-                groundTruthData1.x_field = UI.plot.xTitle;
-                groundTruthData1.y_field = UI.plot.yTitle;
-                groundTruthData1.x_log = UI.checkbox.logx.Value;
-                groundTruthData1.y_log = UI.checkbox.logy.Value;
-                idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
-                clusClas_list = unique(groundTruthData.clusClas(idx));
-                line_histograms_X = []; line_histograms_Y = [];
+            
+            groundTruthData1.x = densityPlotRefData(groundTruth_cell_metrics.(UI.plot.xTitle),h_scatter(2),num2cell(UI.classes.colors3,2),UI.checkbox.logx.Value,xlim11,groundTruthData);
+            groundTruthData1.x_field = UI.plot.xTitle;
+            groundTruthData1.x_log = UI.checkbox.logx.Value;
                 
-                if ~any(isnan(groundTruthData1.y)) || ~any(isinf(groundTruthData1.y))
-                    for m = 1:length(clusClas_list)
-                        idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(m));
-                        line_histograms_X(:,m) = ksdensity(xdata(idx(idx1)),groundTruthData1.x);
-                    end
-                    if UI.checkbox.logx.Value == 0
-                        legendScatter2 = line(groundTruthData1.x,line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
-                    else
-                        legendScatter2 = line(10.^(groundTruthData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
-                    end
-                    set(legendScatter2, {'color'}, num2cell(UI.classes.colors3,2));
-                end
-                
-                if ~any(isnan(groundTruthData1.y)) || ~any(isinf(groundTruthData1.y))
-                    for m = 1:length(clusClas_list)
-                        idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(m));
-                        line_histograms_Y(:,m) = ksdensity(ydata(idx(idx1)),groundTruthData1.y);
-                    end
-                    if UI.checkbox.logy.Value == 0
-                        legendScatter22 = line(groundTruthData1.y,line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
-                    else
-                        legendScatter22 = line(10.^(groundTruthData1.y),line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
-                    end
-                    set(legendScatter22, {'color'}, num2cell(UI.classes.colors3,2));
-                end
+            groundTruthData1.y = densityPlotRefData(groundTruth_cell_metrics.(UI.plot.yTitle),h_scatter(3),num2cell(UI.classes.colors3,2),UI.checkbox.logy.Value,ylim11,groundTruthData);
+            groundTruthData1.y_field = UI.plot.yTitle;
+            groundTruthData1.y_log = UI.checkbox.logy.Value;
+            
+            xlim11 = xlim;
+            ylim11 = ylim;
+            
+%             
+%                 if UI.checkbox.logx.Value == 1
+%                     groundTruthData1.x = linspace(log10(nanmin([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)])),log10(nanmax([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)])),UI.preferences.binCount);
+%                     xdata = log10(groundTruth_cell_metrics.(UI.plot.xTitle));
+%                 else
+%                     groundTruthData1.x = linspace(nanmin([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)]),nanmax([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)]),UI.preferences.binCount);
+%                     xdata = groundTruth_cell_metrics.(UI.plot.xTitle);
+%                 end
+%                 if UI.checkbox.logy.Value == 1
+%                     groundTruthData1.y = linspace(log10(nanmin([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)])),log10(nanmax([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)])),UI.preferences.binCount);
+%                     ydata = log10(groundTruth_cell_metrics.(UI.plot.yTitle));
+%                 else
+%                     groundTruthData1.y = linspace(nanmin([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)]),nanmax([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)]),UI.preferences.binCount);
+%                     ydata = groundTruth_cell_metrics.(UI.plot.yTitle);
+%                 end
+%                 groundTruthData1.x_field = UI.plot.xTitle;
+%                 groundTruthData1.y_field = UI.plot.yTitle;
+%                 groundTruthData1.x_log = UI.checkbox.logx.Value;
+%                 groundTruthData1.y_log = UI.checkbox.logy.Value;
+
+%                 idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
+%                 clusClas_list = unique(groundTruthData.clusClas(idx));
+%                 line_histograms_X = []; line_histograms_Y = [];
+%                 
+%                 if ~any(isnan(groundTruthData1.y)) || ~any(isinf(groundTruthData1.y))
+%                     for m = 1:length(clusClas_list)
+%                         idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(m));
+%                         line_histograms_X(:,m) = ksdensity(xdata(idx(idx1)),groundTruthData1.x);
+%                     end
+%                     if UI.checkbox.logx.Value == 0
+%                         legendScatter2 = line(groundTruthData1.x,line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+%                     else
+%                         legendScatter2 = line(10.^(groundTruthData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+%                     end
+%                     set(legendScatter2, {'color'}, num2cell(UI.classes.colors3,2));
+%                 end
+%                 
+%                 if ~any(isnan(groundTruthData1.y)) || ~any(isinf(groundTruthData1.y))
+%                     for m = 1:length(clusClas_list)
+%                         idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(m));
+%                         line_histograms_Y(:,m) = ksdensity(ydata(idx(idx1)),groundTruthData1.y);
+%                     end
+%                     if UI.checkbox.logy.Value == 0
+%                         legendScatter22 = line(groundTruthData1.y,line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
+%                     else
+%                         legendScatter22 = line(10.^(groundTruthData1.y),line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
+%                     end
+%                     set(legendScatter22, {'color'}, num2cell(UI.classes.colors3,2));
+%                 end
         end
+        
+        
     if strcmp(UI.preferences.referenceData, 'Histogram') && ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,UI.plot.xTitle) && isfield(reference_cell_metrics,UI.plot.yTitle)
             if UI.checkbox.logx.Value == 1
                 AA = reference_cell_metrics.(UI.plot.xTitle);
@@ -1530,11 +1568,13 @@ function updateUI
                 set(legendScatter22, {'color'}, num2cell(UI.classes.colors2,2));
             end
             xlim(h_scatter(2), xlim11)
-            xlim(h_scatter(3), xlim12)
+            xlim(h_scatter(3), ylim11)
     end
     
+    % % % % % 3D plot
+    
     elseif UI.preferences.customPlotHistograms == 3
-        % 3D plot
+
         hold on
         subfig_ax(1).YLabel.String = UI.labels.(UI.plot.yTitle); subfig_ax(1).YLabel.Interpreter = 'tex';
         subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); subfig_ax(1).XLabel.Interpreter = 'tex';
@@ -1570,16 +1610,16 @@ function updateUI
         markerColor = UI.classes.colors(ic,:);
         legendScatter = scatter3(plotX(UI.params.subset), plotY(UI.params.subset), plotZ(UI.params.subset),markerSize,markerColor,'filled', 'HitTest','off','MarkerFaceAlpha',.7);
         if UI.preferences.displayExcitatory && ~isempty(UI.cells.excitatory_subset)
-            line(plotX(UI.cells.excitatory_subset), plotY(UI.cells.excitatory_subset), plotZ(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color','k', 'HitTest','off')
+            line(plotX(UI.cells.excitatory_subset), plotY(UI.cells.excitatory_subset), plotZ(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{1}, 'HitTest','off')
         end
         if UI.preferences.displayInhibitory && ~isempty(UI.cells.inhibitory_subset)
-            line(plotX(UI.cells.inhibitory_subset), plotY(UI.cells.inhibitory_subset), plotZ(UI.cells.inhibitory_subset),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+            line(plotX(UI.cells.inhibitory_subset), plotY(UI.cells.inhibitory_subset), plotZ(UI.cells.inhibitory_subset),'Marker','o','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{2}, 'HitTest','off')
         end
         if UI.preferences.displayExcitatoryPostsynapticCells && ~isempty(UI.cells.excitatoryPostsynaptic_subset)
-            line(plotX(UI.cells.excitatoryPostsynaptic_subset), plotY(UI.cells.excitatoryPostsynaptic_subset), plotZ(UI.cells.excitatoryPostsynaptic_subset),'Marker','v','LineStyle','none','color','k', 'HitTest','off')
+            line(plotX(UI.cells.excitatoryPostsynaptic_subset), plotY(UI.cells.excitatoryPostsynaptic_subset), plotZ(UI.cells.excitatoryPostsynaptic_subset),'Marker','v','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{3}, 'HitTest','off')
         end
         if UI.preferences.displayInhibitoryPostsynapticCells && ~isempty(UI.cells.inhibitoryPostsynaptic_subset)
-            line(plotX(UI.cells.inhibitoryPostsynaptic_subset), plotY(UI.cells.inhibitoryPostsynaptic_subset), plotZ(UI.cells.inhibitoryPostsynaptic_subset),'Marker','*','LineStyle','none','color','k','*k', 'HitTest','off')
+            line(plotX(UI.cells.inhibitoryPostsynaptic_subset), plotY(UI.cells.inhibitoryPostsynaptic_subset), plotZ(UI.cells.inhibitoryPostsynaptic_subset),'Marker','*','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{4}, 'HitTest','off')
         end
         % Plotting synaptic projections
         if  plotConnections(1) == 1 && ~isempty(UI.params.putativeSubse) && UI.preferences.plotExcitatoryConnections
@@ -1655,7 +1695,7 @@ function updateUI
         end
         
         % Activating rotation
-        rotateFig(subfig_ax(1))
+        rotateFig(subfig_ax(1),1)
 
         if contains(UI.plot.xTitle,'_num')
             xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5]),
@@ -1668,9 +1708,10 @@ function updateUI
             subfig_ax(1).YLabel.Interpreter = 'none';
         end
         [az,el] = view;
+    
+    % % % % % Rain cloud plot
         
     elseif UI.preferences.customPlotHistograms == 4
-        % Rain cloud plot
         
         if ~isempty(UI.classes.colors)
             subfig_ax(1).XLabel.String = UI.labels.(UI.plot.xTitle); subfig_ax(1).XLabel.Interpreter = 'tex';
@@ -1695,7 +1736,26 @@ function updateUI
             ids_count = histc(plotClas_subset, ids);
             drops_y_pos = {};
             drops_idx = {};
-            ylim([-length(ids_count)/5,1])
+            
+            if strcmp(UI.preferences.rainCloudNormalization,'Peak')
+                ylim1 = [(-length(ids_count)/5),1];
+                subfig_ax(1).YLabel.String = 'Normalized by peak';
+                subfig_ax(1).YTick = [0:0.1:1];
+
+            elseif strcmp(UI.preferences.rainCloudNormalization,'Count')
+                ylim1 = [(-length(ids_count)/5),1]*max(ids_count)*0.3;
+                subfig_ax(1).YLabel.String = 'Count';
+%                 subfig_ax(1).YTick = [0:0.1:1];
+%                 f = f*length(X)/norm_value;
+            else % Probability
+                ylim1 = [-length(ids_count)/5,1]*0.30;
+                subfig_ax(1).YLabel.String = 'Probability';
+                subfig_ax(1).YTick = [0:0.05:1];
+%                 f = f/100*length(Xi); 
+            end
+            
+            ylim(subfig_ax(1),ylim1);
+            
             for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
                 temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
                 idx = find(plotClas_subset==ids(m));
@@ -1705,19 +1765,20 @@ function updateUI
                     else
                         drops_idx{m} = UI.params.subset(idx((~isnan(plotX(temp1)) & plotX(temp1) > 0 & ~isinf(plotX(temp1)))));
                     end
-                    drops_y_pos{m} = ce_raincloud_plot(plotX(temp1),'randomNumbers',UI.params.randomNumbers(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',UI.classes.colors(m,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',UI.classes.colors(m,:),'box_col_match',1,'log_axis',UI.checkbox.logx.Value,'markerSize',UI.preferences.markerSize,'normalization',UI.preferences.rainCloudNormalization,'norm_value',max(ids_count));
+                    drops_y_pos{m} = ce_raincloud_plot(plotX(temp1),'randomNumbers',UI.params.randomNumbers(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',UI.classes.colors(m,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',UI.classes.colors(m,:),'box_col_match',1,'log_axis',UI.checkbox.logx.Value,'markerSize',UI.preferences.markerSize,'normalization',UI.preferences.rainCloudNormalization,'norm_value',(ids_count(m)),'ylim',ylim1);
                     counter = counter + 1;
                 end
             end
+            
             axis tight
-            yticks([]),
             if nanmin(plotX(UI.params.subset)) ~= nanmax(plotX(UI.params.subset)) & UI.checkbox.logx.Value == 0
                 xlim([nanmin(plotX(UI.params.subset)),nanmax(plotX(UI.params.subset))])
             elseif nanmin(plotX(UI.params.subset)) ~= nanmax(plotX(UI.params.subset)) & UI.checkbox.logx.Value == 1 && any(plotX>0)
                 xlim([nanmin(plotX(intersect(UI.params.subset,find(plotX>0)))),nanmax(plotX(intersect(UI.params.subset,find(plotX>0))))])
             end
-            plotStatRelationship(plotX,0.015,UI.checkbox.logx.Value) % Generates KS group statistics
-            
+            plotStatRelationship(plotX,0.015,UI.checkbox.logx.Value,ylim1) % Generates KS group statistics
+
+%             axis tight
             plotY1 = nan(size(plotX));
             if ~isempty([drops_y_pos{:}])
                 plotY1([drops_idx{:}]) = [drops_y_pos{:}];
@@ -1735,18 +1796,19 @@ function updateUI
             
             % Plotting synaptic markers
             if UI.preferences.displayExcitatory && ~isempty(UI.cells.excitatory_subset)
-                line(plotX(UI.cells.excitatory_subset), plotY1(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color','k','HitTest','off')
+                line(plotX(UI.cells.excitatory_subset), plotY1(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{1},'HitTest','off')
             end
             if UI.preferences.displayInhibitory && ~isempty(UI.cells.inhibitory_subset)
-                line(plotX(UI.cells.inhibitory_subset), plotY1(UI.cells.inhibitory_subset),'Marker','s','LineStyle','none','color','k','HitTest','off')
+                line(plotX(UI.cells.inhibitory_subset), plotY1(UI.cells.inhibitory_subset),'Marker','s','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{2},'HitTest','off')
             end
             if UI.preferences.displayExcitatoryPostsynapticCells && ~isempty(UI.cells.excitatoryPostsynaptic_subset)
-                line(plotX(UI.cells.excitatoryPostsynaptic_subset), plotY1(UI.cells.excitatoryPostsynaptic_subset),'Marker','v','LineStyle','none','color','k','HitTest','off')
+                line(plotX(UI.cells.excitatoryPostsynaptic_subset), plotY1(UI.cells.excitatoryPostsynaptic_subset),'Marker','v','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{3},'HitTest','off')
             end
             if UI.preferences.displayInhibitoryPostsynapticCells && ~isempty(UI.cells.inhibitoryPostsynaptic_subset)
-                line(plotX(UI.cells.inhibitoryPostsynaptic_subset), plotY1(UI.cells.inhibitoryPostsynaptic_subset),'Marker','*','LineStyle','none','color','k','HitTest','off')
+                line(plotX(UI.cells.inhibitoryPostsynaptic_subset), plotY1(UI.cells.inhibitoryPostsynaptic_subset),'Marker','*','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{4},'HitTest','off')
             end
-            % % %
+            
+            
             if contains(UI.plot.xTitle,'_num')
                 xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5]),
 %                 subfig_ax(1).XLabel.String = UI.plot.xTitle(1:end-4); 
@@ -1777,15 +1839,16 @@ function updateUI
             subfig_ax(2).YAxis(1).Color = 'k'; 
             subfig_ax(2).YAxis(2).Color = 'k';
         end
-        subfig_ax(2).YLabel.String = 'Burst Index (Royer 2012)';
+        subfig_ax(2).YLabel.String = ['ACG \tau_{rise} (ms)'];
+        subfig_ax(2).YLabel.Interpreter = 'tex';
         subfig_ax(2).XLabel.String = ['Trough-to-Peak (',char(181),'s)'];
-        subfig_ax(2).Title.String = 'Classic separation plot';
+        subfig_ax(2).Title.String = 'Cell type separation plot';
         set(subfig_ax(2), 'YScale', 'log');
         
         % Reference data
         if strcmp(UI.preferences.referenceData, 'Points') && ~isempty(reference_cell_metrics)
             idx = find(ismember(referenceData.clusClas,referenceData.selection));
-            ce_gscatter(reference_cell_metrics.troughToPeak(idx) * 1000, reference_cell_metrics.burstIndex_Royer2012(idx), referenceData.clusClas(idx), UI.classes.colors2,8,'x');
+            ce_gscatter(reference_cell_metrics.troughToPeak(idx) * 1000, reference_cell_metrics.acg_tau_rise(idx), referenceData.clusClas(idx), UI.classes.colors2,8,'x');
         elseif strcmp(UI.preferences.referenceData, 'Image') && ~isempty(reference_cell_metrics)
             yyaxis left
             set(subfig_ax(2), 'YScale', 'linear');
@@ -1798,7 +1861,7 @@ function updateUI
         % Ground truth data
         if strcmp(UI.preferences.groundTruthData, 'Points') && ~isempty(groundTruth_cell_metrics)
             idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
-            ce_gscatter(groundTruth_cell_metrics.troughToPeak(idx) * 1000, groundTruth_cell_metrics.burstIndex_Royer2012(idx), groundTruthData.clusClas(idx), UI.classes.colors3,8,'x');
+            ce_gscatter(groundTruth_cell_metrics.troughToPeak(idx) * 1000, groundTruth_cell_metrics.acg_tau_rise(idx), groundTruthData.clusClas(idx), UI.classes.colors3,8,UI.preferences.groundTruthMarker);
         elseif strcmp(UI.preferences.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics)
             yyaxis left
             groundTruthData.image = 1-sum(groundTruthData.z(:,:,:,groundTruthData.selection),4);
@@ -1810,7 +1873,7 @@ function updateUI
             yyaxis right, hold on
         end
         
-        plotGroupData(cell_metrics.troughToPeak * 1000,cell_metrics.burstIndex_Royer2012,plotConnections(2),1)
+        plotGroupData(cell_metrics.troughToPeak * 1000,cell_metrics.acg_tau_rise,plotConnections(2),1)
         
         if strcmp(UI.preferences.groundTruthData, 'None') && ~strcmp(UI.preferences.referenceData, 'None') && ~isempty(fig2_axislimit_x_reference) && ~isempty(fig2_axislimit_y_reference)
             xlim(fig2_axislimit_x_reference), ylim(fig2_axislimit_y_reference)
@@ -1832,7 +1895,7 @@ function updateUI
             for m = 1:length(clusClas_list)
                 idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(m));
                 line_histograms_X(:,m) = ksdensity(groundTruth_cell_metrics.troughToPeak(idx(idx1)) * 1000,groundTruthData.x);
-                line_histograms_Y(:,m) = ksdensity(log10(groundTruth_cell_metrics.burstIndex_Royer2012(idx(idx1))),groundTruthData.y1);
+                line_histograms_Y(:,m) = ksdensity(log10(groundTruth_cell_metrics.acg_tau_rise(idx(idx1))),groundTruthData.y1);
             end
             yyaxis right, hold on
             set(subfig_ax(2),'YScale','log','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), hold on
@@ -1858,7 +1921,7 @@ function updateUI
             for m = 1:length(clusClas_list)
                 idx1 = find(referenceData.clusClas(idx)==clusClas_list(m));
                 line_histograms_X(:,m) = ksdensity(reference_cell_metrics.troughToPeak(idx(idx1)) * 1000,referenceData.x);
-                line_histograms_Y(:,m) = ksdensity(log10(reference_cell_metrics.burstIndex_Royer2012(idx(idx1))),referenceData.y1);
+                line_histograms_Y(:,m) = ksdensity(log10(reference_cell_metrics.acg_tau_rise(idx(idx1))),referenceData.y1);
             end
             yyaxis right, hold on
             set(subfig_ax(2),'YScale','log','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), hold on
@@ -1894,60 +1957,17 @@ function updateUI
         plotGroupData(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)',plotConnections(3),1)
     end
     
-    %% % % % % % % % % % % % % % % % % % % % % %
-    % Subfig 4
-    % % % % % % % % % % % % % % % % % % % % % %
-    delete(subfig_ax(4).Children)
-    set(UI.fig,'CurrentAxes',subfig_ax(4))
-    set(subfig_ax(4),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','yscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(4),'off'), view(subfig_ax(4),2), daspect(subfig_ax(4),'auto')
-    UI.subsetPlots{1} = customPlot(UI.preferences.customPlot{1},ii,general,batchIDs,subfig_ax(4),1,1); 
-    % % % % % % % % % % % % % % % % % % % % % %
-    % Subfig 5
-    % % % % % % % % % % % % % % % % % % % % % %
-    delete(subfig_ax(5).Children)
-    set(UI.fig,'CurrentAxes',subfig_ax(5))
-    set(subfig_ax(5),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','yscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(5),'off'), view(subfig_ax(5),2), daspect(subfig_ax(5),'auto')
-    UI.subsetPlots{2} = customPlot(UI.preferences.customPlot{2},ii,general,batchIDs,subfig_ax(5),1,1);
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    % Subfig 6
-    % % % % % % % % % % % % % % % % % % % % % %
-    delete(subfig_ax(6).Children)
-    set(UI.fig,'CurrentAxes',subfig_ax(6))
-    set(subfig_ax(6),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','yscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(6),'off'), view(subfig_ax(6),2), daspect(subfig_ax(6),'auto')
-    UI.subsetPlots{3} = customPlot(UI.preferences.customPlot{3},ii,general,batchIDs,subfig_ax(6),1,1);
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    % Subfig 7
+    %%  % % % % % % % % % % % % % % % % % % % %
+    % Subfig 4 - 9
     % % % % % % % % % % % % % % % % % % % % % %
     
-    if strcmp(UI.panel.subfig_ax(7).Visible,'on')
-        delete(subfig_ax(7).Children)
-        set(UI.fig,'CurrentAxes',subfig_ax(7))
-        set(subfig_ax(7),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','yscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(7),'off'), view(subfig_ax(7),2), daspect(subfig_ax(7),'auto')
-        UI.subsetPlots{4} = customPlot(UI.preferences.customPlot{4},ii,general,batchIDs,subfig_ax(7),1,1);
-    end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    % Subfig 8
-    % % % % % % % % % % % % % % % % % % % % % %
-    
-    if strcmp(UI.panel.subfig_ax(8).Visible,'on')
-        delete(subfig_ax(8).Children)
-        set(UI.fig,'CurrentAxes',subfig_ax(8))
-        set(subfig_ax(8),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','yscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(8),'off'), view(subfig_ax(8),2), daspect(subfig_ax(8),'auto')
-        UI.subsetPlots{5} = customPlot(UI.preferences.customPlot{5},ii,general,batchIDs,subfig_ax(8),1,1);
-    end
-    
-    % % % % % % % % % % % % % % % % % % % % % %
-    % Subfig 9 
-    % % % % % % % % % % % % % % % % % % % % % %
-    
-    if strcmp(UI.panel.subfig_ax(9).Visible,'on')
-        delete(subfig_ax(9).Children)
-        set(UI.fig,'CurrentAxes',subfig_ax(9))
-        set(subfig_ax(9),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','yscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(9),'off'), view(subfig_ax(9),2), daspect(subfig_ax(9),'auto')
-        UI.subsetPlots{6} = customPlot(UI.preferences.customPlot{6},ii,general,batchIDs,subfig_ax(9),1,1);
+    for i_subplot = 4:9
+        if strcmp(UI.panel.subfig_ax(i_subplot).Visible,'on')
+            delete(subfig_ax(i_subplot).Children)
+            set(UI.fig,'CurrentAxes',subfig_ax(i_subplot))
+            set(subfig_ax(i_subplot),'ButtonDownFcn',@ClicktoSelectFromPlot,'xscale','linear','yscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto','ZDir','normal'), grid(subfig_ax(i_subplot),'off'), view(subfig_ax(i_subplot),2), daspect(subfig_ax(i_subplot),'auto')
+            UI.subsetPlots{i_subplot-3} = customPlot(UI.preferences.customPlot{i_subplot-3},ii,general,batchIDs,subfig_ax(i_subplot),1,1,i_subplot);
+        end
     end
     
     % % % % % % % % % % % % % % % % % % % % % %
@@ -1956,12 +1976,11 @@ function updateUI
     
     % % % % % % % % % % % % % % % % % % % % % %
     % Response including benchmarking the UI
-%     drawnow nocallbacks
     UI.benchmark.String = [num2str(length(UI.params.subset)),'/',num2str(cell_metrics.general.cellCount), ' cells displayed. Processing time: ', num2str(toc(timerInterface),3),' sec'];
     
 end
 
-    function subsetPlots = customPlot(customPlotSelection,ii,general,batchIDs,plotAxes,UI_fig,highlightCurrentCell)
+    function subsetPlots = customPlot(customPlotSelection,ii,general,batchIDs,plotAxes,UI_fig,highlightCurrentCell,axnum)
         % INPUTS:
         % customPlotSelection = plot type
         % ii = cell to plot
@@ -2037,7 +2056,7 @@ end
                 text(cell_metrics.waveforms.time{ii}(temp5),temp6,'AB-ratio','HorizontalAlignment','left','VerticalAlignment','bottom')
             end
             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                plotInsetChannelMap(ii,col,general,1);
+                plotInsetChannelMap(ii,col,general,1,axnum);
             end
             if UI.preferences.plotInsetACG > 1
                 plotInsetACG(ii,col,general,1)
@@ -2073,10 +2092,43 @@ end
                 line(cell_metrics.waveforms.time_zscored, cell_metrics.waveforms.(zscoreWaveforms1)(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
             end
             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                plotInsetChannelMap(ii,col,general,1);
+                plotInsetChannelMap(ii,col,general,1,axnum);
             end
             if UI.preferences.plotInsetACG > 1
                 plotInsetACG(ii,col,general,1)
+            end
+            
+        elseif strcmp(customPlotSelection,'Waveforms (group averages)')
+            % All waveforms (z-scored) colored according to cell type
+            plotAxes.XLabel.String = 'Time (ms)';
+            
+            plotAxes.Title.String = customPlotSelection;
+            if UI.preferences.zscoreWaveforms == 1
+               zscoreWaveforms1 = 'filt_zscored';
+               plotAxes.YLabel.String = 'Waveforms (z-scored)';
+            else
+                zscoreWaveforms1 = 'filt_absolute';
+                plotAxes.YLabel.String = ['Waveforms (',char(181),'V)'];
+            end
+            if UI.preferences.showAllTraces == 0 && length(UI.params.subset)>2000
+                plotSubset = UI.params.subset(randsample(length(UI.params.subset),2000));
+            else
+                plotSubset = UI.params.subset;
+            end
+            for k = 1:length(classes2plotSubset)
+                set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
+                if ~isempty(set1)
+                    xdata = cell_metrics.waveforms.time_zscored;
+                    waveforms_mean = nanmean(cell_metrics.waveforms.(zscoreWaveforms1)(:,set1)');
+                    waveforms_std = nanstd(cell_metrics.waveforms.(zscoreWaveforms1)(:,set1)');
+                    patch([xdata,flip(xdata)], [waveforms_mean+waveforms_std,flip(waveforms_mean-waveforms_std)],UI.classes.colors(k,:),'EdgeColor','none','FaceAlpha',.2,'HitTest','off'), hold on
+                    line(xdata,waveforms_mean, 'color', [UI.classes.colors(k,:)],'HitTest','off','linewidth',2)
+                end
+            end
+            
+            % selected cell in black
+            if highlightCurrentCell
+                line(cell_metrics.waveforms.time_zscored, cell_metrics.waveforms.(zscoreWaveforms1)(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
             end
             
         elseif strcmp(customPlotSelection,'Waveforms (across channels)')
@@ -2208,7 +2260,7 @@ end
             xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(plotAxes, 'ZDir','reverse','Clipping','off','ButtonDownFcn',[]);
             view(ccf_ratio(1),ccf_ratio(2)); 
             if UI_fig
-                rotateFig(plotAxes)
+                rotateFig(plotAxes,getAxisBelowCursor)
             end
             
             % Plots putative connections
@@ -2253,7 +2305,7 @@ end
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                plotInsetChannelMap(ii,col,general,1);
+                plotInsetChannelMap(ii,col,general,1,axnum);
             end
             
         elseif strcmp(customPlotSelection,'Waveforms (raw all)')
@@ -2285,105 +2337,81 @@ end
                 line(cell_metrics.waveforms.time_zscored, cell_metrics.waveforms.(zscoreWaveforms1)(:,ii), 'color', 'k','linewidth',2,'HitTest','off')
             end
             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                plotInsetChannelMap(ii,col,general,1);
+                plotInsetChannelMap(ii,col,general,1,axnum);
             end
-            
-        elseif strcmp(customPlotSelection,'Waveforms (tSNE)')
-            % t-SNE scatter-plot with all waveforms calculated from the z-scored waveforms
-            plotAxes.XLabel.String = '';
-            plotAxes.YLabel.String = '';
-            plotAxes.Title.String = customPlotSelection;
-            ce_gscatter(tSNE_metrics.filtWaveform(UI.params.subset,1), tSNE_metrics.filtWaveform(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
-%             legendScatter4 = gscatter(tSNE_metrics.filtWaveform(UI.params.subset,1), tSNE_metrics.filtWaveform(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
-%             set(legendScatter4,'HitTest','off')
-            % selected cell highlighted with black cross
-            line(tSNE_metrics.filtWaveform(ii,1), tSNE_metrics.filtWaveform(ii,2),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22,'HitTest','off');
-            line(tSNE_metrics.filtWaveform(ii,1), tSNE_metrics.filtWaveform(ii,2),'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
-            
-        elseif strcmp(customPlotSelection,'Raw waveforms (tSNE)')
-            % t-SNE scatter-plot with all raw waveforms calculated from the z-scored waveforms
-            plotAxes.XLabel.String = '';
-            plotAxes.YLabel.String = '';
-            plotAxes.Title.String = customPlotSelection;
-            ce_gscatter(tSNE_metrics.rawWaveform(UI.params.subset,1), tSNE_metrics.rawWaveform(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
-%             legendScatter4 = gscatter(tSNE_metrics.rawWaveform(UI.params.subset,1), tSNE_metrics.rawWaveform(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
-%             set(legendScatter4,'HitTest','off')
-            % selected cell highlighted with black cross
-            line(tSNE_metrics.rawWaveform(ii,1), tSNE_metrics.rawWaveform(ii,2),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22,'HitTest','off');
-            line(tSNE_metrics.rawWaveform(ii,1), tSNE_metrics.rawWaveform(ii,2),'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',20,'HitTest','off');
             
         elseif strcmp(customPlotSelection,'Connectivity graph')
-            plotAxes.XLabel.String = '';
-            plotAxes.YLabel.String = '';
+            plotAxes.XLabel.String = ' ';
+            plotAxes.YLabel.String = ' ';
             plotAxes.Title.String = customPlotSelection;
             if isfield(cell_metrics,'putativeConnections') && (isfield(cell_metrics.putativeConnections,'excitatory') || isfield(cell_metrics.putativeConnections,'inhibitory'))
-            putativeConnections_subset = all(ismember(cell_metrics.putativeConnections.excitatory,UI.params.subset),2);
-            putativeConnections_subset = cell_metrics.putativeConnections.excitatory(putativeConnections_subset,:);
-            
-            putativeConnections_subset_inh = all(ismember(cell_metrics.putativeConnections.inhibitory,UI.params.subset),2);
-            putativeConnections_subset_inh = cell_metrics.putativeConnections.inhibitory(putativeConnections_subset_inh,:);
-            
-            if ~isempty(putativeConnections_subset) || ~isempty(putativeConnections_subset_inh)
-            [putativeSubset1,~,Y] = unique([putativeConnections_subset;putativeConnections_subset_inh]);
-            
-            Y = reshape(Y,size([putativeConnections_subset;putativeConnections_subset_inh]));
-            nNodes = length(putativeSubset1);
-            A = zeros(nNodes,nNodes);
-            for i = 1:size(putativeConnections_subset,1)
-                A(Y(i,1),Y(i,2)) = 1;
-            end
-            for i = size(putativeConnections_subset,1)+1:size(Y,1)
-                A(Y(i,1),Y(i,2)) = 2;
-            end
-            
-            connectivityGraph = digraph(A);
-            if ~UI.preferences.plotExcitatoryConnections
-                connectivityGraph = rmedge(connectivityGraph,Y(1:size(putativeConnections_subset,1),1),Y(1:size(putativeConnections_subset,1),2));
-            end
-            if ~UI.preferences.plotInhibitoryConnections
-                connectivityGraph = rmedge(connectivityGraph,Y(size(putativeConnections_subset,1)+1:end,1),Y(size(putativeConnections_subset,1)+1:end,2));
-            elseif ~isempty(putativeConnections_subset)
-                connectivityGraph1 = connectivityGraph;
-                connectivityGraph1 = rmedge(connectivityGraph1,Y(1:size(putativeConnections_subset,1),1),Y(1:size(putativeConnections_subset,1),2));
-            end
-            connectivityGraph_plot = plot(connectivityGraph,'Layout','force','Iterations',15,'MarkerSize',3,'NodeCData',UI.classes.plot(putativeSubset1)','EdgeCData',connectivityGraph.Edges.Weight,'HitTest','off','EdgeColor',[0.2 0.2 0.2],'NodeColor','k','NodeLabel',{}); %
-            subsetPlots.xaxis = connectivityGraph_plot.XData;
-            subsetPlots.yaxis = connectivityGraph_plot.YData;
-            subsetPlots.subset = putativeSubset1;
-            subsetPlots.type = 'points';  % points, curves, image
-            
-            for k = 1:length(classes2plotSubset)
-                highlight(connectivityGraph_plot,find(UI.classes.plot(putativeSubset1)==classes2plotSubset(k)),'NodeColor',UI.classes.colors(k,:))
-            end
-            if UI.preferences.plotInhibitoryConnections && ~isempty(putativeConnections_subset)
-                highlight(connectivityGraph_plot,connectivityGraph1,'EdgeColor','b')
-            end
-            axis tight, %title('Connectivity graph')
-            set(plotAxes, 'box','off','XTick',[],'YTick',[]) % 'XTickLabel',[], 'YTickLabel',[]
-            if UI_fig
-                set(plotAxes,'ButtonDownFcn',@ClicktoSelectFromPlot)
-            end
-            
-            if any(ii == subsetPlots.subset)
-                idx = find(ii == subsetPlots.subset);
-                line(subsetPlots.xaxis(idx), subsetPlots.yaxis(idx),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
-                line(subsetPlots.xaxis(idx), subsetPlots.yaxis(idx),'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
-            end
-            
-            % Plots putative connections
-            if ~isempty(UI.params.putativeSubse) && UI.preferences.plotExcitatoryConnections && ismember(UI.monoSyn.disp,{'Selected','Upstream','Downstream','Up & downstream','All'}) && ~isempty(UI.params.connections)
-                C = ismember(subsetPlots.subset,UI.params.connections);
-                line(subsetPlots.xaxis(C),subsetPlots.yaxis(C),'Marker','o','LineStyle','none','color','k','HitTest','off')
-            end
-            
-            % Plots putative inhibitory connections
-            if  ~isempty(UI.params.putativeSubse_inh) && UI.preferences.plotInhibitoryConnections && ismember(UI.monoSyn.disp,{'Selected','Upstream','Downstream','Up & downstream','All'}) && ~isempty(UI.params.connections_inh)
-                C = ismember(subsetPlots.subset,UI.params.connections_inh);
-                line(subsetPlots.xaxis(C),subsetPlots.yaxis(C),'Marker','o','LineStyle','none','color','k','HitTest','off')
-            end
-            else
-                text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
-            end
+                putativeConnections_subset = all(ismember(cell_metrics.putativeConnections.excitatory,UI.params.subset),2);
+                putativeConnections_subset = cell_metrics.putativeConnections.excitatory(putativeConnections_subset,:);
+                
+                putativeConnections_subset_inh = all(ismember(cell_metrics.putativeConnections.inhibitory,UI.params.subset),2);
+                putativeConnections_subset_inh = cell_metrics.putativeConnections.inhibitory(putativeConnections_subset_inh,:);
+                
+                if ~isempty(putativeConnections_subset) || ~isempty(putativeConnections_subset_inh)
+                    [putativeSubset1,~,Y] = unique([putativeConnections_subset;putativeConnections_subset_inh]);
+                    
+                    Y = reshape(Y,size([putativeConnections_subset;putativeConnections_subset_inh]));
+                    nNodes = length(putativeSubset1);
+                    A = zeros(nNodes,nNodes);
+                    for i = 1:size(putativeConnections_subset,1)
+                        A(Y(i,1),Y(i,2)) = 1;
+                    end
+                    for i = size(putativeConnections_subset,1)+1:size(Y,1)
+                        A(Y(i,1),Y(i,2)) = 2;
+                    end
+                    
+                    connectivityGraph = digraph(A);
+                    if ~UI.preferences.plotExcitatoryConnections
+                        connectivityGraph = rmedge(connectivityGraph,Y(1:size(putativeConnections_subset,1),1),Y(1:size(putativeConnections_subset,1),2));
+                    end
+                    if ~UI.preferences.plotInhibitoryConnections
+                        connectivityGraph = rmedge(connectivityGraph,Y(size(putativeConnections_subset,1)+1:end,1),Y(size(putativeConnections_subset,1)+1:end,2));
+                    elseif ~isempty(putativeConnections_subset)
+                        connectivityGraph1 = connectivityGraph;
+                        connectivityGraph1 = rmedge(connectivityGraph1,Y(1:size(putativeConnections_subset,1),1),Y(1:size(putativeConnections_subset,1),2));
+                    end
+                    connectivityGraph_plot = plot(connectivityGraph,'Layout','force','Iterations',15,'MarkerSize',3,'NodeCData',UI.classes.plot(putativeSubset1)','EdgeCData',connectivityGraph.Edges.Weight,'HitTest','off','EdgeColor',[0.2 0.2 0.2],'NodeColor','k','NodeLabel',{}); %
+                    subsetPlots.xaxis = connectivityGraph_plot.XData;
+                    subsetPlots.yaxis = connectivityGraph_plot.YData;
+                    subsetPlots.subset = putativeSubset1;
+                    subsetPlots.type = 'points';  % points, curves, image
+                    
+                    for k = 1:length(classes2plotSubset)
+                        highlight(connectivityGraph_plot,find(UI.classes.plot(putativeSubset1)==classes2plotSubset(k)),'NodeColor',UI.classes.colors(k,:))
+                    end
+                    if UI.preferences.plotInhibitoryConnections && ~isempty(putativeConnections_subset)
+                        highlight(connectivityGraph_plot,connectivityGraph1,'EdgeColor','b')
+                    end
+                    axis tight, %title('Connectivity graph')
+                    set(plotAxes, 'box','off') % 'XTickLabel',[], 'YTickLabel',[]
+                    if UI_fig
+                        set(plotAxes,'ButtonDownFcn',@ClicktoSelectFromPlot)
+                    end
+                    
+                    if any(ii == subsetPlots.subset)
+                        idx = find(ii == subsetPlots.subset);
+                        line(subsetPlots.xaxis(idx), subsetPlots.yaxis(idx),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
+                        line(subsetPlots.xaxis(idx), subsetPlots.yaxis(idx),'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
+                    end
+                    
+                    % Plots putative connections
+                    if ~isempty(UI.params.putativeSubse) && UI.preferences.plotExcitatoryConnections && ismember(UI.monoSyn.disp,{'Selected','Upstream','Downstream','Up & downstream','All'}) && ~isempty(UI.params.connections)
+                        C = ismember(subsetPlots.subset,UI.params.connections);
+                        line(subsetPlots.xaxis(C),subsetPlots.yaxis(C),'Marker','o','LineStyle','none','color','k','HitTest','off')
+                    end
+                    
+                    % Plots putative inhibitory connections
+                    if  ~isempty(UI.params.putativeSubse_inh) && UI.preferences.plotInhibitoryConnections && ismember(UI.monoSyn.disp,{'Selected','Upstream','Downstream','Up & downstream','All'}) && ~isempty(UI.params.connections_inh)
+                        C = ismember(subsetPlots.subset,UI.params.connections_inh);
+                        line(subsetPlots.xaxis(C),subsetPlots.yaxis(C),'Marker','o','LineStyle','none','color','k','HitTest','off')
+                    end
+                else
+                    text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
+                end
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
@@ -2596,7 +2624,7 @@ end
                 line(plotXdata, plotYdata,'linewidth',1,'color',col,'HitTest','off')
             else
                 set(plotAxes,'yscale','linear')
-                bar_from_patch(plotXdata, plotYdata,col)
+                bar_from_patch_centered_bins(plotXdata, plotYdata,col)
             end
             % ACG fit with a triple-exponential
             if plotAcgFit
@@ -2616,27 +2644,148 @@ end
             end
             
             ax5 = axis; grid on, set(plotAxes, 'Layer', 'top')
-            line([ax5(1) ax5(2)],cell_metrics.firingRate(ii)*[1 1],'LineStyle','--','color','k')            
+            line([ax5(1) ax5(2)],cell_metrics.firingRate(ii)*[1 1],'LineStyle','--','color','k')          
             
+        elseif strcmp(customPlotSelection,'ACGs (group averages)') % ACGs
+            % Auto-correlogram for groups. Colored according to cell-type. Normalized firing rate. X-axis according to selected option
+            plotAxes.YLabel.String = 'Rate (Hz)';
+            plotAxes.Title.String = customPlotSelection;
+            if UI.preferences.showAllTraces == 0 && length(UI.params.subset)>2000
+                plotSubset = UI.params.subset(randsample(length(UI.params.subset),2000));
+            else
+                plotSubset = UI.params.subset;
+            end
+            if strcmp(UI.preferences.acgType,'Normal')
+                for k = 1:length(classes2plotSubset)
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
+                    xdata = [-100:100]/2;
+                    ACGs_mean = nanmean(cell_metrics.acg.narrow(:,set1)./max(cell_metrics.acg.narrow(:,set1)),2)';
+                    ACGs_std = nanstd(cell_metrics.acg.narrow(:,set1)./max(cell_metrics.acg.narrow(:,set1)),0,2)';
+                    if plotAcgYLog
+                        ACGs_mean(ACGs_mean < 0.1)=0.1;
+                    end
+                    patch([xdata,flip(xdata)], [ACGs_mean+ACGs_std,flip(ACGs_mean-ACGs_std)],UI.classes.colors(k,:),'EdgeColor','none','FaceAlpha',.2,'HitTest','off'), hold on
+                    line(xdata,ACGs_mean, 'color', UI.classes.colors(k,:),'HitTest','off','linewidth',1.5)
+                end
+                    
+                if highlightCurrentCell
+                    ydata = cell_metrics.acg.narrow(:,ii)/max(cell_metrics.acg.narrow(:,ii));
+                    line([-100:100]/2,ydata, 'color', 'k','linewidth',1.5,'HitTest','off')
+                end
+                xticks([-50:10:50]),xlim([-50,50])
+                plotAxes.XLabel.String = 'Time (ms)';
+                
+            elseif strcmp(UI.preferences.acgType,'Narrow')
+                for k = 1:length(classes2plotSubset)
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
+                    xdata = [-30:30]/2;
+                    ACGs_mean = nanmean(cell_metrics.acg.narrow(41+30:end-40-30,set1)./max(cell_metrics.acg.narrow(41+30:end-40-30,set1)),2)';
+                    ACGs_std = nanstd(cell_metrics.acg.narrow(41+30:end-40-30,set1)./max(cell_metrics.acg.narrow(41+30:end-40-30,set1)),0,2)';
+                    if plotAcgYLog
+                        ACGs_mean(ACGs_mean < 0.1)=0.1;
+                    end
+                    patch([xdata,flip(xdata)], [ACGs_mean+ACGs_std,flip(ACGs_mean-ACGs_std)],UI.classes.colors(k,:),'EdgeColor','none','FaceAlpha',.2,'HitTest','off'), hold on
+                    line(xdata,ACGs_mean, 'color', UI.classes.colors(k,:),'HitTest','off')
+                end
+                if highlightCurrentCell
+                    ydata = cell_metrics.acg.narrow(41+30:end-40-30,ii)/max(cell_metrics.acg.narrow(41+30:end-40-30,ii));
+                    if plotAcgYLog
+                        ydata(ydata < 0.1)=0.1;
+                    end
+                    line([-30:30]/2,ydata, 'color', 'k','linewidth',1.5,'HitTest','off')
+                end
+                xticks([-15:5:15]),xlim([-15,15])
+                plotAxes.XLabel.String = 'Time (ms)';
+                
+            elseif strcmp(UI.preferences.acgType,'Log10')
+                if UI.preferences.acgYaxisLog == 1
+                    for k = 1:length(classes2plotSubset)
+                        set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
+                        xdata = general.acgs.log10';
+                        ACGs_mean = nanmean(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),2)';
+                        ACGs_std = nanstd(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),0,2)';
+                        if plotAcgYLog
+                            ACGs_mean(ACGs_mean < 0.1)=0.1;
+                        end
+                        patch([xdata,flip(xdata)], [ACGs_mean+ACGs_std,flip(ACGs_mean-ACGs_std)],UI.classes.colors(k,:),'EdgeColor','none','FaceAlpha',.2,'HitTest','off'), hold on
+                        line(xdata,ACGs_mean, 'color', UI.classes.colors(k,:),'HitTest','off')
+                    end
+                    if highlightCurrentCell
+                        ydata = cell_metrics.acg.log10(:,ii)/max(cell_metrics.acg.log10(:,ii));
+                        if plotAcgYLog
+                            ydata(ydata < 0.1)=0.1;
+                        end
+                        line(general.acgs.log10,ydata, 'color', 'k','linewidth',1.5,'HitTest','off')
+                    end
+                else
+                    for k = 1:length(classes2plotSubset)
+                        set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
+                        xdata = general.acgs.log10';
+                        ACGs_mean = nanmean(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),2)';
+                        ACGs_std = nanstd(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),0,2)';
+                        if plotAcgYLog
+                            ACGs_mean(ACGs_mean < 0.1)=0.1;
+                        end
+                        patch([xdata,flip(xdata)], [ACGs_mean+ACGs_std,flip(ACGs_mean-ACGs_std)],UI.classes.colors(k,:),'EdgeColor','none','FaceAlpha',.2,'HitTest','off'), hold on
+                        line(xdata,ACGs_mean, 'color', UI.classes.colors(k,:),'HitTest','off')
+                    end
+                    if highlightCurrentCell
+                        ydata = cell_metrics.acg.log10(:,ii)/max(cell_metrics.acg.log10(:,ii));
+                        if plotAcgYLog
+                            ydata(ydata < 0.1)=0.1;
+                        end
+                        line(general.acgs.log10,ydata, 'color', 'k','linewidth',1.5,'HitTest','off')
+                    end
+                end
+                xlim([0,10]), set(gca,'xscale','log')
+                plotAxes.XLabel.String = 'Time (sec)';
+            else
+                for k = 1:length(classes2plotSubset)
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
+                    xdata = [-500:500];
+                    ACGs_mean = nanmean(cell_metrics.acg.wide(:,set1)./max(cell_metrics.acg.wide(:,set1)),2)';
+                    ACGs_std = nanstd(cell_metrics.acg.wide(:,set1)./max(cell_metrics.acg.wide(:,set1)),0,2)';
+                    if plotAcgYLog
+                        ACGs_mean(ACGs_mean < 0.1)=0.1;
+                    end
+                    patch([xdata,flip(xdata)], [ACGs_mean+ACGs_std,flip(ACGs_mean-ACGs_std)],UI.classes.colors(k,:),'EdgeColor','none','FaceAlpha',.2,'HitTest','off'), hold on
+                    line(xdata,ACGs_mean, 'color', UI.classes.colors(k,:),'HitTest','off')
+                end
+                if highlightCurrentCell
+                    ydata = cell_metrics.acg.wide(:,ii)/max(cell_metrics.acg.wide(:,ii));
+                    if plotAcgYLog
+                        ydata(ydata < 0.1)=0.1;
+                    end
+                    line([-500:500],ydata, 'color', 'k','linewidth',1.5,'HitTest','off')
+                end
+                xticks([-500:100:500]),xlim([-500,500])
+                plotAxes.XLabel.String = 'Time (ms)';
+            end
+            if plotAcgYLog
+                set(plotAxes,'yscale','log')
+            else
+                set(plotAxes,'yscale','linear'), ylim([0 1.1])
+            end
+     
         elseif strcmp(customPlotSelection,'ISIs (single)') % ISIs
             plotAxes.YLabel.String = 'Cells';
             plotAxes.XLabel.String = '';
             plotAxes.Title.String = customPlotSelection;
             if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')
                 if strcmp(UI.preferences.isiNormalization,'Rate')
-                    bar_from_patch(general.isis.log10, cell_metrics.acg.log10(:,ii)-cell_metrics.isi.log10(:,ii),'k')
-                    bar_from_patch(general.isis.log10, cell_metrics.isi.log10(:,ii),col)
+                    bar_from_patch_centered_bins(general.isis.log10, cell_metrics.acg.log10(:,ii)-cell_metrics.isi.log10(:,ii),'k')
+                    bar_from_patch_centered_bins(general.isis.log10, cell_metrics.isi.log10(:,ii),col)
                     xlim([0,10])
                     plotAxes.XLabel.String = 'Time (sec)';
                     plotAxes.YLabel.String = 'Rate (Hz)';
                     
                 elseif strcmp(UI.preferences.isiNormalization,'Firing rates')
-                    bar_from_patch(1./general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^UI.params.ACGLogIntervals))',col)
+                    bar_from_patch_centered_bins(1./general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^UI.params.ACGLogIntervals))',col)
                     xlim([0,1000])
                     plotAxes.XLabel.String = 'Instantaneous rate (Hz)';
                     plotAxes.YLabel.String = 'Occurrence';
                 else
-                    bar_from_patch(general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^UI.params.ACGLogIntervals))',col)
+                    bar_from_patch_centered_bins(general.isis.log10, cell_metrics.isi.log10(:,ii).*(diff(10.^UI.params.ACGLogIntervals))',col)
                     xlim([0,10])
                     plotAxes.XLabel.String = 'Time (sec)';
                     plotAxes.YLabel.String = 'Occurrence';
@@ -2895,60 +3044,6 @@ end
             colormap(UI.preferences.colormap), axis tight
             ploConnectionsHighlights(xlim,UI.params.subset(burstIndexSorted))
             
-        elseif strcmp(customPlotSelection,'tSNE of narrow ACGs')
-            % t-SNE scatter-plot with all ACGs. Calculated from the narrow ACG (-50ms:0.5ms:50ms). Colored by cell-type.
-            plotAxes.YLabel.String = '';
-            plotAxes.XLabel.String = '';
-            plotAxes.Title.String = customPlotSelection;
-            ce_gscatter(tSNE_metrics.acg_narrow(UI.params.subset,1), tSNE_metrics.acg_narrow(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
-%             legendScatter5 = gscatter(tSNE_metrics.acg_narrow(UI.params.subset,1), tSNE_metrics.acg_narrow(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
-%             set(legendScatter5,'HitTest','off'), axis tight
-            % selected cell highlighted with black cross
-            line(tSNE_metrics.acg_narrow(ii,1), tSNE_metrics.acg_narrow(ii,2),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
-            line(tSNE_metrics.acg_narrow(ii,1), tSNE_metrics.acg_narrow(ii,2),'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
-            
-        elseif strcmp(customPlotSelection,'tSNE of wide ACGs')
-            % t-SNE scatter-plot with all ACGs. Calculated from the wide ACG (-500ms:1ms:500ms). Colored by cell-type.
-            plotAxes.YLabel.String = '';
-            plotAxes.XLabel.String = '';
-            plotAxes.Title.String = customPlotSelection;
-            if ~isempty(UI.classes.colors)
-                ce_gscatter(tSNE_metrics.acg_wide(UI.params.subset,1), tSNE_metrics.acg_wide(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
-%                 legendScatter5 = gscatter(tSNE_metrics.acg_wide(UI.params.subset,1), tSNE_metrics.acg_wide(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
-%                 set(legendScatter5,'HitTest','off')
-            end
-            axis tight
-            line(tSNE_metrics.acg_wide(ii,1), tSNE_metrics.acg_wide(ii,2),'Marker','x','LineStyle','none','color','w','LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
-            line(tSNE_metrics.acg_wide(ii,1), tSNE_metrics.acg_wide(ii,2),'Marker','x','LineStyle','none','color','k','LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
-            
-        elseif strcmp(customPlotSelection,'tSNE of log ACGs')
-            % t-SNE scatter-plot with all ACGs. Calculated from the log10 ACG (-500ms:1ms:500ms). Colored by cell-type.
-            plotAxes.YLabel.String = '';
-            plotAxes.XLabel.String = '';
-            plotAxes.Title.String = customPlotSelection;
-            if ~isempty(UI.classes.colors)
-                ce_gscatter(tSNE_metrics.acg_log10(UI.params.subset,1), tSNE_metrics.acg_log10(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
-%                 legendScatter5 = gscatter(tSNE_metrics.acg_log10(UI.params.subset,1), tSNE_metrics.acg_log10(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
-%                 set(legendScatter5,'HitTest','off')
-            end
-            axis tight
-            line(tSNE_metrics.acg_log10(ii,1), tSNE_metrics.acg_log10(ii,2),'Marker','x','LineStyle','none','color','w', 'LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
-            line(tSNE_metrics.acg_log10(ii,1), tSNE_metrics.acg_log10(ii,2),'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
-            
-        elseif strcmp(customPlotSelection,'tSNE of log ISIs')
-            % t-SNE scatter-plot with all ISIs. Calculated from the log10
-            plotAxes.YLabel.String = '';
-            plotAxes.XLabel.String = '';
-            plotAxes.Title.String = customPlotSelection;
-            if ~isempty(UI.classes.colors)
-                ce_gscatter(tSNE_metrics.isi_log10(UI.params.subset,1), tSNE_metrics.isi_log10(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,20,'.');
-%                 legendScatter5 = gscatter(tSNE_metrics.isi_log10(UI.params.subset,1), tSNE_metrics.isi_log10(UI.params.subset,2), UI.classes.plot(UI.params.subset), UI.classes.colors,'',20,'off');
-%                 set(legendScatter5,'HitTest','off')
-            end
-            axis tight
-            line(tSNE_metrics.isi_log10(ii,1), tSNE_metrics.isi_log10(ii,2),'Marker','x','LineStyle','none','color','w','LineWidth', 3, 'MarkerSize',22, 'HitTest','off');
-            line(tSNE_metrics.isi_log10(ii,1), tSNE_metrics.isi_log10(ii,2),'Marker','x','LineStyle','none','color','k','LineWidth', 1.5, 'MarkerSize',20, 'HitTest','off');
-            
         elseif strcmp(customPlotSelection,'firingRateMaps_firingRateMap')
             firingRateMapName = 'firingRateMap';
             % Precalculated firing rate map for the cell
@@ -3101,7 +3196,7 @@ end
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
             end
             
-        elseif contains(customPlotSelection,'raster_')
+        elseif contains(customPlotSelection,'Spike raster')
             if isfield(cell_metrics,'spikes') && numel(cell_metrics.spikes.times)>=ii && ~isempty(cell_metrics.spikes.times{ii})
                 % ii,general,batchIDs,plotAxes
                 plotAxes.XLabel.String = 'Time (s)';
@@ -3111,14 +3206,21 @@ end
                     plotAxes.YLabel.String = 'CV_2';
                 elseif strcmp(UI.preferences.raster,'ISIs')
                     line(cell_metrics.spikes.times{ii},spikes2isi(cell_metrics.spikes.times{ii}),'HitTest','off','Marker','.','LineStyle','none','color', [0.5 0.5 0.5 0.5]), axis tight
-                    plotAxes.YLabel.String = 'ISIs';
+                    plotAxes.YLabel.String = 'ISIs (ms)';
+                elseif strcmp(UI.preferences.raster,'random')
+                    line(cell_metrics.spikes.times{ii},rand(size(cell_metrics.spikes.times{ii})),'HitTest','off','Marker','.','LineStyle','none','color', [0.5 0.5 0.5 0.5]), axis tight
+                    plotAxes.YLabel.String = 'Random';
+                end 
+                axis tight, ax6 = axis; 
+                if isfield(general,'epochs')
+                    epochVisualization(general.epochs,plotAxes,-0.1*ax6(4),-0.005*ax6(4),ax6(4));
+                    axis tight, ax6 = axis;
                 end
-                axis tight, ax6 = axis;
-                
+
                 plotTemporalStates
                 plotTemporalRestriction
                 
-                if isfield(general.responseCurves.firingRateAcrossTime,'boundaries')
+                if isfield(general.responseCurves.firingRateAcrossTime,'boundaries') && ~isfield(general,'epochs')
                     boundaries = general.responseCurves.firingRateAcrossTime.boundaries;
                     if isfield(general.responseCurves.firingRateAcrossTime,'boundaries_labels')
                         boundaries_labels = general.responseCurves.firingRateAcrossTime.boundaries_labels;
@@ -3147,8 +3249,13 @@ end
                 plt1 = line(x_bins,firingRateAcrossTime,'color', 'k','linewidth',2, 'HitTest','off');
                 subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.responseCurves.(responseCurvesName));
 
+                
                 axis tight, ax6 = axis; 
-                if contains(customPlotSelection,'RCs_firingRateAcrossTime')
+                if strcmpi(customPlotSelection,'RCs_firingRateAcrossTime')
+                    if isfield(general,'epochs')
+                        epochVisualization(general.epochs,plotAxes,-0.1*ax6(4),-0.005*ax6(4),ax6(4));
+                        axis tight, ax6 = axis;
+                    end
                     plotTemporalStates
                     plotTemporalRestriction
                 end
@@ -3205,8 +3312,12 @@ end
                 subset1 = cell_metrics.UID(subset222);
                 ploConnectionsHighlights(Xdata,subset1(troughToPeakSorted));
                 
-                ax6 = axis; 
+                axis tight, ax6 = axis; 
                 if contains(customPlotSelection,'RCs_firingRateAcrossTime')
+                    if isfield(general,'epochs')
+                        epochVisualization(general.epochs,plotAxes,-0.1*ax6(4),-0.005*ax6(4),ax6(4));
+                        axis tight, ax6 = axis;
+                    end
                     plotTemporalStates
                     plotTemporalRestriction
                 end
@@ -3265,8 +3376,12 @@ end
                 subsetPlots.yaxis = Zdata;
                 subsetPlots.subset = subset222;
 
-                ax6 = axis; 
+                axis tight, ax6 = axis; 
                 if contains(customPlotSelection,'RCs_firingRateAcrossTime')
+                    if isfield(general,'epochs')
+                        epochVisualization(general.epochs,plotAxes,-0.1*ax6(4),-0.005*ax6(4),ax6(4));
+                        axis tight, ax6 = axis;
+                    end
                     plotTemporalStates
                     plotTemporalRestriction
                 end
@@ -3524,6 +3639,61 @@ end
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
             end
             xlabel(spikesPlots.(customPlotSelection).x_label), ylabel(spikesPlots.(customPlotSelection).y_label), title(customPlotSelection,'Interpreter', 'none')
+            
+        elseif contains(customPlotSelection,{'Waveforms (peakVoltage_all)'})
+            
+            plotAxes.XLabel.String = 'Channels';
+            plotAxes.YLabel.String = ['Voltage (',char(181),'V)'];
+            plotAxes.Title.String = customPlotSelection;
+            if isfield(cell_metrics.waveforms,'peakVoltage_all') && ~isempty(cell_metrics.waveforms.peakVoltage_all{ii})
+                switch UI.preferences.peakVoltage_all_sorting
+                    case 'channelOrder'
+                        if isfield(general,'electrodeGroups') && isfield(general,'electrodeGroups') && ~isempty(cell_metrics.waveforms.filt_all{ii}) && ~isempty(cell_metrics.waveforms.time_all{ii})
+                            channelOrder = [general.electrodeGroups{:}];
+                            if numel(channelOrder) > size(cell_metrics.waveforms.filt_all{ii},1)
+                                channelOrder = 1:size(cell_metrics.waveforms.filt_all{ii},1);
+                            end
+                            plotAxes.XLabel.String = 'Channels (sorted by channel order)';
+                        else
+                            channelOrder = 1:numel(cell_metrics.waveforms.peakVoltage_all{ii});
+                        end
+                    case 'amplitude'
+                        plotAxes.XLabel.String = 'Channels (sorted by amplitude)';
+                        [~, channelOrder]= sort(cell_metrics.waveforms.peakVoltage_all{ii},'descend');
+                    case 'none'
+                        channelOrder = 1:numel(cell_metrics.waveforms.channels_all{ii});
+                end
+                if UI.preferences.peakVoltage_session
+                    subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                    subset1 = UI.params.subset(subset1);
+                    Xdata = [];
+                    Ydata = [];
+                    subset2 = [];
+                    for k = 1:length(classes2plotSubset)
+                        set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), subset1);
+                        if ~isempty(set1)
+                            xdata = repmat([1:numel(cell_metrics.waveforms.peakVoltage_all{ii}),nan(1,1)],length(set1),1)';
+                            ydata = vertcat(cell_metrics.waveforms.peakVoltage_all{set1})';
+                            if strcmp(UI.preferences.peakVoltage_all_sorting,'amplitude')
+                                ydata = [sort(ydata,'descend');nan(1,length(set1))];
+                            else
+                                ydata = [ydata(channelOrder,:);nan(1,length(set1))];
+                            end
+                            line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.5],'HitTest','off')
+                            Xdata = [Xdata,xdata];
+                            Ydata = [Ydata,ydata];
+                            subset2 = [subset2,set1];
+                        end
+                    end
+                    subsetPlots.xaxis = Xdata;
+                    subsetPlots.yaxis = Ydata;
+                    subsetPlots.subset = subset2;
+                end
+                line(1:numel(cell_metrics.waveforms.peakVoltage_all{ii}),cell_metrics.waveforms.peakVoltage_all{ii}(channelOrder), 'color', col,'linewidth',2,'HitTest','off','Marker','.')
+            else
+                text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
+            end
+            
         elseif contains(customPlotSelection,{'Waveforms ('})
             
             plotAxes.XLabel.String = 'Time (ms)';
@@ -3534,10 +3704,10 @@ end
                 if size(cell_metrics.waveforms.(field2plot){ii},1)>1
                     imagesc(cell_metrics.waveforms.(field2plot){ii},'HitTest','off')
                 else
-                    line(1:numel(cell_metrics.waveforms.(field2plot){ii}),cell_metrics.waveforms.(field2plot){ii}, 'color', col,'linewidth',2,'HitTest','off'), grid on
+                    line(1:numel(cell_metrics.waveforms.(field2plot){ii}),cell_metrics.waveforms.(field2plot){ii}, 'color', col,'linewidth',2,'HitTest','off')
                 end
                 if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                    plotInsetChannelMap(ii,col,general,1);
+                    plotInsetChannelMap(ii,col,general,1,axnum);
                 end
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
@@ -3643,43 +3813,43 @@ end
         end
         
         function plotTemporalStates
-            if isfield(general,'states')   
-            stateData = fieldnames(general.states);
-            k_states = 0;
-%             clr_states = hsv(max(structfun(@(X) numel(fields(X)),general.states)))*0.8;
-            clr_states = eval([UI.preferences.colormap,'(',num2str(1+max(structfun(@(X) numel(fields(X)),general.states))),')']);
-            for j = 1:numel(stateData)
-                states1  = general.states.(stateData{j});
-                stateNames = fieldnames(states1); 
-                for jj = 1:numel(stateNames)
-                    if size(states1.(stateNames{jj}),2) == 2 && size(states1.(stateNames{jj}),1) > 0
-                    patch(double([states1.(stateNames{jj}),flip(states1.(stateNames{jj}),2)])',k_states*ax6(4)+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1.(stateNames{jj}),1)),clr_states(jj,:),'EdgeColor',clr_states(jj,:),'HitTest','off')
+            if isfield(general,'states')
+                stateData = fieldnames(general.states);
+                k_offset = ax6(3);
+                clr_states = eval([UI.preferences.colormapStates,'(',num2str(1+max(structfun(@(X) numel(fields(X)),general.states))),')']);
+                clr_states = 1-(1-clr_states)*0.7;
+                for j = 1:numel(stateData)
+                    states1  = general.states.(stateData{j});
+                    stateNames = fieldnames(states1);
+                    for jj = 1:numel(stateNames)
+                        if size(states1.(stateNames{jj}),2) == 2 && size(states1.(stateNames{jj}),1) > 0
+                            patch(double([states1.(stateNames{jj}),flip(states1.(stateNames{jj}),2)])',k_offset+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1.(stateNames{jj}),1)),clr_states(jj,:),'EdgeColor',clr_states(jj,:),'HitTest','off')
+                        end
                     end
+                    k_offset = k_offset - .1*ax6(4);
+                    text(ax6(1),k_offset,[stateData{j}, ' (',num2str(numel(stateNames)),')'],'VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+                    ylim([k_offset,ax6(4)])
                 end
-                k_states = k_states - .1;
-                text(ax6(1),k_states*ax6(4),[stateData{j}, ' (',num2str(numel(stateNames)),')'],'VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
-                ylim([k_states*ax6(4),ax6(4)])
-            end
-            ax6 = axis;
+                ax6 = axis;
             end
         end
         
         function plotTemporalRestriction
-            k_states = 0;
+            k_offset = ax6(3);
             if isfield(cell_metrics.general,'restrictToIntervals')
                 states1  = cell_metrics.general.restrictToIntervals;
-                patch(double([states1,flip(states1,2)])',k_states*ax6(4)+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1,1)),[0.2 0.2 0.8],'EdgeColor',[0.2 0.2 0.8],'HitTest','off')
-                k_states = k_states - .1;
-                text(ax6(1),k_states*ax6(4),'restrictToIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+                patch(double([states1,flip(states1,2)])',k_offset+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1,1)),[0.2 0.2 0.8],'EdgeColor',[0.2 0.2 0.8],'HitTest','off')
+                k_offset = k_offset - .1*ax6(4);
+                text(ax6(1),k_offset*ax6(4),'restrictToIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
 %                 ylim([k_states*ax6(4),ax6(4)])
             end
             if isfield(cell_metrics.general,'excludeIntervals')
                 states1  = cell_metrics.general.excludeIntervals;
-                patch(double([states1,flip(states1,2)])',k_states*ax6(4)+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1,1)),[0.2 0.2 0.8],'EdgeColor',[0.2 0.2 0.8],'HitTest','off')
-                k_states = k_states - .1;
-                text(ax6(1),k_states*ax6(4),'excludeIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+                patch(double([states1,flip(states1,2)])',k_offset+ax6(4)*[-0.005;-0.005;-0.1;-0.1]*ones(1,size(states1,1)),[0.2 0.2 0.8],'EdgeColor',[0.2 0.2 0.8],'HitTest','off')
+                k_offset = k_offset - .1*ax6(4);
+                text(ax6(1),k_offset*ax6(4),'excludeIntervals','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
             end
-            ylim([k_states*ax6(4)+ax6(3),ax6(4)])
+            ylim([k_offset,ax6(4)])
             ax6 = axis;
         end
         
@@ -3697,7 +3867,88 @@ end
             raster = [nan;2.*abs(ISIs(2:end)-ISIs(1:end-1))./(ISIs(2:end)+ISIs(1:end-1));nan];
         end
     end
-
+    
+    function densityPlot(X1,handle23,FaceColor,EdgeColor,logAxis)
+        if logAxis
+            X1 = X1(X1>0 & ~isinf(X1) & ~isnan(X1));
+            X1 = X1(X1>0);
+            X1 = log10(X1);
+        else
+            X1 = X1(~isinf(X1) & ~isnan(X1));
+        end
+        [f, Xi] = ksdensity(X1, 'bandwidth', [],'Function','pdf');
+        if logAxis
+            Xi = 10.^Xi;
+        end
+        if strcmp(UI.preferences.rainCloudNormalization,'Peak')
+            f = f/max(f);
+        elseif strcmp(UI.preferences.rainCloudNormalization,'Count')
+            f = f/sum(f)*numel(X1);
+        else % Probability
+            f = f/sum(f);
+        end
+        area(Xi,f, 'FaceColor', FaceColor, 'EdgeColor', EdgeColor, 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', handle23); hold on
+    end
+    
+    function x_bins = densityPlotRefData(X1,handle23,lineColors,logAxis,xlim1,groundTruthData)
+        
+%         % % %
+%         idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
+%         clusClas_list = unique(groundTruthData.clusClas(idx));
+%         line_histograms_X = []; line_histograms_Y = [];
+%         
+%         if ~any(isnan(groundTruthData1.y)) || ~any(isinf(groundTruthData1.y))
+%             for m = 1:length(clusClas_list)
+%                 idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(m));
+%                 line_histograms_X(:,m) = ksdensity(xdata(idx(idx1)),groundTruthData1.x);
+%             end
+%             if UI.checkbox.logx.Value == 0
+%                 legendScatter2 = line(groundTruthData1.x,line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+%             else
+%                 legendScatter2 = line(10.^(groundTruthData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+%             end
+%             set(legendScatter2, {'color'}, num2cell(UI.classes.colors3,2));
+%         end
+%         % % %
+        if logAxis
+            X1 = X1(X1>0 & ~isinf(X1) & ~isnan(X1));
+            X1 = X1(X1>0);
+            x_bins = linspace(log10(nanmin([xlim1(1),X1])),log10(nanmax([xlim1(2),X1])),UI.preferences.binCount);
+            X1 = log10(X1);
+        else
+            X1 = X1(~isinf(X1) & ~isnan(X1));
+            x_bins = linspace(nanmin([xlim1(1),X1]),nanmax([xlim1(2),X1]),UI.preferences.binCount);
+        end
+        
+        line_histograms = [];
+        idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
+        clusClas_list = unique(groundTruthData.clusClas(idx));
+        
+        for m = 1:length(clusClas_list)
+            idx1 = find(groundTruthData.clusClas(idx)==clusClas_list(m));
+            X2 = X1(idx(idx1));
+            f = ksdensity(X2,x_bins, 'bandwidth', [],'Function','pdf');
+            
+            if strcmp(UI.preferences.rainCloudNormalization,'Peak')
+                f = f/max(f);
+            elseif strcmp(UI.preferences.rainCloudNormalization,'Count')
+                f = f/sum(f)*numel(X2);
+            else % Probability
+                f = f/sum(f);
+            end
+            line_histograms_X(:,m) = f;
+        end
+        if logAxis
+            Xi = 10.^x_bins;
+        else
+            Xi = x_bins;
+        end
+        lineData = line(Xi,line_histograms_X,'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', handle23); hold on
+        set(lineData, {'color'}, lineColors);
+                    
+%         area(x_bins,f, 'FaceColor', FaceColor, 'EdgeColor', EdgeColor, 'LineWidth', 1, 'FaceAlpha', 0.4,'HitTest','off', 'Parent', handle23); hold on
+    end
+    
     function plotGroudhTruthCells(plotX1,plotY1)
         % Plots tagged cells ('tags','groups','groundTruthClassification')
         if ~isempty(UI.groupData1)
@@ -3722,16 +3973,16 @@ end
             ce_gscatter(plotX1(UI.params.subset), plotY1(UI.params.subset), UI.classes.plot(UI.params.subset), UI.classes.colors,UI.preferences.markerSize,'.');
         end
         if UI.preferences.displayExcitatory && ~isempty(UI.cells.excitatory_subset)
-            line(plotX1(UI.cells.excitatory_subset), plotY1(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color','k','HitTest','off')
+            line(plotX1(UI.cells.excitatory_subset), plotY1(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{1},'HitTest','off')
         end
         if UI.preferences.displayInhibitory && ~isempty(UI.cells.inhibitory_subset)
-            line(plotX1(UI.cells.inhibitory_subset), plotY1(UI.cells.inhibitory_subset),'Marker','s','LineStyle','none','color','k','HitTest','off')
+            line(plotX1(UI.cells.inhibitory_subset), plotY1(UI.cells.inhibitory_subset),'Marker','s','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{2},'HitTest','off')
         end
         if UI.preferences.displayExcitatoryPostsynapticCells && ~isempty(UI.cells.excitatoryPostsynaptic_subset)
-            line(plotX1(UI.cells.excitatoryPostsynaptic_subset), plotY1(UI.cells.excitatoryPostsynaptic_subset),'Marker','v','LineStyle','none','color','k','HitTest','off')
+            line(plotX1(UI.cells.excitatoryPostsynaptic_subset), plotY1(UI.cells.excitatoryPostsynaptic_subset),'Marker','v','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{3},'HitTest','off')
         end
         if UI.preferences.displayInhibitoryPostsynapticCells && ~isempty(UI.cells.inhibitoryPostsynaptic_subset)
-            line(plotX1(UI.cells.inhibitoryPostsynaptic_subset), plotY1(UI.cells.inhibitoryPostsynaptic_subset),'Marker','*','LineStyle','none','color','k','HitTest','off')
+            line(plotX1(UI.cells.inhibitoryPostsynaptic_subset), plotY1(UI.cells.inhibitoryPostsynaptic_subset),'Marker','*','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{4},'HitTest','off')
         end
         
         % Plots putative connections
@@ -3772,16 +4023,16 @@ end
             ce_gscatter(plotX1(UI.params.subset), plotY1(UI.params.subset), UI.classes.plot(UI.params.subset), UI.classes.colors,UI.preferences.markerSize,'.');
         end
         if UI.preferences.displayExcitatory && ~isempty(UI.cells.excitatory_subset)
-            line(plotX1(UI.cells.excitatory_subset), plotY1(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color','k', 'HitTest','off')
+            line(plotX1(UI.cells.excitatory_subset), plotY1(UI.cells.excitatory_subset),'Marker','^','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{1}, 'HitTest','off')
         end
         if UI.preferences.displayInhibitory && ~isempty(UI.cells.inhibitory_subset)
-            line(plotX1(UI.cells.inhibitory_subset), plotY1(UI.cells.inhibitory_subset),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
+            line(plotX1(UI.cells.inhibitory_subset), plotY1(UI.cells.inhibitory_subset),'Marker','o','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{2}, 'HitTest','off')
         end
         if UI.preferences.displayExcitatoryPostsynapticCells && ~isempty(UI.cells.excitatoryPostsynaptic_subset)
-            line(plotX1(UI.cells.excitatoryPostsynaptic_subset), plotY1(UI.cells.excitatoryPostsynaptic_subset),'Marker','v','LineStyle','none','color','k', 'HitTest','off')
+            line(plotX1(UI.cells.excitatoryPostsynaptic_subset), plotY1(UI.cells.excitatoryPostsynaptic_subset),'Marker','v','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{3}, 'HitTest','off')
         end
         if UI.preferences.displayInhibitoryPostsynapticCells && ~isempty(UI.cells.inhibitoryPostsynaptic_subset)
-            line(plotX1(UI.cells.inhibitoryPostsynaptic_subset), plotY1(UI.cells.inhibitoryPostsynaptic_subset),'Marker','*','LineStyle','none','color','k', 'HitTest','off')
+            line(plotX1(UI.cells.inhibitoryPostsynaptic_subset), plotY1(UI.cells.inhibitoryPostsynaptic_subset),'Marker','*','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{4}, 'HitTest','off')
         end
     end
 
@@ -3896,7 +4147,7 @@ end
         plotClas_subset = UI.classes.plot(UI.params.subset);
         ids = nanUnique(plotClas_subset);
         xlim11 = xlim;
-        xlim12 = ylim;
+        ylim11 = ylim;
         if UI.checkbox.logx.Value==1
             X1 = log10(plotX);
         else
@@ -4036,14 +4287,19 @@ end
         end
     end
 
-    function out = plotInsetChannelMap(cellID,col,general,plots)
+    function out = plotInsetChannelMap(cellID,col,general,plots,axnum)
         % Displays a map of the channel configuration and highlights current cell
         padding = 0.03;
         if plots
             xlim1 = xlim;
             ylim1 = ylim;
+            zlim1 = zlim;
+            UI.zoom.global{axnum}(1,:) = xlim1;
+            UI.zoom.global{axnum}(2,:) = ylim1;
+            UI.zoom.global{axnum}(3,:) = zlim1;
+            UI.zoom.globalLog{axnum} = [0,0,0];
         else
-            axnum = getAxisBelowCursor;
+%             axnum = getAxisBelowCursor;
             if isempty(axnum) || isempty(UI.zoom.global{axnum})
                 xlim1 = xlim;
                 ylim1 = ylim;
@@ -4241,7 +4497,6 @@ end
                 else
                     return
                 end
-                SWR_in = {};
                 statusUpdate('Initializing session(s)')
                 initializeSession
                 if ishandle(ce_waitbar)
@@ -4515,7 +4770,18 @@ end
         end
         uiresume(UI.fig);
     end
-
+    
+    function showSessionPeakVoltage(src,~)
+        if strcmp(UI.menu.waveforms.peakVoltage_session.Checked,'off')
+            UI.menu.waveforms.peakVoltage_session.Checked = 'on';
+            UI.preferences.peakVoltage_session = true;
+        else
+            UI.menu.waveforms.peakVoltage_session.Checked = 'off';
+            UI.preferences.peakVoltage_session = false;
+        end
+        uiresume(UI.fig);
+    end
+    
     function openWebsite(src,~)
         % Opens the CellExplorer website in your browser
         if isprop(src,'Text')
@@ -4942,13 +5208,17 @@ end
         end
         updateColorMenuCount
 %         UI.popupmenu.groups.String = colorMenu; % buttonGroups(1)
-        MsgLog(['Group filters created succesfully. Check the "group data and filters" dropdown menu in the left side panel.'],[1,2]);
+        MsgLog(['Group data filters created. Check the dropdown menu "Group data and filters" in the left side panel.'],[1,2]);
     end
     
     function defineGroupData(~,~)
-        [cell_metrics,UI] = dialog_metrics_groupData(cell_metrics,UI);
+        [cell_metrics,UI,ClickedCells] = dialog_metrics_groupData(cell_metrics,UI);
         initTags
         updateTags
+        if ~isempty(ClickedCells)
+            UI.params.ClickedCells = ClickedCells;
+            GroupAction(ClickedCells);
+        end
     end
 
     function assignGroup(cellIDsIn,field)
@@ -5866,10 +6136,6 @@ end
         elseif length(UI.params.subset)==1
             ii = UI.params.subset(1);
         end
-        UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
-        
-        UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-        UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
         uiresume(UI.fig);
     end
     
@@ -5884,9 +6150,6 @@ end
         elseif length(UI.params.subset)==1
             ii = UI.params.subset(1);
         end
-        UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
-        UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-        UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
         uiresume(UI.fig);
     end
     
@@ -5973,29 +6236,29 @@ end
             idx = find(ismember(groundTruthData.clusClas,groundTruthData.selection));
             legends2plot = unique(groundTruthData.clusClas(idx));
             for jj = 1:length(legends2plot)
-                line(0, nLegends,'Marker','x','LineStyle','none','color', UI.classes.colors3(jj,:),'markersize',8);
+                line(0, nLegends,'Marker',UI.preferences.groundTruthMarker,'LineStyle','none','color', UI.classes.colors3(jj,:),'markersize',8);
                 text(0.2,nLegends,groundTruthData.groundTruthTypes{legends2plot(jj)}, 'interpreter', 'none')
                 nLegends = nLegends - 1;
             end
         end
         % Synaptic cell types
         if UI.preferences.displayExcitatory && ~isempty(UI.cells.excitatory_subset)
-            line(0, nLegends,'Marker','^','LineStyle','none','color','k');
+            line(0, nLegends,'Marker','^','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{1});
             text(0.2,nLegends,'Excitatory cells')
             nLegends = nLegends - 1;
         end
         if UI.preferences.displayInhibitory && ~isempty(UI.cells.inhibitory_subset)
-            line(0, nLegends,'Marker','s','LineStyle','none','color','k');
+            line(0, nLegends,'Marker','s','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{2});
             text(0.2,nLegends,'Inhibitory cells', 'interpreter', 'none')
             nLegends = nLegends - 1;
         end
         if UI.preferences.displayExcitatoryPostsynapticCells && ~isempty(UI.cells.excitatoryPostsynaptic_subset)
-            line(0, nLegends,'Marker','v','LineStyle','none','color','k');
+            line(0, nLegends,'Marker','v','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{3});
             text(0.2,nLegends,'Cells receiving excitation', 'interpreter', 'none')
             nLegends = nLegends - 1;
         end
         if UI.preferences.displayInhibitoryPostsynapticCells && ~isempty(UI.cells.inhibitoryPostsynaptic_subset)
-            line(0, nLegends,'Marker','*','LineStyle','none','color','k');
+            line(0, nLegends,'Marker','*','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{4});
             text(0.2,nLegends,'Cells receiving inhibition', 'interpreter', 'none')
             nLegends = nLegends - 1;
         end
@@ -6076,9 +6339,6 @@ end
         else
             MsgLog('No other cells with selected class',2);
         end
-        UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);    
-        UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-        UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
         uiresume(UI.fig);
     end
 
@@ -6092,9 +6352,6 @@ end
         else
             MsgLog('No other cells with selected class',2);
         end
-        UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
-        UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-        UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
         uiresume(UI.fig);
     end
 
@@ -6108,9 +6365,6 @@ end
         elseif length(UI.params.subset)==1
             ii = UI.params.subset(1);
         end
-        UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
-        UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-        UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
         uiresume(UI.fig);
     end
     
@@ -6124,11 +6378,9 @@ end
         elseif length(UI.params.subset)==1
             ii = UI.params.subset(1);
         end
-        UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
-        UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-        UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
         uiresume(UI.fig);
     end
+    
     function buttonACG(src,~)
         if src.Position == 1
             UI.preferences.acgType = 'Narrow';
@@ -6215,6 +6467,26 @@ end
         uiresume(UI.fig);
     end
     
+    function adjustSpikeRasterMenu(src,~)
+        if src.Position == 1
+            UI.preferences.raster = 'cv2';
+            UI.menu.display.raster.ops(1).Checked = 'on';
+            UI.menu.display.raster.ops(2).Checked = 'off';
+            UI.menu.display.raster.ops(3).Checked = 'off';
+        elseif src.Position == 2
+            UI.preferences.raster = 'ISIs';
+            UI.menu.display.raster.ops(1).Checked = 'off';
+            UI.menu.display.raster.ops(2).Checked = 'on';
+           UI.menu.display.raster.ops(3).Checked = 'off';
+       elseif src.Position == 3
+            UI.preferences.raster = 'random';
+            UI.menu.display.raster.ops(1).Checked = 'off';
+            UI.menu.display.raster.ops(2).Checked = 'off';
+            UI.menu.display.raster.ops(3).Checked = 'on';
+        end
+        uiresume(UI.fig);
+    end
+
     function adjustTrilatGroupData(src,~)
         if src.Position == 1
             UI.preferences.trilatGroupData = 'session';
@@ -6234,7 +6506,27 @@ end
         end
         uiresume(UI.fig);
     end
-
+    
+    function adjustPeakVoltage_all_sorting(src,~)
+        if src.Position == 1
+            UI.preferences.peakVoltage_all_sorting = 'channelOrder';
+            UI.menu.waveforms.peakVoltage_all_sorting.ops(1).Checked = 'on';
+            UI.menu.waveforms.peakVoltage_all_sorting.ops(2).Checked = 'off';
+            UI.menu.waveforms.peakVoltage_all_sorting.ops(3).Checked = 'off';
+        elseif src.Position == 2
+            UI.preferences.peakVoltage_all_sorting = 'amplitude';
+            UI.menu.waveforms.peakVoltage_all_sorting.ops(1).Checked = 'off';
+            UI.menu.waveforms.peakVoltage_all_sorting.ops(2).Checked = 'on';
+            UI.menu.waveforms.peakVoltage_all_sorting.ops(3).Checked = 'off';
+       elseif src.Position == 3
+            UI.preferences.peakVoltage_all_sorting = 'none';
+            UI.menu.waveforms.peakVoltage_all_sorting.ops(1).Checked = 'off';
+            UI.menu.waveforms.peakVoltage_all_sorting.ops(2).Checked = 'off';
+            UI.menu.waveforms.peakVoltage_all_sorting.ops(3).Checked = 'on';
+        end
+        uiresume(UI.fig);
+    end
+    
     function adjustWaveformsAcrossChannelsAlignment(src,~)
         if src.Position == 1
             UI.preferences.waveformsAcrossChannelsAlignment = 'Probe layout';
@@ -6344,8 +6636,8 @@ end
                         axnum = ceil(fractionalPositionX*3);
                     elseif fractionalPositionY < 0.5
                         axnum = ceil(fractionalPositionX*3)+3;
-                        if fractionalPositionY < 0.25
-                            axnum = axnum + 1;
+                        if fractionalPositionY < 0.25 && axnum < 5
+                            axnum = axnum + 3;
                         end
                     end
                 case 5 % GUI: 3+5
@@ -6353,8 +6645,8 @@ end
                         axnum = ceil(fractionalPositionX*3);
                     elseif fractionalPositionY < 0.5
                         axnum = ceil(fractionalPositionX*3)+3;
-                        if fractionalPositionY < 0.25 && axnum >= 5
-                            axnum = axnum + 2;
+                        if fractionalPositionY < 0.25 && axnum < 6
+                            axnum = axnum + 3;
                         end
                     end
                 case 6 % GUI: 3+6
@@ -6392,7 +6684,7 @@ end
         % Checks first, if a plot is underneath the curser
         axnum = getAxisBelowCursor;
         clickPlotRegular = false;
-        if isfield(UI,'panel') && ~isempty(axnum)
+        if isfield(UI,'panel') && ~isempty(axnum) && UI.scroll
             if axnum == 10
                 handle34 = UI.axis.legends;
             else
@@ -6427,8 +6719,8 @@ end
             elseif axnum == 1  && UI.preferences.customPlotHistograms < 3 && UI.checkbox.logy.Value == 1 && UI.checkbox.logx.Value == 0 && (strcmp(UI.preferences.referenceData, 'Image') || strcmp(UI.preferences.groundTruthData, 'Image'))
                 UI.zoom.twoAxes = 1;
             end
-            zoomInFactor = 0.85;
-            zoomOutFactor = 1.6;
+            zoomInFactor = 0.80;
+            zoomOutFactor = 1.3;
             
             globalZoom1 = UI.zoom.global{axnum};
             globalZoomLog1 = UI.zoom.globalLog{axnum};
@@ -6483,145 +6775,104 @@ end
         clickPlotRegular = true;
         
         function applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction)
-            u = cursorPosition(1);
-            v = cursorPosition(2);
-            w = cursorPosition(3);
-            b = axesLimits(1,:);
-            c = axesLimits(2,:);
-            d = axesLimits(3,:);
             
-            if direction == 1 % zoom in
-                
+            if isreal(axesLimits)
+                u = cursorPosition(1);
+                v = cursorPosition(2);
+                w = cursorPosition(3);
+                b = axesLimits(1,:);
+                c = axesLimits(2,:);
+                d = axesLimits(3,:);
+                if direction == 1
+                    % zoom in
+                    zoomPct = zoomInFactor;
+                else
+                    % zoom out
+                    zoomPct = zoomOutFactor;
+                end
                 if u < b(1) || u > b(2)
                     % Vertical scrolling
-                    y1 = max(globalZoom1(2,1),v-diff(c)/2*zoomInFactor);
-                    y2 = min(globalZoom1(2,2),v+diff(c)/2*zoomInFactor);
-                    if y2>y1 && globalZoomLog1(2)==0
-                        ylim([y1,y2]);
-                    elseif y2>y1 && globalZoomLog1(2)==1
-                        ylim(10.^[y1,y2]);
-                    end
+                    axLim = RecalcZoomAxesLimits(c, globalZoom1(2,:), cursorPosition(2), zoomPct,globalZoomLog1(2));
+                    ylim(axLim)
+                    
                 elseif v < c(1) || v > c(2)
                     % Horizontal scrolling
-                    x1 = max(globalZoom1(1,1),u-diff(b)/2*zoomInFactor);
-                    x2 = min(globalZoom1(1,2),u+diff(b)/2*zoomInFactor);
-                    if x2>x1 && globalZoomLog1(1)==0
-                        xlim([x1,x2]);
-                    elseif x2>x1 && globalZoomLog1(1)==1
-                        xlim(10.^[x1,x2]);
-                    end
+                    axLim = RecalcZoomAxesLimits(b, globalZoom1(1,:), cursorPosition(1), zoomPct,globalZoomLog1(1));
+                    xlim(axLim)
+                    
                 else
-                    % Global scrolling
-                    x1 = max(globalZoom1(1,1),u-diff(b)/2*zoomInFactor);
-                    x2 = min(globalZoom1(1,2),u+diff(b)/2*zoomInFactor);
-                    if x2>x1 && globalZoomLog1(1)==0
-                        xlim([x1,x2]);
-                    elseif x2>x1 && globalZoomLog1(1)==1
-                        xlim(10.^[x1,x2]);
-                    end
-                    y1 = max(globalZoom1(2,1),v-diff(c)/2*zoomInFactor);
-                    y2 = min(globalZoom1(2,2),v+diff(c)/2*zoomInFactor);
-                    if y2>y1 && globalZoomLog1(2)==0
-                        ylim([y1,y2]);
-                    elseif y2>y1 && globalZoomLog1(2)==1
-                        ylim(10.^[y1,y2]);
-                    end
-                    z1 = max(globalZoom1(3,1),w-diff(d)/2*zoomInFactor);
-                    z2 = min(globalZoom1(3,2),w+diff(d)/2*zoomInFactor);
-                    if z2>z1 && globalZoomLog1(3)==0
-                    elseif z2>z1 && globalZoomLog1(3)==1
-                        zlim(10.^[z1,z2]);
+                    % X zoom
+                    axLim = RecalcZoomAxesLimits(b, globalZoom1(1,:), cursorPosition(1), zoomPct,globalZoomLog1(1));
+                    xlim(axLim)
+                    
+                    % Y zoom
+                    axLim = RecalcZoomAxesLimits(c, globalZoom1(2,:), cursorPosition(2), zoomPct,globalZoomLog1(2));
+                    ylim(axLim)
+                    
+                    % Z zoom
+                    axLim = RecalcZoomAxesLimits(d, globalZoom1(3,:), cursorPosition(3), zoomPct,globalZoomLog1(3));
+                    [~,el1] = view;
+                    if el1 ~= 90
+                        zlim(axLim)
                     end
                 end
-            elseif direction == -1
-                % Positive scrolling direction (zoom out)
-                if u < b(1) || u > b(2)
-                    % Vertical scrolling
-                    y1 = max(globalZoom1(2,1),v-diff(c)/2*zoomOutFactor);
-                    y2 = min(globalZoom1(2,2),v+diff(c)/2*zoomOutFactor);
-                    if y1 == globalZoom1(2,1)
-                        y2 = min([globalZoom1(2,2),y1 + diff(c)*2]);
-                    end
-                    if y2 == globalZoom1(2,2)
-                        y1 = max([globalZoom1(2,1),y2 - diff(c)*2]);
-                    end
-                    if y2>y1 && globalZoomLog1(2)==0
-                        ylim([y1,y2]);
-                    elseif y2>y1 && globalZoomLog1(2)==1
-                        ylim(10.^[y1,y2]);
-                    end
-                elseif v < c(1) || v > c(2)
-                    % Horizontal scrolling
-                    x1 = max(globalZoom1(1,1),u-diff(b)/2*zoomOutFactor);
-                    x2 = min(globalZoom1(1,2),u+diff(b)/2*zoomOutFactor);
-                    if x1 == globalZoom1(1,1)
-                        x2 = min([globalZoom1(1,2),x1 + diff(b)*2]);
-                    end
-                    if x2 == globalZoom1(1,2)
-                        x1 = max([globalZoom1(1,1),x2 - diff(b)*2]);
-                    end
-                    if x2>x1 && globalZoomLog1(1)==0
-                        xlim([x1,x2]);
-                    elseif x2>x1 && globalZoomLog1(1)==1
-                        xlim(10.^[x1,x2]);
-                    end
-                else
-                    % Global scrolling
-                    x1 = max(globalZoom1(1,1),u-diff(b)/2*zoomOutFactor);
-                    x2 = min(globalZoom1(1,2),u+diff(b)/2*zoomOutFactor);
-                    y1 = max(globalZoom1(2,1),v-diff(c)/2*zoomOutFactor);
-                    y2 = min(globalZoom1(2,2),v+diff(c)/2*zoomOutFactor);
-                    z1 = max(globalZoom1(3,1),w-diff(d)/2*zoomOutFactor);
-                    z2 = min(globalZoom1(3,2),w+diff(d)/2*zoomOutFactor);
-                    
-                    if x1 == globalZoom1(1,1)
-                        x2 = min([globalZoom1(1,2),x1 + diff(b)*2]);
-                    end
-                    if x2 == globalZoom1(1,2)
-                        x1 = max([globalZoom1(1,1),x2 - diff(b)*2]);
-                    end
-                    if y1 == globalZoom1(2,1)
-                        y2 = min([globalZoom1(2,2),y1 + diff(c)*2]);
-                    end
-                    if y2 == globalZoom1(2,2)
-                        y1 = max([globalZoom1(2,1),y2 - diff(c)*2]);
-                    end
-                    
-                    if z1 == globalZoom1(3,1)
-                        z2 = min([globalZoom1(3,2),z1 + diff(d)*2]);
-                    end
-                    if z2 == globalZoom1(3,2)
-                        z1 = max([globalZoom1(3,1),z2 - diff(d)*2]);
-                    end
-                    
-                    if x2>x1 && globalZoomLog1(1)==0
-                        xlim([x1,x2]);
-                    elseif x2>x1 && globalZoomLog1(1)==1
-                        xlim(10.^[x1,x2]);
-                    end
-                    if y2>y1 && globalZoomLog1(2)==0
-                        ylim([y1,y2]);
-                    elseif y2>y1 && globalZoomLog1(2)==1
-                        ylim(10.^[y1,y2]);
-                    end
-                    if z2>z1 && globalZoomLog1(3)==0
-                    elseif z2>z1 && globalZoomLog1(3)==1
-                        zlim(10.^[z1,z2]);
-                    end
-                end
-            else
-                % Reset zoom
-                xlim(globalZoom1(1,:));
-                ylim(globalZoom1(2,:));
-                zlim(globalZoom1(3,:));
+            end
+        end
+        
+        function axLim = RecalcZoomAxesLimits(axLim, axLimDflt, zcCrd, zoomPct, isLog)
+            
+            rf = range(axLim);
+            ra = range([axLim(1), zcCrd]);
+            rb = range([zcCrd, axLim(2)]);
+            
+            cfa = ra / rf;
+            cfb = rb / rf;
+            
+            newRange = range(axLim) * zoomPct;
+            dRange = newRange - rf;
+            
+            axLim(1) = axLim(1) - dRange * cfa;
+            axLim(2) = axLim(2) + dRange * cfb;
+            
+%             if (axLim(1) < axLimDflt(1)), axLim(1) = axLimDflt(1); end
+%             if (axLim(2) > axLimDflt(2)), axLim(2) = axLimDflt(2); end
+            
+            if diff(axLim)<=0
+                axLim = axLimDflt;
+            end
+            if isLog
+                axLim = 10.^axLim;
             end
         end
     end
+    function enableInteractions
+        try
+            % this works in R2014b, and maybe beyond:
+            [hManager.WindowListenerHandles.Enabled] = deal(false);  % HG2
+        catch
+            set(hManager.WindowListenerHandles, 'Enable', 'off');  % HG1
+        end
+        set(UI.fig, 'WindowKeyPressFcn', []);
+        set(UI.fig, 'KeyPressFcn', {@keyPress});
+        set(UI.fig, 'windowscrollWheelFcn',{@ScrolltoZoomInPlot})
+    end
     
     function hoverCallback(~,~)
-        if UI.preferences.hoverEffect == 1 && clickPlotRegular && UI.fig == get(groot,'CurrentFigure') 
+        if clickPlotRegular
+            set(UI.fig,'Pointer','arrow')
+        else
+            set(UI.fig,'Pointer','crosshair')
+        end
+        if UI.preferences.hoverEffect == 1 && clickPlotRegular && UI.fig == get(groot,'CurrentFigure') && toc(timerHover) > UI.preferences.hoverTimer
             axnum = getAxisBelowCursor;
-            if ~isempty(axnum) && axnum < 10 && ~isempty(UI.params.subset) && toc(timerHover) > UI.preferences.hoverTimer
+            if ~isempty(axnum) && axnum < 10 && ~isempty(UI.params.subset)
+                if UI.pan.allow(axnum) && any(~UI.pan.allow)
+                    UI.drag.pan.Enable = 'on';
+                    enableInteractions
+                elseif ~UI.pan.allow(axnum)
+                    UI.rotate.rotate3d.Enable = 'on';
+                    enableInteractions
+                end
                 handle34 = subfig_ax(axnum);
                 set(UI.fig,'CurrentAxes',handle34)
                 if ishandle(hover2highlight.handle1)
@@ -6648,24 +6899,29 @@ end
         end
     end
 
-    function [u,v] = ClicktoSelectFromPlot(~,~)
+    function [disallowRotation] = ClicktoSelectFromPlot(~,~)
         % Handles mouse clicks on the plots. Determines the selected plot
         % and the coordinates (u,v) within the plot. Finally calls
         % according to which mouse button that was clicked.
+        disallowRotation = true;
         axnum = find(ismember(subfig_ax, gca));
         um_axes = get(subfig_ax(axnum),'CurrentPoint');
+        cursorPosition = um_axes(1,:);
         u = um_axes(1,1);
         v = um_axes(1,2);
         w = um_axes(1,3);
+        selectiontype = get(UI.fig, 'selectiontype');
         if clickPlotRegular
-            switch get(UI.fig, 'selectiontype')
-                case {'normal','open'}
+            switch selectiontype
+                case {'open','extend'}%'normal'
+                    % Select cell from plot
                     if ~isempty(UI.params.subset)
                         SelectFromPlot(u,v,w);
                     else
                         MsgLog(['No cells with selected classification']);
                     end
                 case 'alt'
+                    % Highlight cell
                     if ~isempty(UI.params.subset)
                         if ishandle(hover2highlight.handle1)
                             set(hover2highlight.handle1,'Visible','off');
@@ -6675,14 +6931,21 @@ end
                         end
                         HighlightFromPlot(u,v,w);
                     end
-                case 'extend'
-                    polygonSelection
+                case 'normal'%'extend'
+                    disallowRotation = false;
+%                     h.Enable = 'on';
+%                     polygonSelection
+                    % Drag axis
+%                     DragMouseBegin(axnum,cursorPosition)
+
+%                 case 'open'
+                    % Reset zoom
+                    % polygonSelection
             end
         else
             c = [u,v];
-            sel = get(UI.fig, 'SelectionType');
             
-            if strcmpi(sel, 'alt')
+            if strcmpi(selectiontype, 'alt')
                 if ~isempty(polygon1.coords)
                     hold on,
                     polygon1.handle(polygon1.counter+1) = line([polygon1.coords(:,1);polygon1.coords(1,1)],[polygon1.coords(:,2);polygon1.coords(1,2)],'Marker','.','color','k', 'HitTest','off');
@@ -6695,23 +6958,56 @@ end
                 GroupSelectFromPlot
                 set(polygon1.handle(find(ishandle(polygon1.handle))),'Visible','off');
                 
-            elseif strcmpi(sel, 'extend') && polygon1.counter > 0
+            elseif strcmpi(selectiontype, 'extend') && polygon1.counter > 0
                 polygon1.coords = polygon1.coords(1:end-1,:);
                 set(polygon1.handle(polygon1.counter),'Visible','off');
                 polygon1.counter = polygon1.counter-1;
                 
-            elseif strcmpi(sel, 'extend') && polygon1.counter == 0
+            elseif strcmpi(selectiontype, 'extend') && polygon1.counter == 0
                 clickPlotRegular = true;
                 set(UI.fig,'Pointer','arrow')
                 
-            elseif strcmpi(sel, 'normal')
+            elseif strcmpi(selectiontype, 'normal')
                 polygon1.coords = [polygon1.coords;c];
                 polygon1.counter = polygon1.counter +1;
                 polygon1.handle(polygon1.counter) = line(polygon1.coords(:,1),polygon1.coords(:,2),'Marker','.','color','k','HitTest','off');
             end
         end
+        
     end
 
+    function mousebuttonRelease(~,~)
+         UI.scroll = true;
+    end
+    
+    function mousebuttonPress(~,~)
+         UI.scroll = false;
+    end
+    
+    function DragMouseBegin
+        UI.drag.pan = pan(UI.fig);
+        UI.drag.pan.Enable = 'on';
+        UI.drag.pan.ButtonDownFilter = @ClicktoSelectFromPlot;
+        UI.drag.pan.ActionPreCallback = @mousebuttonPress;
+        UI.drag.pan.ActionPostCallback = @mousebuttonRelease;
+        enableInteractions
+    end
+    
+    function rotateFig(axisToRotate,axnum)
+        % activates a rotation mode for subfig1 while maintaining the keyboard shortcuts and click functionality for the remaining plots
+%         set(UI.fig,'CurrentAxes',UI.panel.subfig_ax(axisTorate).Children)
+        UI.pan.allow(axnum) = false;
+        rotate3d(axisToRotate,'on');
+        UI.rotate.rotate3d = rotate3d(axisToRotate);
+        UI.rotate.rotate3d.Enable = 'on';
+        setAllowAxesRotate(UI.rotate.rotate3d,subfig_ax(2),false);
+        setAllowAxesPan(UI.drag.pan,subfig_ax(2),true);
+%         set(UI.rotate.rotate3d,'ButtonDownFilter',@myRotateFilter);
+        set(UI.rotate.rotate3d,'ButtonDownFilter',@ClicktoSelectFromPlot);
+        set(UI.drag.pan,'ButtonDownFilter',@ClicktoSelectFromPlot);
+        enableInteractions
+    end
+    
     function polygonSelection(~,~)
         clickPlotRegular = false;
         MsgLog('Select cells by drawing a polygon with your mouse. Complete with a right click, cancel last point with middle click.');
@@ -6803,7 +7099,7 @@ end
             line(plotX(UI.params.ClickedCells),plotY(UI.params.ClickedCells),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
         end
         set(UI.fig,'CurrentAxes',subfig_ax(2))
-        line(cell_metrics.troughToPeak(UI.params.ClickedCells)*1000,cell_metrics.burstIndex_Royer2012(UI.params.ClickedCells),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+        line(cell_metrics.troughToPeak(UI.params.ClickedCells)*1000,cell_metrics.acg_tau_rise(UI.params.ClickedCells),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
         
         set(UI.fig,'CurrentAxes',subfig_ax(3))
         line(tSNE_metrics.plot(UI.params.ClickedCells,1),tSNE_metrics.plot(UI.params.ClickedCells,2),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9)
@@ -6915,7 +7211,7 @@ end
             axnum = 1;
         end
 
-        if axnum == 1 && UI.preferences.customPlotHistograms == 3
+        if axnum == 1 && UI.preferences.customPlotHistograms == 3 % 3D plot
             [azimuth,elevation] = view;
                 r  = 10000;
                 y1 = -r .* cosd(elevation) .* cosd(azimuth);
@@ -6964,7 +7260,7 @@ end
                     return
                 end
                 
-        elseif axnum == 1 && UI.preferences.customPlotHistograms < 4
+        elseif axnum == 1 && UI.preferences.customPlotHistograms < 4 % 2D plot
             if UI.checkbox.logx.Value == 1 && UI.checkbox.logy.Value == 1
                 x_scale = range(log10(plotX(plotX>0 & ~isinf(plotX))));
                 y_scale = range(log10(plotY(plotY>0 & ~isinf(plotY))));
@@ -6996,7 +7292,7 @@ end
                 hover2highlight.handle2 = line(plotX(iii),plotY(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
             end
             
-        elseif axnum == 1 && UI.preferences.customPlotHistograms == 4
+        elseif axnum == 1 && UI.preferences.customPlotHistograms == 4 % Raincloud plot
             if UI.checkbox.logx.Value == 1
                 x_scale = range(log10(plotX(plotX>0 & ~isinf(plotX))));
                 y_scale = range(plotY1(~isinf(plotY1)));
@@ -7013,7 +7309,7 @@ end
                 text_offset = plotY(iii)/20;
             end
             if highlight
-                line(plotX(iii),plotY(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+                line(plotX(iii),plotY1(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
             end
             if hover
                 hover2highlight.handle1 = text(plotX(iii),plotY1(iii)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
@@ -7022,16 +7318,16 @@ end
             
         elseif axnum == 2
             x_scale = range(cell_metrics.troughToPeak)*1000;
-            y_scale = range(log10(cell_metrics.burstIndex_Royer2012(find(cell_metrics.burstIndex_Royer2012>0 & cell_metrics.burstIndex_Royer2012<Inf))));
-            [~,idx] = min(hypot((cell_metrics.troughToPeak(UI.params.subset)*1000-u)/x_scale,(log10(cell_metrics.burstIndex_Royer2012(UI.params.subset))-log10(v))/y_scale));
+            y_scale = range(log10(cell_metrics.acg_tau_rise(find(cell_metrics.acg_tau_rise>0 & cell_metrics.acg_tau_rise<Inf))));
+            [~,idx] = min(hypot((cell_metrics.troughToPeak(UI.params.subset)*1000-u)/x_scale,(log10(cell_metrics.acg_tau_rise(UI.params.subset))-log10(v))/y_scale));
             iii = UI.params.subset(idx);
             
             if highlight
-                line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+                line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.acg_tau_rise(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
             end
             if hover
-                hover2highlight.handle1 = text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii)*1.15,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                hover2highlight.handle2 = line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.burstIndex_Royer2012(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
+                hover2highlight.handle1 = text(cell_metrics.troughToPeak(iii)*1000,cell_metrics.acg_tau_rise(iii)*1.15,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                hover2highlight.handle2 = line(cell_metrics.troughToPeak(iii)*1000,cell_metrics.acg_tau_rise(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
             end
             
         elseif axnum == 3
@@ -7058,23 +7354,10 @@ end
                 subsetPlots = [];
             end
             switch selectedOption
-                case 'Waveforms (tSNE)'
-                    [~,idx] = min(hypot(tSNE_metrics.filtWaveform(UI.params.subset,1)-u,tSNE_metrics.filtWaveform(UI.params.subset,2)-v));
-                    iii = UI.params.subset(idx);
-                    if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.filtWaveform(iii,1),tSNE_metrics.filtWaveform(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                    end
-                    
-                case 'Raw waveforms (tSNE)'
-                    [~,idx] = min(hypot(tSNE_metrics.rawWaveform(UI.params.subset,1)-u,tSNE_metrics.rawWaveform(UI.params.subset,2)-v));
-                    iii = UI.params.subset(idx);
-                    if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.rawWaveform(iii,1),tSNE_metrics.rawWaveform(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                    end
-                    
+                
                 case 'Waveforms (single)'
                     if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                        out = plotInsetChannelMap(ii,[],general,0);
+                        out = plotInsetChannelMap(ii,[],general,0,axnum);
                         if ~isempty(out)
                             x_scale = range(out(1,:));
                             y_scale = range(out(2,:));
@@ -7083,7 +7366,7 @@ end
                             iii = out(3,In);
                             if hover
                                 hover2highlight.handle1 = text(out(1,In),out(2,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                                hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                                hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
                             end
                             if highlight
                             	line(out(1,In),out(2,In),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
@@ -7106,7 +7389,7 @@ end
                     y_scale = range(y1(:));
                     
                     if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                        out = plotInsetChannelMap(ii,[],general,0);
+                        out = plotInsetChannelMap(ii,[],general,0,axnum);
                         if ~isempty(out)
                             x2 = [x1(:);out(1,:)'];
                             y2 = y1(:);
@@ -7117,7 +7400,7 @@ end
                                 iii = out(3,In-length(y2));
                                 if hover
                                     hover2highlight.handle3 = text(out(1,In-length(y2)),out(2,In-length(y2))+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                                    hover2highlight.handle4 = line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                                    hover2highlight.handle4 = line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
                                 end
                                 if highlight
                                     line(out(1,In-length(y2)),out(2,In-length(y2)),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
@@ -7139,20 +7422,25 @@ end
                         hover2highlight.handle2 = line(cell_metrics.waveforms.time_zscored,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
                         hover2highlight.handle1 = text(cell_metrics.waveforms.time_zscored(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
+                    
                 case 'Waveforms (raw single)'    
                     if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                        out = plotInsetChannelMap(ii,[],general,0);
+                        out = plotInsetChannelMap(ii,[],general,0,axnum);
                         if ~isempty(out)
                             x_scale = range(out(1,:));
                             y_scale = range(out(2,:));
                             [~,In] = min(hypot((out(1,:)-u)/x_scale,(out(2,:)-v)/y_scale));
                             iii = out(3,In);
+                            if highlight
+                                line(out(1,In),out(2,In),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+                            end
                             if highlight || hover
                                 hover2highlight.handle1 = text(out(1,In),out(2,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                                hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
+                                hover2highlight.handle2 = line(out(1,In),out(2,In),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
                             end
                         end
                     end
+                    
                 case 'Waveforms (raw all)'
                     if UI.preferences.zscoreWaveforms == 1
                         zscoreWaveforms1 = 'raw_zscored';
@@ -7165,7 +7453,7 @@ end
                     y_scale = range(y1(:));
                     
                     if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                        out = plotInsetChannelMap(ii,[],general,0);
+                        out = plotInsetChannelMap(ii,[],general,0,axnum);
                         if ~isempty(out)
                             x2 = [x1(:);out(1,:)'];
                             y2 = y1(:);
@@ -7230,6 +7518,22 @@ end
                         uiresume(UI.fig);
                     end
                     
+                case 'Waveforms (peakVoltage_all)'
+                    subset1 = subsetPlots.subset;
+                    x1 = subsetPlots.xaxis;
+                    y1 = subsetPlots.yaxis;
+                    x_scale = range(x1(:));
+                    y_scale = range(y1(:));
+                    [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
+                    In = unique(floor(In/length(subsetPlots.xaxis)))+1;
+                    In = min([In,length(subset1)]);
+                    iii = subset1(In);
+                    [~,time_index] = min(abs(subsetPlots.xaxis-u));
+                    if highlight || hover
+                        hover2highlight.handle2 = line(subsetPlots.xaxis,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                    end
+                    
                 case 'Trilaterated position'
                     switch UI.preferences.trilatGroupData
                         case 'session'
@@ -7247,8 +7551,12 @@ end
                     y_scale = range(y1(:));
                     [~,idx] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
                     iii = subset1(idx);
+                    if highlight
+                        line(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+                    end
                     if highlight || hover
                         hover2highlight.handle1 = text(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                        hover2highlight.handle2 = line(cell_metrics.trilat_x(iii),cell_metrics.trilat_y(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
                     end
                     
                 case 'Common Coordinate Framework'
@@ -7285,34 +7593,6 @@ end
                         hover2highlight.handle2 = line(plotX22(iii),plotY22(iii),plotZ22(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off');
                     else
                         return
-                    end
-                    
-                case 'tSNE of narrow ACGs'
-                    [~,idx] = min(hypot(tSNE_metrics.acg_narrow(UI.params.subset,1)-u,tSNE_metrics.acg_narrow(UI.params.subset,2)-v));
-                    iii = UI.params.subset(idx);
-                    if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.acg_narrow(iii,1),tSNE_metrics.acg_narrow(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                    end
-                    
-                case 'tSNE of wide ACGs'
-                    [~,idx] = min(hypot(tSNE_metrics.acg_wide(UI.params.subset,1)-u,tSNE_metrics.acg_wide(UI.params.subset,2)-v));
-                    iii = UI.params.subset(idx);
-                    if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.acg_wide(iii,1),tSNE_metrics.acg_wide(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                    end
-                    
-                case 'tSNE of log ACGs'
-                    [~,idx] = min(hypot(tSNE_metrics.acg_log10(UI.params.subset,1)-u,tSNE_metrics.acg_log10(UI.params.subset,2)-v));
-                    iii = UI.params.subset(idx);
-                    if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.acg_log10(iii,1),tSNE_metrics.acg_log10(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                    end
-                    
-                case 'tSNE of log ISIs'
-                    [~,idx] = min(hypot(tSNE_metrics.isi_log10(UI.params.subset,1)-u,tSNE_metrics.isi_log10(UI.params.subset,2)-v));
-                    iii = UI.params.subset(idx);
-                    if highlight || hover
-                        hover2highlight.handle1 = text(tSNE_metrics.isi_log10(iii,1),tSNE_metrics.isi_log10(iii,2)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'CCGs (image)'
@@ -7552,8 +7832,12 @@ end
                     if ~isempty(subsetPlots)
                         [~,idx] = min(hypot(subsetPlots.xaxis-u,subsetPlots.yaxis-v));
                         iii = subsetPlots.subset(idx);
+                        if highlight
+                            line(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+                        end
                         if highlight || hover
                             hover2highlight.handle1 = text(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                            hover2highlight.handle2 = line(subsetPlots.xaxis(idx),subsetPlots.yaxis(idx),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
                         end
                     end
                 otherwise
@@ -7611,6 +7895,17 @@ end
         patch(x_data, y_data,col,'EdgeColor','none','FaceAlpha',.8,'HitTest','off')
     end
     
+    function bar_from_patch_centered_bins(x_data, y_data,col)
+        x_step = (x_data(2)-x_data(1));
+        x_data = x_data-x_step/2;
+%         x_data(1) = x_data(1)+x_step;
+        x_data(end+1) = x_data(end)+x_step;
+        y_data(end+1) = y_data(end);
+        x_data = [x_data(1),reshape([x_data,x_data([2:end,end])]',1,[]),x_data(end)];
+        y_data = [0,reshape([y_data,y_data]',1,[]),0];
+        patch(x_data, y_data,col,'EdgeColor','none','FaceAlpha',.8,'HitTest','off')
+    end
+    
     function bar_from_patch2(x_data, y_data,col,y0)
         % Creates a bar graph using the patch plot mode, which is substantial faster than using the regular bar plot.
         % By Peter Petersen
@@ -7639,9 +7934,6 @@ end
         iii = FromPlot(u,v,w,0,0);
         if iii>0
             ii = iii;
-            UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
-            UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-            UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
             uiresume(UI.fig);
         end
     end
@@ -7861,7 +8153,7 @@ end
         set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
         exportsetupdlg(UI.fig)
     end
-
+    
     function GroupSelectFromPlot(~,~)
         % Allows the user to select multiple cells from any plot.
         if ~isempty(UI.params.subset)
@@ -7882,7 +8174,7 @@ end
                     In = UI.params.subset(In);
                     
                 elseif axnum == 2
-                    In = find(inpolygon(cell_metrics.troughToPeak(UI.params.subset)*1000, log10(cell_metrics.burstIndex_Royer2012(UI.params.subset)), polygon_coords(:,1), log10(polygon_coords(:,2))));
+                    In = find(inpolygon(cell_metrics.troughToPeak(UI.params.subset)*1000, log10(cell_metrics.acg_tau_rise(UI.params.subset)), polygon_coords(:,1), log10(polygon_coords(:,2))));
                     In = UI.params.subset(In);
                     
                 elseif axnum == 3
@@ -7896,7 +8188,7 @@ end
                     switch selectedOption
                         case 'Waveforms (single)'
                             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                                out = plotInsetChannelMap(ii,[],general,0);                                
+                                out = plotInsetChannelMap(ii,[],general,0,axnum);                                
                                 In1 = find(inpolygon(out(1,:), out(2,:), polygon_coords(:,1)',polygon_coords(:,2)'));
                                 In = out(3,In1);
                                 line(out(1,In1),out(2,In1),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
@@ -7904,7 +8196,7 @@ end
                             
                         case 'Waveforms (raw single)'
                             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                                out = plotInsetChannelMap(ii,[],general,0);                                
+                                out = plotInsetChannelMap(ii,[],general,0,axnum);                                
                                 In1 = find(inpolygon(out(1,:), out(2,:), polygon_coords(:,1)',polygon_coords(:,2)'));
                                 In = out(3,In1);
                                 line(out(1,In1),out(2,In1),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
@@ -7922,7 +8214,7 @@ end
                             In = unique(floor(In/length(cell_metrics.waveforms.time_zscored)))+1;
                             In = UI.params.subset(In);
                             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                                out = plotInsetChannelMap(ii,[],general,0);                                
+                                out = plotInsetChannelMap(ii,[],general,0,axnum);                                
                                 In1 = find(inpolygon(out(1,:), out(2,:), polygon_coords(:,1)',polygon_coords(:,2)'));
                                 In2 = out(3,In1);
                                 line(out(1,In1),out(2,In1),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
@@ -7941,7 +8233,7 @@ end
                             In = unique(floor(In/length(cell_metrics.waveforms.time_zscored)))+1;
                             In = UI.params.subset(In);    
                             if UI.preferences.plotInsetChannelMap > 1 && isfield(general,'chanCoords')
-                                out = plotInsetChannelMap(ii,[],general,0);                                
+                                out = plotInsetChannelMap(ii,[],general,0,axnum);                                
                                 In1 = find(inpolygon(out(1,:), out(2,:), polygon_coords(:,1)',polygon_coords(:,2)'));
                                 In2 = out(3,In1);
                                 line(out(1,In1),out(2,In1),'Marker','o','LineStyle','none','color','k', 'HitTest','off')
@@ -7950,10 +8242,6 @@ end
                             
                         case 'Waveforms (image)'
                             In = UI.params.subset(UI.preferences.troughToPeakSorted(min(floor(polygon_coords(:,2))):max(ceil(polygon_coords(:,2)))));
-                            
-                        case 'Waveforms (tSNE)'
-                            In = find(inpolygon(tSNE_metrics.filtWaveform(UI.params.subset,1), tSNE_metrics.filtWaveform(UI.params.subset,2), polygon_coords(:,1)',polygon_coords(:,2)'));
-                            In = UI.params.subset(In);
                             
                         case 'Trilaterated position'
                             switch UI.preferences.trilatGroupData
@@ -8039,13 +8327,6 @@ end
                             [~,burstIndexSorted] = sort(cell_metrics.(UI.preferences.sortingMetric)(UI.params.subset));
                             In = UI.params.subset(burstIndexSorted(max(min(floor(polygon_coords(:,2))),1):min(max(ceil(polygon_coords(:,2))),length(UI.params.subset))));
                             
-                        case 'tSNE of narrow ACGs'
-                            In = find(inpolygon(tSNE_metrics.acg_narrow(UI.params.subset,1), tSNE_metrics.acg_narrow(UI.params.subset,2), polygon_coords(:,1)',polygon_coords(:,2)'));
-                            In = UI.params.subset(In);
-                            
-                        case 'tSNE of wide ACGs'
-                            In = find(inpolygon(tSNE_metrics.acg_wide(UI.params.subset,1), tSNE_metrics.acg_wide(UI.params.subset,2), polygon_coords(:,1)',polygon_coords(:,2)'));
-                            In = UI.params.subset(In);
                             
                         case 'RCs_thetaPhase (all)'
                             x1 = UI.x_bins.thetaPhase'*ones(1,length(UI.params.subset));
@@ -8076,6 +8357,17 @@ end
                                 if ~isempty(In)
                                     line(subsetPlots.xaxis(In1),subsetPlots.yaxis(In1),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',9,'HitTest','off')
                                 end
+                            end
+                        case 'Waveforms (peakVoltage_all)'
+                            subset1 = subsetPlots.subset;
+                            x1 = subsetPlots.xaxis;
+                            y1 = subsetPlots.yaxis;
+                            
+                            In2 = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
+                            In2 = unique(floor(In2/length(subsetPlots.xaxis)))+1;
+                            In = subset1(In2);
+                            if ~isempty(In2)
+                                line(x1(:,1),y1(:,In2),'linewidth',2, 'HitTest','off')
                             end
                         otherwise
                             if any(strcmp(UI.monoSyn.disp,{'All','Selected','Upstream','Downstream','Up & downstream'}))
@@ -8340,6 +8632,15 @@ end
         else
             UI.preferences.zscoreWaveforms=0;
         end
+        
+        if UI.supplementaryFigure.groupDataNormalization== 1
+            UI.preferences.rainCloudNormalization = 'Peak';
+        elseif UI.supplementaryFigure.groupDataNormalization== 2
+            UI.preferences.rainCloudNormalization = 'Probability';
+        elseif UI.supplementaryFigure.groupDataNormalization== 3
+            UI.preferences.rainCloudNormalization = 'Count';
+        end
+        
 %         adjustZscoreWaveforms;
         UI.preferences.plotInsetChannelMap = 1; % Hiding channel map inset in waveform plots.
         UI.preferences.plotInsetACG = 1; % Hiding ACG inset in waveform plots.
@@ -8361,52 +8662,65 @@ end
             alpha(handle_ce_gscatter(i_groups),.8)
         end
 
-        xlabel(UI.labels.(UI.supplementaryFigure.metrics{1})), ylabel(UI.labels.(UI.supplementaryFigure.metrics{2})); set(gca, 'XScale', axisScale{UI.supplementaryFigure.axisScale(1)}, 'YScale', axisScale{UI.supplementaryFigure.axisScale(2)},'TickLength',[0.02 1]), axis tight, figureLetter('A','right')
+        xlabel(UI.labels.(UI.supplementaryFigure.metrics{1}),'FontSize',defaultAxesFontSize-1), ylabel(UI.labels.(UI.supplementaryFigure.metrics{2}),'FontSize',defaultAxesFontSize-1); set(gca, 'XScale', axisScale{UI.supplementaryFigure.axisScale(1)}, 'YScale', axisScale{UI.supplementaryFigure.axisScale(2)},'TickLength',[0.02 1]), axis tight, figureLetter('A','right')
+        
         % Generating legend
         legendNames = UI.classes.labels(nanUnique(UI.classes.plot(UI.params.subset)));
         for i = 1:length(legendNames)
             legendDots(i) = line(nan,nan,'Marker','.','LineStyle','none','color',UI.classes.colors((i),:), 'MarkerSize',20);
         end
         legend(legendDots,legendNames,'Location','southwest');
-        subplot('Position',[0.13 0.01 0.34 .1])
+        
+        % Generating histograms along axis
+        subplot('Position',[0.13 0.015 0.34 .1])
         generateGroupRainCloudPlot(UI.supplementaryFigure.metrics{1},UI.supplementaryFigure.axisScale(1)-1,0,0, 0.06,0)
-        set(gca,'XColor', 'none','Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(1)}),title('')
+        set(gca,'XColor', 'none','Color','none','box','of','TickLength',[0.01 0.7], 'XScale', axisScale{UI.supplementaryFigure.axisScale(1)},'Xticklabels',[]),title('')
+        ylabel(UI.preferences.rainCloudNormalization)
         subplot('Position',[0.01 0.22 0.06 0.75])
         generateGroupRainCloudPlot(UI.supplementaryFigure.metrics{2},UI.supplementaryFigure.axisScale(2)-1,0,0, 0.06,0)
-        set(gca,'XColor', 'none','Ydir','reverse','Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(2)}),title('')
+        set(gca,'XColor', 'none','Ydir','reverse','Color','none','box','off','TickLength',[0.01 0.7], 'XScale', axisScale{UI.supplementaryFigure.axisScale(2)},'Xticklabels',[]),title('')
+        ylabel(UI.preferences.rainCloudNormalization)
         camroll(90)
+        
         % Waveforms
         subplot('Position',[0.5 0.72 0.23 .25])
-        customPlot('Waveforms (all)',ii,general,batchIDs,gca,0,0); yticks([]), axis tight, ylabel(''), figureLetter('B','right');
+        customPlot('Waveforms (all)',ii,general,batchIDs,gca,0,0,13); yticks([]), axis tight, ylabel(''), figureLetter('B','right');
         set(gca,'Color','none','box','off','TickLength',[0.03 1]), title('');
         if UI.supplementaryFigure.waveformNormalization==1
             set(gca,'YColor','none')
         end
-        % Firing rates
+        
+        % % % Histogram plots
+        % 1. Group plot: Firing rates
         subplot('Position',[0.5 0.41 0.23 .21])
         generateGroupRainCloudPlot(UI.supplementaryFigure.metrics{3},UI.supplementaryFigure.axisScale(3)-1,0,0, 0.06,1)
         xlabel(UI.labels.(UI.supplementaryFigure.metrics{3})), figureLetter('C','right'),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(3)}), title('')
-        % CV2
+        
+        % 2. Group plot: CV2
         subplot('Position',[0.5 0.1 0.23 .21])
         generateGroupRainCloudPlot(UI.supplementaryFigure.metrics{4},UI.supplementaryFigure.axisScale(4)-1,0,0, 0.06,1), xlabel(UI.labels.(UI.supplementaryFigure.metrics{4})),
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(4)}), title('')
-        % Peak voltage
+        
+        % 1. Population plot: Peak voltage
         subplot('Position',[0.76 0.815 0.23 .155])
         ce_raincloud_plot(cell_metrics.(UI.supplementaryFigure.metrics{5}),'scatter_on',0,'log_axis',UI.supplementaryFigure.axisScale(5)-1,'color', [0.9 0.9 0.9]);
         axis tight, figureLetter('D','right'), xlabel(UI.labels.(UI.supplementaryFigure.metrics{5})), % xticks([10 100 1000])
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(5)});
-        % Isolation distance
+        
+        % 2. Population plot:  Isolation distance
         subplot('Position',[0.76 0.57 0.23 .145])
         ce_raincloud_plot(cell_metrics.(UI.supplementaryFigure.metrics{6}),'scatter_on',0,'log_axis',UI.supplementaryFigure.axisScale(6)-1,'color', [0.9 0.9 0.9]);
         axis tight, xlabel(UI.labels.(UI.supplementaryFigure.metrics{6})), % xticks([10 100]); xlim([10,300]), 
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(6)});
-        % L_ratio
+        
+        % 3. Population plot:  L_ratio
         subplot('Position',[0.76 0.335 0.23 .142])
         ce_raincloud_plot(cell_metrics.(UI.supplementaryFigure.metrics{7}),'scatter_on',0,'log_axis',UI.supplementaryFigure.axisScale(7)-1,'color', [0.9 0.9 0.9]);
         axis tight, xlabel(UI.labels.(UI.supplementaryFigure.metrics{7})), % xticks(10.^(-5:2:1)); xlim(10.^([-5 2]))
         set(gca,'Color','none','YColor','none','box','off','TickLength',[0.03 1], 'XScale', axisScale{UI.supplementaryFigure.axisScale(7)});
-        % refractory period
+        
+        % 4. Population plot:  refractory period
         subplot('Position',[0.76 0.1 0.23 .142])
         ce_raincloud_plot(cell_metrics.(UI.supplementaryFigure.metrics{8}),'scatter_on',0,'log_axis',UI.supplementaryFigure.axisScale(8)-1,'color', [0.9 0.9 0.9]);
         axis tight, xlabel(UI.labels.(UI.supplementaryFigure.metrics{8})), %xticks(10.^(-2:2:2));
@@ -8551,7 +8865,7 @@ end
             end
             set(fig,'CurrentAxes',ha(1)), hold on
             ii = cellIDs(j);
-            plotGroupData(cell_metrics.troughToPeak * 1000,cell_metrics.burstIndex_Royer2012,plotConnections(2),highlight)
+            plotGroupData(cell_metrics.troughToPeak * 1000,cell_metrics.acg_tau_rise,plotConnections(2),highlight)
             ha(1).XLabel.String = ['Trough-to-Peak (',char(181),'s)'];
             ha(1).YLabel.String = 'Burst Index (Royer 2012)';
             ha(1).Title.String = 'Population';
@@ -8566,7 +8880,7 @@ end
             
             for jj = 1:length(plotOptions)
                 set(fig,'CurrentAxes',ha(jj+2)), hold on
-                customPlot(plotOptions{jj},cellIDs(j),general1,batchIDs1,ha(jj+2),0,highlight);
+                customPlot(plotOptions{jj},cellIDs(j),general1,batchIDs1,ha(jj+2),0,highlight,13);
                 if jj == 1
                     ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                 end
@@ -9021,17 +9335,22 @@ end
                         
                         plot_cells2 = cell_metrics.UID(plot_cells);
                         k = 1;
+                        try 
                         ha = ce_tight_subplot(length(plot_cells),length(plot_cells),[.03 .03],[.06 .05],[.04 .05]);
+                        catch
+                            MsgLog(['The number of selected cells are too high (', num2str(length(plot_cells)), ')'],4);
+                            return
+                        end
                         for j = 1:length(plot_cells)
                             for jj = 1:length(plot_cells)
                                 set(ccgFigure,'CurrentAxes',ha(k))
                                 if jj == j
                                     col1 = UI.preferences.cellTypeColors(clusClas(plot_cells(j)),:);
-                                    bar_from_patch(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),col1)
+                                    bar_from_patch_centered_bins(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),col1)
                                     title(['Cell ', num2str(plot_cells(j)),', Group ', num2str(cell_metrics.electrodeGroup(plot_cells(j))) ]),
                                     xlabel(cell_metrics.putativeCellType{plot_cells(j)})
                                 else
-                                    bar_from_patch(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),[0.5,0.5,0.5])
+                                    bar_from_patch_centered_bins(general.ccg_time*1000,general.ccg(:,plot_cells2(j),plot_cells2(jj)),[0.5,0.5,0.5])
                                 end
                                 if j == length(plot_cells) && mod(jj,2) == 1 && j~=jj; xlabel('Time (ms)'); end
                                 if jj == 1 && mod(j,2) == 0; ylabel('Rate (Hz)'); end
@@ -9042,7 +9361,20 @@ end
                                 if length(plot_cells) > 2 && j < length(plot_cells)
                                     set(ha(k),'XTickLabel',[]);
                                 end
-                                axis tight, grid on
+                                axis tight, set(ha(k), 'YGrid', 'off', 'XGrid', 'on');
+                                if any(cell_metrics.putativeConnections.excitatory(:,1)==plot_cells(j) & cell_metrics.putativeConnections.excitatory(:,2) ==plot_cells(jj))
+                                    text(0,1,[' Exc: ', num2str(plot_cells(j)) ' \rightarrow ', num2str(plot_cells(jj))],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top')
+                                end
+%                                 if any(cell_metrics.putativeConnections.excitatory(:,2)==plot_cells(j) & cell_metrics.putativeConnections.excitatory(:,1) ==plot_cells(jj))
+%                                     text(0,1,[' Exc: ', num2str(plot_cells(j)) ' \leftarrow ', num2str(plot_cells(jj))],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top')
+%                                 end
+                                
+                                if any(cell_metrics.putativeConnections.inhibitory(:,1)==plot_cells(j) & cell_metrics.putativeConnections.inhibitory(:,2) ==plot_cells(jj))
+                                    text(1,1,[' Inh: ', num2str(plot_cells(j)) ' \rightarrow ', num2str(plot_cells(jj)),' '],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top','HorizontalAlignment','right')
+                                end
+%                                 if any(cell_metrics.putativeConnections.inhibitory(:,2)==plot_cells(j) & cell_metrics.putativeConnections.inhibitory(:,1) ==plot_cells(jj))
+%                                     text(0,1,[' Inh: ', num2str(plot_cells(j)) ' \leftarrow ', num2str(plot_cells(jj)),' '],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top','HorizontalAlignment','right')
+%                                 end
                                 set(ha(k), 'Layer', 'top')
                                 k = k+1;
                             end
@@ -9078,7 +9410,7 @@ end
                         for j = 2:length(plot_cells)
                             set(fig,'CurrentAxes',ha(k))
                             col1 = UI.preferences.cellTypeColors(clusClas(plot_cells(j)),:);
-                            bar_from_patch(general.ccg_time*1000,general.ccg(:,plot_cells2(1),plot_cells2(j)),col1), hold on
+                            bar_from_patch_centered_bins(general.ccg_time*1000,general.ccg(:,plot_cells2(1),plot_cells2(j)),col1), hold on
                             if UI.monoSyn.dispHollowGauss && j > 1
                                 norm_factor = cell_metrics.spikeCount(plot_cells2(1))*0.0005;
                                 [ ~,pred] = ce_cch_conv(general.ccg(:,plot_cells2(1),plot_cells2(j))*norm_factor,20); hold on
@@ -9097,7 +9429,19 @@ end
                             if length(plot_cells) > 2 && j <= plotRows(2)
                                 set(ha(k),'XTickLabel',[]);
                             end
-                            axis tight, grid on
+                            axis tight, set(ha(k), 'YGrid', 'off', 'XGrid', 'on');
+                            if any(cell_metrics.putativeConnections.excitatory(:,1)==plot_cells(1) & cell_metrics.putativeConnections.excitatory(:,2) ==plot_cells(j))
+                                text(0,1,[' Exc: ', num2str(plot_cells(1)) ' \rightarrow ', num2str(plot_cells(j))],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top')
+                            end
+                            if any(cell_metrics.putativeConnections.excitatory(:,2)==plot_cells(1) & cell_metrics.putativeConnections.excitatory(:,1) ==plot_cells(j))
+                                text(0,1,[' Exc: ', num2str(plot_cells(1)) ' \leftarrow ', num2str(plot_cells(j))],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top')
+                            end
+                            if any(cell_metrics.putativeConnections.inhibitory(:,1)==plot_cells(1) & cell_metrics.putativeConnections.inhibitory(:,2) ==plot_cells(j))
+                                text(1,1,[' Inh: ', num2str(plot_cells(1)) ' \rightarrow ', num2str(plot_cells(j)),' '],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top','HorizontalAlignment','right')
+                            end
+                            if any(cell_metrics.putativeConnections.inhibitory(:,2)==plot_cells(1) & cell_metrics.putativeConnections.inhibitory(:,1) ==plot_cells(j))
+                                text(1,1,[' Inh: ', num2str(plot_cells(1)) ' \leftarrow ', num2str(plot_cells(j)),' '],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top','HorizontalAlignment','right')
+                            end
                             set(ha(k), 'Layer', 'top')
                             k = k+1;
                         end
@@ -9147,7 +9491,7 @@ end
                             UI.params.connections = [UI.params.incoming;UI.params.outgoing];
                         end
                         set(fig,'CurrentAxes',ha(j)), hold on
-                        customPlot(actionList{choice},cellIDs(j),general1,batchIDs1,ha(j),0,1); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
+                        customPlot(actionList{choice},cellIDs(j),general1,batchIDs1,ha(j),0,1,13); title(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                         if length(cellIDs)>25
                             plotAxes = ha(j);
                             plotAxes.XLabel.String = [];
@@ -9212,7 +9556,7 @@ end
                                 subPlotNum = subPlotNum+1;
                             end
                             set(fig,'CurrentAxes',ha(subPlotNum))
-                            customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(subPlotNum),0,1);
+                            customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(subPlotNum),0,1,13);
                             if jj == 1
                                 ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                             end
@@ -9250,7 +9594,7 @@ end
                         for jjj = 1:length(selectedActions)
                             set(fig,'CurrentAxes',ha(jjj)), hold on
 %                             subplot(plotRows(1),plotRows(2),jjj), hold on
-                            customPlot(plotOptions{selectedActions(jjj)},cellIDs(j),general1,batchIDs1,ha(jjj),0,1);
+                            customPlot(plotOptions{selectedActions(jjj)},cellIDs(j),general1,batchIDs1,ha(jjj),0,1,13);
                             title(plotOptions{selectedActions(jjj)},'Interpreter', 'none')
                         end
                     end
@@ -9305,7 +9649,7 @@ end
                         for jj = 1:length(selectedActions)
                             
                             set(fig,'CurrentAxes',ha(jj+1))
-                            customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(jj+1),0,1);
+                            customPlot(plotOptions{selectedActions(jj)},cellIDs(j),general1,batchIDs1,ha(jj+1),0,1,13);
                             if jj == 1
                                 ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                             end
@@ -9398,12 +9742,6 @@ end
             updatePutativeCellType
             UI.params.alteredCellMetrics = 1;
             
-            % Button Deep-Superficial
-            UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
-            
-            % Button brain region
-            UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-            
             [cell_metrics.brainRegion_num,ID] = findgroups(cell_metrics.brainRegion);
             groups_ids.brainRegion_num = ID;
         else
@@ -9469,11 +9807,12 @@ end
                     [file,SavePath] = uiputfile('cell_metrics.mat','Save metrics');
                 end
                 if SavePath ~= 0
+                    saveMetrics(cell_metrics,fullfile(SavePath,file));
                     try
-                        saveMetrics(cell_metrics,fullfile(SavePath,file));
+                        
                     catch exception
                         disp(exception.identifier)
-                        MsgLog(['Failed to save file - see Command Window for details'],[3,4]);
+                        MsgLog('Failed to save file - see Command Window for details',[3,4]);
                     end
                 end
             case 'Cancel'
@@ -9503,7 +9842,12 @@ end
         if nargin > 1
             try
                 structSize = whos('cell_metrics');
-                if structSize.bytes/1000000000 > 2
+                if numel(structSize)>1
+                    bytes = structSize(1).bytes;
+                else
+                    bytes = structSize.bytes;
+                end
+                if bytes/1000000000 > 2
                     save(file, 'cell_metrics', '-v7.3','-nocompression')
                 else
                     save(file, 'cell_metrics');
@@ -9719,28 +10063,46 @@ end
             plotClas_subset = UI.classes.plot(UI.params.subset);
             counter = 1; % For aligning scatter data
             ids = nanUnique(plotClas_subset);
+            ids_count = histc(plotClas_subset, ids);
+            if strcmp(UI.preferences.rainCloudNormalization,'Peak')
+                ylim1 = [(-length(ids_count)/5),1];
+                subfig_ax(1).YLabel.String = 'Normalized by peak';
+                subfig_ax(1).YTick = [0:0.1:1];
+
+            elseif strcmp(UI.preferences.rainCloudNormalization,'Count')
+                ylim1 = [(-length(ids_count)/5),1]*max(ids_count)*0.3;
+                subfig_ax(1).YLabel.String = 'Count';
+%                 subfig_ax(1).YTick = [0:0.1:1];
+
+            else % Probability
+                ylim1 = [-length(ids_count)/5,1]*0.30;
+                subfig_ax(1).YLabel.String = 'Probability';
+                subfig_ax(1).YTick = [0:0.05:1];
+            end
+            
+            ylim(ylim1);
             for i = 1:length(ids)
                 temp1 = UI.params.subset(find(plotClas_subset==ids(i)));
                 if length(temp1)>1
-                    ce_raincloud_plot(cell_metrics.(fieldName)(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',UI.classes.colors(i,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',UI.classes.colors(i,:),'box_col_match',1,'randomNumbers',UI.params.randomNumbers(temp1),'log_axis',log_axis,'normalization',UI.preferences.rainCloudNormalization,'scatter_on',scatter_on);
+                    ce_raincloud_plot(cell_metrics.(fieldName)(temp1),'box_on',box_on,'box_dodge',1,'line_width',1,'color',UI.classes.colors(i,:),'alpha',0.4,'box_dodge_amount',0.025+(counter-1)*0.21,'dot_dodge_amount',0.13+(counter-1)*0.21,'bxfacecl',UI.classes.colors(i,:),'box_col_match',1,'randomNumbers',UI.params.randomNumbers(temp1),'log_axis',log_axis,'normalization',UI.preferences.rainCloudNormalization,'norm_value',(ids_count(i)),'scatter_on',scatter_on,'ylim',ylim1);
                     counter = counter + 1;
                 end
             end
-            axis tight, title(fieldName, 'interpreter', 'none'), yticks([]),
+            axis tight, title(fieldName, 'interpreter', 'none'), %yticks([]),
             if nanmin(cell_metrics.(fieldName)(UI.params.subset)) ~= nanmax(cell_metrics.(fieldName)(UI.params.subset)) && log_axis == 0
                 xlim([nanmin(cell_metrics.(fieldName)(UI.params.subset)),nanmax(cell_metrics.(fieldName)(UI.params.subset))])
             elseif nanmin(cell_metrics.(fieldName)(UI.params.subset)) ~= nanmax(cell_metrics.(fieldName)(UI.params.subset)) && log_axis == 1 && any(cell_metrics.(fieldName)>0)
                 xlim([nanmin(cell_metrics.(fieldName)(intersect(UI.params.subset,find(cell_metrics.(fieldName)>0)))),nanmax(cell_metrics.(fieldName)(intersect(UI.params.subset,find(cell_metrics.(fieldName)>0))))])
             end
             if plotStats
-                plotStatRelationship(cell_metrics.(fieldName),stats_offset,log_axis) % Generates KS group statistics
+                plotStatRelationship(cell_metrics.(fieldName),stats_offset,log_axis,ylim1) % Generates KS group statistics
             end
         else
             text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
         end
     end
 
-    function plotStatRelationship(data1,stats_offset1,log_axis) 
+    function plotStatRelationship(data1,stats_offset1,log_axis,ylim1) 
         plotClas_subset = UI.classes.plot(UI.params.subset);
         groups = nanUnique(plotClas_subset);
         if length(groups)<10
@@ -9762,11 +10124,11 @@ end
                     if ~all(isnan(data11(temp11))) && ~all(isnan(data11(temp2)))
                         [h,p] = kstest2(data11(temp11),data11(temp2));
                         if p <0.001
-                            line(stats_offset(counter)*[1,1],-[0.13+(j-1)*0.21,0.13+(i-1)*0.21],'color','k','linewidth',3,'HitTest','off')
+                            line(stats_offset(counter)*[1,1],-[0.13+(j-1)*0.21,0.13+(i-1)*0.21]*ylim1(2),'color','k','linewidth',3,'HitTest','off')
                         elseif p < 0.05
-                            line(stats_offset(counter)*[1,1],-[0.13+(j-1)*0.21,0.13+(i-1)*0.21],'color','k','linewidth',2,'HitTest','off')
+                            line(stats_offset(counter)*[1,1],-[0.13+(j-1)*0.21,0.13+(i-1)*0.21]*ylim1(2),'color','k','linewidth',2,'HitTest','off')
                         else
-                            line(stats_offset(counter)*[1,1],-[0.13+(j-1)*0.21,0.13+(i-1)*0.21],'LineStyle','-','color',[0.5 0.5 0.5],'HitTest','off')
+                            line(stats_offset(counter)*[1,1],-[0.13+(j-1)*0.21,0.13+(i-1)*0.21]*ylim1(2),'LineStyle','-','color',[0.5 0.5 0.5],'HitTest','off')
                         end
                         counter = counter + 1;
                     end
@@ -9776,53 +10138,7 @@ end
         end
     end
 
-    function rotateFig(axisToRotate)
-        % activates a rotation mode for subfig1 while maintaining the keyboard shortcuts and click functionality for the remaining plots
-%         set(UI.fig,'CurrentAxes',UI.panel.subfig_ax(axisTorate).Children)
-        rotate3d(axisToRotate,'on');
-        h = rotate3d(axisToRotate);
-        h.Enable = 'on';
-        setAllowAxesRotate(h,subfig_ax(2),false);
-        set(h,'ButtonDownFilter',@myRotateFilter);
-        try
-            % this works in R2014b, and maybe beyond:
-            [hManager.WindowListenerHandles.Enabled] = deal(false);  % HG2
-        catch
-            set(hManager.WindowListenerHandles, 'Enable', 'off');  % HG1
-        end
-        set(UI.fig, 'WindowKeyPressFcn', []);
-        set(UI.fig, 'KeyPressFcn', {@keyPress});
-        set(UI.fig, 'windowscrollWheelFcn',{@ScrolltoZoomInPlot})
-    end
     
-    function [disallowRotation] = myRotateFilter(obj,~)
-        disallowRotation = true;
-        axnum = find(ismember(subfig_ax, gca));
-        if ((UI.preferences.customPlotHistograms == 3 && axnum == 1) || (axnum > 3 && strcmp(UI.preferences.customPlot{axnum-3},'Common Coordinate Framework'))) && strcmp(get(UI.fig, 'selectiontype'),'extend') && ~isempty(UI.params.subset)
-            um_axes = get(gca,'CurrentPoint');
-            u = um_axes(1,1);
-            v = um_axes(1,2);
-            w = um_axes(1,3);
-            HighlightFromPlot(u,v,w);
-        elseif ((UI.preferences.customPlotHistograms == 3 && axnum == 1) || (axnum > 3 && strcmp(UI.preferences.customPlot{axnum-3},'Common Coordinate Framework'))) && strcmp(get(UI.fig, 'selectiontype'),'alt') && ~isempty(UI.params.subset)
-%             UI.preferences.customPlotHistograms == 3 && axnum == 1 && strcmp(get(UI.fig, 'selectiontype'),'alt') &&  ~isempty(UI.params.subset)
-            um_axes = get(gca,'CurrentPoint');
-            u = um_axes(1,1);
-            v = um_axes(1,2);
-            w = um_axes(1,3);
-            iii = FromPlot(u,v,w,0,0);
-            if iii>0
-                ii = iii;
-                UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
-                UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-                UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
-                uiresume(UI.fig);
-            end
-        elseif isfield(get(obj),'ButtonDownFcn')
-            % if a ButtonDownFcn has been defined for the object, then use that
-            disallowRotation = ~isempty(get(obj,'ButtonDownFcn'));
-        end
-    end
 
     function initializeSession
         
@@ -9912,29 +10228,24 @@ end
         UI.classes.labels = UI.preferences.cellTypes;
         
         % SWR profile initialization
-        if isempty(SWR_in)
-            if isfield(cell_metrics.general,'SWR_batch') && ~isempty(cell_metrics.general.SWR_batch)
-                
-            elseif ~UI.BatchMode
-                if isfield(cell_metrics.general,'SWR')
-                    cell_metrics.general.SWR_batch = cell_metrics.general.SWR;
-                else
-                    cell_metrics.general.SWR_batch = [];
-                end
+        if isfield(cell_metrics.general,'SWR_batch') && ~isempty(cell_metrics.general.SWR_batch)
+            
+        elseif ~UI.BatchMode
+            if isfield(cell_metrics.general,'SWR')
+                cell_metrics.general.SWR_batch = cell_metrics.general.SWR;
             else
                 cell_metrics.general.SWR_batch = [];
-                for i = 1:length(cell_metrics.general.basepaths)
-                    if isfield(cell_metrics.general.batch{i},'SWR')
-                        cell_metrics.general.SWR_batch{i} = cell_metrics.general.batch{i}.SWR;
-                    else
-                        cell_metrics.general.SWR_batch{i} = [];
-                    end
-                end
             end
         else
-            cell_metrics.general.SWR_batch = SWR_in;
+            cell_metrics.general.SWR_batch = [];
+            for i = 1:length(cell_metrics.general.basepaths)
+                if isfield(cell_metrics.general.batch{i},'SWR')
+                    cell_metrics.general.SWR_batch{i} = cell_metrics.general.batch{i}.SWR;
+                else
+                    cell_metrics.general.SWR_batch{i} = [];
+                end
+            end
         end
-        
         % Plotting menues initialization
         fieldsMenuCells = metrics_fieldsNames;
         fieldsMenuCells = fieldsMenuCells(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'cell'));
@@ -9991,9 +10302,10 @@ end
         
         % Generating extra fields if necessary
         if ~cell_metrics.general.initialized | ~isfield(cell_metrics.waveforms,{'filt_zscored','filt_absolute'})
+            
+            statusUpdate('Initializing session')
             % waveform initialization
             filtWaveform = [];
-            statusUpdate('Initializing filtered waveforms')
             for i = 1:length(cell_metrics.waveforms.filt)
                 if isempty(cell_metrics.waveforms.filt{i}) || any(isnan(cell_metrics.waveforms.filt{i}))
                     filtWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
@@ -10006,7 +10318,6 @@ end
             
             % 'All raw waveforms'
             if isfield(cell_metrics.waveforms,'raw')
-            statusUpdate('Initializing raw waveforms')
             rawWaveform = [];
             for i = 1:length(cell_metrics.waveforms.raw)
                 if isempty(cell_metrics.waveforms.raw{i}) || any(isnan(cell_metrics.waveforms.raw{i}))
@@ -10021,26 +10332,20 @@ end
             end
             
             % ACGs
-            statusUpdate('Initializing wide ACGs')
             cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide);
-
-            statusUpdate('Initializing narrow ACGs')
             cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow);
             
             if isfield(cell_metrics.acg,'log10')
-            statusUpdate('Initializing log10 ACGs')
             cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
             cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.params.ACGLogIntervals)');
             end
             
             if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')
-            statusUpdate('Initializing log10 ACGs')
             cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
             cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.params.ACGLogIntervals)');
             end
             
             if isfield(cell_metrics.responseCurves,'thetaPhase')
-                statusUpdate('Initializing response curves')
                 thetaPhaseCurves = nan(length(UI.x_bins.thetaPhase),cell_metrics.general.cellCount);
                 for i = 1:length(cell_metrics.responseCurves.thetaPhase)
                     if isempty(cell_metrics.responseCurves.thetaPhase{i}) || any(isnan(cell_metrics.responseCurves.thetaPhase{i}))
@@ -10066,36 +10371,6 @@ end
             end
         else
             tSNE_metrics = [];
-        end
-        
-        if UI.preferences.tSNE.calcWideAcg && ~isfield(tSNE_metrics,'acg_wide')
-            statusUpdate('Calculating tSNE space for wide ACGs')
-            tSNE_metrics.acg_wide = tsne([cell_metrics.acg.wide_normalized(ceil(size(cell_metrics.acg.wide_normalized,1)/2):end,:)]','Distance',UI.preferences.tSNE.dDistanceMetric,'Exaggeration',UI.preferences.tSNE.exaggeration);
-        end
-        if UI.preferences.tSNE.calcNarrowAcg && ~isfield(tSNE_metrics,'acg_narrow')
-            statusUpdate('Calculating tSNE space for narrow ACGs')
-            tSNE_metrics.acg_narrow = tsne([cell_metrics.acg.narrow_normalized(ceil(size(cell_metrics.acg.narrow_normalized,1)/2):end,:)]','Distance',UI.preferences.tSNE.dDistanceMetric,'Exaggeration',UI.preferences.tSNE.exaggeration);
-        end
-        if UI.preferences.tSNE.calcLogAcg && ~isfield(tSNE_metrics,'acg_log10') && isfield(cell_metrics.acg,'log10_normalized')
-            statusUpdate('Calculating tSNE space for log ACGs')
-            tSNE_metrics.acg_log10 = tsne([cell_metrics.acg.log10(ceil(size(cell_metrics.acg.log10_rate,1)/2):end,:)]','Distance',UI.preferences.tSNE.dDistanceMetric,'Exaggeration',UI.preferences.tSNE.exaggeration);
-        end
-        if UI.preferences.tSNE.calcLogIsi && ~isfield(tSNE_metrics,'isi_log10') && isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10_normalized')
-            statusUpdate('Calculating tSNE space for log ISIs')
-            tSNE_metrics.isi_log10 = tsne([cell_metrics.isi.log10(ceil(size(cell_metrics.isi.log10_rate,1)/2):end,:)]','Distance',UI.preferences.tSNE.dDistanceMetric,'Exaggeration',UI.preferences.tSNE.exaggeration);
-        end
-        
-        if UI.preferences.tSNE.calcFiltWaveform && ~isfield(tSNE_metrics,'filtWaveform')
-            statusUpdate('Calculating tSNE space for filtered waveforms')
-            X = cell_metrics.waveforms.filt_zscored';
-            tSNE_metrics.filtWaveform = tsne(X(:,find(~any(isnan(X)))),'Standardize',true,'Distance',UI.preferences.tSNE.dDistanceMetric,'Exaggeration',UI.preferences.tSNE.exaggeration);
-        end
-        if UI.preferences.tSNE.calcRawWaveform && ~isfield(tSNE_metrics,'rawWaveform') && isfield(cell_metrics.waveforms,'raw')
-            statusUpdate('Calculating tSNE space for raw waveforms')
-            X = cell_metrics.waveforms.raw_zscored';
-            if ~isempty(find(~any(isnan(X))))
-                tSNE_metrics.rawWaveform = tsne(X(:,find(~any(isnan(X)))),'Standardize',true,'Distance',UI.preferences.tSNE.dDistanceMetric,'Exaggeration',UI.preferences.tSNE.exaggeration);
-            end
         end
         
         if ~isfield(tSNE_metrics,'plot')
@@ -10147,7 +10422,6 @@ end
             UI.monoSyn.disp = 'None';
         end
         
-        
         % History function initialization
         if isfield(cell_metrics.general,'classificationTrackChanges') && ~isempty(cell_metrics.general.classificationTrackChanges)
             classificationTrackChanges = cell_metrics.general.classificationTrackChanges;
@@ -10171,35 +10445,19 @@ end
         history_classification(1).brainRegion = cell_metrics.brainRegion;
         history_classification(1).brainRegion_num = cell_metrics.brainRegion_num;
         history_classification(1).deepSuperficial_num = cell_metrics.deepSuperficial_num;
-        
+
         % Cell count for menu
         updateCellCount
         
-        % Button Deep-Superficial
-        UI.listbox.deepSuperficial.Value = cell_metrics.deepSuperficial_num(ii);
-        
-        % Button brain region
-        UI.pushbutton.brainRegion.String = ['Region: ', cell_metrics.brainRegion{ii}];
-        
-        % Button label
-        UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
-        
-        waveformOptions = {'Waveforms (single)';'Waveforms (all)'};
+        waveformOptions = {'Waveforms (single)';'Waveforms (all)';'Waveforms (group averages)'};
         if isfield(cell_metrics.waveforms,'filt_all') && isfield(cell_metrics.waveforms,'time_all')
             waveformOptions = [waveformOptions;'Waveforms (across channels)';'Waveforms (image across channels)'];
         end
         waveformOptions = [waveformOptions;'Waveforms (image)'];
         
-        if isfield(tSNE_metrics,'filtWaveform')
-            waveformOptions = [waveformOptions;'Waveforms (tSNE)'];
-        end
         if isfield(cell_metrics.waveforms,'raw')
             waveformOptions = [waveformOptions;'Waveforms (raw single)';'Waveforms (raw all)'];
-            if isfield(tSNE_metrics,'rawWaveform')
-                waveformOptions = [waveformOptions;'Raw waveforms (tSNE)'];
-            end
         end
-        
         temp = fieldnames(cell_metrics.waveforms);
         temp(ismember(temp,{'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time','bestChannels'}) | ~structfun(@iscell,cell_metrics.waveforms)) = [];
         for i = 1:length(temp)
@@ -10213,17 +10471,11 @@ end
             waveformOptions = [waveformOptions;'Common Coordinate Framework'];
         end
         
-        acgOptions = {'ACGs (single)';'ACGs (all)';'ACGs (image)';'CCGs (image)'};
+        acgOptions = {'ACGs (single)';'ACGs (all)';'ACGs (group averages)';'ACGs (image)';'CCGs (image)'};
         if isfield(cell_metrics,'isi')
             acgOptions = [acgOptions;'ISIs (single)';'ISIs (all)';'ISIs (image)'];
         end
-        tSNE_list = {'acg_narrow','acg_wide','acg_log10','isi_log10'};
-        tSNE_listLabels = {'tSNE of narrow ACGs','tSNE of wide ACGs','tSNE of log ACGs','tSNE of log ISIs'};
-        for i = 1:length(tSNE_list)
-            if isfield(tSNE_metrics,tSNE_list{i})
-                acgOptions = [acgOptions;tSNE_listLabels{i}];
-            end
-        end
+
         if isfield(cell_metrics.responseCurves,'thetaPhase_zscored')
             responseCurvesOptions = {'RCs_thetaPhase';'RCs_thetaPhase (all)';'RCs_thetaPhase (image)'};
         else
@@ -10239,13 +10491,21 @@ end
                 responseCurvesOptions = [responseCurvesOptions;['RCs_',responseCurvesFields{i}];['RCs_',responseCurvesFields{i},' (image)'];['RCs_',responseCurvesFields{i},' (all)']];
             end
         end
+        
         if isfield(cell_metrics,'spikes')
-            responseCurvesOptions = [responseCurvesOptions;'raster_'];
+            rasterOption = {'Spike raster'};
+        else
+            rasterOption = [];
         end
+        
         % Custom plot options
-        customPlotOptions = what('customPlots');
-        customPlotOptions = cellfun(@(X) X(1:end-2),customPlotOptions.m,'UniformOutput', false);
-        customPlotOptions(strcmpi(customPlotOptions,'template')) = [];
+        if isdeployed
+            customPlotOptions = {};
+        else
+            customPlotOptions = what('customPlots');
+            customPlotOptions = cellfun(@(X) X(1:end-2),customPlotOptions.m,'UniformOutput', false);
+            customPlotOptions(strcmpi(customPlotOptions,'template')) = [];
+        end
         
         % cell_metricsFieldnames = fieldnames(cell_metrics,'-full');
         structFieldsType = metrics_fieldsNames(find(strcmp(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),'struct')));
@@ -10262,7 +10522,7 @@ end
             monosynOptions = [];
         end
         plotOptions(find(contains(plotOptions,UI.params.plotOptionsToExlude)))=[]; %
-        plotOptions = unique([waveformOptions; acgOptions; monosynOptions; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
+        plotOptions = unique([waveformOptions; acgOptions; monosynOptions; rasterOption; customPlotOptions; plotOptions;responseCurvesOptions],'stable');
         
         % Initilizing views
         for i = 1:6
@@ -10314,7 +10574,7 @@ end
         
         % fixed axes limits for subfig2 and subfig3 to increase performance
         fig2_axislimit_x = [min(cell_metrics.troughToPeak * 1000),max(cell_metrics.troughToPeak * 1000)];
-        fig2_axislimit_y = [min(cell_metrics.burstIndex_Royer2012(cell_metrics.burstIndex_Royer2012>0)),max(cell_metrics.burstIndex_Royer2012(cell_metrics.burstIndex_Royer2012<Inf))];
+        fig2_axislimit_y = [min(cell_metrics.acg_tau_rise(cell_metrics.acg_tau_rise>0)),max(cell_metrics.acg_tau_rise(cell_metrics.acg_tau_rise<Inf))];
         fig3_axislimit_x = [min(tSNE_metrics.plot(:,1)), max(tSNE_metrics.plot(:,1))];
         fig3_axislimit_y = [min(tSNE_metrics.plot(:,2)), max(tSNE_metrics.plot(:,2))];
         
@@ -10335,12 +10595,16 @@ end
         UI.fig.Name = ['CellExplorer v' num2str(CellExplorerVersion), ': ',cell_metrics.general.basename];
         
         % Initialize spike plot options
-        customSpikePlotOptions = what('customSpikesPlots');
-        customSpikePlotOptions = cellfun(@(X) X(1:end-2),customSpikePlotOptions.m,'UniformOutput', false);
-        customSpikePlotOptions(strcmpi(customSpikePlotOptions,'spikes_template')) = [];
-        spikesPlots = {};
-        for i = 1:length(customSpikePlotOptions)
-            spikesPlots.(customSpikePlotOptions{i}) = customSpikesPlots.(customSpikePlotOptions{i});
+        if isdeployed
+            spikesPlots = {};
+        else
+            customSpikePlotOptions = what('customSpikesPlots');
+            customSpikePlotOptions = cellfun(@(X) X(1:end-2),customSpikePlotOptions.m,'UniformOutput', false);
+            customSpikePlotOptions(strcmpi(customSpikePlotOptions,'spikes_template')) = [];
+            spikesPlots = {};
+            for i = 1:length(customSpikePlotOptions)
+                spikesPlots.(customSpikePlotOptions{i}) = customSpikesPlots.(customSpikePlotOptions{i});
+            end
         end
         cell_metrics.general.initialized = 1;
     end
@@ -10388,7 +10652,7 @@ end
             referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas)'))';
         end
         fig2_axislimit_x1 = [min([cell_metrics.troughToPeak * 1000,fig2_axislimit_x(1)]),max([cell_metrics.troughToPeak * 1000, fig2_axislimit_x(2)])];
-        fig2_axislimit_y1 = [min([cell_metrics.burstIndex_Royer2012(cell_metrics.burstIndex_Royer2012>0),fig2_axislimit_y(1)]),max([cell_metrics.burstIndex_Royer2012(cell_metrics.burstIndex_Royer2012<Inf),fig2_axislimit_y(2)])];
+        fig2_axislimit_y1 = [min([cell_metrics.acg_tau_rise(cell_metrics.acg_tau_rise>0),fig2_axislimit_y(1)]),max([cell_metrics.acg_tau_rise(cell_metrics.acg_tau_rise<Inf),fig2_axislimit_y(2)])];
         
         % Creating surface of reference points
         referenceData.x = linspace(fig2_axislimit_x1(1),fig2_axislimit_x1(2),UI.preferences.binCount);
@@ -10405,7 +10669,7 @@ end
         referenceData.z = zeros(length(referenceData.x)-1,length(referenceData.y)-1,3,size(colors,1));
         for i = temp
             idx = find(referenceData.clusClas==i);
-            [z_referenceData_temp,~,~] = histcounts2(cell_metrics.troughToPeak(idx) * 1000, cell_metrics.burstIndex_Royer2012(idx),referenceData.x,referenceData.y,'norm','probability');
+            [z_referenceData_temp,~,~] = histcounts2(cell_metrics.troughToPeak(idx) * 1000, cell_metrics.acg_tau_rise(idx),referenceData.x,referenceData.y,'norm','probability');
             referenceData.z(:,:,:,i) = bsxfun(@times,repmat(conv2(z_referenceData_temp,gauss2d,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
             
         end
@@ -10545,7 +10809,6 @@ end
                 end
                 return
             end
-            SWR_in = {};
             
             statusUpdate('Initializing session(s)')
             initializeSession
@@ -10632,7 +10895,7 @@ end
     function general = generateCCGs(batchIDsIn,general)
         if (~isfield(general,'ccg') || size(general.ccg,2) < general.cellCount) && isfield(cell_metrics,'spikes') && isfield(cell_metrics.spikes,'times')
             if UI.BatchMode
-                subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                subset1 = find(cell_metrics.batchIDs==cell_metrics.batchIDs(ii));
                 if numel(cell_metrics.spikes.times) < max(subset1)
                    return 
                 end
@@ -11708,10 +11971,10 @@ end
             UI.panel.subfig_ax(7).Visible = 'off';
             UI.panel.subfig_ax(8).Visible = 'off';
             UI.panel.subfig_ax(9).Visible = 'off';
-            UI.panel.subfig_ax(1).Position = [0 0 0.7 1];
+            UI.panel.subfig_ax(1).Position = [0    0    0.7 1];
             UI.panel.subfig_ax(4).Position = [0.70 0.67 0.3 0.33];
             UI.panel.subfig_ax(5).Position = [0.70 0.33 0.3 0.34];
-            UI.panel.subfig_ax(6).Position = [0.70 0 0.3 0.33];
+            UI.panel.subfig_ax(6).Position = [0.70 0    0.3 0.33];
          elseif UI.preferences.layout == 2
             % GUI: 2+3 figures
             UI.popupmenu.customplot{4}.Enable = 'off';
@@ -11722,11 +11985,11 @@ end
             UI.panel.subfig_ax(7).Visible = 'off';
             UI.panel.subfig_ax(8).Visible = 'off';
             UI.panel.subfig_ax(9).Visible = 'off';
-            UI.panel.subfig_ax(1).Position = [0 0.4 0.5 0.6];
-            UI.panel.subfig_ax(3).Position = [0.5 0.4 0.5 0.6];
-            UI.panel.subfig_ax(4).Position = [0 0 0.33 0.4];
-            UI.panel.subfig_ax(5).Position = [0.33 0 0.34 0.4];
-            UI.panel.subfig_ax(6).Position = [0.67 0 0.33 0.4];
+            UI.panel.subfig_ax(1).Position = [0    0.4 0.5  0.6];
+            UI.panel.subfig_ax(3).Position = [0.5  0.4 0.5  0.6];
+            UI.panel.subfig_ax(4).Position = [0    0   0.33 0.4];
+            UI.panel.subfig_ax(5).Position = [0.33 0   0.34 0.4];
+            UI.panel.subfig_ax(6).Position = [0.67 0   0.33 0.4];
         elseif UI.preferences.layout == 3
             % GUI: 3+3 figures
             UI.popupmenu.customplot{4}.Enable = 'off';
@@ -11737,12 +12000,12 @@ end
             UI.panel.subfig_ax(7).Visible = 'off';
             UI.panel.subfig_ax(8).Visible = 'off';
             UI.panel.subfig_ax(9).Visible = 'off';
-            UI.panel.subfig_ax(1).Position = [0 0.5 0.33 0.5];
+            UI.panel.subfig_ax(1).Position = [0    0.5 0.33 0.5];
             UI.panel.subfig_ax(2).Position = [0.33 0.5 0.34 0.5];
             UI.panel.subfig_ax(3).Position = [0.67 0.5 0.33 0.5];
-            UI.panel.subfig_ax(4).Position = [0 0 0.33 0.5];
-            UI.panel.subfig_ax(5).Position = [0.33 0 0.34 0.5];
-            UI.panel.subfig_ax(6).Position = [0.67 0 0.33 0.5];
+            UI.panel.subfig_ax(4).Position = [0    0   0.33 0.5];
+            UI.panel.subfig_ax(5).Position = [0.33 0   0.34 0.5];
+            UI.panel.subfig_ax(6).Position = [0.67 0   0.33 0.5];
         elseif UI.preferences.layout == 4
             % GUI: 3+4 figures
             UI.popupmenu.customplot{4}.Enable = 'on';
@@ -11753,13 +12016,13 @@ end
             UI.panel.subfig_ax(7).Visible = 'on';
             UI.panel.subfig_ax(8).Visible = 'off';
             UI.panel.subfig_ax(9).Visible = 'off';
-            UI.panel.subfig_ax(1).Position = [0 0.5 0.33 0.5];
-            UI.panel.subfig_ax(2).Position = [0.33 0.5 0.34 0.5];
-            UI.panel.subfig_ax(3).Position = [0.67 0.5 0.33 0.5];
-            UI.panel.subfig_ax(4).Position = [0 0 0.33 0.5];
-            UI.panel.subfig_ax(5).Position = [0.33 0 0.34 0.5];
-            UI.panel.subfig_ax(6).Position = [0.67 0.25 0.33 0.25];
-            UI.panel.subfig_ax(7).Position = [0.67 0 0.33 0.25];
+            UI.panel.subfig_ax(1).Position = [0    0.5  0.33 0.5];
+            UI.panel.subfig_ax(2).Position = [0.33 0.5  0.34 0.5];
+            UI.panel.subfig_ax(3).Position = [0.67 0.5  0.33 0.5];
+            UI.panel.subfig_ax(4).Position = [0    0.25 0.33 0.25];
+            UI.panel.subfig_ax(5).Position = [0.33 0    0.34 0.5];
+            UI.panel.subfig_ax(6).Position = [0.67 0    0.33 0.5];
+            UI.panel.subfig_ax(7).Position = [0    0    0.33 0.25];
         elseif UI.preferences.layout == 5
             % GUI: 3+5 figures
             UI.popupmenu.customplot{4}.Enable = 'on';
@@ -11770,14 +12033,14 @@ end
             UI.panel.subfig_ax(7).Visible = 'on';
             UI.panel.subfig_ax(8).Visible = 'on';
             UI.panel.subfig_ax(9).Visible = 'off';
-            UI.panel.subfig_ax(1).Position = [0 0.5 0.33 0.5];
-            UI.panel.subfig_ax(2).Position = [0.33 0.5 0.33 0.5];
-            UI.panel.subfig_ax(3).Position = [0.67 0.5 0.33 0.5];
-            UI.panel.subfig_ax(4).Position = [0 0 0.33 0.5];
+            UI.panel.subfig_ax(1).Position = [0    0.5  0.33 0.5];
+            UI.panel.subfig_ax(2).Position = [0.33 0.5  0.33 0.5];
+            UI.panel.subfig_ax(3).Position = [0.67 0.5  0.33 0.5];
+            UI.panel.subfig_ax(4).Position = [0    0.25 0.33 0.25];
             UI.panel.subfig_ax(5).Position = [0.33 0.25 0.34 0.25];
-            UI.panel.subfig_ax(6).Position = [0.67 0.25 0.33 0.25];
-            UI.panel.subfig_ax(7).Position = [0.33 0 0.34 0.25];
-            UI.panel.subfig_ax(8).Position = [0.67 0 0.33 0.25];
+            UI.panel.subfig_ax(6).Position = [0.67 0    0.33 0.5];
+            UI.panel.subfig_ax(7).Position = [0.0  0    0.34 0.25];
+            UI.panel.subfig_ax(8).Position = [0.33 0    0.33 0.25];
         elseif UI.preferences.layout == 6
             % GUI: 3+6 figures
             UI.popupmenu.customplot{4}.Enable = 'on';
@@ -11788,15 +12051,15 @@ end
             UI.panel.subfig_ax(7).Visible = 'on';
             UI.panel.subfig_ax(8).Visible = 'on';
             UI.panel.subfig_ax(9).Visible = 'on';
-            UI.panel.subfig_ax(1).Position = [0 0.67 0.33 0.33];
-            UI.panel.subfig_ax(2).Position = [0.33 0.67 0.34 0.33];
-            UI.panel.subfig_ax(3).Position = [0.67 0.67 0.33 0.33];
-            UI.panel.subfig_ax(4).Position = [0 0.33 0.33 0.34];
-            UI.panel.subfig_ax(5).Position = [0.33 0.33 0.34 0.34];
-            UI.panel.subfig_ax(6).Position = [0.67 0.33 0.33 0.34];
-            UI.panel.subfig_ax(7).Position = [0 0 0.33 0.33];
-            UI.panel.subfig_ax(8).Position = [0.33 0 0.34 0.33];
-            UI.panel.subfig_ax(9).Position = [0.67 0 0.33 0.33];
+            UI.panel.subfig_ax(1).Position = [0    0.67  0.33 0.33];
+            UI.panel.subfig_ax(2).Position = [0.33 0.67  0.34 0.33];
+            UI.panel.subfig_ax(3).Position = [0.67 0.67  0.33 0.33];
+            UI.panel.subfig_ax(4).Position = [0    0.33  0.33 0.34];
+            UI.panel.subfig_ax(5).Position = [0.33 0.33  0.34 0.34];
+            UI.panel.subfig_ax(6).Position = [0.67 0.33  0.33 0.34];
+            UI.panel.subfig_ax(7).Position = [0    0     0.33 0.33];
+            UI.panel.subfig_ax(8).Position = [0.33 0     0.34 0.33];
+            UI.panel.subfig_ax(9).Position = [0.67 0     0.33 0.33];
         elseif UI.preferences.layout == 7
             % GUI: 1+6 figures.
             UI.popupmenu.customplot{4}.Enable = 'on';
@@ -11807,10 +12070,10 @@ end
             UI.panel.subfig_ax(7).Visible = 'on';
             UI.panel.subfig_ax(8).Visible = 'on';
             UI.panel.subfig_ax(9).Visible = 'on';
-            UI.panel.subfig_ax(1).Position = [0 0 0.5 1];
-            UI.panel.subfig_ax(4).Position = [0.5 0.67 0.25 0.33];
-            UI.panel.subfig_ax(5).Position = [0.5 0.33 0.25 0.34];
-            UI.panel.subfig_ax(6).Position = [0.5 0    0.25 0.33];
+            UI.panel.subfig_ax(1).Position = [0    0    0.5  1];
+            UI.panel.subfig_ax(4).Position = [0.5  0.67 0.25 0.33];
+            UI.panel.subfig_ax(5).Position = [0.5  0.33 0.25 0.34];
+            UI.panel.subfig_ax(6).Position = [0.5  0    0.25 0.33];
             UI.panel.subfig_ax(7).Position = [0.75 0.67 0.25 0.33];
             UI.panel.subfig_ax(8).Position = [0.75 0.33 0.25 0.34];
             UI.panel.subfig_ax(9).Position = [0.75 0    0.25 0.33];
@@ -12023,7 +12286,7 @@ end
                         UI.params.connections = [UI.params.incoming;UI.params.outgoing];
                     end
                     
-                    customPlot(plotOptionsIn,ii,general1,batchIDs1,testFig,0,1);
+                    customPlot(plotOptionsIn,ii,general1,batchIDs1,testFig,0,1,13);
                     drawnow nocallbacks;
                     t_bench(i_rep,j) = toc(timerVal1);
                 end
@@ -12036,6 +12299,8 @@ end
     function keyPress(~, event)
         % Keyboard shortcuts
         switch event.Key
+            case 'f'
+                goToCell
             case 'h'
                 HelpDialog;
             case 'm'
@@ -12044,6 +12309,9 @@ end
             case 'n'
                 % Adjusts the number of subplots in the GUI
                 AdjustGUIkey;
+            case 'r'
+                % Hide/show menubar
+                resetZoom
             case 'z'
                 % undoClassification;
             case 'j'
@@ -12101,7 +12369,16 @@ end
                 uiresume(UI.fig);
         end
     end
-
+    
+    function resetZoom
+        axis tight
+%         axnum = getAxisBelowCursor;
+%         if ~isempty(axnum)
+%             set(subfig_ax(axnum),'XLim',[0,UI.settings.windowDuration],'YLim',[0,1]);
+%             axis tight
+%         end
+    end
+    
     function nextSession
         if UI.BatchMode
             temp = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii)+1,1);
@@ -12175,16 +12452,16 @@ end
         if ismac; scs  = 'Cmd + '; else; scs  = 'Ctrl + '; end
         shortcutList = { '','<html><b>Navigation</b></html>';
             '> (right arrow)','Next cell'; '< (left arrow)','Previous cell'; '. (dot)','+10 cell (+shift: Next cell with same class)'; ', (comma) ','-10 cell (+shift: Previous cell with same class)';
-            [scs,'F '],'Go to a specific cell'; 'Page Up ','Next session in batch (only in batch mode)'; 'Page Down','Previous session in batch (only in batch mode)';
+            ['F '],'Go to a specific cell'; 'Page Up ','Next session in batch (only in batch mode)'; 'Page Down','Previous session in batch (only in batch mode)';
             'Numpad0','First cell'; 'Numpad1-9 ','Next cell with that numeric class'; 'Backspace','Previously selected cell'; 'Numeric + / - / *','Zoom in / zoom out / reset plots'; '   ',''; 
             '','<html><b>Cell assigments</b></html>';
-            '1-9 ','Cell-types'; [scs,'B'],'Brain region'; [scs,'L'],'Label'; [scs,'Z'],'Undo assignment'; [scs,'R'],'Reclassify cell types'; ' ',' ';
+            '1-9 ','Cell-types'; [scs,'B'],'Brain region'; [scs,'L'],'Label'; [scs,'Z'],'Undo assignment'; ' ',' ';
             '','<html><b>Display shortcuts</b></html>';
             'M','Show/Hide menubar'; 'N','Change layout [6; 5 or 4 subplots]'; [scs,'E'],'Highlight excitatory cells (triangles)'; [scs,'I'],'Highlight inhibitory cells (circles)';
             [scs,'F'],'Display ACG fit'; 'K','Calculate and display significance matrix for all metrics (KS-test)'; [scs,'T'],'Calculate tSNE space from a selection of metrics';
-            'W','Display waveform metrics'; [scs,'Y'],'Perform ground truth cell type classification'; [scs,'U'],'Load ground truth cell types'; 'Space','Show action dialog'; '  ','';
+            'W','Display waveform metrics'; [scs,'Y'],'Perform ground truth cell type classification'; [scs,'U'],'Load ground truth cell types'; 'Space','Show action dialog'; 'R','Reset zoom'; '  ','';
             '','<html><b>Other shortcuts</b></html>';
-            [scs,'P'],'Open preferences for CellExplorer'; [scs,'C'],'Open the file directory of the selected cell'; [scs,'D'],'Opens sessions from BuzLabDB';
+            [scs,'P'],'Polygon selection of cells'; [scs,'C'],'Open the file directory of the selected cell'; [scs,'D'],'Opens sessions from BuzLabDB';
             [scs,'A'],'Open spike data menu'; [scs,'J'],'Modify parameters for a spike plot'; [scs,'V'],'Visit the CellExplorer website in your browser';
             '',''; '','<html><b>Visit the CellExplorer website for further help and documentation</html></b>'; };
         if ismac

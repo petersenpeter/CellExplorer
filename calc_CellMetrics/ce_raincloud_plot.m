@@ -72,7 +72,7 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     addOptional(p, 'normalization', 'Peak', @ischar)
     addOptional(p, 'norm_value', 1, @isnumeric)
     addOptional(p, 'scatter_on', 1, @isnumeric)
-    
+    addOptional(p, 'ylim', get(gca, 'YLim'), @isnumeric)
     % parse the input
     parse(p,X,varargin{:});
     
@@ -98,6 +98,7 @@ function drops_pos = ce_raincloud_plot(X, varargin)
     normalization       = p.Results.normalization;
     norm_value          = p.Results.norm_value;
     scatter_on          = p.Results.scatter_on;
+    yl                  = p.Results.ylim;
     
     % calculate kernel density
     X = X(~isnan(X) & ~isinf(X));
@@ -112,24 +113,25 @@ function drops_pos = ce_raincloud_plot(X, varargin)
         if all(isnan(X))
             return
         end
-        [f, Xi, ~] = ksdensity(log10(X), 'bandwidth', band_width);
+        [f, Xi, ~] = ksdensity(log10(X), 'bandwidth', band_width,'Function','pdf');
         Xi = 10.^Xi;
     else
-        [f, Xi, ~] = ksdensity(X, 'bandwidth', band_width);
+        [f, Xi, ~] = ksdensity(X, 'bandwidth', band_width,'Function','pdf');
     end
     
     % density plot
     if strcmp(normalization,'Peak')
         f = f/max(f);
     elseif strcmp(normalization,'Count')
-        f = f*length(X)/norm_value;
-    else
-        f = f/100*length(Xi);
+        f = f/sum(f)*norm_value;
+    else % Probability
+%         f = f*length(Xi)/100;
+        f = f/sum(f);
     end
     h{1} = area(Xi, f, 'FaceColor', color, 'EdgeColor', cloud_edge_col, 'LineWidth', line_width, 'FaceAlpha', alpha); hold on
     % make some space under the density plot for the boxplot and raindrops
-    yl = get(gca, 'YLim');
-    set(gca, 'YLim', [-yl(2)*lwr_bnd yl(2)]);
+%     yl = get(gca, 'YLim');
+%     set(gca, 'YLim', [-yl(2)*lwr_bnd yl(2)]);
     
     % width of boxplot
     wdth = yl(2) * 0.25;

@@ -544,12 +544,12 @@ saveOnExitDialog
             mono_res.sig_con_inhibitory = keep_con;
         end
         connectionsDisplayed = UI.switchConnectionType.Value;
-        if connectionsDisplayed == 1 && displayAllConnections.Value == 0
+        if connectionsDisplayed == 1 && displayAllConnections.Value == 0 && ~isempty(mono_res.sig_con_excitatory)
             sig_con = mono_res.sig_con_excitatory;
             keep_con = sig_con;
             allcel = unique(sig_con(:));
 %             disp('Excitatory connections')
-        elseif connectionsDisplayed == 1 && displayAllConnections.Value == 1
+        elseif connectionsDisplayed == 1 && displayAllConnections.Value == 1 && ~isempty(mono_res.sig_con_excitatory)
             keep_con = mono_res.sig_con_excitatory;
             if ~isempty(mono_res.sig_con_excitatory_all)
                 sig_con = mono_res.sig_con_excitatory_all;
@@ -574,7 +574,12 @@ saveOnExitDialog
             end
             allcel = unique(sig_con(:));
 %             disp('Inhibitory connections (all)')
-        else
+        elseif connectionsDisplayed == 1 && isempty(mono_res.sig_con_excitatory)
+            connectionsDisplayed = 2;
+            UI.switchConnectionType.Value = connectionsDisplayed;
+            warndlg('No excitatory connections detected');
+            return
+        else 
             connectionsDisplayed = 1;
             UI.switchConnectionType.Value = connectionsDisplayed;
             warndlg('No inhibitory connections detected');
