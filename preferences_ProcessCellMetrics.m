@@ -34,12 +34,15 @@ preferences.acg_metrics.population_modIndex = true;
 preferences.other.firingRateAcrossTime_binsize = 3*60;      % 180 seconds default bin_size
 
 % PutativeCellType
-% Cells are reassigned as interneurons by below criteria
-% First narrow interneurons are determined:
-preferences.putativeCellType.troughToPeak_boundary = 0.425; % Narrow interneuron assigned if troughToPeak <= 0.425ms
+% Default classification schema:
+preferences.putativeCellType.classification_schema = 'standard'; % You may select and define your own schema. The classification schemas are loaded from +celltype_classification
 
-% Second, from the remaining cells the wide interneurons are determined:
-preferences.putativeCellType.acg_tau_rise_boundary = 6;     % acg_tau_rise > 6ms
+% By default cells are reassigned as interneurons by below criteria
+% 1. narrow interneurons are assigned if troughToPeak <= 0.425ms
+preferences.putativeCellType.troughToPeak_boundary = 0.425; % 
+% 2. the remaining cells are assigned as wide interneurons if acg_tau_rise > 6ms:
+preferences.putativeCellType.acg_tau_rise_boundary = 6;
+% Remaining cells are classified as pyramidal cells
 
 % PCA
 

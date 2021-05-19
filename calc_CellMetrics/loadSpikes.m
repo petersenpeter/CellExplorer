@@ -1,7 +1,15 @@
 function spikes = loadSpikes(varargin)
-% Load clustered data from multiple pipelines [
-% Current supported formats: Phy (default), Klustakwik/Neurosuite, MClust, KlustaViewa, ALF, AllenSDK (NWB), UltraMegaSort2000, Wave_clus, Sebastien Royer's lab standard, 
-% Buzcode compatible output. Saves output to a basename.spikes.cellinfo.mat file
+% Load clustered data from multiple pipelines. Currently supported formats: 
+%      Phy (default)
+%      Klustakwik/Neurosuite
+%      MClust
+%      NWB,
+%      KlustaViewa
+%      ALF
+%      AllenSDK (via NWB files and their API data files)
+%      UltraMegaSort2000
+%      Wave_clus
+%      Sebastien Royer's lab standard
 %
 % Please see the CellExplorer website: https://cellexplorer.org/datastructure/data-structure-and-format/#spikes
 %
@@ -11,7 +19,7 @@ function spikes = loadSpikes(varargin)
 %
 % OUTPUT
 %
-% spikes:               - Matlab struct following the buzcode standard (https://github.com/buzsakilab/buzcode)
+% spikes:               - Matlab struct described here: https://cellexplorer.org/datastructure/data-structure-and-format/#spikes
 %     .basename         - Name of recording file
 %     .sr               - Sampling rate
 %     .UID              - Unique identifier for each neuron in a recording
@@ -39,7 +47,7 @@ function spikes = loadSpikes(varargin)
 %
 %
 % EXAMPLE CALLS
-% spikes = loadSpikes('session',session);
+% spikes = loadSpikes('session',session); % clustering format should be specified in the struct
 % spikes = loadSpikes('basepath',pwd,'clusteringpath',Kilosort_RelativeOutputPath); % Run from basepath, assumes Phy format.
 % spikes = loadSpikes('basepath',pwd,'format','mclust'); % Run from basepath, loads MClust format.
 
@@ -58,9 +66,9 @@ function spikes = loadSpikes(varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
-addParameter(p,'clusteringpath','',@ischar); % clustering path to spike data
-addParameter(p,'format','Phy',@ischar); % clustering format: [phy, klustakwik/neurosuite, KlustaViewa, Wave_clus, MClust, UltraMegaSort2000, ALF, AllenSDK]
-                                                  % TODO: 'NWB' 'SpyKING CIRCUS', 'MountainSort', 'IronClust'
+addParameter(p,'clusteringpath','',@ischar); % relativ clustering path to spike data (optional)
+addParameter(p,'format','Phy',@ischar); % clustering format: phy, klustakwik/neurosuite, KlustaViewa, NWB, Wave_clus, MClust, UltraMegaSort2000, ALF, AllenSDK
+                                                     % TODO: 'SpyKING CIRCUS', 'MountainSort', 'IronClust'
 addParameter(p,'basename','',@ischar); % The basename file naming convention
 addParameter(p,'shanks',nan,@isnumeric); % shanks: Loading only a subset of shanks (only applicable to Klustakwik)
 addParameter(p,'raw_clusters',false,@islogical); % raw_clusters: Load only a subset of clusters (might not work anymore as it has not been tested for a long time)
@@ -704,7 +712,7 @@ if parameters.forceReload
                 UID = UID+1;
             end
             
-        case {'wave_clus'}            
+        case {'wave_clus'}
             UID = 1;
             fileList = dir(fullfile(clusteringpath_full,'times_*.mat'));
             fileList = {fileList.name};

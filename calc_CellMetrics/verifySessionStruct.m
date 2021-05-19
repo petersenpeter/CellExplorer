@@ -69,7 +69,7 @@ for i = 1:numel(fields_1stLevel)
         
         fields_required = session_fields.(fields_1stLevel{i}).required;
         for j = 1:numel(fields_required)
-            if ~isempty(session.spikeSorting) && isfield(session.(fields_1stLevel{i}){1},fields_required{j}) && ~isempty(session.(fields_1stLevel{i}){1}.(fields_required{j}))
+            if isfield(session,'spikeSorting') && ~isempty(session.spikeSorting) && isfield(session.(fields_1stLevel{i}){1},fields_required{j}) && ~isempty(session.(fields_1stLevel{i}){1}.(fields_required{j}))
                 shortcutList = [shortcutList;{fields_required{j},'OK '}];
             else
                 shortcutList = [shortcutList;{fields_required{j},'<html><b><font color="red">Not defined</font></b></html>'}];
@@ -79,7 +79,7 @@ for i = 1:numel(fields_1stLevel)
         
         fields_optional = session_fields.(fields_1stLevel{i}).optional;
         for j = 1:numel(fields_optional)
-            if ~isempty(session.spikeSorting) && isfield(session.(fields_1stLevel{i}){1},fields_optional{j}) && ~isempty(session.(fields_1stLevel{i}){1}.(fields_optional{j}))
+            if isfield(session,'spikeSorting') && ~isempty(session.spikeSorting) && isfield(session.(fields_1stLevel{i}){1},fields_optional{j}) && ~isempty(session.(fields_1stLevel{i}){1}.(fields_optional{j}))
                 shortcutList = [shortcutList;{fields_optional{j},'OK '}];
             else
                 shortcutList = [shortcutList;{fields_optional{j},'<html><b><font color="blue">optional</font></b></html>'}];

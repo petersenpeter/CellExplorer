@@ -257,7 +257,7 @@ UI.panel.main = uipanel('Parent',UI.panel.center); % Main plot panel
 set(UI.panel.center, 'Heights', [20 -1]); % set center panel size
 
 tabsList = {'general','epochs','animal','extracellular','spikeSorting','brainRegions','channelTags','inputs','behaviors'};
-tabsList2 = {'General','Epochs','Animal subject','Extracellular','Spike sorting','Brain regions','Tags','Inputs & time series','Behavioral tracking'};
+tabsList2 = {'General','Epochs','Animal subject','Extracellular','Spike sorting','Brain regions','Tags','Time series & inputs','Behavioral tracking'};
 if exist('parameters','var') && ~isempty(parameters)
     tabsList = ['parameters',tabsList];
     tabsList2 = ['CellExplorer',tabsList2];
@@ -296,20 +296,33 @@ if exist('parameters','var') && ~isempty(parameters)
     UI.listbox.metricsToExcludeManipulationIntervals = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[415 340 195 160],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metricsToExcludeManipulationIntervals),'Units','normalized','tooltip',sprintf('Select metrics to exclude manipulation intervals'));
 
     % Parameters
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Parameters', 'Position', [5, 300, 288, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Parameters', 'Position', [10, 320, 288, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     for iParams = 1:length(UI.list.params)
-        if iParams <=6
+        if iParams <=4
             offset = 10;
-        elseif iParams >12
+        elseif iParams >8
             offset = 410;
         else
             offset = 210;
         end
-        UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.parameters,'Style','checkbox','Position',[offset 285-rem(iParams-1,6)*18 260 15],'Units','normalized','String',UI.list.params{iParams});
+        UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.parameters,'Style','checkbox','Position',[offset 305-rem(iParams-1,4)*18 260 15],'Units','normalized','String',UI.list.params{iParams});
     end
     
-    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 305, 195, 30],'String','Verfiy metadata','Callback',@(src,evnt)performStructVerification,'Units','normalized');
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Preferences', 'Position', [5, 160, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    
+    if isdeployed
+        classification_schema_list = {'standard'};
+        classification_schema_value = 1;
+    else
+        classification_schema_list = what('celltype_classification');
+        classification_schema_list = cellfun(@(X) X(1:end-2),classification_schema_list.m,'UniformOutput', false);
+        
+        classification_schema_value = find(strcmp(parameters.preferences.putativeCellType.classification_schema,classification_schema_list));
+    end
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Cell-type classification schema', 'Position', [10, 210, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.edit.classification_schema = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', classification_schema_list, 'value', classification_schema_value, 'Position', [5, 190, 200, 20],'HorizontalAlignment','left','Units','normalized');
+
+    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 195, 195, 30],'String','Verfiy metadata','Callback',@(src,evnt)performStructVerification,'Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Preferences', 'Position', [10, 160, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     UI.buttons.preferences = uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 165, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics);
     UI.table.preferences = uitable(UI.tabs.parameters,'Data',{},'Position',[5, 5, 605 , 155],'ColumnWidth',{100 160 320},'columnname',{'Category','Name','Value'},'RowName',[],'ColumnEditable',[false false false],'Units','normalized');
 end
@@ -542,23 +555,23 @@ uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 5, 
 % uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[340, 10, 110, 30],'String','Duplicate tag','Callback',@(src,evnt)duplicateAnalysis,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
-% Inputs
-
-tableData = {false,'','',''};
-UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 619, 220],'ColumnWidth',{20 120 75 70 140 187},'columnname',{'','Input tag','Channels','Type','Equipment','Description'},'ColumnFormat',{'logical','char','char',UI.list.inputsType,'char','char'},'RowName',[],'ColumnEditable',[true false true true true true true],'Units','normalized','CellEditCallback',@editInputsTableData);
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 260, 110, 32],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
-
-% % % % % % % % % % % % % % % % % % % % %
 % Time series
 
 tableData = {false,'','',''};
-UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 45, 619, 210],'ColumnWidth',{20 90 105 60 70 40 60 90 78},'columnname',{'','Time series tag','File name', 'Precision', 'nChannels', 'sr', 'nSamples', 'least significant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false true true true true true true true],'Units','normalized','CellEditCallback',@editTimeSeriesTableData);
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 5, 120, 32],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
+UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 619, 220],'ColumnWidth',{20 90 105 60 70 40 60 90 78},'columnname',{'','Time series tag','File name', 'Precision', 'nChannels', 'sr', 'nSamples', 'least significant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false true true true true true true true],'Units','normalized','CellEditCallback',@editTimeSeriesTableData);
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 260, 120, 32],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
 % UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[500, 10, 110, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
+
+% % % % % % % % % % % % % % % % % % % % %
+% Inputs
+
+tableData = {false,'','',''};
+UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 45, 619, 210],'ColumnWidth',{20 120 75 70 140 187},'columnname',{'','Input tag','Channels','Type','Equipment','Description'},'ColumnFormat',{'logical','char','char',UI.list.inputsType,'char','char'},'RowName',[],'ColumnEditable',[true false true true true true true],'Units','normalized','CellEditCallback',@editInputsTableData);
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % BehavioralTracking
@@ -1199,6 +1212,9 @@ uiwait(UI.fig)
             end
             if ~isempty(UI.listbox.metricsToExcludeManipulationIntervals.Value)
                 parameters.metricsToExcludeManipulationIntervals = UI.listbox.metricsToExcludeManipulationIntervals.String(UI.listbox.metricsToExcludeManipulationIntervals.Value);
+            end
+            try
+                parameters.preferences.putativeCellType.classification_schema = UI.edit.classification_schema.String{UI.edit.classification_schema.Value};
             end
         end
         session.general.date = UI.edit.date.String;
@@ -3031,7 +3047,8 @@ uiwait(UI.fig)
             MsgLog('Importing groups from XML...',0)
             
             session = import_xml2session(xml_filepath,session);
-            updateChannelGroupsList
+            updateChannelGroupsList('electrodeGroups')
+            updateChannelGroupsList('spikeGroups')
             UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
             UIsetString(session.extracellular,'nChannels'); % Number of channels
