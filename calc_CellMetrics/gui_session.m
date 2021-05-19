@@ -318,13 +318,13 @@ if exist('parameters','var') && ~isempty(parameters)
         
         classification_schema_value = find(strcmp(parameters.preferences.putativeCellType.classification_schema,classification_schema_list));
     end
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Cell-type classification schema', 'Position', [10, 210, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.edit.classification_schema = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', classification_schema_list, 'value', classification_schema_value, 'Position', [5, 190, 200, 20],'HorizontalAlignment','left','Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Cell-type classification schema', 'Position', [10, 225, 200, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.edit.classification_schema = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', classification_schema_list, 'value', classification_schema_value, 'Position', [5, 200, 200, 20],'HorizontalAlignment','left','Units','normalized');
 
-    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 195, 195, 30],'String','Verfiy metadata','Callback',@(src,evnt)performStructVerification,'Units','normalized');
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Preferences', 'Position', [10, 160, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.buttons.preferences = uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 165, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics);
-    UI.table.preferences = uitable(UI.tabs.parameters,'Data',{},'Position',[5, 5, 605 , 155],'ColumnWidth',{100 160 320},'columnname',{'Category','Name','Value'},'RowName',[],'ColumnEditable',[false false false],'Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 210, 195, 30],'String','Verfiy metadata','Callback',@(src,evnt)performStructVerification,'Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Preferences', 'Position', [10, 175, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.buttons.preferences = uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 180, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics);
+    UI.table.preferences = uitable(UI.tabs.parameters,'Data',{},'Position',[5, 5, 605 , 170],'ColumnWidth',{100 160 320},'columnname',{'Category','Name','Value'},'RowName',[],'ColumnEditable',[false false false],'Units','normalized');
 end
 
 % % % % % % % % % % % % % % % % % % % %
