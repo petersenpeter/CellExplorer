@@ -180,7 +180,7 @@ if parameters.forceReload
             dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
             fclose(fileID);
             UID = 1;
-            tol_samples = session.extracellular.sr*8e-4; % 0.8 ms tolerance in timestamp units
+            tol_samples = session.extracellular.sr*5e-4; % 0.5 ms tolerance in timestamp units
             for i = 1:length(dataArray{1})
                 if raw_clusters == 0
                     if any(strcmpi(dataArray{2}{i},labelsToRead))
@@ -610,9 +610,12 @@ if parameters.forceReload
                 cluster_index = cluster_index(2:end);
                 nb_clusters = unique(cluster_index);
                 nb_clusters2 = nb_clusters(nb_clusters > 1);
+                
+                tol_samples = session.extracellular.sr*5e-4; % 0.5 ms tolerance in timestamp units
                 for i = 1:length(nb_clusters2)
                     UID = UID +1;
                     spikes.ts{UID} = time_stamps(cluster_index == nb_clusters2(i));
+                    [spikes.ts{UID},~] = uniquetol(spikes.ts{UID},tol_samples,'DataScale',1); % unique values within tol (<= 0.8ms)
                     spikes.times{UID} = spikes.ts{UID}/session.extracellular.sr;
                     spikes.shankID(UID) = shank;
                     spikes.cluID(UID) = nb_clusters2(i);
@@ -644,11 +647,13 @@ if parameters.forceReload
                 cluster_index = double(hdf5read([clusteringpath_full, basename, '.kwik'], ['/channel_groups/' num2str(shank-1) '/spikes/clusters/main']));
                 waveforms = double(hdf5read([clusteringpath_full, basename, '.kwx'], ['/channel_groups/' num2str(shank-1) '/waveforms_filtered']));
                 clusters = unique(cluster_index);
+                tol_samples = session.extracellular.sr*5e-4; % 0.5 ms tolerance in timestamp units
                 for i = 1:length(clusters(:))
                     cluster_type = double(hdf5read([clusteringpath_full, basename, '.kwik'], ['/channel_groups/' num2str(shank-1) '/clusters/main/' num2str(clusters(i)),'/'],'cluster_group'));
                     if cluster_type == 2
                         indexes{UID} = UID*ones(sum(cluster_index == clusters(i)),1);
                         spikes.ts{UID} = spike_times(cluster_index == clusters(i))+recording_nb(cluster_index == clusters(i))*40*40000;
+                        [spikes.ts{UID},~] = uniquetol(spikes.ts{UID},tol_samples,'DataScale',1); % unique values within tol (<= 0.8ms)
                         spikes.times{UID} = spikes.ts{j}/session.extracellular.sr;
                         spikes.total(UID) = sum(cluster_index == clusters(i));
                         spikes.shankID(UID) = shank;
