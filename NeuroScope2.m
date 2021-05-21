@@ -164,6 +164,8 @@ end
         UI.settings.background = 'k';
         UI.settings.xtickColor = 'w';
         UI.settings.showChannelNumbers = false;
+        UI.settings.channelList = [];
+        
         % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9') 
             UI.settings.rasterMarker = 'o';
@@ -387,12 +389,19 @@ end
         UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.7 0.01 0.29 0.12],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
         
         % Electrode groups
-        UI.panel.electrodeGroupsList = uipanel('Parent',UI.panel.general.main,'title','Electrode groups');
+        UI.uitabgroup_channels = uiextras.TabPanel('Parent', UI.panel.general.main, 'Padding', 1,'FontSize',11 ,'TabSize',95);
+        UI.panel.electrodeGroups.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
+        UI.panel.chanelList.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
+        UI.uitabgroup_channels.TabNames = {'Electrode groups', 'Channels'};
+        UI.panel.electrodeGroupsList = uipanel('Parent',UI.panel.electrodeGroups.main,'BorderType','none');
         UI.table.electrodeGroups = uitable(UI.panel.electrodeGroupsList,'Data',{false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 20 45 150},'columnname',{'','','Group','Channels        '},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editElectrodeGroups,'CellSelectionCallback',@ClicktoSelectFromTable);
         UI.panel.electrodeGroupsButtons = uipanel('Parent',UI.panel.general.main);
-        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.98],'String','Show all','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Select all groups');
-        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.98],'String','Show none','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Deselect all groups');
+        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.98],'String','Show all','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Select all');
+        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.98],'String','Show none','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Deselect all');
         
+        % Channel list
+        UI.listbox.channelList = uicontrol('Parent',UI.panel.chanelList.main,'Style','listbox','Position',[0 0 1 1],'Units','normalized','String',{'1'},'min',0,'Value',1,'fontweight', 'bold','Callback',@buttonChannelList,'KeyPressFcn', {@keyPress});
+
         % Channel tags
         UI.panel.channelTagsList = uipanel('Parent',UI.panel.general.main,'title','Channel tags');
         UI.table.channeltags = uitable(UI.panel.channelTagsList,'Data', {'','',false,false,false,'',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 60 20 20 20 55 55},'columnname',{'','Tags',char(8226),'+','-','Channels','Groups'},'RowName',[],'ColumnEditable',[false false true true true true false],'CellEditCallback',@editChannelTags,'CellSelectionCallback',@ClicktoSelectFromTable2);
@@ -2060,11 +2069,21 @@ end
         % handles the three buttons under the electrode groups table
         switch src.String
             case 'Show none'
-                UI.table.electrodeGroups.Data(:,1) = {false};
-                editElectrodeGroups
+                if UI.uitabgroup_channels.Selection==1
+                    UI.table.electrodeGroups.Data(:,1) = {false};
+                    editElectrodeGroups
+                elseif UI.uitabgroup_channels.Selection == 2
+                    UI.listbox.channelList.Value = [];
+                    buttonChannelList
+                end
             case 'Show all'
-                UI.table.electrodeGroups.Data(:,1) = {true};
-                editElectrodeGroups
+                if UI.uitabgroup_channels.Selection==1
+                    UI.table.electrodeGroups.Data(:,1) = {true};
+                    editElectrodeGroups
+                elseif UI.uitabgroup_channels.Selection == 2
+                    UI.listbox.channelList.Value = 1:numel(UI.listbox.channelList.String);
+                    buttonChannelList
+                end
             otherwise
                 data.session = gui_session(data.session,[],'extracellular');
                 initData(basepath,basename);
@@ -2072,7 +2091,7 @@ end
                 uiresume(UI.fig);
         end
     end
-
+    
     function getNotes(~,~)
         data.session.general.notes = UI.panel.notes.text.String;
     end
@@ -2551,6 +2570,15 @@ end
                 end
             end
         end
+        
+        % Filtering channel by channel list
+%         UI.channelOrder = intersect(UI.channelOrder, UI.settings.channelList,'stable');
+        for j = 1:numel(UI.channels)
+            [~,idx] = setdiff(UI.channels{j},UI.settings.channelList);
+            UI.channels{j}(idx) = [];
+%             UI.channels{j} = intersect(UI.channels{j}, UI.settings.channelList,'stable')';
+        end
+        
         channels = [UI.channels{UI.settings.electrodeGroupsToPlot}];
         if UI.settings.plotSorting == 1
             UI.channelOrder = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
@@ -2559,6 +2587,7 @@ end
 %         elseif UI.settings.plotSorting == 3
 %             
         end
+        
         nChannelsToPlot = numel(UI.channelOrder);
         UI.channelMap = zeros(1,data.session.extracellular.nChannels);
         [idx, idx2]= ismember([data.session.extracellular.electrodeGroups.channels{:}],channels);
@@ -2566,16 +2595,18 @@ end
         channels_1 = [data.session.extracellular.electrodeGroups.channels{:}];
         UI.channelMap(channels_1(find(idx))) = channels(idx2(idx2~=0));
         if nChannelsToPlot == 1
-            channelOffset = 0.5*ones(1,UI.channelOrder);
+        	channelOffset = 0.5;
+        elseif nChannelsToPlot == 0
+            channelOffset = [];
         elseif UI.settings.extraSpacing && ~isempty(UI.settings.electrodeGroupsToPlot) && UI.settings.plotStyle < 5
             nChannelsInGroups = cellfun(@numel,UI.channels(UI.settings.electrodeGroupsToPlot));
             channelList = [];
             for i = 1:numel(UI.settings.electrodeGroupsToPlot)
                 channelList = [channelList,(0:nChannelsInGroups(i)-1)+numel(channelList)+i*1.5];
             end
-            channelOffset = (channelList-1)/(channelList(end)-1)*(0.9-0.9*offset)+0.05*(1-offset);
+            channelOffset = (channelList-1)/(channelList(end)-1)*0.9*(1-offset)+0.05*(1-offset);
         else
-            channelOffset = [0:nChannelsToPlot-1]/(nChannelsToPlot-1)*(0.9-0.9*offset)+0.05*(1-offset);
+            channelOffset = [0:nChannelsToPlot-1]/(nChannelsToPlot-1)*0.9*(1-offset)+0.05*(1-offset);
         end
         UI.channelOffset = zeros(1,data.session.extracellular.nChannels);
         UI.channelOffset(UI.channelOrder) = channelOffset-1;
@@ -2684,6 +2715,8 @@ end
         
         updateChannelGroupsList
         updateChannelTags
+        updateChannelList
+        
         UI.fig.Name = ['NeuroScope2   -   session: ', UI.data.basename, ', basepath: ', UI.data.basepath];
         
         if isfield(data.session.extracellular,'fileName') && ~isempty(data.session.extracellular.fileName)
@@ -2990,6 +3023,13 @@ end
         uiresume(UI.fig);
     end
 
+    function buttonChannelList(~,~)
+        channelOrder = [data.session.extracellular.electrodeGroups.channels{:}];
+        UI.settings.channelList = channelOrder(UI.listbox.channelList.Value);
+        initTraces
+        uiresume(UI.fig);
+    end
+    
     function editChannelTags(~,evnt)
         if evnt.Indices(1,2) == 6 & isnumeric(str2num(evnt.NewData))
             data.session.channelTags.(UI.table.channeltags.Data{evnt.Indices(1,1),2}).channels = str2num(evnt.NewData);
@@ -3005,6 +3045,7 @@ end
     end
 
     function ClicktoSelectFromTable(~,evnt)
+        % Change colors of electrode groups
         if ~isempty(evnt.Indices) && size(evnt.Indices,1) == 1 && evnt.Indices(2) == 2
             colorpick = UI.colors(evnt.Indices(1),:);
             try
@@ -3018,6 +3059,7 @@ end
             colored_string = strcat('<html><BODY bgcolor="',classColorsHex','">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</BODY></html>');
             UI.table.electrodeGroups.Data{evnt.Indices(1),2} = colored_string{evnt.Indices(1)};
             initTraces
+            updateChannelList
             uiresume(UI.fig);
         end
     end
@@ -3121,6 +3163,35 @@ end
             UI.table.electrodeGroups.Data = {false,'','',''};
         end
         UI.settings.electrodeGroupsToPlot = 1:data.session.extracellular.nElectrodeGroups;
+    end
+    
+    function updateChannelList
+        if isfield(data.session.extracellular,'electrodeGroups')
+            
+            UI.settings.channelList = [data.session.extracellular.electrodeGroups.channels{:}];
+            colored_string = DefineChannelListColors;
+            UI.listbox.channelList.String = colored_string(UI.settings.channelList);
+            UI.listbox.channelList.Max = numel(UI.settings.channelList);
+            UI.listbox.channelList.Value = 1:numel(UI.settings.channelList);
+        else
+            UI.settings.channelList = [];
+            UI.listbox.channelList.String = {''};
+            UI.listbox.channelList.Max = 1;
+            UI.listbox.channelList.Value = 1;
+        end
+        
+        function colored_string = DefineChannelListColors
+            groupColorsHex = rgb2hex(UI.colors*0.7);
+            groupColorsHex = cellstr(groupColorsHex(:,2:end));
+            channelColorsHex = repmat({''},numel(UI.settings.channelList),1);
+            for fn = 1:size(groupColorsHex,1)
+                channelColorsHex(data.session.extracellular.electrodeGroups.channels{fn}) = groupColorsHex(fn);
+            end
+            
+            classNumbers = cellstr(num2str([1:length(UI.settings.channelList)]'));
+            classNumbers = regexprep(classNumbers, ' ', '&nbsp;&nbsp;');
+            colored_string = strcat('<html><BODY bgcolor="',channelColorsHex,'">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="white">Channel&nbsp;&nbsp;', classNumbers, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></BODY>',classNumbers, '.&nbsp;</html>');
+        end
     end
 
     function updateChannelTags

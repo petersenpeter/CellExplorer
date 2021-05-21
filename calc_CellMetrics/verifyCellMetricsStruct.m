@@ -41,7 +41,7 @@ function verifyCellMetricsStruct(cell_metrics)
             field_sizes = cell2mat(struct2cell(structfun(@size, cell_metrics.(cell_metrics_fieldnames{fields_struct(i)}),'UniformOutput',false)));
             field_numeric_cell = find(ismember(field_types,{'double','cell'}));
             if any(field_sizes(field_numeric_cell,2) ~= cell_metrics.general.cellCount)
-                error(['cell_metrics field not formatted correctly: ' field_fieldnames{field_sizes(field_numeric_cell,2) ~= cell_metrics.general.cellCount}])
+                warning(['Incorrect dimensions: cell_metrics.' cell_metrics_fieldnames{fields_struct(i)},'.',field_fieldnames{field_numeric_cell(field_sizes(field_numeric_cell,2) ~= cell_metrics.general.cellCount)}])
             end
         end
     end
