@@ -50,6 +50,7 @@ function spikes = loadSpikes(varargin)
 % spikes = loadSpikes('session',session); % clustering format should be specified in the struct
 % spikes = loadSpikes('basepath',pwd,'clusteringpath',Kilosort_RelativeOutputPath); % Run from basepath, assumes Phy format.
 % spikes = loadSpikes('basepath',pwd,'format','mclust'); % Run from basepath, loads MClust format.
+% spikes = loadSpikes('session',session,'UID',1:30,'shankID',1:3); % Filter and load spikes - only UID 1:30 and the first 3 shanks.
 
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -63,6 +64,7 @@ function spikes = loadSpikes(varargin)
 % 3.6 All waveforms across channels extracted from raw dat file
 % 3.7 Switched from xml to session struct for metadata
 % 3.8 Waveforn extraction separated into its own function
+% 4.1 Adding filter options (e.g. UID, shankID, cluID, region)
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
@@ -80,6 +82,12 @@ addParameter(p,'spikes',[],@isstruct); % Load existing spikes structure to appen
 addParameter(p,'LSB',0.195,@isnumeric); % Least significant bit (LSB in uV/bit) Intan = 0.195, Amplipex = 0.3815. (range/precision)
 addParameter(p,'session',[],@isstruct); % A buzsaki lab session struct
 addParameter(p,'labelsToRead',{'good'},@iscell); % allows you to load units with various labels, e.g. MUA or a custom label
+
+% Filters - All good cells are saved to the struct but the function output can be filtered by below fields
+addParameter(p,'UID',[],@isnumeric);
+addParameter(p,'shankID',[],@isnumeric);
+addParameter(p,'cluID',[],@isnumeric);
+addParameter(p,'region',[],@isstring); 
 
 parse(p,varargin{:})
 
@@ -763,7 +771,7 @@ if parameters.forceReload
     
     % Attaching info about how the spikes structure was generated
     spikes.processinginfo.function = 'loadSpikes';
-    spikes.processinginfo.version = 4.0;
+    spikes.processinginfo.version = 4.1;
     spikes.processinginfo.date = now;
     spikes.processinginfo.params.forceReload = parameters.forceReload;
     spikes.processinginfo.params.shanks = shanks;
@@ -793,6 +801,19 @@ if parameters.forceReload
             end
         catch
             warning('Spikes could not be saved')
+        end
+    end
+end
+
+filteredFields = {'UID','shankID','cluID','region'};
+for i = 1:numel(filteredFields)
+    if ~isempty(parameters.(filteredFields{i}))
+        if isfield(spikes, filteredFields{i})
+            toRemove = ~ismember(spikes.(filteredFields{i}),parameters.(filteredFields{i}));
+            
+            spikes = removeCells(toRemove,spikes);
+        else
+            warning(['The filtered field does not exist in the spikes struct: ' filteredFields{i}])
         end
     end
 end
@@ -859,4 +880,21 @@ if isfield(sessionInfo,'AnatGrps') && isfield(sessionInfo.AnatGrps,'Skip')
         session.channelTags.Bad.channels = channelOrder(skip);
     end
 end
+end
+
+function spikes = removeCells(UIDsToRemove,spikes)
+    % Function to remove cells from the structure. toRemove is the INDEX of the UID in spikes.UID
+    % Functionaloty taken from Buzcode but altered to include all fields.
+    
+    fields2clean = fieldnames(spikes);
+    for i = 1:numel(fields2clean)
+        if (iscell(spikes.(fields2clean{i})) || isnumeric(spikes.(fields2clean{i}))) && numel(spikes.(fields2clean{i})) == spikes.numcells
+            % Cleaning only cell array- and numeric fields
+            spikes.(fields2clean{i})(UIDsToRemove) = [];
+        end
+    end 
+    if ~isfield(spikes,'numcells_orig')
+        spikes.numcells_orig = spikes.numcells;
+    end
+    spikes.numcells = sum(~UIDsToRemove);
 end
