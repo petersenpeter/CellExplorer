@@ -123,6 +123,7 @@ if ~isfield(session,'spikeSorting')
     % Verify that the path contains Kilosort and phy output files
     if exist(fullfile(basepath,relativePath,'spike_times.npy'),'file')
         % Phy and KiloSort 
+        disp('Spike sorting data detected: Phy')
         session.spikeSorting{1}.relativePath = relativePath;
         session.spikeSorting{1}.format = 'Phy';
         session.spikeSorting{1}.method = 'KiloSort';
@@ -131,6 +132,7 @@ if ~isfield(session,'spikeSorting')
         session.spikeSorting{1}.notes = '';
     elseif ~isempty(dir(fullfile(basepath,relativePath,[basename,'.res.*'])))
         % Klustakwik
+        disp('Spike sorting data detected: Klustakwik')
         session.spikeSorting{1}.relativePath = relativePath;
         session.spikeSorting{1}.format = 'Klustakwik';
         session.spikeSorting{1}.method = 'Klustakwik';
@@ -139,6 +141,7 @@ if ~isfield(session,'spikeSorting')
         session.spikeSorting{1}.notes = '';
     elseif exist(fullfile(basepath,relativePath,[basename, '.kwik']),'file')
         % KlustaViewa
+        disp('Spike sorting data detected: KlustaViewa')
         session.spikeSorting{1}.relativePath = relativePath;
         session.spikeSorting{1}.format = 'KlustaViewa';
         session.spikeSorting{1}.method = 'KlustaViewa';
@@ -147,6 +150,7 @@ if ~isfield(session,'spikeSorting')
         session.spikeSorting{1}.notes = '';
     elseif ~isempty(dir(fullfile(basepath,relativePath,['times_raw_elec_CH*.mat'])))
         % UltraMegaSort2000
+        disp('Spike sorting data detected: UltraMegaSort2000')
         session.spikeSorting{1}.relativePath = relativePath;
         session.spikeSorting{1}.format = 'UltraMegaSort2000';
         session.spikeSorting{1}.method = 'UltraMegaSort2000';
@@ -155,15 +159,13 @@ if ~isfield(session,'spikeSorting')
         session.spikeSorting{1}.notes = '';
     elseif ~isempty(dir(fullfile(basepath,relativePath,'TT*.mat')))
         % MClust
+        disp('Spike sorting data detected: MClust')
         session.spikeSorting{1}.relativePath = relativePath;
         session.spikeSorting{1}.format = 'MClust';
         session.spikeSorting{1}.method = 'MClust';
         session.spikeSorting{1}.channels = [];
         session.spikeSorting{1}.manuallyCurated = 1;
         session.spikeSorting{1}.notes = '';
-    else
-        disp('No spike sorting data detected')
-        
     end
 end
 
@@ -341,7 +343,11 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Importing time series from intan metadatafile info.rhd
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-session = loadIntanMetadata(session);
+try
+    session = loadIntanMetadata(session);
+catch
+    warning('Failed to get intan metadata')
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Importing Neuroscope xml parameters (skipped channels, dead channels, notes and experimenters)

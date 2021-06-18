@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+        .spectrum-wrapper {
+            cursor: crosshair;
+            width: 240px;
+            position: relative;
+            height: 120px;
+            user-select: none;
+            user-drag: none;
+            margin: 0 auto;
+            /*outline: 0px solid black;*/
+        }
+
+        .spectrum-layer {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient( to right, rgb(255 0 0), rgb(255 255 0), rgb(0 255 0), rgb(0 255 255), rgb(0 0 255), rgb(255 0 255), rgb(255 0 0) );
+            border-radius: 5px;
+        }
+
+        .saturation-white {
+            background: -webkit-linear-gradient(to top, rgba(255, 255, 255, 0), #fff);
+            background: linear-gradient(to top, rgba(255, 255, 255, 0), #fff);
+            position: absolute;
+            width: 100%;
+            height: 60px;
+            top: 0px;
+            right: 0px;
+            bottom: 60px;
+            left: 0px;
+            border-radius: 5px;
+        }
+
+        .saturation-black {
+            background: -webkit-linear-gradient(to bottom, rgba(0, 0, 0, 0), #000);
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0), #000);
+            position: absolute;
+            width: 100%;
+            height: 60px;
+            top: 60px;
+            right: 0px;
+            bottom: 0px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="spectrum-wrapper">
+        <div class="spectrum-layer"></div>
+        <div class="saturation-white"></div>
+        <div class="saturation-black"></div>
+    </div>
+
+    <!--<div>Red: <span class="red"></span></div>-->
+    <div><!--Green: <span class="green"></span>--></div>
+    <div><!--Blue: <span class="blue"></span>--></div>
+    <div><!--<br />Hex: <span class="hex"></span>--></div>
+
+    <script>
+        // Initial function for MATLAB data exchange
+        function setup(htmlComponent) {
+
+            const getSpectrumWrapper = () => document.querySelector(".spectrum-wrapper");
+
+
+            const spectrumRanges = [
+                { from: [255, 0, 0], to: [255, 255, 0] },
+                { from: [255, 255, 0], to: [0, 255, 0] },
+                { from: [0, 255, 0], to: [0, 255, 255] },
+                { from: [0, 255, 255], to: [0, 0, 255] },
+                { from: [0, 0, 255], to: [255, 0, 255] },
+                { from: [255, 0, 255], to: [255, 0, 0] }
+            ];
+
+            const findColorValue = (from, to, leftDistRatio) => {
+                return Math.round(from + (to - from) * leftDistRatio);
+            };
+
+            const findRgbFromMousePosition = (event) => {
+                const { left, width } = getSpectrumWrapper().getBoundingClientRect();
+                const leftDistance = Math.min(Math.max(event.clientX - left, 0), width - 1);
+                const rangeWidth = width / spectrumRanges.length;
+                const includedRange = Math.floor(leftDistance / rangeWidth);
+                const leftDistRatio = ((leftDistance % rangeWidth) / rangeWidth).toFixed(2);
+                const { from, to } = spectrumRanges[includedRange];
+                return {
+                    r: findColorValue(from[0], to[0], leftDistRatio),
+                    g: findColorValue(from[1], to[1], leftDistRatio),
+                    b: findColorValue(from[2], to[2], leftDistRatio)
+                };
+            };
+
+            const darken = (color, ratio) => Math.round((1 - ratio) * color);
+            const whiten = (color, ratio) => Math.round(color + (255 - color) * ratio);
+            const adjustSaturation = ({ r, g, b }) => (ratio, adjustmentFn) => {
+                return {
+                    r: adjustmentFn(r, ratio),
+                    g: adjustmentFn(g, ratio),
+                    b: adjustmentFn(b, ratio)
+                };
+            };
+
+            const saturate = (rgb, e) => {
+                const { top, height } = getSpectrumWrapper().getBoundingClientRect();
+                const topDistance = Math.min(Math.max(e.clientY - top, 0), height);
+                const topDistRatio = (topDistance / height).toFixed(2);
+                if (topDistRatio > 0.5) {
+                    const darknessRatio = (topDistRatio - 0.5) / 0.5;
+                    return adjustSaturation(rgb)(darknessRatio, darken);
+                }
+                if (topDistRatio < 0.5) {
+                    const whitenessRatio = (0.5 - topDistRatio) / 0.5;
+                    return adjustSaturation(rgb)(whitenessRatio, whiten);
+                }
+                return rgb;
+            };
+
+            const rgbToHex = (r, g, b) => {
+                const toHex = (rgb) => {
+                    let hex = Number(rgb).toString(16);
+                    if (hex.length < 2) {
+                        hex = `0${hex}`;
+                    }
+                    return hex;
+                };
+                const red = toHex(r);
+                const green = toHex(g);
+                const blue = toHex(b);
+                return `#${red}${green}${blue}`;
+            };
+
+            getSpectrumWrapper().addEventListener("click", (e) => {
+                const rgb = findRgbFromMousePosition(e);
+                const { r, g, b } = saturate(rgb, e);
+                const hexValue = rgbToHex(r, g, b);
+                //document.querySelector(".red").innerText = r;
+                //document.querySelector(".green").innerText = g;
+                //document.querySelector(".blue").innerText = b;
+                //document.querySelector(".hex").innerText = hexValue;
+                htmlComponent.Data = [r, g, b]; //Return result to MATLAB in array
+            });
+        }
+    </script>
+
+</body>
+</html>

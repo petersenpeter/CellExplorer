@@ -170,9 +170,9 @@ hManager = uigetmodemanager(UI.fig);
 
 preferences_CellExplorer
 
-% % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Checking for Matlab version requirement (Matlab R2017a)
-% % % % % % % % % % % % % % % % % % % % % %
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if verLessThan('matlab', '9.2')
     warning('CellExplorer is only fully compatible and tested with Matlab version 9.2 and forward (Matlab R2017a)')
@@ -2482,7 +2482,7 @@ end
                 meanCCG = meanCCG./mean(meanCCG);
             end
             if isfield(general,'responseCurves') && isfield(general.responseCurves,'meanCCG')
-                subsetPlots.xaxis = general.responseCurves.meanCCG.x_bins';
+                subsetPlots.xaxis = general.responseCurves.meanCCG.x_bins(:)';
             else
                 subsetPlots.xaxis = -250:10:250;
             end
@@ -2511,7 +2511,7 @@ end
             plotAxes.YLabel.String = 'Cells';
             plotAxes.Title.String = customPlotSelection;
             if isfield(general,'responseCurves') && isfield(general.responseCurves,'meanCCG')
-                subsetPlots.xaxis = general.responseCurves.meanCCG.x_bins';
+                subsetPlots.xaxis = general.responseCurves.meanCCG.x_bins(:)';
             else
                 subsetPlots.xaxis = -250:10:250;
             end
@@ -3063,7 +3063,7 @@ end
                 axis tight, ax6 = axis; grid on,
                 set(plotAxes, 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto')
                 if isfield(general.firingRateMaps,firingRateMapName) & isfield(general.firingRateMaps.(firingRateMapName),'boundaries')
-                    boundaries = general.firingRateMaps.(firingRateMapName).boundaries;
+                    boundaries = general.firingRateMaps.(firingRateMapName).boundaries(:)';
                     line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off');
                 end
             else
@@ -3113,7 +3113,7 @@ end
                         end
                     end
                     if isfield(general.firingRateMaps.(firingRateMapName),'boundaries')
-                        boundaries = general.firingRateMaps.(firingRateMapName).boundaries;
+                        boundaries = general.firingRateMaps.(firingRateMapName).boundaries(:)';
                         line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off');
                     end
                 end
@@ -3141,11 +3141,11 @@ end
                 axis tight, ax6 = axis; grid on
                 line([0, 0], [ax6(3) ax6(4)],'color','k', 'HitTest','off');
                 if isfield(general.psth,eventName) & isfield(general.psth.(eventName),'boundaries')
-                    boundaries = general.psth.(eventName).boundaries;
+                    boundaries = general.psth.(eventName).boundaries(:)';
                     line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off');
                 end
                 if isfield(general.psth,eventName) & isfield(general.psth.(eventName),'boundaries')
-                    boundaries = general.psth.(eventName).boundaries;
+                    boundaries = general.psth.(eventName).boundaries(:)';
                     line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off');
                 end
             else
@@ -3221,7 +3221,7 @@ end
                 plotTemporalRestriction
                 
                 if isfield(general.responseCurves.firingRateAcrossTime,'boundaries') && ~isfield(general,'epochs')
-                    boundaries = general.responseCurves.firingRateAcrossTime.boundaries;
+                    boundaries = general.responseCurves.firingRateAcrossTime.boundaries(:)';
                     if isfield(general.responseCurves.firingRateAcrossTime,'boundaries_labels')
                         boundaries_labels = general.responseCurves.firingRateAcrossTime.boundaries_labels;
                         if length(boundaries_labels) == length(boundaries)
@@ -3262,7 +3262,7 @@ end
                 
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
-                        boundaries = general.responseCurves.(responseCurvesName).boundaries;
+                        boundaries = general.responseCurves.(responseCurvesName).boundaries(:)';
                         if isfield(general.responseCurves.(responseCurvesName),'boundaries_labels')
                             boundaries_labels = general.responseCurves.(responseCurvesName).boundaries_labels;
                             if length(boundaries_labels) == length(boundaries)
@@ -3324,7 +3324,7 @@ end
                 
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
-                        boundaries = general.responseCurves.(responseCurvesName).boundaries;
+                        boundaries = general.responseCurves.(responseCurvesName).boundaries(:)';
                         if isfield(general.responseCurves.(responseCurvesName),'boundaries_labels')
                             boundaries_labels = general.responseCurves.(responseCurvesName).boundaries_labels;
                             if length(boundaries_labels) == length(boundaries)
@@ -3387,7 +3387,7 @@ end
                 end
                 if isfield(general.responseCurves,responseCurvesName)
                     if isfield(general.responseCurves.(responseCurvesName),'boundaries')
-                        boundaries = general.responseCurves.(responseCurvesName).boundaries;
+                        boundaries = general.responseCurves.(responseCurvesName).boundaries(:)';
                         if isfield(general.responseCurves.(responseCurvesName),'boundaries_labels')
                             boundaries_labels = general.responseCurves.(responseCurvesName).boundaries_labels;
                             if length(boundaries_labels) == length(boundaries)
@@ -3735,7 +3735,7 @@ end
             line([0, 0], [ax6(3) ax6(4)],'color','k', 'HitTest','off');
             if isfield(general,customPlotSelection)
                 if isfield(general.(customPlotSelection),'boundaries')
-                    boundaries = general.(customPlotSelection).boundaries;
+                    boundaries = general.(customPlotSelection).boundaries(:)';
                     if isfield(general.(customPlotSelection),'boundaries_labels')
                         boundaries_labels = general.(customPlotSelection).boundaries_labels;
                         text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',0.5);
@@ -6845,6 +6845,7 @@ end
             end
         end
     end
+    
     function enableInteractions
         try
             % this works in R2014b, and maybe beyond:
@@ -9253,7 +9254,7 @@ end
                         saveStateToHistory(cellIDs)
                         clusClas(cellIDs) = selectedClas;
                         updateCellCount
-                        MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.preferences.cellTypes{selectedClas}, ' from t-SNE visualization']);
+                        MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.preferences.cellTypes{selectedClas}]);
                         updatePlotClas
                         updatePutativeCellType
                         uiresume(UI.fig);
@@ -9264,7 +9265,7 @@ end
                             saveStateToHistory(cellIDs)
                             clusClas(cellIDs) = selectedClas-1;
                             updateCellCount
-                            MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.preferences.cellTypes{selectedClas-1}, ' from t-SNE visualization']);
+                            MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.preferences.cellTypes{selectedClas-1}]);
                             updatePlotClas
                             updatePutativeCellType
                             uiresume(UI.fig);
@@ -9381,7 +9382,7 @@ end
                         end
                         movegui(ccgFigure,'center'), set(ccgFigure,'visible','on')
                     else
-                        MsgLog('There is no cross- and auto-correlograms matrix structure found for this dataset (Location general.ccg).',2)
+                        MsgLog('There is no cross- and auto-correlograms matrix structure found for this dataset (location general.ccg).',2)
                     end
                     
                 elseif choice == 9
@@ -9801,11 +9802,13 @@ end
                 assignin('base','cell_metrics',cell_metrics)
                 saveMetrics(cell_metrics);
             case 'Create new file'
+                filter = {'*.mat','MATLAB file (*.mat)';'*.json','JSON-formatted text file (*.json)';'*.nwb','Neurodata Without Borders (NWB) file (*.nwb)';'*.*','Any format (*.*)'};
                 if UI.BatchMode
-                    [file,SavePath] = uiputfile('cell_metrics_batch.mat','Save metrics');
+                    file = 'cell_metrics_batch.mat';
                 else
-                    [file,SavePath] = uiputfile('cell_metrics.mat','Save metrics');
+                    file = 'cell_metrics.mat';
                 end
+                [file,SavePath] = uiputfile(filter,'Save metrics',file);
                 if SavePath ~= 0
                     saveMetrics(cell_metrics,fullfile(SavePath,file));
                     try
@@ -9838,21 +9841,34 @@ end
         MsgLog(['Saving metrics']);
         drawnow nocallbacks;
         cell_metrics = saveCellMetricsStruct(cell_metrics);
-        
+        C = strsplit(file,'.'); format = C{end};
         if nargin > 1
             try
-                structSize = whos('cell_metrics');
-                if numel(structSize)>1
-                    bytes = structSize(1).bytes;
-                else
-                    bytes = structSize.bytes;
+                switch lower(format)
+                    case 'mat'
+                        structSize = whos('cell_metrics');
+                        if numel(structSize)>1
+                            bytes = structSize(1).bytes;
+                        else
+                            bytes = structSize.bytes;
+                        end
+                        if bytes/1000000000 > 2
+                            save(file, 'cell_metrics', '-v7.3','-nocompression')
+                        else
+                            save(file, 'cell_metrics');
+                        end
+                        MsgLog(['Classification saved to ', file],[1,2]);
+                    case 'json'
+                        encodedJSON = jsonencode(cell_metrics);
+                        fid=fopen(file,'w');
+                        fprintf(fid, encodedJSON); 
+                        fclose(fid);
+                    case 'nwb'
+
+                    otherwise
+                        MsgLog(['Unknown file format: ' file],4);
                 end
-                if bytes/1000000000 > 2
-                    save(file, 'cell_metrics', '-v7.3','-nocompression')
-                else
-                    save(file, 'cell_metrics');
-                end
-                MsgLog(['Classification saved to ', file],[1,2]);
+                
             catch
                 MsgLog(['Error saving metrics: ' file],4);
             end

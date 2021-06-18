@@ -25,7 +25,6 @@ function [cell_metrics,cell_metrics_idxs] = loadCellMetrics(varargin)
 % petersen.peter@gmail.com
 % Last edited: 10-01-2021
 
-
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Parsing parameters
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %

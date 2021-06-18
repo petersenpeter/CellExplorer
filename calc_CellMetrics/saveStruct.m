@@ -9,13 +9,14 @@ function success = saveStruct(data,datatype,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last updated: 03-06-2020
+% Last updated: 18-06-2021
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@isstr); 
 addParameter(p,'basename','',@isstr);
 addParameter(p,'session',{},@isstruct);
 addParameter(p,'dataName','',@isstr);
+addParameter(p,'fileformat','mat',@isstr);
 addParameter(p,'commandDisp',true,@islogical);
 parse(p,varargin{:});
 
@@ -23,6 +24,7 @@ basepath = p.Results.basepath;
 basename = p.Results.basename;
 session = p.Results.session;
 dataName = p.Results.dataName;
+fileformat = p.Results.fileformat;
 commandDisp = p.Results.commandDisp;
 success = false;
 
@@ -42,33 +44,54 @@ end
 % No validation implemented yet
 
 % Saving data to basepath
-supportedDataTypes = {'timeseries','digitalseries','events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'states', 'firingRateMap','lfp','session'};
+supportedDataTypes = {'session','behavior','cellinfo','events','manipulation','states','channelInfo','timeseries','digitalseries','firingRateMap','lfp'};
 if any(strcmp(datatype,supportedDataTypes))
     if isempty(dataName)
         dataName = inputname(1);
     end
-    S.(dataName) = data;
     switch datatype
         case {'sessionInfo','session'}
-            filename = fullfile(basepath,[basename,'.',datatype,'.mat']);
+            filename = fullfile(basepath,[basename,'.',datatype,'.',fileformat]);
         otherwise
-            filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.mat']);
+            filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.',fileformat]);
     end
-    % Saving struct
-    % Checks byte size of struct to determine optimal mat format
-    structSize = whos('S');
-    if structSize.bytes/1000000000 > 2
-        save(filename, '-struct', 'S','-v7.3','-nocompression')
-        if commandDisp
-            disp(['Saved variable ''', dataName, ''' to ', filename,' (v7.3)'])
-        end
-    else
-        save(filename, '-struct', 'S')
-        if commandDisp
-            disp(['Saved variable ''', dataName, ''' to ', filename])
-        end
+    
+    % Saving struct  
+    switch fileformat
+        case 'mat'
+            % MATLABs own mat format
+            % Saving to a struct to maintain intented variable name
+            S.(dataName) = data;
+            
+            % Checks byte size of struct to determine optimal mat format
+            structSize = whos('S');
+            if structSize.bytes/1000000000 > 2
+                save(filename, '-struct', 'S','-v7.3','-nocompression')
+                if commandDisp
+                    disp(['Saved variable ''', dataName, ''' to ', filename,' (v7.3)'])
+                end
+            else
+                save(filename, '-struct', 'S')
+                if commandDisp
+                    disp(['Saved variable ''', dataName, ''' to ', filename])
+                end
+            end
+            success = true;
+        case 'json'
+            % Saves session struct or cell_metrics to a json file
+            if strcmp(datatype,{'session','cell_metrics'})
+                encodedJSON = jsonencode(data);
+                fid=fopen(file,'w');
+                fprintf(fid, encodedJSON);
+                fclose(fid);
+            end
+        case 'nwb'
+            % saves to a NeurodataWithoutBorder nwb container
+            warning('Saving to NWB is not yet supported!')
+            
+        otherwise
+            warning(['File format not supported: ' fileformat])
     end
-    success = true;
 else
     error(['Not a valid datatype: ', datatype,', basename: ' basename])
 end
