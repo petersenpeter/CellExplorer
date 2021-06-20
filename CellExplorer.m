@@ -9841,37 +9841,15 @@ end
         MsgLog(['Saving metrics']);
         drawnow nocallbacks;
         cell_metrics = saveCellMetricsStruct(cell_metrics);
-        C = strsplit(file,'.'); format = C{end};
+        
         if nargin > 1
             try
-                switch lower(format)
-                    case 'mat'
-                        structSize = whos('cell_metrics');
-                        if numel(structSize)>1
-                            bytes = structSize(1).bytes;
-                        else
-                            bytes = structSize.bytes;
-                        end
-                        if bytes/1000000000 > 2
-                            save(file, 'cell_metrics', '-v7.3','-nocompression')
-                        else
-                            save(file, 'cell_metrics');
-                        end
-                        MsgLog(['Classification saved to ', file],[1,2]);
-                    case 'json'
-                        encodedJSON = jsonencode(cell_metrics);
-                        fid=fopen(file,'w');
-                        fprintf(fid, encodedJSON); 
-                        fclose(fid);
-                    case 'nwb'
-
-                    otherwise
-                        MsgLog(['Unknown file format: ' file],4);
-                end
-                
+                saveCellMetrics(cell_metrics,file);
+                MsgLog(['Classification saved to ', file],[1,2]);
             catch
                 MsgLog(['Error saving metrics: ' file],4);
             end
+            
         elseif UI.BatchMode
             MsgLog('Saving cell metrics from batch',1);
             sessionWithChanges = unique(cell_metrics.batchIDs(classificationTrackChanges));
@@ -9905,7 +9883,10 @@ end
                 try
                     % Creating backup metrics
                     createBackup(cell_metricsTemp,cellSubset)
-                    
+                catch
+                    MsgLog(['Error saving backup for session: ' cell_metricsTemp.general.basenames{sessionID}],2);
+                end
+                try 
                     % Saving new metrics to file
                     matpath = fullfile(cell_metricsTemp.general.basepaths{sessionID},[cell_metricsTemp.general.basenames{sessionID}, '.',saveAs,'.cellinfo.mat']);
                     matFileCell_metrics = matfile(matpath,'Writable',true);
@@ -9939,28 +9920,34 @@ end
                 MsgLog('Metrics were not succesfully saved for all sessions in batch',4);
             end
         else
-            if ((isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir')) || (isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir')))
-                if isfield(cell_metrics.general,'saveAs')
-                    saveAs = cell_metrics.general.saveAs;
-                else
-                    saveAs = 'cell_metrics';
-                end
-                if ~isfield(cell_metrics.general,'basepath')
-                    cell_metrics.general.basepath = cell_metrics.general.basepath;
-                end
-                try
-                    createBackup(cell_metrics)
-                    file = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat']);
-                    save(file,'cell_metrics');
-                    classificationTrackChanges = [];
-                    UI.menu.file.save.ForegroundColor = 'k';
-                    MsgLog(['Classification saved to ', file],[1,2]);
-                catch
-                    MsgLog(['Failed to save the cell metrics. Please choose a different path: ' cell_metrics.general.basepath],4);
-                end
+            if isfield(cell_metrics.general,'saveAs')
+                saveAs = cell_metrics.general.saveAs;
             else
-                MsgLog(['The path does not exist. Please choose another path to save the metrics'],4);
+                saveAs = 'cell_metrics';
             end
+            file = [cell_metrics.general.basename, '.',saveAs,'.cellinfo.mat'];
+            if ~(isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir'))
+                MsgLog(['Basepath does not exist, please save metrics via dialog'],4);
+                filter = {'*.mat','MATLAB file (*.mat)';'*.json','JSON-formatted text file (*.json)';'*.nwb','Neurodata Without Borders (NWB) file (*.nwb)';'*.*','Any format (*.*)'};
+                [file,SavePath] = uiputfile(filter,'Save metrics',file);
+                cell_metrics.general.basename = SavePath;
+            end
+            try
+                createBackup(cell_metrics)
+            catch
+                MsgLog(['Failed to save backup: ' cell_metrics.general.basepath],4);
+            end
+            
+            try
+                file = fullfile(cell_metrics.general.basepath,file);
+                save(file,'cell_metrics');
+                classificationTrackChanges = [];
+                UI.menu.file.save.ForegroundColor = 'k';
+                MsgLog(['Classification saved to ', file],[1,2]);
+            catch
+                MsgLog(['Failed to save the cell metrics. Please choose a different path: ' cell_metrics.general.basepath],4);
+            end
+            
         end
     end
     
@@ -11946,7 +11933,7 @@ end
         % 2: Show msg dialog
         % 3: Show warning in Command Window
         % 4: Show warning dialog
-        % -1: disp only
+        % -1: Only show message, no logging
         
         timestamp = datestr(now, 'dd-mm-yyyy HH:MM:SS');
         message2 = sprintf('[%s] %s', timestamp, message);

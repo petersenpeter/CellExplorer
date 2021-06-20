@@ -5,9 +5,8 @@ function NeuroScope2(varargin)
 % support Matlab mat-files, and faster than the original NeuroScope. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
 %
 % Major features:
-% - Live trace filter
-% - Live spike and event detection, spectrogram
-% - Plot multiple data streams together
+% - Live trace filter with spike and event detection, single channel spectrogram
+% - Plot multiple data streams together (ephys + analog + digital signals)
 % - Plot CellExplorer/Buzcode structures: spikes, cell_metrics, events, timeseries, states, behavior, trials
 %
 % Example calls:
@@ -17,7 +16,6 @@ function NeuroScope2(varargin)
 %
 % By Peter Petersen
 % % % % % % % % % % % % % % % % % % % % % % % % %
-
 
 % Global variables
 UI = []; % Struct with UI elements and settings
@@ -358,7 +356,7 @@ end
         
         UI.panel.center = uix.VBox( 'Parent', UI.grid_panels, 'Spacing', 0, 'Padding', 0 ); % Center flex box
         % UI.panel.right = uix.VBoxFlex('Parent',UI.grid_panels,'position',[0 0.66 0.26 0.31]); % Right panel
-        set(UI.grid_panels, 'Widths', [220 -1],'MinimumWidths',[100 1]); % set grid panel size
+        set(UI.grid_panels, 'Widths', [220 -1],'MinimumWidths',[220 1]); % set grid panel size
         
         % Separation of the center box into three panels: title panel, plot panel and lower info panel
         UI.panel.plots = uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.center,'BackgroundColor','k'); % Main plot panel
@@ -587,7 +585,7 @@ end
         UI.elements.lower.windowsSize = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', UI.settings.windowDuration, 'Units','normalized', 'Position', [0.3 0 0.05 1],'HorizontalAlignment','right','tooltip','Window size (seconds)','Callback',@setWindowsSize);
         uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Scaling', 'Units','normalized', 'Position', [0.0 0 0.05 0.8],'HorizontalAlignment','center');
         UI.elements.lower.scaling = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', num2str(UI.settings.scalingFactor), 'Units','normalized', 'Position', [0.05 0 0.05 1],'HorizontalAlignment','right','tooltip','Ephys scaling','Callback',@setScaling);
-        UI.elements.lower.performance = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Performance', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','left','KeyPressFcn', @keyPress);
+        UI.elements.lower.performance = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Performance', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','center','KeyPressFcn', @keyPress);
         UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider);
         set(UI.panel.info, 'Widths', [70 80 120 60 60 60 280 -1],'MinimumWidths',[70 80 120 60 60 60 250  1]); % set grid panel size
         
@@ -727,10 +725,14 @@ end
             colors = ones(size(UI.colors))/(UI.settings.greyScaleTraces-4);
             colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
         end
+        % Setting booean for verifying ephys loading and plotting
         
+        ephys.loaded = false;
+        ephys.plotted = false;
         if UI.settings.plotStyle == 4 % lfp file
             if UI.fid.lfp == -1
                 UI.settings.stream = false;
+                ephys.loaded = false;
                 MsgLog('Failed to load LFP data',4);
                 return
             end
@@ -741,6 +743,7 @@ end
         else %  dat file
             if UI.fid.ephys == -1
                 UI.settings.stream = false;
+                ephys.loaded = false;
                 MsgLog('Failed to load raw data',4);
                 return
             end
@@ -761,6 +764,7 @@ end
                 fseek(fileID,round((t0+UI.settings.windowDuration-t_offset)*sr)*data.session.extracellular.nChannels*2,'bof'); % bof: beginning of file
                 try
                     ephys.raw(existingSamples+1:UI.samplesToDisplay,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
+                    ephys.loaded = true;
                 catch 
                     UI.settings.stream = false;
                     warning('Failed to read file')
@@ -774,21 +778,25 @@ end
                 % Loading new data
                 fseek(fileID,round(t0*sr)*data.session.extracellular.nChannels*2,'bof');
                 ephys.raw(1:newSamples,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
+                ephys.loaded = true;
             elseif t0==UI.t1 && ~UI.forceNewData
+                ephys.loaded = true;
             else
                 fseek(fileID,round(t0*sr)*data.session.extracellular.nChannels*2,'bof');
                 ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],'int16'))'*UI.settings.leastSignificantBit;
+                ephys.loaded = true;
             end
             UI.forceNewData = false;
-            
         else
             fseek(fileID,ceil(-UI.settings.windowDuration*sr)*data.session.extracellular.nChannels*2,'eof'); % eof: end of file
             ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],'int16'))'*UI.settings.leastSignificantBit;
             UI.forceNewData = true;
+            ephys.loaded = true;
         end
         
         UI.t1 = t0;
-        if isempty(ephys.raw)
+        
+        if ~ephys.loaded
             return
         end
         
@@ -867,7 +875,7 @@ end
                 channels = data.session.channelTags.(UI.channelTags{UI.settings.channelTags.highlight(i)}).channels;
                 if ~isempty(channels)
                     channels = UI.channelMap(channels); channels(channels==0) = [];
-                    if ~isempty(channels)
+                    if ~isempty(channels) && any(ismember(channels,UI.channelOrder))
                         highlightTraces(channels,UI.colors_tags(UI.settings.channelTags.highlight(i),:));
                     end
                 end
@@ -937,6 +945,7 @@ end
                 text(-0.001*UI.settings.windowDuration*ones(1,numel(UI.channelOrder)),-UI.channelOffset(UI.channelOrder),cellstr(num2str(UI.channelOrder')),'color','w','VerticalAlignment', 'middle','HorizontalAlignment','right','HitTest','off')
             end
         end
+        ephys.plotted = true;
     end
 
     function plotAnalog(signal,sr)
@@ -1415,12 +1424,16 @@ end
         freq_range = UI.settings.spectrogram.freq_range;
         y_ticks = UI.settings.spectrogram.y_ticks;
         
-        [s, f, t] = spectrogram(ephys.traces(:,UI.settings.spectrogram.channel)*5, round(sr*UI.settings.spectrogram.window) ,round(sr*UI.settings.spectrogram.window*0.95), UI.settings.spectrogram.freq_range, sr);
+        [s, ~, t] = spectrogram(ephys.traces(:,UI.settings.spectrogram.channel)*5, round(sr*UI.settings.spectrogram.window) ,round(sr*UI.settings.spectrogram.window*0.95), UI.settings.spectrogram.freq_range, sr);
         multiplier = [0:size(s,1)-1]/(size(s,1)-1)*diff(spectrogram_range)+spectrogram_range(1);
+        
+        scaling = 200;
         axis_labels = interp1(freq_range,multiplier,y_ticks);
-        image(UI.plot_axis1,t,multiplier,200*log10(abs(s)), 'HitTest','off');
+        image(UI.plot_axis1,t,multiplier,scaling*log10(abs(s)), 'HitTest','off');
         text(t(1)*ones(size(y_ticks)),axis_labels,num2str(y_ticks(:)),'FontWeight', 'Bold','color','w','margin',1, 'HitTest','off','HorizontalAlignment','left','BackgroundColor',[0 0 0 0.5]);
-        highlightTraces(UI.settings.spectrogram.channel,'m')
+        if ismember(UI.settings.spectrogram.channel,UI.channelOrder)
+            highlightTraces(UI.settings.spectrogram.channel,'m')
+        end
     end
 
     function plotTemporalStates(t1,t2)
