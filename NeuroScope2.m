@@ -2316,8 +2316,8 @@ end
     end
     
     function toggleSpectrogram(~,~)
-        numeric_gt_0 = @(n) isnumeric(n) && (n > 0); % numeric and greater than 0
-        numeric_gt_oe_0 = @(n) isnumeric(n) && (n >= 0); % Numeric and greater than or equal to 0
+        numeric_gt_0 = @(n) ~isempty(n) && isnumeric(n) && (n > 0); % numeric and greater than 0
+        numeric_gt_oe_0 = @(n) ~isempty(n) && isnumeric(n) && (n >= 0); % Numeric and greater than or equal to 0
         
         if UI.panel.spectrogram.showSpectrogram.Value == 1
             % Channel to use
@@ -2366,8 +2366,8 @@ end
                 UI.settings.spectrogram.y_ticks = y_ticks;
             else
                 UI.settings.spectrogram.show = false;
+                UI.panel.spectrogram.showSpectrogram.Value = 0;
                 MsgLog('The spectrogram frequency range is not valid',4);
-                return
             end
         else
             UI.settings.spectrogram.show = false;
