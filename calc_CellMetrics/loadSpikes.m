@@ -196,7 +196,11 @@ if parameters.forceReload
                             end
                             % New file data format of phy2
                             if exist('cluster_info','var')
-                                temp = find(cluster_info.id == spikes.cluID(UID));
+                                if isfield(cluster_info,'id')
+                                    temp = find(cluster_info.id == spikes.cluID(UID));
+                                else %in the recent(2021) version of Phy2: isfield(cluster_info,'cluster_id')
+                                    temp = find(cluster_info.cluster_id == spikes.cluID(UID));
+                                end
                                 spikes.maxWaveformCh(UID) = cluster_info.ch(temp); % max waveform channel
                                 spikes.maxWaveformCh1(UID) = cluster_info.ch(temp)+1; % index 1;
 %                                 spikes.phy_purity(UID) = cluster_info.purity(temp)+1; % cluster purity
