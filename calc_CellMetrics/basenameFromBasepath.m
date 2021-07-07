@@ -13,7 +13,6 @@ function basename = basenameFromBasepath(basepath)
             for k = 1:numel(filenames)
                 if ~startsWith(filenames{k}, '._')
                     file = filenames{k};
-                    disp(['Basepath: ' extensions{i}])
                     break
                 end
             end
@@ -24,7 +23,7 @@ function basename = basenameFromBasepath(basepath)
         end
     end
     if isempty(basename)
-        disp('Failed to find basepath files')
+        disp('Failed to find basepath files');
         [~,basename,~] = fileparts(basepath);
     end
 end
