@@ -15,7 +15,9 @@ function cell_metrics = loadJsonCellMetrics(json_file)
     % Last updated: 18-06-2021
 
     % Load and decode json content
-    json_file = 'cell_metrics.json';
+    % json_file = 'cell_metrics.json';
+    
+    
     text1 = fileread(json_file);
     text1 = strrep(text1,'\','\\'); % Handling backslash from strings
     cell_metrics = jsondecode(text1);
@@ -28,17 +30,20 @@ function cell_metrics = loadJsonCellMetrics(json_file)
         if all(size(cell_metrics.(fields{i})) == [cell_metrics.general.cellCount,1])
             cell_metrics.(fields{i}) = cell_metrics.(fields{i})';
         end
-        
     end
     
     % Same action as above, but on the content of struct fields:
     structFields = {'waveforms','tags','acg','firingRateMaps','general','groundTruthClassification','isi','putativeConnections','responseCurves','spikes'};
     for j = 1:numel(structFields)
-        fieldsInStruct = fieldnames(cell_metrics.(structFields{j}));
-        for i = 1:numel(fieldsInStruct)
-            if numel(size(cell_metrics.(structFields{j}).(fieldsInStruct{i})))==2 && all(size(cell_metrics.(structFields{j}).(fieldsInStruct{i})) == [cell_metrics.general.cellCount,1])
-                cell_metrics.(structFields{j}).(fieldsInStruct{i}) = cell_metrics.(structFields{j}).(fieldsInStruct{i})';
+        if isfield(cell_metrics,(structFields{j}))
+            fieldsInStruct = fieldnames(cell_metrics.(structFields{j}));
+            for i = 1:numel(fieldsInStruct)
+                if numel(size(cell_metrics.(structFields{j}).(fieldsInStruct{i})))==2 && all(size(cell_metrics.(structFields{j}).(fieldsInStruct{i})) == [cell_metrics.general.cellCount,1])
+                    cell_metrics.(structFields{j}).(fieldsInStruct{i}) = cell_metrics.(structFields{j}).(fieldsInStruct{i})';
+                end
             end
+        else
+            cell_metrics.(structFields{j}) = {};
         end
     end
     
@@ -115,6 +120,14 @@ function cell_metrics = loadJsonCellMetrics(json_file)
             end
         end
     end
+    % Adding basepath to file
+    try
+        [basepath,name,~] = fileparts(json_file);
+        cell_metrics.general.basepath = basepath;
+    end
+    
+    % Adding file format to file
+    cell_metrics.general.fileFormat = 'json';
     disp('Processing complete')
 end
     

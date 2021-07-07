@@ -1,6 +1,6 @@
-function verifySessionStruct(session)
+function validateSessionStruct(session)
 % This function is part of CellExplorer: https://CellExplorer.org
-% Verifies that required and optional fields have been defined in the session struct
+% Validates that required and optional fields have been defined in the session struct
 
 % By Peter Peterseb
 % 26-05-2020
@@ -33,7 +33,7 @@ session_fields.channelTags.optional = {'Theta','Cortical','Ripple'};
 % Brain regions
 session_fields.brainRegions.optional = {''};
 
-%% Verifying fields
+%% Validating fields
 fields_1stLevel = fields(session_fields);
 shortcutList = {};
 for i = 1:numel(fields_1stLevel)
@@ -145,8 +145,8 @@ for i = 1:numel(fields_1stLevel)
     shortcutList = [shortcutList;{'',''}];
 end
 
-%% Verifying if data that is pointed to exists
-shortcutList = [shortcutList;{['<html><b>','Verification of paths and fields','</b></html>'], ''}];
+%% Validating if data that is pointed to exists
+shortcutList = [shortcutList;{['<html><b>','Validation of paths and fields','</b></html>'], ''}];
 if exist(session.general.basePath,'dir')
     shortcutList = [shortcutList;{'session.general.basePath','basepath exists'}];
 else
@@ -162,7 +162,7 @@ if exist(fullfile(session.general.basePath,clusteringpath),'dir')
 else
     shortcutList = [shortcutList;{'session.spikeSorting{1}.relativePath','<html><b><font color="red">clustering data path does not exist</font></b></html>'}];
 end
-% Verifying raw data file exist
+% Validate raw data file exist
 if isfield(session.extracellular,'fileName') && ~isempty(session.extracellular.fileName)
     fileNameRaw = session.extracellular.fileName;
 else
@@ -182,5 +182,5 @@ else
     dimensions = [420,(size(shortcutList,1)+1)*18.5];
 end
 dimensions(2) = min(dimensions(2),700);
-fig.verifySessionStruct = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','CellExplorer: verification of session struct content', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(fig.verifySessionStruct,'center'), set(fig.verifySessionStruct,'visible','on')
-fig.sessionList = uitable(fig.verifySessionStruct,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{200 200},'columnname',{'Field','Outcome'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');
+fig.validateSessionStruct = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','CellExplorer: validation of session struct content', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(fig.validateSessionStruct,'center'), set(fig.validateSessionStruct,'visible','on')
+fig.sessionList = uitable(fig.validateSessionStruct,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{200 200},'columnname',{'Field','Outcome'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');

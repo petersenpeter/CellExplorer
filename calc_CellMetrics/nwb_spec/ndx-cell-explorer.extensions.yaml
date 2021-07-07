@@ -1,0 +1,213 @@
+groups:
+- neurodata_type_def: CellExplorerGeneral
+  neurodata_type_inc: LabMetaData
+  name: cell_explorer_general
+  doc: metadata necessary for full round trip in CellExplorer
+  datasets:
+  - name: saveAs
+    dtype: text
+    doc: doc for saveAs
+    quantity: '?'
+  groups:
+  - name: session
+    doc: holds session info
+    datasets:
+    - name: sessionType
+      dtype: text
+      doc: doc for sessionType
+      quantity: '?'
+    - name: spikeSortingMethod
+      dtype: text
+      doc: doc for spikeSortingMethod
+      quantity: '?'
+    - name: investigator
+      dtype: text
+      doc: doc for investigator
+      quantity: '?'
+  - name: isis
+    doc: holds ISI info
+    datasets:
+    - name: log10
+      dtype: float
+      dims:
+      - nbins
+      shape:
+      - null
+      doc: doc for log10
+      quantity: '?'
+  - name: acgs
+    doc: holds ACG info
+    datasets:
+    - name: log10
+      dtype: float
+      dims:
+      - nbins
+      shape:
+      - null
+      doc: doc for log10
+      quantity: '?'
+- neurodata_type_def: chanCoords
+  neurodata_type_inc: LabMetaData
+  name: chanCoords
+  doc: channel coordinates
+  datasets:
+  - name: source
+    dtype: text
+    doc: doc for source
+    quantity: '?'
+  - name: layout
+    dtype: text
+    doc: doc for layout
+    quantity: '?'
+  - name: shankSpacing
+    dtype: float
+    doc: doc for shankSpacing
+    quantity: '?'
+  - name: x
+    dtype: float
+    dims:
+    - nchans
+    shape:
+    - null
+    doc: doc for x
+    quantity: '?'
+  - name: y
+    dtype: float
+    dims:
+    - nchans
+    shape:
+    - null
+    doc: doc for y
+    quantity: '?'
+- neurodata_type_def: firingRateMaps
+  neurodata_type_inc: LabMetaData
+  name: firingRateMaps
+  doc: A group of firing rate maps
+  quantity: '?'
+  groups:
+  - neurodata_type_def: firingRateMap
+    neurodata_type_inc: NWBDataInterface
+    doc: Firing rate map attributes
+    quantity: '*'
+    datasets:
+    - name: name
+      dtype: text
+      doc: name of firingRateMap
+    - name: x_bins
+      dtype: float
+      dims:
+      - x_bins
+      shape:
+      - null
+      doc: bins of the firing rate map
+      quantity: '?'
+    - name: boundaries
+      dtype: float
+      dims:
+      - boundaries
+      shape:
+      - null
+      doc: boundaries of firing rate map
+      quantity: '?'
+    - name: labels
+      dtype: text
+      doc: labels of firing rate map
+      quantity: '?'
+- neurodata_type_def: responseCurves
+  neurodata_type_inc: LabMetaData
+  name: responseCurves
+  doc: A group of response curves
+  quantity: '?'
+  groups:
+  - neurodata_type_def: responseCurve
+    neurodata_type_inc: NWBDataInterface
+    doc: ResponseCurve attributes
+    quantity: '*'
+    datasets:
+    - name: name
+      dtype: text
+      doc: name of response curve
+    - name: x_bins
+      dtype: float
+      dims:
+      - x_bins
+      shape:
+      - null
+      doc: bins of the firing rate map
+      quantity: '?'
+    - name: x_edges
+      dtype: float
+      dims:
+      - x_edges
+      shape:
+      - null
+      doc: edges of the firing rate map
+      quantity: '?'
+- neurodata_type_def: Events
+  neurodata_type_inc: LabMetaData
+  name: Events
+  doc: A group of events
+  quantity: '?'
+  groups:
+  - neurodata_type_def: eventdata
+    neurodata_type_inc: NWBDataInterface
+    doc: event data attributes
+    quantity: '*'
+    datasets:
+    - name: name
+      dtype: text
+      doc: name of events
+    - name: x_bins
+      dtype: float
+      dims:
+      - x_bins
+      shape:
+      - null
+      doc: bins of the event
+      quantity: '?'
+    - name: event_file
+      dtype: text
+      doc: source file of events
+      quantity: '?'
+    - name: x_label
+      dtype: text
+      doc: x_label (with unit)
+      quantity: '?'
+    - name: alignment
+      dtype: text
+      doc: alignment of events (peaks, start, center)
+      quantity: '?'
+- neurodata_type_def: manipulations
+  neurodata_type_inc: LabMetaData
+  name: manipulations
+  doc: A group of manipulations
+  quantity: '?'
+  groups:
+  - neurodata_type_def: manipulationdata
+    neurodata_type_inc: NWBDataInterface
+    doc: manipulation data attributes
+    quantity: '*'
+    datasets:
+    - name: name
+      dtype: text
+      doc: name of manipulation data
+    - name: x_bins
+      dtype: float
+      dims:
+      - x_bins
+      shape:
+      - null
+      doc: bins of the firing rate map
+      quantity: '?'
+    - name: event_file
+      dtype: text
+      doc: source file of events
+      quantity: '?'
+    - name: x_label
+      dtype: text
+      doc: x_label (with unit)
+      quantity: '?'
+    - name: alignment
+      dtype: text
+      doc: alignment of events (peaks, start, center)
+      quantity: '?'

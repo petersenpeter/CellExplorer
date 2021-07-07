@@ -29,9 +29,9 @@ session = gui_session(session);
 Below is a screenshot of the metadata interface with metadata entered:
 ![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_general.png)
 
-4. You can verify the entered metadata by running the verification script:
+4. You can validate the entered metadata by running the verification script:
 ```m
-verifySessionStruct(session);
+validateSessionStruct(session);
 ```
 This will show a table, with missing required fields highlighted in red, and unused optional fields in blue. The verification can also be run from the session GUI:
 

@@ -17,7 +17,7 @@ saveAs = p.Results.saveAs;
 saveAsFullfile = fullfile(session.general.basePath,[session.general.name,'.',saveAs,'.lfp.mat']);
 
 ch_theta = session.channelTags.Theta.channels;
-
+ch_theta = ch_theta(1);
 if ~forceReload && exist(saveAsFullfile,'file')
     disp('Loading existing InstantaneousTheta.lfp.mat file')
     InstantaneousTheta = [];

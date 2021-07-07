@@ -52,7 +52,7 @@ The significance matrix can help quantify the modality of your data, e.g. using 
 The colors in the matrix signify significance level (right color bar in log10), `*` signifies p<0.05 and `**` signifies p<0.001. Selected metrics are shown on the left side of the matrix. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a nonparametric hypothesis test).
 
 ### Share cell metrics in your publications or with your peers
-You can save your combined cell metrics from a study into a single mat file that can be shared together with a publication. This allows peers to verify your classification or use your cell metrics directly. You can save the mat file from CellExplorer from the menu `File` -> `Save classification`.
+You can save your combined cell metrics from a study into a single mat file that can be shared together with a publication. This allows peers to verify your classification or use your cell metrics directly. You can save the mat file from CellExplorer from the menu `File` -> `Save`.
 
 ### Export figures
 Figures can be exported using the GUI, either the main CellExplorer window or through cell selection actions dialog. For more information please see the [figure export tutorial]({{"/tutorials/export-figure/"|absolute_url}}).

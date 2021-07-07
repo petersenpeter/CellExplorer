@@ -4,7 +4,7 @@ function preferences = preferences_ProcessCellMetrics(session)
 % Check the website of CellExplorer for more details: https://cellexplorer.org/
 
 % By Peter Petersen
-% Last edited: 10-09-2020
+% Last edited: 29-06-2021
 
 % General
 preferences.general.probesVerticalSpacing = 10; % 10um spacing between channels
@@ -15,8 +15,8 @@ preferences.loadSpikes.labelsToRead = {'good'};     % allows you to load units w
 
 % Waveform
 preferences.waveform.nPull = 600;               % number of spikes to pull out (default: 600)
-preferences.waveform.wfWin_sec = 0.004;         % Larger size of waveform windows for filterning. total width in seconds
-preferences.waveform.wfWinKeep = 0.0008;        % half width of the waveform extracted in seconds
+preferences.waveform.wfWin_sec = 0.004;         % Larger window of the waveform for filtering (to avoid edge effects). Total width in seconds [default 4ms]
+preferences.waveform.wfWinKeep = 0.0008;        % half width of the waveform. In seconds [default 0.8ms]
 preferences.waveform.showWaveforms = true;
 
 % PSTHs / Events / Manipulations
@@ -69,7 +69,7 @@ preferences.theta.min_spikes = 500;      % only calculated if the unit has above
 % % % % % % % % % % % % % % % % % % % % 
 % You may edit above preferences or provide your own preferences in a separate file.
 % Provide the path to your preferences as an analysis tag in the session struct: 
-% session.analysisTags.preferences_ProcessCellMetrics = 'user_preferences.user_preferences'; % loads the user_preference.m file from the folder +user_preferences
+% session.analysisTags.preferences_ProcessCellMetrics = 'user_preferences.my_preferences'; % loads the my_preference.m file from the folder +user_preferences
 
 if exist('session','var') && isfield(session,'analysisTags') && isfield(session.analysisTags,'preferences_ProcessCellMetrics') && ~isempty(which(session.analysisTags.preferences_ProcessCellMetrics))
     preferences = feval(session.analysisTags.preferences_ProcessCellMetrics,preferences,session);

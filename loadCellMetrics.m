@@ -1,10 +1,8 @@
 function [cell_metrics,cell_metrics_idxs] = loadCellMetrics(varargin)
-%   This function loads cell metrics for a given session
-
+% This function loads cell metrics for a given session
+% Check the wiki of the CellExplorer for more details: https://cellexplorer.org/
 %
-%   Check the wiki of the CellExplorer for more details: https://cellexplorer.org/
-%
-%   INPUTS
+% INPUTS
 %   id                     - takes a database id as input
 %   session                - takes a database sessionName as input
 %   basepath               - path to session (base directory)
@@ -12,18 +10,21 @@ function [cell_metrics,cell_metrics_idxs] = loadCellMetrics(varargin)
 %   Filters:
 %       brainRegion, synapticEffect, putativeCellType, labels, deepSuperficial, animal, tags, groups, groundTruthClassification
 %
-%   OUTPUT
+% OUTPUT
 %   cell_metrics            - Cell_metrics matlab structure
 %   cell_metrics_idxs       - indexes of cells fulfilling filters*
 % 
-%   Example calls
+% Example calls
 %   cell_metrics = loadCellMetrics('basepath',pwd);
 %   cell_metrics = loadCellMetrics('session',session);
-%  [cell_metrics,Pyramidal_indexes] = loadCellMetrics('session',session,'putativeCellType',{'Pyramidal'});
+%   cell_metrics = loadCellMetrics('fileFormat','json')
+%   cell_metrics = loadCellMetrics('fileFormat','nwb')
+%   [cell_metrics,Pyramidal_indexes] = loadCellMetrics('session',session,'putativeCellType',{'Pyramidal'});
+% 
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 10-01-2021
+% Last edited: 06-07-2021
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Parsing parameters
@@ -37,19 +38,19 @@ addParameter(p,'cell_metrics',{},@isstruct);
 addParameter(p,'basepath',[],@isstr);
 addParameter(p,'basename','',@isstr);
 addParameter(p,'session',[],@isstruct);
-addParameter(p,'id',[],@isnumeric);
+addParameter(p,'sessionId',[],@isnumeric);
 addParameter(p,'sessionName',[],@isstr);
 
-% Batch input
+% Batch input (not implemented)
 addParameter(p,'sessionIDs',{},@iscell);
 addParameter(p,'sessionNames',{},@iscell);
 addParameter(p,'basepaths',{},@iscell);
 
 % Extra inputs
-addParameter(p,'saveAs','cell_metrics',@isstr);
+addParameter(p,'saveAs','cell_metrics',@isstr); % Cell metrics name
+addParameter(p,'fileFormat','mat',@isstr); % File format (options: mat,nwb,json)
 
 % Filters
-addParameter(p,'filter',[],@iscell);
 addParameter(p,'brainRegion',[],@iscell);
 addParameter(p,'synapticEffect',[],@iscell);
 addParameter(p,'putativeCellType',[],@iscell);
@@ -62,56 +63,45 @@ addParameter(p,'groundTruthClassification',[],@iscell);
 
 parse(p,varargin{:})
 
-% Load an existing cell metrics struct 
+% Provide existing cell metrics struct
 cell_metrics = p.Results.cell_metrics;
 
 % Single session input
-id = p.Results.id; 
-session = p.Results.session;
-sessionin = p.Results.sessionName; 
+sessionId = p.Results.sessionId; 
+
+session = p.Results.session; 
 basepath = p.Results.basepath;
 basename = p.Results.basename;
 
-% Extra inputs
-saveAs = p.Results.saveAs;
+% Batch
+sessions = p.Results.sessionNames; 
 
-% Batch input
-sessionIDs = p.Results.sessionIDs;
-sessions = p.Results.sessionNames;
-basepaths = p.Results.basepaths;
-
-% Filters
-filter = p.Results.filter;
-brainRegion = p.Results.brainRegion;
-synapticEffect = p.Results.synapticEffect;
-putativeCellType = p.Results.putativeCellType;
-labels = p.Results.labels;
-deepSuperficial = p.Results.deepSuperficial;
-animal = p.Results.animal;
-tags = p.Results.tags;
-groups = p.Results.groups;
-groundTruthClassification = p.Results.groundTruthClassification;
+params = p.Results;
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Loading metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if ~isempty(cell_metrics)
-    disp('')
-elseif ~isempty(id) || ~isempty(sessionin)
+    
+elseif ~isempty(session)
+    basepath = session.general.basePath;
+    basename = session.general.name;
+
+elseif ~isempty(sessions)
+    cell_metrics = loadCellMetricsBatch('sessions',sessions);
+    
+elseif ~isempty(sessionId) || ~isempty(params.sessionName)
     bz_database = db_credentials;
-    if ~isempty(id)
-        [session, basename, basepath] = db_set_session('sessionId',id);
+    if ~isempty(sessionId)
+        [~, basename, basepath] = db_set_session('sessionId',sessionId);
     else
-        [session, basename, basepath] = db_set_session('sessionName',sessionin);
+        [~, basename, basepath] = db_set_session('sessionName',params.sessionName);
     end
-    if exist(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
-        load(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']))
-        cell_metrics.general.basepath = basepath;
-    else
-        warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
+else
+    if isempty(basepath)
+        basepath = pwd;
     end
-elseif ~isempty(basepath)
     if isempty(basename)
         s = regexp(basepath, filesep, 'split');
         if isempty(s{end})
@@ -119,23 +109,30 @@ elseif ~isempty(basepath)
         end
         basename = s{end};
     end
-    if exist(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
-        load(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']))
-        cell_metrics.general.basepath = basepath;
-    else
-        warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
+end
+
+file = fullfile(basepath,[basename,'.' ,params.saveAs,'.cellinfo.',params.fileFormat]);
+
+% Loading metrics
+
+if exist(file,'file')
+    switch lower(params.fileFormat)
+        case 'mat'
+            load(file,'cell_metrics')
+            cell_metrics.general.basepath = basepath;
+            cell_metrics.general.fileFormat = params.fileFormat;
+            
+        case 'nwb'
+            cell_metrics = loadNwbCellMetrics(file);
+            
+        case 'json'
+            cell_metrics = loadJsonCellMetrics(file);
+
+        otherwise
+            warning(['Unknown cell_metrics file format: ' file])
     end
-elseif ~isempty(session)
-    basepath = session.general.basePath;
-    basename = session.general.name;
-    if exist(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']),'file')
-        load(fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat']))
-        cell_metrics.general.basepath = basepath;
-    else
-        warning(['Error loading metrics: ' fullfile(basepath,[basename,'.' ,saveAs,'.cellinfo.mat'])])
-    end
-elseif ~isempty(sessions)
-    cell_metrics = loadCellMetricsBatch('sessions',sessions);
+else
+    warning(['Error loading metrics: ' file])
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -143,45 +140,47 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 filterIndx = ones(length(cell_metrics.UID),9);
-if ~isempty(brainRegion)
-    filterIndx(:,1) = strcmp(cell_metrics.brainRegion,brainRegion);
+if ~isempty(params.brainRegion)
+    filterIndx(:,1) = strcmp(cell_metrics.brainRegion,params.brainRegion);
 end
-if ~isempty(synapticEffect)
-    filterIndx(:,2) = contains(cell_metrics.synapticEffect,synapticEffect);
+if ~isempty(params.synapticEffect)
+    filterIndx(:,2) = contains(cell_metrics.synapticEffect,params.synapticEffect);
 end
-if ~isempty(putativeCellType)
-    filterIndx(:,3) = contains(cell_metrics.putativeCellType,putativeCellType);
+if ~isempty(params.putativeCellType)
+    filterIndx(:,3) = contains(cell_metrics.putativeCellType,params.putativeCellType);
 end
-if ~isempty(deepSuperficial)
-    filterIndx(:,4) = contains(cell_metrics.deepSuperficial,deepSuperficial);
+if ~isempty(params.deepSuperficial)
+    filterIndx(:,4) = contains(cell_metrics.deepSuperficial,params.deepSuperficial);
 end
-if ~isempty(animal)
-    filterIndx(:,5) = strcmp(cell_metrics.animal,animal);
+if ~isempty(params.animal)
+    filterIndx(:,5) = strcmp(cell_metrics.animal,params.animal);
 end
-if ~isempty(labels)
-    filterIndx(:,6) = strcmp(cell_metrics.labels,labels);
+if ~isempty(params.labels)
+    filterIndx(:,6) = strcmp(cell_metrics.labels,params.labels);
 end
-if ~isempty(tags)
+if ~isempty(params.tags)
     filterIndx(:,7) = 0;
-    for i = 1:numel(tags)
-         if isfield(cell_metrics.tags,tags{i})
-             filterIndx(cell_metrics.tags.(tags{i}),7) = 1;
+    for i = 1:numel(params.tags)
+         if isfield(cell_metrics.tags,params.tags{i})
+             filterIndx(cell_metrics.tags.(params.tags{i}),7) = 1;
          end
     end
 end
-if ~isempty(groups)
+
+if ~isempty(params.groups)
     filterIndx(:,8) = 0;
-    for i = 1:numel(groups)
-         if isfield(cell_metrics.groups,groups{i})
-             filterIndx(cell_metrics.groups.(groups{i}),8) = 1;
+    for i = 1:numel(params.groups)
+         if isfield(cell_metrics.groups,params.groups{i})
+             filterIndx(cell_metrics.groups.(params.groups{i}),8) = 1;
          end
     end
 end
-if ~isempty(groundTruthClassification)
+
+if ~isempty(params.groundTruthClassification)
     filterIndx(:,9) = 0;
-    for i = 1:numel(groundTruthClassification)
-         if isfield(cell_metrics.tags,groundTruthClassification{i})
-             filterIndx(cell_metrics.groundTruthClassification.(groundTruthClassification{i}),9) = 1;
+    for i = 1:numel(params.groundTruthClassification)
+         if isfield(cell_metrics.tags,params.groundTruthClassification{i})
+             filterIndx(cell_metrics.groundTruthClassification.(params.groundTruthClassification{i}),9) = 1;
          end
     end
 end

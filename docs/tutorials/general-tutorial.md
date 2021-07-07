@@ -28,7 +28,7 @@ You can use the GUI to inspect the metadata. Make sure that the extracellular ta
 ```m
 cell_metrics = ProcessCellMetrics('session', session,'showGUI',true);
 ```
-Setting showGUI to *true* will display the GUI shown below allowing you to verify parameters and settings for `ProcessCellMetrics`. You can click the button __Verify metadata__ to show a table with metadata relevant to the processing. Fields requiring your attention will be highlighted in red; optional fields in blue.
+Setting showGUI to *true* will display the GUI shown below allowing you to validate parameters and settings for `ProcessCellMetrics`. You can click the button __Validate metadata__ to show a table with metadata relevant to the processing. Fields requiring your attention will be highlighted in red; optional fields in blue.
 
 ![ProcessCellMetrics_gui](https://buzsakilab.com/wp/wp-content/uploads/2021/04/gui_session_ProcessCellMetrics.png)
 

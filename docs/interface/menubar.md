@@ -29,7 +29,8 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Elements | Description       | 
 |:-------------|:------------------|
 | Load session from file             | Opens a file dialog where you can select a cell metrics Matlab file to load | 
-| Save classification                | Saves any manual curation to the original cell metrics files. This also works in batch mode, allowing you to save any changes back to the original cell metrics calculated per session. | 
+| Save                | Saves any manual curation to the original cell metrics files. This also works in batch mode, allowing you to save any changes back to the original cell metrics calculated per session. | 
+| Save As...    | Save cell metrics to a new file. | 
 | Restore classification from backup | Shows a dialog with a list of backup steps for the current session. Choose any backup point to restore to that state. Every time the cell metrics are processed again with `ProcessCellMetrics.m` and curation are saved via CellExplorer, a backup is created. Backups are stored in a subfolder with the data | 
 | Reload cell metrics                | Reload cell metrics from original files | 
 | Export main figure window          | [Exports the CellExplorer interface](https://cellexplorer.org/tutorials/export-figure/) | 

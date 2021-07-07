@@ -216,14 +216,14 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn
 
 % Extracellular
 UI.menu.extracellular.topMenu = uimenu(UI.fig,menuLabel,'Extracellular');
-uimenu(UI.menu.extracellular.topMenu,menuLabel,'Verify electrode group(s)',menuSelectedFcn,@verifyElectrodeGroup);
+uimenu(UI.menu.extracellular.topMenu,menuLabel,'Validate electrode group(s)',menuSelectedFcn,@validateElectrodeGroup);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Sync electrode groups',menuSelectedFcn,@(~,~)syncChannelGroups);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate channel map',menuSelectedFcn,@(~,~)generateChannelMap1,'Separator','on');
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate common coordinates',menuSelectedFcn,@(~,~)generateCommonCoordinates1);
 
 % CellExplorer
 UI.menu.CellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
-uimenu(UI.menu.CellExplorer.topMenu,menuLabel,'Verfiy metadata',menuSelectedFcn,@performStructVerification,'Accelerator','V');
+uimenu(UI.menu.CellExplorer.topMenu,menuLabel,'Validate metadata',menuSelectedFcn,@performStructValidation,'Accelerator','V');
 
 % Database
 if enableDatabase
@@ -264,7 +264,7 @@ if exist('parameters','var') && ~isempty(parameters)
 end
 UI.panel.title2 = uicontrol('Parent',UI.panel.left,'Style', 'text', 'String', 'Groups','ForegroundColor','w','HorizontalAlignment','center', 'fontweight', 'bold','Units','normalized','BackgroundColor',[0. 0.3 0.7],'FontSize',11);
 for iTabs = 1:numel(tabsList)
-    UI.buttons.(tabsList{iTabs}) = uicontrol('Parent',UI.panel.left,'Style','togglebutton','Units','normalized','String',tabsList2{iTabs},'Callback',@changeTab);
+    UI.buttons.(tabsList{iTabs}) = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Units','normalized','String',tabsList2{iTabs},'Callback',@changeTab);
     UI.tabs.(tabsList{iTabs}) = uipanel('Parent',UI.panel.main,'Visible','off','Units','normalized','Position',[0 0 600 600],'BorderType','none');
 end
 uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.left);
@@ -308,7 +308,6 @@ if exist('parameters','var') && ~isempty(parameters)
         UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.parameters,'Style','checkbox','Position',[offset 305-rem(iParams-1,4)*18 260 15],'Units','normalized','String',UI.list.params{iParams});
     end
     
-    
     if isdeployed
         classification_schema_list = {'standard'};
         classification_schema_value = 1;
@@ -318,10 +317,14 @@ if exist('parameters','var') && ~isempty(parameters)
         
         classification_schema_value = find(strcmp(parameters.preferences.putativeCellType.classification_schema,classification_schema_list));
     end
+    
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Cell-type classification schema', 'Position', [10, 225, 200, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     UI.edit.classification_schema = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', classification_schema_list, 'value', classification_schema_value, 'Position', [5, 200, 200, 20],'HorizontalAlignment','left','Units','normalized');
-
-    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 210, 195, 30],'String','Verfiy metadata','Callback',@(src,evnt)performStructVerification,'Units','normalized');
+    
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'File format', 'Position', [220, 225, 200, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.edit.fileFormat = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', {'mat','nwb','json'}, 'value', 1, 'Position', [215, 200, 200, 20],'HorizontalAlignment','left','Units','normalized');
+    UI.edit.fileFormat.Value = find(strcmp({'mat','nwb','json'},parameters.fileFormat));
+    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 210, 195, 30],'String','Validate metadata','Callback',@(src,evnt)performStructValidation,'Units','normalized');
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Preferences', 'Position', [10, 175, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     UI.buttons.preferences = uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 180, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics);
     UI.table.preferences = uitable(UI.tabs.parameters,'Data',{},'Position',[5, 5, 605 , 170],'ColumnWidth',{100 160 320},'columnname',{'Category','Name','Value'},'RowName',[],'ColumnEditable',[false false false],'Units','normalized');
@@ -1082,9 +1085,9 @@ uiwait(UI.fig)
         end
     end
     
-    function performStructVerification(~,~)
+    function performStructValidation(~,~)
         readBackFields;
-        verifySessionStruct(session);
+        validateSessionStruct(session);
     end
     
     function edit_preferences_ProcessCellMetrics(~,~)
@@ -1216,6 +1219,7 @@ uiwait(UI.fig)
             try
                 parameters.preferences.putativeCellType.classification_schema = UI.edit.classification_schema.String{UI.edit.classification_schema.Value};
             end
+            parameters.fileFormat = UI.edit.fileFormat.String{UI.edit.fileFormat.Value};
         end
         session.general.date = UI.edit.date.String;
         session.general.time = UI.edit.time.String;
@@ -3018,7 +3022,7 @@ uiwait(UI.fig)
         end
     end
     
-    function verifyElectrodeGroup(~,~)
+    function validateElectrodeGroup(~,~)
         if isfield(session.extracellular,'electrodeGroups')
             if isnumeric(session.extracellular.electrodeGroups.channels)
                 channels = session.extracellular.electrodeGroups.channels(:);

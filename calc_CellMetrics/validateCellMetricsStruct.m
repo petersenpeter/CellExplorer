@@ -1,4 +1,4 @@
-function verifyCellMetricsStruct(cell_metrics)
+function validateCellMetricsStruct(cell_metrics)
     % Defining field types of standard metrics
     cell_metrics_type_struct = {'general','acg','isi','waveforms','putativeConnections','firingRateMaps','responseCurves','events','manipulations','tags','groups','groundTruthClassification','spikes'};
     cell_metrics_type_cell = {'brainRegion','animal','sex','species','strain','geneticLine','labels','putativeCellType','deepSuperficial','synapticEffect'};
@@ -16,24 +16,24 @@ function verifyCellMetricsStruct(cell_metrics)
     cell_metrics_cell = find(ismember(cell_metrics_types,{'cell'}));
     fields_struct = find(ismember(cell_metrics_types,'struct'));
     
-    % Verifying struct type
+    % Validating struct type
     if ~any(ismember(cell_metrics_types((ismember(cell_metrics_fieldnames,cell_metrics_type_struct))),'struct'))
         error('struct field not formatted correctly in cell_metrics')
     end
-    % Verifying numeric type
+    % Validating numeric type
     if ~any(ismember(cell_metrics_types((ismember(cell_metrics_fieldnames,cell_metrics_type_numeric))),'double'))
         error('numeric field not formatted correctly in cell_metrics')
     end
-    % Verifying cell type
+    % Validating cell type
     if ~any(ismember(cell_metrics_types((ismember(cell_metrics_fieldnames,cell_metrics_type_cell))),'cell'))
         error('cell array field not formatted correctly in cell_metrics')
     end
-    % Verifying field sizes
+    % Validating field sizes
     if any(any(cell_metrics_sizes(cell_metrics_numeric_cell,:) ~= [1,cell_metrics.general.cellCount]))
         cell_metrics
         error('cell_metrics: One or more numeric field/cell not dimensionalized correct')
     end
-    % Verifying struct fields
+    % Validating struct fields
     for i = 1:length(fields_struct)
         if ~strcmp(cell_metrics_fieldnames{fields_struct(i)},{'general','putativeConnections','tags','groups','groundTruthClassification'})
             field_fieldnames = fieldnames(cell_metrics.(cell_metrics_fieldnames{fields_struct(i)}));

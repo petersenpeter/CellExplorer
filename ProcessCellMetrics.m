@@ -30,7 +30,7 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   removeMetrics          - Metrics to remove (supports only deepSuperficial at this point)
 %   keepCellClassification - logical. Keep existing cell type classifications
 %   includeInhibitoryConnections - logical. Determines if inhibitory connections are included in the detection of synaptic connections
-%   manualAdjustMonoSyn    - logical. Manually verify monosynaptic connections in the pipeline (requires user input)
+%   manualAdjustMonoSyn    - logical. Manually validate monosynaptic connections in the pipeline (requires user input)
 %   restrictToIntervals    - time intervals to restrict the analysis to (in seconds)
 %   excludeIntervals       - time intervals to exclude (in seconds)
 %   excludeManipulationIntervals - logical. Exclude time intervals around manipulations (loads *.manipulation.mat files and excludes defined manipulation intervals)
@@ -57,7 +57,9 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %
 %   cell_metrics = ProcessCellMetrics('sessionName','rec1')       % Load session from database session name
 %   cell_metrics = ProcessCellMetrics('sessionID',10985)          % Load session from database session id
-%
+%  
+%   cell_metrics = ProcessCellMetrics('session', session,'fileFormat','nwb','showGUI',true); % saves cell_metrics to a nwb file
+%   
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 %   OUTPUT
 %   % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -99,6 +101,7 @@ addParameter(p,'submitToDatabase',false,@islogical);
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 addParameter(p,'saveBackup',true,@islogical);
+addParameter(p,'fileFormat','mat',@isstr);
 addParameter(p,'summaryFigures',false,@islogical);
 addParameter(p,'debugMode',false,@islogical);
 addParameter(p,'transferFilesFromClusterpath',true,@islogical);
@@ -173,7 +176,7 @@ end
 % Loading preferences
 preferences = preferences_ProcessCellMetrics(session);
 
-% Verifying format of electrode groups and spike groups  (must be of type cell)
+% Validating format of electrode groups and spike groups  (must be of type cell)
 if isfield(session.extracellular,'spikeGroups') && isfield(session.extracellular.spikeGroups,'channels') && isnumeric(session.extracellular.spikeGroups.channels)
     session.extracellular.spikeGroups.channels = num2cell(session.extracellular.spikeGroups.channels,2);
 end
@@ -202,7 +205,7 @@ if ~isfield(session,'extracellular') || ~isfield(session.extracellular,'electrod
     end
 end
 
-% Verifying that electrode groups and spike groups are 1-indexed
+% Validating that electrode groups and spike groups are 1-indexed
 if any([session.extracellular.electrodeGroups.channels{:}]==0)
     error('session.extracellular.electrodeGroups.channels contains 0. Must be 1-indexed')
 elseif any([session.extracellular.spikeGroups.channels{:}]==0)
@@ -262,7 +265,7 @@ if ~isempty(parameters.spikes)
     spikes{1} = parameters.spikes;
     parameters.spikes = [];
 else
-    dispLog('Getting spikes')
+    dispLog('Getting spikes',basename)
     spikes{1} = loadSpikes('session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'getWaveformsFromDat',parameters.getWaveformsFromDat);
 end
 if parameters.getWaveformsFromDat && (~isfield(spikes{1},'processinginfo') || ~isfield(spikes{1}.processinginfo.params,'WaveformsSource') || ~strcmp(spikes{1}.processinginfo.params.WaveformsSource,'dat file') || spikes{1}.processinginfo.version<3.5 || parameters.forceReloadSpikes == true)
@@ -360,11 +363,11 @@ end
 % Initializing cell_metrics struct
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-saveAsFullfile = fullfile(basepath,[basename,'.',parameters.saveAs,'.cellinfo.mat']);
+saveAsFullfile = fullfile(basepath,[basename,'.',parameters.saveAs,'.cellinfo.',parameters.fileFormat]);
 if exist(saveAsFullfile,'file')
     dispLog(['Loading existing metrics: ' saveAsFullfile],basename)
     load(saveAsFullfile)
-elseif exist(fullfile(basepath,[parameters.saveAs,'.mat']),'file')
+elseif exist(fullfile(basepath,[parameters.saveAs,'.',parameters.fileFormat]),'file')
     % For legacy naming convention
     warning(['Loading existing legacy metrics: ' parameters.saveAs])
     load(fullfile(basepath,[parameters.saveAs,'.mat']))
@@ -683,13 +686,13 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
         cell_metrics.acg_tau_burst = fit_params.acg_tau_burst;
         cell_metrics.acg_h = fit_params.acg_h;
     end
-    if ~all(isfield(cell_metrics,{'acg'}))  || ~isfield(cell_metrics.acg,{'log10'})  || parameters.forceReload == true
+    if ~isfield(cell_metrics,'acg')  || ~isfield(cell_metrics.acg,{'log10'})  || parameters.forceReload == true
         dispLog('Calculating log10 ACGs',basename)
          acg = calc_logACGs(spikes{spkExclu}.times);
          cell_metrics.acg.log10 = acg.log10;
          cell_metrics.general.acgs.log10 = acg.log10_bins;
     end
-    if ~all(isfield(cell_metrics,{'isi'}))  || ~isfield(cell_metrics.isi,{'log10'})  || parameters.forceReload == true
+    if ~isfield(cell_metrics,'isi')  || ~isfield(cell_metrics.isi,{'log10'})  || parameters.forceReload == true
         dispLog('Calculating log10 ISIs',basename)
         isi = calc_logISIs(spikes{spkExclu}.times);
         cell_metrics.isi.log10 = isi.log10;
@@ -855,10 +858,11 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
     end
     
     for j = 1:size(spikes{spkExclu}.times,2)
-        spikes2.ts{j} = spikes2.ts{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{session.channelTags.Theta.channels})/session.extracellular.srLfp);
-        spikes2.times{j} = spikes2.times{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{session.channelTags.Theta.channels})/session.extracellular.srLfp);
+        Theta_channel = session.channelTags.Theta.channels(1);
+        spikes2.ts{j} = spikes2.ts{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{Theta_channel})/session.extracellular.srLfp);
+        spikes2.times{j} = spikes2.times{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{Theta_channel})/session.extracellular.srLfp);
         spikes2.ts_eeg{j} = ceil(spikes2.ts{j}/16);
-        spikes2.theta_phase{j} = InstantaneousTheta.signal_phase{session.channelTags.Theta.channels}(spikes2.ts_eeg{j});
+        spikes2.theta_phase{j} = InstantaneousTheta.signal_phase{Theta_channel}(spikes2.ts_eeg{j});
         spikes2.speed{j} = interp1(animal.time,animal.speed,spikes2.times{j});
         if sum(spikes2.speed{j} > 10)> preferences.theta.min_spikes % only calculated if the unit has above min_spikes (default: 500)
             
@@ -1505,10 +1509,10 @@ if ~isempty(parameters.excludeIntervals) && size(parameters.excludeIntervals,2) 
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Verifying metrics struct
+% Validating metrics struct
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-dispLog('Verifying metrics struct',basename);
-verifyCellMetricsStruct(cell_metrics);
+dispLog('Validating metrics struct',basename);
+validateCellMetricsStruct(cell_metrics);
 
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -1517,13 +1521,9 @@ verifyCellMetricsStruct(cell_metrics);
 
 if parameters.saveMat
     dispLog(['Saving cells to: ',saveAsFullfile],basename);
+    saveCellMetrics(cell_metrics,saveAsFullfile)
     try
-        structSize = whos('cell_metrics');
-        if structSize.bytes/1000000000 > 2
-            save(saveAsFullfile,'cell_metrics','-v7.3','-nocompression')
-        else
-            save(saveAsFullfile,'cell_metrics')
-        end
+        
         dispLog(['Saving session struct: ' fullfile(basepath,[basename,'.session.mat'])],basename);
         save(fullfile(basepath,[basename,'.session.mat']),'session')
     catch

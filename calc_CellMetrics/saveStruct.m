@@ -57,7 +57,7 @@ if any(strcmp(datatype,supportedDataTypes))
     end
     
     % Saving struct  
-    switch fileformat
+    switch lower(fileformat)
         case 'mat'
             % MATLABs own mat format
             % Saving to a struct to maintain intented variable name
@@ -79,16 +79,17 @@ if any(strcmp(datatype,supportedDataTypes))
             success = true;
         case 'json'
             % Saves session struct or cell_metrics to a json file
-            if strcmp(datatype,{'session','cell_metrics'})
+            if any(strcmp(datatype,{'session','cell_metrics'}))
                 encodedJSON = jsonencode(data);
                 fid=fopen(file,'w');
                 fprintf(fid, encodedJSON);
                 fclose(fid);
             end
         case 'nwb'
-            % saves to a NeurodataWithoutBorder nwb container
-            warning('Saving to NWB is not yet supported!')
-            
+            % saves to a NeurodataWithoutBorder nwb container file
+            if strcmp(datatype,'cell_metrics')
+                saveCellMetrics2nwb(cell_metrics,file)
+            end
         otherwise
             warning(['File format not supported: ' fileformat])
     end

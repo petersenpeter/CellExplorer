@@ -725,7 +725,7 @@ end
             colors = ones(size(UI.colors))/(UI.settings.greyScaleTraces-4);
             colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
         end
-        % Setting booean for verifying ephys loading and plotting
+        % Setting booean for validating ephys loading and plotting
         
         ephys.loaded = false;
         ephys.plotted = false;
@@ -3868,7 +3868,7 @@ end
             pcolor(timeLine,multiplier,flipud(transpose(d))); 
         end
 
-%         set(gca,'clim',[-0.05 0.05])
+        set(gca,'clim',[-0.05 0.05])
         
         shading interp;
     end

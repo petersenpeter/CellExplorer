@@ -20,6 +20,7 @@ function saveCellMetrics(cell_metrics,file)
             fprintf(fid, encodedJSON);
             fclose(fid);
         case 'nwb'
+            saveCellMetrics2nwb(cell_metrics,file);
             
         otherwise
             warning(['Unknown file format: ' file]);
