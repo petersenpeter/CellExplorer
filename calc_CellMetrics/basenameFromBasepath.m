@@ -2,36 +2,29 @@ function basename = basenameFromBasepath(basepath)
     % Determines a basename from a basepath by scanning the directory 
     % Part of CellExplorer, by Peter Petersen
     
-    % Looks for certain files from the basepath and if none are present it determines basename from directory name
-    file1 = dir(fullfile(basepath,'*.session.mat'));
-    file2 = dir(fullfile(basepath,'*.xml'));
-    file3 = dir(fullfile(basepath,'*.lfp'));
-    file4 = dir(fullfile(basepath,'*.dat'));
+    % Uses local files to for CellExplorer specific files from the basepath and if none are present it determines the basename from the directory name
     
-    if ~isempty(file1)
-        file = getBasenameFromDir(file1);
-        basename = file(1:end-12);
-    elseif ~isempty(file2)
-        file = getBasenameFromDir(file4);
-        basename = file(1:end-4);
-    elseif ~isempty(file3)
-        file = getBasenameFromDir(file3);
-        basename = file(1:end-4);
-    elseif ~isempty(file4)
-        file = getBasenameFromDir(file4);
-        basename = file(1:end-4);
-    else
+    extensions = {'.session.mat','.xml','.lfp','.dat'};
+    basename = '';
+    for i = 1:numel(extensions)
+        file1 = dir(fullfile(basepath,['*',extensions{i}]));
+        if ~isempty(file1)
+            filenames = {file1.name};
+            for k = 1:numel(filenames)
+                if ~startsWith(filenames{k}, '._')
+                    file = filenames{k};
+                    disp(['Basepath: ' extensions{i}])
+                    break
+                end
+            end
+            basename = file(1:end-numel(extensions{i}));
+        end
+        if ~isempty(basename)
+            break
+        end
+    end
+    if isempty(basename)
         disp('Failed to find basepath files')
         [~,basename,~] = fileparts(basepath);
-    end
-
-    function basname_out = getBasenameFromDir(dirInput)
-        filenames = {dirInput.name};
-        for i = 1:numel(filenames)
-            if ~startsWith(filenames{i}, '._')
-                basname_out = filenames{i};
-                return
-            end
-        end
     end
 end
