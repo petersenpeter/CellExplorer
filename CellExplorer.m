@@ -4742,7 +4742,7 @@ end
         idx = ismember(colorMenu,groups_fields2);
         colorMenu(idx) = [];
         for iGroupFields = 1:numel(groups_fields)
-            if ~isempty(cell_metrics.(groups_fields{iGroupFields}))
+            if ~isempty(cell_metrics.(groups_fields{iGroupFields})) && ~isempty(fieldnames(cell_metrics.(groups_fields{iGroupFields})))
                 newFieldName = groups_fields2{iGroupFields};
                 temp = fieldnames(cell_metrics.(groups_fields{iGroupFields}));
                 cell_metrics.(newFieldName) = repmat({'None'},1,cell_metrics.general.cellCount);
@@ -4762,7 +4762,7 @@ end
     end
     
     function defineGroupData(~,~)
-        [cell_metrics,UI,ClickedCells] = dialog_metrics_groupData(cell_metrics,UI);
+        ClickedCells = dialog_metrics_groupData;
         initTags
         updateTags
         if ~isempty(ClickedCells)
@@ -4771,7 +4771,7 @@ end
         end
     end
     
-    function [cell_metrics,UI,ClickedCells] = dialog_metrics_groupData(cell_metrics,UI)
+    function ClickedCells = dialog_metrics_groupData
         if ~isfield(UI.groupData1,'groupToList')
             UI.groupData1.groupToList = 'tags';
             groupDataSelect = 2;
@@ -4821,6 +4821,8 @@ end
                 end
                 ClickedCells = affectedCells;
                 delete(UI.groupData1.dialog);
+                initTags
+                updateTags
                 updateUI2
             end
         end
@@ -4831,6 +4833,7 @@ end
             updateGroupList
             filterGroupData
         end
+        
         function updateUI2
             for i = 1:numel(UI.preferences.tags)
                 if isfield(UI,'togglebutton')
@@ -4855,6 +4858,7 @@ end
                 end
             end
         end
+        
         function toggleGroundTruthButtons
             if strcmp(UI.groupData1.groupToList,'groundTruthClassification')
                 UI.groupData1.popupmenu.performGroundTruthClassification.Visible = 'On';
@@ -4887,8 +4891,8 @@ end
                     filterGroupData
                     if strcmp(UI.groupData1.groupToList,'tags')
                         UI.preferences.tags = [UI.preferences.tags,NewTag{1}];
-                        %                         initTags
-                        %                         updateTags
+                        initTags
+                        updateTags
                     end
                 else
                     warndlg(['Tag not added. Must be a valid variable name : ' NewTag{1}]);
@@ -4912,8 +4916,8 @@ end
                 filterGroupData
                 if strcmp(UI.groupData1.groupToList,'tags')
                     UI.preferences.tags(ismember(UI.preferences.tags,field)) = [];
-                    %                     initTags
-                    %                     updateTags
+                    initTags
+                    updateTags
                 end
             end
         end
@@ -4946,8 +4950,8 @@ end
                 if strcmp(UI.groupData1.groupToList,'tags')
                     UI.preferences.tags(ismember(UI.preferences.tags,oldField)) = [];
                     UI.preferences.tags = [UI.preferences.tags,newField];
-                    %                     initTags
-                    %                     updateTags
+                    initTags
+                    updateTags
                 end
             elseif column == 5
                 
@@ -5073,6 +5077,8 @@ end
         function CloseDialog
             % Closes the dialog
             delete(UI.groupData1.dialog);
+            initTags
+            updateTags
             updateUI2
             uiresume(UI.fig);
         end
