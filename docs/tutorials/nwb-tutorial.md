@@ -1,6 +1,6 @@
 ---
 layout: default
-title: NWB torial
+title: NWB tutorial
 parent: Tutorials
 nav_order: 3
 ---

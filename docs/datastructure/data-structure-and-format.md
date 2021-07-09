@@ -189,20 +189,22 @@ The `*.channelinfo.mat` files should be stored in the basepath.
 
 __Channels coordinates__
 `chanCoords` : Channels coordinates struct (probe layout) with x and y position for each recording channel saved to `basename.chanCoords.channelinfo.mat` with the following fields:
-  * `channel` : Channel list (Qx1).
   * `x` : x position of each channel (in µm; Qx1).
   * `y` : y position of each channel (in µm; Qx1).
-
-This works as a simple 2D representation of recordings and will help you determine the location of your neurons. It is also used to determine the spike amplitude length constant of the spike waveforms across channels. 
+  * `source` : y position of each channel (in µm; Qx1; optional).
+  * `layout` : y position of each channel (in µm; Qx1; optional).
+  * `shankSpacing` : y position of each channel (in µm; Qx1; optional).
+  * `channel` : Channel list (Qx1; optional).
+This works as a simple 2D representation of recordings and will help you determine the location of your neurons. It is also used to determine the spike amplitude length constant of the spike waveforms across channels.
 
 __Allen Institute's Common Coordinate Framework__
-`ccf` : Allen Institute's Common Coordinate Framework for each recording channel saved to  `basename.ccf.channelinfo.mat` with the following fields:
-  * `channel` : Channel list (Qx1).
-  * `ap` : anterior-posterior position of each channel (µm; Qx1).
-  * `dv` : dorsol-ventral position of each channel (µm; Qx1).
-  * `lr` : left-right position of each channel (µm; Qx1).
+`ccf` : Allen Institute's Common Coordinate Framework (CCF) for each recording channel saved to  `basename.ccf.channelinfo.mat` with the following fields:
+  * `x` : Anterior-Posterior position of each channel (µm; Qx1).
+  * `y` : Superior-Inferior position of each channel (µm; Qx1).
+  * `z` : Left-Right position of each channel (µm; Qx1; right hemisphere positive direction).
+  * `channel` : Channel list (Qx1; optional).
 
-The Allen Institute's Common Coordinate Frame allows you to visualize your cells into a standardized mouse atlas. 
+The Allen Institute's Common Coordinate Frame allows you to visualize your cells into the standardized mouse atlas.
 
 ### Time series
 This is a data container for other time series data (check other containers for specific formats like intracellular). A MATLAB struct `timeserieName` stored in a .mat file: `basename.timeserieName.timeseries.mat` with the following fields:
