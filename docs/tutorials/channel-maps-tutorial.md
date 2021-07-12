@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Channel maps tutorial
+title: Channel maps
 parent: Tutorials
 nav_order: 4
 ---
@@ -22,7 +22,7 @@ CellExplorer can show both channel maps as separate plots as shown in below figu
 ## Channel coordinates (Probe layout)
 The channel maps can be generated manually or with two CellExplorer functions. When you generate the channel maps manually, make sure to save them according to the [data structure](https://cellexplorer.org/datastructure/data-structure-and-format/#channels) of CellExplorer.
 
-### 0. Manually generating the channel coordinates
+### Manually generating the channel coordinates
 The channel coordinates are based on x and y coordinates in µm. To generate a channel map for a linear probe with 16 channels spaced 20 µm apart, you can do the following:
 
 ```m
@@ -42,7 +42,7 @@ Channel coordinates can be generated from a session struct with defined electrod
 between the sites.
 There are two ways to provide these parameters
 
-### 1. Using animal probe implants metadata
+#### 1. Using animal probe implants metadata
 
 Open the session gui: 
 ```m
@@ -57,7 +57,7 @@ Activate the _Probe implants_ tab and click _Add_. This will open a probe implan
 generateChannelMap(session)
 ```
 
-### 2. Using analysis tags
+#### 2. Using analysis tags
 The other option is providing basic parameters about your probe geometry:
 * Probe layout: `session.analysisTags.probesLayout`. Select from the following options: 
   * `linear`: one column of channels sitting along the same linear axis (e.g. A1x16-3mm-25-177 from NeuroNexus). 
@@ -78,11 +78,11 @@ session.extracellular.electrodeGroups
 generateChannelMap(session)
 ```
 
-The channel map can also be generated directly from the session gui, by selecting _Generate channel map_ from the _Extracellular_ menu. This will generate the chanCoords file and below figure showing an example layout with two NeuroNexus Buzsaki 64 channel probes with a staggered configuration with 8 shanks (200 µm apart).
+The channel map can also be generated directly from the session gui, by selecting __Generate channel map__ from the __Extracellular__ menu. This will generate the chanCoords file and below figure showing an example layout with two NeuroNexus Buzsaki 64 channel probes with a staggered configuration with 8 shanks (200 µm apart).
 
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2021/07/Channelmap_session_gui.png" width="80%"></p>
 
-### 3. Generating and using channel coordinates for probe design
+#### 3. Generating and using channel coordinates for probe design
 CellExplorer also supports true probe geometries, which must be saved as a chanCoords struct in the CellExporer directory: `+chanCoords/probe_name.probes.chanCoords.channelInfo.mat`. If a probe design has been defined, CellExplorer prioritizes this above other methods. 
 
 Prioritized order for generating the chanCoords file:
@@ -114,7 +114,7 @@ generateCommonCoordinates(session)
 ```
 This action requires the implant metadata, and will generate a ccf file, e.g. `basepath/basename.ccf.channelInfo.mat` and show the figure below
 
-The common coordinates can also be generated directly from the session gui, by selecting _Generate common coordinates_ from the _Extracellular_ menu. This will generate the chanCoords file and below figure showing an example layout with two Buzsaki 64 probes with a staggered configuration with 8 shanks (200 µm apart) implanted in CA1 in both hemispheres. The vectors signifies implant vectors, and the probes has been rotated along the implant axis to follow the curvature of the Longitudinal Axis of the Hippocampus.
+The common coordinates can also be generated directly from the session gui, by selecting __Generate common coordinates__ from the __Extracellular__ menu. This will generate the chanCoords file and below figure showing an example layout with two Buzsaki 64 probes with a staggered configuration with 8 shanks (200 µm apart) implanted in CA1 in both hemispheres. The vectors signifies implant vectors, and the probes has been rotated along the implant axis to follow the curvature of the Longitudinal Axis of the Hippocampus.
 
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2021/07/CCF_sessio_gui.png" width="80%"></p>
 

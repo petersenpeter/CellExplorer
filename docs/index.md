@@ -39,7 +39,7 @@ mex -O FindInInterval.c
 That's it! Now you can explore the software with below example data or try one of the tutorials.
 
 ### Try CellExplorer with example data
-There is an example dataset included in the repository for trying CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/loadCellMetricsBatch.m) into MATLAB and type:
+There is an example dataset included in the repository for trying CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/exampleData/cell_metrics_batch.mat?raw=true) into MATLAB and type:
 ```m
 CellExplorer('metrics',cell_metrics)
 ```

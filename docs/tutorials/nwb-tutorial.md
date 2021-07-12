@@ -1,6 +1,6 @@
 ---
 layout: default
-title: NWB tutorial
+title: NWB
 parent: Tutorials
 nav_order: 3
 ---
@@ -23,7 +23,9 @@ cell_metrics = loadCellMetrics('basepath',pwd);
 ```
 
 2. Export the cell_metrics to NWB
+
 The nwb naming should ideally follow the CellExplorer filename convention:
+
 ```m
 nwb_file = [cell_metrics.general.basename,'.cell_metrics.cellinfo.nwb'];
 
@@ -58,9 +60,10 @@ The script will determine the nwb filename from the basename and basepath, e.g.:
 
 ## Saving metrics to nwb in ProcessCellMetrics
 To save the cell metrics directly to an nwb file in the processing module, you must provide the file format as an input to the call. The file format can also be set in the graphical interface by setting `showGUI=true`
+
 ```m
 cell_metrics = ProcessCellMetrics('session', session,'showGUI',true,'fileFormat','nwb');
 ```
 
 ### Saving metrics to nwb in CellExplorer
-You may also save directly to an nwb file in CellExplorer. From the _File_ menu in CellExplorer, select _Save As..._, a save-dialog will appear, in which you may select _.nwb_ as the file format. 
+You may also save directly to an nwb file in CellExplorer. From the __File__ menu in CellExplorer, select __Save As...__, a save-dialog will appear, in which you may select __.nwb__ as the file format. 
