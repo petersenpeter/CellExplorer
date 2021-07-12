@@ -8,6 +8,14 @@ nav_order: 3
 {: .no_toc}
 This tutorial will show you how to export cell metrics to a NWB file and import them back from the file. CellExplorer still works with its regular Matlab structs in memory, but you can save (export) and load (import) the cell metrics from a nwb file.
 
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+## Export the cell_metrics to NWB
+
 1. Load cell_metrics struct from a session into Matlab, e.g.:
 
 ```m

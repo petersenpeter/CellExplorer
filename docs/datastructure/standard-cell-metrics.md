@@ -85,6 +85,20 @@ $$
 
 <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%"></p>
 
+### Channel maps
+Two channel maps are currently supported by CellExplorer, that are determined from the amplitude of the average waveform across channels.
+
+* Trilaterated channel coordinates. 
+  * `cell_metrics.trilat_x`: x coordinate in µm.
+  * `cell_metrics.trilat_y`: y coordinate in µm.
+
+* Common coordinate framework (CCF; by the Allen Institute). Also determined by trilateration. 
+  * `cell_metrics.ccf_x`: x coordinate in µm.
+  * `cell_metrics.ccf_y`: y coordinate in µm.
+  * `cell_metrics.ccf_z`: z coordinate in µm.
+
+Please see the [channel maps tutorial](https://cellexplorer.org/tutorials/channel-maps-tutorial/) for how to generate the channel maps.
+
 ## Cell-type classification
 * `putativeCellType`: Putative cell types. [See the dedicated page about cell-type classification]({{"/pipeline/cell-type-classification/"|absolute_url}}).
 

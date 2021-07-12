@@ -8,6 +8,12 @@ nav_order: 4
 {: .no_toc}
 This tutorial will show you how to generate and use the two channel maps available in CellExplorer: 1. Channel coordinates (2D probe layout) and 2. the Common Coordinate Framework (CCF; by the Allen Institute). The data formats are defined [here](https://cellexplorer.org/datastructure/data-structure-and-format/#channels). The channel maps are useful to see the spatial location of the cells, in 2D or in 3D. 
 
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
 ### Channel maps examples in CellExplorer
 CellExplorer can show both channel maps as separate plots as shown in below figure. The probe layout can also be shows as an embedded plot in the waveform plots. The same session and cell are shown in all three panels. Two Buzsaki probes with 6 shanks (10 staggered channels per shank), implanted in CA1 in both hemispheres.
 
