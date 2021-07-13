@@ -8,6 +8,12 @@ nav_order: 7
 {: .no_toc}
 The individual analysis steps of the processing module can easily be used separately. Below follows a few examples. All of them requires the session struct and/or the spikes struct. Most functions have a number of optional arguments allowing for customization. 
 
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
 ### Create session struct
 1. Define the basepath of the dataset to run. An optional Neuroscope compatible `basename.xml` can be used to define the electrode layout.
 ```m
@@ -88,3 +94,33 @@ deepSuperficialfromRipple = classification_DeepSuperficial(session);
 ```m
 gui_DeepSuperficial(deepSuperficialfromRipple;
 ```
+
+### Calculate CCGs across all cells
+First calculate the spindices (the input format of the CCG function), if they are missing in the spikes struct:
+
+```m
+spikes_restrict.spindices = generateSpinDices(spikes_restrict.times);
+```
+
+Next calculate the CCGs between all pairs of cells
+
+```m
+binSize = 0.001; % 1ms bin size
+duration = 0.1; % -50ms:50ms window
+[ccg,t] = CCG(spikes.spindices(:,1),spikes.spindices(:,2),'binSize',binSize,'duration',duration);
+```
+
+Finally, to plot the ACGs and CCGs write
+
+```m
+figure, 
+% Plotting the autocorrelogram (ACG) of the eight cell
+subplot(2,1,1)
+plot(t,ccg(:,8,8)), title('ASCG'), xlabel('Time (seconds)'), ylabel('Count')
+
+% Plotting the cross correlogram (CCG) between a pair of cells
+subplot(2,1,2)
+plot(t,ccg(:,1,3)), title('CCG'), xlabel('Time (seconds)'), ylabel('Count')
+```
+
+The CCG example is also part of a [CCG tutorial script](https://github.com/petersenpeter/CellExplorer/blob/master/tutorials/CCG_tutorial.m).
