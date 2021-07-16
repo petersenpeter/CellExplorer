@@ -510,7 +510,7 @@ titles = {'Electrode groups','Spike groups'};
 for iGroups = 1:2
     UI.tabs.(groups{iGroups}) = uitab(UI.channelGroups,'Title',titles{iGroups});
     UI.list.tableData = {false,'','',''};
-    UI.table.(groups{iGroups}) = uitable(UI.tabs.(groups{iGroups}),'Data',UI.list.tableData,'Position',[1, 45, 616, 320],'Tag','electrodeGroups','ColumnWidth',{20 45 400 120},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false true true],'Units','normalized','CellEditCallback',@editElectrodeTableData);
+    UI.table.(groups{iGroups}) = uitable(UI.tabs.(groups{iGroups}),'Data',UI.list.tableData,'Position',[1, 45, 616, 320],'Tag',groups{iGroups},'ColumnWidth',{20 45 400 120},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false true true],'Units','normalized','CellEditCallback',@editElectrodeTableData);
     uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[5, 5, 110, 32],'Tag',groups{iGroups},'String','Add','Callback',@addElectrodeGroup,'Units','normalized');
     uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[120, 5, 110, 32],'Tag',groups{iGroups},'String','Edit','Callback',@addElectrodeGroup,'Units','normalized');
     uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[235, 5, 130, 32],'Tag',groups{iGroups},'String','Delete','Callback',@deleteElectrodeGroup,'Units','normalized');
@@ -2830,7 +2830,7 @@ uiwait(UI.fig)
         elseif evnt.Indices(1,2)==10
             session.epochs{edit_group}.notes = evnt.NewData;
         end
-    end    
+    end
         
     function editElectrodeTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
