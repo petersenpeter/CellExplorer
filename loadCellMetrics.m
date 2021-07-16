@@ -133,6 +133,7 @@ if exist(file,'file')
     end
 else
     warning(['Error loading metrics: ' file])
+    return
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %

@@ -3,19 +3,20 @@ function session = loadSession(basepath,basename)
 % basepath is providede it will try to load from current directory
 
 % By Peter Petersen
-% Last edited: 29-06-2020
+% Last edited: 29-06-2021
 
-if ~exist('basepath')
+
+if ~exist('basepath','var')
     basepath = pwd;
 end
-if ~exist('basename')
-    test = dir(fullfile(basepath,'*.session.mat'));
-    if ~isempty(test)
-        load(fullfile(basepath,test.name));
-    else
-        error(['No *.session.mat file exist in basepath: ' basepath])
-    end
-else
+
+if ~exist('basename','var')
+    basename = basenameFromBasepath(basepath);
+end
+file = fullfile(basepath,[basename,'.session.mat']);
+if exist(file,'file')
     load(fullfile(basepath,[basename,'.session.mat']),'session')
+else
+    error('No session file exist')
 end
 session.general.basePath = basepath;

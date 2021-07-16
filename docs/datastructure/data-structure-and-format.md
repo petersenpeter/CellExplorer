@@ -141,12 +141,6 @@ Any extra field can be added with info about the units, e.g. the theta phase of 
 ### Cell metrics
 The cell metrics are kept in a `cell_metrics` struct as [described here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). The cell metrics are stored in: `basename.cell_metrics.cellinfo.mat`.
 
-### Firing rate maps
-This is a data container for firing rate map data. A MATLAB struct `ratemap` containing 1D or linearized firing rat maps, stored in a .mat file: `basename.ratemap.firingRateMap.mat`. The firing rate maps have the following fields:
-* `map`: a 1xN cell-struct for N units each containing a KxL matrix, where K corresponds to the bin count and L to the number of states. States can be trials, manipulation states, left-right states, etc.
-* `x_bins`: a 1xK vector with K bin values used to generate the firing rate map.
-* `state_labels`: a 1xL vector with char labels describing the states.
-
 ### Events
 This is a data container for event data. A MATLAB struct `eventName` stored in a .mat file: `basename.eventName.events.mat` with the following fields:
 * `timestamps`: Px2 matrix with intervals for the P events in seconds.
@@ -265,6 +259,7 @@ This is a data container for behavioral tracking data. A MATLAB struct `behavior
 
 Any other field can be added to the struct containing behavior data. The `*.behavior.mat` files should be stored in the basepath.
 
+
 ### Trials
 A MATLAB struct `trials` stored in a .mat file: `basename.trials.behavior.mat`. The trials struct is a special behavior struct centered around behavioral trials. `trials` has the following fields:
 * `start`: trial start times in seconds.
@@ -276,6 +271,15 @@ A MATLAB struct `trials` stored in a .mat file: `basename.trials.behavior.mat`. 
 * `processinginfo`: a struct with information about how the .mat file was generated including the name of the function, version, date and parameters.
 
 Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath. Trial-wise data should live in this container, while trial-intervals can be stored in other behavior structs.
+
+### Firing rate maps
+This is a data container for firing rate map data. A MATLAB struct `ratemap` containing 1D or linearized firing rat maps, stored in a .mat file: `basename.ratemap.firingRateMap.mat`. The firing rate maps have the following fields:
+* `map`: a 1xN cell-struct for N units each containing a KxL matrix, where K corresponds to the bin count and L to the number of states. States can be trials, manipulation states, left-right states, etc.
+* `x_bins`: a 1xK vector with K bin values used to generate the firing rate map.
+* `x_label`: a 1xL vector with names of the states.
+* `stateNames`: a 1xL vector with names of the states.
+* `boundaries`: a 1xL vector with spatial boundaries.
+* `boundaryNames`: a 1xL vector with labels for the boundaries.
 
 ### Intracellular time series
 This is a data container for intracellular recordings. Any MATLAB struct `intracellularName` containing intracellular data would be stored in a .mat file: `basename.intracellularName.intracellular.mat`. It contains fields inherited from timeSeries with the following fields:

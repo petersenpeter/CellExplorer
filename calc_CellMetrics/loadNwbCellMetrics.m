@@ -17,7 +17,6 @@ function cell_metrics = loadNwbCellMetrics(nwb_file)
 % TODO 
 % nwb3.general_experimenter?
 
-% nwb_file = [cell_metrics.general.basename,'.nwb']; 
 nwb = nwbRead(nwb_file);
 
 cell_metrics = {};

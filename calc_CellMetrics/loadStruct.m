@@ -24,7 +24,7 @@ session = p.Results.session;
 recording = p.Results.recording;
 
 % Supported data types
-supportedDataTypes = {'timeseries', 'events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap', 'lfp', 'session'};
+supportedDataTypes = {'timeseries', 'events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap', 'lfp', 'session','digitalseries'};
 
 % Importing parameters from session or recording struct
 if ~isempty(session)

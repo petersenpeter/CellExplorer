@@ -2602,18 +2602,22 @@ end
             colormap(UI.preferences.colormap), axis tight
             ploConnectionsHighlights(xlim,UI.params.subset(burstIndexSorted))
             
-        elseif strcmp(customPlotSelection,'firingRateMaps_firingRateMap')
-            firingRateMapName = 'firingRateMap';
+        elseif strcmp(customPlotSelection,'firingRateMaps_ratemap')
+            firingRateMapName = 'ratemap';
             % Precalculated firing rate map for the cell
-            plotAxes.XLabel.String = 'Position (cm)';
             plotAxes.YLabel.String = 'Rate (Hz)';
-            plotAxes.Title.String = 'Firing Rate Map';
+            plotAxes.Title.String = 'Firing rate map';
             if isfield(cell_metrics.firingRateMaps,firingRateMapName) && size(cell_metrics.firingRateMaps.(firingRateMapName),2)>=ii && ~isempty(cell_metrics.firingRateMaps.(firingRateMapName){ii})
                 firingRateMap = cell_metrics.firingRateMaps.(firingRateMapName){ii};
                 if isfield(general.firingRateMaps,firingRateMapName) & isfield(general.firingRateMaps.(firingRateMapName),'x_bins')
                     x_bins = general.firingRateMaps.(firingRateMapName).x_bins(:);
                 else
                     x_bins = [1:length(firingRateMap)];
+                end
+                if isfield(general.firingRateMaps,firingRateMapName) & isfield(general.firingRateMaps.(firingRateMapName),'x_label')
+                    plotAxes.XLabel.String = general.firingRateMaps.(firingRateMapName).x_label;
+                else
+                    plotAxes.XLabel.String = 'Position (cm)';
                 end
                 line(x_bins,firingRateMap,'LineStyle','-','color', 'k','linewidth',2, 'HitTest','off'),
                 % Synaptic partners are also displayed
@@ -2631,7 +2635,6 @@ end
         elseif contains(customPlotSelection,{'firingRateMaps_'})
             firingRateMapName = customPlotSelection(16:end);
             % A state dependent firing rate map
-            plotAxes.XLabel.String = 'Position (cm)';
             plotAxes.Title.String = firingRateMapName;
             if isfield(cell_metrics.firingRateMaps,firingRateMapName)  && size(cell_metrics.firingRateMaps.(firingRateMapName),2)>=ii && ~isempty(cell_metrics.firingRateMaps.(firingRateMapName){ii})
                 firingRateMap = cell_metrics.firingRateMaps.(firingRateMapName){ii};
@@ -2641,6 +2644,12 @@ end
                 else
                     x_bins = [1:size(firingRateMap,1)];
                 end
+                if isfield(general.firingRateMaps,firingRateMapName) & isfield(general.firingRateMaps.(firingRateMapName),'x_label')
+                    plotAxes.XLabel.String = general.firingRateMaps.(firingRateMapName).x_label;
+                else
+                    plotAxes.XLabel.String = 'Position (cm)';
+                end
+                
                 if UI.preferences.firingRateMap.showHeatmap
                     imagesc(x_bins,1:size(firingRateMap,2),firingRateMap','HitTest','off');
                     if UI.preferences.firingRateMap.showHeatmapColorbar
@@ -2657,13 +2666,13 @@ end
                 if isfield(general.firingRateMaps,firingRateMapName)
                     if UI.preferences.firingRateMap.showLegend
                         if UI.preferences.firingRateMap.showHeatmap
-                            if isfield(general.firingRateMaps.(firingRateMapName),'labels')
-                                yticks([1:length(general.firingRateMaps.(firingRateMapName).labels)])
-                                yticklabels(general.firingRateMaps.(firingRateMapName).labels)
+                            if isfield(general.firingRateMaps.(firingRateMapName),'stateNames')
+                                yticks([1:length(general.firingRateMaps.(firingRateMapName).stateNames)])
+                                yticklabels(general.firingRateMaps.(firingRateMapName).stateNames)
                             end
                         else
-                            if isfield(general.firingRateMaps.(firingRateMapName),'labels')
-                                legend(general.firingRateMaps.(firingRateMapName).labels,'Location','northeast','Box','off','AutoUpdate','off')
+                            if isfield(general.firingRateMaps.(firingRateMapName),'stateNames')
+                                legend(general.firingRateMaps.(firingRateMapName).stateNames,'Location','northeast','Box','off','AutoUpdate','off')
                             else
                                 lgend212 = legend(plt1);
                                 set(lgend212,'Location','northeast','Box','off','AutoUpdate','off')
@@ -6461,7 +6470,7 @@ end
         % Called when scrolling/zooming
         % Checks first, if a plot is underneath the curser
         axnum = getAxisBelowCursor;
-        clickPlotRegular = false;
+%         clickPlotRegular = false;
         if isfield(UI,'panel') && ~isempty(axnum) && UI.scroll
             if axnum == 10
                 handle34 = UI.axis.legends;
@@ -6550,7 +6559,7 @@ end
                 applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
             end
         end
-        clickPlotRegular = true;
+%         clickPlotRegular = true;
         
         function applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction)
             
@@ -6754,21 +6763,21 @@ end
             end
         end
     end
-
-    function mousebuttonRelease(~,~)
-         UI.scroll = true;
-    end
-    
-    function mousebuttonPress(~,~)
-         UI.scroll = false;
-    end
+% 
+%     function mousebuttonRelease(~,~)
+%          UI.scroll = true;
+%     end
+%     
+%     function mousebuttonPress(~,~)
+%          UI.scroll = false;
+%     end
     
     function DragMouseBegin
         UI.drag.pan = pan(UI.fig);
         UI.drag.pan.Enable = 'on';
         UI.drag.pan.ButtonDownFilter = @ClicktoSelectFromPlot;
-        UI.drag.pan.ActionPreCallback = @mousebuttonPress;
-        UI.drag.pan.ActionPostCallback = @mousebuttonRelease;
+%         UI.drag.pan.ActionPreCallback = @mousebuttonPress;
+%         UI.drag.pan.ActionPostCallback = @mousebuttonRelease;
         enableInteractions
     end
     
@@ -6992,53 +7001,53 @@ end
 
         if axnum == 1 && UI.preferences.customPlotHistograms == 3 % 3D plot
             [azimuth,elevation] = view;
-                r  = 10000;
-                y1 = -r .* cosd(elevation) .* cosd(azimuth);
-                x1 = r .* cosd(elevation) .* sind(azimuth);
-                z1 = r .* sind(elevation);
-                if UI.checkbox.logx.Value == 1
-                    x_scale = range(log10(plotX(plotX>0 & ~isinf(plotX))));
-                    u = log10(u);
-                    plotX11 = log10(plotX(UI.params.subset));
-                else
-                    x_scale = range(plotX(~isinf(plotX)));
-                    plotX11 = plotX(UI.params.subset);
-                end
-                if UI.checkbox.logy.Value == 1
-                    y_scale = range(log10(plotY(plotY>0 & ~isinf(plotY))));
-                    v = log10(v);
-                    plotY11 = log10(plotY(UI.params.subset));
-                else
-                    y_scale = range(plotY(~isinf(plotY)));
-                    plotY11 = plotY(UI.params.subset);
-                end
-                if UI.checkbox.logz.Value == 1
-                    z_scale = range(log10(plotZ(plotZ>0 & ~isinf(plotZ))));
-                    w = log10(w);
-                    plotZ11 = log10(plotZ(UI.params.subset));
-                else
-                    z_scale = range(plotZ( ~isinf(plotZ)));
-                    plotZ11 = plotZ(UI.params.subset);
-                end
-                distance = point_to_line_distance([plotX11; plotY11; plotZ11]'./[x_scale y_scale z_scale], [u,v,w]./[x_scale y_scale z_scale], ([u,v,w]./[x_scale y_scale z_scale]+[x1,y1,z1]));
-                [~,idx] = min(distance);
-                iii = UI.params.subset(idx);
-                if strcmp(UI.axes(axnum).YScale,'linear')
-                    text_offset = diff(ylim)/80;
-                else
-                    text_offset = plotY(iii)/20;
-                end
-                if highlight
-                    line(plotX(iii),plotY(iii),plotZ(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
-                end
-                if hover
-                    hover2highlight.handle1 = text(plotX(iii),plotY(iii)+text_offset,plotZ(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
-                    hover2highlight.handle2 = line(plotX(iii),plotY(iii),plotZ(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
-                end
-                if ~(highlight | hover)
-                    return
-                end
-                
+            r  = 10000;
+            y1 = -r .* cosd(elevation) .* cosd(azimuth);
+            x1 = r .* cosd(elevation) .* sind(azimuth);
+            z1 = r .* sind(elevation);
+            if UI.checkbox.logx.Value == 1
+                x_scale = range(log10(plotX(plotX>0 & ~isinf(plotX))));
+                u = log10(u);
+                plotX11 = log10(plotX(UI.params.subset));
+            else
+                x_scale = range(plotX(~isinf(plotX)));
+                plotX11 = plotX(UI.params.subset);
+            end
+            if UI.checkbox.logy.Value == 1
+                y_scale = range(log10(plotY(plotY>0 & ~isinf(plotY))));
+                v = log10(v);
+                plotY11 = log10(plotY(UI.params.subset));
+            else
+                y_scale = range(plotY(~isinf(plotY)));
+                plotY11 = plotY(UI.params.subset);
+            end
+            if UI.checkbox.logz.Value == 1
+                z_scale = range(log10(plotZ(plotZ>0 & ~isinf(plotZ))));
+                w = log10(w);
+                plotZ11 = log10(plotZ(UI.params.subset));
+            else
+                z_scale = range(plotZ( ~isinf(plotZ)));
+                plotZ11 = plotZ(UI.params.subset);
+            end
+            distance = point_to_line_distance([plotX11; plotY11; plotZ11]'./[x_scale y_scale z_scale], [u,v,w]./[x_scale y_scale z_scale]-[x1,y1,z1], ([u,v,w]./[x_scale y_scale z_scale]+[x1,y1,z1]));
+            [~,idx] = min(distance);
+            iii = UI.params.subset(idx);
+            if strcmp(UI.axes(axnum).YScale,'linear')
+                text_offset = diff(ylim)/80;
+            else
+                text_offset = plotY(iii)/20;
+            end
+            if highlight
+                line(plotX(iii),plotY(iii),plotZ(iii),'Marker','s','LineStyle','none','color','k','MarkerFaceColor',[1,0,1],'HitTest','off','LineWidth', 1.5,'markersize',8)
+            end
+            if hover
+                hover2highlight.handle1 = text(plotX(iii),plotY(iii)+text_offset,plotZ(iii),getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                hover2highlight.handle2 = line(plotX(iii),plotY(iii),plotZ(iii),'Marker','o','LineStyle','none','color','k', 'HitTest','off','LineWidth', 1.5);
+            end
+            if ~(highlight | hover)
+                return
+            end
+            
         elseif axnum == 1 && UI.preferences.customPlotHistograms < 4 % 2D plot
             if UI.checkbox.logx.Value == 1 && UI.checkbox.logy.Value == 1
                 x_scale = range(log10(plotX(plotX>0 & ~isinf(plotX))));
@@ -7349,6 +7358,7 @@ end
                         otherwise
                             subset1 = UI.params.subset;
                     end
+                    
                     [azimuth,elevation] = view;
                     r  = 100000000;
                     y1 = -r .* cosd(elevation) .* cosd(azimuth);
@@ -7360,9 +7370,7 @@ end
                     x_scale = range(xlim);
                     y_scale = range(ylim);
                     z_scale = range(zlim);
-                    distance = point_to_line_distance([plotX22(subset1); plotY22(subset1); plotZ22(subset1)]'./[x_scale y_scale z_scale], [u,v,w]./[x_scale y_scale z_scale], ([u,v,w]./[x_scale y_scale z_scale]+[x1,y1,z1]));
-                    [~,idx] = min(distance);
-                    iii = subset1(idx);
+                    distance = point_to_line_distance([plotX22(subset1); plotY22(subset1); plotZ22(subset1)]'./[x_scale y_scale z_scale], [u,v,w]./[x_scale y_scale z_scale]-[x1,y1,z1], ([u,v,w]./[x_scale y_scale z_scale]+[x1,y1,z1]));
                     [~,idx] = min(distance);
                     iii = subset1(idx);
                     if highlight

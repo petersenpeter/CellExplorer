@@ -1,7 +1,7 @@
 function generateCommonCoordinates(session)
         % Loading channelmap
         if ~exist(fullfile(session.general.basePath,[session.general.name,'.chanCoords.channelInfo.mat']))
-            generateChannelMap
+            generateChannelMap(session);
         end
         chanCoords = loadStruct('chanCoords','channelInfo','session',session);
 

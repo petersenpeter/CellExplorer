@@ -13,9 +13,9 @@ function cell_metrics_batch = loadCellMetricsBatch(varargin)
 % Last edited: 13-03-2020
 
 % - Example calls:
-% loadCellMetricsBatch('basepaths',{'path1','[path1'})      % Load batch from a list with paths
-% loadCellMetricsBatch('sessions',{'rec1','rec2'})          % Load batch from database
-% loadCellMetricsBatch('sessionIDs',[10985,10985])          % Load session from database session id
+% cell_metrics_batch = loadCellMetricsBatch('basepaths',{'path1','[path1'})      % Load batch from a list with paths
+% cell_metrics_batch = loadCellMetricsBatch('sessions',{'rec1','rec2'})          % Load batch from database
+% cell_metrics_batch = loadCellMetricsBatch('sessionIDs',[10985,10985])          % Load session from database session id
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
@@ -100,14 +100,6 @@ elseif ~isempty(basepaths)
         else
             basename = basenames{i};
         end
-%         if exist(fullfile(basepath,[basename,'.session.mat']),'file')
-%             waitbar(1/(1+count_metricsLoad+length(basepaths)),ce_waitbar,['Loading session info from basepaths']);
-%             disp(['Loading ',basename,'.session.mat (',]);
-%             load(fullfile(basepath,[basename,'.session.mat']));
-%             sessionIn = session;
-%         else
-%             break
-%         end
     end
 else
     warning('Input not sufficient')
@@ -196,8 +188,8 @@ for iii = 1:length(cell_metrics2)
     end
     cell_metrics = cell_metrics2{iii}.cell_metrics;
     hh = size(cell_metrics.cellID,2);
-    cell_metrics = verifyGroupFormat(cell_metrics,'tags');
-    cell_metrics = verifyGroupFormat(cell_metrics,'groundTruthClassification');
+    cell_metrics = validateGroupFormat(cell_metrics,'tags');
+    cell_metrics = validateGroupFormat(cell_metrics,'groundTruthClassification');
     if length(cell_metrics2) > 1 && iii == 1
 %         cell_metrics_batch = cell_metrics;
 %         cell_metrics_batch = rmfield(cell_metrics_batch,'general');
