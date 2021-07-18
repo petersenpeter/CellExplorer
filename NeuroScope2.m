@@ -174,6 +174,7 @@ end
         UI.settings.showChannelNumbers = false;
         UI.settings.channelList = [];
         UI.settings.brainRegionsToHide = [];
+        UI.settings.removeDC = false;
         
         % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9') 
@@ -334,6 +335,7 @@ end
          
         % Settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
+        UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC);
         UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);
         %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
         UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
@@ -800,7 +802,13 @@ end
             return
         end
         
-        ephys.traces = ephys.raw;
+        % Removing DC
+        if UI.settings.removeDC
+            ephys.traces = ephys.raw-mean(ephys.raw);
+        else
+            ephys.traces = ephys.raw;
+        end
+        
         if UI.settings.filterTraces && UI.settings.plotStyle == 4
             if int_gt_0(UI.settings.filter.lowerBand) && ~int_gt_0(UI.settings.filter.higherBand)
                 [b1, a1] = butter(3, UI.settings.filter.higherBand/sr*2, 'low');
@@ -809,11 +817,11 @@ end
             else
                 [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/sr*2, 'bandpass');
             end
-            ephys.traces(:,UI.channelOrder) = filtfilt(b1, a1, ephys.raw(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
+            ephys.traces(:,UI.channelOrder) = filtfilt(b1, a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         elseif UI.settings.filterTraces
-            ephys.traces(:,UI.channelOrder) = filtfilt(UI.settings.filter.b1, UI.settings.filter.a1, ephys.raw(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
+            ephys.traces(:,UI.channelOrder) = filtfilt(UI.settings.filter.b1, UI.settings.filter.a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         else
-            ephys.traces(:,UI.channelOrder) = ephys.raw(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000;
+            ephys.traces(:,UI.channelOrder) = ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000;
         end
         
         if UI.settings.plotEnergy == 1
@@ -885,8 +893,12 @@ end
         % Detecting and plotting spikes
         if UI.settings.detectSpikes && ~isempty(UI.channelOrder)
             [UI.settings.filter.b2, UI.settings.filter.a2] = butter(3, 500/(ephys.sr/2), 'high');
-            ephys.filt = ephys.raw;
-            ephys.filt(:,UI.channelOrder) = filtfilt(UI.settings.filter.b2, UI.settings.filter.a2, ephys.raw(:,UI.channelOrder));
+            if UI.settings.removeDC
+                ephys.filt = ephys.raw-mean(ephys.raw);
+            else
+                ephys.filt = ephys.raw;
+            end
+            ephys.filt(:,UI.channelOrder) = filtfilt(UI.settings.filter.b2, UI.settings.filter.a2, ephys.filt(:,UI.channelOrder));
             
             raster = [];
             raster.x = [];
@@ -1834,6 +1846,17 @@ end
         end
         uiresume(UI.fig);
     end
+    
+    function removeDC(~,~)
+        UI.settings.removeDC = ~UI.settings.removeDC;
+        if UI.settings.removeDC
+            UI.menu.display.removeDC.Checked = 'on';
+        else
+            UI.menu.display.removeDC.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+    
     function ShowHideMenu(~,~)
         % Hide/show menubar
         if UI.settings.displayMenu == 0
@@ -2748,12 +2771,15 @@ end
         UI.data.basepath = basepath;
         UI.data.basename = basename;
         cd(UI.data.basepath)
-%         UI.file.dat = dir([UI.data.basename,'.dat']);
-        if ~isfield(data,'session') & exist(fullfile(basepath,[basename,'.session.mat']),'file')
+        
+        if ~isfield(data,'session') && exist(fullfile(basepath,[basename,'.session.mat']),'file')
             data.session = loadSession(UI.data.basepath,UI.data.basename);
-        elseif ~isfield(data,'session')
+        elseif ~isfield(data,'session') && exist(fullfile(basepath,[basename,'.xml']),'file')
             data.session = sessionTemplate(UI.data.basepath,'showGUI',false,'basename',basename);
+        elseif ~isfield(data,'session')
+            data.session = sessionTemplate(UI.data.basepath,'showGUI',true,'basename',basename);
         end
+        
         % UI.settings.colormap
         UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
         

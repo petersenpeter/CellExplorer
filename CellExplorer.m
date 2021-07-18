@@ -354,6 +354,7 @@ setUIfromCellMetrics
 if summaryFigures
     MsgLog('Generating summary figures',-1)
     UI.params.subset = 1:length(cell_metrics.cellID);
+%     highlightCurrentCell = false;
     plotSummaryFigures
     % closes the UI
     if ishandle(UI.fig)
@@ -1435,7 +1436,7 @@ function updateUI
         elseif ~strcmp(UI.preferences.groundTruthData, 'None') && ~strcmp(UI.preferences.referenceData, 'None')
             xlim([min(fig2_axislimit_x_groundTruth(1),fig2_axislimit_x_reference(1)),max(fig2_axislimit_x_groundTruth(2),fig2_axislimit_x_reference(2))]) 
             ylim([min(fig2_axislimit_y_groundTruth(1),fig2_axislimit_y_reference(1)),max(fig2_axislimit_y_groundTruth(2),fig2_axislimit_y_reference(2))])
-        else
+        elseif diff(fig2_axislimit_x) & diff(fig2_axislimit_y)
             xlim(fig2_axislimit_x), ylim(fig2_axislimit_y)
         end
         xlim21 = xlim;
@@ -1503,7 +1504,12 @@ function updateUI
 %         set(UI.axes(3),'ButtonDownFcn',@ClicktoSelectFromPlot), hold on
         
         % Scatter plot with t-SNE metrics
-        xlim(UI.axes(3),fig3_axislimit_x); ylim(UI.axes(3),fig3_axislimit_y);
+        if diff(fig3_axislimit_x)
+            xlim(UI.axes(3),fig3_axislimit_x); 
+        end
+        if diff(fig3_axislimit_y)
+            ylim(UI.axes(3),fig3_axislimit_y);
+        end
         plotGroupData(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)',plotConnections(3),highlightCurrentCell)
     end
     
@@ -3359,7 +3365,9 @@ end
                             [~,y_pos,~] = intersect(subset1,(UI.params.incoming));
                             line(x1*ones(size(y_pos)),y_pos,'Marker','.','LineStyle','none','color','b','HitTest','off', 'MarkerSize',12)
                         end
-                        xlim([Xdata(1)-x_range*0.025,Xdata(end)])
+                        if x_range
+                            xlim([Xdata(1)-x_range*0.025,Xdata(end)])
+                        end
                 end
             end
             if UI.preferences.plotInhibitoryConnections
@@ -3373,7 +3381,9 @@ end
                             [~,y_pos,~] = intersect(subset1,(UI.params.incoming_inh));
                             line(x1*ones(size(y_pos)),y_pos,'Marker','.','LineStyle','none','color','r','HitTest','off', 'MarkerSize',12)
                         end
-                        xlim([Xdata(1)-x_range*0.025,Xdata(end)])
+                        if x_range
+                            xlim([Xdata(1)-x_range*0.025,Xdata(end)])
+                        end
                 end
             end
         end
@@ -5830,7 +5840,7 @@ end
             UI.brainRegions.acronym = brainRegions(:,2);
             clear brainRegions;
         end
-        choice = brainRegionDlg(UI.brainRegions.list,find(strcmp(cell_metrics.brainRegion{ii},UI.brainRegions.acronym)));
+        choice = brainRegionDlg(UI.brainRegions.list,find(strcmp(lower(cell_metrics.brainRegion{ii}),lower(UI.brainRegions.acronym))));
         if strcmp(choice,'')
             tf = 0;
         else
@@ -5859,6 +5869,9 @@ end
     end
 
     function choice = brainRegionDlg(brainRegions,InitBrainRegion)
+        if isempty(InitBrainRegion)
+            InitBrainRegion = 1;
+        end
         choice = '';
         brainRegions_dialog = dialog('Position', [300, 300, 600, 350],'Name','Brain region assignment for current cell','visible','off'); movegui(brainRegions_dialog,'center'), set(brainRegions_dialog,'visible','on')
         brainRegionsList = uicontrol('Parent',brainRegions_dialog,'Style', 'ListBox', 'String', brainRegions, 'Position', [10, 50, 580, 220],'Value',InitBrainRegion);
@@ -5929,10 +5942,13 @@ end
     end
     
     function plotLegends
-        nLegends = -1;
-        line(0,0,'Marker','x','LineStyle','none','color','w', 'LineWidth', 3., 'MarkerSize',18,'HitTest','off'), xlim([-0.15,2]), hold on, yticks([]), xticks([])
-        line(0,0,'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',16,'HitTest','off');
-        text(0.2,0,'Selected cell','HitTest','off')
+        nLegends = 0;
+        if highlightCurrentCell
+            line(0,0,'Marker','x','LineStyle','none','color','w', 'LineWidth', 3., 'MarkerSize',18,'HitTest','off'), xlim([-0.15,2]), hold on, yticks([]), xticks([])
+            line(0,0,'Marker','x','LineStyle','none','color','k', 'LineWidth', 1.5, 'MarkerSize',16,'HitTest','off');
+            text(0.2,0,'Selected cell','HitTest','off')
+            nLegends = nLegends - 1;
+        end
         if numel(UI.classes.labels) >= numel(nanUnique(UI.classes.plot(UI.params.subset)))
             b12 = nanUnique(UI.classes.plot(UI.params.subset));
             [cnt_unique, temp] = histc(UI.classes.plot(UI.params.subset),b12);
@@ -7747,12 +7763,12 @@ end
             
             % Cell type
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell types', 'Position', [10, 375, 280, 15],'HorizontalAlignment','left');
-            cell_class_count = getCellcount(cell_metrics.putativeCellType,UI.preferences.cellTypes);
+            cell_class_count = getCellcount('putativeCellType',UI.preferences.cellTypes);
             filterCells.cellTypes = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 295 280 80],'Units','normalized','String',strcat(UI.preferences.cellTypes,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
             
             % Brain region
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Brain regions', 'Position', [300, 375, 280, 15],'HorizontalAlignment','left');
-            cell_class_count = getCellcount(cell_metrics.brainRegion,groups_ids.brainRegion_num);
+            cell_class_count = getCellcount('brainRegion',groups_ids.brainRegion_num);
             filterCells.brainRegions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 295 280 80],'Units','normalized','String',strcat(groups_ids.brainRegion_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
             
             % Session
@@ -7762,12 +7778,15 @@ end
             
             % Animal
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Animals', 'Position', [300, 270, 280, 15],'HorizontalAlignment','left');
-            cell_class_count = getCellcount(cell_metrics.animal,groups_ids.animal_num);
+            cell_class_count = getCellcount('animal',groups_ids.animal_num);
             filterCells.animals = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 150 280 120],'Units','normalized','String',strcat(groups_ids.animal_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
             
             % Synaptic effect
+            
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Synaptic effect', 'Position', [10, 130, 280, 15],'HorizontalAlignment','left');
-            cell_class_count = getCellcount(cell_metrics.synapticEffect,groups_ids.synapticEffect_num);
+            if isfield(cell_metrics,'synapticEffect')
+                cell_class_count = getCellcount('synapticEffect',groups_ids.synapticEffect_num);
+            end
             filterCells.synEffect = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position',  [10 50 280 80],'Units','normalized','String',strcat(groups_ids.synapticEffect_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
             
             % Connections
@@ -7790,9 +7809,14 @@ end
         end
         
         function cell_class_count = getCellcount(plot11,labels)
+            if isfield(cell_metrics,plot11)
+            cell_metrics.(plot11)
             [~,plot11] = ismember(plot11,labels);
             cell_class_count = histc(plot11,[1:length(labels)]);
             cell_class_count = cellstr(num2str(cell_class_count'))';
+            else
+                cell_class_count = {'0'};
+            end
         end
         
         function cellSelection1(~,evnt)
@@ -10617,6 +10641,11 @@ end
         if ~isfield(cell_metrics, 'labels')
             cell_metrics.labels = repmat({''},1,cell_metrics.general.cellCount);
         end
+        % Initialize labels
+        if ~isfield(cell_metrics, 'synapticEffect')
+            cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_metrics.general.cellCount);
+        end
+        
         % Initialize groups
         if ~isfield(cell_metrics, 'groups')
             cell_metrics.groups = struct();
@@ -10824,7 +10853,7 @@ end
         
         if ~all(isfield(tSNE_metrics,{'plot','preferences'}))
             if cell_metrics.general.cellCount>5000
-                statusUpdate('Initializing PCA space for the t-SNE plot as cell count is above 5000.')
+                statusUpdate('Initializing PCA space for the dimensionality reduction plot as the cell count is above 5000.')
                 UI.preferences.tSNE.metrics = intersect(UI.preferences.tSNE.metrics,fieldnames(cell_metrics));
                 if ~isempty(UI.preferences.tSNE.metrics)
                     X = cell2mat(cellfun(@(X) cell_metrics.(X),UI.preferences.tSNE.metrics,'UniformOutput',false));
@@ -10834,7 +10863,7 @@ end
                     tSNE_metrics.preferences.algorithm = 'PCA';
                 end
             else
-                statusUpdate('Initializing t-SNE plot')
+                statusUpdate('Initializing dimensionality reduction plot')
                 UI.preferences.tSNE.metrics = intersect(UI.preferences.tSNE.metrics,fieldnames(cell_metrics));
                 if ~isempty(UI.preferences.tSNE.metrics)
                     X = cell2mat(cellfun(@(X) cell_metrics.(X),UI.preferences.tSNE.metrics,'UniformOutput',false));

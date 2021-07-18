@@ -10,6 +10,7 @@ function spikes = loadSpikes(varargin)
 %      UltraMegaSort2000
 %      Wave_clus
 %      Sebastien Royer's lab standard
+%      custom (Spike timestamps as input)
 %
 % Please see the CellExplorer website: https://cellexplorer.org/datastructure/data-structure-and-format/#spikes
 %
@@ -83,6 +84,9 @@ addParameter(p,'LSB',0.195,@isnumeric); % Least significant bit (LSB in uV/bit) 
 addParameter(p,'session',[],@isstruct); % A buzsaki lab session struct
 addParameter(p,'labelsToRead',{'good'},@iscell); % allows you to load units with various labels, e.g. MUA or a custom label
 
+% Custom spike input
+addParameter(p,'spikes_times',{},@iscell); % allows you to load units with various labels, e.g. MUA or a custom label
+
 % Filters - All good cells are saved to the struct but the function output can be filtered by below fields
 addParameter(p,'UID',[],@isnumeric);
 addParameter(p,'shankID',[],@isnumeric);
@@ -101,6 +105,7 @@ spikes = p.Results.spikes;
 LSB = p.Results.LSB;
 session = p.Results.session;
 labelsToRead = p.Results.labelsToRead;
+spikes_times = p.Results.spikes_times;
 
 parameters = p.Results;
 % Loads parameters from a session struct
@@ -149,6 +154,15 @@ if parameters.forceReload
     session = loadClassicMetadata(session);
     
     switch lower(format)
+        case 'custom'
+            nCells = numel(spikes_times)
+            spikes.times = spikes_times;
+            for i = 1:nCells
+                spikes.UID(i) = i;
+                spikes.cluID(i) = i;
+                spikes.total(i) = length(spikes.times{i});
+            end
+            
         case 'phy' % Loading phy
             if ~exist('readNPY.m','file')
                 error('''readNPY.m'' is not in your path and is required to load the python data. Please download it here: https://github.com/kwikteam/npy-matlab.')

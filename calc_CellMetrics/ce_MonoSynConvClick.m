@@ -61,7 +61,10 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
         disp('Generating spindices')
         spikes.spindices = generateSpinDices(spikes.times);
     end
-    spikeIDs = double([spikes.shankID(spikes.spindices(:,2))' spikes.cluID(spikes.spindices(:,2))' spikes.spindices(:,2)]);
+    shankID = spikes.shankID(spikes.spindices(:,2));
+    cluID = spikes.cluID(spikes.spindices(:,2));
+    spikeIDs = double([shankID(:) cluID(:) spikes.spindices(:,2)]);
+    
     spiketimes = spikes.spindices(:,1);
     
     %get experimentally validated probabilities

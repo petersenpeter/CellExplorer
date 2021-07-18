@@ -6,7 +6,8 @@ function session = sessionTemplate(input1,varargin)
 %
 % - Example calls:
 % session = sessionTemplate(session)    % Load session from session struct
-% session = sessionTemplate(basepath)   % Load from basepath
+% session = sessionTemplate(basepath,'showGUI',true)   % Load from basepath and shows gui
+% session = sessionTemplate(basepath,'basename','name of session')
 
 % By Peter Petersen
 % petersen.peter@gmail.com

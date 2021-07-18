@@ -514,9 +514,10 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
                 [~,idx] = sort(range(cell_metrics.waveforms.filt_all{j}'),'descend');
                 
-                bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:16));
+                trilat_nChannels = min([16,numel(peakVoltage)]);
+                bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
                 beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
-                trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels),peakVoltage(idx(1:16)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
+                trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels),peakVoltage(idx(1:trilat_nChannels)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
                 cell_metrics.trilat_x(j) = trilat_pos(1);
                 cell_metrics.trilat_y(j) = trilat_pos(2);
                 
@@ -1277,7 +1278,7 @@ if isfield(cell_metrics.general,'responseCurves')
     test = isfield(cell_metrics.general.responseCurves,field2remove);
     cell_metrics.general.responseCurves = rmfield(cell_metrics.general.responseCurves,field2remove(test));
 end
-cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges = [0:firingRateAcrossTime_binsize:max(vertcat(spikes{spkExclu}.times{:}))];
+cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges = [0:firingRateAcrossTime_binsize:max([firingRateAcrossTime_binsize,max(vertcat(spikes{spkExclu}.times{:}))])];
 cell_metrics.general.responseCurves.firingRateAcrossTime.x_bins = cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges(1:end-1)+firingRateAcrossTime_binsize/2;
 
 if isfield(session,'epochs')

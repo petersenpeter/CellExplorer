@@ -6,17 +6,16 @@ function cell_metrics_batch = loadCellMetricsBatch(varargin)
 % varargin: Described below
 %
 % OUTPUT:
-% cell_metrics_batch. Combibed batch file with metrics from selected sessions
+% cell_metrics_batch. Combined cell metrics batch file from selected sessions that can be opened with CellExplorer
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 13-03-2020
+% Last edited: 18-07-2021
 
 % - Example calls:
-% cell_metrics_batch = loadCellMetricsBatch('basepaths',{'path1','[path1'})      % Load batch from a list with paths
-% cell_metrics_batch = loadCellMetricsBatch('sessions',{'rec1','rec2'})          % Load batch from database
-% cell_metrics_batch = loadCellMetricsBatch('sessionIDs',[10985,10985])          % Load session from database session id
-
+% cell_metrics = loadCellMetricsBatch('basepaths',{'basepath1','basepath2'},'basenames',{'basename1','basename2'});
+% cell_metrics = loadCellMetricsBatch('sessions',{'rec1','rec2'}) % Load batch from database
+% cell_metrics = loadCellMetricsBatch('sessionIDs',[10985,10985]) % Load session from database session id
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 % Handling inputs

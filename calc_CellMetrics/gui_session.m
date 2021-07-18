@@ -32,8 +32,8 @@ end
 uiLoaded = false;
 
 % Lists
-UI.list.sortingMethod = {'KiloSort','KiloSort2','KiloSort3','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','MountainSort','IronClust','MClust','Wave_clus'}; % Spike sorting methods
-UI.list.sortingFormat = {'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus'}; % Spike sorting formats
+UI.list.sortingMethod = {'KiloSort','KiloSort2','KiloSort3','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','MountainSort','IronClust','MClust','Wave_clus','custom'}; % Spike sorting methods
+UI.list.sortingFormat = {'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus','custom'}; % Spike sorting formats
 UI.list.inputsType = {'adc','aux','dat','dig'}; % input data types
 UI.list.sessionTypes = {'Acute','Chronic','Unknown'}; % session types
 UI.list.species = {'Unknown','Rat', 'Mouse','Red-eared Turtles'}; % animal species
@@ -1492,7 +1492,9 @@ uiwait(UI.fig)
             tableData = cell(nEntries,9);
             tableData(:,1) = {false};
             for fn = 1:nEntries
-                tableData{fn,2} = session.spikeSorting{fn}.method;
+                if isfield(session.spikeSorting{fn},'method') && ~isempty(session.spikeSorting{fn}.method)
+                    tableData{fn,2} = session.spikeSorting{fn}.method;
+                end
                 if isfield(session.spikeSorting{fn},'format') && ~isempty(session.spikeSorting{fn}.format)
                     tableData{fn,3} = session.spikeSorting{fn}.format;
                 end
