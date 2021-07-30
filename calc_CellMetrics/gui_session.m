@@ -36,9 +36,9 @@ UI.list.sortingMethod = {'KiloSort','KiloSort2','KiloSort3','SpyKING CIRCUS','Kl
 UI.list.sortingFormat = {'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus','custom'}; % Spike sorting formats
 UI.list.inputsType = {'adc','aux','dat','dig'}; % input data types
 UI.list.sessionTypes = {'Acute','Chronic','Unknown'}; % session types
-UI.list.species = {'Unknown','Rat', 'Mouse','Red-eared Turtles'}; % animal species
-UI.list.strain = {'Unknown','C57B1/6','B6/FVB Hybrid','BALB/cJ','Red-eared slider','DBA2/J','Brown Norway','Fischer 344','Long Evans','Sprague Dawleys','Wistar','NA'}; % animal strains
-UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat'}; % animal strains parent in species
+UI.list.species = {'Unknown','Rat', 'Mouse','Red-eared Turtles','Human'}; % animal species
+UI.list.strain = {'Unknown','C57B1/6','B6/FVB Hybrid','BALB/cJ','Red-eared slider','DBA2/J','Brown Norway','Fischer 344','Long Evans','Sprague Dawleys','Wistar','Tumor','Epilepsy'}; % animal strains
+UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Human','Human'}; % animal strains parent in species
 
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
