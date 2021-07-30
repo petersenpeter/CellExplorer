@@ -173,8 +173,10 @@ if isfield(session.animal,'species') && ~ismember(session.animal.species,UI.list
     UI.list.species = [UI.list.species,session.animal.species];
 end
 if isfield(session.animal,'strain') && isfield(session.animal,'species') && ~ismember(session.animal.strain,UI.list.strain)
-    UI.list.strain = [UI.list.strain,session.animal.strain];
-    UI.list.strain_species = [UI.list.strain_species,session.animal.species];
+    if ~isempty(session.animal.strain) && ~isempty(session.animal.species)
+        UI.list.strain = [UI.list.strain,session.animal.strain];
+        UI.list.strain_species = [UI.list.strain_species,session.animal.species];
+    end
 end
 
 session.general.basePath = basepath;
