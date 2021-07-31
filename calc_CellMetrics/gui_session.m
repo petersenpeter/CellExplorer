@@ -36,9 +36,9 @@ UI.list.sortingMethod = {'KiloSort','KiloSort2','KiloSort3','SpyKING CIRCUS','Kl
 UI.list.sortingFormat = {'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus','custom'}; % Spike sorting formats
 UI.list.inputsType = {'adc','aux','dat','dig'}; % input data types
 UI.list.sessionTypes = {'Acute','Chronic','Unknown'}; % session types
-UI.list.species = {'Unknown','Rat', 'Mouse','Red-eared Turtles'}; % animal species
-UI.list.strain = {'Unknown','C57B1/6','B6/FVB Hybrid','BALB/cJ','Red-eared slider','DBA2/J','Brown Norway','Fischer 344','Long Evans','Sprague Dawleys','Wistar'}; % animal strains
-UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat'}; % animal strains parent in species
+UI.list.species = {'Unknown','Rat', 'Mouse','Red-eared Turtles','Human'}; % animal species
+UI.list.strain = {'Unknown','C57B1/6','B6/FVB Hybrid','BALB/cJ','Red-eared slider','DBA2/J','Brown Norway','Fischer 344','Long Evans','Sprague Dawleys','Wistar','Tumor','Epilepsy'}; % animal strains
+UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Human','Human'}; % animal strains parent in species
 
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
@@ -173,8 +173,10 @@ if isfield(session.animal,'species') && ~ismember(session.animal.species,UI.list
     UI.list.species = [UI.list.species,session.animal.species];
 end
 if isfield(session.animal,'strain') && isfield(session.animal,'species') && ~ismember(session.animal.strain,UI.list.strain)
-    UI.list.strain = [UI.list.strain,session.animal.strain];
-    UI.list.strain_species = [UI.list.strain_species,session.animal.species];
+    if ~isempty(session.animal.strain) && ~isempty(session.animal.species)
+        UI.list.strain = [UI.list.strain,session.animal.strain];
+        UI.list.strain_species = [UI.list.strain_species,session.animal.species];
+    end
 end
 
 session.general.basePath = basepath;
