@@ -1,32 +1,43 @@
 function session = sessionTemplate(input1,varargin)
-% This script can be used to create a session struct (metadata structure for the CellExplorer)
-% Load parameters from a Neurosuite xml file and buzcode sessionInfo file and any other parameters specified in this script.
-% This script must be called from the basepath of your dataset, or be provided with a basepath as input
+% This script can be used to create a session struct (the metadata structure used by CellExplorer).
+% It must be called from the basepath of your dataset, or be provided with a basepath as input (first input)
 % Check the website of the CellExplorer for more details: https://cellexplorer.org/
 %
+% It will detect and load metadata files and fill out default metadata, including:
+%    - Neurosuite xml file
+%    - Buzcode sessionInfo file
+%    - Intan's metadata file info.rhd
+%    - Determine spike data format from existance of files and folders in the basepath (if any exist: Phy,
+%         Klustakwik, Klustaviewa, UltraMegaSort2000, MClust)
+%    - Detect Kilosort output folder
+%    - Set default animal metadata (name, species, strain)
+%    - Set default extracellular metadata
+%    - Other parameters specified in this script.
+% 
+% You can create your own custom template, simply by generating a new templatescript from this file and change the defaults accordingly 
+% E.g. : session = sessionTemplateCustom(input1,varargin)
+%
 % - Example calls:
-% session = sessionTemplate(session)    % Load session from session struct
-% session = sessionTemplate(basepath,'showGUI',true)   % Load from basepath and shows gui
-% session = sessionTemplate(basepath,'basename','name of session')
+% session = sessionTemplate(session)                                % Load session from session struct
+% session = sessionTemplate(basepath,'showGUI',true)                % Load from basepath and shows gui
+% session = sessionTemplate(basepath,'basename','name_of_session')
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 29-11-2020
+% Last edited: 30-07-2021
 
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
 addParameter(p,'basename',[],@isstr);
 addParameter(p,'importSkippedChannels',true,@islogical); % Import skipped channels from the xml as bad channels
-addParameter(p,'importSyncedChannels',true,@islogical); % Import channel not synchronized between anatomical and spike groups as bad channels
-addParameter(p,'noPrompts',true,@islogical); % Show the session gui if requested
-addParameter(p,'showGUI',false,@islogical); % Show the session gui if requested
+addParameter(p,'importSyncedChannels',true,@islogical);  % Import channel not synchronized between anatomical and spike groups as bad channels
+addParameter(p,'showGUI',false,@islogical);              % Show the session gui
 
 % Parsing inputs
 parse(p,input1,varargin{:})
 basename = p.Results.basename;
 importSkippedChannels = p.Results.importSkippedChannels;
 importSyncedChannels = p.Results.importSyncedChannels;
-noPrompts = p.Results.noPrompts;
 showGUI = p.Results.showGUI;
 
 % Initializing session struct and defining basepath, if not specified as an input
@@ -46,7 +57,6 @@ end
 % Loading existing basename.session.mat file if exist
 if isempty(basename)
     basename = basenameFromBasepath(basepath);
-%     [~,basename,~] = fileparts(basepath);
 end
 if ~exist('session','var') && exist(fullfile(basepath,[basename,'.session.mat']),'file')
     disp('Loading existing basename.session.mat file')
@@ -171,7 +181,7 @@ if ~isfield(session,'spikeSorting')
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Brain regions 
+% Default brain regions 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Brain regions  must be defined as index 1. Can be specified on a channel or electrode group basis (below example for CA1 across all channels)
 % session.brainRegions.CA1.channels = 1:128; % Brain region acronyms from Allan institute: http://atlas.brain-map.org/atlas?atlas=1)
@@ -179,7 +189,7 @@ end
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Channel tags
+% Default channel tags
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Channel tags must be defined as index 1. Each tag is a fieldname with the channels or spike groups as subfields.
 % Below examples shows 5 tags (Theta, Ripple, RippleNoise, Cortical, Bad)
@@ -396,6 +406,6 @@ if (importSkippedChannels || importSyncedChannels) && exist(fullfile(session.gen
 end
 
 % Finally show GUI if requested by user
-if ~noPrompts || showGUI
+if showGUI
     session = gui_session(session);
 end

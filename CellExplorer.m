@@ -134,7 +134,7 @@ UI.params.tableDataSortingList = sort({'cellID', 'putativeCellType','peakVoltage
 UI.classes.plot2 = []; UI.classes.colors = []; UI.classes.colors2 = [];  UI.classes.colors3 = []; UI.classes.plot = []; UI.classes.plot11 = []; 
 UI.brainRegions.list = []; UI.brainRegions.acronym = []; UI.brainRegions.relational_tree = []; UI.groupData1.groupsList = {'groups','tags','groundTruthClassification'};
 
-plotConnections = [1 1 1]; plotAverage_nbins = 40;
+plotConnections = [1 1 1]; plotAverage_nbins = 40; colored_string = [];
 synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstream', 'All'}; ccf_ratio = [-35.5,30];
 plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = [];
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];

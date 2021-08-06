@@ -3,7 +3,7 @@ function spikes = loadSpikes(varargin)
 %      Phy (default)
 %      Klustakwik/Neurosuite
 %      MClust
-%      NWB,
+%      NWB
 %      KlustaViewa
 %      ALF
 %      AllenSDK (via NWB files and their API data files)
@@ -52,10 +52,11 @@ function spikes = loadSpikes(varargin)
 % spikes = loadSpikes('basepath',pwd,'clusteringpath',Kilosort_RelativeOutputPath); % Run from basepath, assumes Phy format.
 % spikes = loadSpikes('basepath',pwd,'format','mclust'); % Run from basepath, loads MClust format.
 % spikes = loadSpikes('session',session,'UID',1:30,'shankID',1:3); % Filter and load spikes - only UID 1:30 and the first 3 shanks.
+% spikes = loadSpikes('basepath',pwd,'format','custom','spikes_times',spikes_times); % Run from basepath, custom spike format, requiring the spike times as input. 
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 15-12-2020
+% Last edited: 30-07-2021
 
 % Version history
 % 3.2 waveforms for phy data extracted from the raw dat
@@ -85,7 +86,7 @@ addParameter(p,'session',[],@isstruct); % A buzsaki lab session struct
 addParameter(p,'labelsToRead',{'good'},@iscell); % allows you to load units with various labels, e.g. MUA or a custom label
 
 % Custom spike input
-addParameter(p,'spikes_times',{},@iscell); % allows you to load units with various labels, e.g. MUA or a custom label
+addParameter(p,'spikes_times',{},@iscell); % allows you to load spike data from a cell arrat with timestamps (formatted as spikes.times)
 
 % Filters - All good cells are saved to the struct but the function output can be filtered by below fields
 addParameter(p,'UID',[],@isnumeric);
