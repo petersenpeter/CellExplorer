@@ -331,10 +331,10 @@ end
         UI.menu.view.channelRMS = uimenu(UI.menu.view.topMenu,menuLabel,'RMS noise across channels',menuSelectedFcn,@noiseFigure,'Separator','on');
         UI.menu.view.channelSpectrum = uimenu(UI.menu.view.topMenu,menuLabel,'Power spectral density across channels',menuSelectedFcn,@powerSpectralFigure);
         UI.menu.view.channelSpectrum2 = uimenu(UI.menu.view.topMenu,menuLabel,'Power spectral density across channels (log bins; slower)',menuSelectedFcn,@powerSpectralFigure2);
-        UI.menu.view.channelCSD = uimenu(UI.menu.view.topMenu,menuLabel,'Current Source density across channels',menuSelectedFcn,@csdFigure,'Separator','on');
          
         % Settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
+        % UI.menu.display.channelCSD = uimenu(UI.menu.display.topMenu,menuLabel,'Show Current Source density (CSD)',menuSelectedFcn,@show_CSD);
         UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC);
         UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);
         %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
@@ -576,8 +576,13 @@ end
         uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','High freq (Hz)', 'Units','normalized', 'Position', [0.67 0.20 0.32 0.16],'HorizontalAlignment','right');
         UI.panel.spectrogram.freq_high = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.freq_high), 'Units','normalized', 'Position', [0.67 0.01 0.32 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
         
+        % Current Source Density
+        UI.panel.csd.main = uipanel('Parent',UI.panel.other.main,'title','Current Source Density');
+        UI.panel.csd.showCSD = uicontrol('Parent',UI.panel.csd.main,'Style', 'checkbox','String','Show Current Source Density', 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.98 0.98],'Callback',@show_CSD,'HorizontalAlignment','left');
+        
+        
         % Defining flexible panel heights
-        set(UI.panel.other.main, 'Heights', [200 95 95 140 95],'MinimumHeights',[220 100 100 150 150]);
+        set(UI.panel.other.main, 'Heights', [200 95 95 140 95 50],'MinimumHeights',[220 100 100 150 150 50]);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -1843,6 +1848,15 @@ end
             UI.menu.display.ShowChannelNumbers.Checked = 'on';
         else
             UI.menu.display.ShowChannelNumbers.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+    
+    function show_CSD(~,~)
+        if UI.panel.csd.showCSD.Value == 1
+            UI.settings.CSD.show = true;
+        else
+            UI.settings.CSD.show = false;
         end
         uiresume(UI.fig);
     end
@@ -3873,9 +3887,8 @@ end
     function plotCSD(~,~)
         % Current source density plot
         % Original code from FMA
-        % Copyright (C) 2008-2011 by Michaël Zugaro
+        % By Michaël Zugaro
         timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
-%         CSD = zeros(size(ephys.traces));
         for iShanks = UI.settings.electrodeGroupsToPlot
             channels = UI.channels{iShanks};
             [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
@@ -3889,13 +3902,11 @@ end
             d = d(1:2:size(d,1),:);
 %             
             markerColor = UI.colors(iShanks,:);
-%             line(ax1,(1:numel(channels))+k_channels,rms1(channels), 'HitTest','off','Color', markerColor,'Marker','o','LineStyle','-','linewidth',1,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
             multiplier = -linspace(max(UI.channelOffset(channels)),min(UI.channelOffset(channels)),size(d,2));
             pcolor(timeLine,multiplier,flipud(transpose(d))); 
         end
 
         set(gca,'clim',[-0.05 0.05])
-        
         shading interp;
     end
 
@@ -4226,19 +4237,48 @@ end
     
     function changeColormap(~,~)
         colormapList = {'lines','hsv','jet','colorcube','prism','parula','hot','cool','spring','summer','autumn','winter','gray','bone','copper','pink','white'};
-        temp = find(strcmp(UI.settings.colormap,colormapList));
-        [idx,~] = listdlg('PromptString','Select colormap','ListString',colormapList,'ListSize',[250,400],'InitialValue',temp,'SelectionMode','single','Name','Colormap');
-        if ~isempty(idx)
+        initial_colormap = UI.settings.colormap;
+        color_idx = find(strcmp(UI.settings.colormap,colormapList));
+        
+        colormap_dialog = dialog('Position', [0, 0, 300, 350],'Name','Change colormap','visible','off'); movegui(colormap_dialog,'center'), set(colormap_dialog,'visible','on')
+        colormap_uicontrol = uicontrol('Parent',colormap_dialog,'Style', 'ListBox', 'String', colormapList, 'Position', [10, 50, 280, 270],'Value',color_idx,'Callback',@(src,evnt)previewColormap);
+        uicontrol('Parent',colormap_dialog,'Style','pushbutton','Position',[10, 10, 135, 30],'String','OK','Callback',@(src,evnt)close_dialog);
+        uicontrol('Parent',colormap_dialog,'Style','pushbutton','Position',[155, 10, 135, 30],'String','Cancel','Callback',@(src,evnt)cancel_dialog);
+        uicontrol('Parent',colormap_dialog,'Style', 'text', 'String', 'Colormaps', 'Position', [10, 320, 280, 20],'HorizontalAlignment','left');
+        uicontrol(colormap_uicontrol)
+        uiwait(colormap_dialog);
+
+        % [idx,~] = listdlg('PromptString','Select colormap','ListString',colormapList,'ListSize',[250,400],'InitialValue',temp,'SelectionMode','single','Name','Colormap','Callback',@previewColormap);
+        function close_dialog
+            idx = colormap_uicontrol.Value;
+            
             UI.settings.colormap = colormapList{idx};
+            
             % Generating colormap
             UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
-
+            
             % Updating table colors
             classColorsHex = rgb2hex(UI.colors);
             classColorsHex = cellstr(classColorsHex(:,2:end));
             UI.table.electrodeGroups.Data(:,2) = strcat('<html><BODY bgcolor="',classColorsHex','">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</BODY></html>');
-            
+            delete(colormap_dialog);
             uiresume(UI.fig);
+            
+        end
+        function cancel_dialog
+            % Closes dialog
+            UI.settings.colormap = initial_colormap;
+            UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+            plotData;
+            delete(colormap_dialog);
+        end
+        
+        function previewColormap
+            % Previewing colormap
+            idx = colormap_uicontrol.Value;
+            colormap_preview = colormapList{idx};
+            UI.colors = eval([colormap_preview,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+            plotData;
         end
     end
     
