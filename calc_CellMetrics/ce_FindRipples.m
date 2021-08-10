@@ -2,11 +2,12 @@ function [ripples] = ce_FindRipples(varargin)
 %FindRipples - Find hippocampal ripples (100~200Hz oscillations).
 %
 % USAGE
-%    [ripples] = ripples = ce_FindRipples(session,<options>);
+%    ripples = ce_FindRipples(session); % This requires the ripple channel defined in the session struct: session.channelTags.Ripple.channels = 1;
+%    ripples = ce_FindRipples(session,);
 %    OR
-%    [ripples] = ce_FindRipples(lfp.data,lfp.timestamps,<options>)
+%    ripples = ce_FindRipples(lfp.data,lfp.timestamps,<options>)
 %    OR
-%    [ripples] = ce_FindRipples(basepath,channel,<options>)
+%    ripples = ce_FindRipples(basepath,channel,<options>)
 %
 %    Ripples are detected using the normalized squared signal (NSS) by
 %    thresholding the baseline, merging neighboring events, thresholding
@@ -261,7 +262,8 @@ if p.Results.absoluteThresholds
     peakNormalizedPower2 = [];
     for i = 1:size(thirdPass,1)
         [maxValue,maxIndex] = max(normalizedSquaredSignal2([thirdPass(i,1):thirdPass(i,2)]));
-        if maxValue < highThresholdFactor
+        [maxValue2,maxIndex] = max(normalizedSquaredSignal([thirdPass(i,1):thirdPass(i,2)]));
+        if maxValue < maxValue2
             thirdPass2 = [thirdPass2 ; thirdPass(i,:)];
             peakNormalizedPower2 = [peakNormalizedPower2 ; maxValue];
         end
