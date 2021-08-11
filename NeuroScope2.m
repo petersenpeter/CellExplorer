@@ -70,7 +70,7 @@ else
     end
 end
 
-int_gt_0 = @(n) (isempty(n)) || (n <= 0);
+int_gt_0 = @(n,sr) (isempty(n)) || (n <= 0 ) || (n >= sr/2);
 
 % Initialization
 initUI
@@ -501,12 +501,18 @@ end
         UI.panel.spikes.populationRateSmoothing = uicontrol('Parent',UI.panel.populationAnalysis.main,'Style', 'Edit', 'String', num2str(UI.settings.populationRateSmoothing), 'Units','normalized', 'Position', [0.7 0.01 0.29 0.3],'Callback',@tooglePopulationRate,'HorizontalAlignment','center','tooltip',['Binsize (seconds)']);
         
         % KiloSort
-        UI.panel.kilosort.main = uipanel('Title','Kilosort','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.spikedata.main);
-        UI.panel.kilosort.showKilosort = uicontrol('Parent',UI.panel.kilosort.main,'Style','checkbox','Units','normalized','Position',[0.01 0 0.485 1], 'value', 0,'String','Show spikes','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
-        UI.panel.kilosort.kilosortBelowTrace = uicontrol('Parent',UI.panel.kilosort.main,'Style','checkbox','Units','normalized','Position',[0.505 0 0.485 1], 'value', 0,'String','Below traces','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
+        UI.panel.spikesorting.main = uipanel('Title','Spike sorting pipelines','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.spikedata.main);
+        UI.panel.spikesorting.showKilosort = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.01 0.66 0.485 0.32], 'value', 0,'String','Kilosort','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
+        UI.panel.spikesorting.kilosortBelowTrace = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.505 0.66 0.485 0.32], 'value', 0,'String','Below traces','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
+        
+        UI.panel.spikesorting.showKlusta = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.01 0.33 0.485 0.32], 'value', 0,'String','Klustakwik','Callback',@showKlusta,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
+        UI.panel.spikesorting.klustaBelowTrace = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.505 0.33 0.485 0.32], 'value', 0,'String','Below traces','Callback',@showKlusta,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
+        
+        UI.panel.spikesorting.showSpykingCircus = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.01 0 0.485 0.32], 'value', 0,'String','SpyKING CIRCUS','Callback',@showSpykingCircus,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
+        UI.panel.spikesorting.spykingCircusBelowTrace = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.505 0 0.485 0.32], 'value', 0,'String','Below traces','Callback',@showSpykingCircus,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
 
         % Defining flexible panel heights
-        set(UI.panel.spikedata.main, 'Heights', [95 170 100 -200 35 100 45],'MinimumHeights',[95 170 60 60 35 60 45]);
+        set(UI.panel.spikedata.main, 'Heights', [95 170 100 -200 35 100 95],'MinimumHeights',[95 170 60 60 35 60 95]);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 3. PANEL: Other datatypes
@@ -815,9 +821,9 @@ end
         end
         
         if UI.settings.filterTraces && UI.settings.plotStyle == 4
-            if int_gt_0(UI.settings.filter.lowerBand) && ~int_gt_0(UI.settings.filter.higherBand)
+            if int_gt_0(UI.settings.filter.lowerBand,sr) && ~int_gt_0(UI.settings.filter.higherBand,sr)
                 [b1, a1] = butter(3, UI.settings.filter.higherBand/sr*2, 'low');
-            elseif int_gt_0(UI.settings.filter.higherBand) && ~int_gt_0(UI.settings.filter.lowerBand)
+            elseif int_gt_0(UI.settings.filter.higherBand,sr) && ~int_gt_0(UI.settings.filter.lowerBand,sr)
                 [b1, a1] = butter(3, UI.settings.filter.lowerBand/sr*2, 'high');
             else
                 [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/sr*2, 'bandpass');
@@ -1502,6 +1508,9 @@ end
 
     function defineGroupData(~,~)
         if isfield(data,'cell_metrics')
+            if ~isfield(data.cell_metrics,'groups')
+                data.cell_metrics.groups = {};
+            end
             [data.cell_metrics,UI] = dialog_metrics_groupData(data.cell_metrics,UI);
             % Group data
             % Filters tagged cells ('tags','groups','groundTruthClassification')
@@ -2095,7 +2104,7 @@ end
     function setWindowsSize(~,~)
         % Set the window size
         string1 = str2num(UI.elements.lower.windowsSize.String);
-        if isnumeric(string1) & string1>0
+        if isnumeric(string1) & string1>0 & string1<100
             UI.settings.windowDuration = round(string1*1000)/1000;
             UI.elements.lower.windowsSize.String = num2str(UI.settings.windowDuration);
             initTraces
@@ -2107,7 +2116,7 @@ end
     function increaseWindowsSize(~,~)
         % Increase the window size
         windowSize_old = UI.settings.windowDuration;
-        UI.settings.windowDuration = min([UI.settings.windowDuration*2,20]);
+        UI.settings.windowDuration = min([UI.settings.windowDuration*2,100]);
         initTraces
         UI.forceNewData = true;
         uiresume(UI.fig);
@@ -2139,7 +2148,7 @@ end
     function setScaling(~,~)
         % Decrease amplitude of the ephys traces
         string1 = str2num(UI.elements.lower.scaling.String);
-        if isnumeric(string1) && string1>=0
+        if ~isempty(string1) && isnumeric(string1) && string1>=0  && string1<1000000
             UI.settings.scalingFactor = string1;
             initTraces
             uiresume(UI.fig);
@@ -2769,7 +2778,7 @@ end
         UI.panel.spikes.showSpikes.Value = 0;
         UI.panel.cell_metrics.useMetrics.Value = 0;
         UI.panel.spikes.populationRate.Value = 0;
-        UI.panel.kilosort.showKilosort.Value = 0;
+        UI.panel.spikesorting.showKilosort.Value = 0;
         UI.panel.events.showEvents.Value = 0;
         UI.panel.timeseries.show.Value = 0;
         UI.panel.states.showStates.Value = 0;
@@ -3215,11 +3224,11 @@ end
             UI.settings.filterTraces = true;
             UI.settings.filter.lowerBand = str2num(UI.panel.general.lowerBand.String);
             UI.settings.filter.higherBand = str2num(UI.panel.general.higherBand.String);
-            if int_gt_0(UI.settings.filter.lowerBand) && int_gt_0(UI.settings.filter.higherBand)
+            if int_gt_0(UI.settings.filter.lowerBand,data.session.extracellular.sr) && int_gt_0(UI.settings.filter.higherBand,data.session.extracellular.sr) 
                 UI.settings.filterTraces = false;
-            elseif int_gt_0(UI.settings.filter.lowerBand) && ~int_gt_0(UI.settings.filter.higherBand)
+            elseif int_gt_0(UI.settings.filter.lowerBand,data.session.extracellular.sr) && ~int_gt_0(UI.settings.filter.higherBand,data.session.extracellular.sr)
                 [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, UI.settings.filter.higherBand/(data.session.extracellular.sr/2), 'low');
-            elseif int_gt_0(UI.settings.filter.higherBand) && ~int_gt_0(UI.settings.filter.lowerBand)
+            elseif int_gt_0(UI.settings.filter.higherBand,data.session.extracellular.sr) && ~int_gt_0(UI.settings.filter.lowerBand,data.session.extracellular.sr)
                 [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, UI.settings.filter.lowerBand/(data.session.extracellular.sr/2), 'high');
             else
                 [UI.settings.filter.b1, UI.settings.filter.a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/(data.session.extracellular.sr/2), 'bandpass');
@@ -4051,8 +4060,8 @@ end
         uiresume(UI.fig);
     end
     
-    function showKilosort(src,~)
-        if UI.panel.kilosort.showKilosort.Value == 1 && ~isfield(data,'spikes_kilosort')
+    function showKilosort(~,~)
+        if UI.panel.spikesorting.showKilosort.Value == 1 && ~isfield(data,'spikes_kilosort')
             [file,path] = uigetfile('*.mat','Please select a KiloSort rez file for this session');
             if ~isequal(file,0)
                 % Loading rez file
@@ -4093,22 +4102,79 @@ end
                 MsgLog(['KiloSort data loaded succesful: ' basename],2)
             else
                 UI.settings.showKilosort = false;
-                UI.panel.kilosort.showKilosort.Value = 0;
+                UI.panel.spikesorting.showKilosort.Value = 0;
             end
-        elseif UI.panel.kilosort.showKilosort.Value == 1  && isfield(data,'spikes_kilosort')
+        elseif UI.panel.spikesorting.showKilosort.Value == 1  && isfield(data,'spikes_kilosort')
             UI.settings.showKilosort = true;
             uiresume(UI.fig);
         else
             UI.settings.showKilosort = false;
             uiresume(UI.fig);
         end
-        if UI.panel.kilosort.kilosortBelowTrace.Value == 1
+        if UI.panel.spikesorting.kilosortBelowTrace.Value == 1
             UI.settings.kilosortBelowTrace = true;
         else
             UI.settings.kilosortBelowTrace = false;
         end
         initTraces
     end
+    
+    function showKlusta(~,~)
+        if UI.panel.spikesorting.showKlusta.Value == 1 && ~isfield(data,'spikes_klusta')
+            try
+                spikes = loadSpikes(data.session,'format','klustakwik','saveMat',false,'getWaveformsFromDat',false,'getWaveformsFromSource',false);
+                data.spikes_kilosort = spikes;
+                UI.settings.showKlusta = true;
+                uiresume(UI.fig);
+                MsgLog(['KiloSort data loaded succesful: ' basename],2)
+            catch
+                UI.settings.showKlusta = false;
+                UI.panel.spikesorting.showKlusta.Value = 0;
+                MsgLog(['Failed to load KlustaKwik data. The data must be located in the basepath'],2)
+            end
+        elseif UI.panel.spikesorting.showKlusta.Value == 1  && isfield(data,'spikes_klusta')
+            UI.settings.showKlusta = true;
+            uiresume(UI.fig);
+        else
+            UI.settings.showKlusta = false;
+            uiresume(UI.fig);
+        end
+        if UI.panel.spikesorting.klustaBelowTrace.Value == 1
+            UI.settings.klustaBelowTrace = true;
+        else
+            UI.settings.klustaBelowTrace = false;
+        end
+        initTraces
+    end
+    
+    function showSpykingCircus(~,~)
+        if UI.panel.spikesorting.showSpykingCircus.Value == 1 && ~isfield(data,'spikes_klusta')
+            try
+                spikes = loadSpikes(data.session,'format','klustakwik','saveMat',false,'getWaveformsFromDat',false,'getWaveformsFromSource',false);
+                data.spikes_spykingcircus = spikes;
+                UI.settings.showSpykingCircus = true;
+                uiresume(UI.fig);
+                MsgLog(['KiloSort data loaded succesful: ' basename],2)
+            catch
+                UI.settings.showSpykingCircus = false;
+                UI.panel.spikesorting.showSpykingCircus.Value = 0;
+                MsgLog(['Failed to load SpyKING Circus data. The data must be located in the basepath'],2)
+            end
+        elseif UI.panel.spikesorting.showSpykingCircus.Value == 1  && isfield(data,'spikes_klusta')
+            UI.settings.showSpykingCircus = true;
+            uiresume(UI.fig);
+        else
+            UI.settings.showSpykingCircus = false;
+            uiresume(UI.fig);
+        end
+        if UI.panel.spikesorting.spykingCircusBelowTrace.Value == 1
+            UI.settings.spykingCircus = true;
+        else
+            UI.settings.klustaspykingCircusBelowTrace = false;
+        end
+        initTraces
+    end
+    
 
     function showIntan(src,~) % Intan data
         if strcmp(src.String,'Show analog')
