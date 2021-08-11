@@ -2830,6 +2830,10 @@ end
             
         if isfield(data.session.extracellular,'fileNameLFP') && ~isempty(data.session.extracellular.fileNameLFP)
             UI.data.fileNameLFP = fullfile(basepath,data.session.extracellular.fileNameLFP);
+        elseif exist(fullfile(basepath,[UI.data.basename '.lfp']))
+            UI.data.fileNameLFP = fullfile(basepath,[UI.data.basename '.lfp']);
+        elseif exist(fullfile(basepath,[UI.data.basename '.eeg']))
+            UI.data.fileNameLFP = fullfile(basepath,[UI.data.basename '.eeg']);
         else
             UI.data.fileNameLFP = fullfile(basepath,[UI.data.basename '.lfp']);
         end
@@ -3414,7 +3418,6 @@ end
             UI.settings.showEvents = false;
             UI.panel.events.eventNumber.String = '';
             UI.panel.events.showEvents.Value = 0;
-            epoch_plotElements.events = line(UI.epochAxes,data.events.(UI.settings.eventData).time,0.1,'color','w', 'HitTest','off','Marker',UI.settings.rasterMarker,'LineStyle','none');
         end
         initTraces
         uiresume(UI.fig);
@@ -3482,13 +3485,15 @@ end
         if ~UI.settings.showEvents
             showEvents
         end
-        idx = 1:numel(data.events.(UI.settings.eventData).time);
-        UI.settings.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)>t0+UI.settings.windowDuration/2,1);
-        UI.settings.iEvent = idx(UI.settings.iEvent1);
-        if ~isempty(UI.settings.iEvent)
-            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
-            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
-            uiresume(UI.fig);
+        if UI.settings.showEvents
+            idx = 1:numel(data.events.(UI.settings.eventData).time);
+            UI.settings.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)>t0+UI.settings.windowDuration/2,1);
+            UI.settings.iEvent = idx(UI.settings.iEvent1);
+            if ~isempty(UI.settings.iEvent)
+                UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+                t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
+                uiresume(UI.fig);
+            end
         end
     end
 
@@ -3497,11 +3502,13 @@ end
         if ~UI.settings.showEvents
             showEvents
         end
-        UI.settings.iEvent = str2num(UI.panel.events.eventNumber.String);
-        if ~isempty(UI.settings.iEvent) && isnumeric(UI.settings.iEvent) && UI.settings.iEvent <= numel(data.events.(UI.settings.eventData).time) && UI.settings.iEvent > 0
-            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
-            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
-            uiresume(UI.fig);
+        if UI.settings.showEvents
+            UI.settings.iEvent = str2num(UI.panel.events.eventNumber.String);
+            if ~isempty(UI.settings.iEvent) && isnumeric(UI.settings.iEvent) && UI.settings.iEvent <= numel(data.events.(UI.settings.eventData).time) && UI.settings.iEvent > 0
+                UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+                t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
+                uiresume(UI.fig);
+            end
         end
     end
     function previousEvent(~,~)
@@ -3509,13 +3516,15 @@ end
         if ~UI.settings.showEvents
             showEvents
         end
-        idx = 1:numel(data.events.(UI.settings.eventData).time);
-        UI.settings.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)<t0+UI.settings.windowDuration/2,1,'last');
-        UI.settings.iEvent = idx(UI.settings.iEvent1);
-        if ~isempty(UI.settings.iEvent)
-            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
-            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
-            uiresume(UI.fig);
+        if UI.settings.showEvents
+            idx = 1:numel(data.events.(UI.settings.eventData).time);
+            UI.settings.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)<t0+UI.settings.windowDuration/2,1,'last');
+            UI.settings.iEvent = idx(UI.settings.iEvent1);
+            if ~isempty(UI.settings.iEvent)
+                UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+                t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
+                uiresume(UI.fig);
+            end
         end
     end
 
@@ -3524,10 +3533,12 @@ end
         if ~UI.settings.showEvents
             showEvents
         end
-        UI.settings.iEvent = ceil(numel(data.events.(UI.settings.eventData).time)*rand(1));
-        UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
-        t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
-        uiresume(UI.fig);
+        if UI.settings.showEvents
+            UI.settings.iEvent = ceil(numel(data.events.(UI.settings.eventData).time)*rand(1));
+            UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
+            t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
+            uiresume(UI.fig);
+        end
     end
 
     function nextPowerEvent(~,~)
