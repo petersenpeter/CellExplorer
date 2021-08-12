@@ -387,7 +387,7 @@ end
         UI.panel.general.filter = uipanel('Parent',UI.panel.general.main,'title','Extracellular traces');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot style', 'Units','normalized', 'Position', [0.01 0.87 0.3 0.1],'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot colors', 'Units','normalized', 'Position', [0.01 0.74 0.3 0.1],'HorizontalAlignment','left');
-        UI.panel.general.plotStyle = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Downsampled','Range','Raw','LFP','Image'}, 'value', UI.settings.plotStyle, 'Units','normalized', 'Position', [0.3 0.86 0.69 0.12],'Callback',@changePlotStyle,'HorizontalAlignment','left');
+        UI.panel.general.plotStyle = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Downsampled','Range','Raw','LFP (*.lfp file)','Image'}, 'value', UI.settings.plotStyle, 'Units','normalized', 'Position', [0.3 0.86 0.69 0.12],'Callback',@changePlotStyle,'HorizontalAlignment','left');
         UI.panel.general.colorScale = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 75%','Colors 50%','Colors 25%','Grey-scale','Grey-scale 75%','Grey-scale 50%','Grey-scale 25%'}, 'value', 1, 'Units','normalized', 'Position', [0.3 0.73 0.69 0.12],'Callback',@changeColorScale,'HorizontalAlignment','left');
         UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.62 0.5 0.11],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
         UI.panel.general.extraSpacing = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Group spacing', 'value', 0, 'Units','normalized', 'Position', [0.5 0.62 0.5 0.11],'Callback',@extraSpacing,'HorizontalAlignment','left');
@@ -461,7 +461,7 @@ end
         % % % % % % % % % % % % % % % % % % % % % %
         % 2. PANEL: Spikes related metrics
         % Spikes
-        UI.panel.spikes.main = uipanel('Parent',UI.panel.spikedata.main,'title','Spikes');
+        UI.panel.spikes.main = uipanel('Parent',UI.panel.spikedata.main,'title','Spikes  (*.spikes.cellinfo.mat)');
         UI.panel.spikes.showSpikes = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Show spikes', 'value', 0, 'Units','normalized', 'Position', [0.01 0.67 0.48 0.32],'Callback',@toggleSpikes,'HorizontalAlignment','left');
         UI.panel.spikes.showSpikesBelowTrace = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Below traces', 'value', 0, 'Units','normalized', 'Position', [0.51 0.67 0.48 0.32],'Callback',@showSpikesBelowTrace,'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', ' Colors: ', 'Units','normalized', 'Position', [0 0.34 0.3 0.3],'HorizontalAlignment','left');
@@ -470,7 +470,7 @@ end
         UI.panel.spikes.setSpikesYData = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.3 0.01 0.69 0.32],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesYData);
 
         % Cell metrics
-        UI.panel.cell_metrics.main = uipanel('Parent',UI.panel.spikedata.main,'title','Cell metrics');
+        UI.panel.cell_metrics.main = uipanel('Parent',UI.panel.spikedata.main,'title','Cell metrics (*.cell_metrics.cellinfo.mat)');
         uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Color groups', 'Units','normalized','Position', [0 0.74 0.5 0.13],'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Sorting (below traces)','Units','normalized','Position', [0 0.47 1 0.13],'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Filter', 'Units','normalized','Position', [0 0.17 1 0.13], 'HorizontalAlignment','left');
@@ -517,7 +517,7 @@ end
         % % % % % % % % % % % % % % % % % % % % % %
         % 3. PANEL: Other datatypes
         % Events
-        UI.panel.events.navigation = uipanel('Parent',UI.panel.other.main,'title','Events');
+        UI.panel.events.navigation = uipanel('Parent',UI.panel.other.main,'title','Events (*.events.mat)');
         UI.panel.events.files = uicontrol('Parent',UI.panel.events.navigation,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.85 0.98 0.13],'HorizontalAlignment','left','Callback',@setEventData);
         UI.panel.events.showEvents = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.01 0.75 0.5 0.1], 'value', 0,'String','Show events','Callback',@showEvents,'KeyPressFcn', @keyPress,'tooltip','Show events');
         UI.panel.events.showEventsBelowTrace = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.505 0.75 0.485 0.1], 'value', 0,'String','Below traces','Callback',@showEventsBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show events below traces');
@@ -534,7 +534,7 @@ end
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.14],'String','Save events','Callback',@saveEvent,'KeyPressFcn', @keyPress,'tooltip','Save events');
         
         % Time series
-        UI.panel.timeseries.main = uipanel('Parent',UI.panel.other.main,'title','Time series');
+        UI.panel.timeseries.main = uipanel('Parent',UI.panel.other.main,'title','Time series (*.timeseries.mat)');
         UI.panel.timeseries.files = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.67 0.98 0.31],'HorizontalAlignment','left','Callback',@setTimeseriesData);
         UI.panel.timeseries.show = uicontrol('Parent',UI.panel.timeseries.main,'Style','checkbox','Units','normalized','Position',[0.01 0.34 0.485 0.33], 'value', 0,'String','Show','Callback',@showTimeSeries,'KeyPressFcn', @keyPress,'tooltip','Show timeseries data');
         uicontrol('Parent',UI.panel.timeseries.main,'Style','pushbutton','Units','normalized','Position',[0.505 0.34 0.485 0.33],'String','Full trace','Callback',@plotTimeSeries,'KeyPressFcn', @keyPress,'tooltip','Show full trace in separate figure');
@@ -542,7 +542,7 @@ end
         UI.panel.timeseries.upperBoundary = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'Edit', 'String', num2str(UI.settings.timeseries.upperBoundary), 'Units','normalized', 'Position', [0.505 0 0.485 0.33],'HorizontalAlignment','center','tooltip','Higher bound','Callback',@setTimeSeriesBoundary);
         
         % States
-        UI.panel.states.main = uipanel('Parent',UI.panel.other.main,'title','States');
+        UI.panel.states.main = uipanel('Parent',UI.panel.other.main,'title','States (*.states.mat)');
         UI.panel.states.files = uicontrol('Parent',UI.panel.states.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.67 0.98 0.31],'HorizontalAlignment','left','Callback',@setStatesData);
         UI.panel.states.showStates = uicontrol('Parent',UI.panel.states.main,'Style','checkbox','Units','normalized','Position',[0.01 0.35 1 0.33], 'value', 0,'String','Show states','Callback',@showStates,'KeyPressFcn', @keyPress,'tooltip','Show states data');
         UI.panel.states.previousStates = uicontrol('Parent',UI.panel.states.main,'Style','pushbutton','Units','normalized','Position',[0.505 0.35 0.24 0.32],'String',char(8592),'Callback',@previousStates,'KeyPressFcn', @keyPress,'tooltip','Previous state');
@@ -551,7 +551,7 @@ end
         UI.panel.states.statesCount = uicontrol('Parent',UI.panel.states.main,'Style', 'Edit', 'String', 'nStates', 'Units','normalized', 'Position', [0.505 0.01 0.485 0.32],'HorizontalAlignment','center','Enable','off');
         
         % Behavior
-        UI.panel.behavior.main = uipanel('Parent',UI.panel.other.main,'title','Behavior');
+        UI.panel.behavior.main = uipanel('Parent',UI.panel.other.main,'title','Behavior (*.behavior.mat)');
         UI.panel.behavior.files = uicontrol('Parent',UI.panel.behavior.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.79 0.98 0.19],'HorizontalAlignment','left','Callback',@setBehaviorData);
         UI.panel.behavior.showBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','checkbox','Units','normalized','Position',[0 0.60 1 0.19], 'value', 0,'String','Show behavior','Callback',@showBehavior,'KeyPressFcn', @keyPress,'tooltip','Show behavior');
         UI.panel.behavior.previousBehavior = uicontrol('Parent',UI.panel.behavior.main,'Style','pushbutton','Units','normalized','Position',[0.505 0.60 0.24 0.19],'String',['| ' char(8592)],'Callback',@previousBehavior,'KeyPressFcn', @keyPress,'tooltip','Start');
@@ -721,7 +721,11 @@ end
 %             end
 %         end
     end
-
+    
+    function text_center(message)
+        text(UI.plot_axis1,0.5,0.5,message,'Color','w','FontSize',14,'Units','normalized','FontWeight', 'Bold','BackgroundColor',[0 0 0 0.8])
+    end
+    
     function plot_ephys
         % Loading and plotting ephys data
         % There are five plot styles, for optimized plotting performance
@@ -746,7 +750,7 @@ end
             if UI.fid.lfp == -1
                 UI.settings.stream = false;
                 ephys.loaded = false;
-                MsgLog('Failed to load LFP data',4);
+                text_center('Failed to load LFP data')
                 return
             end
             sr = data.session.extracellular.srLfp;
@@ -757,7 +761,7 @@ end
             if UI.fid.ephys == -1
                 UI.settings.stream = false;
                 ephys.loaded = false;
-                MsgLog('Failed to load raw data',4);
+                text_center('Failed to load raw data')
                 return
             end
             sr = data.session.extracellular.sr;
@@ -780,7 +784,7 @@ end
                     ephys.loaded = true;
                 catch 
                     UI.settings.stream = false;
-                    warning('Failed to read file')
+                    text_center('Failed to read file')
                 end
             elseif t0 < UI.t1 && t0 > UI.t1 - UI.settings.windowDuration && ~UI.forceNewData
                 t_offset = UI.t1-t0;
@@ -3763,7 +3767,7 @@ end
         timestamps = sort(timestamps);
     end
 
-    function showBehavior(~,~) % Behavior (buzcode)
+    function showBehavior(~,~) % Behavior (CellExplorer/buzcode)
         if UI.settings.showBehavior
             UI.settings.showBehavior = false;
             UI.panel.behavior.showBehavior.Value = 0;
@@ -4160,17 +4164,32 @@ end
     
     function showSpykingCircus(~,~)
         if UI.panel.spikesorting.showSpykingCircus.Value == 1 && ~isfield(data,'spikes_klusta')
-            try
-                spikes = loadSpikes(data.session,'format','klustakwik','saveMat',false,'getWaveformsFromDat',false,'getWaveformsFromSource',false);
+%             try
+                [file,path] = uigetfile('*.hdf5','Please select the Spyking Circus file for this session (hdf5 result/clusters)');
+                if ~isequal(file,0)
+                    % Loading Spyking Circus file
+                    info = h5info(fullfile(path,file));
+                    for i =1:numel(info.Datasets)
+                        name = info.Datasets(i).Name
+                        temp = strsplit(name,'_');
+                        if strcmp(temp,'clusters')
+                        spikes.times
+                        end
+                    end
+                end
+                tmpfile = fullfile(path,file);
+                
+                spikes  = double(h5read(tmpfile, '/spiketimes/temp_1'));
+                spikes = loadSpikes(data.session,'format','spykingcircus','saveMat',false,'getWaveformsFromDat',false,'getWaveformsFromSource',false);
                 data.spikes_spykingcircus = spikes;
                 UI.settings.showSpykingCircus = true;
                 uiresume(UI.fig);
                 MsgLog(['KiloSort data loaded succesful: ' basename],2)
-            catch
-                UI.settings.showSpykingCircus = false;
-                UI.panel.spikesorting.showSpykingCircus.Value = 0;
-                MsgLog(['Failed to load SpyKING Circus data. The data must be located in the basepath'],2)
-            end
+%             catch
+%                 UI.settings.showSpykingCircus = false;
+%                 UI.panel.spikesorting.showSpykingCircus.Value = 0;
+%                 MsgLog(['Failed to load SpyKING Circus data. The data must be located in the basepath'],2)
+%             end
         elseif UI.panel.spikesorting.showSpykingCircus.Value == 1  && isfield(data,'spikes_klusta')
             UI.settings.showSpykingCircus = true;
             uiresume(UI.fig);
