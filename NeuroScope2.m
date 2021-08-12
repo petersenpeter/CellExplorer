@@ -339,6 +339,8 @@ end
         UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);
         %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
         UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
+        UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);
+        
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background/xtick color',menuSelectedFcn,@changeBackgroundColor);
         UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu','Separator','on',menuSelectedFcn,@ShowHideMenu);
         UI.menu.display.debug = uimenu(UI.menu.display.topMenu,menuLabel,'Debug','Separator','on',menuSelectedFcn,@toggleDebug);
@@ -639,7 +641,7 @@ end
         
         % Spike data
         if UI.settings.showSpikes
-            plotSpikeData(t0,t0+UI.settings.windowDuration,'w')
+            plotSpikeData(t0,t0+UI.settings.windowDuration,'w',UI.plot_axis1)
         end
         
         % Spectrogram
@@ -723,7 +725,7 @@ end
     end
     
     function text_center(message)
-        text(UI.plot_axis1,0.5,0.5,message,'Color','w','FontSize',14,'Units','normalized','FontWeight', 'Bold','BackgroundColor',[0 0 0 0.8])
+        text(UI.plot_axis1,0.5,0.5,message,'Color',UI.settings.xtickColor,'FontSize',14,'Units','normalized','FontWeight', 'Bold','BackgroundColor',[0 0 0 0.8])
     end
     
     function plot_ephys
@@ -1072,7 +1074,8 @@ end
                     if UI.settings.spikesGroupColors == 3
                         % UI.params.sortingMetric = 'putativeCellType';
                         putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
-                        UI.colors_metrics = hsv(numel(putativeCellTypes));
+%                         UI.colors_metrics = hsv(numel(putativeCellTypes));
+                        UI.colors_metrics = eval([UI.settings.spikesColormap,'(',num2str(numel(putativeCellTypes)),')']);
                         k = 1;
                         for i = 1:numel(putativeCellTypes)
                             idx2 = find(ismember(data.cell_metrics.(UI.params.groupMetric),putativeCellTypes{i}));
@@ -1129,7 +1132,7 @@ end
         end
     end
 
-    function plotSpikeData(t1,t2,colorIn)
+    function plotSpikeData(t1,t2,colorIn,axesIn)
         % Plots spikes
         
         % Determining which units to plot from various filters
@@ -1186,16 +1189,16 @@ end
                 end
             end
             if UI.settings.spikesGroupColors == 3
-                % UI.params.sortingMetric = 'putativeCellType';
                 putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
-                UI.colors_metrics = hsv(numel(putativeCellTypes));
+%                 UI.colors_metrics = hsv(numel(putativeCellTypes));
+                UI.colors_metrics = eval([UI.settings.spikesColormap,'(',num2str(numel(putativeCellTypes)),')']);
                 k = 1;
                 for i = 1:numel(putativeCellTypes)
                     idx2 = find(ismember(data.cell_metrics.(UI.params.groupMetric),putativeCellTypes{i}));
                     idx3 = ismember(data.spikes.spindices(spin_idx,2),idx2);
                     if any(idx3)
-                        line(spikes_raster.x(idx3), spikes_raster.y(idx3),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',UI.colors_metrics(i,:), 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
-                        text(1/400,0.005+(k-1)*0.012+UI.dataRange.spikes(1),putativeCellTypes{i},'color',UI.colors_metrics(i,:)*0.8,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized', 'HitTest','off')
+                        line(axesIn,spikes_raster.x(idx3), spikes_raster.y(idx3),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',UI.colors_metrics(i,:), 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
+                        text(axesIn,1/400,0.005+(k-1)*0.012+UI.dataRange.spikes(1),putativeCellTypes{i},'color',UI.colors_metrics(i,:)*0.8,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized', 'HitTest','off')
                         k = k+1;
                     end
                 end
@@ -1205,10 +1208,10 @@ end
                 uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(unique_uids)),')']);
                 for i = 1:numel(unique_uids)
                     idx_uids = uid == unique_uids(i);
-                    line(spikes_raster.x(idx_uids), spikes_raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
+                    line(axesIn,spikes_raster.x(idx_uids), spikes_raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
                 end
             else
-                line(spikes_raster.x, spikes_raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorIn, 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
+                line(axesIn,spikes_raster.x, spikes_raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorIn, 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
             end
             
             % Highlights cells ('tags','groups','groundTruthClassification')
@@ -1239,7 +1242,8 @@ end
                 populationBins = 0:UI.settings.populationRateWindow:t2-t1;
                 if UI.settings.spikesGroupColors == 3
                     putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
-                    UI.colors_metrics = hsv(numel(putativeCellTypes));
+%                     UI.colors_metrics = hsv(numel(putativeCellTypes));
+                    UI.colors_metrics = eval([UI.settings.spikesColormap,'(',num2str(numel(putativeCellTypes)),')']);
                     
                     for i = 1:numel(putativeCellTypes)
                         idx2 = find(ismember(data.cell_metrics.(UI.params.groupMetric),putativeCellTypes{i}));
@@ -1512,9 +1516,6 @@ end
 
     function defineGroupData(~,~)
         if isfield(data,'cell_metrics')
-            if ~isfield(data.cell_metrics,'groups')
-                data.cell_metrics.groups = {};
-            end
             [data.cell_metrics,UI] = dialog_metrics_groupData(data.cell_metrics,UI);
             % Group data
             % Filters tagged cells ('tags','groups','groundTruthClassification')
@@ -2297,6 +2298,9 @@ end
         % Toggle cell metrics data
         if ~isfield(data,'cell_metrics') && exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
             data.cell_metrics = loadCellMetrics('session',data.session);
+            if ~isfield(data.cell_metrics,'groups')
+                data.cell_metrics.groups = {};
+            end
         elseif ~exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
             UI.panel.cell_metrics.useMetrics.Value = 0;
             MsgLog('Cell_metrics does not exist',4);
@@ -3828,7 +3832,7 @@ end
             spikesBelowTrace = UI.settings.spikesBelowTrace;
             UI.settings.spikesBelowTrace = true;
             
-            plotSpikeData(0,UI.t_total,'w')
+            plotSpikeData(0,UI.t_total,'w',ax1)
             
             UI.dataRange.spikes = dataRange_spikes;
             UI.settings.spikesBelowTrace = spikesBelowTrace;
@@ -4374,6 +4378,40 @@ end
             idx = colormap_uicontrol.Value;
             colormap_preview = colormapList{idx};
             UI.colors = eval([colormap_preview,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+            plotData;
+        end
+    end
+    
+    function changeSpikesColormap(~,~)
+        colormapList = {'lines','hsv','jet','colorcube','prism','parula','hot','cool','spring','summer','autumn','winter','gray','bone','copper','pink','white'};
+        initial_colormap = UI.settings.spikesColormap;
+        color_idx = find(strcmp(UI.settings.spikesColormap,colormapList));
+        
+        colormap_dialog = dialog('Position', [0, 0, 300, 350],'Name','Change colormap','visible','off'); movegui(colormap_dialog,'center'), set(colormap_dialog,'visible','on')
+        colormap_uicontrol = uicontrol('Parent',colormap_dialog,'Style', 'ListBox', 'String', colormapList, 'Position', [10, 50, 280, 270],'Value',color_idx,'Callback',@(src,evnt)previewColormap);
+        uicontrol('Parent',colormap_dialog,'Style','pushbutton','Position',[10, 10, 135, 30],'String','OK','Callback',@(src,evnt)close_dialog);
+        uicontrol('Parent',colormap_dialog,'Style','pushbutton','Position',[155, 10, 135, 30],'String','Cancel','Callback',@(src,evnt)cancel_dialog);
+        uicontrol('Parent',colormap_dialog,'Style', 'text', 'String', 'Colormaps', 'Position', [10, 320, 280, 20],'HorizontalAlignment','left');
+        uicontrol(colormap_uicontrol)
+        uiwait(colormap_dialog);
+
+        function close_dialog
+            UI.settings.spikesColormap = colormapList{colormap_uicontrol.Value};
+            delete(colormap_dialog);
+            uiresume(UI.fig);
+            
+        end
+        function cancel_dialog
+            % Closes dialog
+            UI.settings.spikesColormap = initial_colormap;
+            plotData;
+            delete(colormap_dialog);
+        end
+        
+        function previewColormap
+            % Previewing colormap
+            idx = colormap_uicontrol.Value;
+            UI.settings.spikesColormap = colormapList{idx};
             plotData;
         end
     end
