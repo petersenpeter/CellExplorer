@@ -1,6 +1,6 @@
 function [EMGFromLFP] = ce_EMGFromLFP(session,varargin)
 % USAGE
-% [EMGCorr] = bz_EMGCorrFromLFP(basePath)
+% [EMGCorr] = ce_EMGCorrFromLFP(basePath)
 %
 % INPUTS
 %       basePath            - string combination of basepath and basename of recording
@@ -98,7 +98,6 @@ display('Calculating EMGFromLFP from High Frequency LFP Correlation')
 
 %% get basics about.lfp/lfp file
 
-% sessionInfo = bz_getSessionInfo(basepath,'noPrompts',noPrompts); % now using the updated version
 switch fromDat
     case false
         if exist([basepath filesep basename '.lfp'])
@@ -208,7 +207,7 @@ counter = 1;
 for j=1:(length(xcorr_chs))
     for k=(j+1):length(xcorr_chs)
         %disp([num2str(counter*2 ./ (length(xcorr_chs)*length(xcorr_chs)*length(timestamps)))])
-        bz_Counter(counter,(length(xcorr_chs)*(length(xcorr_chs)-1))./2,'Channel Pair')
+        ce_Counter(counter,(length(xcorr_chs)*(length(xcorr_chs)-1))./2,'Channel Pair')
         c1 = [];
         c2 = [];
         binind = 0;
@@ -240,7 +239,7 @@ EMGFromLFP.timestamps = timestamps'./Fs;
 EMGFromLFP.data = EMGCorr;
 EMGFromLFP.channels = xcorr_chs-1;
 EMGFromLFP.channels1 = xcorr_chs;
-EMGFromLFP.detectorName = 'bz_EMGFromLFP';
+EMGFromLFP.detectorName = 'ce_EMGFromLFP';
 EMGFromLFP.samplingFrequency = samplingFrequency; 
 
 if saveMat
