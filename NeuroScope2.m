@@ -2350,9 +2350,21 @@ end
         % Toggle cell metrics data
         if ~isfield(data,'cell_metrics') && exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
             data.cell_metrics = loadCellMetrics('session',data.session);
-            if ~isfield(data.cell_metrics,'groups')
-                data.cell_metrics.groups = {};
+            
+            % Initialize labels
+            if ~isfield(data.cell_metrics, 'labels')
+                data.cell_metrics.labels = repmat({''},1,data.cell_metrics.general.cellCount);
             end
+            % Initialize labels
+            if ~isfield(data.cell_metrics, 'synapticEffect')
+                data.cell_metrics.synapticEffect = repmat({'Unknown'},1,data.cell_metrics.general.cellCount);
+            end
+            
+            % Initialize groups
+            if ~isfield(data.cell_metrics, 'groups')
+                data.cell_metrics.groups = struct();
+            end
+
         elseif ~exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
             UI.panel.cell_metrics.useMetrics.Value = 0;
             MsgLog('Cell_metrics does not exist',4);
@@ -2681,7 +2693,7 @@ end
         UI.offsets.spectrogram = 0.25 * (UI.settings.spectrogram.show);
         UI.offsets.events   = 0.04 * ((UI.settings.showEventsBelowTrace || UI.settings.processing_steps) && UI.settings.showEvents);
         UI.offsets.kilosort = 0.08 * (UI.settings.showKilosort && UI.settings.kilosortBelowTrace);
-        UI.offsets.klusta = 0.08 * (UI.settings.showKlusta && UI.settings.KlustaBelowTrace);
+        UI.offsets.klusta = 0.08 * (UI.settings.showKlusta && UI.settings.klustaBelowTrace);
         UI.offsets.spykingcircus = 0.08 * (UI.settings.showSpykingcircus && UI.settings.spykingcircusBelowTrace);
         UI.offsets.spikes   = 0.08 * (UI.settings.spikesBelowTrace && UI.settings.showSpikes);
         UI.offsets.populationRate = 0.08 * (UI.settings.showSpikes && UI.settings.showPopulationRate && UI.settings.populationRateBelowTrace);
@@ -4208,16 +4220,19 @@ end
     
     function showKlusta(~,~)
         if UI.panel.spikesorting.showKlusta.Value == 1 && ~isfield(data,'spikes_klusta')
-            try
-                spikes = loadSpikes(data.session,'format','klustakwik','saveMat',false,'getWaveformsFromDat',false,'getWaveformsFromSource',false);
-                data.spikes_kilosort = spikes;
+            [file,path] = uigetfile('*.xml','Please select the klustakwik xml file for this session');
+            if ~isequal(file,0)
+                basename1 = file(1:end-4);
+                spikes = loadSpikes('basepath',path,'basename',basename1,'format','klustakwik','saveMat',false,'getWaveformsFromDat',false,'getWaveformsFromSource',true);
+                spikes.spindices = generateSpinDices(spikes.times);
+                data.spikes_klusta = spikes;
                 UI.settings.showKlusta = true;
                 uiresume(UI.fig);
-                MsgLog(['KiloSort data loaded succesful: ' basename],2)
-            catch
+                MsgLog('Klustakwik data loaded succesful',2)
+            else
                 UI.settings.showKlusta = false;
                 UI.panel.spikesorting.showKlusta.Value = 0;
-                MsgLog(['Failed to load KlustaKwik data. The data must be located in the basepath'],2)
+                MsgLog(['Failed to load KlustaKwik data'],2)
             end
         elseif UI.panel.spikesorting.showKlusta.Value == 1  && isfield(data,'spikes_klusta')
             UI.settings.showKlusta = true;
@@ -4235,7 +4250,7 @@ end
     end
     
     function showSpykingcircus(~,~)
-        if UI.panel.spikesorting.showSpykingcircus.Value == 1 && ~isfield(data,'spikes_klusta')
+        if UI.panel.spikesorting.showSpykingcircus.Value == 1 && ~isfield(data,'spikes_spykingcircus')
             
             [file,path] = uigetfile('*.hdf5','Please select the Spyking Circus file for this session (hdf5 clusters)');
             if ~isequal(file,0)
@@ -4251,7 +4266,7 @@ end
                         
                         for i = 1:length(spike_clusters)
                             spikes.ids{UID} = find(spike_cluster_index == spike_clusters(i));
-                            spikes.times{UID} = spike_times(spikes.ids{UID});
+                            spikes.times{UID} = spike_times(spikes.ids{UID})/data.session.extracellular.sr;
                             spikes.cluID(UID) = spike_clusters(i);
                             spikes.total(UID) = length(spikes.times{UID});
                             spikes.maxWaveformCh1(UID)=i;
