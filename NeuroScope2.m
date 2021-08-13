@@ -4255,25 +4255,37 @@ end
             [file,path] = uigetfile('*.hdf5','Please select the Spyking Circus file for this session (hdf5 clusters)');
             if ~isequal(file,0)
                 % Loading Spyking Circus file
-                spyking_circus_file = fullfile(path,file);
-                info = h5info(spyking_circus_file);
-                UID = 1;
-                for i =1:data.session.extracellular.nChannels
-                    if ismember(['clusters_',num2str(i-1)],{info.Datasets.Name})
-                        spike_times  = double(h5read(spyking_circus_file, ['/times_',num2str(i-1)]));
-                        spike_cluster_index  = double(h5read(spyking_circus_file, ['/clusters_',num2str(i-1)]));
-                        spike_clusters = unique(spike_cluster_index);
-                        
-                        for i = 1:length(spike_clusters)
-                            spikes.ids{UID} = find(spike_cluster_index == spike_clusters(i));
-                            spikes.times{UID} = spike_times(spikes.ids{UID})/data.session.extracellular.sr;
-                            spikes.cluID(UID) = spike_clusters(i);
-                            spikes.total(UID) = length(spikes.times{UID});
-                            spikes.maxWaveformCh1(UID)=i;
-                            UID = UID+1;
-                        end
-                    end
+                result_file = fullfile(path,file); % the user should use result.hdf5 which includes spiketimes of all templates (from the last template matching step) 
+                info = h5info(result_file);
+                templates_file = replace(result_file,'result','templates'); % to read templates.hdf5 file 
+                prefered_electrodes = double(h5read(templates_file, '/electrodes')); % read prefered electrode for every template, the length of this file is the same as the number of templates
+                for i = 1: length(prefered_electrodes) % which is equal to length(info.Groups(4).Datasets)
+                    spikes.times{i} = double(h5read(result_file,['/spiketimes/',info.Groups(4).Datasets(i).Name]))/data.session.extracellular.sr;
+                    template_number = str2double(erase(info.Groups(4).Datasets(i).Name,'temp_'));
+                    spikes.cluID(i) = template_number;
+                    spikes.total(i) = length(spikes.times{i});
+                    spikes.maxWaveformCh1(i)=prefered_electrodes(i)+1;
                 end
+              
+
+%                 UID = 1;
+%                 for i =1:data.session.extracellular.nChannels
+%                     i0 = i-1; %electrode are indexed from 0
+%                     if ismember(i0, prefered_electrodes) %ismember(['cluster_',num2str(i-1)],{cluster_info.Datasets.Name})
+%                         spike_times  = double(h5read(spyking_circus_file, ['/times_',num2str(i-1)]));
+%                         spike_cluster_index  = double(h5read(spyking_circus_file, ['/clusters_',num2str(i-1)]));
+%                         spike_clusters = unique(spike_cluster_index);
+%                         
+%                         for i = 1:length(spike_clusters)
+%                             spikes.ids{UID} = find(spike_cluster_index == spike_clusters(i));
+%                             spikes.times{UID} = spike_times(spikes.ids{UID})/data.session.extracellular.sr;
+%                             spikes.cluID(UID) = spike_clusters(i);
+%                             spikes.total(UID) = length(spikes.times{UID});
+%                             spikes.maxWaveformCh1(UID)=i;
+%                             UID = UID+1;
+%                         end
+%                     end
+%                 end
                 spikes.numcells = numel(spikes.times);
                 spikes.spindices = generateSpinDices(spikes.times);
                 spikes.UID = 1:spikes.numcells;
