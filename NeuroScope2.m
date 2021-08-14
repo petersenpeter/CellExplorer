@@ -4258,37 +4258,47 @@ end
                 result_file = fullfile(path,file); % the user should use result.hdf5 which includes spiketimes of all templates (from the last template matching step) 
                 info = h5info(result_file);
                 templates_file = replace(result_file,'result','templates'); % to read templates.hdf5 file 
-                prefered_electrodes = double(h5read(templates_file, '/electrodes')); % read prefered electrode for every template, the length of this file is the same as the number of templates
-                for i = 1: length(prefered_electrodes) % which is equal to length(info.Groups(4).Datasets)
+                % find max channel and correct for bad channels that are removed
+                %preferred_electrodes = double(h5read(templates_file, '/electrodes')); % prefered electrode for every template may not be the maxCh
+                bad_channels = data.session.channelTags.Bad.channels;
+                bad_channels = sort(bad_channels); % in case they are not stored in Session in ascending order                        
+                % extract templates for finding max channel
+                temp_shape = double(h5read(templates_file, '/temp_shape'));
+                Ne = temp_shape(1);
+                Nt = temp_shape(2); 
+                N_templates = temp_shape(3)/2; 
+                temp_x = double(h5read(templates_file, '/temp_x') + 1);
+                temp_y = double(h5read(templates_file, '/temp_y') + 1);
+                temp_z = double(h5read(templates_file, '/temp_data'));
+                tmp = sparse(temp_x, temp_y, temp_z, Ne*Nt, temp_shape(3));
+                templates = reshape(full(tmp(:,1:N_templates)),Nt,Ne,N_templates); %spatiotemporal templates Nt*Ne*N_templates
+                for i = 1:N_templates
+                    template_i = templates(:,:,i);  
+                    [~, maxCh1(i,1)] = min(min(template_i,[],1));
+                end
+                %correct bad channel removal by Spyking_circus 
+                for i = 1:length(bad_channels)
+                    ch = bad_channels(i); 
+                    mask = maxCh1>= ch;
+                    maxCh1(mask) = maxCh1(mask)+1; 
+                end                
+                
+                for i = 1: N_templates % which is equal to length(info.Groups(4).Datasets) = number of templates
                     spikes.times{i} = double(h5read(result_file,['/spiketimes/',info.Groups(4).Datasets(i).Name]))/data.session.extracellular.sr;
                     template_number = str2double(erase(info.Groups(4).Datasets(i).Name,'temp_'));
-                    spikes.cluID(i) = template_number;
+                    spikes.cluID(i) = template_number+1; %plus one since temps start with temp_0
                     spikes.total(i) = length(spikes.times{i});
-                    spikes.maxWaveformCh1(i)=prefered_electrodes(i)+1;
+                    spikes.maxWaveformCh1(i)=maxCh1(i); %preferred_electrodes(i);
+                    spikes.ids{i} = spikes.cluID(i)*ones(size(spikes.times{i})); 
                 end
-              
-
-%                 UID = 1;
-%                 for i =1:data.session.extracellular.nChannels
-%                     i0 = i-1; %electrode are indexed from 0
-%                     if ismember(i0, prefered_electrodes) %ismember(['cluster_',num2str(i-1)],{cluster_info.Datasets.Name})
-%                         spike_times  = double(h5read(spyking_circus_file, ['/times_',num2str(i-1)]));
-%                         spike_cluster_index  = double(h5read(spyking_circus_file, ['/clusters_',num2str(i-1)]));
-%                         spike_clusters = unique(spike_cluster_index);
-%                         
-%                         for i = 1:length(spike_clusters)
-%                             spikes.ids{UID} = find(spike_cluster_index == spike_clusters(i));
-%                             spikes.times{UID} = spike_times(spikes.ids{UID})/data.session.extracellular.sr;
-%                             spikes.cluID(UID) = spike_clusters(i);
-%                             spikes.total(UID) = length(spikes.times{UID});
-%                             spikes.maxWaveformCh1(UID)=i;
-%                             UID = UID+1;
-%                         end
-%                     end
-%                 end
+                
                 spikes.numcells = numel(spikes.times);
-                spikes.spindices = generateSpinDices(spikes.times);
                 spikes.UID = 1:spikes.numcells;
+                % generateSpinDices
+                groups = cat(1,spikes.ids{:}); % from cell to array
+                [alltimes,sortidx] = sort(cat(1,spikes.times{:})); % Sorting spikes
+                spikes.spindices = [alltimes groups(sortidx)];
+
                 
                 % spikes = loadSpikes(data.session,'format','spykingcircus','saveMat',false,'getWaveformsFromDat',false,'getWaveformsFromSource',false);
                 data.spikes_spykingcircus = spikes;
