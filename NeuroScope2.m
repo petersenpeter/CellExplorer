@@ -507,14 +507,14 @@ end
         UI.panel.spikes.populationRateSmoothing = uicontrol('Parent',UI.panel.populationAnalysis.main,'Style', 'Edit', 'String', num2str(UI.settings.populationRateSmoothing), 'Units','normalized', 'Position', [0.7 0.01 0.29 0.3],'Callback',@tooglePopulationRate,'HorizontalAlignment','center','tooltip',['Binsize (seconds)']);
         
         % Spike sorting pipelines
-        UI.panel.spikesorting.main = uipanel('Title','Spike sorting pipelines','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.spikedata.main);
+        UI.panel.spikesorting.main = uipanel('Title','Other spike sorting formats','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.spikedata.main);
         UI.panel.spikesorting.showKilosort = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.01 0.66 0.485 0.32], 'value', 0,'String','Kilosort','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Open a KiloSort rez.mat data and show detected spikes');
         UI.panel.spikesorting.kilosortBelowTrace = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.505 0.66 0.485 0.32], 'value', 0,'String','Below traces','Callback',@showKilosort,'KeyPressFcn', @keyPress,'tooltip','Show KiloSort spikes below trace');
         
         UI.panel.spikesorting.showKlusta = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.01 0.33 0.485 0.32], 'value', 0,'String','Klustakwik','Callback',@showKlusta,'KeyPressFcn', @keyPress,'tooltip','Open Klustakwik clustered data files and show detected spikes');
         UI.panel.spikesorting.klustaBelowTrace = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.505 0.33 0.485 0.32], 'value', 0,'String','Below traces','Callback',@showKlusta,'KeyPressFcn', @keyPress,'tooltip','Show Klustakwik spikes below trace');
         
-        UI.panel.spikesorting.showSpykingcircus = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.01 0 0.485 0.32], 'value', 0,'String','SpyKING CIRCUS','Callback',@showSpykingcircus,'KeyPressFcn', @keyPress,'tooltip','Open SpyKING CIRCUS clustered data and show detected spikes');
+        UI.panel.spikesorting.showSpykingcircus = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.01 0 0.485 0.32], 'value', 0,'String','Spyking Circus','Callback',@showSpykingcircus,'KeyPressFcn', @keyPress,'tooltip','Open SpyKING CIRCUS clustered data and show detected spikes');
         UI.panel.spikesorting.spykingcircusBelowTrace = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.505 0 0.485 0.32], 'value', 0,'String','Below traces','Callback',@showSpykingcircus,'KeyPressFcn', @keyPress,'tooltip','Show SpyKING CIRCUS spikes below trace');
 
         % Defining flexible panel heights
