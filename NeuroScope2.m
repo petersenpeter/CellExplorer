@@ -4283,9 +4283,10 @@ end
                     maxCh1(mask) = maxCh1(mask)+1; 
                 end                
                 
+                ind_group = find(ismember({info.Groups.Name},{'/spiketimes'})); % find the index of the '/spiketimes' field
                 for i = 1: N_templates % which is equal to length(info.Groups(4).Datasets) = number of templates
-                    spikes.times{i} = double(h5read(result_file,['/spiketimes/',info.Groups(4).Datasets(i).Name]))/data.session.extracellular.sr;
-                    template_number = str2double(erase(info.Groups(4).Datasets(i).Name,'temp_'));
+                    spikes.times{i} = double(h5read(result_file,['/spiketimes/',info.Groups(ind_group).Datasets(i).Name]))/data.session.extracellular.sr;
+                    template_number = str2double(erase(info.Groups(ind_group).Datasets(i).Name,'temp_'));
                     spikes.cluID(i) = template_number+1; %plus one since temps start with temp_0
                     spikes.total(i) = length(spikes.times{i});
                     spikes.maxWaveformCh1(i)=maxCh1(i); %preferred_electrodes(i);
