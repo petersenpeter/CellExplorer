@@ -179,6 +179,7 @@ end
         UI.settings.channelList = [];
         UI.settings.brainRegionsToHide = [];
         UI.settings.removeDC = false;
+        UI.settings.showScalebar = false;
         
         % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9') 
@@ -341,6 +342,8 @@ end
         % UI.menu.display.channelCSD = uimenu(UI.menu.display.topMenu,menuLabel,'Show Current Source density (CSD)',menuSelectedFcn,@show_CSD);
         UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC);
         UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);
+        UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
+
         %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
         UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
         UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);
@@ -987,6 +990,12 @@ end
             else
                 text(-0.001*UI.settings.windowDuration*ones(1,numel(UI.channelOrder)),-UI.channelOffset(UI.channelOrder),cellstr(num2str(UI.channelOrder')),'color','w','VerticalAlignment', 'middle','HorizontalAlignment','right','HitTest','off')
             end
+        end
+        
+        % Plotting scale bar
+        if UI.settings.showScalebar
+            plot(UI.plot_axis1,[0.005,0.005],[0.93,0.98],'-','linewidth',3,'color',UI.settings.xtickColor)
+            text(UI.plot_axis1,0.005,0.955,['  ',num2str(0.05/(UI.settings.scalingFactor)*1000,3),' mV'],'FontWeight', 'Bold','VerticalAlignment', 'middle','HorizontalAlignment','left','color',UI.settings.xtickColor)
         end
         ephys.plotted = true;
     end
@@ -1916,6 +1925,16 @@ end
             UI.menu.display.ShowChannelNumbers.Checked = 'on';
         else
             UI.menu.display.ShowChannelNumbers.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+    
+    function showScalebar(~,~)
+        UI.settings.showScalebar = ~UI.settings.showScalebar;
+        if UI.settings.showScalebar
+            UI.menu.display.showScalebar.Checked = 'on';
+        else
+            UI.menu.display.showScalebar.Checked = 'off';
         end
         uiresume(UI.fig);
     end
@@ -4283,10 +4302,9 @@ end
                     maxCh1(mask) = maxCh1(mask)+1; 
                 end                
                 
-                ind_group = find(ismember({info.Groups.Name},{'/spiketimes'})); % find the index of the '/spiketimes' field
                 for i = 1: N_templates % which is equal to length(info.Groups(4).Datasets) = number of templates
-                    spikes.times{i} = double(h5read(result_file,['/spiketimes/',info.Groups(ind_group).Datasets(i).Name]))/data.session.extracellular.sr;
-                    template_number = str2double(erase(info.Groups(ind_group).Datasets(i).Name,'temp_'));
+                    spikes.times{i} = double(h5read(result_file,['/spiketimes/',info.Groups(4).Datasets(i).Name]))/data.session.extracellular.sr;
+                    template_number = str2double(erase(info.Groups(4).Datasets(i).Name,'temp_'));
                     spikes.cluID(i) = template_number+1; %plus one since temps start with temp_0
                     spikes.total(i) = length(spikes.times{i});
                     spikes.maxWaveformCh1(i)=maxCh1(i); %preferred_electrodes(i);
@@ -4407,8 +4425,10 @@ end
         text(UI.plot_axis1,1,1,['Start time: ', num2str(t0), ' sec, Duration: ', num2str(UI.settings.windowDuration), ' sec '],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','right','color',UI.settings.xtickColor,'Units','normalized')
         
         % Adding scalebar
-        plot([0.005,0.005],[0.93,0.98],'-','linewidth',3,'color',UI.settings.xtickColor)
-        text(UI.plot_axis1,0.005,0.955,['  ',num2str(0.05/(UI.settings.scalingFactor)*1000,3),' mV'],'FontWeight', 'Bold','VerticalAlignment', 'middle','HorizontalAlignment','left','color',UI.settings.xtickColor)
+        if ~UI.settings.showScalebar
+            plot(UI.plot_axis1,[0.005,0.005],[0.93,0.98],'-','linewidth',3,'color',UI.settings.xtickColor)
+            text(UI.plot_axis1,0.005,0.955,['  ',num2str(0.05/(UI.settings.scalingFactor)*1000,3),' mV'],'FontWeight', 'Bold','VerticalAlignment', 'middle','HorizontalAlignment','left','color',UI.settings.xtickColor)
+        end
         drawnow
         if strcmp(src.Text,'Export to .png file (image)')
             if ~verLessThan('matlab','9.8') 
@@ -4458,7 +4478,7 @@ end
         color_idx = find(strcmp(UI.settings.colormap,colormapList));
         
         colormap_dialog = dialog('Position', [0, 0, 300, 350],'Name','Change colormap','visible','off'); movegui(colormap_dialog,'center'), set(colormap_dialog,'visible','on')
-        colormap_uicontrol = uicontrol('Parent',colormap_dialog,'Style', 'ListBox', 'String', colormapList, 'Position', [10, 50, 280, 270],'Value',color_idx,'Callback',@(src,evnt)previewColormap);
+        colormap_uicontrol = uicontrol('Parent',colormap_dialog,'Style', 'ListBox', 'String', colormapList, 'Position', [10, 50, 280, 270],'Value',color_idx,'Max',1,'Min',1,'Callback',@(src,evnt)previewColormap);
         uicontrol('Parent',colormap_dialog,'Style','pushbutton','Position',[10, 10, 135, 30],'String','OK','Callback',@(src,evnt)close_dialog);
         uicontrol('Parent',colormap_dialog,'Style','pushbutton','Position',[155, 10, 135, 30],'String','Cancel','Callback',@(src,evnt)cancel_dialog);
         uicontrol('Parent',colormap_dialog,'Style', 'text', 'String', 'Colormaps', 'Position', [10, 320, 280, 20],'HorizontalAlignment','left');
@@ -4493,9 +4513,11 @@ end
         function previewColormap
             % Previewing colormap
             idx = colormap_uicontrol.Value;
-            colormap_preview = colormapList{idx};
-            UI.colors = eval([colormap_preview,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
-            plotData;
+            if ~isempty(idx)
+                colormap_preview = colormapList{idx};
+                UI.colors = eval([colormap_preview,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+                plotData;
+            end
         end
     end
     
@@ -4505,7 +4527,7 @@ end
         color_idx = find(strcmp(UI.settings.spikesColormap,colormapList));
         
         colormap_dialog = dialog('Position', [0, 0, 300, 350],'Name','Change colormap','visible','off'); movegui(colormap_dialog,'center'), set(colormap_dialog,'visible','on')
-        colormap_uicontrol = uicontrol('Parent',colormap_dialog,'Style', 'ListBox', 'String', colormapList, 'Position', [10, 50, 280, 270],'Value',color_idx,'Callback',@(src,evnt)previewColormap);
+        colormap_uicontrol = uicontrol('Parent',colormap_dialog,'Style', 'ListBox', 'String', colormapList, 'Position', [10, 50, 280, 270],'Value',color_idx,'Max',1,'Min',1,'Callback',@(src,evnt)previewColormap);
         uicontrol('Parent',colormap_dialog,'Style','pushbutton','Position',[10, 10, 135, 30],'String','OK','Callback',@(src,evnt)close_dialog);
         uicontrol('Parent',colormap_dialog,'Style','pushbutton','Position',[155, 10, 135, 30],'String','Cancel','Callback',@(src,evnt)cancel_dialog);
         uicontrol('Parent',colormap_dialog,'Style', 'text', 'String', 'Colormaps', 'Position', [10, 320, 280, 20],'HorizontalAlignment','left');
@@ -4527,9 +4549,11 @@ end
         
         function previewColormap
             % Previewing colormap
-            idx = colormap_uicontrol.Value;
-            UI.settings.spikesColormap = colormapList{idx};
-            plotData;
+            if ~isempty(idx)
+                idx = colormap_uicontrol.Value;
+                UI.settings.spikesColormap = colormapList{idx};
+                plotData;
+            end
         end
     end
     
