@@ -164,7 +164,11 @@ for jj = 1:session.extracellular.nElectrodeGroups
     ripple_channels{jj} = session.extracellular.electrodeGroups.channels{jj};
     
     % Loading .lfp file
-    signal = 0.000195 * double(LoadBinary([basename '.lfp'],'nChannels',nChannels,'channels',ripple_channels{jj},'precision','int16','frequency',srLfp));
+    if exist([basename '.lfp'],'file')
+        signal = 0.000195 * double(LoadBinary([basename '.lfp'],'nChannels',nChannels,'channels',ripple_channels{jj},'precision','int16','frequency',srLfp));
+    elseif exist([basename '.eeg'],'file')
+        signal = 0.000195 * double(LoadBinary([basename '.eeg'],'nChannels',nChannels,'channels',ripple_channels{jj},'precision','int16','frequency',srLfp));
+    end
     ripple_ave2 = [];
     
     % Only include ripples outside 151 samples from the start/end of the lfp file
