@@ -657,6 +657,7 @@ if parameters.forceReload
                         spikes.filtWaveform{UID} = spikes.filtWaveform_all{UID}(index1,:);
 %                         spikes.filtWaveform_std{unit_nb} = spikes.filtWaveform_all_std{unit_nb}(index1,:);
                         spikes.peakVoltage(UID) = max(spikes.filtWaveform{UID}) - min(spikes.filtWaveform{UID});
+                        spikes.channels_all{UID} = session.extracellular.electrodeGroups.channels{shank}; 
                     end
                 end
                 if parameters.getWaveformsFromDat
