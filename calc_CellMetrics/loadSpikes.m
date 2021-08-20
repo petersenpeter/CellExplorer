@@ -638,6 +638,10 @@ if parameters.forceReload
                 nb_clusters = unique(cluster_index);
                 nb_clusters2 = nb_clusters(nb_clusters > 1);
                 
+                % calc waveform x axis (time in seconds) 
+                [~,midx] = min(squeeze(waveforms(1,:,:)));
+                timeWaveform = ((1:size(waveforms,2)) - mode(midx)) / session.extracellular.sr * 1000;
+               
                 tol_samples = session.extracellular.sr*5e-4; % 0.5 ms tolerance in timestamp units
                 for i = 1:length(nb_clusters2)
                     UID = UID +1;
@@ -658,6 +662,7 @@ if parameters.forceReload
 %                         spikes.filtWaveform_std{unit_nb} = spikes.filtWaveform_all_std{unit_nb}(index1,:);
                         spikes.peakVoltage(UID) = max(spikes.filtWaveform{UID}) - min(spikes.filtWaveform{UID});
                         spikes.channels_all{UID} = session.extracellular.electrodeGroups.channels{shank}; 
+                        spikes.timeWaveform{UID} = timeWaveform;
                     end
                 end
                 if parameters.getWaveformsFromDat
