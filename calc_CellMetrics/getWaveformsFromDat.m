@@ -56,9 +56,12 @@ end
 badChannels = [];
 timerVal = tic;
 
+if filtFreq(2) > sr/2
+    filtFreq(2) = sr/2-1;
+end
 % Determining any extra bad channels from noiselevel of .dat file
 if params.getBadChannelsFromDat
-    session = getBadChannelsFromDat(session);
+    session = getBadChannelsFromDat(session,'filtFreq',filtFreq);
 end
 
 % Removing channels marked as Bad in session struct
@@ -207,31 +210,31 @@ for i = 1:length(unitsToProcess)
     if ishandle(fig1)
         figure(fig1)
         subplot(5,3,[1,4]), hold off
-        plot(time,wfF2), hold on, plot(time,wfF2(:,maxWaveformCh1),'k','linewidth',2),title('All channels'),ylabel('Mean filtered waveforms (uV)'),hold off
+        plot(time,wfF2), hold on, plot(time,wfF2(:,maxWaveformCh1),'k','linewidth',2), xlabel('Time (ms)'),title('All channels'),ylabel('Average filtered waveforms across channels (\muV)','Interpreter','tex'),hold off
         subplot(5,3,[2,5]), hold off,
         plot(time,permute(wfF(spikes.maxWaveformCh1(ii),:,:),[2,3,1])), hold on
         plot(time,mean(permute(wfF(spikes.maxWaveformCh1(ii),:,:),[2,3,1]),2),'k','linewidth',2),
-        title(['Peak channel (',num2str(spikes.maxWaveformCh1(ii)),')']),ylabel('All filtered waveforms (uV)')
+        title(['Peak channel = ',num2str(spikes.maxWaveformCh1(ii))]),ylabel('Filtered waveforms from peak channel (\muV)','Interpreter','tex'), xlabel('Time (ms)')
         
         subplot(5,3,[7,10]), hold off,
         plot(spikes.timeWaveform{ii},vertcat(spikes.rawWaveform{1:ii})'), hold on
-        plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Raw waveforms (uV)'), xlim([-0.8,0.8])
+        plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Raw waveforms (\muV)','Interpreter','tex'), xlim([-0.8,0.8])
         subplot(5,3,[8,11]), hold off,
         plot(spikes.timeWaveform{ii},vertcat(spikes.filtWaveform{1:ii})'), hold on
-        plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Filtered waveforms (uV)'), xlim([-0.8,0.8])
+        plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Filtered waveforms (\muV)','Interpreter','tex'), xlim([-0.8,0.8])
         subplot(5,3,3), hold off
-        plot(permute(range((wfF(spikes.maxWaveformCh1(ii),window_interval,:)),2),[3,2,1]),'.b')
-        title('Spikes across time (uV)')
+        plot(spkTmp,permute(range((wfF(spikes.maxWaveformCh1(ii),window_interval,:)),2),[3,2,1]),'.b')
+        ylabel('Amplitude (\muV)','Interpreter','tex'), xlabel('Time (sec)'), title(['Spike amplitudes (nPull=' num2str(nPull),')'])
         subplot(5,3,6), hold off
         plot(spikes.peakVoltage_sorted{ii},'.-b'), hold on
         plot(x,fitCoeffValues(1)*exp(-x/fitCoeffValues(2))+fitCoeffValues(3),'r'),
-        title(['Length constant (\lambda) = ',num2str(spikes.peakVoltage_expFitLengthConstant(ii),2)]), xlabel('Sorted channels'), ylabel('Amplitude (uV)'), xlim([1,nChannelFit])
+        title(['Length constant (\lambda) = ',num2str(spikes.peakVoltage_expFitLengthConstant(ii),2)],'Interpreter','tex'), xlabel('Sorted channels'), ylabel('Amplitude (\muV)','Interpreter','tex'), xlim([1,nChannelFit])
         subplot(5,3,9), hold on
-        plot(spikes.peakVoltage_sorted{ii}), title('Processed units'), xlabel('Sorted channels'), ylabel('Amplitude (uV)'), xlim([1,nChannelFit])
+        plot(spikes.peakVoltage_sorted{ii}), title('Processed units'), xlabel('Sorted channels'), ylabel('Amplitude (\muV)','Interpreter','tex'), xlim([1,nChannelFit])
         subplot(5,3,12), hold off,
-        histogram(spikes.peakVoltage_expFitLengthConstant(unitsToProcess(1:i)),20), title('Length constant (\lambda)'), axis tight
+        histogram(spikes.peakVoltage_expFitLengthConstant(unitsToProcess(1:i)),20), xlabel('Length constant (\lambda)','Interpreter','tex'), ylabel('Occurances'), axis tight
         subplot(5,3,15), hold off,
-        histogram(spikes.peakVoltage(unitsToProcess(1:i)),20), title('Amplitudes (uV)'), axis tight
+        histogram(spikes.peakVoltage(unitsToProcess(1:i)),20), xlabel('Amplitudes (\muV)','Interpreter','tex'), ylabel('Occurances'), axis tight
         
         subplot(10,3,[28,29]), hold off, title(['Extraction progress for session: ' basename ,' ', extraLabel],'interpreter','none')
         rectangle('Position',[0,0,100*i/length(unitsToProcess),1],'FaceColor',[0, 0.4470, 0.7410],'EdgeColor',[0, 0.4470, 0.7410] ,'LineWidth',1), xlim([0,100]), ylim([0,1]), set(gca,'xtick',[],'ytick',[])
