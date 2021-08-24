@@ -1,8 +1,9 @@
 function NeuroScope2(varargin)
 % % % % % % % % % % % % % % % % % % % % % % % % %
 % NeuroScope2 (BETA) is a visualizer for electrophysiological recordings. It is inspired by the original Neuroscope (http://neurosuite.sourceforge.net/)
-% and made to mimic its features, but built upon Matlab and the data structure of CellExplorer, making it much easier to hack/customize, fully
-% support Matlab mat-files, and faster than the original NeuroScope. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
+% and made to mimic its features, but built upon Matlab and the data structure of CellExplorer, making it much easier to hack/customize, 
+% and faster than the original NeuroScope. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
+% https://cellexplorer.org/interface/neuroscope2/
 %
 % Major features:
 % - Live trace filter with spike and event detection, single channel spectrogram
@@ -138,7 +139,11 @@ trackGoogleAnalytics('NeuroScope2',1);
 % Saving session metadata
 if UI.settings.saveMetadata
     session = data.session;
-    saveStruct(session,'session','commandDisp',false);
+    try
+        saveStruct(session,'session','commandDisp',false);
+    catch
+        warning('Could not save session struct to basepath when closing NeuroScope2')
+    end
 end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1284,7 +1289,7 @@ end
                                 % populationRate = smooth(populationRate,UI.settings.populationRateSmoothing);
                                 populationRate = conv(populationRate,gausswin(UI.settings.populationRateSmoothing)'/sum(gausswin(UI.settings.populationRateSmoothing)),'same');
                             end
-                            populationRate = (populationRate/max(populationRate))*diff(UI.dataRange.populationRate)+UI.dataRange.populationRate(1);
+                            populationRate = (populationRate/max(populationRate))*diff(UI.dataRange.populationRate)+UI.dataRange.populationRate(1)+0.001;
                             line(populationBins, populationRate,'Marker','none','LineStyle','-','color',UI.colors_metrics(i,:), 'HitTest','off','linewidth',1.5);
                         end
                     end
@@ -1300,7 +1305,7 @@ end
                         % populationRate = smooth(populationRate,UI.settings.populationRateSmoothing);
                         populationRate = conv(populationRate,gausswin(UI.settings.populationRateSmoothing)'/sum(gausswin(UI.settings.populationRateSmoothing)),'same');
                     end
-                    populationRate = (populationRate/max(populationRate))*diff(UI.dataRange.populationRate)+UI.dataRange.populationRate(1);
+                    populationRate = (populationRate/max(populationRate))*diff(UI.dataRange.populationRate)+UI.dataRange.populationRate(1)+0.001;
                     line(populationBins, populationRate,'Marker','none','LineStyle','-','color','w', 'HitTest','off','linewidth',1.5);
                 end
             end
@@ -2182,7 +2187,12 @@ end
     function setWindowsSize(~,~)
         % Set the window size
         string1 = str2num(UI.elements.lower.windowsSize.String);
-        if isnumeric(string1) & string1>0 & string1<100
+        if isnumeric(string1) 
+            if string1 < 0.001
+                string1 = 1;
+            elseif string1 > 100
+                string1 = 100;
+            end
             UI.settings.windowDuration = round(string1*1000)/1000;
             UI.elements.lower.windowsSize.String = num2str(UI.settings.windowDuration);
             initTraces
@@ -2195,6 +2205,7 @@ end
         % Increase the window size
         windowSize_old = UI.settings.windowDuration;
         UI.settings.windowDuration = min([UI.settings.windowDuration*2,100]);
+        UI.elements.lower.windowsSize.String = num2str(UI.settings.windowDuration);
         initTraces
         UI.forceNewData = true;
         uiresume(UI.fig);
@@ -2204,6 +2215,7 @@ end
         % Decrease the window size
         windowSize_old = UI.settings.windowDuration;
         UI.settings.windowDuration = max([UI.settings.windowDuration/2,0.125]);
+        UI.elements.lower.windowsSize.String = num2str(UI.settings.windowDuration);
         initTraces
         UI.forceNewData = true;
         uiresume(UI.fig);
@@ -2834,6 +2846,7 @@ end
                 initTraces
             end
         end
+        
         if exist('parameters','var') &&~isempty(parameters.events)
             idx = find(strcmp(parameters.events,UI.panel.events.files.String));
             if ~isempty(idx)

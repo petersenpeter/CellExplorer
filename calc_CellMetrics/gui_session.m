@@ -205,14 +205,17 @@ end
 % File
 UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
 uimenu(UI.menu.file.topMenu,menuLabel,'Save session file',menuSelectedFcn,@(~,~)saveSessionFile,'Accelerator','S');
-uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort',menuSelectedFcn,@(~,~)importKiloSort,'Separator','on');
-uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata via template script',menuSelectedFcn,@(~,~)importMetadataTemplate);
+uimenu(UI.menu.file.topMenu,menuLabel,'Generate session template file',menuSelectedFcn,@(~,~)generateSessionTemplate,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Load session template file',menuSelectedFcn,@(~,~)loadSessionTemplate);
+
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from template script',menuSelectedFcn,@(~,~)importMetadataTemplate,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort',menuSelectedFcn,@(~,~)importKiloSort);
 uimenu(UI.menu.file.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML,'Separator','on','Accelerator','I');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import bad channels from xml file',menuSelectedFcn,@importBadChannelsFromXML,'Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import time series from Intan info.rhd',menuSelectedFcn,@importMetaFromIntan,'Accelerator','T');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import merge points (*.mergePoints.events.mat)',menuSelectedFcn,@importEpochsIntervalsFromMergePoints,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import epoch info from parent sessions',menuSelectedFcn,@importFromFiles);
-uimenu(UI.menu.file.topMenu,menuLabel,'Generate animal metadata template',menuSelectedFcn,@(~,~)generateAnimalMetadataTemplate,'Separator','on');
+
 uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI with changes',menuSelectedFcn,@(~,~)CloseMetricsWindow,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn,@(~,~)cancelMetricsWindow);
 
@@ -611,17 +614,67 @@ uiwait(UI.fig)
 % Embedded functions 
 % % % % % % % % % % % % % % % % % % % % %
 
-    function generateAnimalMetadataTemplate(~,~)
+    function generateSessionTemplate(~,~)
         readBackFields;
-        pathparts = strsplit(session.general.basePath,filesep);
-        filepath1 = session.general.basePath(1:end-numel(pathparts{end}));
-        filename1 = [session.animal.name,'.session.mat'];
-        session.general.name = session.animal.name;
-        try
-            save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
-            MsgLog(['Animal metadata template saved to: ' fullfile(filepath1, filename1)],2)
-        catch
-            MsgLog(['Failed to save ',filename1,'. Location not available'],4)
+        listing = fieldnames(session);
+        filename1 = session.general.name;
+        output = dialog_general('dialog_title','Create template file','list_options',listing,'list_title','Select the data types to save to the template file','list_value',1:numel(listing),'list_max',numel(listing),'text1_value',filename1,'text1_title','Filename (*.session.mat)');
+        % [indx,~] = listdlg('PromptString','Select the data types to save to the template file','ListString',listing,'SelectionMode','multiple','ListSize',[300,220],'InitialValue',1:numel(listing),'Name','Create template file');
+        if ~isempty(output)
+            indx = output.list_value;
+            filename1 = [output.text1_value,'.session.mat'];
+            session_template = {};
+            S = {};
+            for i = 1:numel(indx)
+                fieldname1 = listing{indx(i)};
+                S.session.(fieldname1) = session.(fieldname1);
+            end
+
+            session_templates_path = what('session_templates');
+            filepath1 = session_templates_path.path;
+            
+            fullfile1 = fullfile(filepath1, filename1);
+            % try
+            save(fullfile1, '-struct', 'S')
+            MsgLog(['Session metadata template saved to: ' fullfile1],2)
+            %             catch
+            %                 MsgLog(['Failed to save ',fullfile1,'. Location not available'],4)
+            %             end
+        end
+        
+    end
+    
+    function loadSessionTemplate(~,~)
+        if isdeployed
+            return
+            % classification_schema_list = {'standard'};
+            % classification_schema_value = 1;
+        else
+            session_templates_variables = what('session_templates');
+            session_templates_list = session_templates_variables.mat;
+            if ~isempty(session_templates_list)
+                [indx,~] = listdlg('PromptString','Select metadata template','ListString',session_templates_list,'SelectionMode','single','ListSize',[300,220],'InitialValue',1,'Name','Session metadata template');
+                if ~isempty(indx)
+                    session_template = load(fullfile(session_templates_variables.path,session_templates_list{indx}),'session');
+                    listing = fieldnames(session_template.session);
+                    for i = 1:numel(listing)
+                        fieldname1 = listing{i};
+                        if strcmp(fieldname1,'general')
+                            session_template.session.general = rmfield(session.general,{'name','baseName','basePath','sessionName'});
+                            general_fields = fieldnames(session_template.session.general);
+                            for j = 1:numel(general_fields)
+                                session.general.(general_fields{j}) = session_template.session.general.(general_fields{j});
+                            end
+                        else
+                            session.(fieldname1) = session_template.session.(fieldname1);
+                        end
+                    end
+                    importSessionStruct
+                    MsgLog('Session metadata template loaded. Session name and basepath not altered.',2)
+                end
+            else
+                MsgLog('No metadata templates exist',2)
+            end
         end
     end
     
@@ -2735,13 +2788,13 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.electrodes = dialog('Position', [300, 300, 500, 200],'Name','Electrode group','WindowStyle','modal'); movegui(UI.dialog.electrodes,'center')
+        UI.dialog.electrodes = dialog('Position', [300, 300, 500, 300],'Name','Electrode group','WindowStyle','modal'); movegui(UI.dialog.electrodes,'center')
         
-        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Group (nGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 173, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 150, 480, 25],'HorizontalAlignment','left','enable', 'off');
+        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Group (nGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 273, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 250, 480, 25],'HorizontalAlignment','left','enable', 'off');
         
-        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsChannels = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 223, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsChannels = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
         uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', 'Label', 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
         spikeGroupsLabel = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initLabel, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
