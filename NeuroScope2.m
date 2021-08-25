@@ -185,6 +185,8 @@ end
         UI.settings.brainRegionsToHide = [];
         UI.settings.removeDC = false;
         UI.settings.showScalebar = false;
+        UI.settings.narrowPadding = false;
+        UI.settings.ephys_padding = 0.05; % Initial padding above and below ephys traces
         
         % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9') 
@@ -348,6 +350,7 @@ end
         UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC);
         UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);
         UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
+        UI.menu.display.narrowPadding = uimenu(UI.menu.display.topMenu,menuLabel,'Narrow ephys padding',menuSelectedFcn,@narrowPadding);
 
         %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
         UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
@@ -1944,6 +1947,19 @@ end
         uiresume(UI.fig);
     end
     
+    function narrowPadding(~,~)
+        UI.settings.narrowPadding = ~UI.settings.narrowPadding;
+        if UI.settings.narrowPadding
+            UI.settings.ephys_padding = 0.015;
+            UI.menu.display.narrowPadding.Checked = 'on';
+        else
+            UI.settings.ephys_padding = 0.05;
+            UI.menu.display.narrowPadding.Checked = 'off';
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
+    
     function show_CSD(~,~)
         if UI.panel.csd.showCSD.Value == 1
             UI.settings.CSD.show = true;
@@ -2795,7 +2811,8 @@ end
         [~,temp] = sort([data.session.extracellular.electrodeGroups.channels{:}]);
         channels_1 = [data.session.extracellular.electrodeGroups.channels{:}];
         UI.channelMap(channels_1(find(idx))) = channels(idx2(idx2~=0));
-        padding = 0.05 + 0.5./numel(UI.channelOrder);
+        padding = UI.settings.ephys_padding + 0.5./numel(UI.channelOrder);
+        
         if nChannelsToPlot == 1
         	channelOffset = 0.5;
         elseif nChannelsToPlot == 0
@@ -3090,10 +3107,12 @@ end
             delete(UI.menu.file.recentSessions.ops);
             UI.menu.file.recentSessions.ops = [];
         end
-        for i = min([numel(recentSessions.basepaths),15]):-1:1
-            UI.menu.file.recentSessions.ops(i) = uimenu(UI.menu.file.recentSessions.main,menuLabel,fullfile(recentSessions.basepaths{i}, recentSessions.basenames{i}),menuSelectedFcn,@loadFromRecentFiles);
+        for i = 1:min([numel(recentSessions.basepaths),15])
+            UI.menu.file.recentSessions.ops(i) = uimenu(UI.menu.file.recentSessions.main,menuLabel,fullfile(recentSessions.basepaths{end-i+1}, recentSessions.basenames{end-i+1}),menuSelectedFcn,@loadFromRecentFiles);
         end
-        save(fullfile(CellExplorer_path,'data_NeuroScope2.mat'),'recentSessions');
+        try
+            save(fullfile(CellExplorer_path,'data_NeuroScope2.mat'),'recentSessions');
+        end
     end
 
     function moveSlider(src,~)
