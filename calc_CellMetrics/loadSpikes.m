@@ -84,6 +84,7 @@ addParameter(p,'spikes',[],@isstruct); % Load existing spikes structure to appen
 addParameter(p,'LSB',0.195,@isnumeric); % Least significant bit (LSB in uV/bit) Intan = 0.195, Amplipex = 0.3815. (range/precision)
 addParameter(p,'session',[],@isstruct); % A buzsaki lab session struct
 addParameter(p,'labelsToRead',{'good'},@iscell); % allows you to load units with various labels, e.g. MUA or a custom label
+addParameter(p,'showWaveforms',true,@islogical);
 
 % Custom spike input
 addParameter(p,'spikes_times',{},@iscell); % allows you to load spike data from a cell arrat with timestamps (formatted as spikes.times)
@@ -785,7 +786,7 @@ if parameters.forceReload
     
     % Getting waveforms from dat (raw data)
     if parameters.getWaveformsFromDat && ~strcmpi(format,'allensdk')
-        spikes = getWaveformsFromDat(spikes,session);
+        spikes = getWaveformsFromDat(spikes,session,'showWaveforms',parameters.showWaveforms);
     end
     
     % Attaching info about how the spikes structure was generated

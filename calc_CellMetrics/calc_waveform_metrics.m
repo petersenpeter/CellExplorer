@@ -1,4 +1,4 @@
-function waveform_metrics = calc_waveform_metrics(waveforms,sr_in)
+function waveform_metrics = calc_waveform_metrics(waveforms,sr_in,varargin)
 % Extracts waveform metrics
 % 
 % INPUT:
@@ -11,6 +11,10 @@ function waveform_metrics = calc_waveform_metrics(waveforms,sr_in)
   
 % By Peter Petersen
 % petersen.peter@gmail.com
+p = inputParser;
+addParameter(p,'showFigures',true,@islogical);
+parse(p,varargin{:})
+
 
 filtWaveform = waveforms.filtWaveform;
 timeWaveform = waveforms.timeWaveform{1};
@@ -49,8 +53,11 @@ width1 = [];
 t_after_diff = [];
 Itest = [];
 Itest2 = [];
+
+if p.Results.showFigures
 figure
 subplot(2,2,[1,3]), hold on
+end
 
 
 for m = 1:length(filtWaveform)
@@ -76,22 +83,25 @@ for m = 1:length(filtWaveform)
     trough(m) = MIN2;
     Itest(m) = I2;
     Itest2(m) = length(wave)-(idx_45+I2);
-    subplot(3,2,1), hold on
-    plot([-(I2+trough_interval(1)-1)+1:1:0,1:1:(length(wave)-(I2+trough_interval(1)-1))]/sr*1000,wave,'Color',[0,0,0,0.1],'linewidth',2), axis tight
-    plot(0,MIN2,'.b') % Min
-    plot((-(I2+trough_interval(1)-1)+I3)/sr*1000,MAX3,'.r') % Max
-    plot(I4/sr*1000,MAX4,'.g') % Max
-    title('Waveforms'),xlabel('Time (ms)'),ylabel('Z-scored')
+    
     indexes = I3:I2+I4+trough_interval(1)-1;
+        if p.Results.showFigures
+            subplot(3,2,1), hold on
+            plot([-(I2+trough_interval(1)-1)+1:1:0,1:1:(length(wave)-(I2+trough_interval(1)-1))]/sr*1000,wave,'Color',[0,0,0,0.1],'linewidth',2), axis tight
+            plot(0,MIN2,'.b') % Min
+            plot((-(I2+trough_interval(1)-1)+I3)/sr*1000,MAX3,'.r') % Max
+            plot(I4/sr*1000,MAX4,'.g') % Max
+            title('Waveforms'),xlabel('Time (ms)'),ylabel('Z-scored')
 
-    subplot(3,2,3), hold on
-    plot([-(I2_diff+trough_interval_1stDerivative(1)-1)+1:1:0,1:1:(length(wave_diff{m})-(I2_diff+trough_interval_1stDerivative(1)-1))]/sr*1000,wave_diff{m},'Color',[0,0,0,0.05],'linewidth',2), axis tight
-    plot(I4_diff/sr*1000,MAX4_diff,'.m') % Max
-    title('Waveforms (1st derivative)'),xlabel('Time (ms)'),ylabel('Z-scored')
+            subplot(3,2,3), hold on
+            plot([-(I2_diff+trough_interval_1stDerivative(1)-1)+1:1:0,1:1:(length(wave_diff{m})-(I2_diff+trough_interval_1stDerivative(1)-1))]/sr*1000,wave_diff{m},'Color',[0,0,0,0.05],'linewidth',2), axis tight
+            plot(I4_diff/sr*1000,MAX4_diff,'.m') % Max
+            title('Waveforms (1st derivative)'),xlabel('Time (ms)'),ylabel('Z-scored')
 
-    subplot(3,2,5), hold on
-    plot([-(I2_diff2+idx_6)+1:1:0,1:1:(length(wave_diff2{m})-(I2_diff2+idx_6))]/sr*1000,wave_diff2{m},'Color',[0,0,0,0.05],'linewidth',2), axis tight
-    title('Waveforms (2nd derivative'),xlabel('Time (ms)'),ylabel('Z-scored')
+            subplot(3,2,5), hold on
+            plot([-(I2_diff2+idx_6)+1:1:0,1:1:(length(wave_diff2{m})-(I2_diff2+idx_6))]/sr*1000,wave_diff2{m},'Color',[0,0,0,0.05],'linewidth',2), axis tight
+            title('Waveforms (2nd derivative'),xlabel('Time (ms)'),ylabel('Z-scored')
+        end
     else
         t_before(m) = nan;
         t_after(m) = nan;
@@ -109,6 +119,7 @@ waveform_metrics.peakB = peakB;
 waveform_metrics.ab_ratio = (peakB-peakA)./(peakA+peakB);
 waveform_metrics.trough = trough;
 
+if p.Results.showFigures
 axis tight
 subplot(6,2,2)
 hist(waveform_metrics.peaktoTrough,0:0.0250:0.90);
@@ -141,3 +152,5 @@ title('peak/trough (markers: red/blue))'), axis tight
 subplot(6,2,12)
 hist(waveform_metrics.ab_ratio,30);
 title('AB ratio (markers: red/green))'), axis tight
+end
+end
