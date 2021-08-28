@@ -195,7 +195,6 @@ end
 warning('off','MATLAB:deblank:NonStringInput')
 warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame')
 warning('off','MATLAB:Axes:NegativeDataInLogAxis')
-
 % % % % % % % % % % % % % % % % % % % % % %
 % Database initialization
 % % % % % % % % % % % % % % % % % % % % % %
@@ -1374,6 +1373,10 @@ function updateUI
             end
         end
     end
+    UI.zoom.global{1}(1,:) = xlim;
+    UI.zoom.global{1}(2,:) = ylim;
+    UI.zoom.global{1}(3,:) = zlim;
+    UI.zoom.globalLog{1} = [UI.checkbox.logx.Value,UI.checkbox.logy.Value,UI.checkbox.logz.Value];
     UI.axes(1).Title.String = 'Custom group plot';
     
     %% % % % % % % % % % % % % % % % % % % % % %
@@ -1492,6 +1495,10 @@ function updateUI
             xlim(xlim21), ylim(log10(ylim21))
             yyaxis right
         end
+        UI.zoom.global{2}(1,:) = xlim21;
+        UI.zoom.global{2}(2,:) = ylim21;
+        UI.zoom.global{2}(3,:) = [0 1];
+        UI.zoom.globalLog{2} = [0,1,0];
     end
     
     %% % % % % % % % % % % % % % % % % % % % % %
@@ -1511,6 +1518,10 @@ function updateUI
             ylim(UI.axes(3),fig3_axislimit_y);
         end
         plotGroupData(tSNE_metrics.plot(:,1)',tSNE_metrics.plot(:,2)',plotConnections(3),highlightCurrentCell)
+        UI.zoom.global{3}(1,:) = xlim;
+        UI.zoom.global{3}(2,:) = ylim;
+        UI.zoom.global{3}(3,:) = [0 1];
+        UI.zoom.globalLog{3} = [0,0,0];
     end
     
     %%  % % % % % % % % % % % % % % % % % % % %
@@ -1526,6 +1537,10 @@ function updateUI
             % ,'ButtonDownFcn',@ClicktoSelectFromPlot
 
             UI.subsetPlots{i_subplot-3} = customPlot(UI.preferences.customPlot{i_subplot-3},ii,general,batchIDs,UI.axes(i_subplot),1,highlightCurrentCell,i_subplot);
+            UI.zoom.global{i_subplot}(1,:) = xlim;
+            UI.zoom.global{i_subplot}(2,:) = ylim;
+            UI.zoom.global{i_subplot}(3,:) = zlim;
+            UI.zoom.globalLog{i_subplot} = [0,0,0];
         end
     end
     
@@ -2388,7 +2403,9 @@ end
                         plotAxes.XLabel.String = 'Time (sec)';
                         plotAxes.YLabel.String = 'Occurrence';
                     end
-                    line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
+                    if ~isempty(xdata)
+                        line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
+                    end
                 end
                 if highlightCurrentCell
                     if strcmp(UI.preferences.isiNormalization,'Rate')
@@ -6718,7 +6735,7 @@ end
         selectiontype = get(UI.fig, 'selectiontype');
         if clickPlotRegular
             switch selectiontype
-                case {'open','extend'}%'normal'
+                case 'extend'
                     % Select cell from plot
                     if ~isempty(UI.params.subset)
                         SelectFromPlot(u,v,w);
@@ -6736,16 +6753,22 @@ end
                         end
                         HighlightFromPlot(u,v,w);
                     end
-                case 'normal'%'extend'
+                case 'normal'
                     disallowRotation = false;
 %                     h.Enable = 'on';
 %                     polygonSelection
                     % Drag axis
 %                     DragMouseBegin(axnum,cursorPosition)
 
-%                 case 'open'
+                case 'open'
                     % Reset zoom
-                    % polygonSelection
+                    axnum = find(ismember(UI.axes, gca));
+                    if isempty(axnum)
+                        axnum = 1;
+                    end
+                    xlim(UI.zoom.global{axnum}(1,:));
+                    ylim(UI.zoom.global{axnum}(2,:));
+                    zlim(UI.zoom.global{axnum}(3,:));
             end
         else
             c = [u,v];

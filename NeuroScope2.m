@@ -105,6 +105,7 @@ while t0>=0
             delete(epoch_plotElements.t0)
         end
         epoch_plotElements.t0 = line(UI.epochAxes,[t0,t0],[0,1],'color','k', 'HitTest','off','linewidth',1);
+        
         % Update UI text and slider
         UI.elements.lower.time.String = num2str(t0);
         UI.elements.lower.slider.Value = min([t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
@@ -423,11 +424,12 @@ end
         UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.7 0.01 0.29 0.12],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
         
         % Electrode groups
-        UI.uitabgroup_channels = uiextras.TabPanel('Parent', UI.panel.general.main, 'Padding', 1,'FontSize',11 ,'TabSize',60);
+        UI.uitabgroup_channels = uiextras.TabPanel('Parent', UI.panel.general.main, 'Padding', 1,'FontSize',11 ,'TabSize',45);
         UI.panel.electrodeGroups.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
         UI.panel.chanelList.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
         UI.panel.brainRegions.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
-        UI.uitabgroup_channels.TabNames = {'Groups', 'Channels','Regions'};
+        UI.panel.chanCoords.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
+        UI.uitabgroup_channels.TabNames = {'Groups', 'Channels','Regions','Layout'};
         
         UI.table.electrodeGroups = uitable(UI.panel.electrodeGroups.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 20 45 150},'columnname',{'','','Group','Channels        '},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editElectrodeGroups,'CellSelectionCallback',@ClicktoSelectFromTable);
         UI.panel.electrodeGroupsButtons = uipanel('Parent',UI.panel.general.main);
@@ -437,7 +439,10 @@ end
 
         % Brain regions
         UI.table.brainRegions = uitable(UI.panel.brainRegions.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 45 100 45},'columnname',{'','Region','Channels','Groups'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editBrainregionList);
-         
+        
+        % Channel coordinates
+        UI.chanCoordsAxes = axes('Parent',UI.panel.chanCoords.main,'Units','Normalize','Position',[0 0 1 1],'YLim',[0,1],'YTick',[],'XTick',[]); axis tight
+        
         % Group buttons
         uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.98],'String','Show all','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Select all');
         uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.98],'String','Show none','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Deselect all');
@@ -1012,7 +1017,7 @@ end
         % Plotting analog traces
         if strcmp(UI.settings.fileRead,'bof')
             fseek(UI.fid.timeSeries.(signal),round(t0*sr)*data.session.timeSeries.(signal).nChannels*2,'bof'); % eof: end of file
-        else
+        else 
             fseek(UI.fid.timeSeries.(signal),ceil(-UI.settings.windowDuration*sr)*data.session.timeSeries.(signal).nChannels*2,'eof'); % eof: end of file
         end
         traces_analog = fread(UI.fid.timeSeries.(signal), [data.session.timeSeries.(signal).nChannels, UI.samplesToDisplay],'uint16')';
@@ -2271,6 +2276,12 @@ end
                 elseif UI.uitabgroup_channels.Selection == 2
                     UI.listbox.channelList.Value = [];
                     buttonChannelList
+                elseif UI.uitabgroup_channels.Selection == 3
+                    UI.table.brainRegions.Data(:,1) = {false};
+                    brainRegions = fieldnames(data.session.brainRegions);
+                    UI.settings.brainRegionsToHide = brainRegions(~UI.table.brainRegions.Data{:,1});
+                    initTraces;
+                    uiresume(UI.fig);
                 end
             case 'Show all'
                 if UI.uitabgroup_channels.Selection==1
@@ -2279,6 +2290,12 @@ end
                 elseif UI.uitabgroup_channels.Selection == 2
                     UI.listbox.channelList.Value = 1:numel(UI.listbox.channelList.String);
                     buttonChannelList
+                elseif UI.uitabgroup_channels.Selection == 3
+                    UI.table.brainRegions.Data(:,1) = {true};
+                    brainRegions = fieldnames(data.session.brainRegions);
+                    UI.settings.brainRegionsToHide = brainRegions(~UI.table.brainRegions.Data{:,1});
+                    initTraces;
+                    uiresume(UI.fig);
                 end
             otherwise
                 data.session = gui_session(data.session,[],'extracellular');
@@ -2796,6 +2813,12 @@ end
             end
         end
         
+        % Filtering channels by channel coordinates
+        for j = 1:numel(UI.channels)
+            [~,idx] = setdiff(UI.channels{j},UI.settings.chanCoordsToPlot);
+            UI.channels{j}(idx) = [];
+        end
+        
         channels = [UI.channels{UI.settings.electrodeGroupsToPlot}];
         if UI.settings.plotSorting == 1
             UI.channelOrder = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
@@ -3041,7 +3064,7 @@ end
             if isfield(data.session,'inputs')
                 inputs = fieldnames(data.session.inputs);
                 for i = 1:numel(inputs)
-                    if strcmp(data.session.inputs.(inputs{i}).inputType,'aux') && data.session.inputs.(inputs{i}).channels<= numel(UI.settings.traceLabels.aux)
+                    if strcmp(data.session.inputs.(inputs{i}).inputType,'aux') && ~isempty(data.session.inputs.(inputs{i}).channels) && data.session.inputs.(inputs{i}).channels <= numel(UI.settings.traceLabels.aux)
                         UI.settings.traceLabels.aux(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.aux{data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
                     end
                 end
@@ -3057,7 +3080,7 @@ end
             if isfield(data.session,'inputs')
                 inputs = fieldnames(data.session.inputs);
                 for i = 1:numel(inputs)
-                    if strcmp(data.session.inputs.(inputs{i}).inputType,'dig')
+                    if strcmp(data.session.inputs.(inputs{i}).inputType,'dig') && ~isempty(data.session.inputs.(inputs{i}).channels)
                         UI.settings.traceLabels.dig(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.dig{data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
                     end
                 end
@@ -3068,11 +3091,26 @@ end
         
         % Generating epoch interval-visualization
         delete(UI.epochAxes.Children)
-        if isfield(data.session,'epochs') 
+        if isfield(data.session,'epochs')
             epochVisualization(data.session.epochs,UI.epochAxes,0,1); 
             if UI.t_total>0
                 set(UI.epochAxes,'XLim',[0,UI.t_total])
             end
+        end
+        
+        % Generating Probe layout visualization
+        UI.settings.chanCoordsToPlot = 1:data.session.extracellular.nChannels;
+        delete(UI.chanCoordsAxes.Children)
+        if isfield(data.session.extracellular,'chanCoords')
+            chanCoordsVisualization(data.session.extracellular.chanCoords,UI.chanCoordsAxes);
+            updateChanCoordsColorHighlight
+            
+            x_lim_data = [min(data.session.extracellular.chanCoords.x),max(data.session.extracellular.chanCoords.x)];
+            y_lim_data = [min(data.session.extracellular.chanCoords.y),max(data.session.extracellular.chanCoords.y)];
+            x_padding = 0.03*diff(x_lim_data);
+            y_padding = 0.03*diff(y_lim_data);
+            UI.plotpoints.roi_ChanCoords = drawrectangle(UI.chanCoordsAxes,'Position',[x_lim_data(1)-x_padding,y_lim_data(1)-y_padding,1.06*diff(x_lim_data),1.06*diff(y_lim_data)],'LineWidth',2,'FaceAlpha',0.1,'Deletable',false,'FixedAspectRatio',false);
+            addlistener(UI.plotpoints.roi_ChanCoords,'ROIMoved',@updateChanCoordsPlot);
         end
         
         setRecentSessions
@@ -3247,6 +3285,33 @@ end
                 
         end
     end
+    
+    function updateChanCoordsPlot(~,~)
+
+        UI.settings.stream = false;
+        pos = UI.plotpoints.roi_ChanCoords.Position;
+        x1 = [pos(1),pos(1)+pos(3),pos(1)+pos(3),pos(1)];
+        y1 = [pos(2),pos(2),pos(2)+pos(4),pos(2)+pos(4)];
+        UI.settings.chanCoordsToPlot = find(inpolygon(data.session.extracellular.chanCoords.x,data.session.extracellular.chanCoords.y, x1 ,y1));
+        
+        updateChanCoordsColorHighlight
+        initTraces
+        uiresume(UI.fig);
+    end
+    
+    function updateChanCoordsColorHighlight
+        if isfield(data.session.extracellular,'chanCoords')
+            try
+                delete(UI.plotpoints.chanCoords)
+            end
+            for fn = 1:data.session.extracellular.nElectrodeGroups
+                channels = intersect(data.session.extracellular.electrodeGroups.channels{fn},UI.settings.chanCoordsToPlot,'stable');
+                if ~isempty(channels)
+                    UI.plotpoints.chanCoords(fn) = line(UI.chanCoordsAxes,data.session.extracellular.chanCoords.x(channels),data.session.extracellular.chanCoords.y(channels),'color',0.8*UI.colors(fn,:),'Marker','.','linestyle','none','HitTest','off','markersize',10);
+                end
+            end
+        end
+    end
 
     function t0 = valid_t0(t0)
         t0 = min([max([0,floor(t0*data.session.extracellular.sr)/data.session.extracellular.sr]),UI.t_total-UI.settings.windowDuration]);
@@ -3259,9 +3324,8 @@ end
     end
     
     function editBrainregionList(~,~)
-        temp = ~UI.table.brainRegions.Data{:,1};
         brainRegions = fieldnames(data.session.brainRegions);
-        UI.settings.brainRegionsToHide = brainRegions(temp);
+        UI.settings.brainRegionsToHide = brainRegions(~UI.table.brainRegions.Data{:,1});
         initTraces
         uiresume(UI.fig);
     end
@@ -3299,6 +3363,7 @@ end
             UI.table.electrodeGroups.Data{evnt.Indices(1),2} = colored_string{evnt.Indices(1)};
             initTraces
             updateChannelList
+            updateChanCoordsColorHighlight
             uiresume(UI.fig);
         end
     end
@@ -4525,6 +4590,7 @@ end
             
             % Generating colormap
             UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+            updateChanCoordsColorHighlight
             
             % Updating table colors
             classColorsHex = rgb2hex(UI.colors);
@@ -4538,6 +4604,7 @@ end
             % Closes dialog
             UI.settings.colormap = initial_colormap;
             UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+            updateChanCoordsColorHighlight
             plotData;
             delete(colormap_dialog);
         end
@@ -4548,6 +4615,7 @@ end
             if ~isempty(idx)
                 colormap_preview = colormapList{idx};
                 UI.colors = eval([colormap_preview,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+                updateChanCoordsColorHighlight
                 plotData;
             end
         end

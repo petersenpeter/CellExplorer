@@ -44,7 +44,7 @@ UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles',
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
 
 % Parameters in cell metrics pipeline
-UI.list.params = {'getWaveformsFromDat','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','keepCellClassification','summaryFigures','forceReload','forceReloadSpikes','saveMat','saveBackup','debugMode'};
+UI.list.params = {'getWaveformsFromDat','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','showFigures','summaryFigures','forceReload','forceReloadSpikes','keepCellClassification','saveMat','saveBackup'};
 if enableDatabase
     UI.list.params =  {UI.list.params{:},'submitToDatabase'};
 end
@@ -223,7 +223,6 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn
 UI.menu.extracellular.topMenu = uimenu(UI.fig,menuLabel,'Extracellular');
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Validate electrode group(s)',menuSelectedFcn,@validateElectrodeGroup);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Sync electrode groups',menuSelectedFcn,@(~,~)syncChannelGroups);
-uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate channel map',menuSelectedFcn,@(~,~)generateChannelMap1,'Separator','on');
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate common coordinates',menuSelectedFcn,@(~,~)generateCommonCoordinates1);
 
 % CellExplorer
@@ -522,6 +521,33 @@ for iGroups = 1:2
     uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[510, 5, 50, 32],'Tag',groups{iGroups},'String',char(8593),'Callback',@moveElectrodes,'Units','normalized');
     uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[565, 5, 50, 32],'Tag',groups{iGroups},'String',char(8595),'Callback',@moveElectrodes,'Units','normalized');
 end
+
+% Channel map (Layout - channel coordinates)
+UI.tabs.chanCoords = uitab(UI.channelGroups,'Title','Channel coordinates');
+% UI.chanCoordsAxes = axes('Parent',UI.tabs.chanCoords,'Position',[1, 45, 616, 320]); axis tight,
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Layout', 'Position', [5, 300, 240, 20],'HorizontalAlignment','left');
+UI.edit.chanCoords_layout = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 275, 285, 25],'HorizontalAlignment','left');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Shank spacing (µm)', 'Position', [305, 300, 240, 20],'HorizontalAlignment','left');
+UI.edit.chanCoords_shankSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 275, 285, 25],'HorizontalAlignment','left');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Source', 'Position', [5, 250, 240, 20],'HorizontalAlignment','left');
+UI.edit.chanCoords_source = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 225, 285, 25],'HorizontalAlignment','left');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'x coordinates (µm)', 'Position', [5, 195, 240, 20],'HorizontalAlignment','left');
+UI.edit.chanCoords_x = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 50, 285, 145],'HorizontalAlignment','left','Min',1,'Max',10);
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'y coordinates (µm)', 'Position', [305, 195, 240, 20],'HorizontalAlignment','left');
+UI.edit.chanCoords_y = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 50, 285, 145],'HorizontalAlignment','left','Min',1,'Max',10);
+
+
+
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[5, 5, 145, 32],'String','Import','Callback',@importChannelMap1,'Units','normalized');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[155, 5, 145, 32],'String','Export','Callback',@exportChannelMap1,'Units','normalized');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[315, 5, 145, 32],'String','Generate','Callback',@generateChannelMap1,'Units','normalized');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[470, 5, 145, 32],'String','Plot','Callback',@plotChannelMap1,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
@@ -1087,6 +1113,7 @@ uiwait(UI.fig)
         UIsetString(session.extracellular,'srLfp');
         updateChannelGroupsList('electrodeGroups')
         updateChannelGroupsList('spikeGroups')
+        updateChanCoords
         updateSpikeSortingList
         updateBrainRegionList
         updateTagList
@@ -1094,6 +1121,16 @@ uiwait(UI.fig)
         updateBehaviorsList
         updateAnalysisList
         updateTimeSeriesList
+        
+    end
+    function updateChanCoords
+        if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
+            UI.edit.chanCoords_x.String = num2str(session.extracellular.chanCoords.x');
+            UI.edit.chanCoords_y.String = num2str(session.extracellular.chanCoords.y');
+            UI.edit.chanCoords_source.String = session.extracellular.chanCoords.source;
+            UI.edit.chanCoords_layout.String = session.extracellular.chanCoords.layout;
+            UI.edit.chanCoords_shankSpacing.String = num2str(session.extracellular.chanCoords.shankSpacing);
+        end
     end
     
     function updateStrain
@@ -1676,25 +1713,25 @@ uiwait(UI.fig)
             initElectrodeGroups = '';
         end
         % Opens dialog
-        UI.dialog.brainRegion = dialog('Position', [300, 300, 620, 400],'Name','Brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
+        UI.dialog.brainRegion = dialog('Position', [300, 300, 620, 550],'Name','Brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 373, 600, 20],'HorizontalAlignment','left');
-        brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 350, 600, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 523, 600, 20],'HorizontalAlignment','left');
+        brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 500, 600, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
         if exist('regionIn','var')
             brainRegionsTextfield.Enable = 'off';
         end
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Selct brain region below', 'Position', [10, 320, 600, 20],'HorizontalAlignment','left');
-        brainRegionsList = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'ListBox', 'String', brainRegions_list, 'Position', [10, 100, 600, 220],'Value',InitBrainRegion);
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Selct brain region below', 'Position', [10, 470, 600, 20],'HorizontalAlignment','left');
+        brainRegionsList = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'ListBox', 'String', brainRegions_list, 'Position', [10, 250, 600, 220],'Value',InitBrainRegion);
         if exist('regionIn','var')
             brainRegionsList.Enable = 'off';
         end
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 73, 280, 20],'HorizontalAlignment','left');
-        brainRegionsChannels = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 280, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 223, 600, 20],'HorizontalAlignment','left');
+        brainRegionsChannels = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 600, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [300, 73, 310, 20],'HorizontalAlignment','left');
-        brainRegionsElectrodeGroups = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [300, 50, 310, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 73, 600, 20],'HorizontalAlignment','left');
+        brainRegionsElectrodeGroups = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 50, 600, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Save region','Callback',@(src,evnt)CloseBrainRegions_dialog);
         uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[300, 10, 310, 30],'String','Cancel','Callback',@(src,evnt)CancelBrainRegions_dialog);
@@ -1793,18 +1830,18 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.tags = dialog('Position', [300, 300, 500, 150],'Name','Channel tag','WindowStyle','modal'); movegui(UI.dialog.tags,'center')
+        UI.dialog.tags = dialog('Position', [300, 300, 500, 300],'Name','Channel tag','WindowStyle','modal'); movegui(UI.dialog.tags,'center')
         
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', 'Channel tag name (e.g. Theta, Gamma, Bad, Cortical, Ripple, RippleNoise)', 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
-        tagsTextfield = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', InitTag, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', 'Channel tag name (e.g. Theta, Gamma, Bad, Cortical, Ripple, RippleNoise)', 'Position', [10, 273, 480, 20],'HorizontalAlignment','left');
+        tagsTextfield = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', InitTag, 'Position', [10, 250, 480, 25],'HorizontalAlignment','left');
         if exist('regionIn','var')
             tagsTextfield.Enable = 'off';
         end
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 73, 230, 20],'HorizontalAlignment','left');
-        tagsChannels = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 223, 230, 20],'HorizontalAlignment','left');
+        tagsChannels = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [250, 73, 240, 20],'HorizontalAlignment','left');
-        tagsElectrodeGroups = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [250, 50, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
+        tagsElectrodeGroups = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.tags,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save tag','Callback',@(src,evnt)CloseTags_dialog);
         uicontrol('Parent',UI.dialog.tags,'Style','pushbutton','Position',[250, 10, 240, 30],'String','Cancel','Callback',@(src,evnt)CancelTags_dialog);
@@ -2421,21 +2458,21 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.spikeSorting = dialog('Position', [300, 300, 500, 225],'Name','Spike sorting','WindowStyle','modal'); movegui(UI.dialog.spikeSorting,'center')
+        UI.dialog.spikeSorting = dialog('Position', [300, 300, 500, 375],'Name','Spike sorting','WindowStyle','modal'); movegui(UI.dialog.spikeSorting,'center')
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting method', 'Position', [10, 198, 230, 20],'HorizontalAlignment','left');
-        spikeSortingMethod = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingMethod, 'Position', [10, 175, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting method', 'Position', [10, 348, 230, 20],'HorizontalAlignment','left');
+        spikeSortingMethod = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingMethod, 'Position', [10, 325, 230, 25],'HorizontalAlignment','left');
         UIsetValue(spikeSortingMethod,InitMethod)
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting format', 'Position', [250, 198, 240, 20],'HorizontalAlignment','left');
-        spikeSortinFormat = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingFormat, 'Position', [250, 175, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting format', 'Position', [250 348, 240, 20],'HorizontalAlignment','left');
+        spikeSortinFormat = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingFormat, 'Position', [250, 325, 240, 25],'HorizontalAlignment','left');
         UIsetValue(spikeSortinFormat,initFormat) 
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Relative path', 'Position', [10, 148, 230, 20],'HorizontalAlignment','left');
-        spikeSortingRelativePath = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initRelativePath, 'Position', [10, 125, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Relative path', 'Position', [10, 298, 480, 20],'HorizontalAlignment','left');
+        spikeSortingRelativePath = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initRelativePath, 'Position', [10, 275, 480, 25],'HorizontalAlignment','left');
 
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Channels', 'Position', [250, 148, 240, 20],'HorizontalAlignment','left');
-        spikeSortingChannels = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initChannels, 'Position', [250, 125, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Channels', 'Position', [10, 248, 240, 20],'HorizontalAlignment','left');
+        spikeSortingChannels = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initChannels, 'Position', [10, 125, 480, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Spike sorter', 'Position', [10, 98, 230, 20],'HorizontalAlignment','left');
         spikeSortingSpikeSorter = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initSpikeSorter, 'Position', [10, 75, 230, 25],'HorizontalAlignment','left');
@@ -3167,11 +3204,23 @@ uiwait(UI.fig)
         generateCommonCoordinates(session)
     end
     
-    function generateChannelMap1
+    function importChannelMap1(~,~)
+        chanCoords_filepath =fullfile(session.general.basePath,[session.general.name,'.chanCoords.channelInfo.mat']);
+        if exist(chanCoords_filepath,'file')
+            session.extracellular.chanCoords = loadStruct('chanCoords','channelInfo','session',session);
+            updateChanCoords;
+            disp('Loaded chanCoords from basepath')
+        else
+            MsgLog(['chanCoords file not available: ' chanCoords_filepath],4)
+        end
+    end
+    
+    function generateChannelMap1(~,~)
         [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
         if isfield(session.animal,'probes') && exist(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'file')
             disp('Loading predefined chanCoords')
             load(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'chanCoords');
+            session.extracellular.chanCoords = chanCoords;
         else
             chanMap = generateChannelMap(session);
             chanCoords.x = chanMap.xcoords(:);
@@ -3180,6 +3229,22 @@ uiwait(UI.fig)
             chanCoords.layout = chanMap.layout;
             chanCoords.shankSpacing = chanMap.shankSpacing;
         end
+        session.extracellular.chanCoords = chanCoords;
+        updateChanCoords;
+    end
+    function exportChannelMap1(~,~)
+        % Saving chanCoords to basename.chanCoords.channelInfo.mat file
+        if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
+            chanCoords = session.extracellular.chanCoords;
+            saveStruct(chanCoords,'channelInfo','session',session);
+            disp('Saved chanCoords to basepath')
+        else
+            MsgLog('No chanCoords data available',4)
+        end
+    end
+    
+    function plotChannelMap1(~,~)
+        chanCoords = session.extracellular.chanCoords;
         x_range = range(chanCoords.x);
         y_range = range(chanCoords.y);
         if x_range > y_range
@@ -3192,9 +3257,7 @@ uiwait(UI.fig)
         fig1 = figure('Name','Channel map','position',[5,5,fig_width,fig_height]); movegui(fig1,'center')
         plot(chanCoords.x,chanCoords.y,'.k'), hold on
         text(chanCoords.x,chanCoords.y,num2str([1:numel(chanCoords.x)]'),'VerticalAlignment', 'bottom','HorizontalAlignment','center');
-        title({' ','Channel map',' '}), xlabel('X (um)'), ylabel('Y (um)'), 
-        % Saving chanCoords to basename.chanCoords.channelInfo.mat file
-        saveStruct(chanCoords,'channelInfo','session',session);
+        title({' ','Channel map',' '}), xlabel('X (um)'), ylabel('Y (um)')
     end
 
     function importBadChannelsFromXML(~,~)

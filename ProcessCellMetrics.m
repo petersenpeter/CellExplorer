@@ -221,7 +221,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if parameters.showGUI
-    dispLog('Showing GUI for adjusting parameters and session metadata',basename)
+    dispLog('Showing GUI with parameters and session metadata',basename)
     session.general.basePath = basepath;
     parameters.preferences = preferences;
     [session,parameters,status] = gui_session(session,parameters);
@@ -609,14 +609,15 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 end
             end
             if parameters.showFigures
-            figure
-            plot3(cell_metrics.general.ccf.x,cell_metrics.general.ccf.z,cell_metrics.general.ccf.y,'.k'), hold on
-            plot3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,'ob'),
-            xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse')
+                figure
+                plot3(cell_metrics.general.ccf.x,cell_metrics.general.ccf.z,cell_metrics.general.ccf.y,'.k'), hold on
+                plot3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,'ob'),
+                xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse')
+                if exist('plotBrainGrid.m','file')
+                    plotAllenBrainGrid, hold on
+                end
             end
-            if exist('plotBrainGrid.m','file')
-                plotAllenBrainGrid, hold on
-            end
+            
         end
     end
 end
@@ -1030,7 +1031,7 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
             if strcmp(fieldnames(eventOut),eventName)
                 if strcmp(eventName,'ripples') && isfield(eventOut.(eventName),'timestamps') && isnumeric(eventOut.(eventName).peaks) && length(eventOut.(eventName).peaks)>0
                     % Ripples specific histogram
-                    PSTH = calc_PSTH(eventOut.ripples,spikes{spkExclu},'alignment','peaks','duration',0.150,'binCount',150,'smoothing',5,'eventName',eventName);
+                    PSTH = calc_PSTH(eventOut.ripples,spikes{spkExclu},'alignment','peaks','duration',0.150,'binCount',150,'smoothing',5,'eventName',eventName,'plots',parameters.showFigures);
                     if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
                         cell_metrics.events.ripples = num2cell(PSTH.responsecurve,1);
                         cell_metrics.general.events.(eventName).event_file = eventFiles{i};
@@ -1043,7 +1044,7 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
                         cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
                     end
                 elseif isfield(eventOut.(eventName),'timestamps') && isnumeric(eventOut.(eventName).timestamps) && length(eventOut.(eventName).timestamps)>0
-                    PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile);
+                    PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile,'plots',parameters.showFigures);
                     if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
                         cell_metrics.events.(eventName) = num2cell(PSTH.responsecurve,1);
                         cell_metrics.general.events.(eventName).event_file = eventFiles{i};
@@ -1087,7 +1088,7 @@ if any(contains(parameters.metrics,{'manipulation_metrics','all'})) && ~any(cont
             eventName = strsplit(manipulationFiles{iEvents},'.'); eventName = eventName{end-2};
             eventOut = load(fullfile(basepath,manipulationFiles{iEvents}));
             disp(['  Importing ' eventName]);
-            PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile);
+            PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile,'plots',parameters.showFigures);
             cell_metrics.manipulations.(eventName) = num2cell(PSTH.responsecurve,1);
             cell_metrics.general.manipulations.(eventName).event_file = manipulationFiles{iEvents};
             cell_metrics.general.manipulations.(eventName).x_bins = PSTH.time*1000;

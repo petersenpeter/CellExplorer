@@ -6,8 +6,6 @@ function spikes = getWaveformsFromDat(spikes,session,varargin)
 % Spikes struct:            https://cellexplorer.org/datastructure/data-structure-and-format/#spikes
 % session metadata struct:  https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata
 %
-% By Peter Petersen
-% petersen.peter@gmail.com
 % Last edited: 21-12-2020
 
 % Loading preferences
@@ -75,7 +73,11 @@ if ~isempty(session) && isfield(session,'channelTags') && isfield(session.channe
     end
     badChannels = unique(badChannels);
 end
-disp(['Bad channels detected: ' num2str(badChannels)])
+if ~isempty(badChannels)
+    disp(['Bad channels detected: ' num2str(badChannels)])
+else
+    disp('No bad channels detected')
+end
 
 % Removing channels that does not exist in SpkGrps
 if isfield(session.extracellular,'spikeGroups')
@@ -258,16 +260,17 @@ for i = 1:length(unitsToProcess)
     clear wf wfF wf2 wfF2
 end
 
+spikes.processinginfo.params.WaveformsSource = 'dat file';
+spikes.processinginfo.params.WaveformsFiltFreq = filtFreq;
+spikes.processinginfo.params.Waveforms_nPull = nPull;
+spikes.processinginfo.params.WaveformsWin_sec = wfWin_sec;
+spikes.processinginfo.params.WaveformsWinKeep = wfWinKeep;
+spikes.processinginfo.params.WaveformsFilterType = 'butter';
+clear rawWaveform rawWaveform_std filtWaveform filtWaveform_std
+clear rawData
+
 % Plots
 if showWaveforms && ishandle(fig1)
-    spikes.processinginfo.params.WaveformsSource = 'dat file';
-    spikes.processinginfo.params.WaveformsFiltFreq = filtFreq;
-    spikes.processinginfo.params.Waveforms_nPull = nPull;
-    spikes.processinginfo.params.WaveformsWin_sec = wfWin_sec;
-    spikes.processinginfo.params.WaveformsWinKeep = wfWinKeep;
-    spikes.processinginfo.params.WaveformsFilterType = 'butter';
-    clear rawWaveform rawWaveform_std filtWaveform filtWaveform_std
-    clear rawData
     fig1.Name = [basename, ': Waveform extraction complete. ',num2str(i),' cells processed.  ', num2str(round(toc(timerVal)/60)) ' minutes total'];
     
     % Saving a summary figure for all cells
