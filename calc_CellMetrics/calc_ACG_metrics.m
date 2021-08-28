@@ -1,4 +1,4 @@
-function acg_metrics = calc_ACG_metrics(spikes,sr)%(clustering_path,sr,TimeRestriction)
+function acg_metrics = calc_ACG_metrics(spikes,sr,varargin)%(clustering_path,sr,TimeRestriction)
 % Two autocorrelograms are calculated:  narrow (100ms, 0.5ms bins) and wide (1s, 1ms bins) using the CCG function (for speed)
 %
 % Further three metrics are derived from these:
@@ -19,6 +19,9 @@ function acg_metrics = calc_ACG_metrics(spikes,sr)%(clustering_path,sr,TimeRestr
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 06-10-2020
+p = inputParser;
+addParameter(p,'showFigures',true,@islogical);
+parse(p,varargin{:})
 
 ThetaModulationIndex = nan(1,spikes.numcells);
 BurstIndex_Royer2012 = nan(1,spikes.numcells);
@@ -47,13 +50,14 @@ for i = cell_indexes
 end
 toc
 
+if p.Results.showFigures
 figure, subplot(3,1,1)
 histogram(ThetaModulationIndex,40),xlabel('Theta modulation index'), ylabel('Count')
 subplot(3,1,2)
 histogram(BurstIndex_Royer2012,40),xlabel('BurstIndex Royer2012'), ylabel('Count')
 subplot(3,1,3)
 histogram(BurstIndex_Doublets,40),xlabel('BurstIndex Doublets'), ylabel('Count')
-
+end
 acg_metrics.acg_wide = acg_wide;
 acg_metrics.acg_narrow = acg_narrow;
 acg_metrics.thetaModulationIndex = ThetaModulationIndex;

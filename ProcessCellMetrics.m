@@ -47,6 +47,7 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   summaryFigures         - logical. Plot summary figures
 %   debugMode              - logical. Activate a debug mode avoiding try/catch 
 %   transferFilesFromClusterpath - logical. Moves previosly generated files from clusteringpath to basepath (new file structure)
+%   showFigures            - logical. if false, turns off the default plotting of different stages of processing 
 %
 % - Example calls:
 %   cell_metrics = ProcessCellMetrics                             % Load from current path, assumed to be a basepath
@@ -105,7 +106,10 @@ addParameter(p,'fileFormat','mat',@isstr);
 addParameter(p,'summaryFigures',false,@islogical);
 addParameter(p,'debugMode',false,@islogical);
 addParameter(p,'transferFilesFromClusterpath',true,@islogical);
+addParameter(p,'showFigures',true,@islogical);
+addParameter(p,'showWaveforms',true,@islogical);
 
+ 
 parse(p,varargin{:})
 
 sessionID = p.Results.sessionID;
@@ -266,10 +270,10 @@ if ~isempty(parameters.spikes)
     parameters.spikes = [];
 else
     dispLog('Getting spikes',basename)
-    spikes{1} = loadSpikes('session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'getWaveformsFromDat',parameters.getWaveformsFromDat);
+    spikes{1} = loadSpikes('session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'getWaveformsFromDat',parameters.getWaveformsFromDat,'showWaveforms',parameters.showFigures);
 end
 if parameters.getWaveformsFromDat && (~isfield(spikes{1},'processinginfo') || ~isfield(spikes{1}.processinginfo.params,'WaveformsSource') || ~strcmp(spikes{1}.processinginfo.params.WaveformsSource,'dat file') || spikes{1}.processinginfo.version<3.5 || parameters.forceReloadSpikes == true)
-    spikes{1} = loadSpikes('forceReload',true,'spikes',spikes{1},'session',session,'labelsToRead',preferences.loadSpikes.labelsToRead);
+    spikes{1} = loadSpikes('forceReload',true,'spikes',spikes{1},'session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'showWaveforms',parameters.showFigures);
 end
 if ~isfield(spikes{1},'total')
     spikes{1}.total = cellfun(@(X) length(X),spikes{1}.times);
@@ -453,7 +457,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         end
         
         dispLog('Calculating waveform metrics',basename);
-        waveform_metrics = calc_waveform_metrics(spikes{spkExclu},sr);
+        waveform_metrics = calc_waveform_metrics(spikes{spkExclu},sr,'showFigures',parameters.showFigures);
         cell_metrics.troughToPeak = waveform_metrics.troughtoPeak;
         cell_metrics.troughtoPeakDerivative = waveform_metrics.derivative_TroughtoPeak;
         cell_metrics.ab_ratio = waveform_metrics.ab_ratio;
@@ -554,6 +558,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 expential_y{j} = [];
             end
         end
+        if parameters.showFigures
         fig1 = figure('Name', 'Length constant and Trilateration','NumberTitle', 'off','position',[100,100,1000,800]);
         subplot(2,2,1), hold on
         for j = 1:cell_metrics.general.cellCount
@@ -568,6 +573,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         subplot(2,2,4), hold on
         plot(cell_metrics.general.chanCoords.x,cell_metrics.general.chanCoords.y,'.k'), hold on
         plot(cell_metrics.trilat_x,cell_metrics.trilat_y,'ob'), xlabel('x position (µm)'), ylabel('y position (µm)')
+        end
     end
     
     % Common coordinate framework
@@ -602,10 +608,12 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                     cell_metrics.ccf_z(j) = nan;
                 end
             end
+            if parameters.showFigures
             figure
             plot3(cell_metrics.general.ccf.x,cell_metrics.general.ccf.z,cell_metrics.general.ccf.y,'.k'), hold on
             plot3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,'ob'),
             xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse')
+            end
             if exist('plotBrainGrid.m','file')
                 plotAllenBrainGrid, hold on
             end
@@ -667,7 +675,7 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
     end
     if ~all(isfield(cell_metrics,{'acg','thetaModulationIndex','burstIndex_Royer2012','burstIndex_Doublets','acg_tau_decay','acg_tau_rise'})) || parameters.forceReload == true
         dispLog('ACG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets',basename)
-        acg_metrics = calc_ACG_metrics(spikes{spkExclu},sr);
+        acg_metrics = calc_ACG_metrics(spikes{spkExclu},sr,'showFigures',parameters.showFigures);
         
         cell_metrics.acg.wide = acg_metrics.acg_wide; % Wide: 1000ms wide CCG with 1ms bins
         cell_metrics.acg.narrow = acg_metrics.acg_narrow; % Narrow: 100ms wide CCG with 0.5ms bins
@@ -689,19 +697,19 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
     end
     if ~isfield(cell_metrics,'acg')  || ~isfield(cell_metrics.acg,{'log10'})  || parameters.forceReload == true
         dispLog('Calculating log10 ACGs',basename)
-         acg = calc_logACGs(spikes{spkExclu}.times);
+         acg = calc_logACGs(spikes{spkExclu}.times,'showFigures',parameters.showFigures);
          cell_metrics.acg.log10 = acg.log10;
          cell_metrics.general.acgs.log10 = acg.log10_bins;
     end
     if ~isfield(cell_metrics,'isi')  || ~isfield(cell_metrics.isi,{'log10'})  || parameters.forceReload == true
         dispLog('Calculating log10 ISIs',basename)
-        isi = calc_logISIs(spikes{spkExclu}.times);
+        isi = calc_logISIs(spikes{spkExclu}.times,'showFigures',parameters.showFigures);
         cell_metrics.isi.log10 = isi.log10;
         cell_metrics.general.isis.log10 = isi.log10_bins;
     end
     if ~(isfield(preferences,'acg_metrics') && isfield(preferences.acg_metrics,'population_modIndex') && ~preferences.acg_metrics.population_modIndex) && (~isfield(cell_metrics,{'population_modIndex'}) || ~isfield(cell_metrics.general,'responseCurves') || ~isfield(cell_metrics.general.responseCurves,'meanCCG') || numel(cell_metrics.general.responseCurves.meanCCG.x_bins) ~= 51   || parameters.forceReload == true)
         dispLog('Calculating population modulation index',basename)
-        [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes{spkExclu},sr);
+        [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes{spkExclu},sr,'showFigures',parameters.showFigures);
         cell_metrics.responseCurves.meanCCG = num2cell(meanCCG,1);
         cell_metrics.general.responseCurves.meanCCG.x_bins = tR;
         cell_metrics.population_modIndex = population_modIndex;
@@ -880,7 +888,7 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
         end
     end
     cell_metrics.general.responseCurves.thetaPhase.x_bins = theta_bins(1:end-1)+diff(theta_bins([1,2]))/2;
-    
+    if parameters.showFigures
     figure, subplot(2,2,1)
     plot(cell_metrics.general.responseCurves.thetaPhase.x_bins,horzcat(cell_metrics.responseCurves.thetaPhase{:})),title('Theta entrainment during locomotion'), xlim([-1,1]*pi)
     subplot(2,2,2)
@@ -890,6 +898,7 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
     subplot(2,2,4)
     histogram(cell_metrics.thetaPhaseTrough,[-1:0.2:1]*pi),title('Theta trough and peak'), hold on
     histogram(cell_metrics.thetaPhasePeak,[-1:0.2:1]*pi), legend({'Trough','Peak'})
+    end
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
