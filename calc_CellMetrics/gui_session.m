@@ -1125,8 +1125,8 @@ uiwait(UI.fig)
     end
     function updateChanCoords
         if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
-            UI.edit.chanCoords_x.String = num2str(session.extracellular.chanCoords.x');
-            UI.edit.chanCoords_y.String = num2str(session.extracellular.chanCoords.y');
+            UI.edit.chanCoords_x.String = num2strCommaSeparated(session.extracellular.chanCoords.x');
+            UI.edit.chanCoords_y.String = num2strCommaSeparated(session.extracellular.chanCoords.y');
             UI.edit.chanCoords_source.String = session.extracellular.chanCoords.source;
             UI.edit.chanCoords_layout.String = session.extracellular.chanCoords.layout;
             UI.edit.chanCoords_shankSpacing.String = num2str(session.extracellular.chanCoords.shankSpacing);

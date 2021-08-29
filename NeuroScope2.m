@@ -188,6 +188,7 @@ end
         UI.settings.showScalebar = false;
         UI.settings.narrowPadding = false;
         UI.settings.ephys_padding = 0.05; % Initial padding above and below ephys traces
+        UI.settings.text_spacing = 0.016;
         
         % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9') 
@@ -1026,9 +1027,12 @@ end
         else
             line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,traces_analog(UI.dispSamples,:)./2^16, 'HitTest','off','Marker','none','LineStyle','-','linewidth',1.5);
         end
+        textString = {};
         for i = 1:data.session.timeSeries.(signal).nChannels
-            text(UI.settings.windowDuration*(1-1/400),0.005+(UI.settings.textOffset+i-1)*0.012+UI.dataRange.intan(1),UI.settings.traceLabels.(signal){i},'color',UI.colorLine(i,:),'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','right','HitTest','off')
+%             text(UI.settings.windowDuration*(1-1/400),0.005+(UI.settings.textOffset+i-1)*UI.settings.text_spacing+UI.dataRange.intan(1),UI.settings.traceLabels.(signal){i},'color',UI.colorLine(i,:),'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','right','HitTest','off')
+            textString{i} = ['\color[rgb]{',num2strCommaSeparated(UI.colorLine(i,:)),'} ',strrep(UI.settings.traceLabels.(signal){i}, '_', ' ')];
         end
+        text(UI.settings.windowDuration*(1-1/400),0.005+UI.dataRange.intan(1)+UI.settings.textOffset*UI.settings.text_spacing,textString,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','right','HitTest','off','Interpreter','tex')
         UI.settings.textOffset = UI.settings.textOffset + data.session.timeSeries.(signal).nChannels;
     end
 
@@ -1049,9 +1053,11 @@ end
         else
             line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,0.98*traces_digital2(UI.dispSamples,:)+0.005, 'HitTest','off','Marker','none','LineStyle','-');
         end
+        textString = '';
         for i = 1:data.session.timeSeries.(signal).nChannels
-            text(UI.settings.windowDuration*(1-1/400),0.005+(UI.settings.textOffset+i-1)*0.012+UI.dataRange.intan(1),UI.settings.traceLabels.(signal){i},'color',UI.colorLine(i,:),'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','right','HitTest','off')
+            textString{i} = ['\color[rgb]{',num2strCommaSeparated(UI.colorLine(i,:)*0.8),'} ',UI.settings.traceLabels.(signal){i}];
         end
+        text(UI.settings.windowDuration*(1-1/400),0.005+UI.dataRange.intan(1)+UI.settings.textOffset*UI.settings.text_spacing,textString,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','right','HitTest','off','Interpreter','tex')
         UI.settings.textOffset = UI.settings.textOffset + data.session.timeSeries.(signal).nChannels;
     end
 
@@ -1229,15 +1235,19 @@ end
 %                 UI.colors_metrics = hsv(numel(putativeCellTypes));
                 UI.colors_metrics = eval([UI.settings.spikesColormap,'(',num2str(numel(putativeCellTypes)),')']);
                 k = 1;
+                textString = {};
                 for i = 1:numel(putativeCellTypes)
                     idx2 = find(ismember(data.cell_metrics.(UI.params.groupMetric),putativeCellTypes{i}));
                     idx3 = ismember(data.spikes.spindices(spin_idx,2),idx2);
                     if any(idx3)
                         line(axesIn,spikes_raster.x(idx3), spikes_raster.y(idx3),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',UI.colors_metrics(i,:), 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
-                        text(axesIn,1/400,0.005+(k-1)*0.012+UI.dataRange.spikes(1),putativeCellTypes{i},'color',UI.colors_metrics(i,:)*0.8,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized', 'HitTest','off')
+%                         text(axesIn,1/400,0.005+(k-1)*UI.settings.text_spacing+UI.dataRange.spikes(1),putativeCellTypes{i},'color',UI.colors_metrics(i,:)*0.8,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized', 'HitTest','off')
+                        textString{k} = ['\color[rgb]{',num2strCommaSeparated(UI.colors_metrics(i,:)*0.8),'} ',putativeCellTypes{i}];
                         k = k+1;
                     end
                 end
+                text(axesIn,1/400,0.005+UI.dataRange.spikes(1),textString,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','left','HitTest','off','Interpreter','tex')
+                
             elseif UI.settings.spikesGroupColors == 1
                 uid = data.spikes.spindices(spin_idx,2);
                 unique_uids = unique(uid);
@@ -1462,15 +1472,17 @@ end
             fields2plot = fieldnames(data.events.(UI.settings.eventData).processing_steps);
             UI.colors_processing_steps = hsv(numel(fields2plot));
             ydata1 = [0;0.005]+ydata(1);
+            textString = {};
             for i = 1:numel(fields2plot)
                 idx5 = find(data.events.(UI.settings.eventData).processing_steps.(fields2plot{i}) >= t1 & data.events.(UI.settings.eventData).processing_steps.(fields2plot{i}) <= t2);
                 if any(idx5)
                     line([1;1]*data.events.(UI.settings.eventData).processing_steps.(fields2plot{i})(idx5)'-t1,0.005*i+ydata1*ones(1,numel(idx5)),'Marker','none','LineStyle','-','color',UI.colors_processing_steps(i,:), 'HitTest','off','linewidth',1.3);
-                    text(1/400,0.005+i*0.012+ydata(1),fields2plot{i},'color',UI.colors_processing_steps(i,:)*0.8,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7], 'HitTest','off','Units','normalized')
+                    textString{i} = ['\color[rgb]{',num2strCommaSeparated(UI.colors_processing_steps(i,:)*0.8),'} ',strrep(fields2plot{i}, '_', ' ')];
                 else
-                    text(1/400,0.005+i*0.012+ydata(1),fields2plot{i},'color',[0.5 0.5 0.5],'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7], 'HitTest','off','Units','normalized')
+                    textString{i} = ['\color[rgb]{0.5, 0.5, 0.5} ',fields2plot{i}];
                 end
             end
+            text(1/400,0.005+ydata(1),textString,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','left','HitTest','off','Interpreter','tex')
             
             % Specs
             idx_center = find(data.events.(UI.settings.eventData).time == t1+UI.settings.windowDuration/2);
@@ -1553,6 +1565,7 @@ end
             end
             stateNames = fieldnames(states1);
             clr_states = eval([UI.settings.colormap,'(',num2str(numel(stateNames)),')']);
+            textString = {};
             for jj = 1:numel(stateNames)
                 if size(states1.(stateNames{jj}),2) == 2 && size(states1.(stateNames{jj}),1) > 0
                     idx = (states1.(stateNames{jj})(:,1)<t2 & states1.(stateNames{jj})(:,2)>t1);
@@ -1561,11 +1574,16 @@ end
                         statesData(statesData<0) = 0; statesData(statesData>t2-t1) = t2-t1;
                         p1 = patch(double([statesData,flip(statesData,2)])',[UI.dataRange.states(1);UI.dataRange.states(1);UI.dataRange.states(2);UI.dataRange.states(2)]*ones(1,size(statesData,1)),clr_states(jj,:),'EdgeColor',clr_states(jj,:),'HitTest','off');
                         alpha(p1,0.3);
-                        text(1/400,0.005+(jj-1)*0.012+UI.dataRange.states(1),stateNames{jj},'color',clr_states(jj,:)*0.8,'FontWeight', 'Bold','Color', clr_states(jj,:),'BackgroundColor',[0 0 0 0.7],'margin',1, 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized')
+%                         text(1/400,0.005+(jj-1)*UI.settings.text_spacing+UI.dataRange.states(1),stateNames{jj},'color',clr_states(jj,:)*0.8,'FontWeight', 'Bold','Color', clr_states(jj,:),'BackgroundColor',[0 0 0 0.7],'margin',1, 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized')
+                        textString{jj} = ['\color[rgb]{',num2strCommaSeparated(clr_states(jj,:)*0.8),'} ',stateNames{jj}];
                     else
-                        text(1/400,0.005+(jj-1)*0.012+UI.dataRange.states(1),stateNames{jj},'color',[0.5 0.5 0.5],'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'margin',1, 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized')
+%                         text(1/400,0.005+(jj-1)*UI.settings.text_spacing+UI.dataRange.states(1),stateNames{jj},'color',[0.5 0.5 0.5],'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'margin',1, 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized')
+                        textString{jj} = ['\color[rgb]{0.5, 0.5, 0.5} ',stateNames{jj}];
                     end
                 end
+            end
+            if ~isempty(textString)
+                text(1/400,0.005+UI.dataRange.states(1),textString,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','left','HitTest','off','Interpreter','tex')
             end
         end
     end
@@ -4006,7 +4024,8 @@ end
         UI.settings.stream = false;
         % Spike data
         summaryfig = figure('name','Summary figure','Position',[50 50 1200 900],'visible','off');
-        ax1 = axes(summaryfig,'XLim',[0,UI.t_total],'title','Summary figure','YLim',[0,1],'YTickLabel',[],'Color','k','Position',[0.05 0.05 0.9 0.9],'XColor','k','TickDir','out'); hold on, ylabel('Summary figure'), xlabel('Time (s)'), % ce_dragzoom(ax1)
+        ax1 = axes(summaryfig,'XLim',[0,UI.t_total],'title','Summary figure','YLim',[0,1],'YTickLabel',[],'Color','k','Position',[0.05 0.05 0.9 0.9],'XColor','k','TickDir','out'); hold on, 
+        ylabel('Summary figure'), xlabel('Time (s)'), % ce_dragzoom(ax1)
         
         if UI.settings.showSpikes
             dataRange_spikes = UI.dataRange.spikes;

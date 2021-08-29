@@ -227,7 +227,7 @@ for i = 1:length(unitsToProcess)
         plot(spikes.timeWaveform{ii},vertcat(spikes.filtWaveform{1:ii})'), hold on
         plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Filtered waveforms (\muV)','Interpreter','tex'), xlim([-0.8,0.8])
         subplot(5,3,3), hold off
-        plot(spkTmp,permute(range((wfF(spikes.maxWaveformCh1(ii),window_interval,:)),2),[3,2,1]),'.b')
+        plot(spkTmp/sr,permute(range((wfF(spikes.maxWaveformCh1(ii),window_interval,:)),2),[3,2,1]),'.b')
         ylabel('Amplitude (\muV)','Interpreter','tex'), xlabel('Time (sec)'), title(['Spike amplitudes (nPull=' num2str(nPull),')'])
         subplot(5,3,6), hold off
         plot(spikes.peakVoltage_sorted{ii},'.-b'), hold on
