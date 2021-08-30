@@ -3168,7 +3168,8 @@ uiwait(UI.fig)
             rezFile = fullfile(rezFile.folder,rezFile.name);
             MsgLog('Importing KiloSort metadata...',0)
             session = loadKiloSortMetadata(session,rezFile);
-            updateChannelGroupsList
+            updateChannelGroupsList('electrodeGroups')
+            updateChannelGroupsList('spikeGroups')
             UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
             UIsetString(session.extracellular,'nChannels'); % Number of channels
@@ -3181,7 +3182,8 @@ uiwait(UI.fig)
     function importMetadataTemplate
         MsgLog('Importing metadata using template',0)
         session = sessionTemplate(session);
-        updateChannelGroupsList
+        updateChannelGroupsList('electrodeGroups')
+        updateChannelGroupsList('spikeGroups')
         UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
         UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
         UIsetString(session.extracellular,'nChannels'); % Number of channels
@@ -3197,7 +3199,8 @@ uiwait(UI.fig)
         elseif strcmp(answer,'Cancel')
             return
         end
-        updateChannelGroupsList
+        updateChannelGroupsList('electrodeGroups')
+        updateChannelGroupsList('spikeGroups')
     end
     
     function generateCommonCoordinates1

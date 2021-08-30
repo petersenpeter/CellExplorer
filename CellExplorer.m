@@ -6966,19 +6966,15 @@ end
                 if strcmp(UI.preferences.acgType,'100 ms')
                     x1 = [-100:100]/2;
                     y1 = cell_metrics.acg.narrow(:,UI.params.ClickedCells);
-%                     line([-100:100]/2,cell_metrics.acg.narrow(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
                 elseif strcmp(UI.preferences.acgType,'30 ms')
                     x1 = [-30:30]/2;
                     y1 = cell_metrics.acg.narrow(41+30:end-40-30,UI.params.ClickedCells);
-%                     line([-30:30]/2,cell_metrics.acg.narrow(41+30:end-40-30,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
                 elseif strcmp(UI.preferences.acgType,'Log10')
                     x1 = general.acgs.log10;
                     y1 = cell_metrics.acg.log10(:,UI.params.ClickedCells);
-%                     line(general.acgs.log10,cell_metrics.acg.log10(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
                 else
                     x1 = [-500:500];
                     y1 = cell_metrics.acg.wide(:,UI.params.ClickedCells);
-%                     line([-500:500],cell_metrics.acg.wide(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
                 end
                 if plotAcgYLog
                     y1(y1 < 0.1) = 0.1;
@@ -7015,7 +7011,7 @@ end
             idx = find(strcmp(UI.preferences.customPlot,'RCs_firingRateAcrossTime (all)'));
             for i = 1:length(idx)
                 set(UI.fig,'CurrentAxes',UI.axes(3+idx(i)))
-                line(UI.subsetPlots{idx}.xaxis,UI.subsetPlots{idx}.yaxis(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
+                line(UI.subsetPlots{idx}.xaxis,UI.subsetPlots{idx}.yaxis(:,ismember(UI.subsetPlots{idx}.subset,UI.params.ClickedCells)),'linewidth',2, 'HitTest','off')
             end
         end
     end
@@ -7303,7 +7299,7 @@ end
                             end
                             [~,time_index] = min(abs(cell_metrics.waveforms.time_zscored-u));
                         end
-                    else
+                    else                                                       
                         [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
                         In = unique(floor(In/length(cell_metrics.waveforms.time_zscored)))+1;
                         iii = UI.params.subset(In);
@@ -7330,14 +7326,14 @@ end
                 case 'Waveforms (across channels)'
                     % All waveforms across channels with largest ampitude colored according to cell type
                     if highlight && ~hover
-                        factors = [90,60,40,25,15,10,6,4];
+                        factors = [60,40,20,10,5,2.5];
                         idx5 = find(UI.params.chanCoords.y_factor == factors);
                         idx5 = rem(idx5,length(factors))+1;
                         UI.params.chanCoords.y_factor = factors(idx5);
                         MsgLog(['Waveform y-factor altered: ' num2str(UI.params.chanCoords.y_factor)]);
                         uiresume(UI.fig);
                     elseif ~hover
-                        factors = [4,6,10,16,25,40,60,90];
+                        factors = [5,10,20,40,75,150];
                         idx5 = find(UI.params.chanCoords.x_factor==factors);
                         idx5 = rem(idx5,length(factors))+1;
                         UI.params.chanCoords.x_factor = factors(idx5);
@@ -9476,7 +9472,7 @@ end
                                 ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                             end
                             if (mod(j,5)==0 || j == length(cellIDs)) && jj == length(selectedActions)
-                                ce_savefigure(gcf,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_MultipleCells_', num2str(nPlots)],saveFig)
+                                ce_savefigure(gcf,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_MultipleCells_', num2str(nPlots)],saveFig.save)
                                 nPlots = nPlots+1;
                             end
                         end
@@ -10338,7 +10334,7 @@ end
         % Help
         UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
         uimenu(UI.menu.help.topMenu,menuLabel,'Introduction to CellExplorer',menuSelectedFcn,@(~,~)introPopUpCellExplorer);
-        uimenu(UI.menu.help.topMenu,menuLabel,'Keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','H','Separator','on');
+        uimenu(UI.menu.help.topMenu,menuLabel,'Mouse and keyboard shortcuts',menuSelectedFcn,@HelpDialog,'Accelerator','H','Separator','on');
         uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Accelerator','V','Separator','on');
         uimenu(UI.menu.help.topMenu,menuLabel,'- Tutorials',menuSelectedFcn,@openWebsite);
         uimenu(UI.menu.help.topMenu,menuLabel,'- Graphical interface',menuSelectedFcn,@openWebsite);
@@ -12991,7 +12987,17 @@ end
 
     function HelpDialog(~,~)
         if ismac; scs  = 'Cmd + '; else; scs  = 'Ctrl + '; end
-        shortcutList = { '','<html><b>Navigation</b></html>';
+        shortcutList = { 
+            '','<html><b>Mouse actions</b></html>';
+            'Left mouse button','Pan traces'; 
+            'Right mouse button','Select and highlight nearest cell';
+            'Middle button','Go to nearest cell';
+            'Shift + Left mouse button','Go to nearest cell';
+            'Double click','Reset zoom';
+            'Scroll in','Zoom in';
+            'Scroll out','Zoom out'; '   ',''; 
+            
+            '','<html><b>Navigation</b></html>';
             '> (right arrow)','Next cell'; '< (left arrow)','Previous cell'; '. (dot)','+10 cell (+shift: Next cell with same class)'; ', (comma) ','-10 cell (+shift: Previous cell with same class)';
             ['F '],'Go to a specific cell'; 'Page Up ','Next session in batch (only in batch mode)'; 'Page Down','Previous session in batch (only in batch mode)';
             'Numpad0','First cell'; 'Numpad1-9 ','Next cell with that numeric class'; 'Backspace','Previously selected cell'; 'Numeric + / - / *','Zoom in / zoom out / reset plots'; '   ',''; 
@@ -13006,11 +13012,11 @@ end
             [scs,'A'],'Open spike data menu'; [scs,'J'],'Modify parameters for a spike plot'; [scs,'V'],'Visit the CellExplorer website in your browser';
             '',''; '','<html><b>Visit the CellExplorer website for further help and documentation</html></b>'; };
         if ismac
-            dimensions = [450,(size(shortcutList,1)+1)*17.5];
+            dimensions = [490,(size(shortcutList,1)+1-10)*17.5];
         else
-            dimensions = [450,(size(shortcutList,1)+1)*18.5];
+            dimensions = [490,(size(shortcutList,1)+1-10)*18.5];
         end
-        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','CellExplorer: keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(HelpWindow.dialog,'center'), set(HelpWindow.dialog,'visible','on')
-        HelpWindow.sessionList = uitable(HelpWindow.dialog,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{100 345},'columnname',{'Shortcut','Action'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');
+        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','Mouse and keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(HelpWindow.dialog,'center'), set(HelpWindow.dialog,'visible','on')
+        HelpWindow.sessionList = uitable(HelpWindow.dialog,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{120 345},'columnname',{'Shortcut','Action'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');
     end
 end

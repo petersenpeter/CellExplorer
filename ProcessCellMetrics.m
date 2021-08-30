@@ -890,15 +890,15 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
     end
     cell_metrics.general.responseCurves.thetaPhase.x_bins = theta_bins(1:end-1)+diff(theta_bins([1,2]))/2;
     if parameters.showFigures
-    figure, subplot(2,2,1)
-    plot(cell_metrics.general.responseCurves.thetaPhase.x_bins,horzcat(cell_metrics.responseCurves.thetaPhase{:})),title('Theta entrainment during locomotion'), xlim([-1,1]*pi)
-    subplot(2,2,2)
-    plot(cell_metrics.thetaPhaseTrough,cell_metrics.thetaPhasePeak,'o'),xlabel('Trough'),ylabel('Peak')
-    subplot(2,2,3)
-    histogram(cell_metrics.thetaEntrainment,30),title('Theta entrainment')
-    subplot(2,2,4)
-    histogram(cell_metrics.thetaPhaseTrough,[-1:0.2:1]*pi),title('Theta trough and peak'), hold on
-    histogram(cell_metrics.thetaPhasePeak,[-1:0.2:1]*pi), legend({'Trough','Peak'})
+        figure, subplot(2,2,1)
+        plot(cell_metrics.general.responseCurves.thetaPhase.x_bins,horzcat(cell_metrics.responseCurves.thetaPhase{:})),title('Theta entrainment during locomotion'), xlim([-1,1]*pi)
+        subplot(2,2,2)
+        plot(cell_metrics.thetaPhaseTrough,cell_metrics.thetaPhasePeak,'o'),xlabel('Trough'),ylabel('Peak')
+        subplot(2,2,3)
+        histogram(cell_metrics.thetaEntrainment,30),title('Theta entrainment')
+        subplot(2,2,4)
+        histogram(cell_metrics.thetaPhaseTrough,[-1:0.2:1]*pi),title('Theta trough and peak'), hold on
+        histogram(cell_metrics.thetaPhasePeak,[-1:0.2:1]*pi), legend({'Trough','Peak'})
     end
 end
 

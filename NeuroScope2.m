@@ -167,6 +167,8 @@ end
         UI.settings.fileRead = 'bof';
         UI.settings.greyScaleTraces = 1;
         UI.settings.columnTraces = false;
+        UI.settings.colorByChannels = false;
+        UI.settings.nColorGroups = 10;
         UI.settings.displayMenu = 0;
         UI.settings.channelTags.hide = [];
         UI.settings.channelTags.filter = [];
@@ -191,7 +193,7 @@ end
         UI.settings.text_spacing = 0.016;
         
         % Only Matlab 2020b and forward support vertical markers unfortunately
-        if verLessThan('matlab','9.9') 
+        if verLessThan('matlab','9.9')
             UI.settings.rasterMarker = 'o';
         else
             UI.settings.rasterMarker = '|';
@@ -348,13 +350,13 @@ end
          
         % Settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
-        % UI.menu.display.channelCSD = uimenu(UI.menu.display.topMenu,menuLabel,'Show Current Source density (CSD)',menuSelectedFcn,@show_CSD);
         UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC);
         UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);
         UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
         UI.menu.display.narrowPadding = uimenu(UI.menu.display.topMenu,menuLabel,'Narrow ephys padding',menuSelectedFcn,@narrowPadding);
 
         %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
+        UI.menu.display.colorByChannels = uimenu(UI.menu.display.topMenu,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);
         UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
         UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);
         
@@ -366,11 +368,12 @@ end
         UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
         uimenu(UI.menu.help.topMenu,menuLabel,'Mouse and keyboard shortcuts',menuSelectedFcn,@HelpDialog);
         uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Accelerator','V','Separator','on');
-        uimenu(UI.menu.help.topMenu,menuLabel,'Tutorial on metadata',menuSelectedFcn,@openWebsite,'Separator','on');
-        uimenu(UI.menu.help.topMenu,menuLabel,'Documentation on session metadata',menuSelectedFcn,@openWebsite);
+        uimenu(UI.menu.help.topMenu,menuLabel,'- About NeuroScope2',menuSelectedFcn,@openWebsite);
+        uimenu(UI.menu.help.topMenu,menuLabel,'- Tutorial on metadata',menuSelectedFcn,@openWebsite);
+        uimenu(UI.menu.help.topMenu,menuLabel,'- Documentation on session metadata',menuSelectedFcn,@openWebsite);
 
         % % % % % % % % % % % % % % % % % % % % % %
-        % Creating UI/panels
+        % Creating UI/panels 
         
         UI.grid_panels = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0); % Flexib grid box
         UI.panel.left = uix.VBoxFlex('Parent',UI.grid_panels,'position',[0 0.66 0.26 0.31]); % Left panel
@@ -619,11 +622,11 @@ end
         UI.elements.lower.time = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.15 0 0.05 1],'HorizontalAlignment','right','tooltip','Current timestamp (seconds)','Callback',@setTime);
         uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Window duration (s)', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','center');
         UI.elements.lower.windowsSize = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', UI.settings.windowDuration, 'Units','normalized', 'Position', [0.3 0 0.05 1],'HorizontalAlignment','right','tooltip','Window size (seconds)','Callback',@setWindowsSize);
-        uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Scaling', 'Units','normalized', 'Position', [0.0 0 0.05 0.8],'HorizontalAlignment','center');
+        UI.elements.lower.scalingText = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', ' Scaling ', 'Units','normalized', 'Position', [0.0 0 0.05 0.8],'HorizontalAlignment','right');
         UI.elements.lower.scaling = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', num2str(UI.settings.scalingFactor), 'Units','normalized', 'Position', [0.05 0 0.05 1],'HorizontalAlignment','right','tooltip','Ephys scaling','Callback',@setScaling);
         UI.elements.lower.performance = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Performance', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','center','KeyPressFcn', @keyPress);
         UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider);
-        set(UI.panel.info, 'Widths', [70 80 120 60 60 60 280 -1],'MinimumWidths',[70 80 120 60 60 60 250  1]); % set grid panel size
+        set(UI.panel.info, 'Widths', [70 80 120 60 120 60 280 -1],'MinimumWidths',[70 80 120 60 60 60 250  1]); % set grid panel size
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
@@ -635,6 +638,8 @@ end
         ce_dragzoom(UI.plot_axis1,'on');
         UI.Pix_SS = get(0,'screensize');
         UI.Pix_SS = UI.Pix_SS(3)*2;
+        
+        setScalingText
     end
 
     function plotData
@@ -883,12 +888,35 @@ end
             plotCSD
         end
         
+        if UI.settings.colorByChannels
+            channelsList2 = [UI.channels{UI.settings.electrodeGroupsToPlot}];
+            channelsList = {};
+            temp = rem(0:numel(channelsList2)-1,UI.settings.nColorGroups)+1;
+            for i = 1:max(temp)
+                channelsList{i} = channelsList2(find(temp==i));
+            end
+            colors = eval([UI.settings.colormap,'(',num2str(numel(channelsList)),')']);
+            electrodeGroupsToPlot = 1:max(temp);
+            
+            if UI.settings.greyScaleTraces < 5
+                colors = colors/UI.settings.greyScaleTraces;
+            elseif UI.settings.greyScaleTraces >=5
+                colors = ones(size(colors))/(UI.settings.greyScaleTraces-4);
+                colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
+            end
+            colorsList = colors;
+        else
+            electrodeGroupsToPlot = UI.settings.electrodeGroupsToPlot;
+            channelsList = UI.channels;
+            colorsList = colors;
+        end
+        
         if UI.settings.plotStyle == 1 
             % Low sampled values (Faster plotting)
-            for iShanks = UI.settings.electrodeGroupsToPlot
-                channels = UI.channels{iShanks};
+            for iShanks = electrodeGroupsToPlot
+                channels = channelsList{iShanks};
                 [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
-                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelOffset(channels),'color',colors(iShanks,:), 'HitTest','off');
+                line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:), 'HitTest','off');
             end
         elseif UI.settings.plotStyle == 2 && (UI.settings.windowDuration>=UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange) % Range values per sample (ala Neuroscope1)
             % Range data (low sampled values with min and max per interval)
@@ -897,10 +925,10 @@ end
             ephys_traces2 = reshape(ephys_traces3,ceil(UI.settings.plotStyleRangeSamples*UI.settings.windowDuration),[]);
             ephys.traces_min = reshape(min(ephys_traces2),[],size(ephys.traces,2));
             ephys.traces_max = reshape(max(ephys_traces2),[],size(ephys.traces,2));
-            for iShanks = UI.settings.electrodeGroupsToPlot
+            for iShanks = electrodeGroupsToPlot
                 tist = [];
                 timeLine = [];
-                channels = UI.channels{iShanks};
+                channels = channelsList{iShanks};
                 [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
                 tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelOffset(channels);
                 tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelOffset(channels);
@@ -909,7 +937,7 @@ end
                 timeLine(1,:,:) = timeLine1;
                 timeLine(2,:,:) = timeLine1;
                 timeLine(:,end+1,:) = timeLine(:,end,:);
-                line(UI.plot_axis1,timeLine(:)',tist(:)','color',colors(iShanks,:)','LineStyle','-', 'HitTest','off');
+                line(UI.plot_axis1,timeLine(:)',tist(:)','color',colorsList(iShanks,:)','LineStyle','-', 'HitTest','off');
             end
         elseif UI.settings.plotStyle == 5
             % Image representation
@@ -919,13 +947,14 @@ end
         else
             % Raw data
             timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
-            for iShanks = UI.settings.electrodeGroupsToPlot
-                channels = UI.channels{iShanks};
+            for iShanks = electrodeGroupsToPlot
+                channels = channelsList{iShanks};
                 if ~isempty(channels)
-                    line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelOffset(channels),'color',colors(iShanks,:),'LineStyle','-', 'HitTest','off');
+                    line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off');
                 end
             end
         end
+        
         if ~isempty(UI.settings.channelTags.highlight)
             for i = 1:numel(UI.settings.channelTags.highlight)
                 channels = data.session.channelTags.(UI.channelTags{UI.settings.channelTags.highlight(i)}).channels;
@@ -1241,12 +1270,16 @@ end
                     idx3 = ismember(data.spikes.spindices(spin_idx,2),idx2);
                     if any(idx3)
                         line(axesIn,spikes_raster.x(idx3), spikes_raster.y(idx3),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',UI.colors_metrics(i,:), 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
-%                         text(axesIn,1/400,0.005+(k-1)*UI.settings.text_spacing+UI.dataRange.spikes(1),putativeCellTypes{i},'color',UI.colors_metrics(i,:)*0.8,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized', 'HitTest','off')
                         textString{k} = ['\color[rgb]{',num2strCommaSeparated(UI.colors_metrics(i,:)*0.8),'} ',putativeCellTypes{i}];
                         k = k+1;
                     end
                 end
-                text(axesIn,1/400,0.005+UI.dataRange.spikes(1),textString,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','left','HitTest','off','Interpreter','tex')
+                if UI.settings.showStates
+                    y_pos = 0.005+UI.dataRange.spikes(1)+UI.dataRange.states(2);
+                else
+                    y_pos = 0.005+UI.dataRange.spikes(1);
+                end
+                text(axesIn,1/400,y_pos,textString,'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','left','HitTest','off','Interpreter','tex')
                 
             elseif UI.settings.spikesGroupColors == 1
                 uid = data.spikes.spindices(spin_idx,2);
@@ -1288,7 +1321,6 @@ end
                 populationBins = 0:UI.settings.populationRateWindow:t2-t1;
                 if UI.settings.spikesGroupColors == 3
                     putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
-%                     UI.colors_metrics = hsv(numel(putativeCellTypes));
                     UI.colors_metrics = eval([UI.settings.spikesColormap,'(',num2str(numel(putativeCellTypes)),')']);
                     
                     for i = 1:numel(putativeCellTypes)
@@ -1574,10 +1606,8 @@ end
                         statesData(statesData<0) = 0; statesData(statesData>t2-t1) = t2-t1;
                         p1 = patch(double([statesData,flip(statesData,2)])',[UI.dataRange.states(1);UI.dataRange.states(1);UI.dataRange.states(2);UI.dataRange.states(2)]*ones(1,size(statesData,1)),clr_states(jj,:),'EdgeColor',clr_states(jj,:),'HitTest','off');
                         alpha(p1,0.3);
-%                         text(1/400,0.005+(jj-1)*UI.settings.text_spacing+UI.dataRange.states(1),stateNames{jj},'color',clr_states(jj,:)*0.8,'FontWeight', 'Bold','Color', clr_states(jj,:),'BackgroundColor',[0 0 0 0.7],'margin',1, 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized')
                         textString{jj} = ['\color[rgb]{',num2strCommaSeparated(clr_states(jj,:)*0.8),'} ',stateNames{jj}];
                     else
-%                         text(1/400,0.005+(jj-1)*UI.settings.text_spacing+UI.dataRange.states(1),stateNames{jj},'color',[0.5 0.5 0.5],'FontWeight', 'Bold','BackgroundColor',[0 0 0 0.7],'margin',1, 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized')
                         textString{jj} = ['\color[rgb]{0.5, 0.5, 0.5} ',stateNames{jj}];
                     end
                 end
@@ -2262,26 +2292,32 @@ end
 
     function increaseAmplitude(~,~)
         % Decrease amplitude of the traces
-        UI.settings.scalingFactor = UI.settings.scalingFactor*(sqrt(2));
+        UI.settings.scalingFactor = min([UI.settings.scalingFactor*(sqrt(2)),100000]);
+        setScalingText
         initTraces
         uiresume(UI.fig);
     end
 
     function decreaseAmplitude(~,~)
         % Increase amplitude of the ephys traces
-        UI.settings.scalingFactor = UI.settings.scalingFactor/sqrt(2);
+        UI.settings.scalingFactor = max([UI.settings.scalingFactor/sqrt(2),1]);
+        setScalingText
         initTraces
         uiresume(UI.fig);
     end
 
     function setScaling(~,~)
-        % Decrease amplitude of the ephys traces
         string1 = str2num(UI.elements.lower.scaling.String);
-        if ~isempty(string1) && isnumeric(string1) && string1>=0  && string1<1000000
+        if ~isempty(string1) && isnumeric(string1) && string1>=1  && string1<100000
             UI.settings.scalingFactor = string1;
+            setScalingText
             initTraces
             uiresume(UI.fig);
         end
+    end
+    
+    function setScalingText
+        UI.elements.lower.scalingText.String = ['Scaling (range: ',num2str(round(10000./UI.settings.scalingFactor)/10),'µV) '];
     end
 
     function buttonsElectrodeGroups(src,~)
@@ -3116,7 +3152,7 @@ end
             end
         end
         
-        % Generating Probe layout visualization
+        % Generating Probe layout visualization (Channel coordinates)
         UI.settings.chanCoordsToPlot = 1:data.session.extracellular.nChannels;
         delete(UI.chanCoordsAxes.Children)
         if isfield(data.session.extracellular,'chanCoords')
@@ -3127,8 +3163,12 @@ end
             y_lim_data = [min(data.session.extracellular.chanCoords.y),max(data.session.extracellular.chanCoords.y)];
             x_padding = 0.03*diff(x_lim_data);
             y_padding = 0.03*diff(y_lim_data);
-            UI.plotpoints.roi_ChanCoords = drawrectangle(UI.chanCoordsAxes,'Position',[x_lim_data(1)-x_padding,y_lim_data(1)-y_padding,1.06*diff(x_lim_data),1.06*diff(y_lim_data)],'LineWidth',2,'FaceAlpha',0.1,'Deletable',false,'FixedAspectRatio',false);
-            addlistener(UI.plotpoints.roi_ChanCoords,'ROIMoved',@updateChanCoordsPlot);
+            if ~verLessThan('matlab', '9.4')
+                UI.plotpoints.roi_ChanCoords = drawrectangle(UI.chanCoordsAxes,'Position',[x_lim_data(1)-x_padding,y_lim_data(1)-y_padding,1.06*diff(x_lim_data),1.06*diff(y_lim_data)],'LineWidth',2,'FaceAlpha',0.1,'Deletable',false,'FixedAspectRatio',false);
+                addlistener(UI.plotpoints.roi_ChanCoords,'ROIMoved',@updateChanCoordsPlot);
+            else
+                warning('Channel coordinates selection only available with Matlab 2018b or later')
+            end
         end
         
         setRecentSessions
@@ -4110,7 +4150,7 @@ end
     end
     
     function noiseFigure(~,~)
-        rms1 = rms(ephys.traces)*1000;
+        rms1 = rms(ephys.traces/(UI.settings.scalingFactor/1000000));
         k_channels = 0;
         fig1 = figure('name',['RMS across channels. Session: ', UI.data.basename],'Position',[50 50 1200 900],'visible','off');
         ax1 = axes(fig1,'Color','k'); hold on, xlabel(ax1,'Sorted and filtered channels'), ylabel(ax1,'RMS (µV)'), title(ax1,[' Session: ', UI.data.basename], 'interpreter','none')
@@ -4160,7 +4200,7 @@ end
         
         sr = ephys.sr; % Sampling rate
         nfft = 2^nextpow2(size(ephys.traces,1));
-        psd1 = abs(fft(ephys.traces,nfft)).^2/size(ephys.traces,1)/sr; % compute the PSD and normalize
+        psd1 = abs(fft(ephys.traces/(UI.settings.scalingFactor/1000000),nfft)).^2/size(ephys.traces,1)/sr; % compute the PSD and normalize
         for iShanks = UI.settings.electrodeGroupsToPlot
             channels = UI.channels{iShanks};
             [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
@@ -4203,7 +4243,7 @@ end
                    return 
                 end
                 waitbar(i_channel/numel(UI.channelOrder),f_waitbar,'Generating power spectral density across channels');
-                [X, f, C] = lpsd(ephys.traces(:,channels(i)), @hanning, fmin, fmax, Jdes, Kdes, Kmin, sr, xi);
+                [X, f, C] = lpsd(ephys.traces(:,channels(i))/(UI.settings.scalingFactor/1000000), @hanning, fmin, fmax, Jdes, Kdes, Kmin, sr, xi);
                 line(ax2,f, X .* C.PSD, 'color', UI.colors(iShanks,:)*0.95, 'linewidth', 1, 'HitTest','off');
             end
         end
@@ -4632,8 +4672,8 @@ end
             % Previewing colormap
             idx = colormap_uicontrol.Value;
             if ~isempty(idx)
-                colormap_preview = colormapList{idx};
-                UI.colors = eval([colormap_preview,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+                UI.settings.colormap = colormapList{idx};
+                UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
                 updateChanCoordsColorHighlight
                 plotData;
             end
@@ -4674,6 +4714,16 @@ end
                 plotData;
             end
         end
+    end
+    
+    function colorByChannels(~,~)
+        UI.settings.colorByChannels = ~UI.settings.colorByChannels;
+        if UI.settings.colorByChannels
+            UI.menu.display.colorByChannels.Checked = 'on';
+        else
+            UI.menu.display.colorByChannels.Checked = 'off';
+        end
+        uiresume(UI.fig);
     end
     
     function columnTraces(~,~)
@@ -4774,12 +4824,14 @@ end
             source = '';
         end
         switch source
-            case 'Tutorial on metadata'
+            case '- About NeuroScope2'
+                web('https://cellexplorer.org/interface/neuroscope2/','-new','-browser')
+            case '- Tutorial on metadata'
                 web('https://cellexplorer.org/tutorials/metadata-tutorial/','-new','-browser')
-            case 'Documentation on session metadata'
+            case '- Documentation on session metadata'
                 web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
             otherwise
-                web('https://cellexplorer.org/interface/neuroscope2/','-new','-browser')
+                web('https://cellexplorer.org/','-new','-browser')
         end
     end
 

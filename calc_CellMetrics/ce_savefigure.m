@@ -2,7 +2,7 @@ function ce_savefigure(fig,savePathIn,fileNameIn,dispSave,saveFig1)
     % saveFig.path [1=summaryFigures,2=withCellExplorer,3=custom]
     % saveFig.fileFormat [1=png,2=pdf]
     if nargin < 4
-        dispSave = 0;
+        dispSave = false;
     end
     if nargin < 5
         saveFig1.save = 1;
@@ -36,7 +36,7 @@ function ce_savefigure(fig,savePathIn,fileNameIn,dispSave,saveFig1)
             set(fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
             print(fig, fullfile(savePath,[fileNameIn,'.pdf']),'-dpdf');
         end
-        if exist('dispSave','var') && dispSave
+        if exist('dispSave','var') & dispSave
             if saveFig1.fileFormat == 1
                 disp(['Figure saved: ', fullfile(savePath,[fileNameIn,'.png'])])
             else
