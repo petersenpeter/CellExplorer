@@ -237,6 +237,10 @@ for jj = 1:session.extracellular.nElectrodeGroups
     SWR_diff2(ia) = [];
     SWR_diff2 = nanconv(SWR_diff2,[ones(1,conv_length)]/conv_length,'edge');
     
+    if isempty(SWR_diff2)
+       continue 
+    end
+        
     SWR_average2 = nanconv(ripple_average{jj},ones(20,1)/20,'edge');
     SWR_amplitude{jj} = sum(abs(ripple_average{jj}(100:201,:)-SWR_average2(100:201,:)));
     SWR_amplitude2 = SWR_amplitude{jj};
@@ -314,6 +318,9 @@ end
 % Plotting the average ripple with sharp wave across all electrode groups
 figure
 for jj = 1:session.extracellular.nElectrodeGroups
+    if jj > length(SWR_amplitude)
+        break
+    end
     subplot(2,ceil(session.extracellular.nElectrodeGroups/2),jj)
     plot((SWR_diff{jj}*50)+ripple_time_axis(1)-50,-[0:size(SWR_diff{jj},2)-1]*0.04,'-k','linewidth',2), hold on, grid on
     plot((SWR_amplitude{jj}*50)+ripple_time_axis(1)-50,-[0:size(SWR_amplitude{jj},2)-1]*0.04,'k','linewidth',1)
@@ -355,5 +362,5 @@ end
 
 % Saving figure
 if saveFig
-    saveas(gcf,'deepSuperficial_classification_fromRipples.png');
+    saveas(gcf,fullfile(basepath,'deepSuperficial_classification_fromRipples.png'));
 end
