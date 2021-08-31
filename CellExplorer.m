@@ -157,8 +157,7 @@ createStruct1.Interpreter = 'none'; createStruct1.WindowStyle = 'modal';
 polygon1.handle = gobjects(0); fig = 1;
 set(groot, 'DefaultFigureVisible', 'on','DefaultAxesLooseInset',[.01,.01,.01,.01],'DefaultTextInterpreter', 'none'), 
 maxFigureSize = get(groot,'ScreenSize'); 
-UI.params.figureSize = [50, 50, min([1500,maxFigureSize(3)-100]), min([1000,maxFigureSize(4)-100])];
-
+UI.params.figureSize = [50, 50, min([1200,maxFigureSize(3)-300]), min([800,maxFigureSize(4)-300])];
 
 if isempty(basename)
     basename = basenameFromBasepath(basepath);
@@ -542,7 +541,7 @@ function updateUI
     
     % Regrouping cells if comparison checkbox is checked
     if ColorVal == 5 % major brain regions 
-        if ~isfield(UI.params,'brainRegionsLevel') | ~isfield(UI.params,'subset_pre') | numel(UI.params.subset) ~= numel(UI.params.subset_pre) | UI.params.subset ~= UI.params.subset_pre
+        if ~isfield(UI.params,'brainRegionsLevel') | isempty(UI.params.brainRegionsLevel) | ~isfield(UI.params,'subset_pre') | numel(UI.params.subset) ~= numel(UI.params.subset_pre) | UI.params.subset ~= UI.params.subset_pre
             if isempty(UI.brainRegions.relational_tree)
                 temp = load('brainRegions_relational_tree.mat','relational_tree');
                 UI.brainRegions.relational_tree = temp.relational_tree;
@@ -561,6 +560,10 @@ function updateUI
                     kk = kk + 1;
                 end
             end
+        end
+        if isempty(UI.params.brainRegionsLevel)
+            warning('No brain regions detected or existing in atlas')
+           return 
         end
         classes2plotSubset = unique(UI.classes.plot(UI.params.subset));
         UI.classes.plot = UI.classes.plotBrainRegions;
@@ -3900,7 +3903,6 @@ end
             UI.zoom.global{axnum}(3,:) = zlim1;
             UI.zoom.globalLog{axnum} = [0,0,0];
         else
-%             axnum = getAxisBelowCursor;
             if isempty(axnum) || isempty(UI.zoom.global{axnum})
                 xlim1 = xlim;
                 ylim1 = ylim;
@@ -7011,7 +7013,9 @@ end
             idx = find(strcmp(UI.preferences.customPlot,'RCs_firingRateAcrossTime (all)'));
             for i = 1:length(idx)
                 set(UI.fig,'CurrentAxes',UI.axes(3+idx(i)))
-                line(UI.subsetPlots{idx}.xaxis,UI.subsetPlots{idx}.yaxis(:,ismember(UI.subsetPlots{idx}.subset,UI.params.ClickedCells)),'linewidth',2, 'HitTest','off')
+                if any(ismember(UI.subsetPlots{idx}.subset,UI.params.ClickedCells))
+                    line(UI.subsetPlots{idx}.xaxis,UI.subsetPlots{idx}.yaxis(:,ismember(UI.subsetPlots{idx}.subset,UI.params.ClickedCells)),'linewidth',2, 'HitTest','off')
+                end
             end
         end
     end
@@ -8488,7 +8492,7 @@ end
             defaultAxesFontSize = 12;
             fig_pos = [0,0,1200,600];
         end
-        fig = figure('Name','CellExplorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','on','DefaultTextInterpreter', 'tex');
+        fig = figure('Name','CellExplorer supplementary figure','NumberTitle','off','pos',fig_pos,'defaultAxesFontSize',defaultAxesFontSize,'color','w','visible','off','DefaultTextInterpreter', 'tex');
         % Scatter plot with trough to peak vs burst index
         ax1 = subplot('Position',[0.13 0.22 0.34 .75]); % Trough to peak vs burstiness
         hold on
@@ -9460,7 +9464,8 @@ end
                         
                         for jj = 1:length(selectedActions)
                             if mod(j,5)==1 && jj == 1
-                                fig = figure('name',['CellExplorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.params.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
+                                fig = figure('name',['CellExplorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.params.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off'); 
+                                movegui(fig,'center'), set(fig,'visible','on') 
                                 ha = ce_tight_subplot(plot_columns,length(selectedActions),[.06 .03],[.08 .06],[.06 .05]); 
                                 subPlotNum = 1;
                             else
@@ -9472,7 +9477,7 @@ end
                                 ylabel(['Cell ', num2str(cellIDs(j)), ', Group ', num2str(cell_metrics.electrodeGroup(cellIDs(j)))])
                             end
                             if (mod(j,5)==0 || j == length(cellIDs)) && jj == length(selectedActions)
-                                ce_savefigure(gcf,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_MultipleCells_', num2str(nPlots)],saveFig.save)
+                                ce_savefigure(gcf,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_MultipleCells_', num2str(nPlots)],0,saveFig)
                                 nPlots = nPlots+1;
                             end
                         end
@@ -9480,7 +9485,8 @@ end
                     
                 elseif choice == 12 && ~isempty(selectedActions)
                     
-                    fig = figure('name',['CellExplorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.params.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01]);
+                    fig = figure('name',['CellExplorer: Multiple plots for ', num2str(length(cellIDs)), ' selected cells'],'pos',UI.params.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off'); 
+                    
                     [plotRows,~]= numSubplots(length(selectedActions));
                     ha = ce_tight_subplot(plotRows(1),plotRows(2),[.06 .03],[.08 .06],[.06 .05]);
                     for j = 1:length(cellIDs)
@@ -9509,6 +9515,7 @@ end
                             title(plotOptions{selectedActions(jjj)},'Interpreter', 'none')
                         end
                     end
+                    movegui(fig,'center'), set(fig,'visible','on') 
                     ce_savefigure(fig,savePath1,['CellExplorer_Cells_', num2str(cell_metrics.UID(cellIDs),'%d_')],0,saveFig)
                     
                 elseif choice == 13 && ~isempty(selectedActions)
@@ -9533,7 +9540,8 @@ end
                             UI.params.outgoing = UI.params.a2(UI.params.outbound);
                             UI.params.connections = [UI.params.incoming;UI.params.outgoing];
                         end
-                        fig = figure('Name',['CellExplorer: cell ', num2str(cellIDs(j))],'NumberTitle','off','pos',UI.params.figureSize);
+                        fig = figure('Name',['CellExplorer: cell ', num2str(cellIDs(j))],'NumberTitle','off','pos',UI.params.figureSize,'visible','off'); 
+                        
                         if ispc
                             ha = ce_tight_subplot(plotRows(1),plotRows(2),[.08 .04],[.05 .05],[.05 .05]);
                         else
@@ -9573,6 +9581,7 @@ end
                         set(fig,'CurrentAxes',ha(length(selectedActions)+3))
                         plotCharacteristics(cellIDs(j)), title('Characteristics')
                         
+                        movegui(fig,'center'), set(fig,'visible','on') 
                         % Saving figure
                         ce_savefigure(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)},'.CellExplorer_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0,saveFig)
                     end
@@ -12664,12 +12673,17 @@ end
             figure(UI.fig)
             % Benchmarking single figures
             t_bench_single = [];
-            plotOptions1 = {'Waveforms (single)','Waveforms (all)','Waveforms (across channels)','Waveforms (image)','Trilaterated position','ACGs (single)','ACGs (all)','ACGs (image)','CCGs (image)','ISIs (single)','ISIs (all)','ISIs (image)','Connectivity graph'};
-            plotOptions1 = plotOptions;
+            
+            [indx1,tf] = listdlg('ListString',plotOptions,'InitialValue',1:numel(plotOptions),'Name' ,'Select plots');
+            if tf
+                plotOptions1 = plotOptions(indx1);
+            else
+                plotOptions1 = plotOptions;
+            end
             disp(['Benchmarking single cell plots (n = ',num2str(numel(plotOptions1)),')'])
             for k = 1:numel(plotOptions1)
                 disp([plotOptions1{k},' ',num2str(k),'/',num2str(numel(plotOptions1))])
-                t_bench1 = runBenchMarkSinglePlot(plotOptions1{k});
+                t_bench1 = runBenchMarkSinglePlot(plotOptions1{k},[' (plotOption ',num2str(k),'/',num2str(numel(plotOptions1)),')']);
                 t_bench_single = [t_bench_single,t_bench1];
             end
             figure,
@@ -12757,9 +12771,9 @@ end
             UI.groupData1.groups.plus_filter.(testGroups{j}) = 0;
         end
     end
-        function t_bench = runBenchMarkSinglePlot(plotOptionsIn)
+        function t_bench = runBenchMarkSinglePlot(plotOptionsIn,title1)
             % Benchmarking single figures
-            testFig1 = figure('pos',UI.params.figureSize,'name','Single cell plot benchmarks');
+            testFig1 = figure('pos',UI.params.figureSize,'visible','off'); movegui(testFig1,'center'), set(testFig1,'visible','on')
             testFig = gca;
             timerVal1 = tic;
             t_bench = [];
@@ -12768,10 +12782,13 @@ end
 %                 ii = 1;
                 figure(UI.fig)
                 updateUI
-                figure(testFig1), set(testFig1,'name',['Single cell plot benchmarks: group: ',num2str(j),'/',num2str(numel(testGroups))])
-                pause(0.5)
+                figure(testFig1), set(testFig1,'name',['Single cell plot benchmarks: group: ',num2str(j),'/',num2str(numel(testGroups)),title1])
+                drawnow nocallbacks;
                 for i_rep = 1:nRepetitions
                     ii = cell_metrics.groups.(testGroups{j})(i_rep);
+                    if ~ishandle(testFig)
+                        return
+                    end
                     delete(testFig.Children)
 %                     set(testFig1,'CurrentAxes',testFig)
                     set(testFig,'xscale','linear','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), grid(testFig,'off')
