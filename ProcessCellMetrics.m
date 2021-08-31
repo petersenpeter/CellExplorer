@@ -135,10 +135,12 @@ if ~isempty(sessionID)
 elseif ~isempty(sessionin)
     [session, basename, basepath] = db_set_session('sessionName',sessionin);
 elseif ~isempty(sessionStruct)
-    if isfield(sessionStruct.general,'basePath')
+    if isfield(sessionStruct.general,'basePath') 
         session = sessionStruct;
         basename = session.general.name;
-        basepath = session.general.basePath;
+        if exist(sessionStruct.general.basePath,'dir')
+            basepath = session.general.basePath;
+        end
     else
         [session, basename, basepath] = db_set_session('session',sessionStruct);
         if isempty(session.general.entryID)
