@@ -33,7 +33,7 @@ if strcmp(inputname(1),'session')
     datatype = 'session';
 end
 % Importing parameters from session struct
-if ~isempty(session)
+if ~isempty(session) && exist(session.general.basePath,'dir')
     basename = session.general.name;
     basepath = session.general.basePath;
 elseif isempty(basename)
