@@ -80,8 +80,20 @@ saveDeepSuperficial
                 plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'k')
             end
             % Plotting the channel used for the ripple detection if it is part of current spike group
-            if isfield(deepSuperficialfromRipple,'detectorinfo') && deepSuperficialfromRipple.detectorinfo.detectionparms.channel+1==deepSuperficialfromRipple.ripple_channels{jj}(jjj)
-                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'k','linewidth',2)
+            try
+                if isfield(deepSuperficialfromRipple,'detectorinfo') &&...
+                        deepSuperficialfromRipple.detectorinfo.detectionparms.channel+1==deepSuperficialfromRipple.ripple_channels{jj}(jjj)
+                    plot(deepSuperficialfromRipple.ripple_time_axis,...
+                        deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,...
+                        'k','linewidth',2)
+                end
+            catch
+                if isfield(deepSuperficialfromRipple,'detectorinfo') &&...
+                        deepSuperficialfromRipple.detectorinfo.detectionparms.ripple_channel+1==deepSuperficialfromRipple.ripple_channels{jj}(jjj)
+                    plot(deepSuperficialfromRipple.ripple_time_axis,...
+                        deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,...
+                        'k','linewidth',2)
+                end
             end
         end
         

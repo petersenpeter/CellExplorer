@@ -82,7 +82,11 @@ end
 try
     ripple_channel_detector = ripples.detectorinfo.detectionparms.channel;
 catch
-    ripple_channel_detector = 0;
+    try
+        ripple_channel_detector = ripples.detectorinfo.detectionparms.ripple_channel;
+    catch
+        ripple_channel_detector = 0;
+    end
 end
 
 % Excluding ripples that have been flagged
