@@ -4414,6 +4414,10 @@ end
                 web('https://CellExplorer.org/tutorials/tutorials/','-new','-browser')
             case '- Graphical interface'
                 web('https://cellexplorer.org/interface/interface/','-new','-browser')
+            case 'Support'
+                 web('https://cellexplorer.org/#support','-new','-browser')
+            case {'- Submit feature request','- Report an issue'}
+                web('https://github.com/petersenpeter/CellExplorer/issues/new','-new','-browser')
             otherwise
                 web('https://CellExplorer.org/','-new','-browser')
         end
@@ -10347,6 +10351,9 @@ end
         uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Accelerator','V','Separator','on');
         uimenu(UI.menu.help.topMenu,menuLabel,'- Tutorials',menuSelectedFcn,@openWebsite);
         uimenu(UI.menu.help.topMenu,menuLabel,'- Graphical interface',menuSelectedFcn,@openWebsite);
+        uimenu(UI.menu.help.topMenu,menuLabel,'Support',menuSelectedFcn,@openWebsite,'Separator','on');
+        uimenu(UI.menu.help.topMenu,menuLabel,'- Submit feature request',menuSelectedFcn,@openWebsite);
+        uimenu(UI.menu.help.topMenu,menuLabel,'- Report an issue',menuSelectedFcn,@openWebsite);
     end
     
     function setUiPreferences

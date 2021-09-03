@@ -82,8 +82,9 @@ initTraces
 % % % % % % % % % % % % % % % % % % % % % %
 % Maximazing figure to full screen
 if ~verLessThan('matlab', '9.4')
-    set(UI.fig,'WindowState','maximize','visible','on'), drawnow nocallbacks;
+    set(UI.fig,'WindowState','maximize'), set(UI.fig,'visible','on')
 else
+    warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame')
     set(UI.fig,'visible','on')
     drawnow nocallbacks; frame_h = get(UI.fig,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks;
 end
@@ -191,6 +192,8 @@ end
         UI.settings.narrowPadding = false;
         UI.settings.ephys_padding = 0.05; % Initial padding above and below ephys traces
         UI.settings.text_spacing = 0.016;
+        UI.settings.detectedEventsBelowTrace = false;
+        UI.settings.detectedSpikesBelowTrace = false;
         
         % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9')
@@ -228,8 +231,8 @@ end
         UI.settings.spikesGroupColors = 1;
         UI.settings.showPopulationRate = false;
         UI.settings.populationRateBelowTrace = false;
-        UI.settings.populationRateWindow = 0.001; % in seconds
-        UI.settings.populationRateSmoothing = 35; % in seconds
+        UI.settings.populationRateWindow = 0.001; % in seconds 
+        UI.settings.populationRateSmoothing = 35; % in seconds 
         UI.settings.spikeRasterLinewidth = 1;
         
         % Cell metrics
@@ -350,27 +353,36 @@ end
          
         % Settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
-        UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC);
+        UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu',menuSelectedFcn,@ShowHideMenu);
+        UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC,'Separator','on');
         UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);
         UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
         UI.menu.display.narrowPadding = uimenu(UI.menu.display.topMenu,menuLabel,'Narrow ephys padding',menuSelectedFcn,@narrowPadding);
-
+        UI.menu.display.plotStyleDynamicRange = uimenu(UI.menu.display.topMenu,menuLabel,'Dynamic ephys range plot',menuSelectedFcn,@plotStyleDynamicRange,'Checked','on');
         %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
         UI.menu.display.colorByChannels = uimenu(UI.menu.display.topMenu,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);
         UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
         UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);
         
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background/xtick color',menuSelectedFcn,@changeBackgroundColor);
-        UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu','Separator','on',menuSelectedFcn,@ShowHideMenu);
+        UI.menu.display.detectedEventsBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected events below traces',menuSelectedFcn,@detectedEventsBelowTrace,'Separator','on');
+        UI.menu.display.detectedSpikesBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spikes below traces',menuSelectedFcn,@detectedSpikesBelowTrace);
+        
         UI.menu.display.debug = uimenu(UI.menu.display.topMenu,menuLabel,'Debug','Separator','on',menuSelectedFcn,@toggleDebug);
         
         % Help
         UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
         uimenu(UI.menu.help.topMenu,menuLabel,'Mouse and keyboard shortcuts',menuSelectedFcn,@HelpDialog);
-        uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Accelerator','V','Separator','on');
+        uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite,'Separator','on');
         uimenu(UI.menu.help.topMenu,menuLabel,'- About NeuroScope2',menuSelectedFcn,@openWebsite);
         uimenu(UI.menu.help.topMenu,menuLabel,'- Tutorial on metadata',menuSelectedFcn,@openWebsite);
         uimenu(UI.menu.help.topMenu,menuLabel,'- Documentation on session metadata',menuSelectedFcn,@openWebsite);
+        uimenu(UI.menu.help.topMenu,menuLabel,'Support',menuSelectedFcn,@openWebsite,'Separator','on');
+        uimenu(UI.menu.help.topMenu,menuLabel,'- Submit feature request',menuSelectedFcn,@openWebsite);
+        uimenu(UI.menu.help.topMenu,menuLabel,'- Report an issue',menuSelectedFcn,@openWebsite);
+        
+        
+        
 
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating UI/panels 
@@ -491,8 +503,8 @@ end
         UI.panel.spikes.showSpikes = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Show spikes', 'value', 0, 'Units','normalized', 'Position', [0.01 0.67 0.48 0.32],'Callback',@toggleSpikes,'HorizontalAlignment','left');
         UI.panel.spikes.showSpikesBelowTrace = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Below traces', 'value', 0, 'Units','normalized', 'Position', [0.51 0.67 0.48 0.32],'Callback',@showSpikesBelowTrace,'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', ' Colors: ', 'Units','normalized', 'Position', [0 0.34 0.3 0.3],'HorizontalAlignment','left');
-        UI.panel.spikes.setSpikesGroupColors = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {'UID','White'}, 'Units','normalized', 'Position', [0.3 0.34 0.69 0.32],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesGroupColors);
-        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', ' Y-data: ', 'Units','normalized', 'Position', [0.0 0.01 0.3 0.3],'HorizontalAlignment','left');
+        UI.panel.spikes.setSpikesGroupColors = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {'UID','White','Electrode group'}, 'Units','normalized', 'Position', [0.3 0.34 0.69 0.32],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesGroupColors);
+        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', ' Sorting: ', 'Units','normalized', 'Position', [0.0 0.01 0.3 0.3],'HorizontalAlignment','left');
         UI.panel.spikes.setSpikesYData = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.3 0.01 0.69 0.32],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesYData);
 
         % Cell metrics
@@ -987,13 +999,16 @@ end
                     raster.x = [raster.x;idx];
                     if UI.settings.plotStyle == 5
                         raster.y = [raster.y;-UI.channelScaling(idx,i)];
+                    elseif UI.settings.detectedSpikesBelowTrace
+                        raster_y = diff(UI.dataRange.detectedSpikes)*(-UI.channelScaling(idx,i))+UI.dataRange.detectedSpikes(1);
+                        raster.y = [raster.y;raster_y];
                     else
                         raster.y = [raster.y;ephys.traces(idx,i)-UI.channelScaling(idx,i)];
                     end
                 end
             end               
                 
-            if UI.settings.showSpikes
+            if UI.settings.showSpikes && ~UI.settings.detectedSpikesBelowTrace
                 markerType = 'o';
             else
                 markerType = UI.settings.rasterMarker;
@@ -1014,7 +1029,12 @@ end
                 end
                 if ~isempty(idx)
                     raster.x = [raster.x;idx];
-                    raster.y = [raster.y;ephys.traces(idx,i)-UI.channelScaling(idx,i)];
+                    if UI.settings.detectedEventsBelowTrace
+                        raster_y = diff(UI.dataRange.detectedEvents)*(-UI.channelScaling(idx,i))+UI.dataRange.detectedEvents(1);
+                        raster.y = [raster.y;raster_y];
+                    else                        
+                        raster.y = [raster.y;ephys.traces(idx,i)-UI.channelScaling(idx,i)];
+                    end
                 end
             end
             [~,ia] = sort(UI.channelOrder);
@@ -1142,7 +1162,7 @@ end
                 
                 % Showing spikes in the 2D behavior plot
                 if UI.settings.showSpikes && ~isempty(spikes_raster)
-                    if UI.settings.spikesGroupColors == 3
+                    if UI.settings.spikesGroupColors == 4
                         % UI.params.sortingMetric = 'putativeCellType';
                         putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
 %                         UI.colors_metrics = hsv(numel(putativeCellTypes));
@@ -1163,6 +1183,13 @@ end
                         for i = 1:numel(unique_uids)
                             idx_uids = spikes_raster.UID == unique_uids(i);
                             plotBehaviorEvents(spikes_raster.x(idx_uids)+t1,uid_colormap(i,:),'o')
+                        end
+                    elseif UI.settings.spikesGroupColors == 3
+                        unique_electrodeGroups = unique(spikes_raster.electrodeGroup);
+                        electrodeGroup_colormap = UI.colors;
+                        for i = unique_electrodeGroups
+                            idx_uids = spikes_raster.electrodeGroup == i;
+                            plotBehaviorEvents(spikes_raster.x(idx_uids)+t1,electrodeGroup_colormap(i,:),'o')
                         end
                     else
                         plotBehaviorEvents(spikes_raster.x+t1,'w','o')
@@ -1219,10 +1246,14 @@ end
 %             spikes_raster.spin_idx = spin_idx;
             spikes_raster.x = data.spikes.spindices(spin_idx,1)-t1;
             spikes_raster.UID = data.spikes.spindices(spin_idx,2);
+            if isfield(data.spikes,'shankID')
+                spikes_raster.electrodeGroup = data.spikes.shankID(spikes_raster.UID);
+            end
+            
             if UI.settings.spikesBelowTrace
                 idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
                 if UI.settings.useSpikesYData
-                    spikes_raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(spin_idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1);
+                    spikes_raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(spin_idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1)+0.002;
                 else
                     if UI.settings.useMetrics
                         [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric));
@@ -1230,7 +1261,7 @@ end
                     else
                         sortIdx = 1:data.spikes.numcells;
                     end
-                    spikes_raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(spin_idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1);
+                    spikes_raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(spin_idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1)+0.002;
                 end
             else
                 % Aligning timestamps and determining trace value for each spike
@@ -1259,7 +1290,7 @@ end
                     spikes_raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
                 end
             end
-            if UI.settings.spikesGroupColors == 3
+            if UI.settings.spikesGroupColors == 4
                 putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
 %                 UI.colors_metrics = hsv(numel(putativeCellTypes));
                 UI.colors_metrics = eval([UI.settings.spikesColormap,'(',num2str(numel(putativeCellTypes)),')']);
@@ -1288,6 +1319,13 @@ end
                 for i = 1:numel(unique_uids)
                     idx_uids = uid == unique_uids(i);
                     line(axesIn,spikes_raster.x(idx_uids), spikes_raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
+                end
+            elseif UI.settings.spikesGroupColors == 3
+                unique_electrodeGroups = unique(spikes_raster.electrodeGroup);
+                electrodeGroup_colormap = UI.colors;
+                for i = unique_electrodeGroups
+                    idx_uids = spikes_raster.electrodeGroup == i;
+                    line(axesIn,spikes_raster.x(idx_uids), spikes_raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',electrodeGroup_colormap(i,:), 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
                 end
             else
                 line(axesIn,spikes_raster.x, spikes_raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorIn, 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
@@ -1319,7 +1357,7 @@ end
                     UI.dataRange.populationRate(2) = 0.5;
                 end
                 populationBins = 0:UI.settings.populationRateWindow:t2-t1;
-                if UI.settings.spikesGroupColors == 3
+                if UI.settings.spikesGroupColors == 4
                     putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
                     UI.colors_metrics = eval([UI.settings.spikesColormap,'(',num2str(numel(putativeCellTypes)),')']);
                     
@@ -1343,6 +1381,28 @@ end
                             line(populationBins, populationRate,'Marker','none','LineStyle','-','color',UI.colors_metrics(i,:), 'HitTest','off','linewidth',1.5);
                         end
                     end
+                elseif UI.settings.spikesGroupColors == 3
+                    unique_electrodeGroups = unique(spikes_raster.electrodeGroup);
+                    electrodeGroup_colormap = UI.colors;
+                    for i = unique_electrodeGroups
+                        idx3 = spikes_raster.electrodeGroup==i;                        
+                        if any(idx3)
+                            populationRate = histcounts(spikes_raster.x(idx3),populationBins)/UI.settings.populationRateWindow/2;
+                            if UI.settings.populationRateSmoothing == 1
+                                populationRate = [populationRate;populationRate];
+                                populationRate = populationRate(:);
+                                populationBins = [populationBins(1:end-1);populationBins(2:end)];
+                                populationBins = populationBins(:);
+                            else
+                                populationBins = populationBins(1:end-1)+UI.settings.populationRateWindow/2;
+                                % populationRate = smooth(populationRate,UI.settings.populationRateSmoothing);
+                                populationRate = conv(populationRate,gausswin(UI.settings.populationRateSmoothing)'/sum(gausswin(UI.settings.populationRateSmoothing)),'same');
+                            end
+                            populationRate = (populationRate/max(populationRate))*diff(UI.dataRange.populationRate)+UI.dataRange.populationRate(1)+0.001;
+                            line(populationBins, populationRate,'Marker','none','LineStyle','-','color',electrodeGroup_colormap(i,:), 'HitTest','off','linewidth',1.5);
+                        end
+                    end
+                    
                 else
                     populationRate = histcounts(spikes_raster.x,populationBins)/UI.settings.populationRateWindow;
                     if UI.settings.populationRateSmoothing == 1
@@ -2013,6 +2073,38 @@ end
         uiresume(UI.fig);
     end
     
+    function plotStyleDynamicRange(~,~)
+        UI.settings.plotStyleDynamicRange = ~UI.settings.plotStyleDynamicRange;
+        if UI.settings.plotStyleDynamicRange
+            UI.menu.display.plotStyleDynamicRange.Checked = 'on';
+        else
+            UI.menu.display.plotStyleDynamicRange.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+    
+    function detectedEventsBelowTrace(~,~)
+        UI.settings.detectedEventsBelowTrace = ~UI.settings.detectedEventsBelowTrace;
+        if UI.settings.detectedEventsBelowTrace
+            UI.menu.display.detectedEventsBelowTrace.Checked = 'on';
+        else
+            UI.menu.display.detectedEventsBelowTrace.Checked = 'off';
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
+    
+    function detectedSpikesBelowTrace(~,~)
+        UI.settings.detectedSpikesBelowTrace = ~UI.settings.detectedSpikesBelowTrace;
+        if UI.settings.detectedSpikesBelowTrace
+            UI.menu.display.detectedSpikesBelowTrace.Checked = 'on';
+        else
+            UI.menu.display.detectedSpikesBelowTrace.Checked = 'off';
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
+    
     function show_CSD(~,~)
         if UI.panel.csd.showCSD.Value == 1
             UI.settings.CSD.show = true;
@@ -2114,7 +2206,7 @@ end
         else
             dimensions = [450,(size(shortcutList,1)+1)*18.5];
         end
-        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','NeuroScope2: mouse and keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(HelpWindow.dialog,'center'), set(HelpWindow.dialog,'visible','on')
+        HelpWindow.dialog = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','Mouse and keyboard shortcuts', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(HelpWindow.dialog,'center'), set(HelpWindow.dialog,'visible','on')
         HelpWindow.sessionList = uitable(HelpWindow.dialog,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{100 345},'columnname',{'Shortcut','Action'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');
     end
     
@@ -2317,7 +2409,7 @@ end
     end
     
     function setScalingText
-        UI.elements.lower.scalingText.String = ['Scaling (range: ',num2str(round(10000./UI.settings.scalingFactor)/10),'µV) '];
+        UI.elements.lower.scalingText.String = ['Scaling (range: ',num2str(round(10000./UI.settings.scalingFactor)/10),char(181),'V) '];
     end
 
     function buttonsElectrodeGroups(src,~)
@@ -2409,9 +2501,7 @@ end
         % Toggle spikes data
         if ~isfield(data,'spikes') && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
             data.spikes = loadSpikes('session',data.session);
-            if ~isfield(data.spikes,'spindices')
-                data.spikes.spindices = generateSpinDices(data.spikes.times);
-            end
+            data.spikes.spindices = generateSpinDices(data.spikes.times);
             if ~isfield(data.spikes,'maxWaveformCh1')
                 data.spikes.maxWaveformCh1 = data.spikes.maxWaveformCh+1;
             end
@@ -2431,7 +2521,7 @@ end
             idx = ismember(subfieldstypes,{'double','cell'}) & all(subfieldssizes == [1,data.spikes.numcells],2);
             spikes_fields = spikes_fields(idx);
             UI.settings.spikesYDataType = subfieldstypes(idx);
-            excluded_fields = {'times','ts','ts_eeg','maxWaveform_all','channels_all','peakVoltage_sorted','timeWaveform'};
+            excluded_fields = {'times','ts','ts_eeg','maxWaveform_all','channels_all','peakVoltage_sorted','timeWaveform','amplitudes','ids'};
             [spikes_fields,ia] = setdiff(spikes_fields,excluded_fields);
             UI.settings.spikesYDataType = UI.settings.spikesYDataType(ia);
 
@@ -2441,10 +2531,13 @@ end
                     if all(all([cellfun(@(X) size(X,1), data.spikes.(spikes_fields{i}));cellfun(@(X) size(X,2), data.spikes.(spikes_fields{i}))] == [data.spikes.total;ones(1,data.spikes.numcells)])) || all(all([cellfun(@(X) size(X,1), data.spikes.(spikes_fields{i}));cellfun(@(X) size(X,2), data.spikes.(spikes_fields{i}))] == [ones(1,data.spikes.numcells);data.spikes.total]))
                         idx_toKeep = [idx_toKeep,i];
                     end
+                elseif strcmp(UI.settings.spikesYDataType{i},'double')
+                    idx_toKeep = [idx_toKeep,i];
                 end
             end
             UI.settings.spikesYDataType = UI.settings.spikesYDataType(idx_toKeep);
-           
+            UI.panel.spikes.setSpikesYData.String = spikes_fields(idx_toKeep);
+            
             if isempty(UI.panel.spikes.setSpikesYData.Value)
                 UI.panel.spikes.setSpikesYData.Value = 1;
             end
@@ -2452,8 +2545,9 @@ end
             UI.params.subsetFilter = 1:data.spikes.numcells;
             UI.params.subsetGroups = 1:data.spikes.numcells;
             UI.params.subsetCellType = 1:data.spikes.numcells;
-            UI.panel.spikes.setSpikesYData.Enable = 'off';
-            UI.panel.spikes.setSpikesGroupColors.Enable = 'on';
+            
+            UI.panel.spikes.setSpikesYData.Enable = 'on';
+            UI.panel.spikes.setSpikesGroupColors.Enable = 'on'; 
         else
             UI.panel.spikes.showSpikes.Value = 0;
             UI.panel.spikes.setSpikesYData.Enable = 'off';
@@ -2529,9 +2623,9 @@ end
             UI.listbox.cellTypes.Value = 1:length(UI.params.cellTypes);
             UI.params.subsetCellType = 1:data.cell_metrics.general.cellCount;
             
-            UI.panel.spikes.setSpikesGroupColors.String = {'UID','White','Cell metrics'};
-            UI.panel.spikes.setSpikesGroupColors.Value = 3; 
-            UI.settings.spikesGroupColors = 3;
+            UI.panel.spikes.setSpikesGroupColors.String = {'UID','White','Electrode group','Cell metrics'};
+            UI.panel.spikes.setSpikesGroupColors.Value = 4; 
+            UI.settings.spikesGroupColors = 4;
         else
             UI.panel.cell_metrics.useMetrics.Value = 0;
             UI.panel.cell_metrics.sortingMetric.Enable = 'off';
@@ -2542,11 +2636,11 @@ end
             spikes_fields = {''};
             UI.table.cells.Data = {''};
             UI.table.cells.Enable = 'off';
-            if UI.panel.spikes.setSpikesGroupColors.Value == 3
+            if UI.panel.spikes.setSpikesGroupColors.Value == 4
                 UI.panel.spikes.setSpikesGroupColors.Value = 1;
                 UI.settings.spikesGroupColors = 1;
             end
-            UI.panel.spikes.setSpikesGroupColors.String = {'UID','White'};
+            UI.panel.spikes.setSpikesGroupColors.String = {'UID','White','Electrode group'};
         end
         uiresume(UI.fig);
     end
@@ -2761,14 +2855,15 @@ end
     function setSpikesYData(~,~)
         UI.settings.spikesYData = UI.panel.spikes.setSpikesYData.String{UI.panel.spikes.setSpikesYData.Value};
         if UI.panel.spikes.setSpikesYData.Value > 1
+            try
             UI.settings.useSpikesYData = true;
             if numel(data.spikes.times)>0
                 switch UI.settings.spikesYDataType{UI.panel.spikes.setSpikesYData.Value-1}
                     case 'double'
                         groups = [];
-                            for i = 1:numel(data.spikes.(UI.settings.spikesYData))
-                                groups = [groups,ones(1,data.spikes.total(i))*data.spikes.(UI.settings.spikesYData)(i)]; % from cell to array
-                            end
+                        for i = 1:numel(data.spikes.(UI.settings.spikesYData))
+                            groups = [groups,ones(1,data.spikes.total(i))*data.spikes.(UI.settings.spikesYData)(i)]; % from cell to array
+                        end
                         [~,sortidx] = sort(cat(1,data.spikes.times{:})); % Sorting spikes
                         data.spikes.spindices(:,3) = groups(sortidx); % Combining spikes and sorted group ids
                     case 'cell'
@@ -2794,6 +2889,11 @@ end
             
             % Getting limits
             UI.settings.spikes_ylim = [min(data.spikes.spindices(:,3)),max(data.spikes.spindices(:,3))];
+            catch 
+                 UI.settings.useSpikesYData = false;
+                 UI.panel.spikes.setSpikesYData.Value = 1;
+                 warning('Failed to set sorting')
+            end
         else
             UI.settings.useSpikesYData = false;
         end
@@ -2815,7 +2915,9 @@ end
         UI.offsets.spykingcircus = 0.08 * (UI.settings.showSpykingcircus && UI.settings.spykingcircusBelowTrace);
         UI.offsets.spikes   = 0.08 * (UI.settings.spikesBelowTrace && UI.settings.showSpikes);
         UI.offsets.populationRate = 0.08 * (UI.settings.showSpikes && UI.settings.showPopulationRate && UI.settings.populationRateBelowTrace);
-
+        UI.offsets.detectedSpikes = 0.08 * (UI.settings.detectSpikes && UI.settings.detectedSpikesBelowTrace);
+        UI.offsets.detectedEvents = 0.08 * (UI.settings.detectEvents && UI.settings.detectedEventsBelowTrace);
+        
         offset = 0;
         padding = 0.005;
         list = fieldnames(UI.offsets);
@@ -3614,6 +3716,7 @@ end
         else
             UI.settings.detectSpikes = false;
         end
+        initTraces
         uiresume(UI.fig);
     end
 
@@ -3626,6 +3729,7 @@ end
         else
             UI.settings.detectEvents = false;
         end
+        initTraces
         uiresume(UI.fig);
     end
 
@@ -4153,7 +4257,7 @@ end
         rms1 = rms(ephys.traces/(UI.settings.scalingFactor/1000000));
         k_channels = 0;
         fig1 = figure('name',['RMS across channels. Session: ', UI.data.basename],'Position',[50 50 1200 900],'visible','off');
-        ax1 = axes(fig1,'Color','k'); hold on, xlabel(ax1,'Sorted and filtered channels'), ylabel(ax1,'RMS (µV)'), title(ax1,[' Session: ', UI.data.basename], 'interpreter','none')
+        ax1 = axes(fig1,'Color','k'); hold on, xlabel(ax1,'Sorted and filtered channels'), ylabel(ax1,'RMS (',char(181),'V)'), title(ax1,[' Session: ', UI.data.basename], 'interpreter','none')
         for iShanks = UI.settings.electrodeGroupsToPlot
             channels = UI.channels{iShanks};
             [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
@@ -4176,17 +4280,18 @@ end
             channels = UI.channels{iShanks};
             [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
             channels = UI.channelOrder(ia);
-           
-            y = ephys.traces(:,channels);
-            y = y - repmat(mean(y),length(timeLine),1);
-            d = -diff(y,2,2);
-            d = interp2(d);
-            
-            d = d(1:2:size(d,1),:);
-%             
-            markerColor = UI.colors(iShanks,:);
-            multiplier = -linspace(max(UI.channelOffset(channels)),min(UI.channelOffset(channels)),size(d,2));
-            pcolor(timeLine,multiplier,flipud(transpose(d))); 
+            if numel(channels)>3
+                y = ephys.traces(:,channels);
+                y = y - repmat(mean(y),length(timeLine),1);
+                d = -diff(y,2,2);
+                d = interp2(d);
+                
+                d = d(1:2:size(d,1),:);
+                %
+                markerColor = UI.colors(iShanks,:);
+                multiplier = -linspace(max(UI.channelOffset(channels)),min(UI.channelOffset(channels)),size(d,2));
+                pcolor(timeLine,multiplier,flipud(transpose(d)));
+            end
         end
 
         set(gca,'clim',[-0.05 0.05])
@@ -4719,7 +4824,22 @@ end
     function colorByChannels(~,~)
         UI.settings.colorByChannels = ~UI.settings.colorByChannels;
         if UI.settings.colorByChannels
-            UI.menu.display.colorByChannels.Checked = 'on';
+            prompt = {'Number of color groups (1-50)'};
+            dlgtitle = 'Color groups';
+            definput = {num2str(UI.settings.nColorGroups)};
+            dims = [1 40];
+            opts.Interpreter = 'tex';
+            answer = inputdlg(prompt,dlgtitle,dims,definput,opts);
+            if ~isempty(answer)
+                numeric_answer = str2num(answer{1});
+                if ~isempty(answer{1}) && rem(numeric_answer,1)==0 && numeric_answer > 0 && numeric_answer <= 50
+                    UI.settings.nColorGroups = numeric_answer;
+                end
+                UI.menu.display.colorByChannels.Checked = 'on';
+            else
+                UI.settings.colorByChannels = false;
+                UI.menu.display.colorByChannels.Checked = 'off';
+            end
         else
             UI.menu.display.colorByChannels.Checked = 'off';
         end
@@ -4830,6 +4950,10 @@ end
                 web('https://cellexplorer.org/tutorials/metadata-tutorial/','-new','-browser')
             case '- Documentation on session metadata'
                 web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
+            case 'Support'
+                 web('https://cellexplorer.org/#support','-new','-browser')
+            case {'- Submit feature request','- Report an issue'}
+                web('https://github.com/petersenpeter/CellExplorer/issues/new','-new','-browser')
             otherwise
                 web('https://cellexplorer.org/','-new','-browser')
         end
