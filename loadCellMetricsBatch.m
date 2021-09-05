@@ -17,9 +17,9 @@ function cell_metrics_batch = loadCellMetricsBatch(varargin)
 % cell_metrics = loadCellMetricsBatch('sessions',{'rec1','rec2'}) % Load batch from database
 % cell_metrics = loadCellMetricsBatch('sessionIDs',[10985,10985]) % Load session from database session id
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Handling inputs
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 p = inputParser;
 addParameter(p,'sessionIDs',{},@isnumeric);     % numeric IDs for the sessions to load
 addParameter(p,'sessions',{},@iscell);          % sessionNames for the sessions to load
@@ -56,7 +56,7 @@ cell_metrics_type_struct = {'general','putativeConnections','groups','tags','gro
 if ~isempty(sessionNames)
     count_metricsLoad = 1;
     waitbar(1/(1+count_metricsLoad+length(sessionNames)),ce_waitbar,['Loading session info from sessionNames']);
-   
+    
     % % % % % % % % % % % % %
     options = weboptions('Username',db_settings.credentials.username,'Password',db_settings.credentials.password,'RequestMethod','get','Timeout',50);
     options.CertificateFilename=('');
@@ -105,9 +105,9 @@ else
 end
 batch_benchmark.clock(1) = toc(batch_timer);
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Loading cell_metircs file batch
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
 for iii = 1:length(basepaths)
     file_load_timer = tic;
     if ~isempty(basenames) && ishandle(ce_waitbar)
@@ -117,7 +117,7 @@ for iii = 1:length(basepaths)
     end
     if exist(fullfile(basepaths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']))
         cell_metrics2{iii} = load(fullfile(basepaths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat']));
-    else 
+    else
         warning(['session not found: ', fullfile(basepaths{iii},[basenames{iii},'.',saveAs,'.cellinfo.mat'])])
         cell_metrics_batch = [];
         return
@@ -158,7 +158,7 @@ h = 0;
 cell_metrics_batch = [];
 batch_benchmark.clock(2) = toc(batch_timer);
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Creating cell_metrics_batch from individual session cell_metrics
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
@@ -190,8 +190,8 @@ for iii = 1:length(cell_metrics2)
     cell_metrics = validateGroupFormat(cell_metrics,'tags');
     cell_metrics = validateGroupFormat(cell_metrics,'groundTruthClassification');
     if length(cell_metrics2) > 1 && iii == 1
-%         cell_metrics_batch = cell_metrics;
-%         cell_metrics_batch = rmfield(cell_metrics_batch,'general');
+        %         cell_metrics_batch = cell_metrics;
+        %         cell_metrics_batch = rmfield(cell_metrics_batch,'general');
         cell_metrics_batch.general.basename = 'Batch of sessions';
     end
     cell_metrics_batch.batchIDs(h+1:hh+h) = iii*ones(1,hh);
@@ -214,71 +214,77 @@ for iii = 1:length(cell_metrics2)
             elseif ismember(cell_metrics_fieldnames{ii},{'groups','tags','groundTruthClassification'})
                 if isfield(cell_metrics,cell_metrics_fieldnames{ii})
                     fields1 = fieldnames(cell_metrics.(cell_metrics_fieldnames{ii}));
-                        for k = 1:numel(fields1)
-                            if isfield(cell_metrics_batch,cell_metrics_fieldnames{ii}) && isfield(cell_metrics_batch.(cell_metrics_fieldnames{ii}),fields1{k})
-                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}) = [cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}), cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k})+h];
-                            else
-                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}) = cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k})+h;
-                            end
+                    for k = 1:numel(fields1)
+                        if isfield(cell_metrics_batch,cell_metrics_fieldnames{ii}) && isfield(cell_metrics_batch.(cell_metrics_fieldnames{ii}),fields1{k})
+                            cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}) = [cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}), cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k})+h];
+                        else
+                            cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}) = cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k})+h;
                         end
+                    end
                 end
             else
                 if isfield(cell_metrics,cell_metrics_fieldnames{ii})
-                structFields = fieldnames(cell_metrics.(cell_metrics_fieldnames{ii}));
-                structFieldsType = struct2cell(structfun(@class,cell_metrics.(cell_metrics_fieldnames{ii}),'UniformOutput',false));
-                structFieldsSize = struct2cell(structfun(@size,cell_metrics.(cell_metrics_fieldnames{ii}),'UniformOutput',false));
-                for k = 1:length(structFields)
-                    if  strcmp(structFieldsType{k},'cell')
-                        if ~isempty(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k})) && length(size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k})))<3 & size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),1)==1 & size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),2)== hh
-                            cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k});
-                        else
-                            cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k}){iii} = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}){1};
-                        end
-                    elseif strcmp(structFieldsType{k},'double')
-                        % % % % % % % % % % % % % % % % % % % % % % % % 
-                        % If field does not exist
-                        if ~isfield(cell_metrics.(cell_metrics_fieldnames{ii}),structFields{k})
-                            if length(structFieldsSize{k})==2 && structFieldsSize{k}(1) > 0
-                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(:,h+1:hh+h) = nan(structFieldsSize{k}(1:end-1),hh);
+                    try
+                        structFields = fieldnames(cell_metrics.(cell_metrics_fieldnames{ii}));
+                    catch
+                        disp([cell_metrics.animal{1},'  ',cell_metrics.sessionName{1}])
+                        disp('failed')
+                        return
+                    end
+                    structFieldsType = struct2cell(structfun(@class,cell_metrics.(cell_metrics_fieldnames{ii}),'UniformOutput',false));
+                    structFieldsSize = struct2cell(structfun(@size,cell_metrics.(cell_metrics_fieldnames{ii}),'UniformOutput',false));
+                    for k = 1:length(structFields)
+                        if  strcmp(structFieldsType{k},'cell')
+                            if ~isempty(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k})) && length(size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k})))<3 & size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),1)==1 & size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),2)== hh
+                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k});
                             else
-                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = nan(1,hh);
+                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k}){iii} = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}){1};
                             end
-                            
-                        % If field exist
-                        else
-                            if isempty(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k})) && length(structFieldsSize{k})==2 && structFieldsSize{k}(1) > 0%% && ~any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
-                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(:,h+1:hh+h) = nan(structFieldsSize{k}(1:end-1),hh);
-                            elseif isempty(cell_metrics.(cell_metrics_fieldnames{ii})) && length(structFieldsSize{k})==1
-                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = nan(1,hh);
-                            else
-                                if length(structFieldsSize{k})==3
-                                    for iiii=1:size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),3)
-                                        
-                                    end
-                                elseif structFieldsSize{k}(1)>1 %&& ~any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
-                                    if ~isfield(cell_metrics_batch,cell_metrics_fieldnames{ii}) ||  ~isfield(cell_metrics_batch.(cell_metrics_fieldnames{ii}),structFields{k}) || (isfield(cell_metrics_batch.(cell_metrics_fieldnames{ii}),structFields{k}) && size(cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k}),1) == size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),1))
-                                        cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(:,h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k});
-                                    end
-%                                 elseif structFieldsSize{k}(1)>1 %&& any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
-%                                     cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k}){iii} = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k});
+                        elseif strcmp(structFieldsType{k},'double')
+                            % % % % % % % % % % % % % % % % % % % % % % % %
+                            % If field does not exist
+                            if ~isfield(cell_metrics.(cell_metrics_fieldnames{ii}),structFields{k})
+                                if length(structFieldsSize{k})==2 && structFieldsSize{k}(1) > 0
+                                    cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(:,h+1:hh+h) = nan(structFieldsSize{k}(1:end-1),hh);
                                 else
-                                    if ~isempty(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}))
-                                        if size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),2) == hh && size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),1) == 1
-                                            cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k});
-                                        else
-                                            cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = nan(1,hh);
+                                    cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = nan(1,hh);
+                                end
+                                
+                                % If field exist
+                            else
+                                if isempty(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k})) && length(structFieldsSize{k})==2 && structFieldsSize{k}(1) > 0%% && ~any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
+                                    cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(:,h+1:hh+h) = nan(structFieldsSize{k}(1:end-1),hh);
+                                elseif isempty(cell_metrics.(cell_metrics_fieldnames{ii})) && length(structFieldsSize{k})==1
+                                    cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = nan(1,hh);
+                                else
+                                    if length(structFieldsSize{k})==3
+                                        for iiii=1:size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),3)
+                                            
+                                        end
+                                    elseif structFieldsSize{k}(1)>1 %&& ~any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
+                                        if ~isfield(cell_metrics_batch,cell_metrics_fieldnames{ii}) ||  ~isfield(cell_metrics_batch.(cell_metrics_fieldnames{ii}),structFields{k}) || (isfield(cell_metrics_batch.(cell_metrics_fieldnames{ii}),structFields{k}) && size(cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k}),1) == size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),1))
+                                            cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(:,h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k});
+                                        end
+                                        %                                 elseif structFieldsSize{k}(1)>1 %&& any(strcmp(cell_metrics_fieldnames{ii}, {'firing_rate_map','firing_rate_map_states'}))
+                                        %                                     cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k}){iii} = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k});
+                                    else
+                                        if ~isempty(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}))
+                                            if size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),2) == hh && size(cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k}),1) == 1
+                                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii}).(structFields{k});
+                                            else
+                                                cell_metrics_batch.(cell_metrics_fieldnames{ii}).(structFields{k})(h+1:hh+h) = nan(1,hh);
+                                            end
                                         end
                                     end
                                 end
                             end
+                            % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
                         end
-                        % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
                     end
-                end
                 end
             end
             
-        % Cell field
+            % Cell field
         elseif strcmp(subfieldstypes{ii},'cell')
             % If field does not exist
             if ~isfield(cell_metrics,cell_metrics_fieldnames{ii})
@@ -288,7 +294,7 @@ for iii = 1:length(cell_metrics2)
                     cell_metrics_batch.(cell_metrics_fieldnames{ii}){iii} = {};
                 end
                 
-            % If field exist
+                % If field exist
             else
                 if ~isempty(cell_metrics.(cell_metrics_fieldnames{ii})) && length(size(cell_metrics.(cell_metrics_fieldnames{ii})))<3 & size(cell_metrics.(cell_metrics_fieldnames{ii}),1)==1 && size(cell_metrics.(cell_metrics_fieldnames{ii}),2)== hh
                     cell_metrics_batch.(cell_metrics_fieldnames{ii})(h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii});
@@ -303,7 +309,7 @@ for iii = 1:length(cell_metrics2)
             if ~isfield(cell_metrics,cell_metrics_fieldnames{ii})
                 cell_metrics_batch.(cell_metrics_fieldnames{ii})(h+1:hh+h) = nan(1,hh);
                 
-            % If field exist
+                % If field exist
             else
                 if size(cell_metrics.(cell_metrics_fieldnames{ii}),2) == hh && size(cell_metrics.(cell_metrics_fieldnames{ii}),1) == 1
                     cell_metrics_batch.(cell_metrics_fieldnames{ii})(h+1:hh+h) = cell_metrics.(cell_metrics_fieldnames{ii});
