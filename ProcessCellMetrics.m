@@ -439,7 +439,12 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         end
         for j = 1:numel(field2copy)
             if isfield(spikes{spkExclu},field2copy{j})
-                cell_metrics.waveforms.(field2copyNewNames{j}) =  spikes{spkExclu}.(field2copy{j});
+                try
+                    cell_metrics.waveforms.(field2copyNewNames{j}) = spikes{spkExclu}.(field2copy{j});
+                catch
+                    cell_metrics.waveforms = [];
+                    cell_metrics.waveforms.(field2copyNewNames{j}) = spikes{spkExclu}.(field2copy{j});
+                end
             end
         end
         
