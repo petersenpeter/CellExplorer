@@ -521,13 +521,18 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
                 [~,idx] = sort(range(cell_metrics.waveforms.filt_all{j}'),'descend');
                 
-                trilat_nChannels = min([16,numel(peakVoltage)]);
-                bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
-                beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
-                trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels),peakVoltage(idx(1:trilat_nChannels)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
-                cell_metrics.trilat_x(j) = trilat_pos(1);
-                cell_metrics.trilat_y(j) = trilat_pos(2);
+                try
+                    trilat_nChannels = min([16,numel(peakVoltage)]);
+                    bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
+                    beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
                 
+                    trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels),peakVoltage(idx(1:trilat_nChannels)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
+                    cell_metrics.trilat_x(j) = trilat_pos(1);
+                    cell_metrics.trilat_y(j) = trilat_pos(2);
+                catch
+                    cell_metrics.trilat_x(j) = cell_metrics.general.chanCoords.x(idx(1));
+                    cell_metrics.trilat_y(j) = cell_metrics.general.chanCoords.y(idx(1));
+                end
                 % Length constant
                 x1 = cell_metrics.general.chanCoords.x;
                 y1 = cell_metrics.general.chanCoords.y;
