@@ -830,7 +830,7 @@ end
                 % Loading new samples
                 fseek(fileID,round((t0+UI.settings.windowDuration-t_offset)*sr)*data.session.extracellular.nChannels*2,'bof'); % bof: beginning of file
                 try
-                    ephys.raw(existingSamples+1:UI.samplesToDisplay,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
+                    ephys.raw(existingSamples+1:UI.samplesToDisplay,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],UI.settings.precision))'*UI.settings.leastSignificantBit;
                     ephys.loaded = true;
                 catch 
                     UI.settings.stream = false;
@@ -844,19 +844,19 @@ end
                 ephys.raw(newSamples+1:UI.samplesToDisplay,:) = ephys.raw(1:existingSamples,:);
                 % Loading new data
                 fseek(fileID,round(t0*sr)*data.session.extracellular.nChannels*2,'bof');
-                ephys.raw(1:newSamples,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],'int16'))'*UI.settings.leastSignificantBit;
+                ephys.raw(1:newSamples,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],UI.settings.precision))'*UI.settings.leastSignificantBit;
                 ephys.loaded = true;
             elseif t0==UI.t1 && ~UI.forceNewData
                 ephys.loaded = true;
             else
                 fseek(fileID,round(t0*sr)*data.session.extracellular.nChannels*2,'bof');
-                ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],'int16'))'*UI.settings.leastSignificantBit;
+                ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],UI.settings.precision))'*UI.settings.leastSignificantBit;
                 ephys.loaded = true;
             end
             UI.forceNewData = false;
         else
             fseek(fileID,ceil(-UI.settings.windowDuration*sr)*data.session.extracellular.nChannels*2,'eof'); % eof: end of file
-            ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],'int16'))'*UI.settings.leastSignificantBit;
+            ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],UI.settings.precision))'*UI.settings.leastSignificantBit;
             UI.forceNewData = true;
             ephys.loaded = true;
         end
@@ -1006,7 +1006,7 @@ end
                         raster.y = [raster.y;ephys.traces(idx,i)-UI.channelScaling(idx,i)];
                     end
                 end
-            end               
+            end
                 
             if UI.settings.showSpikes && ~UI.settings.detectedSpikesBelowTrace
                 markerType = 'o';
@@ -3115,6 +3115,8 @@ end
         UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
         UI.fig.UserData.leastSignificantBit = UI.settings.leastSignificantBit;
         
+        UI.settings.precision = data.session.extracellular.precision;
+        
         % Getting notes
         if isfield(data.session.general,'notes')
             UI.panel.notes.text.String = data.session.general.notes;
@@ -3124,6 +3126,12 @@ end
         updateChannelTags
         updateChannelList
         updateBrainRegionList
+        
+        if data.session.extracellular.nElectrodeGroups<2
+            UI.settings.extraSpacing = false;
+            UI.panel.general.extraSpacing.Value = 0;
+        end
+        
         UI.fig.Name = ['NeuroScope2   -   session: ', UI.data.basename, ', basepath: ', UI.data.basepath];
         
         if isfield(data.session.extracellular,'fileName') && ~isempty(data.session.extracellular.fileName)

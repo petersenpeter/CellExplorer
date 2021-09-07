@@ -254,6 +254,7 @@ if parameters.forceReload
                     UID = UID+1;
                 end
             end
+            disp(['Importing ' num2str(numel(spikes.times)),'/', num2str(length(dataArray{1})),' clusters from phy'])
             
         case {'ultramegasort2000','ums2k'} % ultramegasort2000 (https://github.com/danamics/UMS2K)
             % From the Neurophysics Lab at UCSD (Daniel N. Hill, Samar B. Mehta, David Kleinfeld)

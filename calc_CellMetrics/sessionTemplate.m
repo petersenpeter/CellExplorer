@@ -257,15 +257,18 @@ if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.m
     session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
     
 elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
-    disp('Loading Neurosuite xml file metadata')
+    disp('Loading Neurosuite xml file metadata : ' )
     sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
     if isfield(sessionInfo,'SpkGrps')
         session.extracellular.nSpikeGroups = length(sessionInfo.SpkGrps); % Number of spike groups
         session.extracellular.spikeGroups.channels = {sessionInfo.SpkGrps.Channels}; % Spike groups
-    else
-        warning('No spike groups exist in the xml. Anatomical groups used instead')
+    elseif isfield(sessionInfo,'AnatGrps')
+        disp('No spike groups exist in the xml. Anatomical groups used instead')
         session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
         session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
+    else
+        warning(['No spike groups or Anatomical groups exist in detected xml file: ' session.general.name, '.xml'])
+        return
     end
     session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
     session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
@@ -277,7 +280,7 @@ elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[ses
     session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0);
     
 else
-    warning('No sessionInfo.mat or xml file loaded')
+    warning('No sessionInfo.mat or xml file detected')
     sessionInfo = [];
 end
 

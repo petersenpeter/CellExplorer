@@ -110,13 +110,12 @@ else
         load(fullfile(basepath,'session.mat'),'session');
         sessionIn = session;
     else
-        answer = questdlg([basename,'.session.mat does not exist. Would you like to create one from a template or locate an existing session file?'],'No basename.session.mat file found','Create from template', 'Load from database','Locate file','Create from template');
+        answer = questdlg([basename,'.session.mat does not exist. Would you like to create one from a template or locate an existing session file?'],'No basename.session.mat file found','Create with template script','Load session template file','Locate file','Create with template script');
         % Handle response
         switch answer
-            case 'Create from template'
-                session = sessionTemplate(pwd);
+            case 'Create with template script'
+                session = sessionTemplate(basepath,'basename',basename);
                 sessionIn = session;
-                basepath = session.general.basePath;
             case 'Locate file'
                 [file,basepath] = uigetfile('*.mat','Please select a session.mat file','*.session.mat');
                 if ~isequal(file,0)
@@ -136,6 +135,9 @@ else
                     warning('Failed to load session metadata from database');
                     return
                 end
+            case 'Load session template file'
+                loadSessionTemplate
+                sessionIn = session;
             otherwise
                 return
         end
@@ -208,8 +210,9 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Save session file',menuSelectedFcn,@(~,~)
 uimenu(UI.menu.file.topMenu,menuLabel,'Generate session template file',menuSelectedFcn,@(~,~)generateSessionTemplate,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Load session template file',menuSelectedFcn,@(~,~)loadSessionTemplate);
 
-uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from template script',menuSelectedFcn,@(~,~)importMetadataTemplate,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata with template script',menuSelectedFcn,@(~,~)importMetadataTemplate,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort',menuSelectedFcn,@(~,~)importKiloSort);
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from Phy',menuSelectedFcn,@(~,~)importPhy);
 uimenu(UI.menu.file.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML,'Separator','on','Accelerator','I');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import bad channels from xml file',menuSelectedFcn,@importBadChannelsFromXML,'Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import time series from Intan info.rhd',menuSelectedFcn,@importMetaFromIntan,'Accelerator','T');
@@ -685,17 +688,29 @@ uiwait(UI.fig)
                     listing = fieldnames(session_template.session);
                     for i = 1:numel(listing)
                         fieldname1 = listing{i};
-                        if strcmp(fieldname1,'general')
-                            session_template.session.general = rmfield(session.general,{'name','baseName','basePath','sessionName'});
+                        if strcmp(fieldname1,'general') && exist('session','var')
+                            session_template.session.general = rmfield(session.general,{'name','baseName','basePath','sessionName','entryID','repositories','projects','repositoriesDataOrganization','duration','entryCreated','entryCreatedBy','entryUpdated','entryUpdatedBy'});
                             general_fields = fieldnames(session_template.session.general);
                             for j = 1:numel(general_fields)
                                 session.general.(general_fields{j}) = session_template.session.general.(general_fields{j});
                             end
+                        elseif strcmp(fieldname1,'general') && ~exist('session','var')
+                            field2remove = {'baseName','sessionName','entryID','repositories','projects','repositoriesDataOrganization','duration','entryCreated','entryCreatedBy','entryUpdated','entryUpdatedBy'};
+                            idx = isfield(session_template.session.general,field2remove);
+                            session_template.session.general = rmfield(session_template.session.general,field2remove(idx));
+                            general_fields = fieldnames(session_template.session.general);
+                            for j = 1:numel(general_fields)
+                                session.general.(general_fields{j}) = session_template.session.general.(general_fields{j});
+                            end
+                            session.general.basePath = basepath;
+                            session.general.name = basename;
                         else
                             session.(fieldname1) = session_template.session.(fieldname1);
                         end
                     end
-                    importSessionStruct
+                    if uiLoaded
+                        importSessionStruct
+                    end
                     MsgLog('Session metadata template loaded. Session name and basepath not altered.',2)
                 end
             else
@@ -1125,13 +1140,22 @@ uiwait(UI.fig)
     end
     function updateChanCoords
         if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
-            UI.edit.chanCoords_x.String = num2strCommaSeparated(session.extracellular.chanCoords.x');
-            UI.edit.chanCoords_y.String = num2strCommaSeparated(session.extracellular.chanCoords.y');
+            UI.edit.chanCoords_x.String = num2strCommaSeparated(session.extracellular.chanCoords.x(:)');
+            UI.edit.chanCoords_y.String = num2strCommaSeparated(session.extracellular.chanCoords.y(:)');
             UI.edit.chanCoords_source.String = session.extracellular.chanCoords.source;
             UI.edit.chanCoords_layout.String = session.extracellular.chanCoords.layout;
             UI.edit.chanCoords_shankSpacing.String = num2str(session.extracellular.chanCoords.shankSpacing);
         end
     end
+    
+    function readBackChanCoords
+        session.extracellular.chanCoords.x = eval(['[',UI.edit.chanCoords_x.String,']']);
+        session.extracellular.chanCoords.y = eval(['[',UI.edit.chanCoords_y.String,']']);
+        session.extracellular.chanCoords.source = UI.edit.chanCoords_source.String;
+        session.extracellular.chanCoords.layout = UI.edit.chanCoords_layout.String;
+        session.extracellular.chanCoords.shankSpacing = str2double(UI.edit.chanCoords_shankSpacing.String);
+    end
+   
     
     function updateStrain
        UI.edit.strain.String = UI.list.strain(strcmp(UI.list.strain_species,UI.edit.species.String{UI.edit.species.Value})); 
@@ -1355,6 +1379,8 @@ uiwait(UI.fig)
         session.extracellular.fileName = UI.edit.fileName.String;
         session.extracellular.precision = UI.edit.precision.String;
         session.extracellular.equipment = UI.edit.equipment.String;
+        
+        readBackChanCoords
     end
     
     function cancelMetricsWindow
@@ -3179,8 +3205,27 @@ uiwait(UI.fig)
         end
     end
     
+    function importPhy
+        clusteringpath_full = uigetdir(session.general.basePath,'Phy folder');
+        if ~isempty(clusteringpath_full)
+            MsgLog('Importing Phy metadata...',0)
+            session = loadPhyMetadata(session,clusteringpath_full);
+%             session = loadKiloSortMetadata(session,rezFile);
+            updateChannelGroupsList('electrodeGroups')
+            updateChannelGroupsList('spikeGroups')
+            updateChanCoords
+            UIsetString(session.extracellular,'nChannels'); % Number of channels
+%             UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
+%             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
+            
+            MsgLog('Phy metadata imported via phy folder',2)
+        else
+            MsgLog('Phy data folder does not exist',4)
+        end
+    end
+    
     function importMetadataTemplate
-        MsgLog('Importing metadata using template',0)
+        MsgLog('Importing metadata using template script',0)
         session = sessionTemplate(session);
         updateChannelGroupsList('electrodeGroups')
         updateChannelGroupsList('spikeGroups')
@@ -3212,7 +3257,7 @@ uiwait(UI.fig)
         if exist(chanCoords_filepath,'file')
             session.extracellular.chanCoords = loadStruct('chanCoords','channelInfo','session',session);
             updateChanCoords;
-            disp('Loaded chanCoords from basepath')
+            MsgLog(['Imported channel coordinates from basepath: ' chanCoords_filepath],2)
         else
             MsgLog(['chanCoords file not available: ' chanCoords_filepath],4)
         end
@@ -3221,7 +3266,7 @@ uiwait(UI.fig)
     function generateChannelMap1(~,~)
         [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
         if isfield(session.animal,'probes') && exist(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'file')
-            disp('Loading predefined chanCoords')
+            MsgLog('Loading predefined channel coordinates',2)
             load(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'chanCoords');
             session.extracellular.chanCoords = chanCoords;
         else
@@ -3231,36 +3276,42 @@ uiwait(UI.fig)
             chanCoords.source = chanMap.source;
             chanCoords.layout = chanMap.layout;
             chanCoords.shankSpacing = chanMap.shankSpacing;
+            MsgLog('Generated new channel coordinates. Check command window for details',2)
         end
         session.extracellular.chanCoords = chanCoords;
         updateChanCoords;
     end
+    
     function exportChannelMap1(~,~)
         % Saving chanCoords to basename.chanCoords.channelInfo.mat file
         if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
             chanCoords = session.extracellular.chanCoords;
             saveStruct(chanCoords,'channelInfo','session',session);
-            disp('Saved chanCoords to basepath')
+            MsgLog(['Exported channel coords to basepath: ' session.general.basePath],2)
         else
-            MsgLog('No chanCoords data available',4)
+            MsgLog('No channel coords data available',4)
         end
     end
     
     function plotChannelMap1(~,~)
-        chanCoords = session.extracellular.chanCoords;
-        x_range = range(chanCoords.x);
-        y_range = range(chanCoords.y);
-        if x_range > y_range
-            fig_width = 1600;
-            fig_height = ceil(fig_width*y_range/x_range)+200;
+        if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
+            chanCoords = session.extracellular.chanCoords;
+            x_range = range(chanCoords.x);
+            y_range = range(chanCoords.y);
+            if x_range > y_range
+                fig_width = 1600;
+                fig_height = ceil(fig_width*y_range/x_range)+200;
+            else
+                fig_height = 1000;
+                fig_width = ceil(fig_height*x_range/y_range)+200;
+            end
+            fig1 = figure('Name','Channel map','position',[5,5,fig_width,fig_height]); movegui(fig1,'center')
+            plot(chanCoords.x,chanCoords.y,'.k'), hold on
+            text(chanCoords.x,chanCoords.y,num2str([1:numel(chanCoords.x)]'),'VerticalAlignment', 'bottom','HorizontalAlignment','center');
+            title({' ','Channel map',' '}), xlabel('X (um)'), ylabel('Y (um)')
         else
-            fig_height = 1000;
-            fig_width = ceil(fig_height*x_range/y_range)+200;
+            MsgLog('No channel coords data available',4)
         end
-        fig1 = figure('Name','Channel map','position',[5,5,fig_width,fig_height]); movegui(fig1,'center')
-        plot(chanCoords.x,chanCoords.y,'.k'), hold on
-        text(chanCoords.x,chanCoords.y,num2str([1:numel(chanCoords.x)]'),'VerticalAlignment', 'bottom','HorizontalAlignment','center');
-        title({' ','Channel map',' '}), xlabel('X (um)'), ylabel('Y (um)')
     end
 
     function importBadChannelsFromXML(~,~)
@@ -3330,7 +3381,7 @@ uiwait(UI.fig)
                 disp(message)
             end
             if any(priority == 2)
-                msgbox(message,'Message',dialog1);
+                msgbox(message,'gui_session',dialog1);
             end
             if any(priority == 3)
                 warning(message)

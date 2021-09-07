@@ -51,6 +51,11 @@ if isfield(session.extracellular,'fileName') && ~isempty(session.extracellular.f
 else
     fileNameRaw = [basename '.dat'];
 end
+try
+    precision = session.extracellular.precision;
+catch
+    precision = 'int16';
+end
 
 badChannels = [];
 timerVal = tic;
@@ -60,7 +65,9 @@ if filtFreq(2) > sr/2
 end
 % Determining any extra bad channels from noiselevel of .dat file
 if params.getBadChannelsFromDat
-    session = getBadChannelsFromDat(session,'filtFreq',filtFreq);
+    try
+        session = getBadChannelsFromDat(session,'filtFreq',filtFreq);
+    end
 end
 
 % Removing channels marked as Bad in session struct
@@ -108,7 +115,7 @@ end
 s = dir(fullfile(basepath,fileNameRaw));
 
 duration = s.bytes/(2*nChannels*sr);
-rawData = memmapfile(fullfile(basepath,fileNameRaw),'Format','int16','writable',false);
+rawData = memmapfile(fullfile(basepath,fileNameRaw),'Format',precision,'writable',false);
 % DATA = rawData.Data;
 
 % Fit exponential
