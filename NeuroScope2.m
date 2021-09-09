@@ -233,7 +233,7 @@ end
         UI.settings.populationRateBelowTrace = false;
         UI.settings.populationRateWindow = 0.001; % in seconds 
         UI.settings.populationRateSmoothing = 35; % in seconds 
-        UI.settings.spikeRasterLinewidth = 1;
+        UI.settings.spikeRasterLinewidth = 1.2;
         
         % Cell metrics
         UI.settings.useMetrics = false;
@@ -280,7 +280,7 @@ end
         UI.settings.intan_showAnalog = false;
         UI.settings.intan_showAux = false;
         UI.settings.intan_showDigital = false;
-        UI.settings.showIntanBelowTrace = false;
+        UI.settings.showTimeseriesBelowTrace = false;
         
         % Spectrogram
         UI.settings.spectrogram.show = false;
@@ -380,9 +380,6 @@ end
         uimenu(UI.menu.help.topMenu,menuLabel,'Support',menuSelectedFcn,@openWebsite,'Separator','on');
         uimenu(UI.menu.help.topMenu,menuLabel,'- Submit feature request',menuSelectedFcn,@openWebsite);
         uimenu(UI.menu.help.topMenu,menuLabel,'- Report an issue',menuSelectedFcn,@openWebsite);
-        
-        
-        
 
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating UI/panels 
@@ -478,23 +475,18 @@ end
         UI.panel.epochs.main = uipanel('Parent',UI.panel.general.main,'title','Session epochs');
         UI.epochAxes = axes('Parent',UI.panel.epochs.main,'Units','Normalize','Position',[0 0 1 1],'YLim',[0,1],'YTick',[],'ButtonDownFcn',@ClickEpochs,'XTick',[]); axis tight %,'Color',UI.settings.background,'XColor',UI.settings.xtickColor,'TickLength',[0.005, 0.001],'XMinorTick','on',,'Clipping','off');
         
-        UI.panel.channelTagsButtons = uipanel('Parent',UI.panel.general.main,'title','Session metadata');
-        uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.98],'String','Save','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Save session metadata');
-        uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.98],'String','View','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','View session metadata');
+%         UI.panel.channelTagsButtons = uipanel('Parent',UI.panel.general.main,'title','Session metadata');
+%         uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.98],'String','Save','Callback',@buttonsChannelTags,'KeyPressFcn', @keyPress,'tooltip','Save session metadata');
+%         uicontrol('Parent',UI.panel.channelTagsButtons,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.98],'String','View','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','View session metadata');
         
-        % Intan
-        UI.panel.intan.main = uipanel('Title','Intan data','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
-        UI.panel.intan.showAnalog = uicontrol('Parent',UI.panel.intan.main,'Style','checkbox','Units','normalized','Position',[0 0.75 1 0.25], 'value', 0,'String','Show analog','Callback',@showIntan,'KeyPressFcn', @keyPress,'tooltip','Show analog data');
-        UI.panel.intan.filenameAnalog = uicontrol('Parent',UI.panel.intan.main,'Style', 'Edit', 'String', 'analogin.dat', 'Units','normalized', 'Position', [0.5 0.75 0.49 0.24],'Callback',@showIntan,'HorizontalAlignment','left','tooltip','Filename of analog file','Enable','off');
-        UI.panel.intan.showAux = uicontrol('Parent',UI.panel.intan.main,'Style','checkbox','Units','normalized','Position',[0 0.5 1 0.25], 'value', 0,'String','Show aux','Callback',@showIntan,'KeyPressFcn', @keyPress,'tooltip','Show aux data');
-        UI.panel.intan.filenameAux = uicontrol('Parent',UI.panel.intan.main,'Style', 'Edit', 'String', 'auxiliary.dat', 'Units','normalized', 'Position', [0.5 0.5 0.49 0.24],'Callback',@showIntan,'HorizontalAlignment','left','tooltip','Filename of analog file','Enable','off');
-        UI.panel.intan.showDigital = uicontrol('Parent',UI.panel.intan.main,'Style','checkbox','Units','normalized','Position',[0 0.25 1 0.25], 'value', 0,'String','Show digital','Callback',@showIntan,'KeyPressFcn', @keyPress,'tooltip','Show digital data');
-        UI.panel.intan.filenameDigital = uicontrol('Parent',UI.panel.intan.main,'Style', 'Edit', 'String', 'digitalin.dat', 'Units','normalized', 'Position', [0.5 0.25 0.49 0.24],'Callback',@showIntan,'HorizontalAlignment','left','tooltip','Filename of analog file','Enable','off');
-        UI.panel.intan.showIntanBelowTrace = uicontrol('Parent',UI.panel.intan.main,'Style','checkbox','Units','normalized','Position',[0 0 0.5 0.25], 'value', 0,'String','Below traces','Callback',@showIntanBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show intan data below traces');
-        uicontrol('Parent',UI.panel.intan.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.24],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit input channels');
+        % Time series data
+        UI.panel.timeseriesdata.main = uipanel('Title','Time series data','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
+        UI.table.timeseriesdata = uitable(UI.panel.timeseriesdata.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0.20 1 0.80],'ColumnWidth',{20 35 100 45},'columnname',{'','Tag','File name','nChan'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@showIntan);
+        UI.panel.timeseriesdata.showTimeseriesBelowTrace = uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','checkbox','Units','normalized','Position',[0 0 0.5 0.20], 'value', 0,'String','Below traces','Callback',@showTimeseriesBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show intan data below traces');
+        uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit input channels');
             
         % Defining flexible panel heights
-        set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 40 50 120],'MinimumHeights',[65 210 100 35 100 35 50 30 50 120]);
+        set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 40 150],'MinimumHeights',[65 210 100 35 100 35 50 30 150]);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 2. PANEL: Spikes related metrics
@@ -610,7 +602,6 @@ end
         uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Window width (sec)', 'Units','normalized', 'Position', [0.01 0.40 0.49 0.19],'HorizontalAlignment','left');
         UI.panel.spectrogram.spectrogramWindow = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.window), 'Units','normalized', 'Position', [0.505 0.40 0.485 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
         
-        
         uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Low freq (Hz)', 'Units','normalized', 'Position', [0.01 0.20 0.32 0.16],'HorizontalAlignment','left');
         UI.panel.spectrogram.freq_low = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.freq_low), 'Units','normalized', 'Position', [0.01 0.01 0.32 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
         
@@ -623,7 +614,6 @@ end
         % Current Source Density
         UI.panel.csd.main = uipanel('Parent',UI.panel.other.main,'title','Current Source Density');
         UI.panel.csd.showCSD = uicontrol('Parent',UI.panel.csd.main,'Style', 'checkbox','String','Show Current Source Density', 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.98 0.98],'Callback',@show_CSD,'HorizontalAlignment','left');
-        
         
         % Defining flexible panel heights
         set(UI.panel.other.main, 'Heights', [200 95 95 140 95 50],'MinimumHeights',[220 100 100 150 150 50]);
@@ -1071,7 +1061,7 @@ end
             fseek(UI.fid.timeSeries.(signal),ceil(-UI.settings.windowDuration*sr)*data.session.timeSeries.(signal).nChannels*2,'eof'); % eof: end of file
         end
         traces_analog = fread(UI.fid.timeSeries.(signal), [data.session.timeSeries.(signal).nChannels, UI.samplesToDisplay],'uint16')';
-        if UI.settings.showIntanBelowTrace
+        if UI.settings.showTimeseriesBelowTrace
             line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,traces_analog(UI.dispSamples,:)./2^16*diff(UI.dataRange.intan)+UI.dataRange.intan(1), 'HitTest','off','Marker','none','LineStyle','-','linewidth',1);
         else
             line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,traces_analog(UI.dispSamples,:)./2^16, 'HitTest','off','Marker','none','LineStyle','-','linewidth',1.5);
@@ -1097,7 +1087,7 @@ end
         for i = 1:data.session.timeSeries.dig.nChannels
             traces_digital2(:,i) = bitget(traces_digital,i)+i*0.001;
         end
-        if UI.settings.showIntanBelowTrace
+        if UI.settings.showTimeseriesBelowTrace
             line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,0.98*traces_digital2(UI.dispSamples,:)*diff(UI.dataRange.intan)+UI.dataRange.intan(1)+0.004, 'HitTest','off','Marker','none','LineStyle','-');
         else
             line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,0.98*traces_digital2(UI.dispSamples,:)+0.005, 'HitTest','off','Marker','none','LineStyle','-');
@@ -1432,7 +1422,7 @@ end
             idx2 = ceil(raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
             if UI.settings.spikesBelowTrace
                 if UI.settings.useSpikesYData
-                    raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1);
+                    raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1)+0.002;
                 else
                     if UI.settings.useMetrics
                         [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric));
@@ -1440,7 +1430,7 @@ end
                     else
                         sortIdx = 1:data.spikes.numcells;
                     end
-                    raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1);
+                    raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1)+0.002;
                 end
             else
                 idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(idx,2))');
@@ -2756,7 +2746,11 @@ end
                 uiresume(UI.fig);
             case 'Metrics'
                 if isfield(data,'cell_metrics')
-                    generate_cell_metrics_table(data.cell_metrics);
+                    if ~isempty(UI.selectedUnits)
+                        generate_cell_metrics_table(data.cell_metrics, UI.selectedUnits);
+                    else
+                        generate_cell_metrics_table(data.cell_metrics);
+                    end
                 end
         end
     end
@@ -2904,7 +2898,7 @@ end
     function initTraces
         set(UI.fig,'Renderer','opengl');
         % Determining data offsets
-        UI.offsets.intan    = 0.10 * (UI.settings.showIntanBelowTrace & (UI.settings.intan_showAnalog | UI.settings.intan_showAux | UI.settings.intan_showDigital));
+        UI.offsets.intan    = 0.10 * (UI.settings.showTimeseriesBelowTrace & (UI.settings.intan_showAnalog | UI.settings.intan_showAux | UI.settings.intan_showDigital));
         UI.offsets.trials   = 0.02 * (UI.settings.showTrials);
         UI.offsets.behavior = 0.08 * (UI.settings.showBehaviorBelowTrace && UI.settings.plotBehaviorLinearized && UI.settings.showBehavior);
         UI.offsets.states   = 0.04 * (UI.settings.showStates);
@@ -3092,10 +3086,6 @@ end
         UI.table.cells.Data = {};
         UI.listbox.cellTypes.String = {''};
         
-        UI.panel.intan.showAnalog.Value = 0;
-        UI.panel.intan.showAux.Value = 0;
-        UI.panel.intan.showDigital.Value = 0;
-        
         % Initialize the data
         UI.data.basepath = basepath;
         UI.data.basename = basename;
@@ -3205,53 +3195,8 @@ end
             UI.panel.behavior.files.String = {''};
         end
         
-        % Intan files
-        if isfield(data.session,'timeSeries') && isfield(data.session.timeSeries,'adc')
-            UI.panel.intan.filenameAnalog.String = data.session.timeSeries.adc.fileName;
-            % Defining adc channel labels
-            UI.settings.traceLabels.adc = strcat(repmat({'adc'},data.session.timeSeries.adc.nChannels,1),num2str([1:data.session.timeSeries.adc.nChannels]'));
-            if isfield(data.session,'inputs')
-                inputs = fieldnames(data.session.inputs);
-                for i = 1:numel(inputs)
-                    if strcmp(data.session.inputs.(inputs{i}).inputType,'adc')
-                        UI.settings.traceLabels.adc(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.adc{data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
-                    end
-                end
-            end
-        else
-            UI.panel.intan.filenameAnalog.String = '';
-        end
-        if isfield(data.session,'timeSeries') && isfield(data.session.timeSeries,'aux')
-            UI.panel.intan.filenameAux.String = data.session.timeSeries.aux.fileName;
-            % Defining aux channel labels
-            UI.settings.traceLabels.aux = strcat(repmat({'aux'},data.session.timeSeries.aux.nChannels,1),num2str([1:data.session.timeSeries.aux.nChannels]'));
-            if isfield(data.session,'inputs')
-                inputs = fieldnames(data.session.inputs);
-                for i = 1:numel(inputs)
-                    if strcmp(data.session.inputs.(inputs{i}).inputType,'aux') && ~isempty(data.session.inputs.(inputs{i}).channels) && data.session.inputs.(inputs{i}).channels <= numel(UI.settings.traceLabels.aux)
-                        UI.settings.traceLabels.aux(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.aux{data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
-                    end
-                end
-            end
-        else
-            UI.panel.intan.filenameAux.String = '';
-        end
-        
-        if isfield(data.session,'timeSeries') && isfield(data.session.timeSeries,'dig')
-            UI.panel.intan.filenameDigital.String = data.session.timeSeries.dig.fileName;
-            % Defining dig channel labels
-            UI.settings.traceLabels.dig = strcat(repmat({'dig'},data.session.timeSeries.dig.nChannels,1),num2str([1:data.session.timeSeries.dig.nChannels]'));
-            if isfield(data.session,'inputs')
-                inputs = fieldnames(data.session.inputs);
-                for i = 1:numel(inputs)
-                    if strcmp(data.session.inputs.(inputs{i}).inputType,'dig') && ~isempty(data.session.inputs.(inputs{i}).channels)
-                        UI.settings.traceLabels.dig(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.dig{data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
-                    end
-                end
-            end
-        else
-            UI.panel.intan.filenameDigital.String = '';
-        end
+        % Timeseries files
+        updateTimeSeriesDataList
         
         % Generating epoch interval-visualization
         delete(UI.epochAxes.Children)
@@ -3397,12 +3342,14 @@ end
                         UI.elements.lower.performance.String = ['Unit(s) selected: ',num2str(UI.selectedUnits)];
                     end
                 end
+                
             case 'open'
                 if UI.settings.showChannelNumbers
                     set(UI.plot_axis1,'XLim',[-0.01*UI.settings.windowDuration,UI.settings.windowDuration],'YLim',[0,1])
                 else
                     set(UI.plot_axis1,'XLim',[0,UI.settings.windowDuration],'YLim',[0,1])
                 end
+                
             otherwise
                 um_axes = get(UI.plot_axis1,'CurrentPoint');
                 UI.elements.lower.performance.String = ['Cursor: ',num2str(um_axes(1,1)+t0),' sec'];
@@ -3678,6 +3625,79 @@ end
             tableData = {false,'','',''};
         end
         UI.table.brainRegions.Data =  tableData;
+    end
+    
+    function updateTimeSeriesDataList
+        if isfield(data.session,'timeSeries')
+            timeSeries = fieldnames(data.session.timeSeries);
+            tableData = {};
+            for fn = 1:numel(timeSeries)
+                tableData{fn,1} = false;
+                tableData{fn,2} = timeSeries{fn};
+                tableData{fn,3} = (data.session.timeSeries.(timeSeries{fn}).fileName);
+                tableData{fn,4} = [num2str(data.session.timeSeries.(timeSeries{fn}).nChannels)];
+                
+                % Defining channel labels
+                UI.settings.traceLabels.(timeSeries{fn}) = strcat(repmat({timeSeries{fn}},data.session.timeSeries.(timeSeries{fn}).nChannels,1),num2str([1:data.session.timeSeries.(timeSeries{fn}).nChannels]'));
+                if isfield(data.session,'inputs')
+                    inputs = fieldnames(data.session.inputs);
+                    for i = 1:numel(inputs)
+                        if strcmp(data.session.inputs.(inputs{i}).inputType,timeSeries{fn})
+                            UI.settings.traceLabels.(timeSeries{fn})(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.(timeSeries{fn}){data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
+                        end
+                    end
+                end
+            end
+        else
+            tableData = {false,'','',''};
+        end
+        UI.table.timeseriesdata.Data =  tableData;
+        
+%         if isfield(data.session,'timeSeries') && isfield(data.session.timeSeries,'adc')
+%             % Defining adc channel labels
+%             UI.settings.traceLabels.adc = strcat(repmat({'adc'},data.session.timeSeries.adc.nChannels,1),num2str([1:data.session.timeSeries.adc.nChannels]'));
+%             if isfield(data.session,'inputs')
+%                 inputs = fieldnames(data.session.inputs);
+%                 for i = 1:numel(inputs)
+%                     if strcmp(data.session.inputs.(inputs{i}).inputType,'adc')
+%                         UI.settings.traceLabels.adc(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.adc{data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
+%                     end
+%                 end
+%             end
+%         else
+%             UI.panel.intan.filenameAnalog.String = '';
+%         end
+%         if isfield(data.session,'timeSeries') && isfield(data.session.timeSeries,'aux')
+%             UI.panel.intan.filenameAux.String = data.session.timeSeries.aux.fileName;
+%             % Defining aux channel labels
+%             UI.settings.traceLabels.aux = strcat(repmat({'aux'},data.session.timeSeries.aux.nChannels,1),num2str([1:data.session.timeSeries.aux.nChannels]'));
+%             if isfield(data.session,'inputs')
+%                 inputs = fieldnames(data.session.inputs);
+%                 for i = 1:numel(inputs)
+%                     if strcmp(data.session.inputs.(inputs{i}).inputType,'aux') && ~isempty(data.session.inputs.(inputs{i}).channels) && data.session.inputs.(inputs{i}).channels <= numel(UI.settings.traceLabels.aux)
+%                         UI.settings.traceLabels.aux(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.aux{data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
+%                     end
+%                 end
+%             end
+%         else
+%             UI.panel.intan.filenameAux.String = '';
+%         end
+%         
+%         if isfield(data.session,'timeSeries') && isfield(data.session.timeSeries,'dig')
+%             UI.panel.intan.filenameDigital.String = data.session.timeSeries.dig.fileName;
+%             % Defining dig channel labels
+%             UI.settings.traceLabels.dig = strcat(repmat({'dig'},data.session.timeSeries.dig.nChannels,1),num2str([1:data.session.timeSeries.dig.nChannels]'));
+%             if isfield(data.session,'inputs')
+%                 inputs = fieldnames(data.session.inputs);
+%                 for i = 1:numel(inputs)
+%                     if strcmp(data.session.inputs.(inputs{i}).inputType,'dig') && ~isempty(data.session.inputs.(inputs{i}).channels)
+%                         UI.settings.traceLabels.dig(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.dig{data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
+%                     end
+%                 end
+%             end
+%         else
+%             UI.panel.intan.filenameDigital.String = '';
+%         end
     end
 
     function updateChannelTags
@@ -4265,7 +4285,7 @@ end
         rms1 = rms(ephys.traces/(UI.settings.scalingFactor/1000000));
         k_channels = 0;
         fig1 = figure('name',['RMS across channels. Session: ', UI.data.basename],'Position',[50 50 1200 900],'visible','off');
-        ax1 = axes(fig1,'Color','k'); hold on, xlabel(ax1,'Sorted and filtered channels'), ylabel(ax1,'RMS (',char(181),'V)'), title(ax1,[' Session: ', UI.data.basename], 'interpreter','none')
+        ax1 = axes(fig1,'Color','k'); hold on, xlabel(ax1,'Sorted and filtered channels'), ylabel(ax1,['RMS (',char(181),'V)']), title(ax1,[' Session: ', UI.data.basename], 'interpreter','none')
         for iShanks = UI.settings.electrodeGroupsToPlot
             channels = UI.channels{iShanks};
             [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
@@ -4614,43 +4634,47 @@ end
     end
 
 
-    function showIntan(src,~) % Intan data
-        if strcmp(src.String,'Show analog')
-            if UI.panel.intan.showAnalog.Value == 1 && ~isempty(UI.panel.intan.filenameAnalog.String) && exist(fullfile(basepath,UI.panel.intan.filenameAnalog.String),'file')
+    function showIntan(src,evnt) % Intan data
+        
+        evnt_indice = evnt.Indices(1);
+        value = evnt.EditData;
+        tag = src.Data{evnt_indice,2};
+        if strcmp(tag,'adc')
+            if value && ~isempty(UI.table.timeseriesdata.Data{evnt_indice,3}) && exist(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}),'file')
                 UI.settings.intan_showAnalog = true;
-                UI.fid.timeSeries.adc = fopen(fullfile(basepath,UI.panel.intan.filenameAnalog.String), 'r');
+                UI.fid.timeSeries.adc = fopen(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}), 'r');
                 
-            elseif UI.panel.intan.showAnalog.Value == 1
-                UI.panel.intan.showAnalog.Value = 0;
+            elseif value
+                UI.table.timeseriesdata.Data{evnt_indice,1} = false;
                 MsgLog('Failed to load Analog file',4);
             else
                 UI.settings.intan_showAnalog = false;
-                UI.panel.intan.showAnalog.Value = 0;
+                UI.table.timeseriesdata.Data{evnt_indice,1} = false;
             end
         end
-        if strcmp(src.String,'Show aux')
-            if UI.panel.intan.showAux.Value == 1 && ~isempty(UI.panel.intan.filenameAux.String) && exist(fullfile(basepath,UI.panel.intan.filenameAux.String),'file')
+        if strcmp(tag,'aux')
+            if value && ~isempty(UI.table.timeseriesdata.Data{evnt_indice,3}) && exist(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}),'file')
                 UI.settings.intan_showAux = true;
-                UI.fid.timeSeries.aux = fopen(fullfile(basepath,UI.panel.intan.filenameAux.String), 'r');
-            elseif UI.panel.intan.showAux.Value == 1
-                UI.panel.intan.showAux.Value = 0;
+                UI.fid.timeSeries.aux = fopen(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}), 'r');
+            elseif value
+                UI.table.timeseriesdata.Data{evnt_indice,1} = false;
                 UI.settings.intan_showAux = false;
                 MsgLog('Failed to load aux file',4);
             else
                 UI.settings.intan_showAux = false;
-                UI.panel.intan.showAux.Value = 0;                
+                UI.table.timeseriesdata.Data{evnt_indice,1} = false;
             end
         end
-        if strcmp(src.String,'Show digital')
-            if UI.panel.intan.showDigital.Value == 1 && ~isempty(UI.panel.intan.filenameDigital.String) && exist(fullfile(basepath,UI.panel.intan.filenameDigital.String),'file')
+        if strcmp(tag,'dig')
+            if value && ~isempty(UI.table.timeseriesdata.Data{evnt_indice,3}) && exist(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}),'file')
                 UI.settings.intan_showDigital = true;
-                UI.fid.timeSeries.dig = fopen(fullfile(basepath,UI.panel.intan.filenameDigital.String), 'r');
-            elseif UI.panel.intan.showDigital.Value == 1
-                UI.panel.intan.showDigital.Value = 0;
+                UI.fid.timeSeries.dig = fopen(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}), 'r');
+            elseif value == 1
+                UI.table.timeseriesdata.Data{evnt_indice,1} = false;
                 MsgLog('Failed to load digital file',4);
             else
                 UI.settings.intan_showDigital = false;
-                UI.panel.intan.showDigital.Value = 0;
+                UI.table.timeseriesdata.Data{evnt_indice,1} = false;
             end
         end
         initTraces
@@ -4664,11 +4688,11 @@ end
         uiresume(UI.fig);
     end
     
-    function showIntanBelowTrace(~,~)
-        if UI.panel.intan.showIntanBelowTrace.Value == 1
-            UI.settings.showIntanBelowTrace = true;
+    function showTimeseriesBelowTrace(~,~)
+        if UI.panel.timeseriesdata.showTimeseriesBelowTrace.Value == 1
+            UI.settings.showTimeseriesBelowTrace = true;
         else
-            UI.settings.showIntanBelowTrace = false;
+            UI.settings.showTimeseriesBelowTrace = false;
         end
         initTraces
         uiresume(UI.fig);
