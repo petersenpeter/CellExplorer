@@ -1,4 +1,4 @@
-% Getting cell type groups
+% Getting cell type groups (for coloring notes)
 cellTypes = unique(cell_metrics.putativeCellType,'stable');
 clusClas = ones(1,length(cell_metrics.putativeCellType));
 for i = 1:length(cellTypes)
@@ -9,10 +9,10 @@ end
 putativeConnections = cell_metrics.putativeConnections.excitatory;
 putativeConnections_inh = cell_metrics.putativeConnections.inhibitory;
 [cellSubset,~,pairsSubset] = unique([putativeConnections;putativeConnections_inh]);
-
 pairsSubset = reshape(pairsSubset,size([putativeConnections;putativeConnections_inh]));
-nNodes = length(cellSubset);
-A = zeros(nNodes,nNodes);
+
+% Generating connectivity matrix (A)
+A = zeros(length(cellSubset),length(cellSubset));
 for i = 1:size(putativeConnections,1)
     A(pairsSubset(i,1),pairsSubset(i,2)) = 1;
 end
@@ -20,15 +20,17 @@ for i = size(putativeConnections,1)+1:size(pairsSubset,1)
     A(pairsSubset(i,1),pairsSubset(i,2)) = 2;
 end
 
+% Plotting connectivity matrix
+figure, subplot(1,2,1)
+imagesc(A), title('Connectivity matrix')
+
 % Generating connectivity graph (only for subset of cells with connections)
 connectivityGraph = digraph(A);
-connectivityGraph1 = connectivityGraph;
-connectivityGraph1 = rmedge(connectivityGraph1,pairsSubset(1:size(putativeConnections,1),1),pairsSubset(1:size(putativeConnections,1),2));
 
 % Plotting connectivity graph
-figure
+subplot(1,2,2)
 connectivityGraph_plot = plot(connectivityGraph,'Layout','force','Iterations',15,'MarkerSize',3,'NodeCData',clusClas(cellSubset)','EdgeCData',connectivityGraph.Edges.Weight,'HitTest','off','EdgeColor',[0.2 0.2 0.2],'NodeColor','k','NodeLabel',{}); %
-
+title('Connectivity graph')
 % Coloring nodes by cell types
 classes2plotSubset = 1:numel(cellTypes);
 colors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
