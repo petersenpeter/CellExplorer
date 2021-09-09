@@ -29,8 +29,9 @@ connectivityGraph = digraph(A);
 
 % Plotting connectivity graph
 subplot(1,2,2)
-connectivityGraph_plot = plot(connectivityGraph,'Layout','force','Iterations',15,'MarkerSize',3,'NodeCData',clusClas(cellSubset)','EdgeCData',connectivityGraph.Edges.Weight,'HitTest','off','EdgeColor',[0.2 0.2 0.2],'NodeColor','k','NodeLabel',{}); %
+connectivityGraph_plot = plot(connectivityGraph,'Layout','force','Iterations',15,'MarkerSize',3,'EdgeCData',connectivityGraph.Edges.Weight,'HitTest','off','EdgeColor',[0.2 0.2 0.2],'NodeLabel',{});
 title('Connectivity graph')
+
 % Coloring nodes by cell types
 classes2plotSubset = 1:numel(cellTypes);
 colors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
