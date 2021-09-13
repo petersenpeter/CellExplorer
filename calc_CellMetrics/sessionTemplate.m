@@ -30,7 +30,7 @@ p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
 addParameter(p,'basename',[],@isstr);
 addParameter(p,'importSkippedChannels',true,@islogical); % Import skipped channels from the xml as bad channels
-addParameter(p,'importSyncedChannels',true,@islogical);  % Import channel not synchronized between anatomical and spike groups as bad channels
+addParameter(p,'importSyncedChannels',true,@islogical);  % Import channel not synchronized between electrode groups and spike groups as bad channels
 addParameter(p,'showGUI',false,@islogical);              % Show the session gui
 
 % Parsing inputs
@@ -77,7 +77,7 @@ pathPieces = regexp(basepath, filesep, 'split'); % Assumes file structure: anima
 session.general.basePath =  basepath; % Full path
 session.general.name = basename; % Session name / basename
 session.general.version = 5; % Metadata version
-session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
+session.general.sessionType = 'Unknown'; % Type of recording: Chronic, Acute, Unknown
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Limited animal metadata (practical information)
@@ -85,10 +85,10 @@ session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute
 % The animal data is relevant for filtering across datasets in CellExplorer
 if ~isfield(session,'animal')
     session.animal.name = pathPieces{end-1}; % Animal name is inferred from the data path
-    session.animal.sex = 'Male'; % Male, Female, Unknown
-    session.animal.species = 'Rat'; % Mouse, Rat
-    session.animal.strain = 'Long Evans';
-    session.animal.geneticLine = 'Wild type';
+    session.animal.sex = 'Unknown'; % Male, Female, Unknown
+    session.animal.species = 'Unknown'; % Mouse, Rat
+    session.animal.strain = 'Unknown';
+    session.animal.geneticLine = '';
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -191,23 +191,28 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Default channel tags
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Channel tags must be defined as index 1. Each tag is a fieldname with the channels or spike groups as subfields.
+% Channel tags must be defined as 1-indexed. Each tag is a fieldname with the channels or electrode groups as subfields.
 % Below examples shows 5 tags (Theta, Ripple, RippleNoise, Cortical, Bad)
 % session.channelTags.Theta.channels = 64;              % Theta channel
 % session.channelTags.Ripple.channels = 64;             % Ripple channel
 % session.channelTags.RippleNoise.channels = 1;         % Ripple Noise reference channel
-% session.channelTags.Cortical.electrodeGroups = 3;     % Cortical spike groups
+% session.channelTags.Cortical.electrodeGroups = 3;     % Cortical electrode groups
 % session.channelTags.Bad.channels = 1;                 % Bad channels
-% session.channelTags.Bad.electrodeGroups = 1;          % Bad spike groups (broken shanks)
+% session.channelTags.Bad.electrodeGroups = 1;          % Bad electrode groups (broken shanks)
 
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% Channel coordinates
+% % % % % % % % % % % % % % % % % % % % % % % % % % % %
+if ~isfield(session,'extracellular') && ~isfield(session.extracellular,'chanCoords') 
+    session.extracellular.chanCoords.layout = 'poly2'; % Probe layout: linear,staggered,poly2,edge,poly3,poly5
+    session.extracellular.chanCoords.verticalSpacing = 10; % (µm) Vertical spacing between sites.
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Analysis tags
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-if ~isfield(session,'analysisTags') || (isfield(session,'analysisTags') && (~isfield(session.analysisTags,'probesLayout')) || isempty(session.analysisTags.probesLayout)) 
-    session.analysisTags.probesLayout = 'poly2'; % Probe layout: linear,staggered,poly2,edge,poly3,poly5
-    session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
-end
+
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Kilosort
@@ -385,7 +390,7 @@ if (importSkippedChannels || importSyncedChannels) && exist(fullfile(session.gen
         badChannels_synced = [];
     end
     
-    if isfield(session,'channelTags') & isfield(session.channelTags,'Bad')
+    if isfield(session,'channelTags') && isfield(session.channelTags,'Bad')
         session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,badChannels_skipped,badChannels_synced]);
     else
         session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);

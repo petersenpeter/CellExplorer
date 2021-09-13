@@ -1,46 +1,46 @@
-function chanMap = generateChannelMap(session)
-% Generates a channelmap compatible with KiloSort. 
+function chanCoords = generateChanCoords(session)
+% Generates channel coordinates
 % Original custom function by Brendon Watson and Sam McKenzie (from the KiloSortWrapper)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 09-03-2021
+% Last edited: 13-09-2021
 
 % Parameters: 
-% layout: channel layout, e.g. linear, poly2, poly3
+% layout: channel layout, see options below
 % verticalSpacing: the vertical spacing between channels (on the same configuration line; in µm)
 % shankSpacing (in µm)
 
 electrodeLayouts = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
+
+% Default parameters
+source = 'defaults';
+layout = 'poly2';
+shankSpacing = 200; % in µm
+verticalSpacing = 20; % in µm
 
 if isfield(session.animal,'probeImplants')
     source = 'probeImplants';
     layout = session.animal.probeImplants{1}.layout;
     if isfield(session.animal.probeImplants{1},'shankSpacing')
         shankSpacing = session.animal.probeImplants{1}.shankSpacing;
-    else
-        shankSpacing = 200;
     end
     verticalSpacing = session.animal.probeImplants{1}.verticalSpacing;
     if ~isnumeric(verticalSpacing)
         verticalSpacing = str2num(verticalSpacing);
     end
-elseif isfield(session,'analysisTags') && isfield(session.analysisTags,'probesLayout') && any(strcmpi(session.analysisTags.probesLayout,electrodeLayouts))
-    source = 'analysisTags';
-    layout = session.analysisTags.probesLayout;
-    shankSpacing = 200;
-    if isfield(session,'analysisTags') && isfield(session.analysisTags,'probesVerticalSpacing')
-        verticalSpacing = session.analysisTags.probesVerticalSpacing;
-    else
-        verticalSpacing = 20;
+elseif isfield(session.extracellular,'chanCoords') && isfield(session.extracellular.chanCoords,'layout') && any(strcmpi(session.extracellular.chanCoords.layout,electrodeLayouts))
+    source = 'chanCoords parameters';
+    layout = session.extracellular.chanCoords.layout;
+    if isfield(session.extracellular.chanCoords,'shankSpacing')
+        shankSpacing = session.extracellular.chanCoords.shankSpacing;
     end
-else
-    source = 'defaults';
-    layout = 'poly2';
-    shankSpacing = 200;
-    verticalSpacing = 20;
+    if isfield(session.extracellular.chanCoords,'verticalSpacing')
+        verticalSpacing = session.extracellular.chanCoords.verticalSpacing;
+    end
 end
-disp(['Generating channel map from ' source ' information. layout: ', layout, ', shank spacing: ' num2str(shankSpacing) 'um, and vertical channel spacing: ' num2str(verticalSpacing),'um'])
+
+disp(['Generating channel coords from ' source ' information. layout: ', layout, ', shank spacing: ' num2str(shankSpacing) 'um, and vertical channel spacing: ' num2str(verticalSpacing),'um'])
 
 %%
 xcoords = [];%eventual output arrays
@@ -172,9 +172,12 @@ switch(layout)
         warning('layout not detected')
 end
 [~,I] =  sort(horzcat(groups{:}));
-chanMap.xcoords = xcoords(I)';
-chanMap.ycoords = ycoords(I)';
-chanMap.source = source;
-chanMap.layout = layout;
-chanMap.shankSpacing = shankSpacing;
+chanCoords.x = xcoords(I);
+chanCoords.y = ycoords(I);
+chanCoords.x = chanCoords.x(:);
+chanCoords.y = chanCoords.y(:);
+chanCoords.source = source;
+chanCoords.layout = layout;
+chanCoords.shankSpacing = shankSpacing;
+chanCoords.verticalSpacing = verticalSpacing;
 

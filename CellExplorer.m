@@ -565,8 +565,8 @@ function updateUI
             warning('No brain regions detected or existing in atlas')
            return 
         end
-        classes2plotSubset = unique(UI.classes.plot(UI.params.subset));
         UI.classes.plot = UI.classes.plotBrainRegions;
+        classes2plotSubset = unique(UI.classes.plot(UI.params.subset));
         UI.classes.labels = UI.params.brainRegionsLevel(unique(UI.classes.plot(UI.params.subset)));
         UI.params.subset_pre = UI.params.subset;
     elseif ColorVal == 4 % Compare to rest
@@ -2541,8 +2541,8 @@ end
                         ydata = [cell_metrics.acg.wide(:,set1);nan(1,length(set1))];
                     end
                     if plotAcgYLog
-                            ydata(ydata < 0.1)=0.1;
-                        end
+                        ydata(ydata < 0.1)=0.1;
+                    end
                     line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.2],'HitTest','off')
                 end
                 if highlightCurrentCell
@@ -10159,7 +10159,7 @@ end
         % Cell selection
         UI.menu.cellSelection.topMenu = uimenu(UI.fig,menuLabel,'Cell selection');
         uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Polygon selection of cells from plot',menuSelectedFcn,@polygonSelection,'Accelerator','P');
-        uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Perform group action [space]',menuSelectedFcn,@selectCellsForGroupAction);
+        uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Perform group action',menuSelectedFcn,@selectCellsForGroupAction);
         UI.menu.cellSelection.stickySelection = uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Sticky cell selection',menuSelectedFcn,@toggleStickySelection,'Separator','on');
         UI.menu.cellSelection.stickySelectionReset = uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Reset sticky selection',menuSelectedFcn,@toggleStickySelectionReset);
         UI.menu.cellSelection.hoverEffect = uimenu(UI.menu.cellSelection.topMenu,menuLabel,'Highlight cells by mouse hover',menuSelectedFcn,@adjustHoverEffect,'Separator','on');
@@ -10240,9 +10240,9 @@ end
         UI.menu.display.significanceMetricsMatrix = uimenu(UI.menu.display.topMenu,menuLabel,'Generate significance matrix',menuSelectedFcn,@SignificanceMetricsMatrix,'Accelerator','K','Separator','on');
         UI.menu.display.generateRainCloudsPlot = uimenu(UI.menu.display.topMenu,menuLabel,'Generate rain cloud metrics figure',menuSelectedFcn,@generateRainCloudPlot);
         UI.menu.display.markerSizeMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Change marker size for group plots',menuSelectedFcn,@defineMarkerSize,'Separator','on');
-        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap',menuSelectedFcn,@changeColormap);
-        UI.menu.display.sortingMetric = uimenu(UI.menu.display.topMenu,menuLabel,'Change metric used for sorting image data',menuSelectedFcn,@editSortingMetric);
-        UI.menu.display.redefineMetrics = uimenu(UI.menu.display.topMenu,menuLabel,'Redefine dimensionality reduction plot',menuSelectedFcn,@tSNE_redefineMetrics,'Accelerator','T');
+        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap for image data',menuSelectedFcn,@changeColormap);
+        UI.menu.display.sortingMetric = uimenu(UI.menu.display.topMenu,menuLabel,'Change sorting metric for image data',menuSelectedFcn,@editSortingMetric);
+        UI.menu.display.redefineMetrics = uimenu(UI.menu.display.topMenu,menuLabel,'Change dimensionality reduction plot',menuSelectedFcn,@tSNE_redefineMetrics,'Accelerator','T','Separator','on');
         UI.menu.display.flipXY = uimenu(UI.menu.display.topMenu,menuLabel,'Flip x and y axes in the custom group plot',menuSelectedFcn,@flipXY,'Separator','on');
         
         % ACG

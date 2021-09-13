@@ -37,8 +37,11 @@ UI.list.sortingFormat = {'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaV
 UI.list.inputsType = {'adc','aux','dat','dig'}; % input data types
 UI.list.sessionTypes = {'Acute','Chronic','Unknown'}; % session types
 UI.list.species = {'Unknown','Rat', 'Mouse','Red-eared Turtles','Human'}; % animal species
+% strain and strain_species must be added in a paired manner (number of strains == number of strain_species):
 UI.list.strain = {'Unknown','C57B1/6','B6/FVB Hybrid','BALB/cJ','Red-eared slider','DBA2/J','Brown Norway','Fischer 344','Long Evans','Sprague Dawleys','Wistar','Tumor','Epilepsy'}; % animal strains
-UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Human','Human'}; % animal strains parent in species
+UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Human','Human'}; % animal strains parent in species, must be added as well with a new strain
+% data precision types (Matlab data types)
+UI.list.precision = {'double','single','int8','int16','int32','int64','uint8','uint16','uint32','uint64'};
 
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
@@ -497,8 +500,8 @@ UI.edit.fileName = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'St
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [200, 448, 220, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 425, 190, 25],'HorizontalAlignment','left','Units','normalized','tooltip',['Least significant bit (', char(181),'V/bit, Intan=0.195, Amplipex=0.3815']);
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (e.g. int16)', 'Position', [400 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 425, 210, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('e.g. int16'));
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (numeric data type)', 'Position', [400 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'popup', 'String', UI.list.precision, 'Position', [400, 425, 210, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('e.g. int16'));
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Equipment', 'Position', [10, 398, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.equipment = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 375, 380, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Hardware equipment use'));
@@ -537,6 +540,9 @@ UI.edit.chanCoords_shankSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style',
 
 uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Source', 'Position', [5, 250, 240, 20],'HorizontalAlignment','left');
 UI.edit.chanCoords_source = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 225, 285, 25],'HorizontalAlignment','left');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Vertical spacing (µm)', 'Position', [305, 250, 240, 20],'HorizontalAlignment','left');
+UI.edit.chanCoords_verticalSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 225, 285, 25],'HorizontalAlignment','left');
 
 uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'x coordinates (µm)', 'Position', [5, 195, 240, 20],'HorizontalAlignment','left');
 UI.edit.chanCoords_x = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 50, 285, 145],'HorizontalAlignment','left','Min',1,'Max',10);
@@ -595,7 +601,7 @@ uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 5, 
 % Time series
 
 tableData = {false,'','',''};
-UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 616, 220],'ColumnWidth',{20 90 105 60 70 40 60 90 76},'columnname',{'','Time series tag','File name', 'Precision', 'nChannels', 'sr', 'nSamples', 'least significant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false true true true true true true true],'Units','normalized','CellEditCallback',@editTimeSeriesTableData);
+UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 616, 220],'ColumnWidth',{20 90 105 70 50 40 60 90 76},'columnname',{'','Time series tag','File name', 'Precision', 'nChan', 'sr', 'nSamples', 'least significant bit', 'Equipment'},'ColumnFormat',{'logical','char','char',UI.list.precision,'numeric','numeric','numeric','numeric','char'},'RowName',[],'ColumnEditable',[true false true true true true true true true],'Units','normalized','CellEditCallback',@editTimeSeriesTableData);
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
 uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 260, 120, 32],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
@@ -1121,7 +1127,8 @@ uiwait(UI.fig)
         UIsetString(session.extracellular,'nChannels');
         UIsetString(session.extracellular,'sr');
         UIsetString(session.extracellular,'nSamples');
-        UIsetString(session.extracellular,'precision');
+        UIsetValue(UI.edit.precision,session.extracellular.precision)
+%         UIsetString(session.extracellular,'precision');
         UIsetString(session.extracellular,'leastSignificantBit');
         UIsetString(session.extracellular,'fileName');
         UIsetString(session.extracellular,'equipment');
@@ -1140,11 +1147,24 @@ uiwait(UI.fig)
     end
     function updateChanCoords
         if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
-            UI.edit.chanCoords_x.String = num2strCommaSeparated(session.extracellular.chanCoords.x(:)');
-            UI.edit.chanCoords_y.String = num2strCommaSeparated(session.extracellular.chanCoords.y(:)');
-            UI.edit.chanCoords_source.String = session.extracellular.chanCoords.source;
-            UI.edit.chanCoords_layout.String = session.extracellular.chanCoords.layout;
-            UI.edit.chanCoords_shankSpacing.String = num2str(session.extracellular.chanCoords.shankSpacing);
+            if isfield(session.extracellular.chanCoords,'x')
+                UI.edit.chanCoords_x.String = num2strCommaSeparated(session.extracellular.chanCoords.x(:)');
+            end
+            if isfield(session.extracellular.chanCoords,'y')
+                UI.edit.chanCoords_y.String = num2strCommaSeparated(session.extracellular.chanCoords.y(:)');
+            end
+            if isfield(session.extracellular.chanCoords,'source')
+                UI.edit.chanCoords_source.String = session.extracellular.chanCoords.source;
+            end
+            if isfield(session.extracellular.chanCoords,'layout')
+                UI.edit.chanCoords_layout.String = session.extracellular.chanCoords.layout;
+            end
+            if isfield(session.extracellular.chanCoords,'shankSpacing')
+                UI.edit.chanCoords_shankSpacing.String = num2str(session.extracellular.chanCoords.shankSpacing);
+            end
+            if isfield(session.extracellular.chanCoords,'verticalSpacing')
+                UI.edit.chanCoords_verticalSpacing.String = num2str(session.extracellular.chanCoords.verticalSpacing);
+            end
         end
     end
     
@@ -1153,9 +1173,17 @@ uiwait(UI.fig)
         session.extracellular.chanCoords.y = eval(['[',UI.edit.chanCoords_y.String,']']);
         session.extracellular.chanCoords.source = UI.edit.chanCoords_source.String;
         session.extracellular.chanCoords.layout = UI.edit.chanCoords_layout.String;
-        session.extracellular.chanCoords.shankSpacing = str2double(UI.edit.chanCoords_shankSpacing.String);
+        if ~isempty(UI.edit.chanCoords_shankSpacing.String) 
+            session.extracellular.chanCoords.shankSpacing = str2double(UI.edit.chanCoords_shankSpacing.String);
+        else
+            session.extracellular.chanCoords.shankSpacing = [];
+        end
+        if ~isempty(UI.edit.chanCoords_shankSpacing.String) 
+            session.extracellular.chanCoords.verticalSpacing = str2double(UI.edit.chanCoords_verticalSpacing.String);
+        else
+            session.extracellular.chanCoords.verticalSpacing = [];
+        end
     end
-   
     
     function updateStrain
        UI.edit.strain.String = UI.list.strain(strcmp(UI.list.strain_species,UI.edit.species.String{UI.edit.species.Value})); 
@@ -1377,7 +1405,7 @@ uiwait(UI.fig)
         session.extracellular.nSpikeGroups = numel(session.extracellular.spikeGroups.channels);
         
         session.extracellular.fileName = UI.edit.fileName.String;
-        session.extracellular.precision = UI.edit.precision.String;
+        session.extracellular.precision = UI.edit.precision.String{UI.edit.precision.Value};
         session.extracellular.equipment = UI.edit.equipment.String;
         
         readBackChanCoords
@@ -2665,9 +2693,12 @@ uiwait(UI.fig)
             initType = behaviorIn;
             % precision
             if isfield(session.timeSeries.(behaviorIn),'precision')
-                initPrecision = session.timeSeries.(behaviorIn).precision;
+                initPrecision_value = find(strcmp(session.timeSeries.(behaviorIn).precision,UI.list.precision));
+                if isempty(initPrecision_value)
+                    initPrecision_value=1;
+                end
             else
-                initPrecision = '';
+                initPrecision_value = 1;
             end
             % nChannels
             if isfield(session.timeSeries.(behaviorIn),'nChannels')
@@ -2702,7 +2733,7 @@ uiwait(UI.fig)
         else 
             InitFileName = '';
             initType = 'adc';
-            initPrecision = 'int16';
+            initPrecision_value = 1;
             initnChannels = '';
             initSr = '';
             initnSamples = '';
@@ -2723,7 +2754,7 @@ uiwait(UI.fig)
             timeSeriesType.Enable = 'off';
         end
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Precision', 'Position', [10, 173, 230, 20],'HorizontalAlignment','left');
-        timeSeriesPrecision = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initPrecision, 'Position', [10, 150, 230, 25],'HorizontalAlignment','left');
+        timeSeriesPrecision = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'popup', 'String', UI.list.precision,'Value',initPrecision_value, 'Position', [10, 150, 230, 25],'HorizontalAlignment','left');
 
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'nChannels', 'Position', [250, 173, 240, 20],'HorizontalAlignment','left');
         timeSeriesnChannels = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initnChannels, 'Position', [250, 150, 240, 25],'HorizontalAlignment','left');
@@ -2750,7 +2781,7 @@ uiwait(UI.fig)
             if isvarname(timeSeriesType.String{timeSeriesType.Value})
                 SelectedBehavior = timeSeriesType.String{timeSeriesType.Value};
                 session.timeSeries.(SelectedBehavior).fileName = timeSeriesFileName.String;             
-                session.timeSeries.(SelectedBehavior).precision = timeSeriesPrecision.String;
+                session.timeSeries.(SelectedBehavior).precision = timeSeriesPrecision.String{timeSeriesPrecision.Value};
                 if ~isempty(timeSeriesnChannels.String)
                     session.timeSeries.(SelectedBehavior).nChannels = str2double(timeSeriesnChannels.String);
                 else
@@ -3264,18 +3295,14 @@ uiwait(UI.fig)
     end
     
     function generateChannelMap1(~,~)
+        readBackChanCoords
         [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
         if isfield(session.animal,'probes') && exist(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'file')
             MsgLog('Loading predefined channel coordinates',2)
             load(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'chanCoords');
             session.extracellular.chanCoords = chanCoords;
         else
-            chanMap = generateChannelMap(session);
-            chanCoords.x = chanMap.xcoords(:);
-            chanCoords.y = chanMap.ycoords(:);
-            chanCoords.source = chanMap.source;
-            chanCoords.layout = chanMap.layout;
-            chanCoords.shankSpacing = chanMap.shankSpacing;
+            chanCoords = generateChanCoords(session);
             MsgLog('Generated new channel coordinates. Check command window for details',2)
         end
         session.extracellular.chanCoords = chanCoords;
@@ -3283,6 +3310,7 @@ uiwait(UI.fig)
     end
     
     function exportChannelMap1(~,~)
+        readBackChanCoords
         % Saving chanCoords to basename.chanCoords.channelInfo.mat file
         if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
             chanCoords = session.extracellular.chanCoords;
@@ -3294,6 +3322,7 @@ uiwait(UI.fig)
     end
     
     function plotChannelMap1(~,~)
+        readBackChanCoords
         if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
             chanCoords = session.extracellular.chanCoords;
             x_range = range(chanCoords.x);

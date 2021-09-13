@@ -134,7 +134,7 @@ for i = 1:numel(fields_1stLevel)
         end
         if strcmp(fields_1stLevel{i},{'extracellular'})
             if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.electrodeGroups,'channels') && numel([session.extracellular.electrodeGroups.channels{:}]) == session.extracellular.nChannels
-                shortcutList = [shortcutList;{['electrodeGroups channel count: ' numel([session.extracellular.electrodeGroups.channels{:}])],'OK '}];
+                shortcutList = [shortcutList;{['electrodeGroups channel count: ' num2str(numel([session.extracellular.electrodeGroups.channels{:}]))],'OK '}];
             elseif isempty(session.extracellular.electrodeGroups.channels)
                 shortcutList = [shortcutList;{'electrodeGroups not defined','<html><b><font color="red">electrodeGroups empty</font></b></html>'}];
             else
@@ -183,4 +183,4 @@ else
 end
 dimensions(2) = min(dimensions(2),700);
 fig.validateSessionStruct = figure('Position', [300, 300, dimensions(1), dimensions(2)],'Name','CellExplorer: validation of session struct content', 'MenuBar', 'None','NumberTitle','off','visible','off'); movegui(fig.validateSessionStruct,'center'), set(fig.validateSessionStruct,'visible','on')
-fig.sessionList = uitable(fig.validateSessionStruct,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{200 200},'columnname',{'Field','Outcome'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');
+fig.sessionList = uitable(fig.validateSessionStruct,'Data',shortcutList,'Position',[1, 1, dimensions(1)-1, dimensions(2)-1],'ColumnWidth',{250 150},'columnname',{'Field','Outcome'},'RowName',[],'ColumnEditable',[false false],'Units','normalized');

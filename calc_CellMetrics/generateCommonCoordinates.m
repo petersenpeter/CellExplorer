@@ -1,10 +1,13 @@
 function generateCommonCoordinates(session)
-        % Loading channelmap
-        if ~exist(fullfile(session.general.basePath,[session.general.name,'.chanCoords.channelInfo.mat']))
-            generateChannelMap(session);
+        
+        if ~isfield(session.extracellular,'chanCoords')
+            % Generating channel coords
+            chanCoords = generateChanCoords(session);
+        else
+            % Loading existing channel coords
+            chanCoords = session.extracellular.chanCoords;
         end
-        chanCoords = loadStruct('chanCoords','channelInfo','session',session);
-
+        
         ccf = {};
         ccf.x = [];
         ccf.y = [];
