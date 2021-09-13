@@ -40,6 +40,49 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
   * `species` : species of animal
   * `strain` : strain of animal
   * `geneticLine` : genetic line of animal
+  * `probeImplants` : struct-array with probe implants information
+    * `probe` : Name of probe implanted
+    * `brainRegion` : brain region
+    * `ap` : Anterior-Posterior coordinate (mm)
+    * `ml` : Medial-Lateral coordinate (mm)
+    * `depth` : Implantation depth (mm)
+    * `ap_angle` : ap-angle of probe implantation (degrees)
+    * `ml_angle` : ml angle of probe implantation (degrees)
+    * `rotation` : rotation of probe (degrees)
+  * `opticFiberImplants` : struct-array with optic fiber implants information
+    * `opticFiber` : Name of optic fiber implanted
+    * `brainRegion` : brain region
+    * `ap` : Anterior-Posterior coordinate (mm)
+    * `ml` : Medial-Lateral coordinate (mm)
+    * `depth` : Implantation depth (mm)
+    * `ap_angle` : ap-angle of probe implantation (degrees)
+    * `ml_angle` : ml angle of probe implantation (degrees)
+    * `notes` : notes
+  * `surgeries` : struct-array with surgery information
+    * `date` : date of surgery
+    * `start_time` : start time of surgery
+    * `end_time` : end time of surgery
+    * `weight` : weight of animal before surgery
+    * `type_of_surgery` : type of surgery (Chronic or Acute)
+    * `room` : room of surgery
+    * `persons_involved` : Persons involved in the surgery
+    * `anesthesia` : anesthesia used during surgery (e.g. Isoflurane)
+    * `analgesics` : analgesics applied after surgery
+    * `antibiotics` : antibiotics applied after surgery
+    * `complications` : complications
+    * `notes` : notes about the surgery
+  * `virusInjections` : struct-array with virus injections information
+    * `virus` : Name of virus injected
+    * `brainRegion` : brain region
+    * `injection_schema` : brain region
+    * `injection_volume` : brain region
+    * `injection_rate` : brain region
+    * `ap` : Anterior-Posterior coordinate (mm)
+    * `ml` : Medial-Lateral coordinate (mm)
+    * `depth` : Implantation depth (mm)
+    * `ap_angle` : ap-angle of probe implantation (degrees)
+    * `ml_angle` : ml angle of probe implantation (degrees)
+    * `notes` : notes
 * `epochs`
   * `name`
   * `behavioralParadigm`
@@ -56,20 +99,21 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
   * `nSamples` : number of samples
   * `nElectrodeGroups` : number of electrode groups
   * `electrodeGroups` (struct) : struct with definition of electrode groups (1-indexed)
+    * `channels` : numeric cell array with list of channels (electrodes) in electrode groups (1-indexed)
+    * `label` : char cell array with labels of electrode groups
   * `nSpikeGroups` : number of spike groups
   * `spikeGroups` (struct) : struct with definition of spike groups (1-indexed)
+    * `channels` : numeric cell array with list of channels (electrodes) in spike groups (1-indexed)
+    * `label` : char cell array with labels of spike groups
   * `precision` : e.g. signed int16.
   * `leastSignificantBit` : range/precision in µV. Intan system: 0.195µV/bit
   * `srLFP` : sampling rate of the LFP file
-  * `electrode` : struct with implanted electrodes
-    * `siliconProbes` : name of the probe
-    * `company` : company producing the probe
-    * `nChannels` : number of channels
-    * `nShanks` : number of shanks
-    * `AP_coordinates` : Anterior-Posterior coordinates(mm)
-    * `ML_coordinates` : Medial-Lateral coordinates (mm)
-    * `depth` : implant depth (mm)
-    * `brainRegions` : implant brain region acronym (Allen institute Atlas)
+  * `chanCoords` : struct with channel coordinates (x and y coordinates)
+    * `x` : x coordinates of channels (1 x nChannels)
+    * `y` : company producing the probe (1 x nChannels)
+    * `source` : Source of channel coordinates
+    * `layout` : Probe layout (e.g. linear,staggered,poly2,poly3,poly4,poly5)
+    * `shankSpacing` : Shank spacing (in µm)
 * `brainRegions`
   * `regionAcronym` : e.g. CA1 or HIP, Allen institute Atlas
     * `brainRegion` 
