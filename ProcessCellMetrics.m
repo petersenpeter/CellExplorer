@@ -126,7 +126,7 @@ requiredToolboxes = {'Curve Fitting Toolbox', 'Parallel Computing Toolbox'};
 missingToolboxes = requiredToolboxes(~ismember(requiredToolboxes,installedToolboxes));
 if ~isempty(missingToolboxes)
     for i = 1:numel(missingToolboxes)
-    warning(['A toolbox required by CellExplorer must be installed: ' missingToolboxes{i}]);
+        warning(['A toolbox required by CellExplorer must be installed: ' missingToolboxes{i}]);
     end
 end
 
@@ -188,17 +188,14 @@ if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracell
     session.extracellular.electrodeGroups.channels = num2cell(session.extracellular.electrodeGroups.channels,2)';
 end
 
-% Non-standard parameters: probeSpacing and probeLayout
-if (~isfield(session,'analysisTags') || (~isfield(session.analysisTags,'probesVerticalSpacing')) && ~isfield(session.analysisTags,'probesLayout')) && isfield(session.extracellular,'electrodes') && isfield(session.extracellular.electrodes,'siliconProbes')
-    session = determineProbeSpacing(session);
-    if ~isfield(session.analysisTags,'probesVerticalSpacing')
-        session.analysisTags.probesVerticalSpacing = preferences.general.probesVerticalSpacing;
-        disp('  Using probesVerticalSpacing from preferences')
-    end
-    if ~isfield(session.analysisTags,'probesLayout')
-        session.analysisTags.probesLayout = preferences.general.probesLayout;
-        disp('  Using probesLayout from preferences')
-    end
+% Non-standard parameters: vertical spacing and layout
+if (~isfield(session,'extracellular') || ~isfield(session.extracellular,'chanCoords') || ~isfield(session.extracellular.chanCoords,'verticalSpacing'))
+    session.extracellular.chanCoords.verticalSpacing = preferences.general.probesVerticalSpacing;
+    disp('  Using vertical spacing from preferences')
+end
+if (~isfield(session,'extracellular') || ~isfield(session.extracellular,'chanCoords') || ~isfield(session.extracellular.chanCoords,'layout'))
+    session.extracellular.chanCoords.layout = preferences.general.probesLayout;
+    disp('  Using layout from preferences')
 end
 
 if ~isfield(session,'extracellular') || ~isfield(session.extracellular,'electrodeGroups')  || ~isfield(session.extracellular.electrodeGroups,'channels') || isempty([session.extracellular.electrodeGroups.channels{:}])
@@ -472,30 +469,33 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     % Channel coordinates map, trilateration and length constant determined from waveforms across channels
     if ~all(isfield(cell_metrics,{'trilat_x','trilat_y','peakVoltage_expFit'})) || parameters.forceReload == true
         chanCoordsFile = fullfile(basepath,[basename,'.chanCoords.channelInfo.mat']);
-        if exist(chanCoordsFile,'file')
+        if isfield(session.extracellular,'chanCoords')
+            chanCoords = session.extracellular.chanCoords;
+        elseif exist(chanCoordsFile,'file')
             load(chanCoordsFile,'chanCoords');
+            chanCoords.x = chanCoords.x(:);
+            chanCoords.y = chanCoords.y(:);
+            session.extracellular.chanCoords = chanCoords;
         else
             chanCoords = {};
             if exist(fullfile(basepath,'chanMap.mat'),'file') % Will look for a chanMap file with default name (compatible with KiloSort)
                 chanMap = load(fullfile(basepath,'chanMap.mat'));
+                chanCoords.x = chanMap.xcoords(:);
+                chanCoords.y = chanMap.ycoords(:);
             elseif isfield(session,'analysisTags') && isfield(session.analysisTags,'chanMapFile')
                 % You can use a different filename that must be specified in: session.analysisTags.chanMapFile
                 chanMap = load(fullfile(basepath,session.analysisTags.chanMapFile));
+                chanCoords.x = chanMap.xcoords(:);
+                chanCoords.y = chanMap.ycoords(:);
             else
-                if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
-                    disp('  Using default probesLayout: poly2')
-                    session.analysisTags.probesLayout = 'poly2';
-                end
-                disp('  Generating channelmap')
-                chanMap = generateChannelMap(session);
+                disp('  Generating chanCoords')
+                chanCoords = generateChanCoords(session);
             end
-            chanCoords.x = chanMap.xcoords(:);
-            chanCoords.y = chanMap.ycoords(:);
-            saveStruct(chanCoords,'channelInfo','session',session);
+            session.extracellular.chanCoords = chanCoords;
         end
-        chanCoords.x = chanCoords.x(:);
-        chanCoords.y = chanCoords.y(:);
+
         cell_metrics.general.chanCoords = chanCoords;
+        
         % Fit exponential
         fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
         expential_x = {};
@@ -830,8 +830,8 @@ if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(
     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') && (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || parameters.forceReload == true)
         dispLog('Deep-Superficial by ripple polarity reversal',basename)
         if ~exist(deepSuperficial_file,'file')
-            if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout')
-                session = determineProbeSpacing(session);
+            if ~isfield(session.extracellular,'chanCoords')
+                session.extracellular.chanCoords = generateChanCoords(session);
             end
             classification_DeepSuperficial(session);
         end
@@ -866,14 +866,13 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
     if isfield(cell_metrics,'thetaPhaseResponse')
         cell_metrics = rmfield(cell_metrics,'thetaPhaseResponse');
     end
-    downsampling_ratio = session.extracellular.sr/session.extracellular.srLfp;
-
+    
     for j = 1:size(spikes{spkExclu}.times,2)
         Theta_channel = session.channelTags.Theta.channels(1);
         spikes2.ts{j} = spikes2.ts{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{Theta_channel})/session.extracellular.srLfp);
         spikes2.times{j} = spikes2.times{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{Theta_channel})/session.extracellular.srLfp);
-        spikes2.ts_lfp{j} = ceil(spikes2.ts{j}/downsampling_ratio);
-        spikes2.theta_phase{j} = InstantaneousTheta.signal_phase{Theta_channel}(spikes2.ts_lfp{j});
+        spikes2.ts_eeg{j} = ceil(spikes2.ts{j}/16);
+        spikes2.theta_phase{j} = InstantaneousTheta.signal_phase{Theta_channel}(spikes2.ts_eeg{j});
         spikes2.speed{j} = interp1(animal.time,animal.speed,spikes2.times{j});
         if sum(spikes2.speed{j} > 10)> preferences.theta.min_spikes % only calculated if the unit has above min_spikes (default: 500)
             

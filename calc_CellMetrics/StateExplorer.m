@@ -3,7 +3,9 @@ function dataIn = StateExplorer(dataIn,varargin)
     % StateExplorer (BETA) is a visualizer for state data. StateExplorer is part of CellExplorer - https://CellExplorer.org/
     %
     % INPUTS:
-    %   data.timestamps
+    %   If a struct is provided, it must have these required fields:
+    %   dataIn.timestamps
+    %   dataIn.data
     %
     %   session: session struct. Defined by CellExplorer: https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata
     %
@@ -12,8 +14,9 @@ function dataIn = StateExplorer(dataIn,varargin)
     %
     % Example calls:
     %    StateExplorer
-    %    StateExplorer('basepath',basepath)
-    %    StateExplorer('session',session)
+    %    StateExplorer(dataIn)
+    %    StateExplorer(dataIn,'basepath',basepath)
+    %    StateExplorer(dataIn,'session',session)
     %
     % By Peter Petersen
     % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -21,16 +24,16 @@ function dataIn = StateExplorer(dataIn,varargin)
     % Global variables
     UI = []; % Struct with UI elements and settings
     UI.drag.mouse = false; UI.drag.startX = []; UI.drag.startY = []; UI.drag.axnum = []; UI.drag.pan = []; UI.scroll = true;
-    UI.zoom.global = cell(1,1); UI.zoom.globalLog = cell(1,1);  
+    UI.zoom.global = cell(1,1); UI.zoom.globalLog = cell(1,1);
     data = []; % Contains all external data loaded like data.session, data.events, data.states, data.behavior, data.spikes
-
+    
     t0 = 0; % Timestamp of the start of the current window (in seconds)
     polygon1.handle = gobjects(0);
     clickAction = 0;
     data_source = 'input';
     epoch_plotElements.t0 = [];
     epoch_plotElements.events = [];
-
+    
     % % % % % % % % % % % % % % % % % % % % % % % % %
     % Handling inputs
     p = inputParser;
@@ -56,6 +59,7 @@ function dataIn = StateExplorer(dataIn,varargin)
                     temo2 = fieldnames(varout);
                     dataIn = varout.(temo2{1});
                     dataIn.inputname = temo2{1};
+                    dataIn.fullfile = fullfile(path,file);
                     data_source = 'file';
                 else
                     return
@@ -76,7 +80,7 @@ function dataIn = StateExplorer(dataIn,varargin)
     else
         dataIn.inputname = inputname(1);
     end
-
+    
     basepath = p.Results.basepath;
     basename = p.Results.basename;
     if isempty(basename)
@@ -91,7 +95,13 @@ function dataIn = StateExplorer(dataIn,varargin)
     else
         data.session = parameters.session;
     end
-
+    
+    if ~isfield(dataIn,'data') || ~isfield(dataIn,'timestamps')
+        warndlg('The data must contain two fields: data and timestamps','StateExplorer closed')
+        warning('StateExplorer: The data must contain two fields: data and timestamps. Closing StateExplorer')
+        return
+    end
+    
     % % % % % % % % % % % % % % % % % % % % % % % % %
     % Initialization
     initUI
@@ -99,9 +109,9 @@ function dataIn = StateExplorer(dataIn,varargin)
     %     initInputs
     %     initTraces
     
-    movegui(UI.fig,'center'), 
+    movegui(UI.fig,'center'),
     set(UI.fig,'visible','on')
-%     DragMouseBegin
+    %     DragMouseBegin
     
     % % % % % % % % % % % % % % % % % % % % % % % % %
     % Main loop of the StateExplorer
@@ -114,7 +124,7 @@ function dataIn = StateExplorer(dataIn,varargin)
             % Plotting data
             plotData;
             
-            % Enabling axes panning    
+            % Enabling axes panning
             UI.drag.pan.Enable = 'on';
             enableInteractions
             UI.pan.allow = true(1,1);
@@ -132,18 +142,22 @@ function dataIn = StateExplorer(dataIn,varargin)
             % Saves back changes to the variable loaded from the workspace
             assignin('base',dataIn.inputname,dataIn)
         case 'file'
-            
+            answer = questdlg('Do you want to save your changes to the file loaded?', 'StateExplorer: Save changes?', 'Yes','No','Yes');
+            if strcmp(answer,'Yes')
+                S.(dataIn.inputname) = dataIn;
+                save(dataIn.fullfile, '-struct', 'S','-v7.3','-nocompression')
+            end
         otherwise
             
     end
     
     % % % % % % % % % % % % % % % % % % % % % % % % %
-    % Embedded functions 
+    % Embedded functions
     
     function initData(basepath,basename)
         if numel(dataIn.data)>100000
-        samples = 50000;
-        idx_lowress = round([1:samples]/samples*numel(dataIn.timestamps));
+            samples = 50000;
+            idx_lowress = round([1:samples]/samples*numel(dataIn.timestamps));
             dataIn.timestamps_lowress = dataIn.timestamps(idx_lowress);
             dataIn.data_lowress = dataIn.data(idx_lowress);
         else
@@ -270,7 +284,7 @@ function dataIn = StateExplorer(dataIn,varargin)
         UI.listbox.statesIntervals = uicontrol('Parent',UI.panel.statesIntervals.main,'Style','listbox','Position',[0.5 0 0.5 1],'Units','normalized','String',{''},'max',100,'min',0,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)setStatesPlots,'KeyPressFcn', {@keyPress});
         
         UI.panel.events.main  = uipanel('Parent',UI.panel.general.main,'title','Event data','TitlePosition','centertop');
-%         UI.panel.events.navigation = uipanel('Parent',UI.panel.other.main,'title','Events');
+        %         UI.panel.events.navigation = uipanel('Parent',UI.panel.other.main,'title','Events');
         UI.panel.events.files = uicontrol('Parent',UI.panel.events.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.67 0.98 0.31],'HorizontalAlignment','left','Callback',@setEventData);
         UI.panel.events.showEvents = uicontrol('Parent',UI.panel.events.main,'Style','checkbox','Units','normalized','Position',[0.01 0.35 0.98 0.33], 'value', 0,'String','Show events','Callback',@showEvents,'KeyPressFcn', @keyPress,'tooltip','Show events');
         % set(UI.panel.events.main, 'Heights', [30 30],'MinimumHeights',[30 30]);
@@ -279,12 +293,12 @@ function dataIn = StateExplorer(dataIn,varargin)
         UI.panel.statesExtra.main = uipanel('Parent',UI.panel.general.main,'title','Extra states data','TitlePosition','centertop');
         UI.panel.statesExtra.files = uicontrol('Parent',UI.panel.statesExtra.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.67 0.98 0.31],'HorizontalAlignment','left','Callback',@setStatesData);
         UI.panel.statesExtra.showStates = uicontrol('Parent',UI.panel.statesExtra.main,'Style','checkbox','Units','normalized','Position',[0.01 0.35 0.98 0.33], 'value', 0,'String','Show states','Callback',@showStates,'KeyPressFcn', @keyPress,'tooltip','Show states data');
-
+        
         set(UI.panel.general.main, 'Heights', [155 100 100 100 100],'MinimumHeights',[155 100 100 100 100]);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
-
+        
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
         % Main axes
@@ -343,12 +357,12 @@ function dataIn = StateExplorer(dataIn,varargin)
     end
     
     function keyPress(~,~)
-    
+        
     end
     
     
     function keyRelease(~,~)
-    
+        
     end
     
     function AboutDialog(~,~)
@@ -379,7 +393,7 @@ function dataIn = StateExplorer(dataIn,varargin)
     function polygonSelection(~,~)
         clickAction = 1;
         MsgLog('Select points by drawing a polygon with your mouse. Complete with a right click, cancel last point with middle click.');
-%         ax = get(UI.fig,'CurrentAxes');
+        %         ax = get(UI.fig,'CurrentAxes');
         ax = UI.plot_axis1;
         hold(ax, 'on');
         polygon1.counter = 0;
@@ -424,7 +438,7 @@ function dataIn = StateExplorer(dataIn,varargin)
     function saveStates(~,~)
         if isfield(dataIn,'states')
             if isfield(dataIn,'inputname')
-            	value = dataIn.inputname;
+                value = dataIn.inputname;
             else
                 value = '';
             end
@@ -463,7 +477,7 @@ function dataIn = StateExplorer(dataIn,varargin)
         end
         if clickAction == 0 && UI.fig == get(groot,'CurrentFigure')
             UI.drag.pan.Enable = 'on';
-%             enableInteractions
+            %             enableInteractions
         end
     end
     
@@ -480,12 +494,12 @@ function dataIn = StateExplorer(dataIn,varargin)
     end
     
     function mousebuttonRelease(~,~)
-         UI.scroll = true;
-         enableInteractions
+        UI.scroll = true;
+        enableInteractions
     end
     
     function mousebuttonPress(~,~)
-         UI.scroll = false;
+        UI.scroll = false;
     end
     
     % Events
@@ -565,7 +579,7 @@ function dataIn = StateExplorer(dataIn,varargin)
             UI.plot_axis3.Visible = 'off';
             delete(UI.plot_axis3.Children)
         end
-
+        
         UI.plot_axis4.Position = [0.015 0.005+offset 0.984 0.1];
         UI.plot_axis1.Position = [0.015 0.135+offset 0.984 0.865-offset];
     end
@@ -578,13 +592,13 @@ function dataIn = StateExplorer(dataIn,varargin)
             handle34 = UI.plot_axis1;
             um_axes = get(handle34,'CurrentPoint');
             UI.zoom.twoAxes = 0;
-
+            
             u = um_axes(1,1);
             v = um_axes(1,2);
             w = um_axes(1,2);
-%             if UI.preferences.hoverEffect == 0
-                set(UI.fig,'CurrentAxes',handle34)
-%             end
+            %             if UI.preferences.hoverEffect == 0
+            set(UI.fig,'CurrentAxes',handle34)
+            %             end
             b = get(handle34,'Xlim');
             c = get(handle34,'Ylim');
             d = get(handle34,'Zlim');
@@ -594,7 +608,7 @@ function dataIn = StateExplorer(dataIn,varargin)
                 UI.zoom.global{axnum} = [b;c;d];
                 UI.zoom.globalLog{axnum} = [0,0,0];
             end
-
+            
             zoomInFactor = 0.80;
             zoomOutFactor = 1.3;
             
@@ -690,8 +704,8 @@ function dataIn = StateExplorer(dataIn,varargin)
             axLim(1) = axLim(1) - dRange * cfa;
             axLim(2) = axLim(2) + dRange * cfb;
             
-%             if (axLim(1) < axLimDflt(1)), axLim(1) = axLimDflt(1); end
-%             if (axLim(2) > axLimDflt(2)), axLim(2) = axLimDflt(2); end
+            %             if (axLim(1) < axLimDflt(1)), axLim(1) = axLimDflt(1); end
+            %             if (axLim(2) > axLimDflt(2)), axLim(2) = axLimDflt(2); end
             
             if diff(axLim)<=0
                 axLim = axLimDflt;
@@ -835,7 +849,7 @@ function dataIn = StateExplorer(dataIn,varargin)
             if size(states,1)>1
                 states = ConsolidateIntervals(states);
             end
-     
+            
             plotStates(states)
             addStateDialog(states)
         else
@@ -865,7 +879,7 @@ function dataIn = StateExplorer(dataIn,varargin)
     
     function p1 = plotStates(statesData)
         ydata = [0 1];
-%         line(UI.plot_axis1, states,[ydata,flip(ydata)],'Marker','none','LineStyle','-','color','r', 'HitTest','off')
+        %         line(UI.plot_axis1, states,[ydata,flip(ydata)],'Marker','none','LineStyle','-','color','r', 'HitTest','off')
         p1 = patch(UI.plot_axis4,double([statesData,flip(statesData,2)])',[ydata(1);ydata(1);ydata(2);ydata(2)]*ones(1,size(statesData,1)),'k','EdgeColor','k','HitTest','off');
         alpha(p1,0.3);
     end
@@ -884,7 +898,7 @@ function dataIn = StateExplorer(dataIn,varargin)
             ydata = [0; 1];
             states1  = dataIn.states;
             stateNames =  UI.settings.states;
-
+            
             for jj = UI.settings.statesIntervals
                 if size(states1.(stateNames{jj}),2) == 2 && size(states1.(stateNames{jj}),1) > 0
                     idx = (states1.(stateNames{jj})(:,1)<t2 & states1.(stateNames{jj})(:,2)>t1);
@@ -976,7 +990,7 @@ function dataIn = StateExplorer(dataIn,varargin)
             idx(idx2) = [];
         end
         
-        % Plotting events 
+        % Plotting events
         if any(idx)
             raster_line(UI.plot_axis3,data.events.(UI.settings.eventData).time(idx)',ydata2,colorIn1)
         end

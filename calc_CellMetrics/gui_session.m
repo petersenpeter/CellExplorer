@@ -393,10 +393,11 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
 tableData = {false,'','',''};
 % uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false true true true true true true true true],'ColumnFormat',{'logical','numeric','char','numeric','numeric','char','char','char','char','char'},'Units','normalized','CellEditCallback',@editEpochsTableData);
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit','Callback',@(src,evnt)editEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[235, 5 110, 32],'String','Delete','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[350, 5, 110, 32],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[5, 5, 90, 32],'String','Add','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[100, 5, 90, 32],'String','Edit','Callback',@(src,evnt)editEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[195, 5 100, 32],'String','Delete','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[300, 5, 100, 32],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[405, 5, 90, 32],'String','Visualize','Callback',@(src,evnt)visualizeEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 5, 50, 32],'String',char(8593),'Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[555, 5 50, 32],'String',char(8595),'Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
 
@@ -2280,6 +2281,12 @@ uiwait(UI.fig)
         else
             helpdlg('Please select the epoch to duplicate','Error')
         end
+    end
+    
+    function visualizeEpoch
+        figure
+        epochVisualization(session.epochs,gca,0,1,0.95), xlabel('Time (s)'), title('Epochs')
+        yticks([]), axis tight
     end
 
 %% % Behavior

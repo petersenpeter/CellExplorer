@@ -3,7 +3,7 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
 % Fits a tripple exponential to the autocorrelogram with 0.5ms bins from -50ms -> 50ms 
 
 % By Peter Petersen
-% Last edited: 24-08-22020;
+% Last edited: 24-08-2020;
 
 if ~exist('plots','var')
     plots = true;

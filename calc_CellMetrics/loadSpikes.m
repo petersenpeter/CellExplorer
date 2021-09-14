@@ -712,9 +712,9 @@ if parameters.forceReload
             disp('loadSpikes: Loading KiloSort data (the rez.mat file)')
             if exist(fullfile(clusteringpath_full, 'rez.mat'),'file')
                 load(fullfile(clusteringpath_full, 'rez.mat'))
-                temp = find(rez.connected);
-                peak_channel = temp(peak_channel);
-                clear temp
+%                 temp = find(rez.connected);
+%                 peak_channel = temp(peak_channel);
+%                 clear temp
             else
                 error('rez.mat file does not exist')
             end

@@ -1,15 +1,15 @@
 function session = determineProbeSpacing(session)
 
-%     % Loads probesVerticalSpacing and probesLayout from session struct
-%     VerticalSpacing = session.analysisTags.probesVerticalSpacing;
-%     Layout = session.analysisTags.probesLayout;
+% Loads verticalSpacing and layout from session struct
+%     VerticalSpacing = session.extracellular.chanCoords.verticalSpacing;
+%     layout = session.extracellular.chanCoords.layout;
 % else
 % If no probesVerticalSpacing or probesLayout is given, it will try to load the information from the database
 
 
-if ~isempty(session.extracellular.electrodes.siliconProbes)
+if ~isempty(session.animal.probeImplants)
     % Get the probe type from the session struct
-    SiliconProbes = session.extracellular.electrodes.siliconProbes;
+    SiliconProbes = session.animal.probeImplants{1};
 else
     % if no probe information is given in the session struct, it tries
     % to get the probe type from probe implants in the database
@@ -44,6 +44,6 @@ if ~isempty(db_siliconprobes)
         error('No probe layout defined');
     end
     disp(['  Vertical spacing applied: ', num2str(VerticalSpacingBetweenSites_corrected),' µm'])
-    session.analysisTags.probesVerticalSpacing = VerticalSpacingBetweenSites_corrected;
-    session.analysisTags.probesLayout = layout;
+    session.extracellular.chanCoords.verticalSpacing = VerticalSpacingBetweenSites_corrected;
+    session.extracellular.chanCoords.layout = layout;
 end

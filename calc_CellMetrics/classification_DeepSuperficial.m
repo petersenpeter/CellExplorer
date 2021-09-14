@@ -18,8 +18,8 @@ function deepSuperficialfromRipple = classification_DeepSuperficial(session,vara
 % session.general.name: name of the recording, e.g. 'Peter_MS22_180629_110319_concat'
 % session.channelTags.(Bad or Cortical) specifying electrodeGroups (1-indexed), channels (1-indexed)
 %   e.g. session.channelTags.Bad.channels = [1,25,128]; session.channelTags.Bad.electrodeGroups = 1;
-% session.analysisTags.probesVerticalSpacing: in µm, e.g. 20
-% session.analysisTags.probesLayout: ['staggered','linear','poly2','poly3','poly5']
+% session.extracellular.chanCoords.verticalSpacing: in µm, default: 20. This is the vertical distance between each channel
+% session.extracellular.chanCoords.layout: ['staggered','linear','poly2','poly3','poly5']
 % session.extracellular.srLfp: in Hz, e.g. 1250
 % session.extracellular.nChannels: integer, e.g. 128
 % session.extracellular.nElectrodeGroups: integer, e.g. 8
@@ -105,17 +105,15 @@ try
     electrodeGroupsToExclude = [electrodeGroupsToExclude,session.channelTags.Bad.electrodeGroups];
 end
 
-if isfield(session,'analysisTags') && isfield(session.analysisTags,'probesVerticalSpacing')
-    VerticalSpacing = session.analysisTags.probesVerticalSpacing;
+if isfield(session.extracellular,'chanCoords') && isfield(session.extracellular.chanCoords,'verticalSpacing')
+    VerticalSpacing = session.extracellular.chanCoords.verticalSpacing;
 else
     warning('No vertical spacing defined. Defaults to 20um')
     VerticalSpacing = 20;
 end
 
-if ischar(session.analysisTags.probesLayout)
-    Layout = session.analysisTags.probesLayout;
-else
-    Layout = session.analysisTags.probesLayout{1};
+if ischar(session.extracellular.chanCoords.layout)
+    Layout = session.extracellular.chanCoords.layout;
 end
 
 % The number of channel convoluted to get a better estimate of the reversal point of the sharpwave

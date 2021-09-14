@@ -2372,9 +2372,7 @@ end
                 end
                 set(plotAxes,'xscale','log')
                 ax5 = axis; grid on, set(plotAxes, 'Layer', 'top')
-%                 title('ISI distribution')
             else
-%                 title('ISI distribution')
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
             
@@ -2789,11 +2787,11 @@ end
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
             end
             
-        elseif contains(customPlotSelection,'Spike raster')
+        elseif contains(customPlotSelection,'Spike raster (single)')
             if isfield(cell_metrics,'spikes') && numel(cell_metrics.spikes.times)>=ii && ~isempty(cell_metrics.spikes.times{ii})
                 % ii,general,batchIDs,plotAxes
                 plotAxes.XLabel.String = 'Time (s)';
-                plotAxes.Title.String = 'Spike raster';
+                plotAxes.Title.String = 'Spike raster (single)';
                 if strcmp(UI.preferences.raster,'cv2')
                     line(cell_metrics.spikes.times{ii},spikes2cv2(cell_metrics.spikes.times{ii}),'HitTest','off','Marker','.','LineStyle','none','color', [0.5 0.5 0.5 0.5]), axis tight
                     plotAxes.YLabel.String = 'CV_2';
@@ -2810,6 +2808,53 @@ end
                     axis tight, ax6 = axis;
                 end
 
+                plotTemporalStates
+                plotTemporalRestriction
+                
+                if isfield(general.responseCurves.firingRateAcrossTime,'boundaries') && ~isfield(general,'epochs')
+                    boundaries = general.responseCurves.firingRateAcrossTime.boundaries(:)';
+                    if isfield(general.responseCurves.firingRateAcrossTime,'boundaries_labels')
+                        boundaries_labels = general.responseCurves.firingRateAcrossTime.boundaries_labels;
+                        if length(boundaries_labels) == length(boundaries)
+                            text(boundaries, ax6(4)*ones(1,length(boundaries_labels)),boundaries_labels, 'HitTest','off','HorizontalAlignment','left','VerticalAlignment','top','Rotation',-90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                        end
+                    end
+                    line([1;1] * boundaries, [ax6(3) ax6(4)],'LineStyle','--','color','k', 'HitTest','off');
+                end
+            else
+                text(0.5,0.5,'No spike data','FontWeight','bold','HorizontalAlignment','center')
+            end
+        
+        elseif contains(customPlotSelection,'Spike raster (session)')
+            if isfield(cell_metrics,'spikes') && numel(cell_metrics.spikes.times)>=ii && ~isempty(cell_metrics.spikes.times{ii})
+                plotAxes.XLabel.String = 'Time (s)';
+                plotAxes.Title.String = 'Spike raster (session)';
+                plotAxes.YLabel.String = 'Cells';
+                if UI.BatchMode
+                    subset1 = find(cell_metrics.batchIDs(UI.params.subset)==cell_metrics.batchIDs(ii));
+                    subset222 = UI.params.subset(subset1);
+                else
+                    subset222 = UI.params.subset;
+                end
+                
+                for k = 1:length(classes2plotSubset)
+                    set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), subset222);
+                    for i = 1:numel(set1)
+                        idx = find(subset222 == set1(i));
+                        line(cell_metrics.spikes.times{set1(i)},idx*ones(numel(cell_metrics.spikes.times{set1(i)}),1),'HitTest','off','Marker','.','LineStyle','none','color', UI.classes.colors(k,:)), axis tight
+                    end
+                end
+                idx = find(subset222 == ii);
+                if ~isempty(idx) && highlightCurrentCell
+                    line(cell_metrics.spikes.times{ii},idx*ones(numel(cell_metrics.spikes.times{ii}),1),'HitTest','off','Marker','.','LineStyle','none','color', 'k'), axis tight
+                end
+                
+                axis tight, ax6 = axis;
+                if isfield(general,'epochs')
+                    epochVisualization(general.epochs,plotAxes,-0.1*ax6(4),-0.005*ax6(4),ax6(4));
+                    axis tight, ax6 = axis;
+                end
+                
                 plotTemporalStates
                 plotTemporalRestriction
                 
@@ -4782,6 +4827,7 @@ end
         groups_fields = {'tags','groups','groundTruthClassification'};
         groups_fields2 = strcat({'groups_from_'},groups_fields);
         idx = ismember(colorMenu,groups_fields2);
+        tags_exported = 0;
         colorMenu(idx) = [];
         for iGroupFields = 1:numel(groups_fields)
             if ~isempty(cell_metrics.(groups_fields{iGroupFields})) && ~isempty(fieldnames(cell_metrics.(groups_fields{iGroupFields})))
@@ -4797,10 +4843,15 @@ end
                 else
                     groups_ids.([newFieldName,'_num']) = temp';
                 end
+                tags_exported = tags_exported+1;
             end
         end
         updateColorMenuCount
-        MsgLog(['Group data filters created. Check the dropdown menu "Group data and filters" in the left side panel.'],[1,2]);
+        if tags_exported>0
+            MsgLog('Group data filters created. Check the dropdown menu "Filters & grouping" in the left side-panel.',[1,2]);
+        else
+            MsgLog('No group tags available to export',2);
+        end
     end
     
     function defineGroupData(~,~)
@@ -4829,7 +4880,7 @@ end
         UI.groupData1.sessionList = uitable(UI.groupData1.VBox,'Data',UI.groupData.dataTable,'Position',[10, 50, 740, 457],'ColumnWidth',{65,45,45,100,460 75,45},'columnname',{'Highlight','+filter','-filter','Group name','List of cells','Cell count','Select'},'RowName',[],'ColumnEditable',[true true true true true false true],'Units','normalized','CellEditCallback',@editTable);
         UI.groupData1.panel.bottom = uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.groupData1.VBox);
         set(UI.groupData1.VBox, 'Heights', [50 -1 35]);
-        uicontrol('Parent',UI.groupData1.panel.top,'Style','text','Position',[13, 25, 170, 20],'Units','normalized','String','Group tags','HorizontalAlignment','left','Units','normalized');
+        uicontrol('Parent',UI.groupData1.panel.top,'Style','text','Position',[13, 25, 170, 20],'Units','normalized','String','Group tags types','HorizontalAlignment','left','Units','normalized');
         uicontrol('Parent',UI.groupData1.panel.top,'Style','text','Position',[203, 25, 120, 20],'Units','normalized','String','Sort by','HorizontalAlignment','left','Units','normalized');
         uicontrol('Parent',UI.groupData1.panel.top,'Style','text','Position',[333, 25, 170, 20],'Units','normalized','String','Filter','HorizontalAlignment','left','Units','normalized');
         
@@ -5330,7 +5381,7 @@ end
             ref_sessionNames = unique(reference_cell_metrics.sessionName);
         end
         
-        [basenames,basepaths,exitMode] = gui_db_sessions(ref_sessionNames);
+        [basenames,basepaths,exitMode] = gui_db_sessions(ref_sessionNames,[],false);
         
         if ~isempty(basenames)
             % Loading multiple sessions
@@ -5359,8 +5410,8 @@ end
             for i_db = 1:length(i_db_subset_all)
                 i_db2 = find(strcmp(basenames{i_db},cellfun(@(X) X.name,db.sessions,'UniformOutput',0)));
                 if ~any(strcmp(db.sessions{i_db2}.repositories{1},fieldnames(db_settings.repositories))) && ~strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
-                    MsgLog(['The respository ', db.sessions{i_db2}.repositories{1} ,' has not been defined on this computer. Please edit db_local_repositories and provide the path'],4)
-                    edit db_local_repositories.m
+                    MsgLog(['The respository ', db.sessions{i_db2}.repositories{1} ,' has not been defined on this computer. Please edit db_local_repositories.m and provide the path'],4)
+%                     edit db_local_repositories.m
                     return
                 end
                 
@@ -5374,7 +5425,11 @@ end
                     if ~any(strcmp(db.sessions{i_db2}.repositories{1},fieldnames(db_settings.repositories))) && strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
                         url = [nyu_url,path_Investigator,'/',db.sessions{i_db2}.animal,'/', basenames{i_db},'/',[basenames{i_db},'.cell_metrics.cellinfo.mat']];
                         options = weboptions('Timeout', 30);
-                        outfilename = websave(filename,url,options);
+                        try
+                            outfilename = websave(filename,url,options);
+                        catch
+                            disp(['Failed to download cell metrics file: ' url])
+                        end
                     else
                         if strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
                             url = fullfile(db_settings.repositories.(db.sessions{i_db2}.repositories{1}), path_Investigator,db.sessions{i_db2}.animal, db.sessions{i_db2}.name);
@@ -5386,7 +5441,7 @@ end
                         url = fullfile(url,[basenames{i_db},'.cell_metrics.cellinfo.mat']);
                         status = copyfile(url,filename);
                         if ~status
-                            MsgLog('Copying cell metrics failed',4)
+                            MsgLog(['Copying cell metrics failed: ' url],4)
                             return
                         end
                     end
@@ -8463,6 +8518,14 @@ end
         end
     end
     
+    function showMetricsTable(~,~)
+        if ~isempty(UI.params.ClickedCells)
+            generate_cell_metrics_table(cell_metrics, UI.params.ClickedCells);
+        else
+            generate_cell_metrics_table(cell_metrics);
+        end
+    end
+    
     function plotSummaryFigure(~,~)
         plotCellIDs = -1;
         plotSummaryFigures
@@ -9152,7 +9215,7 @@ end
         choice = '';
         GoTo_dialog = dialog('Position', [0, 0, 300, 350],'Name','Group actions','visible','off'); movegui(GoTo_dialog,'center'), set(GoTo_dialog,'visible','on')
         
-        actionList = strcat([{'---------------- Assignments -----------------','Assign cell-type','Assign label','Assign deep/superficial','Assign tag','Assign group','-------------------- CCGs ---------------------','CCGs ','CCGs (only with selected cell)','----------- MULTI PLOT OPTIONS ----------','Row-wise plots (5 cells per figure)','Plot-on-top (one figure for all cells)','Dedicated figures (one figure per cell)','--------------- SINGLE PLOTS ---------------'},plotOptions']);
+        actionList = strcat([{'----------------------- Assignments -------------------------','Assign cell-type','Assign label','Assign deep/superficial','Assign tag','Assign group','--------------------------- CCGs -----------------------------','CCGs ','CCGs (only with selected cell)','------------------ MULTI PLOT OPTIONS ------------------','Row-wise plots (5 cells per figure)','Plot-on-top (one figure for all cells)','Dedicated figures (one figure per cell)','--------------------------- TABLE ----------------------------','Table with metrics','---------------------- SINGLE PLOTS -----------------------'},plotOptions']);
         brainRegionsList = uicontrol('Parent',GoTo_dialog,'Style', 'ListBox', 'String', actionList, 'Position', [10, 50, 280, 270],'Value',1,'Callback',@(src,evnt)CloseGoTo_dialog(cellIDs));
         uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[10, 10, 135, 30],'String','OK','Callback',@(src,evnt)CloseGoTo_dialog(cellIDs));
         uicontrol('Parent',GoTo_dialog,'Style','pushbutton','Position',[155, 10, 135, 30],'String','Cancel','Callback',@(src,evnt)CancelGoTo_dialog);
@@ -9383,7 +9446,9 @@ end
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[5, 5, 140, 30],'String','OK','Callback',@ClosePlot_dialog,'Units','normalized');
                     uicontrol('Parent',exportPlots.dialog,'Style','pushbutton','Position',[155, 5, 140, 30],'String','Cancel','Callback',@(src,evnt)CancelPlot_dialog,'Units','normalized');
 
-                elseif choice > 14
+                elseif choice == 15
+                    generate_cell_metrics_table(cell_metrics, UI.params.ClickedCells);
+                elseif choice > 16
                     % Plots any custom plot for selected cells in a single new figure with subplots
                     fig = figure('Name',['CellExplorer: ',actionList{choice},' for selected cells: ', num2str(cellIDs)],'NumberTitle','off','pos',UI.params.figureSize,'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off');
                     [plotRows,~]= numSubplots(length(cellIDs));
@@ -10181,7 +10246,7 @@ end
         UI.menu.waveforms.topMenu = uimenu(UI.fig,menuLabel,'Waveforms');
         UI.menu.waveforms.zscoreWaveforms = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Z-score waveforms',menuSelectedFcn,@adjustZscoreWaveforms);
         
-        UI.menu.waveforms.showMetrics = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Show waveform metrics',menuSelectedFcn,@showWaveformMetrics);
+        UI.menu.waveforms.showMetrics = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Show waveform metrics in single waveform plots',menuSelectedFcn,@showWaveformMetrics);
         UI.menu.waveforms.plotInsetChannelMapMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Channel map inset','Separator','on');
         UI.menu.waveforms.plotInsetChannelMap.ops(1) = uimenu(UI.menu.waveforms.plotInsetChannelMapMenu,menuLabel,'No channelmap',menuSelectedFcn,@showChannelMap);
         UI.menu.waveforms.plotInsetChannelMap.ops(2) = uimenu(UI.menu.waveforms.plotInsetChannelMapMenu,menuLabel,'By peak channel',menuSelectedFcn,@showChannelMap);
@@ -10302,10 +10367,10 @@ end
         uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Save tagging to groundTruthData folder',menuSelectedFcn,@importGroundTruth);
         uimenu(UI.menu.groundTruth.topMenu,menuLabel,'Explore groundTruth data',menuSelectedFcn,@exploreGroundTruth,'Separator','on');
         
-        % Group data
+        % Group tags
         UI.menu.groupData.topMenu = uimenu(UI.fig,menuLabel,'Group tags');
         UI.menu.display.defineGroupData = uimenu(UI.menu.groupData.topMenu,menuLabel,'Open group tags dialog',menuSelectedFcn,@defineGroupData,'Accelerator','G');
-        UI.menu.display.generateFilterbyGroupData = uimenu(UI.menu.groupData.topMenu,menuLabel,'Generate filter from group data',menuSelectedFcn,@generateFilterbyGroupData,'Separator','on');
+        UI.menu.display.generateFilterbyGroupData = uimenu(UI.menu.groupData.topMenu,menuLabel,'Generate filter groups from group tags',menuSelectedFcn,@generateFilterbyGroupData,'Separator','on');
         
         % Table menu
         UI.menu.tableData.topMenu = uimenu(UI.fig,menuLabel,'Table data');
@@ -10326,6 +10391,7 @@ end
         for m = 1:length(UI.params.tableDataSortingList)
             UI.menu.tableData.sortingList(m) = uimenu(UI.menu.tableData.topMenu,menuLabel,UI.params.tableDataSortingList{m},menuSelectedFcn,@setTableDataSorting);
         end
+        uimenu(UI.menu.tableData.topMenu,menuLabel,'See metrics in separate table',menuSelectedFcn,@showMetricsTable,'Accelerator','A','Separator','on');
         
         % Spikes
         UI.menu.spikeData.topMenu = uimenu(UI.fig,menuLabel,'Spikes');
@@ -10597,11 +10663,11 @@ end
         % % % % % % % % % % % % % % % % % % % %
         % Custom colors
         % % % % % % % % % % % % % % % % % % % %'
-        uicontrol('Parent',UI.panel.group,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Group data & filters','HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.group,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Filters & grouping','HorizontalAlignment','center');
         UI.popupmenu.groups = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 73 144 10],'Units','normalized','String',colorMenu,'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(1),'KeyPressFcn', {@keyPress},'tooltip','Filter and select group data');
         updateColorMenuCount
         UI.listbox.groups = uicontrol('Parent',UI.panel.group,'Style','listbox','Position',[0 20 148 54],'Units','normalized','String',{},'max',100,'min',1,'Value',1,'Callback',@(src,evnt)buttonSelectGroups(),'KeyPressFcn', {@keyPress},'Enable','Off','tooltip','Group data');
-        uicontrol('Parent',UI.panel.group,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Color groups','HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.group,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Coloring-groups','HorizontalAlignment','center');
         UI.popupmenu.colors = uicontrol('Parent',UI.panel.group,'Style','popupmenu','Position',[2 10 144 10],'Units','normalized','String',{'By group data','By cell types','Single group','Compare to other','By higher brain region'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)buttonGroups(0),'KeyPressFcn', {@keyPress},'tooltip','Select color data');
         set(UI.panel.group, 'Heights', [15 20 -1 15 25], 'Spacing', 5);
         
@@ -10610,14 +10676,15 @@ end
         % % % % % % % % % % % % % % % % % % % %
         % Select subset of cell type
         updateCellCount
-        uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Display settings','HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Putative Cell types','HorizontalAlignment','center');
         UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[0 73 148 48],'Units','normalized','String',strcat(UI.preferences.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.preferences.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress},'tooltip','Displayed putative cell types. Select to filter');
         
         % Number of plots
-        UI.panel.buttonGroup5 = uix.HBox('Parent',UI.panel.displaySettings);
-        uicontrol('Parent',UI.panel.buttonGroup5,'Style','text','Position',[0 0 0.3 1],'Units','normalized','String','Layout','HorizontalAlignment','center');
-        UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.buttonGroup5,'Style','popupmenu','Position',[0.3 0 0.7 1],'Units','normalized','String',{'GUI 1+3','GUI 2+3','GUI 3+3','GUI 3+4','GUI 3+5','GUI 3+6','GUI 1+6'},'max',1,'min',1,'Value',UI.preferences.layout,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress},'tooltip','Select the GUI layout');
-        set(UI.panel.buttonGroup5, 'Widths', [45 -1], 'Spacing', 5);
+        uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Groups and single cell plots','HorizontalAlignment','center');
+%         UI.panel.buttonGroup5 = uix.HBox('Parent',UI.panel.displaySettings);
+%         uicontrol('Parent',UI.panel.buttonGroup5,'Style','text','Position',[0 0 0.25 1],'Units','normalized','String','Layout','HorizontalAlignment','center');
+        UI.popupmenu.plotCount = uicontrol('Parent',UI.panel.displaySettings,'Style','popupmenu','Position',[0.3 0 0.75 1],'Units','normalized','String',{'1 group, 3 single plots','2 groups, 3 single plots','3 groups, 3 single plots','3 groups, 4 single plots','3 groups, 5 single plots','3 groups, 6 single plots','1 group, 6 single plots'},'max',1,'min',1,'Value',UI.preferences.layout,'Callback',@(src,evnt)AdjustGUIbutton,'KeyPressFcn', {@keyPress},'tooltip','Select the GUI layout');
+%         set(UI.panel.buttonGroup5, 'Widths', [45 -1], 'Spacing', 5);
         
         for i_disp = 1:6
             UI.panel.buttonGroupView{i_disp} = uix.HBox('Parent',UI.panel.displaySettings);
@@ -10625,7 +10692,7 @@ end
             UI.popupmenu.customplot{i_disp} = uicontrol('Parent',UI.panel.buttonGroupView{i_disp},'Style','popupmenu','String',plotOptions,'max',1,'min',1,'Value',1,'Callback',@toggleWaveformsPlot,'KeyPressFcn', {@keyPress},'tooltip','Single cell plot');
             set(UI.panel.buttonGroupView{i_disp}, 'Widths', [15 -1], 'Spacing', 2);
         end
-        set(UI.panel.displaySettings, 'Heights', [15 -1 22 22 22 22 22 22 25], 'Spacing', 3);
+        set(UI.panel.displaySettings, 'Heights', [15 -1 15 22 22 22 22 22 22 25], 'Spacing', 3);
         
         % % % % % % % % % % % % % % % % % % % %
         % Tab panel 2 (left side)
@@ -11024,7 +11091,7 @@ end
         end
         
         if isfield(cell_metrics,'spikes')
-            rasterOption = {'Spike raster'};
+            rasterOption = {'Spike raster (single)';'Spike raster (session)'};
         else
             rasterOption = [];
         end
