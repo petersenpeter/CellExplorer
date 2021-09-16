@@ -42,16 +42,22 @@ p = inputParser;
 addParameter(p,'buzcode',false,@islogical); % Defines whether bz_FindRipples or ce_FindRipples is called
 addParameter(p,'saveMat',true,@islogical); % Defines if a mat file is created
 addParameter(p,'saveFig',true,@islogical); % Defines if the summary figure is saved to basepath
+addParameter(p,'basepath',[]);
 
 % Parsing inputs
 parse(p,varargin{:})
 buzcode = p.Results.buzcode;
 saveMat = p.Results.saveMat;
 saveFig = p.Results.saveFig;
+basepath = p.Results.basepath;
 
 % Gets basepath and basename from session struct
-basepath = session.general.basePath;
-basename = session.general.name;
+if isempty(basepath)
+    basepath = session.general.basePath;
+    basename = session.general.name;
+else
+    basename = basenameFromBasepath(basepath);
+end
 
 % Loading detected ripples
 if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
