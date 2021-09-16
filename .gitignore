@@ -2,3 +2,4 @@
 .DS_Store
 CellExplorer.sublime-workspace
 CellExplorer.sublime-project
+*.asv
