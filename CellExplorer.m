@@ -163,7 +163,7 @@ if isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
 
-CellExplorerVersion = 1.71;
+CellExplorerVersion = 1.72;
 
 UI.fig = figure('Name',['CellExplorer v' num2str(CellExplorerVersion)],'NumberTitle','off','renderer','opengl', 'MenuBar', 'None','windowscrollWheelFcn',@ScrolltoZoomInPlot,'KeyPressFcn', {@keyPress},'DefaultAxesLooseInset',[.01,.01,.01,.01],'visible','off','WindowButtonMotionFcn', @hoverCallback,'pos',[0,0,1600,800],'DefaultTextInterpreter', 'none', 'DefaultLegendInterpreter', 'none'); % ,'WindowButtonDownFcn',@mousebuttonPress,'WindowButtonUpFcn',@mousebuttonRelease
 hManager = uigetmodemanager(UI.fig);
@@ -693,11 +693,15 @@ function updateUI
             else
                 set(h_scatter(2), 'XScale', 'linear')
             end
+            linkaxes([UI.axes(1) h_scatter(2)],'x')
             if UI.checkbox.logy.Value == 1
                 set(h_scatter(3), 'XScale', 'log')
             else
                 set(h_scatter(3), 'XScale', 'linear')
             end
+            UI.xLimListener = addlistener(UI.axes(1), 'YLim', 'PostSet', @(src,evt) set_lims(h_scatter(3),'XLim', UI.axes(1),'YLim'));
+            UI.yLimListener = addlistener(h_scatter(3), 'XLim', 'PostSet', @(src,evt) set_lims(UI.axes(1),'YLim', h_scatter(3),'XLim'));
+            set(UI.fig,'CurrentAxes',UI.axes(1))
         end
 
         if ((strcmp(UI.preferences.referenceData, 'Image') && ~isempty(reference_cell_metrics)) || (strcmp(UI.preferences.groundTruthData, 'Image')) && ~isempty(groundTruth_cell_metrics)) && UI.checkbox.logy.Value == 1
@@ -1403,6 +1407,9 @@ function updateUI
             set(UI.axes(2),'YScale','log','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto'), hold on
             UI.axes(2).YAxis(1).Color = 'k'; 
             UI.axes(2).YAxis(2).Color = 'k';
+            if ~isfield(UI,'xLimListener2')
+                UI.xLimListener2 = addlistener(UI.axes(2), 'YLim', 'PostSet', @(src,evt) set_lims2(UI.axes(2), 'YLim', UI.axes(2),'YLim'));
+            end
         end
         
         % Reference data
@@ -2918,7 +2925,7 @@ end
             % Firing rates across time for the population
             responseCurvesName = customPlotSelection(5:end-8);
             plotAxes.XLabel.String = 'Time (s)';
-            plotAxes.YLabel.String = '';
+            plotAxes.YLabel.String = 'Cells';
             plotAxes.Title.String = responseCurvesName;
             if isfield(cell_metrics.responseCurves,responseCurvesName) && ~isempty(cell_metrics.responseCurves.(responseCurvesName){ii})
                 if UI.BatchMode
@@ -2980,7 +2987,7 @@ end
             % Firing rates across time for the population
             responseCurvesName = customPlotSelection(5:end-6);
             plotAxes.XLabel.String = 'Time (s)';
-            plotAxes.YLabel.String = '';
+            plotAxes.YLabel.String = 'Rate (Hz)';
             plotAxes.Title.String = responseCurvesName;
             if isfield(cell_metrics.responseCurves,responseCurvesName) && ~isempty(cell_metrics.responseCurves.(responseCurvesName){ii})
                 if UI.BatchMode
@@ -3644,7 +3651,7 @@ end
                 if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
                     fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj}) && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
                             idx_groupData = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX1(idx_groupData), plotY1(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
@@ -4858,9 +4865,30 @@ end
         ClickedCells = dialog_metrics_groupData;
         initTags
         updateTags
+        updateGrouptagsTable
         if ~isempty(ClickedCells)
             UI.params.ClickedCells = ClickedCells;
             GroupAction(ClickedCells);
+        end
+    end
+    
+    function updateGrouptagsTable
+        for i = 1:numel(UI.preferences.tags)
+            if isfield(UI.groupData1,'tags') && isfield(UI.groupData1.tags,'highlight') && isfield(UI.groupData1.tags.highlight,UI.preferences.tags{i})
+                UI.tables.grouptags.Data{i,2} = UI.groupData1.tags.highlight.(UI.preferences.tags{i});
+            else
+                UI.tables.grouptags.Data{i,2} = false;
+            end
+            if isfield(UI.groupData1,'tags') && isfield(UI.groupData1.tags,'plus_filter') && isfield(UI.groupData1.tags.plus_filter,UI.preferences.tags{i})
+                UI.tables.grouptags.Data{i,3} = UI.groupData1.tags.plus_filter.(UI.preferences.tags{i});
+            else
+                UI.tables.grouptags.Data{i,3} = false;
+            end
+            if  isfield(UI.groupData1,'tags') && isfield(UI.groupData1.tags,'minus_filter') && isfield(UI.groupData1.tags.minus_filter,UI.preferences.tags{i})
+                UI.tables.grouptags.Data{i,4} = UI.groupData1.tags.minus_filter.(UI.preferences.tags{i});
+            else
+                UI.tables.grouptags.Data{i,4} = false;
+            end
         end
     end
     
@@ -4916,7 +4944,7 @@ end
                 delete(UI.groupData1.dialog);
                 initTags
                 updateTags
-                updateUI2
+                updateGrouptagsTable
             end
         end
         
@@ -4925,31 +4953,6 @@ end
             toggleGroundTruthButtons
             updateGroupList
             filterGroupData
-        end
-        
-        function updateUI2
-            for i = 1:numel(UI.preferences.tags)
-                if isfield(UI,'togglebutton')
-                    if  isfield(UI.groupData1,'tags') && isfield(UI.groupData1.tags,'minus_filter') && isfield(UI.groupData1.tags.minus_filter,UI.preferences.tags{i})
-                        UI.togglebutton.dispTags(i).Value = UI.groupData1.tags.minus_filter.(UI.preferences.tags{i});
-                        UI.togglebutton.dispTags(i).FontWeight = 'bold';
-                        UI.togglebutton.dispTags(i).ForegroundColor = UI.colors.toggleButtons;
-                    else
-                        UI.togglebutton.dispTags(i).Value = 0;
-                        UI.togglebutton.dispTags(i).FontWeight = 'normal';
-                        UI.togglebutton.dispTags(i).ForegroundColor = [0 0 0];
-                    end
-                    if isfield(UI.groupData1,'tags') && isfield(UI.groupData1.tags,'plus_filter') && isfield(UI.groupData1.tags.plus_filter,UI.preferences.tags{i})
-                        UI.togglebutton.dispTags2(i).Value = UI.groupData1.tags.plus_filter.(UI.preferences.tags{i});
-                        UI.togglebutton.dispTags2(i).FontWeight = 'bold';
-                        UI.togglebutton.dispTags2(i).ForegroundColor = UI.colors.toggleButtons;
-                    else
-                        UI.togglebutton.dispTags2(i).Value = 0;
-                        UI.togglebutton.dispTags2(i).FontWeight = 'normal';
-                        UI.togglebutton.dispTags2(i).ForegroundColor = [0 0 0];
-                    end
-                end
-            end
         end
         
         function toggleGroundTruthButtons
@@ -5172,7 +5175,7 @@ end
             delete(UI.groupData1.dialog);
             initTags
             updateTags
-            updateUI2
+            updateGrouptagsTable
             uiresume(UI.fig);
         end
     end
@@ -5748,10 +5751,6 @@ end
     end
 
     function initTags
-        % Initialize tags
-%         dispTags = ones(size(UI.preferences.tags));
-%         dispTags2 = zeros(size(UI.preferences.tags));
-        
         % Tags
         buttonPosition = getButtonLayout(UI.tabs.tags,UI.preferences.tags,1);
         delete(UI.togglebutton.tag)
@@ -5761,18 +5760,7 @@ end
         m = length(UI.preferences.tags)+1;
         UI.togglebutton.tag(m) = uicontrol('Parent',UI.tabs.tags,'Style','togglebutton','String','+ tag','Position',buttonPosition{m},'Units','normalized','Callback',@(src,evnt)addTag,'KeyPressFcn', {@keyPress});
         
-        % Display settings for tags1
-        buttonPosition = getButtonLayout(UI.tabs.dispTags_minus,UI.preferences.tags,0);
-        delete(UI.togglebutton.dispTags)
-        for m = 1:length(UI.preferences.tags)
-            UI.togglebutton.dispTags(m) = uicontrol('Parent',UI.tabs.dispTags_minus,'Style','togglebutton','String',UI.preferences.tags{m},'Position',buttonPosition{m},'Value',1,'Units','normalized','Callback',@(src,evnt)buttonTags_minus(m),'KeyPressFcn', {@keyPress});
-        end
-        
-        % Display settings for tags2
-        delete(UI.togglebutton.dispTags2)
-        for m = 1:length(UI.preferences.tags)
-            UI.togglebutton.dispTags2(m) = uicontrol('Parent',UI.tabs.dispTags_plus,'Style','togglebutton','String',UI.preferences.tags{m},'Position',buttonPosition{m},'Value',0,'Units','normalized','Callback',@(src,evnt)buttonTags_plus(m),'KeyPressFcn', {@keyPress});
-        end
+        initGrouptagsTable
     end
 
     function colored_string = DefineCellTypeList
@@ -5827,31 +5815,33 @@ end
             
         end
     end
-
-    function buttonTags_minus(input)
-        UI.groupData1.tags.minus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags(input).Value;
-        if UI.togglebutton.dispTags(input).Value == 1
-            UI.togglebutton.dispTags(input).FontWeight = 'bold';
-            UI.togglebutton.dispTags(input).ForegroundColor = UI.colors.toggleButtons;
-        else
-            UI.togglebutton.dispTags(input).FontWeight = 'normal';
-            UI.togglebutton.dispTags(input).ForegroundColor = [0 0 0];
+    
+    function buttonTags_table(~,evnt)
+        row = evnt.Indices(1,1);
+        column = evnt.Indices(1,2);
+        tag_name = UI.tables.grouptags.Data{row,1};
+        if column == 2
+            UI.groupData1.tags.highlight.(tag_name) = evnt.NewData;
+        elseif column == 3
+            UI.groupData1.tags.plus_filter.(tag_name) = evnt.NewData;
+        elseif column == 4
+            UI.groupData1.tags.minus_filter.(tag_name) = evnt.NewData;
         end
+        
         uiresume(UI.fig);
     end
-
-    function buttonTags_plus(input)
-        UI.groupData1.tags.plus_filter.(UI.preferences.tags{input}) = UI.togglebutton.dispTags2(input).Value;
-        if UI.togglebutton.dispTags2(input).Value == 1
-            UI.togglebutton.dispTags2(input).FontWeight = 'bold';
-            UI.togglebutton.dispTags2(input).ForegroundColor = UI.colors.toggleButtons;
-        else
-            UI.togglebutton.dispTags2(input).FontWeight = 'normal';
-            UI.togglebutton.dispTags2(input).ForegroundColor = [0 0 0];
+    
+    function initGrouptagsTable
+        tableData = {};
+        for m = 1:length(UI.preferences.tags)
+            tableData{m,1} = UI.preferences.tags{m};
+            tableData{m,2} = false;
+            tableData{m,3} = false;
+            tableData{m,4} = false;
         end
-        uiresume(UI.fig);
+        UI.tables.grouptags.Data = tableData;
     end
-
+        
     function updateTags
         % Updates tags
         fields1 = fieldnames(cell_metrics.tags);
@@ -6132,6 +6122,20 @@ end
             nLegends = nLegends - 1;
         end
         ylim([min(nLegends,-5)+0.5,0.5])
+    end
+    
+    function set_lims(ax_set,lim_set, ax_source,lim_source)
+        set(ax_set, lim_set, get(ax_source, lim_source))
+    end
+    
+    function set_lims2(ax_set,lim_set, ax_source,lim_source)
+%         try
+            yyaxis(ax_set,'right')
+            lim1 = log10(get(ax_source, lim_source));
+            yyaxis(ax_set,'left')
+            set(ax_set, lim_set, lim1)
+            yyaxis(ax_set,'right')
+%         end
     end
 
     function plotCharacteristics(cellID)
@@ -7836,40 +7840,38 @@ end
             filterCells.currentFilter = uicontrol('Parent',filterCells.dialog,'Style','checkbox','Position',[410, 445, 150, 25],'String',['Current filter (', num2str(numel(UI.params.subset)) ,' cells)'],'HorizontalAlignment','right','tooltip','Toggle select cell by current filter');
             
             % Text field
-            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Metric to filter', 'Position', [10, 420, 180, 15],'HorizontalAlignment','left');
+            uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Filter by numeric metric', 'Position', [10, 420, 180, 15],'HorizontalAlignment','left');
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Logic filter', 'Position', [300, 420, 100, 15],'HorizontalAlignment','left');
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Value', 'Position', [410, 420, 170, 15],'HorizontalAlignment','left');
-            filterCells.filterDropdown = uicontrol('Parent',filterCells.dialog,'Style','popupmenu','Position',[10, 395, 280, 25],'Units','normalized','String',['Select';UI.lists.metrics],'Value',1,'HorizontalAlignment','left');
+            filterCells.filterDropdown = uicontrol('Parent',filterCells.dialog,'Style','popupmenu','Position',[10, 395, 280, 25],'Units','normalized','String',['Select metric';UI.lists.metrics],'Value',1,'HorizontalAlignment','left');
             filterCells.filterType = uicontrol('Parent',filterCells.dialog,'Style', 'popupmenu', 'String', {'>','<','==','~='}, 'Value',1,'Position', [300, 395, 100, 25],'HorizontalAlignment','left');
             filterCells.filterInput = uicontrol('Parent',filterCells.dialog,'Style', 'Edit', 'String', '', 'Position', [410, 395, 170, 25],'HorizontalAlignment','left','KeyReleaseFcn',@cellSelection1);
             
             % Cell type
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Cell types', 'Position', [10, 375, 280, 15],'HorizontalAlignment','left');
-            cell_class_count = getCellcount('putativeCellType',UI.preferences.cellTypes);
-            filterCells.cellTypes = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 295 280 80],'Units','normalized','String',strcat(UI.preferences.cellTypes,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            counts_celltypes = getCellcount('putativeCellType',UI.preferences.cellTypes);
+            filterCells.cellTypes = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 295 280 80],'Units','normalized','String',strcat(UI.preferences.cellTypes,' (',counts_celltypes,')'),'max',100,'min',0,'Value',[]);
             
             % Brain region
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Brain regions', 'Position', [300, 375, 280, 15],'HorizontalAlignment','left');
-            cell_class_count = getCellcount('brainRegion',groups_ids.brainRegion_num);
-            filterCells.brainRegions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 295 280 80],'Units','normalized','String',strcat(groups_ids.brainRegion_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            counts_brainregions = getCellcount('brainRegion',groups_ids.brainRegion_num);
+            filterCells.brainRegions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 295 280 80],'Units','normalized','String',strcat(groups_ids.brainRegion_num,' (',counts_brainregions,')'),'max',100,'min',0,'Value',[]);
             
             % Session
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Sessions', 'Position', [10, 270, 280, 15],'HorizontalAlignment','left');
-            cell_class_count = getCellcount(cell_metrics.sessionName,groups_ids.sessionName_num);
-            filterCells.sessions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 150 280 120],'Units','normalized','String',strcat(groups_ids.sessionName_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            counts_sessions = getCellcount('sessionName',groups_ids.sessionName_num);
+            filterCells.sessions = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [10 150 280 120],'Units','normalized','String',strcat(groups_ids.sessionName_num,' (',counts_sessions,')'),'max',100,'min',0,'Value',[]);
             
             % Animal
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Animals', 'Position', [300, 270, 280, 15],'HorizontalAlignment','left');
-            cell_class_count = getCellcount('animal',groups_ids.animal_num);
-            filterCells.animals = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 150 280 120],'Units','normalized','String',strcat(groups_ids.animal_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            counts_animals = getCellcount('animal',groups_ids.animal_num);
+            filterCells.animals = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position', [300 150 280 120],'Units','normalized','String',strcat(groups_ids.animal_num,' (',counts_animals,')'),'max',100,'min',0,'Value',[]);
             
             % Synaptic effect
             
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Synaptic effect', 'Position', [10, 130, 280, 15],'HorizontalAlignment','left');
-            if isfield(cell_metrics,'synapticEffect')
-                cell_class_count = getCellcount('synapticEffect',groups_ids.synapticEffect_num);
-            end
-            filterCells.synEffect = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position',  [10 50 280 80],'Units','normalized','String',strcat(groups_ids.synapticEffect_num,' (',cell_class_count,')'),'max',100,'min',0,'Value',[]);
+            counts_synapticEffect = getCellcount('synapticEffect',groups_ids.synapticEffect_num);
+            filterCells.synEffect = uicontrol('Parent',filterCells.dialog,'Style','listbox','Position',  [10 50 280 80],'Units','normalized','String',strcat(groups_ids.synapticEffect_num,' (',counts_synapticEffect,')'),'max',100,'min',0,'Value',[]);
             
             % Connections
             uicontrol('Parent',filterCells.dialog,'Style', 'text', 'String', 'Synaptic connections', 'Position', [300, 130, 280, 15],'HorizontalAlignment','left');
@@ -7890,14 +7892,13 @@ end
             end
         end
         
-        function cell_class_count = getCellcount(plot11,labels)
-            if isfield(cell_metrics,plot11)
-            cell_metrics.(plot11)
-            [~,plot11] = ismember(plot11,labels);
-            cell_class_count = histc(plot11,[1:length(labels)]);
-            cell_class_count = cellstr(num2str(cell_class_count'))';
+        function cell_class_count = getCellcount(fieldname1,labels)
+            if isfield(cell_metrics,fieldname1)
+                [~,idx] = ismember(cell_metrics.(fieldname1),labels);
+                cell_class_count = histc(idx,[1:length(labels)]);
+                cell_class_count = cellstr(num2str(cell_class_count'))';
             else
-                cell_class_count = {'0'};
+                cell_class_count = repmat({'0'},1,length(labels));
             end
         end
         
@@ -10255,8 +10256,8 @@ end
         UI.menu.waveforms.channelMapColoring = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Show group colors in channel map inset',menuSelectedFcn,@showChannelMap);
         UI.menu.waveforms.showInsetACG = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Show ACG inset',menuSelectedFcn,@showInsetACG,'Separator','on');
         
-        UI.menu.waveforms.waveformsAcrossChannelsAlignmentMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Waveform alignment','Separator','on');
-        UI.menu.waveforms.waveformsAcrossChannelsAlignment.ops(1) = uimenu(UI.menu.waveforms.waveformsAcrossChannelsAlignmentMenu,menuLabel,'Probe layout',menuSelectedFcn,@adjustWaveformsAcrossChannelsAlignment);
+        UI.menu.waveforms.waveformsAcrossChannelsAlignmentMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Waveform channel alignment','Separator','on');
+        UI.menu.waveforms.waveformsAcrossChannelsAlignment.ops(1) = uimenu(UI.menu.waveforms.waveformsAcrossChannelsAlignmentMenu,menuLabel,'Channel coordinates',menuSelectedFcn,@adjustWaveformsAcrossChannelsAlignment);
         UI.menu.waveforms.waveformsAcrossChannelsAlignment.ops(2) = uimenu(UI.menu.waveforms.waveformsAcrossChannelsAlignmentMenu,menuLabel,'Electrode groups',menuSelectedFcn,@adjustWaveformsAcrossChannelsAlignment);
         
         UI.menu.waveforms.plotChannelMapAllChannelsMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Waveform count across channels');
@@ -10271,8 +10272,8 @@ end
         UI.menu.waveforms.peakVoltage_session = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Population in Peak voltage plot',menuSelectedFcn,@showSessionPeakVoltage,'Separator','on');
         
         UI.menu.waveforms.peakVoltage_all_sortingMenu = uimenu(UI.menu.waveforms.topMenu,menuLabel,'Peak voltage channel sorting');
-        UI.menu.waveforms.peakVoltage_all_sorting.ops(1) = uimenu(UI.menu.waveforms.peakVoltage_all_sortingMenu,menuLabel,'Channel order',menuSelectedFcn,@adjustPeakVoltage_all_sorting);
-        UI.menu.waveforms.peakVoltage_all_sorting.ops(2) = uimenu(UI.menu.waveforms.peakVoltage_all_sortingMenu,menuLabel,'Amplitude',menuSelectedFcn,@adjustPeakVoltage_all_sorting);
+        UI.menu.waveforms.peakVoltage_all_sorting.ops(1) = uimenu(UI.menu.waveforms.peakVoltage_all_sortingMenu,menuLabel,'By channel order in electrode groups',menuSelectedFcn,@adjustPeakVoltage_all_sorting);
+        UI.menu.waveforms.peakVoltage_all_sorting.ops(2) = uimenu(UI.menu.waveforms.peakVoltage_all_sortingMenu,menuLabel,'By amplitude',menuSelectedFcn,@adjustPeakVoltage_all_sorting);
         UI.menu.waveforms.peakVoltage_all_sorting.ops(3) = uimenu(UI.menu.waveforms.peakVoltage_all_sortingMenu,menuLabel,'None',menuSelectedFcn,@adjustPeakVoltage_all_sorting);
         
         % View / display
@@ -10487,7 +10488,7 @@ end
         UI.panel.left = uix.VBoxFlex('Parent',UI.HBox,'position',[0 0.66 0.26 0.31]);
         
         % Elements in left panel
-        UI.textFilter = uicontrol('Style','edit','Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText,'tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuro"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with AND // OR operators (&,|) \nEaxmple: ".firingRate > 10 & CA1"\nFilter by parent brain regions as well, fx: ".brainRegion HIP"\nMake sure to include  spaces between fields and operators' ));
+        UI.textFilter = uicontrol('Style','edit','FontSize',12,'Units','normalized','Position',[0 0.973 1 0.024],'String','Filter','HorizontalAlignment','left','Parent',UI.panel.left,'Callback',@filterCellsByText,'tooltip',sprintf('Search across cell metrics\nString fields: "CA1" or "Interneuron"\nNumeric fields: ".firingRate > 10" or ".cv2 < 0.5" (==,>,<,~=) \nCombine with AND // OR operators (&,|) \nExample: ".firingRate > 10 & CA1"\nFilter by parent brain region, fx: ".brainRegion HIP"\nMake sure to include  spaces between fields and operators' ));
         UI.panel.custom = uix.VBox('Position',[0 0.717 1 0.255],'Parent',UI.panel.left);
         UI.panel.group = uix.VBox('Parent',UI.panel.left);
         UI.panel.displaySettings = uix.VBox('Parent',UI.panel.left);
@@ -10520,7 +10521,8 @@ end
         UI.panel.right = uix.VBoxFlex('Parent',UI.HBox,'position',[0 0.66 0.26 0.31]);
         
         % UI menu panels
-        UI.panel.navigation = uipanel('Title','Navigation','TitlePosition','centertop','Position',[0 0.927 1 0.065],'Units','normalized','Parent',UI.panel.right);
+        UI.panel.navigation = uipanel('Title','Navigation','TitlePosition','centertop','Position',[0 0.927 1 0.065],'Units','normalized','Parent',UI.panel.right,'BorderType','none');
+        UI.panel.navigation2 = uipanel('Title','Selection & actions','TitlePosition','centertop','Position',[0 0.927 1 0.065],'Units','normalized','Parent',UI.panel.right,'BorderType','none');
         UI.panel.cellAssignment = uix.VBox('Position',[0 0.643 1 0.275],'Parent',UI.panel.right);
         UI.panel.tabgroup1 = uitabgroup('Position',[0 0.493 1 0.142],'Units','normalized','Parent',UI.panel.right);
         
@@ -10550,7 +10552,7 @@ end
         % Table with metrics for selected cell
         UI.table = uitable('Parent',UI.panel.right,'Data',[table_fieldsNames,table_metrics(:,1)],'Units','normalized','Position',[0 0.003 1 0.485],'ColumnWidth',{100,  100},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn', {@keyPress},'tooltip',sprintf('Metrics for current cell. \nClick left column to select metric in custom group plot on x axis. \nClick right column to select metric in custom group plot on y axis  \nChange table data in Table data menu'));
         
-        set(UI.panel.right, 'Heights', [50 250 180 -1], 'Spacing', 8,'MinimumHeights',[50 20 20 20]);
+        set(UI.panel.right, 'Heights', [48 48 230 180 -1], 'Spacing', 8,'MinimumHeights',[48 48 20 20 20]);
         
         
         if UI.preferences.metricsTable==1
@@ -10583,6 +10585,13 @@ end
         uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0 0.33 1],'String','GoTo','Callback',@(src,evnt)goToCell,'KeyPressFcn', {@keyPress},'tooltip','Open a dialog to provide specific cell id');
         UI.pushbutton.next = uicontrol('Parent',UI.panel.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0 0.33 1],'String',char(8594),'Callback',@advance,'KeyPressFcn', {@keyPress},'tooltip','Go to next cell (i+1)');
         
+        % Poly-select and action
+%         uicontrol('Parent',UI.panel.cellAssignment,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Selection & actions','HorizontalAlignment','center');
+%         UI.panel.buttonGroup0 = uix.HBox('Parent',UI.panel.cellAssignment);
+        uicontrol('Parent',UI.panel.navigation2,'Style','pushbutton','Units','normalized','Position',[0 0 0.5 1],'String','O Polygon','Callback',@(src,evnt)polygonSelection,'KeyPressFcn', {@keyPress},'tooltip','Draw a polygon around cells to select them');
+        uicontrol('Parent',UI.panel.navigation2,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.5 1],'String','Actions','Callback',@(src,evnt)selectCellsForGroupAction,'KeyPressFcn', {@keyPress},'tooltip','Perform group action on selected cells');
+        
+        
         % % % % % % % % % % % % % % % % % % % %
         % Cell assignments panel (right side)
         % % % % % % % % % % % % % % % % % % % %
@@ -10592,18 +10601,13 @@ end
         uicontrol('Parent',UI.panel.cellAssignment,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Cell classification','HorizontalAlignment','center');
         UI.listbox.cellClassification = uicontrol('Parent',UI.panel.cellAssignment,'Style','listbox','Position',[0 54 148 48],'Units','normalized','String',colored_string,'max',1,'min',1,'Value',1,'fontweight', 'bold','Callback',@(src,evnt)listCellType,'KeyPressFcn', {@keyPress},'tooltip','Cell type of current cell. Click to assign');
         
-        % Poly-select and action
-        UI.panel.buttonGroup0 = uix.HBox('Parent',UI.panel.cellAssignment);
-        uicontrol('Parent',UI.panel.buttonGroup0,'Style','pushbutton','Units','normalized','Position',[0 0 0.5 1],'String','O Polygon','Callback',@(src,evnt)polygonSelection,'KeyPressFcn', {@keyPress},'tooltip','Draw a polygon around cells to select them');
-        uicontrol('Parent',UI.panel.buttonGroup0,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.5 1],'String','Actions','Callback',@(src,evnt)selectCellsForGroupAction,'KeyPressFcn', {@keyPress},'tooltip','Perform group action on selected cells');
-        
         % Brain region
         UI.pushbutton.brainRegion = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 20 145 15],'Units','normalized','String',['Region: ', cell_metrics.brainRegion{ii}],'Callback',@(src,evnt)buttonBrainRegion,'KeyPressFcn', {@keyPress},'tooltip','Brain region of current cell. Click to assign');
         
         % Custom labels
         UI.pushbutton.labels = uicontrol('Parent',UI.panel.cellAssignment,'Style','pushbutton','Position',[2 3 145 15],'Units','normalized','String',['Label: ', cell_metrics.labels{ii}],'Callback',@(src,evnt)buttonLabel,'KeyPressFcn', {@keyPress},'tooltip','Label of current cell. Click to assign');
         
-        set(UI.panel.cellAssignment, 'Heights', [15 -1 30 30 30], 'Spacing', 5);
+        set(UI.panel.cellAssignment, 'Heights', [15 -1 30 30], 'Spacing', 5);
         
         % % % % % % % % % % % % % % % % % % % %
         % Tab panel 1 (right side)
@@ -10699,22 +10703,14 @@ end
         % % % % % % % % % % % % % % % % % % % %
         
         % UI display settings tabs
-        UI.tabs.legends =        uitab(UI.panel.tabgroup2,'Title','Legend','tooltip',sprintf('Legend for plots. \nClick to show legends in separate figure'));
-        UI.tabs.dispTags_minus = uitab(UI.panel.tabgroup2,'Title','-Tags','tooltip',sprintf('Cell tags. \nHide cells with one or more specific tags'));
-        UI.tabs.dispTags_plus =  uitab(UI.panel.tabgroup2,'Title','+Tags','tooltip',sprintf('Cell tags. \nFilter cells with one or more specific tags'));
+        UI.tabs.legends = uitab(UI.panel.tabgroup2,'Title','Legend','tooltip',sprintf('Legend for plots. \nClick to show legends in separate figure'));
+        UI.tabs.dispTags = uitab(UI.panel.tabgroup2,'Title','Tags','tooltip',sprintf('Cell tags. \nHide cells with one or more specific tags'));
+        
         UI.axis.legends = axes(UI.tabs.legends,'Position',[0 0 1 1]);
         set(UI.axis.legends,'ButtonDownFcn',@createLegend)
         
-        % Display settings for tags_minus
-        buttonPosition = getButtonLayout(UI.tabs.dispTags_minus,UI.preferences.tags,0);
-        for m = 1:length(UI.preferences.tags)
-            UI.togglebutton.dispTags(m) = uicontrol('Parent',UI.tabs.dispTags_minus,'Style','togglebutton','String',UI.preferences.tags{m},'Units','normalized','Position',buttonPosition{m},'Value',0,'Callback',@(src,evnt)buttonTags_minus(m),'KeyPressFcn', {@keyPress});
-        end
-        
-        % Display settings for tags_plus
-        for m = 1:length(UI.preferences.tags)
-            UI.togglebutton.dispTags2(m) = uicontrol('Parent',UI.tabs.dispTags_plus,'Style','togglebutton','String',UI.preferences.tags{m},'Units','normalized','Position',buttonPosition{m},'Value',0,'Callback',@(src,evnt)buttonTags_plus(m),'KeyPressFcn', {@keyPress});
-        end
+        UI.tables.grouptags = uitable(UI.tabs.dispTags,'Data', {'',false,false,false},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{75 20 20 20},'columnname',{'Tags',char(8226),'+','-'},'RowName',[],'ColumnEditable',[false true true true],'CellEditCallback',@buttonTags_table);
+        initGrouptagsTable
         
         set(UI.panel.left, 'MinimumHeights',[25 230 10 10 50]);
         
@@ -12777,7 +12773,7 @@ end
             % 1. benchmark with minimum features
             UI.preferences.metricsTable = 3; % turning off table data
             buttonShowMetrics
-            UI.panel.tabgroup2.SelectedTab = UI.tabs.dispTags_minus; % Deselecting figure legends
+            UI.panel.tabgroup2.SelectedTab = UI.tabs.dispTags; % Deselecting figure legends
             UI.preferences.plotInsetChannelMap = 1; % Hiding channel map inset in waveform plots.
             UI.preferences.plotInsetACG = 1; % Hiding ACG inset in waveform plots.
             UI.preferences.customPlot{1} = 'Waveforms (single)';

@@ -471,6 +471,8 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         chanCoordsFile = fullfile(basepath,[basename,'.chanCoords.channelInfo.mat']);
         if isfield(session.extracellular,'chanCoords')
             chanCoords = session.extracellular.chanCoords;
+            chanCoords.x = chanCoords.x(:);
+            chanCoords.y = chanCoords.y(:);
         elseif exist(chanCoordsFile,'file')
             load(chanCoordsFile,'chanCoords');
             chanCoords.x = chanCoords.x(:);
@@ -491,9 +493,10 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 disp('  Generating chanCoords')
                 chanCoords = generateChanCoords(session);
             end
+            
             session.extracellular.chanCoords = chanCoords;
         end
-
+        
         cell_metrics.general.chanCoords = chanCoords;
         
         % Fit exponential

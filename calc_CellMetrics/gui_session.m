@@ -1172,6 +1172,8 @@ uiwait(UI.fig)
     function readBackChanCoords
         session.extracellular.chanCoords.x = eval(['[',UI.edit.chanCoords_x.String,']']);
         session.extracellular.chanCoords.y = eval(['[',UI.edit.chanCoords_y.String,']']);
+        session.extracellular.chanCoords.x = session.extracellular.chanCoords.x(:);
+        session.extracellular.chanCoords.y = session.extracellular.chanCoords.y(:);
         session.extracellular.chanCoords.source = UI.edit.chanCoords_source.String;
         session.extracellular.chanCoords.layout = UI.edit.chanCoords_layout.String;
         if ~isempty(UI.edit.chanCoords_shankSpacing.String) 

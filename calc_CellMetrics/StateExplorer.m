@@ -14,7 +14,7 @@ function dataIn = StateExplorer(dataIn,varargin)
     %
     % Example calls:
     %    StateExplorer
-    %    StateExplorer(dataIn)
+    %    dataIn = StateExplorer(dataIn)
     %    StateExplorer(dataIn,'basepath',basepath)
     %    StateExplorer(dataIn,'session',session)
     %

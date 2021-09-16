@@ -29,6 +29,7 @@ spikes_raster = []; % Spike raster (used for highlighting, to minimize computati
 epoch_plotElements.t0 = [];
 epoch_plotElements.events = [];
 score = [];
+
 if isdeployed % Check for if NeuroScope2 is running as a deployed app (compiled .exe or .app for windows and mac respectively)
     if ~isempty(varargin) % If a file name is provided it will load it.
         [basepath,basename,ext] = fileparts(varargin{1});
@@ -73,13 +74,16 @@ end
 
 int_gt_0 = @(n,sr) (isempty(n)) || (n <= 0 ) || (n >= sr/2);
 
+% % % % % % % % % % % % % % % % % % % % % %
 % Initialization
+% % % % % % % % % % % % % % % % % % % % % %
+
 initUI
 initData(basepath,basename);
 initInputs
 initTraces
 
-% % % % % % % % % % % % % % % % % % % % % %
+
 % Maximazing figure to full screen
 if ~verLessThan('matlab', '9.4')
     set(UI.fig,'WindowState','maximize'), set(UI.fig,'visible','on')
@@ -89,7 +93,10 @@ else
     drawnow nocallbacks; frame_h = get(UI.fig,'JavaFrame'); set(frame_h,'Maximized',1); drawnow nocallbacks;
 end
 
+% % % % % % % % % % % % % % % % % % % % % %
 % Main while loop of the interface
+% % % % % % % % % % % % % % % % % % % % % %
+
 while t0>=0
     % breaking if figure has been closed
     if ~ishandle(UI.fig)
@@ -126,6 +133,10 @@ while t0>=0
     end
     UI.timerInterface = tic;
 end
+
+% % % % % % % % % % % % % % % % % % % % % %
+% Closing
+% % % % % % % % % % % % % % % % % % % % % %
 
 % Closing all file readers
 fclose('all');
@@ -704,17 +715,17 @@ end
         
         % Intan analog
         if UI.settings.intan_showAnalog
-            plotAnalog('adc',data.session.extracellular.sr)
+            plotAnalog('adc')
         end
         
         % Intan aux
         if UI.settings.intan_showAux
-            plotAnalog('aux',data.session.extracellular.sr)
+            plotAnalog('aux')
         end
         
         % Intan digital
         if UI.settings.intan_showDigital
-            plotDigital('dig',data.session.extracellular.sr)
+            plotDigital('dig')
         end
         
         % Behavior
@@ -1053,18 +1064,21 @@ end
         ephys.plotted = true;
     end
 
-    function plotAnalog(signal,sr)
+    function plotAnalog(signal)
+        sr = data.session.timeSeries.(signal).sr;
+        precision = data.session.timeSeries.(signal).precision;
+        nDispSamples = UI.settings.windowDuration*sr;
         % Plotting analog traces
         if strcmp(UI.settings.fileRead,'bof')
             fseek(UI.fid.timeSeries.(signal),round(t0*sr)*data.session.timeSeries.(signal).nChannels*2,'bof'); % eof: end of file
         else 
             fseek(UI.fid.timeSeries.(signal),ceil(-UI.settings.windowDuration*sr)*data.session.timeSeries.(signal).nChannels*2,'eof'); % eof: end of file
         end
-        traces_analog = fread(UI.fid.timeSeries.(signal), [data.session.timeSeries.(signal).nChannels, UI.samplesToDisplay],'uint16')';
+        traces_analog = fread(UI.fid.timeSeries.(signal), [data.session.timeSeries.(signal).nChannels, nDispSamples],precision)';
         if UI.settings.showTimeseriesBelowTrace
-            line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,traces_analog(UI.dispSamples,:)./2^16*diff(UI.dataRange.intan)+UI.dataRange.intan(1), 'HitTest','off','Marker','none','LineStyle','-','linewidth',1);
+            line((1:nDispSamples)/sr,traces_analog./2^16*diff(UI.dataRange.intan)+UI.dataRange.intan(1), 'HitTest','off','Marker','none','LineStyle','-','linewidth',1);
         else
-            line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,traces_analog(UI.dispSamples,:)./2^16, 'HitTest','off','Marker','none','LineStyle','-','linewidth',1.5);
+            line((1:nDispSamples)/sr,traces_analog./2^16, 'HitTest','off','Marker','none','LineStyle','-','linewidth',1.5);
         end
         textString = {};
         for i = 1:data.session.timeSeries.(signal).nChannels
@@ -1075,22 +1089,25 @@ end
         UI.settings.textOffset = UI.settings.textOffset + data.session.timeSeries.(signal).nChannels;
     end
 
-    function plotDigital(signal,sr)
+    function plotDigital(signal)
+        sr = data.session.timeSeries.(signal).sr;
+        precision = data.session.timeSeries.(signal).precision;
+        nDispSamples = UI.settings.windowDuration*sr;
         % Plotting digital traces
         if strcmp(UI.settings.fileRead,'bof')
             fseek(UI.fid.timeSeries.(signal),round(t0*sr)*2,'bof');
         else
             fseek(UI.fid.timeSeries.(signal),ceil(-UI.settings.windowDuration*sr)*2,'eof');
         end
-        traces_digital = fread(UI.fid.timeSeries.(signal), [UI.samplesToDisplay],'uint16')';
+        traces_digital = fread(UI.fid.timeSeries.(signal), nDispSamples,precision)';
         traces_digital2 = [];
-        for i = 1:data.session.timeSeries.dig.nChannels
+        for i = 1:data.session.timeSeries.(signal).nChannels
             traces_digital2(:,i) = bitget(traces_digital,i)+i*0.001;
         end
         if UI.settings.showTimeseriesBelowTrace
-            line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,0.98*traces_digital2(UI.dispSamples,:)*diff(UI.dataRange.intan)+UI.dataRange.intan(1)+0.004, 'HitTest','off','Marker','none','LineStyle','-');
+            line((1:nDispSamples)/sr,0.98*traces_digital2*diff(UI.dataRange.intan)+UI.dataRange.intan(1)+0.004, 'HitTest','off','Marker','none','LineStyle','-');
         else
-            line((1:UI.nDispSamples)/UI.nDispSamples*UI.settings.windowDuration,0.98*traces_digital2(UI.dispSamples,:)+0.005, 'HitTest','off','Marker','none','LineStyle','-');
+            line((1:nDispSamples)/sr,0.98*traces_digital2+0.005, 'HitTest','off','Marker','none','LineStyle','-');
         end
         textString = '';
         for i = 1:data.session.timeSeries.(signal).nChannels
@@ -3642,7 +3659,7 @@ end
                 if isfield(data.session,'inputs')
                     inputs = fieldnames(data.session.inputs);
                     for i = 1:numel(inputs)
-                        if strcmp(data.session.inputs.(inputs{i}).inputType,timeSeries{fn})
+                        if strcmp(data.session.inputs.(inputs{i}).inputType,timeSeries{fn}) && ~isempty(data.session.inputs.(inputs{i}).channels)
                             UI.settings.traceLabels.(timeSeries{fn})(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.(timeSeries{fn}){data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
                         end
                     end
