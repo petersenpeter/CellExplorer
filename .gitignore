@@ -3,3 +3,5 @@
 CellExplorer.sublime-workspace
 CellExplorer.sublime-project
 *.asv
+calc_CellMetrics/data_NeuroScope2.mat
+calc_CellMetrics/last_preferences_CellExplorer.mat
