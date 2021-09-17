@@ -1,4 +1,4 @@
-function chanMap = generateChannelMap(session)
+function chanMap = generateChannelMap(session,varargin)
 % Generates a channelmap compatible with KiloSort. 
 % Original custom function by Brendon Watson and Sam McKenzie (from the KiloSortWrapper)
 
@@ -10,6 +10,11 @@ function chanMap = generateChannelMap(session)
 % layout: channel layout, e.g. linear, poly2, poly3
 % verticalSpacing: the vertical spacing between channels (on the same configuration line; in µm)
 % shankSpacing (in µm)
+
+p = inputParser;
+addParameter(p,'reorder',true) % reorder coords for when channels are not 1:n
+parse(p,varargin{:})
+reorder = p.Results.reorder;
 
 electrodeLayouts = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
 
@@ -171,9 +176,14 @@ switch(layout)
     otherwise
         warning('layout not detected')
 end
-[~,I] =  sort(horzcat(groups{:}));
-chanMap.xcoords = xcoords(I)';
-chanMap.ycoords = ycoords(I)';
+if reorder
+    [~,I] =  sort(horzcat(groups{:}));
+    chanMap.xcoords = xcoords(I)';
+    chanMap.ycoords = ycoords(I)';
+else
+    chanMap.xcoords = xcoords';
+    chanMap.ycoords = ycoords';
+end
 chanMap.source = source;
 chanMap.layout = layout;
 chanMap.shankSpacing = shankSpacing;
