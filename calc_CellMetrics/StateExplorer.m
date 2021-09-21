@@ -183,7 +183,6 @@ function dataIn = StateExplorer(dataIn,varargin)
         else
             UI.panel.statesExtra.files.String = {''};
         end
-        
     end
     
     function updateUIStates
@@ -246,10 +245,20 @@ function dataIn = StateExplorer(dataIn,varargin)
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating menu
         
-        % NeuroScope2
+        % StateExplorer
         UI.menu.cellExplorer.topMenu = uimenu(UI.fig,menuLabel,'StateExplorer');
         uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'About StateExplorer',menuSelectedFcn,@AboutDialog);
         uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Quit',menuSelectedFcn,@exitStateExplorer,'Separator','on','Accelerator','W');
+        
+        % File menu
+        UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
+        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file (image)',menuSelectedFcn,@exportPlotData);
+        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file (vector graphics)',menuSelectedFcn,@exportPlotData);
+        uimenu(UI.menu.file.topMenu,menuLabel,'Export figure via the export setup dialog',menuSelectedFcn,@exportPlotData,'Separator','on');
+        
+        % Processing menu
+        UI.menu.processing.topMenu = uimenu(UI.fig,menuLabel,'Processing');
+        uimenu(UI.menu.processing.topMenu,menuLabel,'Remove short intervals',menuSelectedFcn,@removeShortIntervals);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating UI/panels
@@ -297,8 +306,8 @@ function dataIn = StateExplorer(dataIn,varargin)
         set(UI.panel.general.main, 'Heights', [155 100 100 100 100],'MinimumHeights',[155 100 100 100 100]);
         
         % % % % % % % % % % % % % % % % % % % % % %
-        % Lower info panel elements
-        
+        % Lower panel elements
+         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
         % Main axes
@@ -310,6 +319,10 @@ function dataIn = StateExplorer(dataIn,varargin)
         % Extra states axis
         UI.plot_axis2 = axes('Parent',UI.panel.plots,'Units','Normalize','Position',[0.015 0.005 0.984 0.1],'ButtonDownFcn',@ClickPlot,'XMinorTick','on','Visible', 'off','YLim',[0 1],'YTickLabel',[],'XTickLabel',[]); ylabel(UI.plot_axis2,'Extra states')
         
+        linkaxes([UI.plot_axis1 UI.plot_axis4 UI.plot_axis3 UI.plot_axis2],'x')
+        
+        UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.015 0.001 0.984 0.04],'Value',0, 'SliderStep', [0.001, 0.05], 'Min', 0, 'Max', 100,'Callback',@moveSlider);
+       
         hold on, axis tight
         set(0,'units','pixels');
         UI.Pix_SS = get(0,'screensize');
@@ -329,12 +342,12 @@ function dataIn = StateExplorer(dataIn,varargin)
         UI.zoom.globalLog{1} = [0,0,0];
         
         UI.plot_axis4.XLim = xlim1;
-        if UI.settings.showEvents
-            UI.plot_axis3.XLim = xlim1;
-        end
-        if UI.settings.showStates
-            UI.plot_axis2.XLim = xlim1;
-        end
+%         if UI.settings.showEvents
+%             UI.plot_axis3.XLim = xlim1;
+%         end
+%         if UI.settings.showStates
+%             UI.plot_axis2.XLim = xlim1;
+%         end
         % States
         if ~isempty(UI.settings.statesOnTrace)
             plotStatesOnTrace(0,inf)
@@ -356,10 +369,40 @@ function dataIn = StateExplorer(dataIn,varargin)
         end
     end
     
-    function keyPress(~,~)
-        
+    function keyPress(~, event)
+        if isempty(event.Modifier)
+            switch event.Key
+                case 'rightarrow'
+                    xlim1 = get(UI.plot_axis1,'Xlim');
+                    UI.plot_axis1.XLim = xlim1+diff(xlim1)/5;
+                case 'leftarrow'
+                    xlim1 = get(UI.plot_axis1,'Xlim');
+                    UI.plot_axis1.XLim = xlim1-diff(xlim1)/5;
+                case 'uparrow'
+                    ylim1 = get(UI.plot_axis1,'Ylim');
+                    UI.plot_axis1.YLim = ylim1+diff(ylim1)/5;
+                case 'downarrow'
+                    ylim1 = get(UI.plot_axis1,'Ylim');
+                    UI.plot_axis1.YLim = ylim1-diff(ylim1)/5;
+            end
+        elseif strcmp(event.Modifier,'shift')
+            switch event.Key
+                case 'rightarrow'
+                    xlim1 = get(UI.plot_axis1,'Xlim');
+                    UI.plot_axis1.XLim = xlim1-[-diff(xlim1)/5,diff(xlim1)/5];
+                case 'leftarrow'
+                    xlim1 = get(UI.plot_axis1,'Xlim');
+                    UI.plot_axis1.XLim = xlim1+[-diff(xlim1)/5,diff(xlim1)/5];
+                case 'uparrow'
+                    ylim1 = get(UI.plot_axis1,'Ylim');
+                    UI.plot_axis1.YLim = ylim1-[-diff(ylim1)/5,diff(ylim1)/5];
+                case 'downarrow'
+                    ylim1 = get(UI.plot_axis1,'Ylim');
+                    UI.plot_axis1.YLim = ylim1+[-diff(ylim1)/5,diff(ylim1)/5];
+            end
+            
+        end
     end
-    
     
     function keyRelease(~,~)
         
@@ -432,6 +475,25 @@ function dataIn = StateExplorer(dataIn,varargin)
             uiresume(UI.fig);
         else
             uiresume(UI.fig);
+        end
+    end
+    
+    function removeShortIntervals(~,~)
+        statesList = fieldnames(dataIn.states);
+        [selectedState,~] = listdlg('PromptString','Select state data to process','ListString',statesList,'SelectionMode','single','ListSize',[200,150]);
+        if ~isempty(selectedState)
+            answer = inputdlg({'Minimum duration (sec)'},'Minimum duration', [1 50],{'5'});
+            if ~isempty(answer) && ~strcmp(answer{1},'') && isnumeric(str2double(answer{1}))
+                minDuration = str2double(answer{1});
+                idx = diff(dataIn.states.(statesList{selectedState})') < minDuration;
+                if ~isempty(idx)
+                    dataIn.states.(statesList{selectedState})(idx,:) = [];
+                    MsgLog([num2str(sum(idx)) ' intervals removed shorter than ' num2str(minDuration),' sec'],2);
+                else
+                    MsgLog('No intervals removed',2);
+                end
+                uiresume(UI.fig);
+            end
         end
     end
     
@@ -635,13 +697,16 @@ function dataIn = StateExplorer(dataIn,varargin)
             end
             
             xlim1 = applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
-            UI.plot_axis4.XLim = xlim1;
-            if UI.settings.showEvents
-                UI.plot_axis3.XLim = xlim1;
-            end
-            if UI.settings.showStates
-                UI.plot_axis2.XLim = xlim1;
-            end
+%             UI.plot_axis4.XLim = xlim1;
+%             if UI.settings.showEvents
+%                 UI.plot_axis3.XLim = xlim1;
+%             end
+%             if UI.settings.showStates
+%                 UI.plot_axis2.XLim = xlim1;
+%             end
+            t_total = UI.zoom.global{1}(1,2);
+            windowDuration = diff(xlim1);
+            UI.elements.lower.slider.Value = max([0,min([xlim1(1)/(t_total-windowDuration)*100,100])]);
         end
         
         function xlim1 = applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction)
@@ -716,6 +781,23 @@ function dataIn = StateExplorer(dataIn,varargin)
         end
     end
     
+    function moveSlider(~,~)
+        t_total = UI.zoom.global{1}(1,2)*1.04;
+        windowDuration = diff(get(UI.plot_axis1,'Xlim'));
+
+        t_start = UI.elements.lower.slider.Value / 100 * (t_total-min([windowDuration,t_total]));
+        xlim2 = [t_start-t_total*0.02,t_start-t_total*0.02+windowDuration];
+        
+        UI.plot_axis1.XLim = xlim2;
+%         UI.plot_axis4.XLim = xlim2;
+%         if UI.settings.showEvents
+%             UI.plot_axis3.XLim = xlim2;
+%         end
+%         if UI.settings.showStates
+%             UI.plot_axis2.XLim = xlim2;
+%         end
+    end
+    
     function [disallowRotation] = ClickPlot(~,~)
         % Handles mouse clicks on the plots. Determines the selected plot
         % and the coordinates (u,v) within the plot. Finally calls
@@ -727,13 +809,13 @@ function dataIn = StateExplorer(dataIn,varargin)
                 case 'open'
                     xlim1 = UI.zoom.global{1}(1,:);
                     set(UI.plot_axis1,'XLim',xlim1,'YLim',UI.zoom.global{1}(2,:))
-                    UI.plot_axis4.XLim = xlim1;
-                    if UI.settings.showEvents
-                        UI.plot_axis3.XLim = xlim1;
-                    end
-                    if UI.settings.showStates
-                        UI.plot_axis2.XLim = xlim1;
-                    end
+%                     UI.plot_axis4.XLim = xlim1;
+%                     if UI.settings.showEvents
+%                         UI.plot_axis3.XLim = xlim1;
+%                     end
+%                     if UI.settings.showStates
+%                         UI.plot_axis2.XLim = xlim1;
+%                     end
                 case 'normal'
                     disallowRotation = false;
             end
@@ -747,6 +829,7 @@ function dataIn = StateExplorer(dataIn,varargin)
                 if ~isempty(polygon1.coords)
                     hold on,
                     polygon1.handle(polygon1.counter+1) = line([polygon1.coords(:,1);polygon1.coords(1,1)],[polygon1.coords(:,2);polygon1.coords(1,2)],'Marker','.','color','k', 'HitTest','off');
+                    drawnow
                 end
                 if polygon1.counter > 0
                     polygon1.cleanExit = 1;
@@ -820,13 +903,13 @@ function dataIn = StateExplorer(dataIn,varargin)
             elseif strcmpi(selectiontype, 'open')
                 xlim1 = UI.zoom.global{1}(1,:);
                 set(UI.plot_axis1,'XLim',xlim1,'YLim',UI.zoom.global{1}(2,:))
-                UI.plot_axis4.XLim = xlim1;
-                if UI.settings.showEvents
-                    UI.plot_axis3.XLim = xlim1;
-                end
-                if UI.settings.showStates
-                    UI.plot_axis2.XLim = xlim1;
-                end
+%                 UI.plot_axis4.XLim = xlim1;
+%                 if UI.settings.showEvents
+%                     UI.plot_axis3.XLim = xlim1;
+%                 end
+%                 if UI.settings.showStates
+%                     UI.plot_axis2.XLim = xlim1;
+%                 end
             end
         end
         
@@ -835,7 +918,7 @@ function dataIn = StateExplorer(dataIn,varargin)
     function finishPolygonSelection
         idx = sort(find(inpolygon(dataIn.timestamps,dataIn.data, polygon1.coords(:,1)',polygon1.coords(:,2)')));
         if ~isempty(idx)
-            line(UI.plot_axis1,dataIn.timestamps(idx),dataIn.data(idx),'Marker','.','LineStyle','none','color','k', 'HitTest','off')
+%             line(UI.plot_axis1,dataIn.timestamps(idx),dataIn.data(idx),'Marker','.','LineStyle','none','color','k', 'HitTest','off')
             intervals = find(diff(idx)>1);
             intervals = [0,intervals,numel(idx)];
             n_intervals = numel(intervals)-1;
@@ -849,7 +932,11 @@ function dataIn = StateExplorer(dataIn,varargin)
             if size(states,1)>1
                 states = ConsolidateIntervals(states);
             end
-            
+            % Plotting States on trace
+            for i = 1:size(states,1)
+                indices = InIntervals(dataIn.timestamps_lowress,states(i,:));
+                line(UI.plot_axis1,dataIn.timestamps_lowress(indices),dataIn.data_lowress(indices),'Marker','none','LineStyle','-', 'HitTest','off','Color','k','linewidth',2)
+            end
             plotStates(states)
             addStateDialog(states)
         else
@@ -1032,7 +1119,7 @@ function dataIn = StateExplorer(dataIn,varargin)
             if isfield(dataIn,'states') && isfield(dataIn.states,stateName) && ~isempty(dataIn.states.(stateName))
                 dataIn.states.(stateName) = SubtractIntervals(dataIn.states.(stateName),states);
                 MsgLog([num2str(size(states,1)), ' intervals removed from ', UI.settings.states{selectedState}],1);
-                updateUIStates
+%                 updateUIStates
             end
             
         end
@@ -1050,6 +1137,28 @@ function dataIn = StateExplorer(dataIn,varargin)
     
     function exitStateExplorer(~,~)
         close(UI.fig);
+    end
+    
+    function exportPlotData(src,~)
+        timestamp = datestr(now, '_dd-mm-yyyy_HH.MM.SS');
+        if strcmp(src.Text,'Export to .png file (image)')
+            set(UI.fig,'Units','Inches');
+            set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
+            saveas(UI.fig,fullfile(basepath,[basename,'_StateExplorer',timestamp, '.png']));
+            MsgLog(['The .png file was saved to the basepath: ' basename],2);
+        elseif strcmp(src.Text,'Export to .pdf file (vector graphics)')
+            % Renderer is set to painter (vector graphics)
+            set(UI.fig,'Units','Inches','Renderer','painters');
+            set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
+            saveas(UI.fig,fullfile(basepath,[basename,'_StateExplorer',timestamp, '.pdf']));
+            set(UI.fig,'Renderer','opengl');
+            MsgLog(['The .pdf file was saved to the basepath: ' basename],2);
+        else
+            % renderer is set to painter (vector graphics)
+            set(UI.fig,'Units','Inches','Renderer','painters');
+            set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
+            exportsetupdlg(UI.fig)
+        end
     end
     
     function openWebsite(src,~)

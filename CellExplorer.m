@@ -48,7 +48,7 @@ function cell_metrics = CellExplorer(varargin)
 % Initialization: initializeSession, initializeUI, 
 % Data handling: saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData, defineGroupData
 % UI: hoverCallback, updateUI, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics
-% Plotting: customPlot, plotGroupData, plotSummaryFigures
+% Plotting: customPlot, plotGroupData, plotSummaryFigures, runBenchMark
 
 if isdeployed % Check for if CellExplorer is running as a deployed app (compiled .exe or .app for windows and mac respectively)
     if ~isempty(varargin) % If a file name is provided it will load it.
@@ -144,7 +144,7 @@ hover2highlight = {}; clickPlotRegular = true;
 classes2plot = []; classes2plotSubset = []; ii = []; history_classification = []; batchIDs = []; general = []; classificationTrackChanges = []; 
 cell_class_count = [];  plotOptions = ''; colorMenu = []; GroupVal = 1; ColorVal = 1; 
 plotAcgFit = 0; plotAcgYLog = 0; plotAcgZscore = 0; clasLegend = 0; groups2plot = []; groups2plot2 = []; connectivityGraph = []; 
-tSNE_metrics = [];  spikesPlots = {}; gauss2d = gausswin(10)*gausswin(10)'; gauss2d = 1.*gauss2d/sum(gauss2d(:));
+tSNE_metrics = [];  spikesPlots = {}; gauss2d = ce_gausswin(10)*ce_gausswin(10)'; gauss2d = 1.*gauss2d/sum(gauss2d(:));
 idx_textFilter = []; freeText = {''}; table_metrics = []; table_fieldsNames = {}; tableDataOrder = []; 
 groundTruthSelection = []; subsetGroundTruth = []; groundTruthCelltypesList = {''}; db = {}; gt = {}; 
 customPlotOptions = {}; timerInterface = tic; timerHover = tic; highlightCurrentCell = true;
@@ -2235,7 +2235,7 @@ end
             
         elseif strcmp(customPlotSelection,'ACGs (group averages)') % ACGs
             % Auto-correlogram for groups. Colored according to cell-type. Normalized firing rate. X-axis according to selected option
-            plotAxes.YLabel.String = 'Rate (Hz)';
+            plotAxes.YLabel.String = 'Normalized rate';
             plotAxes.Title.String = customPlotSelection;
             if UI.preferences.showAllTraces == 0 && length(UI.params.subset)>2000
                 plotSubset = UI.params.subset(randsample(length(UI.params.subset),2000));
@@ -3046,6 +3046,7 @@ end
             end
             
         elseif contains(customPlotSelection,'RCs_') && contains(customPlotSelection,'Phase') && ~contains(customPlotSelection,'(image)') && ~contains(customPlotSelection,'(all)')
+            % Phase response curve for single cell (no image)
             responseCurvesName = customPlotSelection(5:end);
             plotAxes.XLabel.String = 'Phase';
             plotAxes.YLabel.String = 'Probability';
@@ -3057,19 +3058,23 @@ end
                 else
                     x_bins = [1:length(thetaPhaseResponse)];
                 end
+                x_bins = [x_bins,x_bins+2*pi];
+                thetaPhaseResponse = [thetaPhaseResponse;thetaPhaseResponse];
                 plt1 = line(x_bins,thetaPhaseResponse,'color', 'k','linewidth',2, 'HitTest','off');
                 
-                subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.responseCurves.(responseCurvesName));
+                subsetPlots = plotConnectionsCurvesPhase(x_bins,cell_metrics.responseCurves.(responseCurvesName));
+%                 subsetPlots = plotConnectionsCurves(x_bins+2*pi,cell_metrics.responseCurves.(responseCurvesName));
                 axis tight, ax6 = axis; grid on,
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
             end
-            xticks([-pi,-pi/2,0,pi/2,pi]),xticklabels({'-\pi','-\pi/2','0','\pi/2','\pi'}),xlim([-pi,pi])
+            xticks([-pi,-pi/2,0,pi/2,pi,3*pi/2,2*pi,2.5*pi,3*pi]),xticklabels({'-\pi','-0.5\pi','0','0.5\pi','\pi','1.5\pi','2\pi','2.5\pi','3\pi'}),xlim([-pi,3*pi])
             
         elseif contains(customPlotSelection,'RCs_') && contains(customPlotSelection,'(image)')
+            
             responseCurvesName = customPlotSelection(5:end-8);
             plotAxes.XLabel.String = 'Phase';
-            plotAxes.YLabel.String = '';
+            plotAxes.YLabel.String = 'Cells';
             plotAxes.Title.String = responseCurvesName;
             % All responseCurves shown in an imagesc plot
             % Sorted according to user input
@@ -3088,20 +3093,23 @@ end
             
             responseCurvesName = customPlotSelection(5:end-6);
             plotAxes.XLabel.String = 'Phase';
-            plotAxes.YLabel.String = 'z-scored distribution';
+            plotAxes.YLabel.String = 'Distribution';
             plotAxes.Title.String = responseCurvesName;
             % All responseCurves colored according to cell type
+            x_bins = [UI.x_bins.thetaPhase,UI.x_bins.thetaPhase+2*pi];
+            
             for k = 1:length(classes2plotSubset)
                 set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), UI.params.subset);
-                xdata = repmat([UI.x_bins.thetaPhase,nan(1,1)],length(set1),1)';
-                ydata = [cell_metrics.responseCurves.thetaPhase_zscored(:,set1);nan(1,length(set1))];
+                xdata = repmat([x_bins,nan(1,1)],length(set1),1)';
+                ydata = [cell_metrics.responseCurves.thetaPhase_zscored(:,set1);cell_metrics.responseCurves.thetaPhase_zscored(:,set1);nan(1,length(set1))];
                 line(xdata(:),ydata(:), 'color', [UI.classes.colors(k,:),0.5],'HitTest','off')
             end
             % selected cell in black
             if highlightCurrentCell
-                line(UI.x_bins.thetaPhase, cell_metrics.responseCurves.thetaPhase_zscored(:,ii), 'color', 'k','linewidth',2,'HitTest','off'), grid on
+                thetaPhase_zscored =[cell_metrics.responseCurves.thetaPhase_zscored(:,ii);cell_metrics.responseCurves.thetaPhase_zscored(:,ii)];
+                line(x_bins, thetaPhase_zscored, 'color', 'k','linewidth',2,'HitTest','off'), grid on
             end
-            xticks([-pi,-pi/2,0,pi/2,pi]),xticklabels({'-\pi','-\pi/2','0','\pi/2','\pi'}),xlim([-pi,pi])
+            xticks([-pi,-pi/2,0,pi/2,pi,3*pi/2,2*pi,2.5*pi,3*pi]),xticklabels({'-\pi','-0.5\pi','0','0.5\pi','\pi','1.5\pi','2\pi','2.5\pi','3\pi'}),xlim([-pi,3*pi])
             
         elseif contains(customPlotSelection,{'spikes_'}) && ~isempty(spikesPlots.(customPlotSelection).event)
             
@@ -3418,6 +3426,42 @@ end
                         end
                         if ~isempty(UI.params.inbound_inh) && ~isempty(UI.params.incoming_inh)
                             line(x_bins,horzcat(ydata{UI.params.incoming_inh}),'color', 'b', 'HitTest','off')
+                        end
+                end
+            end
+        end
+        
+        function subsetPlots = plotConnectionsCurvesPhase(x_bins,ydata)
+            subsetPlots.xaxis = x_bins;
+            subsetPlots.yaxis = [];
+            subsetPlots.subset = [];
+            ydata = horzcat(ydata{:});
+            ydata = [ydata;ydata];
+            if ~isempty(UI.params.putativeSubse) && UI.preferences.plotExcitatoryConnections
+                switch UI.monoSyn.disp
+                    case {'All','Selected','Upstream','Downstream','Up & downstream'}
+                        % subsetPlots.xaxis = x_bins;
+                        subsetPlots.yaxis = [subsetPlots.yaxis,ydata(:,[UI.params.outgoing;UI.params.incoming])];
+                        subsetPlots.subset = [subsetPlots.subset;[UI.params.outgoing;UI.params.incoming]];
+                        if ~isempty(UI.params.outbound) && ~isempty(UI.params.outgoing)
+                            line(x_bins,ydata(:,UI.params.outgoing),'color', 'm', 'HitTest','off')
+                        end
+                        if ~isempty(UI.params.inbound) && ~isempty(UI.params.incoming)
+                            line(x_bins,ydata(:,UI.params.incoming),'color', 'b', 'HitTest','off')
+                        end
+                end
+            end
+            if ~isempty(UI.params.putativeSubse_inh) &&  UI.preferences.plotInhibitoryConnections
+                switch UI.monoSyn.disp
+                    case {'All','Selected','Upstream','Downstream','Up & downstream'}
+                        % subsetPlots.xaxis_inh = x_bins;
+                        subsetPlots.yaxis = [subsetPlots.yaxis,ydata(:,[UI.params.outgoing_inh;UI.params.incoming_inh])];
+                        subsetPlots.subset = [subsetPlots.subset;[UI.params.outgoing_inh;UI.params.incoming_inh]];
+                        if ~isempty(UI.params.outbound_inh) && ~isempty(UI.params.outgoing_inh)
+                            line(x_bins,ydata(:,UI.params.outgoing_inh),'color', 'm', 'HitTest','off')
+                        end
+                        if ~isempty(UI.params.inbound_inh) && ~isempty(UI.params.incoming_inh)
+                            line(x_bins,ydata(:,UI.params.incoming_inh),'color', 'b', 'HitTest','off')
                         end
                 end
             end
@@ -7063,12 +7107,15 @@ end
         end
         % Highlighting response curves (e.g. theta) 'RCs_thetaPhase (all)'
         if any(strcmp(UI.preferences.customPlot,'RCs_thetaPhase (all)'))
-            x1 = UI.x_bins.thetaPhase'*ones(1,length(UI.params.subset));
-            y1 = cell_metrics.responseCurves.thetaPhase_zscored(:,UI.params.subset);
+            x1 = UI.x_bins.thetaPhase';
+            y1 = cell_metrics.responseCurves.thetaPhase_zscored;
+            x1 = [x1;x1+2*pi];
+            y1 = [y1;y1];
             idx = find(strcmp(UI.preferences.customPlot,'RCs_thetaPhase (all)'));
             for i = 1:length(idx)
                 set(UI.fig,'CurrentAxes',UI.axes(3+idx(i)))
-                line(x1(:,UI.params.ClickedCells),y1(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
+                
+                line(x1,y1(:,UI.params.ClickedCells),'linewidth',2, 'HitTest','off')
             end
         end
         % Highlighting firing rate curves 
@@ -7101,7 +7148,7 @@ end
             axnum = 1;
         end
 
-        if axnum == 1 && UI.preferences.customPlotHistograms == 3 % 3D plot
+        if axnum == 1 && UI.preferences.customPlotHistograms == 3 % 3D plot 
             [azimuth,elevation] = view;
             r  = 10000;
             y1 = -r .* cosd(elevation) .* cosd(azimuth);
@@ -7642,15 +7689,18 @@ end
                 case 'RCs_thetaPhase (all)'
                     x1 = UI.x_bins.thetaPhase'*ones(1,length(UI.params.subset));
                     y1 = cell_metrics.responseCurves.thetaPhase_zscored(:,UI.params.subset);
+                    x1 = [x1;x1+2*pi];
+                    y1 = [y1;y1];
                     x_scale = range(x1(:));
                     y_scale = range(y1(:));
                     [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
-                    In = unique(floor(In/length(UI.x_bins.thetaPhase)))+1;
-                    iii = UI.params.subset(In);
-                    [~,time_index] = min(abs(UI.x_bins.thetaPhase-u));
+                    x_bins = [UI.x_bins.thetaPhase,UI.x_bins.thetaPhase+2*pi]';
+                    In = unique(floor(In/length(x_bins)))+1;
+                    iii = UI.params.subset(In);                    
+                    [~,time_index] = min(abs(x_bins-u));
                     if highlight || hover
-                        hover2highlight.handle2 = line(UI.x_bins.thetaPhase,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(UI.x_bins.thetaPhase(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                        hover2highlight.handle2 = line(x_bins,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(x_bins(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'RCs_firingRateAcrossTime (all)'
@@ -8226,10 +8276,13 @@ end
                         case 'RCs_thetaPhase (all)'
                             x1 = UI.x_bins.thetaPhase'*ones(1,length(UI.params.subset));
                             y1 = cell_metrics.responseCurves.thetaPhase_zscored(:,UI.params.subset);
+                            x1 = [x1;x1+2*pi];
+                            y1 = [y1;y1];
                             In = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
-                            In = unique(floor(In/length(UI.x_bins.thetaPhase)))+1;
+                            x_bins = [UI.x_bins.thetaPhase,UI.x_bins.thetaPhase+2*pi];
+                            In = unique(floor(In/length(x_bins)))+1;
                             if ~isempty(In)
-                                line(UI.x_bins.thetaPhase,y1(:,In),'linewidth',2, 'HitTest','off')
+                                line(x_bins,y1(:,In),'linewidth',2, 'HitTest','off')
                             end
                             In = UI.params.subset(In);
                             
@@ -10221,6 +10274,7 @@ end
         end
         uimenu(UI.menu.file.topMenu,menuLabel,'Generate supplementary figure',menuSelectedFcn,@plotSupplementaryFigure);
         uimenu(UI.menu.file.topMenu,menuLabel,'Generate summary figure',menuSelectedFcn,@plotSummaryFigure);
+        UI.menu.file.initializeSession = uimenu(UI.menu.file.topMenu,menuLabel,'Initialize cell metrics',menuSelectedFcn,@(src,evnt)reInitializeSession,'Separator','on');
         
         % Cell selection
         UI.menu.cellSelection.topMenu = uimenu(UI.fig,menuLabel,'Cell selection');
@@ -10716,6 +10770,13 @@ end
         
     end
     
+    function reInitializeSession(~,~)
+        cell_metrics.general.initialized = 0;
+        initializeSession
+        uiresume(UI.fig);
+        MsgLog('Cell metrics initialized again',2);
+    end
+    
     function initializeSession
         
         ii = 1;
@@ -10925,6 +10986,9 @@ end
             if isfield(cell_metrics.responseCurves,'thetaPhase')
                 thetaPhaseCurves = nan(length(UI.x_bins.thetaPhase),cell_metrics.general.cellCount);
                 for i = 1:length(cell_metrics.responseCurves.thetaPhase)
+                    if isempty(cell_metrics.responseCurves.thetaPhase{i})
+                        cell_metrics.responseCurves.thetaPhase{i} = nan(size(UI.x_bins.thetaPhase'));
+                    end
                     if isempty(cell_metrics.responseCurves.thetaPhase{i}) || any(isnan(cell_metrics.responseCurves.thetaPhase{i}))
                         thetaPhaseCurves(:,i) = nan(size(UI.x_bins.thetaPhase));
                     elseif UI.BatchMode
@@ -10935,7 +10999,7 @@ end
                         thetaPhaseCurves(:,i) = cell_metrics.responseCurves.thetaPhase{i};
                     end
                 end
-                cell_metrics.responseCurves.thetaPhase_zscored = (thetaPhaseCurves-nanmean(thetaPhaseCurves))./nanstd(thetaPhaseCurves);
+                cell_metrics.responseCurves.thetaPhase_zscored = thetaPhaseCurves;%(thetaPhaseCurves-nanmean(thetaPhaseCurves))./nanstd(thetaPhaseCurves);
                 clear thetaPhaseCurves
             end
         end
@@ -12693,7 +12757,7 @@ end
                 testGroupsSizes(i) = 0;
             end
         end
-        testGroupsSizes(end) = cell_metrics.general.cellCount;
+        testGroupsSizes(end) = length(UI.params.subset);
         cell_metrics.groups.(testGroups{end}) = UI.params.subset(randsample(length(UI.params.subset),testGroupsSizes(end)));
         idx = testGroupsSizes==0;
         testGroups(idx) = [];
@@ -12777,8 +12841,8 @@ end
             UI.preferences.plotInsetChannelMap = 1; % Hiding channel map inset in waveform plots.
             UI.preferences.plotInsetACG = 1; % Hiding ACG inset in waveform plots.
             UI.preferences.customPlot{1} = 'Waveforms (single)';
-            UI.preferences.customPlot{2} = 'Waveforms (single)';
-            UI.preferences.customPlot{3} = 'Waveforms (single)';
+            UI.preferences.customPlot{2} = 'ACGs (single)';
+            UI.preferences.customPlot{3} = 'ISIs (single)';
             UI.preferences.layout = 1; % GUI: 1+3 figures
             AdjustGUI
             t_bench1 = runBenchMarkRound;
@@ -12789,12 +12853,12 @@ end
             buttonShowMetrics
             UI.panel.tabgroup2.SelectedTab = UI.tabs.legends; % Selecting figure legends
             UI.preferences.plotInsetChannelMap = 3; % Showing channel map inset in waveform plots.
-            UI.preferences.plotInsetACG = 2; % Showing ACG inset in waveform plots.
+            UI.preferences.plotInsetACG = 1; % Hiding ACG inset in waveform plots.
             UI.preferences.customPlot{1} = 'Waveforms (all)';
             UI.preferences.customPlot{2} = 'ACGs (single)';
             UI.preferences.customPlot{3} = 'RCs_firingRateAcrossTime';
             UI.preferences.customPlot{4} = 'Waveforms (single)';
-            UI.preferences.customPlot{5} = 'CCGs (image)';
+            UI.preferences.customPlot{5} = 'ISIs (single)';
             UI.preferences.customPlot{6} = 'ISIs (all)';
             UI.preferences.layout = 3; % GUI: 3+3 figures
             AdjustGUI
@@ -12802,15 +12866,16 @@ end
             t_bench = [t_bench,t_bench1];
             
             % 3. benchmark
+            UI.preferences.plotInsetACG = 2; % Showing ACG inset in waveform plots.
             UI.preferences.layout = 6; % GUI: 3+6 figures
             AdjustGUI
             t_bench1 = runBenchMarkRound;
             t_bench = [t_bench,t_bench1];
             
             % Plotting benchmark figure
-            figure(50),
+            figure,
             subplot(2,1,1)
-            plot(1000*diff(t_bench)); title('benchmarking UI'), xlabel('Test number'), ylabel('Processing time (ms)'), ylim([0,500]), set(gca, 'YScale', 'log')
+            plot(1000*diff(t_bench)); title('benchmarking UI'), xlabel('Test number'), ylabel('Processing time (ms)'), ylim([0,500])
             
             subplot(2,1,2)
             y1 = mean(1000*diff(t_bench));
@@ -12819,28 +12884,30 @@ end
             f1(1) = errorbarPatch(testGroupsSizes,y1(idx),y_std(idx),[0.8 0.2 0.2]);
             f1(2) = errorbarPatch(testGroupsSizes,y1(idx+length(idx)),y_std(idx+length(idx)),[0.2 0.8 0.2]);
             f1(3) = errorbarPatch(testGroupsSizes,y1(idx+length(idx)*2),y_std(idx+length(idx)*2),[0.2 0.2 0.8]);
-            xlabel('Number of cells'), ylabel('Processing time (ms)'), ylim([0,800])
-            legend(f1,{'Layout: 1+3','Layout: 3+3','Layout: 3+6 simple',}), title('Average processing times'), set(gca, 'YScale', 'log')
-            figure(UI.fig)
+            xlabel('Number of cells'), ylabel('Processing time (ms)'), ylim([0,500])
+            legend(f1,{'Layout: 1+3','Layout: 3+3','Layout: 3+6 simple',}), title('Average processing times')
+             drawnow nocallbacks;
         end
         figure(UI.fig)
-        uiresume(UI.fig);
-        
-    function t_bench = runBenchMarkRound
-        timerVal1 = tic;
-        t_bench = [];
-        for j = 1:numel(testGroups)
-            UI.groupData1.groups.plus_filter.(testGroups{j}) = 1;
-            pause(0.5)
-            for i = 1:nRepetitions
-                ii = cell_metrics.groups.(testGroups{j})(i);
-                updateUI
-                drawnow nocallbacks;
-                t_bench(i,j) = toc(timerVal1);
+       
+%         uiresume(UI.fig);
+
+        function t_bench = runBenchMarkRound
+            timerVal1 = tic;
+            t_bench = [];
+            for j = 1:numel(testGroups)
+                UI.groupData1.groups.plus_filter.(testGroups{j}) = 1;
+                pause(0.5)
+                for i = 1:nRepetitions
+                    ii = cell_metrics.groups.(testGroups{j})(i);
+                    updateUI
+                    drawnow nocallbacks;
+                    t_bench(i,j) = toc(timerVal1);
+                end
+                UI.groupData1.groups.plus_filter.(testGroups{j}) = 0;
             end
-            UI.groupData1.groups.plus_filter.(testGroups{j}) = 0;
         end
-    end
+        
         function t_bench = runBenchMarkSinglePlot(plotOptionsIn,title1)
             % Benchmarking single figures
             testFig1 = figure('pos',UI.params.figureSize,'visible','off'); movegui(testFig1,'center'), set(testFig1,'visible','on')

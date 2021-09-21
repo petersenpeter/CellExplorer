@@ -1382,7 +1382,7 @@ end
                             else
                                 populationBins = populationBins(1:end-1)+UI.settings.populationRateWindow/2;
                                 % populationRate = smooth(populationRate,UI.settings.populationRateSmoothing);
-                                populationRate = conv(populationRate,gausswin(UI.settings.populationRateSmoothing)'/sum(gausswin(UI.settings.populationRateSmoothing)),'same');
+                                populationRate = conv(populationRate,ce_gausswin(UI.settings.populationRateSmoothing)'/sum(ce_gausswin(UI.settings.populationRateSmoothing)),'same');
                             end
                             populationRate = (populationRate/max(populationRate))*diff(UI.dataRange.populationRate)+UI.dataRange.populationRate(1)+0.001;
                             line(populationBins, populationRate,'Marker','none','LineStyle','-','color',UI.colors_metrics(i,:), 'HitTest','off','linewidth',1.5);
@@ -1403,7 +1403,7 @@ end
                             else
                                 populationBins = populationBins(1:end-1)+UI.settings.populationRateWindow/2;
                                 % populationRate = smooth(populationRate,UI.settings.populationRateSmoothing);
-                                populationRate = conv(populationRate,gausswin(UI.settings.populationRateSmoothing)'/sum(gausswin(UI.settings.populationRateSmoothing)),'same');
+                                populationRate = conv(populationRate,ce_gausswin(UI.settings.populationRateSmoothing)'/sum(ce_gausswin(UI.settings.populationRateSmoothing)),'same');
                             end
                             populationRate = (populationRate/max(populationRate))*diff(UI.dataRange.populationRate)+UI.dataRange.populationRate(1)+0.001;
                             line(populationBins, populationRate,'Marker','none','LineStyle','-','color',electrodeGroup_colormap(i,:), 'HitTest','off','linewidth',1.5);

@@ -6,6 +6,7 @@ function success = saveStruct(data,datatype,varargin)
 % saveStruct(cell_metrics,'cellinfo','session',session); % Saving cell metrics
 % saveStruct(ripples,'events','session',session); % Saving ripples
 % saveStruct(session); Saving session metadata struct
+% saveStruct(temperature,'timeseries','session',session);
 
 % By Peter Petersen
 % petersen.peter@gmail.com
