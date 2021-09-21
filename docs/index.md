@@ -32,9 +32,9 @@ To address this, we built CellExplorer, a framework for analyzing and characteri
 mex -O CCGHeart.c
 mex -O FindInInterval.c
 ```
-4. CellExplorer uses additional toolboxes, of which two MATLAB toolboxes must be installed manually.
-  * [Curve Fitting Toolbox](https://se.mathworks.com/products/curvefitting.html).
-  * [Parallel Computing Toolbox](https://se.mathworks.com/products/parallel-computing.html).
+4. CellExplorer uses additional MATLAB toolboxes, where one is required for the Processing module.
+  * [Curve Fitting Toolbox](https://se.mathworks.com/products/curvefitting.html) (required).
+  * [Parallel Computing Toolbox](https://se.mathworks.com/products/parallel-computing.html) (optional).
 
 That's it! Now you can explore the software with below example data or try one of the tutorials.
 
