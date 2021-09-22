@@ -19,12 +19,6 @@ function cell_metrics = swr_unit_metrics(cell_metrics,session,spikes,parameters)
 %     cell_metrics.ripple_GainParticip
 %     cell_metrics.ripple_nSpkAll
 %     cell_metrics.ripple_nSpkParticip 
-%     cell_metrics.general.ripple_participation.ripple_nCellsEvent
-%     cell_metrics.general.ripple_participation.ripple_FReach
-%     cell_metrics.general.ripple_participation.ripple_GainEach
-%     cell_metrics.general.ripple_participation.ripple_nSpkEach
-%     cell_metrics.general.ripple_participation.ripple_nSpkEvent
-%     cell_metrics.general.ripple_participation.ripple_FRevent
 %
 %     metrics for individual units will be calculated for each state as well
 %
@@ -38,7 +32,7 @@ if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
     
     load(fullfile(basepath,[basename,'.ripples.events.mat']))
     
-    SWRunitMetrics = main(basepath,basename,spikes{1},ripples,cell_metrics);
+    SWRunitMetrics = main(basepath,spikes{1},ripples,cell_metrics);
     
     % single cell metrics to cell_metrics
     cell_metrics.ripple_particip = SWRunitMetrics.particip';
@@ -49,13 +43,13 @@ if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
     cell_metrics.ripple_nSpkAll = SWRunitMetrics.nSpkAll';
     cell_metrics.ripple_nSpkParticip = SWRunitMetrics.nSpkParticip';
     
-    % add (n ripple, n cell) metrics to cell_metrics general
-    cell_metrics.general.ripple_participation.ripple_nCellsEvent = SWRunitMetrics.nCellsEvent;
-    cell_metrics.general.ripple_participation.ripple_FReach = SWRunitMetrics.FReach';
-    cell_metrics.general.ripple_participation.ripple_GainEach = SWRunitMetrics.GainEach';
-    cell_metrics.general.ripple_participation.ripple_nSpkEach = SWRunitMetrics.nSpkEach';
-    cell_metrics.general.ripple_participation.ripple_nSpkEvent = SWRunitMetrics.nSpkEvent;
-    cell_metrics.general.ripple_participation.ripple_FRevent = SWRunitMetrics.FRevent;
+%     % add (n ripple, n cell) metrics to cell_metrics general
+%     cell_metrics.general.ripple_participation.ripple_nCellsEvent = SWRunitMetrics.nCellsEvent;
+%     cell_metrics.general.ripple_participation.ripple_FReach = SWRunitMetrics.FReach';
+%     cell_metrics.general.ripple_participation.ripple_GainEach = SWRunitMetrics.GainEach';
+%     cell_metrics.general.ripple_participation.ripple_nSpkEach = SWRunitMetrics.nSpkEach';
+%     cell_metrics.general.ripple_participation.ripple_nSpkEvent = SWRunitMetrics.nSpkEvent;
+%     cell_metrics.general.ripple_participation.ripple_FRevent = SWRunitMetrics.FRevent;
     
     if any(contains(parameters.metrics,{'state_metrics','all'})) &&...
             ~any(contains(parameters.excludeMetrics,{'state_metrics'}))
@@ -82,7 +76,6 @@ if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
                         continue
                     end
                     SWRunitMetrics = main(basepath,...
-                        basename,...
                         spikes{spkExclu},...
                         current_ripples,...
                         cell_metrics);
