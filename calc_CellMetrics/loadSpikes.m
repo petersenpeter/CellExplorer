@@ -524,13 +524,23 @@ if parameters.forceReload
             end
             disp(['Applying channel offset: ', num2str(channel_offset),' (diff: ' , num2str(diff(channel_offset)),')'])
             
-            % Pulling out waveforms in parfor loop
-            disp('Extracting waveforms from parfor loop')
+            % Pulling waveforms (in parfor if possible)
+            parallel_toolbox_installed = isToolboxInstalled('Parallel Computing Toolbox'); % Validating that Parallel Computing Toolbox has been installed
+            spikes_out = {}; tic;
             probesToProcess = sort(find(~cellfun(@isempty, unitsToProcess)));
-            gcp; spikes_out = {}; tic;
-            parfor iProbe = 1:numel(probesToProcess)
-                disp(['Getting waveforms from ',num2str(numel(unitsToProcess{probesToProcess(iProbe)})) ,' cells from binary file (',num2str(probesToProcess(iProbe)),'/',num2str(session.extracellular.nElectrodeGroups),')'])
-                spikes_out{iProbe} = getWaveformsFromDat(spikes,session1{probesToProcess(iProbe)},'unitsToProcess',unitsToProcess{probesToProcess(iProbe)},'saveFig', true,'extraLabel', ['probe #' num2str(iProbe)]);
+            if parallel_toolbox_installed
+                disp('Extracting waveforms from parfor loop')
+                gcp; 
+                parfor iProbe = 1:numel(probesToProcess)
+                    disp(['Getting waveforms from ',num2str(numel(unitsToProcess{probesToProcess(iProbe)})) ,' cells from binary file (',num2str(probesToProcess(iProbe)),'/',num2str(session.extracellular.nElectrodeGroups),')'])
+                    spikes_out{iProbe} = getWaveformsFromDat(spikes,session1{probesToProcess(iProbe)},'unitsToProcess',unitsToProcess{probesToProcess(iProbe)},'saveFig', true,'extraLabel', ['probe #' num2str(iProbe)]);
+                end
+            else
+                disp('Extracting waveforms')
+                for iProbe = 1:numel(probesToProcess)
+                    disp(['Getting waveforms from ',num2str(numel(unitsToProcess{probesToProcess(iProbe)})) ,' cells from binary file (',num2str(probesToProcess(iProbe)),'/',num2str(session.extracellular.nElectrodeGroups),')'])
+                    spikes_out{iProbe} = getWaveformsFromDat(spikes,session1{probesToProcess(iProbe)},'unitsToProcess',unitsToProcess{probesToProcess(iProbe)},'saveFig', true,'extraLabel', ['probe #' num2str(iProbe)]);
+                end
             end
             
             % Writing fields back to spikes struct

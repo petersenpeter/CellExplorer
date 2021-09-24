@@ -533,26 +533,23 @@ end
 UI.tabs.chanCoords = uitab(UI.channelGroups,'Title','Channel coordinates');
 % UI.chanCoordsAxes = axes('Parent',UI.tabs.chanCoords,'Position',[1, 45, 616, 320]); axis tight,
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Layout', 'Position', [5, 300, 240, 20],'HorizontalAlignment','left');
-UI.edit.chanCoords_layout = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 275, 285, 25],'HorizontalAlignment','left');
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Layout', 'Position', [5, 340, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_layout = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 315, 285, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Shank spacing (µm)', 'Position', [305, 300, 240, 20],'HorizontalAlignment','left');
-UI.edit.chanCoords_shankSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 275, 285, 25],'HorizontalAlignment','left');
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Shank spacing (µm)', 'Position', [305, 340, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_shankSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 315, 285, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Source', 'Position', [5, 250, 240, 20],'HorizontalAlignment','left');
-UI.edit.chanCoords_source = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 225, 285, 25],'HorizontalAlignment','left');
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Source', 'Position', [5, 290, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_source = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 265, 285, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Vertical spacing (µm)', 'Position', [305, 250, 240, 20],'HorizontalAlignment','left');
-UI.edit.chanCoords_verticalSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 225, 285, 25],'HorizontalAlignment','left');
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Vertical spacing (µm)', 'Position', [305, 290, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_verticalSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 265, 285, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'x coordinates (µm)', 'Position', [5, 195, 240, 20],'HorizontalAlignment','left');
-UI.edit.chanCoords_x = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 50, 285, 145],'HorizontalAlignment','left','Min',1,'Max',10);
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'x coordinates (µm)', 'Position', [5, 235, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_x = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 50, 285, 185],'HorizontalAlignment','left','Min',1,'Max',10,'Units','normalized');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'y coordinates (µm)', 'Position', [305, 195, 240, 20],'HorizontalAlignment','left');
-UI.edit.chanCoords_y = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 50, 285, 145],'HorizontalAlignment','left','Min',1,'Max',10);
-
-
-
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'y coordinates (µm)', 'Position', [305, 235, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_y = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 50, 285, 185],'HorizontalAlignment','left','Min',1,'Max',10,'Units','normalized');
 
 uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[5, 5, 145, 32],'String','Import','Callback',@importChannelMap1,'Units','normalized');
 uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[155, 5, 145, 32],'String','Export','Callback',@exportChannelMap1,'Units','normalized');

@@ -122,7 +122,7 @@ timerCalcMetrics = tic;
 % Verifying required toolboxes are installed
 installedToolboxes = ver;
 installedToolboxes = {installedToolboxes.Name};
-requiredToolboxes = {'Curve Fitting Toolbox', 'Parallel Computing Toolbox'};
+requiredToolboxes = {'Curve Fitting Toolbox'};
 missingToolboxes = requiredToolboxes(~ismember(requiredToolboxes,installedToolboxes));
 if ~isempty(missingToolboxes)
     for i = 1:numel(missingToolboxes)
@@ -469,7 +469,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     % Channel coordinates map, trilateration and length constant determined from waveforms across channels
     if ~all(isfield(cell_metrics,{'trilat_x','trilat_y','peakVoltage_expFit'})) || parameters.forceReload == true
         chanCoordsFile = fullfile(basepath,[basename,'.chanCoords.channelInfo.mat']);
-        if isfield(session.extracellular,'chanCoords')
+        if isfield(session.extracellular,'chanCoords') && isfield(session.extracellular.chanCoords,'x') && isfield(session.extracellular.chanCoords,'y')
             chanCoords = session.extracellular.chanCoords;
             chanCoords.x = chanCoords.x(:);
             chanCoords.y = chanCoords.y(:);
@@ -501,8 +501,8 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         
         % Fit exponential
         fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
-        expential_x = {};
-        expential_y = {};
+        xdata = {};
+        ydata = {};
         
         if parameters.debugMode
             fig100 = figure;
@@ -539,15 +539,15 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 x = 1:nChannelFit;
                 y = peakVoltage(idx(x));
                 x2 = channel_distance(1:nChannelFit)';
-                expential_x{j} = x2;
-                expential_y{j} = y;
+                xdata{j} = x2;
+                ydata{j} = y;
                 f0 = fit(x2',y',fit_eqn,'StartPoint',[cell_metrics.peakVoltage(j), 30, 5],'Lower',[1, 0.001, 0],'Upper',[5000, 200, 1000]);
                 fitCoeffValues = coeffvalues(f0);
                 cell_metrics.peakVoltage_expFit(j) = fitCoeffValues(2);
                 if parameters.debugMode && ishandle(handle_subfig1)
                     fig100.Name = ['Cell ',num2str(j),'/',num2str(cell_metrics.general.cellCount)];
                     delete(handle_subfig1.Children)
-                    plot(handle_subfig1,expential_x{j},expential_y{j},'.-b'), hold on
+                    plot(handle_subfig1,xdata{j},ydata{j},'.-b'), hold on
                     plot(handle_subfig1,x2,fitCoeffValues(1)*exp(-x2/fitCoeffValues(2))+fitCoeffValues(3),'r'),
                     plot(handle_subfig2,cell_metrics.peakVoltage(j),cell_metrics.peakVoltage_expFit(j),'ok')
                     plot(handle_subfig3,cell_metrics.trilat_x(j),cell_metrics.trilat_y(j),'ob'), 
@@ -557,15 +557,15 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 cell_metrics.trilat_x(j) = nan;
                 cell_metrics.trilat_y(j) = nan;
                 cell_metrics.peakVoltage_expFit(j) = nan;
-                expential_x{j} = [];
-                expential_y{j} = [];
+                xdata{j} = [];
+                ydata{j} = [];
             end
         end
         if parameters.showFigures
         fig1 = figure('Name', 'Length constant and Trilateration','NumberTitle', 'off','position',[100,100,1000,800]);
         subplot(2,2,1), hold on
         for j = 1:cell_metrics.general.cellCount
-            plot(expential_x{j},expential_y{j})
+            plot(xdata{j},ydata{j})
         end
         title('Spike amplitude (all)'), xlabel('Distance (µm)'), ylabel('µV')
         subplot(2,2,2), hold off,
