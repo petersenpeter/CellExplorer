@@ -2854,12 +2854,12 @@ end
                     set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), subset222);
                     for i = 1:numel(set1)
                         idx = find(subset222 == set1(i));
-                        line(cell_metrics.spikes.times{set1(i)},idx*ones(numel(cell_metrics.spikes.times{set1(i)}),1),'HitTest','off','Marker','.','LineStyle','none','color', UI.classes.colors(k,:)), axis tight
+                        line(cell_metrics.spikes.times{set1(i)},idx*ones(numel(cell_metrics.spikes.times{set1(i)}),1),'HitTest','off','Marker',UI.preferences.rasterMarker,'LineStyle','none','color', UI.classes.colors(k,:)), axis tight
                     end
                 end
                 idx = find(subset222 == ii);
                 if ~isempty(idx) && highlightCurrentCell
-                    line(cell_metrics.spikes.times{ii},idx*ones(numel(cell_metrics.spikes.times{ii}),1),'HitTest','off','Marker','.','LineStyle','none','color', 'k'), axis tight
+                    line(cell_metrics.spikes.times{ii},idx*ones(numel(cell_metrics.spikes.times{ii}),1),'HitTest','off','Marker',UI.preferences.rasterMarker,'LineStyle','none','color', 'k'), axis tight
                 end
                 
                 axis tight, ax6 = axis;
@@ -4283,7 +4283,7 @@ end
             cell_metrics_backup.cell_metrics = validateGroupFormat(cell_metrics_backup.cell_metrics,'tags');
             cell_metrics_backup.cell_metrics = validateGroupFormat(cell_metrics_backup.cell_metrics,'groundTruthClassification');
             if size(cell_metrics_backup.cell_metrics.putativeCellType,2) == length(backup_subset)
-                saveStateToHistory(backup_subset);
+                saveStateToHistory(backup_subset,'bacup');
                 cell_metrics.labels(backup_subset) = cell_metrics_backup.cell_metrics.labels;
                 if isfield(cell_metrics_backup.cell_metrics,'deepSuperficial')
                     cell_metrics.deepSuperficial(backup_subset) = cell_metrics_backup.cell_metrics.deepSuperficial;
@@ -5027,7 +5027,7 @@ end
                                 cell_metrics.(UI.groupData1.groupToList).(NewTag{1}) = eval(['[',NewTag{2},']']);
                                 idx_ids = cell_metrics.(UI.groupData1.groupToList).(NewTag{1}) < 1 | cell_metrics.(UI.groupData1.groupToList).(NewTag{1}) > cell_metrics.general.cellCount;
                                 cell_metrics.(UI.groupData1.groupToList).(NewTag{1})(idx_ids) = [];
-                                saveStateToHistory(cell_metrics.(UI.groupData1.groupToList).(NewTag{1}));
+                                saveStateToHistory(cell_metrics.(UI.groupData1.groupToList).(NewTag{1}),'group tag');
                             end
                         end
                     else
@@ -5055,7 +5055,7 @@ end
                     affectedCells = [affectedCells,cell_metrics.(UI.groupData1.groupToList).(field{i})];
                 end
                 if ~isempty(affectedCells)
-                    saveStateToHistory(affectedCells)
+                    saveStateToHistory(affectedCells,'group tags')
                 end
                 cell_metrics.(UI.groupData1.groupToList) = rmfield(cell_metrics.(UI.groupData1.groupToList),field);
                 updateGroupList
@@ -5086,7 +5086,7 @@ end
                 oldField = callbackdata.PreviousData;
                 cells_altered = cell_metrics.(UI.groupData1.groupToList).(oldField);
                 if ~isempty(cells_altered)
-                    saveStateToHistory(cells_altered)
+                    saveStateToHistory(cells_altered,'group tag')
                 end
                 [cell_metrics.(UI.groupData1.groupToList).(newField)] = cell_metrics.(UI.groupData1.groupToList).(oldField);
                 cell_metrics.(UI.groupData1.groupToList) = rmfield(cell_metrics.(UI.groupData1.groupToList),oldField);
@@ -5113,7 +5113,7 @@ end
                 end
                 cells_altered = unique([preValue,cell_metrics.(UI.groupData1.groupToList).(UI.groupData1.sessionList.Data{row,4})]);
                 if ~isempty(cells_altered)
-                    saveStateToHistory(cells_altered)
+                    saveStateToHistory(cells_altered,'group tag')
                 end
                 updateGroupList
                 filterGroupData
@@ -5241,7 +5241,7 @@ end
             opts.Interpreter = 'tex';
             groupName = inputdlg({['Name of new ' field(1:end-1)]},['Add ' field(1:end-1)] ,[1 40],{''},opts);
             if ~isempty(groupName) && ~isempty(groupName{1}) && ~any(strcmp(groupName,fieldnames(cell_metrics.(field))))
-                saveStateToHistory(cellIDsIn)
+                saveStateToHistory(cellIDsIn,'group tag')
                 cell_metrics.(field).(groupName{1}) = cellIDsIn;
                 MsgLog(['New ', field(1:end-1),' added: ' groupName{1}]);
                 if strcmp(field,'tags')
@@ -5250,7 +5250,7 @@ end
                 end 
             end
         elseif ~isempty(selectedTag)
-            saveStateToHistory(cellIDsIn)
+            saveStateToHistory(cellIDsIn,'group tag')
             if isfield(cell_metrics.(field),groupList{selectedTag})
                 cell_metrics.(field).(groupList{selectedTag}) = unique([cellIDsIn,cell_metrics.(field).(groupList{selectedTag})]);
             else
@@ -5596,7 +5596,7 @@ end
             else
                 subset = 1:cell_metrics.general.cellCount;
             end
-            saveStateToHistory(subset)
+            saveStateToHistory(subset,'deep-superficial classification')
             for j = subset
                 cell_metrics.deepSuperficial(j) = deepSuperficialfromRipple.channelClass(cell_metrics.maxWaveformCh1(j));
                 cell_metrics.deepSuperficialDistance(j) = deepSuperficialfromRipple.channelDistance(cell_metrics.maxWaveformCh1(j));
@@ -5692,7 +5692,7 @@ end
 
     function buttonCellType(selectedClas)
         if any(selectedClas == [1:length(UI.preferences.cellTypes)])
-            saveStateToHistory(ii)
+            saveStateToHistory(ii,'cell-type classification')
             clusClas(ii) = selectedClas;
             MsgLog(['Cell ', num2str(ii), ' classified as ', UI.preferences.cellTypes{selectedClas}]);
             updateCellCount
@@ -5716,7 +5716,7 @@ end
         end
     end
 
-    function saveStateToHistory(cellIDs)
+    function saveStateToHistory(cellIDs,action)
         UI.menu.file.save.ForegroundColor = [0.6350 0.0780 0.1840];
         hist_idx = size(history_classification,2)+1;
         history_classification(hist_idx).cellIDs = cellIDs;
@@ -5729,6 +5729,9 @@ end
         history_classification(hist_idx).groundTruthClassification = cell_metrics.groundTruthClassification;
         history_classification(hist_idx).deepSuperficial_num = cell_metrics.deepSuperficial_num(cellIDs);
         history_classification(hist_idx).deepSuperficialDistance = cell_metrics.deepSuperficialDistance(cellIDs);
+        if exist('action','var')
+            history_classification(hist_idx).action = action;
+        end
         classificationTrackChanges = [classificationTrackChanges,cellIDs];
         UI.params.alteredCellMetrics = 1;
         if rem(hist_idx,UI.preferences.autoSaveFrequency) == 0
@@ -5746,7 +5749,7 @@ end
         if UI.listbox.cellClassification.Value > length(UI.preferences.cellTypes)
             AddNewCellType
         else
-            saveStateToHistory(ii);
+            saveStateToHistory(ii,'cell-type classification');
             clusClas(ii) = UI.listbox.cellClassification.Value;
             MsgLog(['Cell ', num2str(ii), ' classified as ', UI.preferences.cellTypes{clusClas(ii)}]);
             updateCellCount
@@ -5781,6 +5784,8 @@ end
             updatePutativeCellType
             classes2plot = UI.listbox.cellTypes.Value;
             MsgLog(['New cell type added: ' NewClass{1}]);
+            uiresume(UI.fig);
+        else
             uiresume(UI.fig);
         end
     end
@@ -5827,7 +5832,7 @@ end
     end
 
     function buttonDeepSuperficial
-        saveStateToHistory(ii)
+        saveStateToHistory(ii,'deep-superficial classification')
         cell_metrics.deepSuperficial{ii} = UI.preferences.deepSuperficial{UI.listbox.deepSuperficial.Value};
         cell_metrics.deepSuperficial_num(ii) = UI.listbox.deepSuperficial.Value;
         
@@ -5847,7 +5852,7 @@ end
     end
 
     function buttonTags(input)
-        saveStateToHistory(ii);
+        saveStateToHistory(ii,'tag');
         if UI.togglebutton.tag(input).Value == 1
             if isfield(cell_metrics.tags,UI.preferences.tags{input})
                 cell_metrics.tags.(UI.preferences.tags{input}) = unique([cell_metrics.tags.(UI.preferences.tags{input}),ii]);
@@ -5936,7 +5941,7 @@ end
     function buttonLabel(~,~)
         Label = inputdlg({'Assign label to cell'},'Custom label',[1 40],{cell_metrics.labels{ii}});
         if ~isempty(Label)
-            saveStateToHistory(ii);
+            saveStateToHistory(ii,'label');
             cell_metrics.labels{ii} = Label{1};
             UI.pushbutton.labels.String = ['Label: ', cell_metrics.labels{ii}];
             MsgLog(['Cell ', num2str(ii), ' labeled as ', Label{1}]);
@@ -5950,7 +5955,7 @@ end
     end
 
     function buttonBrainRegion(~,~)
-        saveStateToHistory(ii)
+        saveStateToHistory(ii,'brain region')
         
         if isempty(UI.brainRegions.list)
             brainRegions = load('BrainRegions.mat'); brainRegions = brainRegions.BrainRegions;
@@ -9295,7 +9300,7 @@ end
                 if choice == 2
                     [selectedClas,~] = listdlg('PromptString',['Assign cell-type to ' num2str(length(cellIDs)) ' cells'],'ListString',colored_string,'SelectionMode','single','ListSize',[200,150]);
                     if ~isempty(selectedClas) && selectedClas < numel(colored_string)
-                        saveStateToHistory(cellIDs)
+                        saveStateToHistory(cellIDs,'cell-type classification')
                         clusClas(cellIDs) = selectedClas;
                         updateCellCount
                         MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.preferences.cellTypes{selectedClas}]);
@@ -9306,7 +9311,7 @@ end
                         AddNewCellType
                         selectedClas = length(colored_string); % Last entry is the not a a real cell type
                         if ~isempty(selectedClas)
-                            saveStateToHistory(cellIDs)
+                            saveStateToHistory(cellIDs,'cell-type classification')
                             clusClas(cellIDs) = selectedClas-1;
                             updateCellCount
                             MsgLog([num2str(length(cellIDs)), ' cells assigned to ', UI.preferences.cellTypes{selectedClas-1}]);
@@ -9319,7 +9324,7 @@ end
                 elseif choice == 3
                     Label = inputdlg({'Assign label to cell'},'Custom label',[1 40],{''});
                     if ~isempty(Label)
-                        saveStateToHistory(cellIDs)
+                        saveStateToHistory(cellIDs,'label')
                         cell_metrics.labels(cellIDs) = repmat(Label(1),length(cellIDs),1);
                         [~,ID] = findgroups(cell_metrics.labels);
                         groups_ids.labels_num = ID;
@@ -9333,7 +9338,7 @@ end
                 elseif choice == 4
                     [selectedClas,~] = listdlg('PromptString',['Assign Deep-Superficial to ' num2str(length(cellIDs)) ' cells'],'ListString',UI.listbox.deepSuperficial.String,'SelectionMode','single','ListSize',[200,150]);
                     if ~isempty(selectedClas)
-                        saveStateToHistory(cellIDs)
+                        saveStateToHistory(cellIDs,'deep-superficial classification')
                         cell_metrics.deepSuperficial(cellIDs) =  repmat(UI.listbox.deepSuperficial.String(selectedClas),1,length(cellIDs));
                         cell_metrics.deepSuperficial_num(cellIDs) = selectedClas;
                         
@@ -9738,7 +9743,7 @@ end
         answer = questdlg('Are you sure you want to reclassify all your cells?', 'Reclassification', 'Yes','Cancel','Cancel');
         switch answer
             case 'Yes'
-                saveStateToHistory(1:cell_metrics.general.cellCount)
+                saveStateToHistory(1:cell_metrics.general.cellCount,'cell-type classification')
                 
                 preferences = preferences_ProcessCellMetrics;
                 
@@ -9782,11 +9787,16 @@ end
             
             classificationTrackChanges = [classificationTrackChanges,history_classification(end).cellIDs];
             
+            if isfield(history_classification(end),'action')
+                action = history_classification(end).action;
+            else
+                action = 'classification';
+            end
             if length(history_classification(end).cellIDs) == 1
-                MsgLog(['Reversed classification for cell ', num2str(history_classification(end).cellIDs)]);
+                MsgLog(['Reversed ', action, ' for cell ', num2str(history_classification(end).cellIDs)]);
                 ii = history_classification(end).cellIDs;
             else
-                MsgLog(['Reversed classification for ' num2str(length(history_classification(end).cellIDs)), ' cells']);
+                MsgLog(['Reversed ', action, ' for ' num2str(length(history_classification(end).cellIDs)), ' cells']);
             end
             history_classification(end) = [];
             updateCellCount
@@ -10544,7 +10554,8 @@ end
         else
             tooltip = 'Tooltip';
         end
-        % Flexib grid box for adjusting the width of the side panels
+        
+        % Flex grid box for adjusting the width of the side panels
         UI.HBox = uix.GridFlex( 'Parent', UI.fig, 'Spacing', 5, 'Padding', 0);
         
         % Left panel
@@ -12437,7 +12448,7 @@ end
     end
 
     function buttonGroundTruthClassification(input)
-        saveStateToHistory(ii)
+        saveStateToHistory(ii,'ground truth classification')
         if UI.togglebutton.groundTruthClassification(input).Value == 1
             if isfield(cell_metrics.groundTruthClassification,UI.preferences.groundTruth{input})
                 cell_metrics.groundTruthClassification.(UI.preferences.groundTruth{input}) = unique([cell_metrics.groundTruthClassification.(UI.preferences.groundTruth{input}),ii]);

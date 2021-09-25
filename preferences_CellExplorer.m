@@ -85,6 +85,12 @@ UI.preferences.referenceData = 'None';
 UI.preferences.groundTruthData = 'None'; 
 UI.preferences.channelMapColoring = false;         % Color groups in channel map inset with waveforms
 
+if verLessThan('matlab','9.9')
+    UI.preferences.rasterMarker = '.';
+else
+    UI.preferences.rasterMarker = '|';
+end
+
 % Autosave
 UI.preferences.autoSaveFrequency = 5;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
 UI.preferences.autoSaveVarName = 'cell_metrics';   % Variable name used in autosave
