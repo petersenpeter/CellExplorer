@@ -139,7 +139,7 @@ synConnectOptions = {'None', 'Selected', 'Upstream', 'Downstream', 'Up & downstr
 plotX = []; plotY = []; plotY1 = []; plotZ = [];  plotMarkerSize = [];
 fig2_axislimit_x = []; fig2_axislimit_y = []; fig3_axislimit_x = []; fig3_axislimit_y = [];
 fig2_axislimit_x_reference = []; fig2_axislimit_y_reference = []; fig2_axislimit_x_groundTruth = []; fig2_axislimit_y_groundTruth = [];
-ce_waitbar = []; colorStr = []; iLine = 1; h_scatter = []; groups_ids = []; clusClas = [];  meanCCG = [];
+ce_waitbar = []; colorStr = []; iLine = 1; h_scatter2 = [];h_scatter3 = [];groups_ids = []; clusClas = [];  meanCCG = [];
 hover2highlight = {}; clickPlotRegular = true; 
 classes2plot = []; classes2plotSubset = []; ii = []; history_classification = []; batchIDs = []; general = []; classificationTrackChanges = []; 
 cell_class_count = [];  plotOptions = ''; colorMenu = []; GroupVal = 1; ColorVal = 1; 
@@ -659,52 +659,46 @@ function updateUI
     % Subfig 1
     % % % % % % % % % % % % % % % % % % % % % %
     if any(UI.preferences.customPlotHistograms == [1,3,4])
-        if size(UI.panel.subfig_ax(1).Children,1) > 1
-            set(UI.fig,'CurrentAxes',UI.panel.subfig_ax(1).Children(2))
-        else
-            set(UI.fig,'CurrentAxes',UI.panel.subfig_ax(1).Children)
-        end
-        % Saving current view activated for previous cell
-        [az,el] = view;
+        % Saving view for previous cell
+        [az,el] = view(UI.axes(1));
     end
 
-    % Deletes all children from the panel
-    delete(UI.panel.subfig_ax(1).Children)
-
-    % Creating new chield
-    UI.axes(1) = axes('Parent',UI.panel.subfig_ax(1),'NextPlot','add');
+    % Deleting children of axes
+    delete(UI.axes(1).Children)
+    delete(h_scatter2.Children)
+    delete(h_scatter3.Children)
 
     % % % % % Regular plot with/without histograms
     
     if any(UI.preferences.customPlotHistograms == [1,2])
         if UI.preferences.customPlotHistograms == 2 || strcmp(UI.preferences.referenceData, 'Histogram') || strcmp(UI.preferences.groundTruthData, 'Histogram')
             % Double kernel-histogram with scatter plot
-            clear h_scatter
-            set(UI.axes(1),'Position', [0.30 0.30 0.685 0.675]);
-            h_scatter(2) = axes('Parent',UI.panel.subfig_ax(1),'Position', [0.30 0.01 0.685 0.2], 'visible', 'on','Xticklabels',[],'NextPlot','add');
-            h_scatter(3) = axes('Parent',UI.panel.subfig_ax(1),'Position', [0.01 0.30 0.2 0.675], 'visible', 'on','Xticklabels',[],'NextPlot','add');
-            h_scatter(2).YLabel.String = UI.preferences.rainCloudNormalization;
-            h_scatter(3).YLabel.String = UI.preferences.rainCloudNormalization;
+            set(UI.axes(1),'Position', [0.30 0.30 0.685 0.675], 'visible', 'on', 'Clipping','on');
+            set(h_scatter2,'Position', [0.30 0.01 0.685 0.2], 'visible', 'on');
+            set(h_scatter3,'Position', [0.01 0.30 0.2 0.675], 'visible', 'on');
             
-%             hold(UI.axes(1),'on')
-%             hold(h_scatter(2),'on')
-%             hold(h_scatter(3),'on')
-%             hold([UI.axes(1) h_scatter(2) h_scatter(3)],'on')
-            set(UI.fig,'CurrentAxes',UI.axes(1))
-            view(h_scatter(3),[90 -90])
+            h_scatter2.YLabel.String = UI.preferences.rainCloudNormalization;
+            h_scatter3.YLabel.String = UI.preferences.rainCloudNormalization;
+
+%             set(UI.fig,'CurrentAxes',UI.axes(1))
+%             view(h_scatter3,[90 -90])
             if UI.checkbox.logx.Value == 1
-                set(h_scatter(2), 'XScale', 'log')
+                set(h_scatter2, 'XScale', 'log')
             else
-                set(h_scatter(2), 'XScale', 'linear')
+                set(h_scatter2, 'XScale', 'linear')
             end
-            linkaxes([UI.axes(1) h_scatter(2)],'x')
+            linkaxes([UI.axes(1) h_scatter2],'x')
             if UI.checkbox.logy.Value == 1
-                set(h_scatter(3), 'XScale', 'log')
+                set(h_scatter3, 'XScale', 'log')
             else
-                set(h_scatter(3), 'XScale', 'linear')
+                set(h_scatter3, 'XScale', 'linear')
             end
-            UI.xLimListener = addlistener(UI.axes(1), 'YLim', 'PostSet', @(src,evt) set_lims(h_scatter(3),'XLim', UI.axes(1),'YLim'));
-            UI.yLimListener = addlistener(h_scatter(3), 'XLim', 'PostSet', @(src,evt) set_lims(UI.axes(1),'YLim', h_scatter(3),'XLim'));
+            
+            set(UI.fig,'CurrentAxes',UI.axes(1))
+        else
+            set(UI.axes(1),'Position', [0.058812664907652   0.049837398373984   0.931187335092348   0.923495934959349], 'visible', 'on', 'Clipping','on');
+            set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
+            set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
             set(UI.fig,'CurrentAxes',UI.axes(1))
         end
 
@@ -714,7 +708,6 @@ function updateUI
             UI.axes(1).YAxis(2).Color = 'k';
         end
 
-%         hold on
         UI.axes(1).YLabel.String = UI.labels.(UI.plot.yTitle); 
         UI.axes(1).XLabel.String = UI.labels.(UI.plot.xTitle); 
         set(UI.axes(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
@@ -735,8 +728,6 @@ function updateUI
         % % % % % 2D plot
 
 %         set(UI.axes(1),'ButtonDownFcn',@ClicktoSelectFromPlot), 
-%         hold on, 
-        axis tight
         view([0 90]);
         if UI.checkbox.logx.Value == 1
             AA = cell_metrics.(UI.plot.xTitle)(UI.params.subset);
@@ -766,7 +757,6 @@ function updateUI
         elseif diff(fig1_axislimit_y) == 0
             fig1_axislimit_y = fig1_axislimit_y + [-1 1];
         end
-
         % Reference data
         if strcmp(UI.preferences.referenceData, 'Points') && ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,UI.plot.xTitle) && isfield(reference_cell_metrics,UI.plot.yTitle)
             idx = find(ismember(referenceData.clusClas,referenceData.selection));
@@ -989,29 +979,29 @@ function updateUI
             for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
                 temp9 = UI.params.subset(find(plotClas_subset==ids(m)));
                 if length(temp9)>1 && any(~isnan(plotX(temp9)))
-                    densityPlot(plotX(temp9),h_scatter(2),UI.classes.colors(m,:),UI.classes.colors(m,:),UI.checkbox.logx.Value)
+                    densityPlot(plotX(temp9),h_scatter2,UI.classes.colors(m,:),UI.classes.colors(m,:),UI.checkbox.logx.Value)
                 end
             end
             if UI.preferences.plotLinearFits
                 plotLinearFits(plotX,plotY)
             end
-            xlim(h_scatter(2), xlim11)
+            xlim(h_scatter2, xlim11)
             
             for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
                 temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
                 if length(temp1)>1 && any(~isnan(plotY(temp1)))
-                    densityPlot(plotY(temp1),h_scatter(3),UI.classes.colors(m,:),UI.classes.colors(m,:),UI.checkbox.logy.Value)
+                    densityPlot(plotY(temp1),h_scatter3,UI.classes.colors(m,:),UI.classes.colors(m,:),UI.checkbox.logy.Value)
                 end
             end
-            xlim(h_scatter(3),ylim11)
+            xlim(h_scatter3,ylim11)
         end
         if strcmp(UI.preferences.groundTruthData, 'Histogram') && ~isempty(groundTruth_cell_metrics) && isfield(groundTruth_cell_metrics,UI.plot.xTitle) && isfield(groundTruth_cell_metrics,UI.plot.yTitle)
             
-            groundTruthData1.x = densityPlotRefData(groundTruth_cell_metrics.(UI.plot.xTitle),h_scatter(2),num2cell(UI.classes.colors3,2),UI.checkbox.logx.Value,xlim11,groundTruthData);
+            groundTruthData1.x = densityPlotRefData(groundTruth_cell_metrics.(UI.plot.xTitle),h_scatter2,num2cell(UI.classes.colors3,2),UI.checkbox.logx.Value,xlim11,groundTruthData);
             groundTruthData1.x_field = UI.plot.xTitle;
             groundTruthData1.x_log = UI.checkbox.logx.Value;
                 
-            groundTruthData1.y = densityPlotRefData(groundTruth_cell_metrics.(UI.plot.yTitle),h_scatter(3),num2cell(UI.classes.colors3,2),UI.checkbox.logy.Value,ylim11,groundTruthData);
+            groundTruthData1.y = densityPlotRefData(groundTruth_cell_metrics.(UI.plot.yTitle),h_scatter3,num2cell(UI.classes.colors3,2),UI.checkbox.logy.Value,ylim11,groundTruthData);
             groundTruthData1.y_field = UI.plot.yTitle;
             groundTruthData1.y_log = UI.checkbox.logy.Value;
             
@@ -1048,9 +1038,9 @@ function updateUI
 %                         line_histograms_X(:,m) = ksdensity(xdata(idx(idx1)),groundTruthData1.x);
 %                     end
 %                     if UI.checkbox.logx.Value == 0
-%                         legendScatter2 = line(groundTruthData1.x,line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+%                         legendScatter2 = line(groundTruthData1.x,line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter2);
 %                     else
-%                         legendScatter2 = line(10.^(groundTruthData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+%                         legendScatter2 = line(10.^(groundTruthData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter2);
 %                     end
 %                     set(legendScatter2, {'color'}, num2cell(UI.classes.colors3,2));
 %                 end
@@ -1061,9 +1051,9 @@ function updateUI
 %                         line_histograms_Y(:,m) = ksdensity(ydata(idx(idx1)),groundTruthData1.y);
 %                     end
 %                     if UI.checkbox.logy.Value == 0
-%                         legendScatter22 = line(groundTruthData1.y,line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
+%                         legendScatter22 = line(groundTruthData1.y,line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter3);
 %                     else
-%                         legendScatter22 = line(10.^(groundTruthData1.y),line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
+%                         legendScatter22 = line(10.^(groundTruthData1.y),line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter3);
 %                     end
 %                     set(legendScatter22, {'color'}, num2cell(UI.classes.colors3,2));
 %                 end
@@ -1113,9 +1103,9 @@ function updateUI
                     line_histograms_X(:,m) = ksdensity(xdata(idx(idx1)),referenceData1.x);
                 end
                 if UI.checkbox.logx.Value == 0
-                    legendScatter2 = line(referenceData1.x,line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+                    legendScatter2 = line(referenceData1.x,line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter2);
                 else
-                    legendScatter2 = line(10.^(referenceData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+                    legendScatter2 = line(10.^(referenceData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter2);
                 end
                 set(legendScatter2, {'color'}, num2cell(UI.classes.colors2,2));
             end
@@ -1126,20 +1116,23 @@ function updateUI
                     line_histograms_Y(:,m) = ksdensity(ydata(idx(idx1)),referenceData1.y);
                 end
                 if UI.checkbox.logy.Value == 0
-                    legendScatter22 = line(referenceData1.y,line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
+                    legendScatter22 = line(referenceData1.y,line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter3);
                 else
-                    legendScatter22 = line(10.^(referenceData1.y),line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(3));
+                    legendScatter22 = line(10.^(referenceData1.y),line_histograms_Y./max(line_histograms_Y),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter3);
                 end
                 set(legendScatter22, {'color'}, num2cell(UI.classes.colors2,2));
             end
-            xlim(h_scatter(2), xlim11)
-            xlim(h_scatter(3), ylim11)
+            xlim(h_scatter2, xlim11)
+            xlim(h_scatter3, ylim11)
     end
     
     % % % % % 3D plot
     
     elseif UI.preferences.customPlotHistograms == 3
-
+        set(UI.axes(1),'Position', [0.058812664907652   0.049837398373984   0.931187335092348   0.923495934959349], 'visible', 'on');
+        set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
+        set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
+        set(UI.fig,'CurrentAxes',UI.axes(1))
 %         hold on
         UI.axes(1).YLabel.String = UI.labels.(UI.plot.yTitle); UI.axes(1).YLabel.Interpreter = 'tex';
         UI.axes(1).XLabel.String = UI.labels.(UI.plot.xTitle); UI.axes(1).XLabel.Interpreter = 'tex';
@@ -1279,12 +1272,16 @@ function updateUI
         
     elseif UI.preferences.customPlotHistograms == 4
         
+        set(UI.axes(1),'Position', [0.058812664907652   0.049837398373984   0.931187335092348   0.923495934959349], 'visible', 'on', 'Clipping','on');
+        set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
+        set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
+        set(UI.fig,'CurrentAxes',UI.axes(1))
+        
         if ~isempty(UI.classes.colors)
             UI.axes(1).XLabel.String = UI.labels.(UI.plot.xTitle); UI.axes(1).XLabel.Interpreter = 'tex';
-            set(UI.axes(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
+            set(UI.axes(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto', 'YScale', 'linear'),
             xlim auto, ylim manual, zlim auto
 %             set(UI.axes(1),'ButtonDownFcn',@ClicktoSelectFromPlot), 
-%             hold on, 
             axis tight
             view([0 90]);
             % Setting linear/log scale
@@ -1390,7 +1387,7 @@ function updateUI
     UI.zoom.global{1}(2,:) = ylim;
     UI.zoom.global{1}(3,:) = zlim;
     UI.zoom.globalLog{1} = [UI.checkbox.logx.Value,UI.checkbox.logy.Value,UI.checkbox.logz.Value];
-    UI.axes(1).Title.String = 'Custom group plot';
+%     UI.axes(1).Title.String = 'Custom group plot';
     
     %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 2
@@ -1847,10 +1844,11 @@ end
             if exist('plotAllenBrainGrid.m','file')
                 plotAllenBrainGrid
             end
-            xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(plotAxes, 'ZDir','reverse','Clipping','off','ButtonDownFcn',[]);
+            xlabel(['x ( Anterior-Posterior; ',char(181),'m)']), zlabel(['y (Superior-Inferior; ',char(181),'m)']), ylabel(['z (Left-Right; ',char(181),'m)']), axis equal, set(plotAxes, 'ZDir','reverse','Clipping','off','ButtonDownFcn',[]);
             view(ccf_ratio(1),ccf_ratio(2)); 
             if UI_fig
-                rotateFig(plotAxes,getAxisBelowCursor)
+%                 rotateFig(plotAxes,getAxisBelowCursor)
+                rotateFig(plotAxes,axnum)
             end
             
             % Plots putative connections
@@ -2170,7 +2168,6 @@ end
             
         elseif strcmp(customPlotSelection,'ACGs (single)') % ACGs
             % Auto-correlogram for selected cell. Colored according to cell-type. Normalized firing rate. X-axis according to selected option
-            grid on 
             plotAxes.YLabel.String = 'Rate (Hz)';
             plotAxes.Title.String = customPlotSelection;
             
@@ -2384,7 +2381,7 @@ end
                     plotAxes.YLabel.String = 'Occurrence';
                 end
                 set(plotAxes,'xscale','log')
-                ax5 = axis; grid on, set(plotAxes, 'Layer', 'top')
+                ax5 = axis; set(plotAxes, 'Layer', 'top')
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
             end
@@ -3601,9 +3598,9 @@ end
 %                 line_histograms_X(:,m) = ksdensity(xdata(idx(idx1)),groundTruthData1.x);
 %             end
 %             if UI.checkbox.logx.Value == 0
-%                 legendScatter2 = line(groundTruthData1.x,line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+%                 legendScatter2 = line(groundTruthData1.x,line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter2);
 %             else
-%                 legendScatter2 = line(10.^(groundTruthData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter(2));
+%                 legendScatter2 = line(10.^(groundTruthData1.x),line_histograms_X./max(line_histograms_X),'LineStyle','-','linewidth',1,'HitTest','off', 'Parent', h_scatter2);
 %             end
 %             set(legendScatter2, {'color'}, num2cell(UI.classes.colors3,2));
 %         end
@@ -6705,9 +6702,9 @@ end
                     applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
                 end
                 % Double kernel-histograms
-                set(UI.fig,'CurrentAxes',h_scatter(2))
+                set(UI.fig,'CurrentAxes',h_scatter2)
                 applyZoom([globalZoom1(1,:);0,1;0,1],[cursorPosition(1),inf,0],[axesLimits(1,:);0,1;0,1],[globalZoomLog1(1),0,0],direction);
-                set(UI.fig,'CurrentAxes',h_scatter(3))
+                set(UI.fig,'CurrentAxes',h_scatter3)
                 applyZoom([globalZoom1(2,:);0,1;0,1],[cursorPosition(2),inf,0],[axesLimits(2,:);0,1;0,1],[globalZoomLog1(2),0,0],direction);
             else
                 applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
@@ -8636,7 +8633,8 @@ end
             alpha(handle_ce_gscatter(i_groups),.8)
         end
 
-        xlabel(UI.labels.(UI.supplementaryFigure.metrics{1}),'FontSize',defaultAxesFontSize-1), ylabel(UI.labels.(UI.supplementaryFigure.metrics{2}),'FontSize',defaultAxesFontSize-1); set(gca, 'XScale', axisScale{UI.supplementaryFigure.axisScale(1)}, 'YScale', axisScale{UI.supplementaryFigure.axisScale(2)},'TickLength',[0.02 1]), axis tight, figureLetter('A','right')
+        xlabel(UI.labels.(UI.supplementaryFigure.metrics{1}),'FontSize',defaultAxesFontSize-1), ylabel(UI.labels.(UI.supplementaryFigure.metrics{2}),'FontSize',defaultAxesFontSize-1); set(gca, 'XScale', axisScale{UI.supplementaryFigure.axisScale(1)}, 'YScale', axisScale{UI.supplementaryFigure.axisScale(2)},'TickLength',[0.02 1]), axis tight,
+        text(-0.1,1,'A','FontSize',30,'Units','normalized','verticalalignment','middle','horizontalalignment','right');
         
         % Generating legend
         legendNames = UI.classes.labels(nanUnique(UI.classes.plot(UI.params.subset)));
@@ -10465,7 +10463,7 @@ end
         for m = 1:length(UI.params.tableDataSortingList)
             UI.menu.tableData.sortingList(m) = uimenu(UI.menu.tableData.topMenu,menuLabel,UI.params.tableDataSortingList{m},menuSelectedFcn,@setTableDataSorting);
         end
-        uimenu(UI.menu.tableData.topMenu,menuLabel,'See metrics in separate table',menuSelectedFcn,@showMetricsTable,'Accelerator','A','Separator','on');
+        uimenu(UI.menu.tableData.topMenu,menuLabel,'See metrics in separate table',menuSelectedFcn,@showMetricsTable,'Separator','on');
         
         % Spikes
         UI.menu.spikeData.topMenu = uimenu(UI.fig,menuLabel,'Spikes');
@@ -10542,7 +10540,7 @@ end
         UI.axes(2).Title.String = 'Cell type separation plot';
         set(UI.axes(2), 'YScale', 'log');
         
-        UI.axes(3).Title.String = [tSNE_metrics.preferences.algorithm, ' dimensionality reduction'];
+        UI.axes(3).Title.String = [tSNE_metrics.preferences.algorithm, ' dimensionality reduction plot'];
         UI.axes(3).XLabel.String = tSNE_metrics.preferences.algorithm;
         UI.axes(3).YLabel.String = tSNE_metrics.preferences.algorithm;
     end
@@ -10610,6 +10608,10 @@ end
         set( UI.VBox, 'Heights', [25 -1 25]);
         
         UI.axes(1) = axes('Parent',UI.panel.subfig_ax(1),'NextPlot','add');
+        UI.axes(1).Title.String = 'Custom group plot';
+        h_scatter2 = axes('Parent',UI.panel.subfig_ax(1),'Position', [0.30 0.01 0.685 0.2], 'visible', 'off','Xticklabels',[],'NextPlot','add');
+        h_scatter3 = axes('Parent',UI.panel.subfig_ax(1),'Position', [0.01 0.30 0.2 0.675], 'visible', 'off','Xticklabels',[],'NextPlot','add');
+        view(h_scatter3,[90 -90])
         UI.axes(2) = axes('Parent',UI.panel.subfig_ax(2),'NextPlot','add');
         UI.axes(3) = axes('Parent',UI.panel.subfig_ax(3),'NextPlot','add');
         UI.axes(4) = axes('Parent',UI.panel.subfig_ax(4),'NextPlot','add');
@@ -10618,6 +10620,10 @@ end
         UI.axes(7) = axes('Parent',UI.panel.subfig_ax(7),'NextPlot','add');
         UI.axes(8) = axes('Parent',UI.panel.subfig_ax(8),'NextPlot','add');
         UI.axes(9) = axes('Parent',UI.panel.subfig_ax(9),'NextPlot','add');
+        
+        % Adding listeners to axes
+        UI.xLimListener = addlistener(UI.axes(1), 'YLim', 'PostSet', @(src,evt) set_lims(h_scatter3,'XLim', UI.axes(1),'YLim'));
+        UI.yLimListener = addlistener(h_scatter3, 'XLim', 'PostSet', @(src,evt) set_lims(UI.axes(1),'YLim', h_scatter3,'XLim'));
         
         % % % % % % % % % % % % % % % % % % %
         % Metrics table
@@ -10707,7 +10713,7 @@ end
         % % % % % % % % % % % % % % % % % % % %
         
         % Custom plot
-        uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 10 45 10],'Units','normalized','String','Custom group plot style','HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.custom,'Style','text','Position',[5 10 45 10],'Units','normalized','String','Custom group plot settings','HorizontalAlignment','center');
         UI.popupmenu.metricsPlot = uicontrol('Parent',UI.panel.custom,'Style','popupmenu','Position',[2 82 144 10],'Units','normalized','String',{'2D scatter plot','2D + Histograms','3D scatter plot','Raincloud plot'},'Value',1,'HorizontalAlignment','left','Callback',@(src,evnt)customPlotStyle,'KeyPressFcn', {@keyPress},'tooltip','Plot style of custom group plot');
         
         % Custom plotting menues
@@ -12785,6 +12791,7 @@ end
         nRepetitions = min([100,numel(UI.params.subset)]); 
 
         [indx,~] = listdlg('PromptString','Which benchmarks do you want to perform?','ListString',{'Cell metrics file loading','Reference data file loading','Single plot figures','Cell Exporer UI'},'ListSize',[300,200],'InitialValue',1,'SelectionMode','many','Name','Benchmarks');
+        set(UI.fig,'WindowButtonMotionFcn', [])
         if any(indx == 1)
             % Benchmarking file loading
             if isfield(cell_metrics.general,'batch_benchmark')
@@ -12908,6 +12915,7 @@ end
             legend(f1,{'Layout: 1+3','Layout: 3+3','Layout: 3+6 simple',}), title('Average processing times')
              drawnow nocallbacks;
         end
+        set(UI.fig,'WindowButtonMotionFcn', @hoverCallback)
         figure(UI.fig)
        
 %         uiresume(UI.fig);
