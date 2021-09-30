@@ -2170,10 +2170,12 @@ end
             
             '   ',''; 
             '','<html><b>Navigation</b></html>';
-            '> (right arrow)','Forward in time'; 
-            '< (left arrow)','Backward in time';
-            'shift + > (right arrow)','Fast forward in time'; 
-            'shift + < (left arrow)','Fast backward in time';
+            '> (right arrow)','Forward in time (quarter window length)'; 
+            '< (left arrow)','Backward in time (quarter window length)';
+            'shift + > (right arrow)','Forward in time (full window length)'; 
+            'shift + < (left arrow)','Backward in time (full window length)';
+            'alt + > (right arrow)','Forward in time (a tenth window length)'; 
+            'alt + < (left arrow)','Backward in time (a tenth window length)';
             'G','Go to timestamp';
             'Numpad0','Go to t = 0s'; 
             'Backspace','Go to previous time point'; 
@@ -4233,7 +4235,7 @@ end
         UI.settings.stream = false;
         % Spike data
         summaryfig = figure('name','Summary figure','Position',[50 50 1200 900],'visible','off');
-        ax1 = axes(summaryfig,'XLim',[0,UI.t_total],'title','Summary figure','YLim',[0,1],'YTickLabel',[],'Color','k','Position',[0.05 0.07 0.9 0.88],'XColor','k','TickDir','out'); hold on, 
+        ax1 = axes(summaryfig,'XLim',[0,UI.t_total],'title','Summary figure','YLim',[0,1],'YTickLabel',[],'Color',UI.settings.background,'Position',[0.05 0.07 0.9 0.88],'XColor','k','TickDir','out'); hold on, 
         xlabel('Time (s)')
         
         if UI.settings.showSpikes
@@ -4258,7 +4260,7 @@ end
             else
                 spikes_sorting = 'UID';
             end
-            ylabel(['Neurons (sorting / ydata: ' spikes_sorting,')']), 
+            ylabel(['Neurons (sorting / ydata: ' spikes_sorting,')'],'interpreter','none'), 
         end
         
         % KiloSort data
@@ -4407,22 +4409,45 @@ end
         
         xi = 0.5;                   % fractional overlap
         
-        fig2 = figure('name',['Power spectral density. Session: ', UI.data.basename],'Position',[50 50 1200 900],'visible','off');
-        ax2 = axes(fig2, 'YScale', 'log', 'XScale', 'log'); hold on, xlabel(ax2,'Frequency (Hz)'), ylabel(ax2,'Power spectral density'), title(ax2,[' Session: ', UI.data.basename], 'interpreter','none'), grid on
         f_waitbar = waitbar(0,'Please wait...','Name','Power spectral density');
         i_channel = 0;
+        X_all = [];
+        channels = [UI.channels{:}];
+        
+        % Validating that Parallel Computing Toolbox is installed
+        parallel_toolbox_installed = isToolboxInstalled('Parallel Computing Toolbox');
+
+        % Will calculate the power spectral density in parallel if toolbox is installed (which is much faster), otherwise in a regular for loop. 
+        if parallel_toolbox_installed
+            waitbar(0,f_waitbar,'Please wait... Starting parallel pool...');
+            gcp;
+            waitbar(0.01,f_waitbar,'Calculating power spectral density across channels in parallel');
+            ephys_traces = ephys.traces(:,channels)/(UI.settings.scalingFactor/1000000);
+            parfor i = 1:numel(channels)
+                [X, f, C] = lpsd(ephys_traces(:,i), @hanning, fmin, fmax, Jdes, Kdes, Kmin, sr, xi);
+                X_all(:,i) = X .* C.PSD;
+            end
+            X_all(:,channels) = X_all;
+            f = logspace(log10(fmin),log10(fmax),Jdes);
+        else
+            for i = 1:numel(channels)
+                i_channel = i_channel+1;
+                if ~ishandle(f_waitbar)
+                    return
+                end
+                waitbar(i_channel/numel(channels),f_waitbar,'Generating power spectral density across channels');
+                [X, f, C] = lpsd(ephys.traces(:,channels(i))/(UI.settings.scalingFactor/1000000), @hanning, fmin, fmax, Jdes, Kdes, Kmin, sr, xi);
+                X_all(:,channels(i)) = X .* C.PSD;
+            end
+        end
+        fig2 = figure('name',['Power spectral density. Session: ', UI.data.basename],'Position',[50 50 1200 900],'visible','off');
+        ax2 = axes(fig2, 'YScale', 'log', 'XScale', 'log'); hold on, xlabel(ax2,'Frequency (Hz)'), ylabel(ax2,'Power spectral density'), title(ax2,[' Session: ', UI.data.basename], 'interpreter','none'), grid on
         for iShanks = UI.settings.electrodeGroupsToPlot
             channels = UI.channels{iShanks};
             [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
             channels = UI.channelOrder(ia);
             for i = 1:numel(channels)
-                i_channel = i_channel+1;
-                if ~ishandle(f_waitbar)
-                   return 
-                end
-                waitbar(i_channel/numel(UI.channelOrder),f_waitbar,'Generating power spectral density across channels');
-                [X, f, C] = lpsd(ephys.traces(:,channels(i))/(UI.settings.scalingFactor/1000000), @hanning, fmin, fmax, Jdes, Kdes, Kmin, sr, xi);
-                line(ax2,f, X .* C.PSD, 'color', UI.colors(iShanks,:)*0.95, 'linewidth', 1, 'HitTest','off');
+                line(ax2,f, X_all(:,channels(i)), 'color', UI.colors(iShanks,:)*0.95, 'linewidth', 1, 'HitTest','off');
             end
         end
         if ishandle(f_waitbar)
