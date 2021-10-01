@@ -27,7 +27,7 @@ To address this, we built CellExplorer, a framework for analyzing and characteri
 ## Getting started
 1. [Clone](x-github-client://openRepo/https://github.com/petersenpeter/CellExplorer), fork, or [download](https://github.com/petersenpeter/CellExplorer/archive/master.zip) the repository (cloning or forking is recommended).
 2. Add the local repository to your MATLAB setpath. 
-3. The pipeline uses two c-code files that must be compiled `CCGHeart.c` and `FindInInterval.c` (originally part of the FMA toolbox). Compiled versions are included for Windows and Mac. __If you are using Linux__ you have to compile the scripts. In MATLAB, go to `CellExplorer/calc_CellMetrics/mex/` and run these line:
+3. The pipeline uses two c-code files that must be compiled `CCGHeart.c` and `FindInInterval.c` (originally part of the FMA toolbox). Compiled versions are included for Windows 64bit and Intel Mac 64bit, but you still have to compile them if your OS version is different. __If you are using Linux__ you have to compile the scripts. In MATLAB, go to `CellExplorer/calc_CellMetrics/mex/` and run these line:
 ```m
 mex -O CCGHeart.c
 mex -O FindInInterval.c
@@ -36,7 +36,7 @@ mex -O FindInInterval.c
   * [Curve Fitting Toolbox](https://se.mathworks.com/products/curvefitting.html) (required).
   * [Parallel Computing Toolbox](https://se.mathworks.com/products/parallel-computing.html) (optional).
 
-That's it! Now you can explore the software with below example data or try one of the tutorials.
+That's it! Now you can explore the software with below example data or try one of the tutorials with your own data.
 
 ### Try CellExplorer with example data
 There is an example dataset included in the repository for trying CellExplorer. Load the mat-file [`cell_metrics_batch.mat`](https://github.com/petersenpeter/CellExplorer/blob/master/exampleData/cell_metrics_batch.mat?raw=true) into MATLAB and type:
