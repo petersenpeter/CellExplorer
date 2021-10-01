@@ -865,9 +865,10 @@ if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.m
         warning('No spike groups exist in the xml. Anatomical groups used instead')
         session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
         session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
+   
+        session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
+        session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
     end
-    session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
-    session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
     session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
     session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
     session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
@@ -887,9 +888,10 @@ elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[ses
         warning('No spike groups exist in the xml. Anatomical groups used instead')
         session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
         session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
+    
+        session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
+        session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
     end
-    session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
-    session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
     session.extracellular.sr = sessionInfo.SampleRate; % Sampling rate of dat file
     session.extracellular.srLfp = sessionInfo.lfpSampleRate; % Sampling rate of lfp file
     session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
