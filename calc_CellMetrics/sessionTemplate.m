@@ -25,6 +25,7 @@ function session = sessionTemplate(input1,varargin)
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 30-07-2021
+% Edited by John Tukker, Oct 2021
 
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
@@ -76,8 +77,8 @@ pathPieces = regexp(basepath, filesep, 'split'); % Assumes file structure: anima
 % From the provided path, the session name, clustering path will be implied
 session.general.basePath =  basepath; % Full path
 session.general.name = basename; % Session name / basename
-session.general.version = 5; % Metadata version
-session.general.sessionType = 'Unknown'; % Type of recording: Chronic, Acute, Unknown
+session.general.version = 6; % Metadata version
+session.general.sessionType = 'Chronic'; % Type of recording: Chronic, Acute, Unknown
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Limited animal metadata (practical information)
@@ -86,9 +87,9 @@ session.general.sessionType = 'Unknown'; % Type of recording: Chronic, Acute, Un
 if ~isfield(session,'animal')
     session.animal.name = pathPieces{end-1}; % Animal name is inferred from the data path
     session.animal.sex = 'Unknown'; % Male, Female, Unknown
-    session.animal.species = 'Unknown'; % Mouse, Rat
-    session.animal.strain = 'Unknown';
-    session.animal.geneticLine = '';
+    session.animal.species = 'Mouse'; % Mouse, Rat
+    session.animal.strain = 'C57Bl/6N';
+    session.animal.geneticLine = 'Oxr1-Cre';
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -99,7 +100,7 @@ end
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'sr')) || isempty(session.extracellular.sr))
     session.extracellular.sr = 20000;           % Sampling rate of raw data
     session.extracellular.srLfp = 1250;         % Sampling rate of LFP data
-    session.extracellular.nChannels = 64;       % number of channels
+    session.extracellular.nChannels = 32;       % number of channels
     session.extracellular.fileName = '';        % (optional) file name of raw data if different from basename.dat
     session.extracellular.electrodeGroups.channels = {[1:session.extracellular.nChannels]}; %creating a default list of channels. Please change according to your own layout. 
     session.extracellular.nElectrodeGroups = numel(session.extracellular.electrodeGroups);
@@ -184,8 +185,8 @@ end
 % Default brain regions 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Brain regions  must be defined as index 1. Can be specified on a channel or electrode group basis (below example for CA1 across all channels)
-% session.brainRegions.CA1.channels = 1:128; % Brain region acronyms from Allan institute: http://atlas.brain-map.org/atlas?atlas=1)
-% session.brainRegions.CA1.electrodeGroups = 1:8; 
+session.brainRegions.CA1.channels = 1:32; % Brain region acronyms from Allan institute: http://atlas.brain-map.org/atlas?atlas=1)
+session.brainRegions.CA1.electrodeGroups = 1:4;
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -231,6 +232,8 @@ rezFile = dir(fullfile(basepath,relativePath,'rez*.mat'));
 if ~isempty(rezFile)
     rezFile = rezFile.name;
     session = loadKiloSortMetadata(session,rezFile);
+elseif 
+
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -357,6 +360,15 @@ end
 if ~isfield(session,'epochs')
     session.epochs{1}.name = session.general.name;
     session.epochs{1}.startTime =  0;
+    if strcmpi(session.general.name(12),'b')
+        Condition = 'Baseline';
+    elseif strcmpi(session.general.name(12),'t')
+        Condition = 'Test';
+    else
+        error('Name of session is irregular, cannot continue.');
+    end
+    session.epochs{1}.manipulation = Condition;
+    session.epochs{1}.environment = 'Hall';
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -409,6 +421,8 @@ if (importSkippedChannels || importSyncedChannels) && exist(fullfile(session.gen
     try
     	if ~isfield(session.general,'experimenters') || isempty(session.general.experimenters)
             session.general.experimenters = rxml.child(1).child(2).value;
+            session.general.experimenters = 'Constance Holman';
+            session.general.projects = 'Phase_Precession_Project';
         end
     end
 end
