@@ -29,7 +29,6 @@ if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
     
     cell_metrics.rankorder = median(rankStats.rankUnits,2,'omitnan')';
     
-    
     if any(contains(parameters.metrics,{'state_metrics','all'})) &&...
             ~any(contains(parameters.excludeMetrics,{'state_metrics'}))
         
