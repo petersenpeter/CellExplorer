@@ -3681,7 +3681,7 @@ end
                 if isfield(data.session,'inputs')
                     inputs = fieldnames(data.session.inputs);
                     for i = 1:numel(inputs)
-                        if strcmp(data.session.inputs.(inputs{i}).inputType,timeSeries{fn}) && ~isempty(data.session.inputs.(inputs{i}).channels)
+                        try
                             UI.settings.traceLabels.(timeSeries{fn})(data.session.inputs.(inputs{i}).channels) = {[UI.settings.traceLabels.(timeSeries{fn}){data.session.inputs.(inputs{i}).channels},': ',inputs{i}]};
                         end
                     end
@@ -4472,7 +4472,9 @@ end
             UI.settings.showTrials = true;
             UI.panel.behavior.showTrials.Value = 1;
             UI.panel.behavior.trialNumber.String = '1';
-            UI.panel.behavior.trialCount.String = ['nTrials: ' num2str(data.behavior.trials.nTrials)];
+            try
+                UI.panel.behavior.trialCount.String = ['nTrials: ' num2str(data.behavior.trials.nTrials)];
+            end
         end
         initTraces
         uiresume(UI.fig);
