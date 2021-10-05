@@ -1,5 +1,5 @@
 function spikes = loadSpikes(varargin)
-% Load clustered data from multiple pipelines. Currently supported formats: 
+% Load clustered data from multiple pipelines/formats. Currently supported formats: 
 %      Phy (default)
 %      Klustakwik/Neurosuite
 %      MClust
@@ -15,7 +15,7 @@ function spikes = loadSpikes(varargin)
 % Please see the CellExplorer website: https://cellexplorer.org/datastructure/data-structure-and-format/#spikes
 %
 % INPUTS
-%
+% 
 % See description of varargin below
 %
 % OUTPUT
@@ -39,24 +39,21 @@ function spikes = loadSpikes(varargin)
 %     .processingInfo   - Processing info
 %
 % DEPENDENCIES:
-%
-% LoadXml.m & xmltools.m (optional and included with CellExplorer: https://github.com/petersenpeter/CellExplorer/tree/master/calc_CellMetrics/private)
-% or bz_getSessionInfo.m (optional. From buzcode: https://github.com/buzsakilab/buzcode)
-%
-% npy-matlab toolbox (required for reading phy, AllenSDK & ALF data: https://github.com/kwikteam/npy-matlab)
-% getWaveformsFromDat (optional and included with CellExplorer)
+% - LoadXml.m (optional and included with CellExplorer: https://github.com/petersenpeter/CellExplorer/tree/master/calc_CellMetrics/private)
+% - npy-matlab toolbox (required for reading phy, AllenSDK & ALF data: https://github.com/kwikteam/npy-matlab)
+% - getWaveformsFromDat (optional and included with CellExplorer)
 %
 %
 % EXAMPLE CALLS
 % spikes = loadSpikes('session',session); % clustering format should be specified in the struct
 % spikes = loadSpikes('basepath',pwd,'clusteringpath',Kilosort_RelativeOutputPath); % Run from basepath, assumes Phy format.
 % spikes = loadSpikes('basepath',pwd,'format','mclust'); % Run from basepath, loads MClust format.
-% spikes = loadSpikes('session',session,'UID',1:30,'shankID',1:3); % Filter and load spikes - only UID 1:30 and the first 3 shanks.
-% spikes = loadSpikes('basepath',pwd,'format','custom','spikes_times',spikes_times); % Run from basepath, custom spike format, requiring the spike times as input. 
+% spikes = loadSpikes('session',session,'UID',1:30,'shankID',1:3); % Loads spikes and filters output - only UID 1:30 and the first 3 shanks.
+% spikes = loadSpikes('basepath',pwd,'format','custom','spikes_times',spikes_times); % Run from basepath, custom spike format, requires the spike times as input. 
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 30-07-2021
+% Last edited: 05-10-2021
 
 % Version history
 % 3.2 waveforms for phy data extracted from the raw dat
@@ -150,14 +147,25 @@ if parameters.forceReload
     % Setting parameters
     session.general.name = basename;
     session.general.basePath = basepath;
-    if ~isfield(session,'extracellular') ||~isfield(session.extracellular,'leastSignificantBit') || session.extracellular.leastSignificantBit == 0
+    
+    % If the least significant bit is not defined, a default value will be used
+    if ~isfield(session,'extracellular') || ~isfield(session.extracellular,'leastSignificantBit') || session.extracellular.leastSignificantBit == 0
         session.extracellular.leastSignificantBit = LSB;
     end
-    session = loadClassicMetadata(session);
+    
+    % If number of channels or electrode groups are missing in the session struct, the script will try to import this from a basename.sessionInfo.mat or a basename.xml file.
+    if ~isfield(session.extracellular,'nChannels') || ~isfield(session.extracellular,'electrodeGroups')
+        if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'file')
+            session = loadBuzcodeMetadata(session);
+        elseif exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
+            session = loadNeurosuiteMetadata(session);
+        end
+        % TODO: A gui will be shown allowing for manual edits of extracellular parameters        
+    end
     
     switch lower(format)
         case 'custom'
-            nCells = numel(spikes_times)
+            nCells = numel(spikes_times);
             spikes.times = spikes_times;
             for i = 1:nCells
                 spikes.UID(i) = i;
@@ -802,7 +810,7 @@ if parameters.forceReload
     
     % Attaching info about how the spikes structure was generated
     spikes.processinginfo.function = 'loadSpikes';
-    spikes.processinginfo.version = 4.1;
+    spikes.processinginfo.version = 4.2;
     spikes.processinginfo.date = now;
     spikes.processinginfo.params.forceReload = parameters.forceReload;
     spikes.processinginfo.params.shanks = shanks;
@@ -820,7 +828,7 @@ if parameters.forceReload
         disp('Failed to retrieve system info.')
     end
     
-    % Saving output to a buzcode compatible spikes file.
+    % Saving output to a CellExplorer compatible spikes file.
     if parameters.saveMat
         disp('loadSpikes: Saving spikes')
         try
@@ -849,82 +857,7 @@ for i = 1:numel(filteredFields)
     end
 end
 
-end
 
-function session = loadClassicMetadata(session)
-
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Loading parameters from sessionInfo and xml (including skipped and dead channels)
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
-if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'file')
-    load(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'sessionInfo')
-    if isfield(sessionInfo,'AnatGrps')
-        session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
-        session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
-        session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0); % Changing index from 0 to 1
-    else
-        session.extracellular.nElectrodeGroups = session.extracellular.nSpikeGroups; % Number of electrode groups
-        session.extracellular.electrodeGroups.channels = session.extracellular.spikeGroups.channels; % Electrode groups
-        session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0); % Changing index from 0 to 1
-    end
-    
-    if isfield(sessionInfo,'spikeGroups') && sessionInfo.spikeGroups.nGroups>0
-        session.extracellular.nSpikeGroups = sessionInfo.spikeGroups.nGroups; % Number of spike groups
-        session.extracellular.spikeGroups.channels = sessionInfo.spikeGroups.groups; % Spike groups
-        session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0); % Changing index from 0 to 1
-    elseif isfield(sessionInfo,'AnatGrps')
-        warning('No spike groups exist in the xml. Anatomical groups used instead')
-        session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
-        session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
-        session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0); % Changing index from 0 to 1
-    end
-    
-    session.extracellular.sr = sessionInfo.rates.wideband; % Sampling rate of dat file
-    session.extracellular.srLfp = sessionInfo.rates.lfp; % Sampling rate of lfp file
-    session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
-
-elseif exist('LoadXml.m','file') && exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
-    if ~exist('LoadXml.m','file') || ~exist('xmltools.m','file')
-        error('''LoadXml.m'' and ''xmltools.m'' is not in your path and is required to load the xml file. If you have buzcode installed, please set ''buzcode'' to true in the input parameters.')
-    end
-    sessionInfo = LoadXml(fullfile(session.general.basePath,[session.general.name, '.xml']));
-    if isfield(sessionInfo,'AnatGrps')
-        session.extracellular.nElectrodeGroups = size(sessionInfo.AnatGrps,2); % Number of electrode groups
-        session.extracellular.electrodeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Electrode groups
-        session.extracellular.electrodeGroups.channels=cellfun(@(x) x+1,session.extracellular.electrodeGroups.channels,'un',0); % Changing index from 0 to 1
-    end
-    
-    if isfield(sessionInfo,'SpkGrps')
-        session.extracellular.nSpikeGroups = length(sessionInfo.SpkGrps); % Number of spike groups
-        session.extracellular.spikeGroups.channels = {sessionInfo.SpkGrps.Channels}; % Spike groups
-        session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0); % Changing index from 0 to 1
-    elseif isfield(sessionInfo,'AnatGrps')
-        warning('No spike groups exist in the xml. Anatomical groups used instead for spike groups')
-        session.extracellular.nSpikeGroups = size(sessionInfo.AnatGrps,2); % Number of spike groups
-        session.extracellular.spikeGroups.channels = {sessionInfo.AnatGrps.Channels}; % Spike groups
-        session.extracellular.spikeGroups.channels=cellfun(@(x) x+1,session.extracellular.spikeGroups.channels,'un',0); % Changing index from 0 to 1
-    end
-    
-    session.extracellular.sr = sessionInfo.SampleRate; % Sampling rate of dat file
-    session.extracellular.srLfp = sessionInfo.lfpSampleRate; % Sampling rate of lfp file
-    session.extracellular.nChannels = sessionInfo.nChannels; % Number of channels
-    
-else
-    disp('No sessionInfo.mat or xml found in basepath.')
-    sessionInfo = [];
-end
-
-% Removing channels marked with skip parameter
-if isfield(sessionInfo,'AnatGrps') && isfield(sessionInfo.AnatGrps,'Skip')
-    channelOrder = [sessionInfo.AnatGrps.Channels]+1;
-    skip = find([sessionInfo.AnatGrps.Skip]);
-    if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'Channels')
-        session.channelTags.Bad.channels = [session.channelTags.Bad.channels, channelOrder(skip)];
-    else
-        session.channelTags.Bad.channels = channelOrder(skip);
-    end
-end
 end
 
 function spikes = removeCells(UIDsToRemove,spikes)
