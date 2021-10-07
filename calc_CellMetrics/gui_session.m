@@ -236,21 +236,26 @@ UI.menu.CellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
 uimenu(UI.menu.CellExplorer.topMenu,menuLabel,'Validate metadata',menuSelectedFcn,@performStructValidation,'Accelerator','V');
 
 % Database
+UI.menu.buzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
+uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Update metadata model (equipment, suppliers, probes, optic fibers...)',menuSelectedFcn,@(~,~)db_load_metadata_model);
 if enableDatabase
-    UI.menu.buzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
-    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Upload metadata to DB',menuSelectedFcn,@(~,~)buttonUploadToDB,'Accelerator','U');
+    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Upload metadata to DB',menuSelectedFcn,@(~,~)buttonUploadToDB,'Accelerator','U','Separator','on');
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Download metadata from DB',menuSelectedFcn,@(~,~)buttonUpdateFromDB,'Accelerator','D');
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Edit credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Edit repository paths',menuSelectedFcn,@editDBrepositories);
-    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Update metadata model',menuSelectedFcn,@(~,~)db_load_metadata_model,'Separator','on');
-    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Get animal metadata',menuSelectedFcn,@(~,~)getAnimalMetadata);
+    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Get animal metadata',menuSelectedFcn,@(~,~)getAnimalMetadata,'Separator','on');
 end
 
 % Help
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
-uimenu(UI.menu.help.topMenu,menuLabel,'Tutorial on session metadata',menuSelectedFcn,@buttonHelp);
-uimenu(UI.menu.help.topMenu,menuLabel,'Documentation of session metadata structure',menuSelectedFcn,@buttonHelp,'Accelerator','H');
-    
+uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'- About gui_session',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'- Tutorial on metadata',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'- Documentation on session metadata',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'Support',menuSelectedFcn,@openWebsite,'Separator','on');
+uimenu(UI.menu.help.topMenu,menuLabel,'- Submit feature request',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'- Report an issue',menuSelectedFcn,@openWebsite);
+
 %% % % % % % % % % % % % % % % % % % % %
 % Initializing tabs
 % % % % % % % % % % % % % % % % % % % %
@@ -278,8 +283,8 @@ for iTabs = 1:numel(tabsList)
     UI.tabs.(tabsList{iTabs}) = uipanel('Parent',UI.panel.main,'Visible','off','Units','normalized','Position',[0 0 600 600],'BorderType','none');
 end
 uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.left);
-UI.button.ok = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[10, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI whlie keeping changes. \nDoes not save to file'));
-UI.button.save = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized','Interruptible','off','tooltip',sprintf('Save to session.mat file'));
+UI.button.ok = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[10, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI whlie keeping changes. \nDoes not save changes to basename.session.mat file'));
+UI.button.save = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized','Interruptible','off','tooltip',sprintf('Save changes to basename.session.mat file'));
 UI.button.cancel = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[230, 5, 100, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI without keeping any changes'));
 
 set(UI.panel.left, 'Heights', [20,32*ones(size(tabsList)),-1,30,30,30],'MinimumHeights',[20,32*ones(size(tabsList)),5,30,30,30],'Spacing', 3);
@@ -334,9 +339,9 @@ if exist('parameters','var') && ~isempty(parameters)
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'File format', 'Position', [220, 225, 200, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     UI.edit.fileFormat = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', {'mat','nwb','json'}, 'value', 1, 'Position', [215, 200, 200, 20],'HorizontalAlignment','left','Units','normalized');
     UI.edit.fileFormat.Value = find(strcmp({'mat','nwb','json'},parameters.fileFormat));
-    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 210, 195, 30],'String','Validate metadata','Callback',@(src,evnt)performStructValidation,'Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 210, 195, 30],'String','Validate metadata','Callback',@(src,evnt)performStructValidation,'Units','normalized','tooltip','Validate metadata for CellExplorer');
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Preferences', 'Position', [10, 175, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.buttons.preferences = uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 180, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics);
+    UI.buttons.preferences = uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 180, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics,'tooltip','Edit preferences for ProcessCellmetrics');
     UI.table.preferences = uitable(UI.tabs.parameters,'Data',{},'Position',[5, 5, 605 , 170],'ColumnWidth',{100 160 320},'columnname',{'Category','Name','Value'},'RowName',[],'ColumnEditable',[false false false],'Units','normalized');
 end
 
@@ -393,13 +398,13 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
 tableData = {false,'','',''};
 % uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false true true true true true true true true],'ColumnFormat',{'logical','numeric','char','numeric','numeric','char','char','char','char','char'},'Units','normalized','CellEditCallback',@editEpochsTableData);
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[5, 5, 90, 32],'String','Add','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[100, 5, 90, 32],'String','Edit','Callback',@(src,evnt)editEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[195, 5 100, 32],'String','Delete','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[300, 5, 100, 32],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[405, 5, 90, 32],'String','Visualize','Callback',@(src,evnt)visualizeEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 5, 50, 32],'String',char(8593),'Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[555, 5 50, 32],'String',char(8595),'Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[5, 5, 90, 32],'String','Add','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off','tooltip','Add new epoch');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[100, 5, 90, 32],'String','Edit','Callback',@(src,evnt)editEpoch,'Units','normalized','tooltip','Add selected epoch');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[195, 5 100, 32],'String','Delete','Callback',@(src,evnt)deleteEpoch,'Units','normalized','tooltip','Delete selected epoch(s)');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[300, 5, 100, 32],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized','tooltip','Duplicate selected epoch');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[405, 5, 90, 32],'String','Visualize','Callback',@(src,evnt)visualizeEpoch,'Units','normalized','tooltip','Visualize epoch(s)');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 5, 50, 32],'String',char(8593),'Callback',@(src,evnt)moveUpEpoch,'Units','normalized','tooltip','Move selected epoch(s) up');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[555, 5 50, 32],'String',char(8595),'Callback',@(src,evnt)moveDownEpoch,'Units','normalized','tooltip','Move selected epoch(s) down');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Animal
@@ -425,6 +430,7 @@ UI.animalMetadata = uitabgroup('units','pixels','Position',[0, 0, 616, 365],'Par
 % Implanted probes tab
 layout.probeImplants.name = 'probeImplants';
 layout.probeImplants.title = 'Probe implants';
+layout.probeImplants.title_singular = 'probe implant';
 layout.probeImplants.field_names = {'probe','brainRegion','ap','ml','depth','ap_angle','ml_angle','rotation'};
 layout.probeImplants.field_title = {'Probe','Brain region','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle','Rotation'};
 layout.probeImplants.field_required = [true true false false false false false false];
@@ -439,7 +445,8 @@ generateTabdata(layout.probeImplants)
 
 % Optic fibers tab
 layout.opticFiberImplants.name = 'opticFiberImplants';
-layout.opticFiberImplants.title = 'Optic fibers implants';
+layout.opticFiberImplants.title = 'Optic fiber implants';
+layout.opticFiberImplants.title_singular = 'optic fiber implant';
 layout.opticFiberImplants.field_names = {'opticFiber','brainRegion','ap','ml','depth','ap_angle','ml_angle','notes'};
 layout.opticFiberImplants.field_title = {'Optic fiber','Target region','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle','Notes'};
 layout.opticFiberImplants.field_required = [true false false false false false false false];
@@ -456,6 +463,7 @@ generateTabdata(layout.opticFiberImplants)
 % Surgeries tab
 layout.surgeries.name = 'surgeries';
 layout.surgeries.title = 'Surgeries';
+layout.surgeries.title_singular = 'surgery';
 layout.surgeries.field_names = {'date','start_time','end_time','weight','type_of_surgery','room','persons_involved','anesthesia','analgesics','antibiotics','complications','notes'};
 layout.surgeries.field_title = {'Date','Start time','End time','Weight (g)','Type of Surgery','Room','Persons involved','Anesthesia','Analgesics','Antibiotics','Complications','Notes'};
 layout.surgeries.field_required = [true true true false false false false false false false false false];
@@ -470,6 +478,7 @@ generateTabdata(layout.surgeries)
 % Virus injections tab
 layout.virusInjections.name = 'virusInjections';
 layout.virusInjections.title = 'Virus injections';
+layout.virusInjections.title_singular = 'virus injection';
 layout.virusInjections.field_names = {'virus','brainRegion','injection_schema','notes','injection_volume','injection_rate','ap','ml','depth','ap_angle','ml_angle'};
 layout.virusInjections.field_title = {'Virus','Target region','Injection schema','Notes','Injection volume (nL)','Injection rate (nL/s)','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle'};
 layout.virusInjections.field_required = [true true false false false false false false false false false];
@@ -522,77 +531,74 @@ for iGroups = 1:2
     UI.tabs.(groups{iGroups}) = uitab(UI.channelGroups,'Title',titles{iGroups});
     UI.list.tableData = {false,'','',''};
     UI.table.(groups{iGroups}) = uitable(UI.tabs.(groups{iGroups}),'Data',UI.list.tableData,'Position',[1, 45, 616, 320],'Tag',groups{iGroups},'ColumnWidth',{20 45 400 120},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false true true],'Units','normalized','CellEditCallback',@editElectrodeTableData);
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[5, 5, 110, 32],'Tag',groups{iGroups},'String','Add','Callback',@addElectrodeGroup,'Units','normalized');
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[120, 5, 110, 32],'Tag',groups{iGroups},'String','Edit','Callback',@addElectrodeGroup,'Units','normalized');
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[235, 5, 130, 32],'Tag',groups{iGroups},'String','Delete','Callback',@deleteElectrodeGroup,'Units','normalized');
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[510, 5, 50, 32],'Tag',groups{iGroups},'String',char(8593),'Callback',@moveElectrodes,'Units','normalized');
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[565, 5, 50, 32],'Tag',groups{iGroups},'String',char(8595),'Callback',@moveElectrodes,'Units','normalized');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[5, 5, 110, 32],'Tag',groups{iGroups},'String','Add','Callback',@addElectrodeGroup,'Units','normalized','tooltip','Add new group');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[120, 5, 110, 32],'Tag',groups{iGroups},'String','Edit','Callback',@addElectrodeGroup,'Units','normalized','tooltip','Edit selected group');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[235, 5, 130, 32],'Tag',groups{iGroups},'String','Delete','Callback',@deleteElectrodeGroup,'Units','normalized','tooltip','Delete selected group(s)');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[510, 5, 50, 32],'Tag',groups{iGroups},'String',char(8593),'Callback',@moveElectrodes,'Units','normalized','tooltip','Move selected group(s) up');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[565, 5, 50, 32],'Tag',groups{iGroups},'String',char(8595),'Callback',@moveElectrodes,'Units','normalized','tooltip','Move selected group(s) down');
 end
 
-% Channel map (Layout - channel coordinates)
+% Channel coordinates (Layout)
 UI.tabs.chanCoords = uitab(UI.channelGroups,'Title','Channel coordinates');
-% UI.chanCoordsAxes = axes('Parent',UI.tabs.chanCoords,'Position',[1, 45, 616, 320]); axis tight,
 
 uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Layout', 'Position', [5, 340, 240, 20],'HorizontalAlignment','left','Units','normalized');
-UI.edit.chanCoords_layout = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 315, 285, 25],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_layout = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 315, 290, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Shank spacing (µm)', 'Position', [305, 340, 240, 20],'HorizontalAlignment','left','Units','normalized');
-UI.edit.chanCoords_shankSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 315, 285, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Shank spacing (µm)', 'Position', [315, 340, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_shankSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [315, 315, 290, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Source', 'Position', [5, 290, 240, 20],'HorizontalAlignment','left','Units','normalized');
-UI.edit.chanCoords_source = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 265, 285, 25],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_source = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 265, 290, 25],'HorizontalAlignment','left','Units','normalized');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Vertical spacing (µm)', 'Position', [305, 290, 240, 20],'HorizontalAlignment','left','Units','normalized');
-UI.edit.chanCoords_verticalSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 265, 285, 25],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Vertical spacing (µm)', 'Position', [315, 290, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_verticalSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [315, 265, 290, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'x coordinates (µm)', 'Position', [5, 235, 240, 20],'HorizontalAlignment','left','Units','normalized');
-UI.edit.chanCoords_x = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 50, 285, 185],'HorizontalAlignment','left','Min',1,'Max',10,'Units','normalized');
+UI.edit.chanCoords_x = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 50, 290, 185],'HorizontalAlignment','left','Min',1,'Max',10,'Units','normalized');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'y coordinates (µm)', 'Position', [305, 235, 240, 20],'HorizontalAlignment','left','Units','normalized');
-UI.edit.chanCoords_y = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [305, 50, 285, 185],'HorizontalAlignment','left','Min',1,'Max',10,'Units','normalized');
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'y coordinates (µm)', 'Position', [315, 235, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_y = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [315, 50, 290, 185],'HorizontalAlignment','left','Min',1,'Max',10,'Units','normalized');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[5, 5, 145, 32],'String','Import','Callback',@importChannelMap1,'Units','normalized');
-uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[155, 5, 145, 32],'String','Export','Callback',@exportChannelMap1,'Units','normalized');
-uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[315, 5, 145, 32],'String','Generate','Callback',@generateChannelMap1,'Units','normalized');
-uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[470, 5, 145, 32],'String','Plot','Callback',@plotChannelMap1,'Units','normalized');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[5, 5, 145, 32],'String','Import','Callback',@importChannelMap1,'Units','normalized','tooltip','Import channel coordinates from chanCoords file or KiloSort chanMap file');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[155, 5, 145, 32],'String','Export','Callback',@exportChannelMap1,'Units','normalized','tooltip','Export channel coordinates to chanCoords file');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[315, 5, 145, 32],'String','Generate','Callback',@generateChannelMap1,'Units','normalized','tooltip','Generate channel coordinates from parameters');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[470, 5, 145, 32],'String','Plot','Callback',@plotChannelMap1,'Units','normalized','tooltip','Plot channel coordinates');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
 
 tableData = {false,'','',''};
 UI.table.spikeSorting = uitable(UI.tabs.spikeSorting,'Data',tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 75 75 148 62 75 46 50 60},'columnname',{'','Method','Format','Relative path','Channels','Spike sorter','Notes','Metrics','Currated'},'RowName',[],'ColumnEditable',[true true true true true true true true true],'Units','normalized','ColumnFormat',{'logical',UI.list.sortingMethod,UI.list.sortingFormat,'char','char','char','char','logical','logical'},'CellEditCallback',@editSpikeSortingTableData);
-uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add sorting','Callback',@(src,evnt)addSpikeSorting,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit sorting','Callback',@(src,evnt)editSpikeSorting,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[235, 5, 130, 32],'String','Delete sorting(s)','Callback',@(src,evnt)deleteSpikeSorting,'Units','normalized');
-% uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[330, 10, 160, 30],'String','Import sorting?','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add sorting','Callback',@(src,evnt)addSpikeSorting,'Units','normalized','tooltip','Add spike sorting set');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit sorting','Callback',@(src,evnt)editSpikeSorting,'Units','normalized','tooltip','Edit selected spike sorting set');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[235, 5, 130, 32],'String','Delete sorting(s)','Callback',@(src,evnt)deleteSpikeSorting,'Units','normalized','tooltip','Delete selected spike sorting set(s)');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Brain regions
 
 UI.list.tableData = {false,'','','',''};
 UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 70 280 95 147},'columnname',{'','Region','Channels','Electrode groups','Notes'},'RowName',[],'ColumnEditable',[true false true true true],'Units','normalized','CellEditCallback',@editBrainregionTableData);
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add region','Callback',@(src,evnt)addRegion,'Units','normalized');
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit region','Callback',@(src,evnt)editRegion,'Units','normalized');
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[235, 5, 120, 32],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion,'Units','normalized');
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add region','Callback',@(src,evnt)addRegion,'Units','normalized','tooltip','Add new brain region');
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit region','Callback',@(src,evnt)editRegion,'Units','normalized','tooltip','Edit selected brain region');
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[235, 5, 120, 32],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion,'Units','normalized','tooltip','Delete selected brain region(s)');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Channel tags
 
 tableData = {false,'','',''};
 UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 616, 220],'ColumnWidth',{20 130 315 147},'columnname',{'','Channel tag','Channels','Electrode groups'},'RowName',[],'ColumnEditable',[true false true true],'Units','normalized','CellEditCallback',@editTagsTableData);
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add tag','Callback',@(src,evnt)addTag,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit tag','Callback',@(src,evnt)editTag,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 260, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized');
-% uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[470, 260, 140, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add tag','Callback',@(src,evnt)addTag,'Units','normalized','tooltip','Add new channel tag');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit tag','Callback',@(src,evnt)editTag,'Units','normalized','tooltip','Edit selected channel tag');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 260, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized','tooltip','Delete selected channel tag(s)');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Analysis tags
 
 tableData = {false,'','',''};
 UI.table.analysis = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 45, 616, 210],'ColumnWidth',{20 250 342},'columnname',{'','Analysis tag','Value'},'RowName',[],'ColumnEditable',[true false true],'Units','normalized','CellEditCallback',@editAnalysisTagsTableData);
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tag','Callback',@(src,evnt)addAnalysis,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tag','Callback',@(src,evnt)editAnalysis,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tag','Callback',@(src,evnt)addAnalysis,'Units','normalized','tooltip','Add new analysis tag');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tag','Callback',@(src,evnt)editAnalysis,'Units','normalized','tooltip','Edit selected analysis tag');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized','tooltip','Delete selected analysis tag(s)');
 % uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[340, 10, 110, 30],'String','Duplicate tag','Callback',@(src,evnt)duplicateAnalysis,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
@@ -600,29 +606,28 @@ uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 5, 
 
 tableData = {false,'','',''};
 UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 616, 220],'ColumnWidth',{20 90 105 70 50 40 60 90 76},'columnname',{'','Time series tag','File name', 'Precision', 'nChan', 'sr', 'nSamples', 'least significant bit', 'Equipment'},'ColumnFormat',{'logical','char','char',UI.list.precision,'numeric','numeric','numeric','numeric','char'},'RowName',[],'ColumnEditable',[true false true true true true true true true],'Units','normalized','CellEditCallback',@editTimeSeriesTableData);
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 260, 120, 32],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
-% UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[500, 10, 110, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized','tooltip','Add new time serie');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized','tooltip','Edit selected time serie');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 260, 120, 32],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized','tooltip','Delete selected time serie(s)');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Inputs
 
 tableData = {false,'','',''};
 UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 45, 616, 210],'ColumnWidth',{20 120 75 70 140 187},'columnname',{'','Input tag','Channels','Type','Equipment','Description'},'ColumnFormat',{'logical','char','char',UI.list.inputsType,'char','char'},'RowName',[],'ColumnEditable',[true false true true true true true],'Units','normalized','CellEditCallback',@editInputsTableData);
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized','tooltip','Add new input');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized','tooltip','Edit selected input');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized','tooltip','Delete selected input(s)');
 
 % % % % % % % % % % % % % % % % % % % % %
 % BehavioralTracking
 
 tableData = {false,'','',''};
 UI.table.behaviors = uitable(UI.tabs.behaviors,'Data',tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 180 100 50 80 75 107},'columnname',{'','Filenames','Equipment','Epoch','Type','Frame rate','Notes'},'RowName',[],'ColumnEditable',[true true true true true true true],'Units','normalized','CellEditCallback',@editBehaviorTableData);
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tracking','Callback',@(src,evnt)addBehavior,'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tracking','Callback',@(src,evnt)editBehavior,'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tracking(s)','Callback',@(src,evnt)deleteBehavior,'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[350, 5, 110, 32],'String','Duplicate tracking','Callback',@(src,evnt)duplicateBehavior,'Units','normalized');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tracking','Callback',@(src,evnt)addBehavior,'Units','normalized','tooltip','Add new tracking');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tracking','Callback',@(src,evnt)editBehavior,'Units','normalized','tooltip','Edit selected tracking');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tracking(s)','Callback',@(src,evnt)deleteBehavior,'Units','normalized','tooltip','Delete selected tracking(s)');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[350, 5, 110, 32],'String','Duplicate tracking','Callback',@(src,evnt)duplicateBehavior,'Units','normalized','tooltip','Duplicate selected tracking(s)');
 
 % Loading session struct into gui
 importSessionStruct
@@ -732,13 +737,13 @@ uiwait(UI.fig)
         set(UI.tabs.panels.(metadataStruct.name).main, 'Heights', [-1 39]); % set center panel size
         UI.table.(metadataStruct.name) = uitable(UI.tabs.panels.(metadataStruct.name).table,'Data',UI.list.tableData,'Tag',metadataStruct.name,'Units','normalized','Position',[0, 0, 1, 1],'ColumnWidth',[20, metadataStruct.column_widths],'columnname',{'',metadataStruct.field_title{:}},'ColumnFormat',{'logical',metadataStruct.column_format{:}},'RowName',[],'ColumnEditable',[true metadataStruct.column_editable],'Units','normalized','CellEditCallback',@editTableData);
         updateAnimalMeta(metadataStruct.name)
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[10, 0, 110, 32],'String','Add','Callback',@animalMeta,'Units','normalized');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Edit','Callback',@animalMeta,'Units','normalized');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Duplicate','Callback',@animalMeta,'Units','normalized');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[250, 0, 130, 32],'String','Delete','Callback',@animalMeta,'Units','normalized');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[10, 0, 110, 32],'String','Add','Callback',@animalMeta,'Units','normalized','tooltip',['Add new ' metadataStruct.title_singular]);
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Edit','Callback',@animalMeta,'Units','normalized','tooltip',['Edit selected ' metadataStruct.title_singular]);
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Duplicate','Callback',@animalMeta,'Units','normalized','tooltip',['Duplicate selected ' metadataStruct.title_singular]);
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[250, 0, 130, 32],'String','Delete','Callback',@animalMeta,'Units','normalized','tooltip',['Delete selected ' metadataStruct.title_singular]);
         uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','text','String','');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8593),'Callback',@moveIt,'Units','normalized');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8595),'Callback',@moveIt,'Units','normalized');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8593),'Callback',@moveIt,'Units','normalized','tooltip',['Move selected ', metadataStruct.title_singular, ' up']);
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8595),'Callback',@moveIt,'Units','normalized','tooltip',['Move selected ', metadataStruct.title_singular,' down']);
         set(UI.tabs.panels.(metadataStruct.name).buttons, 'Widths', [110 110 110 110 -1 50 50],'MinimumWidths',[110 110 110 110 10 50 50],'Spacing', 3);
     end
     
@@ -1221,13 +1226,31 @@ uiwait(UI.fig)
     function editDBrepositories(~,~)
         edit db_local_repositories.m
     end
-    function buttonHelp(src,~)
-        if strcmp(src.(menuLabel),'Tutorial on session metadata')
-            web('https://cellexplorer.org/tutorials/metadata-tutorial/','-new','-browser')
+    
+    
+    function openWebsite(src,~)
+        % Opens the CellExplorer website in your browser
+        if isprop(src,'Text')
+            source = src.Text;
         else
-            web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
+            source = '';
+        end
+        switch source
+            case '- About gui_session'
+                web('https://cellexplorer.org/interface/gui_session/','-new','-browser')
+            case '- Tutorial on metadata'
+                web('https://cellexplorer.org/tutorials/metadata-tutorial/','-new','-browser')
+            case '- Documentation on session metadata'
+                web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
+            case 'Support'
+                web('https://cellexplorer.org/#support','-new','-browser')
+            case {'- Submit feature request','- Report an issue'}
+                web('https://github.com/petersenpeter/CellExplorer/issues/new','-new','-browser')
+            otherwise
+                web('https://cellexplorer.org/','-new','-browser')
         end
     end
+
     
     function performStructValidation(~,~)
         readBackFields;
@@ -3195,7 +3218,7 @@ uiwait(UI.fig)
             elseif any(sort(channels) ~= [1:session.extracellular.nChannels])
                 helpdlg('Channels are not ranging from 1 : nChannels','Error')
             else
-                msgbox('Channels verified succesfully!');
+                msgbox('Channels validated! (1:nChannels represented in the electrode groups)');
             end
         else
             msgbox('Error: No electrode groups found.');
@@ -3290,13 +3313,32 @@ uiwait(UI.fig)
     end
     
     function importChannelMap1(~,~)
-        chanCoords_filepath =fullfile(session.general.basePath,[session.general.name,'.chanCoords.channelInfo.mat']);
-        if exist(chanCoords_filepath,'file')
-            session.extracellular.chanCoords = loadStruct('chanCoords','channelInfo','session',session);
-            updateChanCoords;
-            MsgLog(['Imported channel coordinates from basepath: ' chanCoords_filepath],2)
-        else
-            MsgLog(['chanCoords file not available: ' chanCoords_filepath],4)
+        answer = questdlg('What format do you want to import?','Import channel coordinates','Channel coordinates (chancoords)', 'Channelmap (chanmap)','Cancel','Channel coordinates (chancoords)');
+        if ~isempty(answer)
+            if strcmp(answer,'Channel coordinates (chancoords)')
+                chanCoords_filepath =fullfile(session.general.basePath,[session.general.name,'.chanCoords.channelInfo.mat']);
+                if exist(chanCoords_filepath,'file')
+                    session.extracellular.chanCoords = loadStruct('chanCoords','channelInfo','session',session);
+                    updateChanCoords;
+                    plotChannelMap1
+                    MsgLog(['Imported channel coordinates from basepath: ' chanCoords_filepath],2)
+                else
+                    MsgLog(['chanCoords file not available: ' chanCoords_filepath],4)
+                end
+            elseif strcmp(answer,'Channelmap (chanmap)')
+                [file,basepath] = uigetfile('*.mat','Please select the chanMap.mat file','chanMap.mat');
+                if ~isequal(file,0)
+                    temp = load(fullfile(basepath,file));
+                    session.extracellular.chanCoords.x = nan(session.extracellular.nChannels,1);
+                    session.extracellular.chanCoords.y = nan(session.extracellular.nChannels,1);
+                    session.extracellular.chanCoords.x(temp.chanMap) = temp.xcoords(:);
+                    session.extracellular.chanCoords.y(temp.chanMap) = temp.ycoords(:);
+                    session.extracellular.chanCoords.source = 'chanMap.mat';
+                    updateChanCoords; 
+                    plotChannelMap1
+                    MsgLog(['Imported channel map: ' file],2)
+                end
+            end
         end
     end
     
@@ -3304,15 +3346,16 @@ uiwait(UI.fig)
         readBackChanCoords
         [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
         if isfield(session.animal,'probes') && exist(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'file')
-            MsgLog('Loading predefined channel coordinates',2)
             load(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'chanCoords');
             session.extracellular.chanCoords = chanCoords;
+            MsgLog('Loaded predefined channel coordinates',2)
         else
             chanCoords = generateChanCoords(session);
             MsgLog('Generated new channel coordinates. Check command window for details',2)
         end
         session.extracellular.chanCoords = chanCoords;
         updateChanCoords;
+        plotChannelMap1
     end
     
     function exportChannelMap1(~,~)
@@ -3340,10 +3383,12 @@ uiwait(UI.fig)
                 fig_height = 1000;
                 fig_width = ceil(fig_height*x_range/y_range)+200;
             end
-            fig1 = figure('Name','Channel map','position',[5,5,fig_width,fig_height]); movegui(fig1,'center')
-            plot(chanCoords.x,chanCoords.y,'.k'), hold on
-            text(chanCoords.x,chanCoords.y,num2str([1:numel(chanCoords.x)]'),'VerticalAlignment', 'bottom','HorizontalAlignment','center');
-            title({' ','Channel map',' '}), xlabel('X (um)'), ylabel('Y (um)')
+            fig1 = figure('Name','Channel coordinates','position',[5,5,fig_width,fig_height],'visible','off'); movegui(fig1,'center')
+            ax1 = axes(fig1);
+            plot(ax1,chanCoords.x,chanCoords.y,'.k'), hold on
+            text(ax1,chanCoords.x,chanCoords.y,num2str([1:numel(chanCoords.x)]'),'VerticalAlignment', 'bottom','HorizontalAlignment','center');
+            title(ax1,{' ','Channel coordinates',' '}), xlabel(ax1,'X (um)'), ylabel(ax1,'Y (um)')
+            set(fig1,'visible','on')
         else
             MsgLog('No channel coords data available',4)
         end

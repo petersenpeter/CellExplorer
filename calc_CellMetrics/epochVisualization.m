@@ -28,5 +28,5 @@ function epochVisualization(epochs,axes,y1,y2,y3)
             end
         end
     end
-    text(0,y1,'Epochs','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
+%     text(0,y1,'Epochs','VerticalAlignment', 'bottom','HorizontalAlignment','left', 'HitTest','off', 'FontSize', 12, 'Color', 'w','BackgroundColor',[0 0 0 0.7],'margin',0.1)
 end
