@@ -53,7 +53,7 @@ We have created a few tutorials to get you started, covering the pipeline and th
 Please use the [GitHub issues system](https://github.com/petersenpeter/CellExplorer/issues) for reporting bugs, enhancement requests or general questions. We also have a [google group](https://groups.google.com/g/cellexplorer/) for the same requests.
 
 ## Citing CellExplorer in research and publications
-Peter C. Petersen, Joshua H. Siegle, Nicholas A. Steinmetz, Sara Mahallati, György Buzsáki. CellExplorer: a graphical user interface and a standardized pipeline for visualizing and characterizing single neurons. Neuron, September 29, 2021; doi: [https://doi.org/10.1016/j.neuron.2021.09.002](https://www.sciencedirect.com/science/article/pii/S0896627321006565).
+Peter C. Petersen, Joshua H. Siegle, Nicholas A. Steinmetz, Sara Mahallati, György Buzsáki. CellExplorer: A framework for visualizing and characterizing single neurons. Neuron, September 29, 2021; doi: [https://doi.org/10.1016/j.neuron.2021.09.002](https://www.sciencedirect.com/science/article/pii/S0896627321006565).
 
 ## Video demonstrating the user-friendly capabilities of CellExplorer
 <video width="100%" height="auto" controls="controls">
