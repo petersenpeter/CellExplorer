@@ -75,14 +75,13 @@ end
 int_gt_0 = @(n,sr) (isempty(n)) || (n <= 0 ) || (n >= sr/2);
 
 % % % % % % % % % % % % % % % % % % % % % %
-% Initialization
+% Initialization 
 % % % % % % % % % % % % % % % % % % % % % %
 
 initUI
 initData(basepath,basename);
 initInputs
 initTraces
-
 
 % Maximazing figure to full screen
 if ~verLessThan('matlab', '9.4')
@@ -97,7 +96,7 @@ end
 % Main while loop of the interface
 % % % % % % % % % % % % % % % % % % % % % %
 
-while t0>=0
+while t0 >= 0
     % breaking if figure has been closed
     if ~ishandle(UI.fig)
         break
@@ -135,7 +134,7 @@ while t0>=0
 end
 
 % % % % % % % % % % % % % % % % % % % % % %
-% Closing
+% Closing 
 % % % % % % % % % % % % % % % % % % % % % %
 
 % Closing all file readers
@@ -160,7 +159,7 @@ if UI.settings.saveMetadata
 end
 
 % % % % % % % % % % % % % % % % % % % % % %
-% Embedded functions
+% Embedded functions 
 % % % % % % % % % % % % % % % % % % % % % %
 
     function initUI % Initialize the UI (settings, parameters, figure, menu, panels, axis)
@@ -206,7 +205,7 @@ end
         UI.settings.text_spacing = 0.016;
         UI.settings.detectedEventsBelowTrace = false;
         UI.settings.detectedSpikesBelowTrace = false;
-        
+                
         % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9')
             UI.settings.rasterMarker = 'o';
@@ -306,6 +305,12 @@ end
         % CSD
         UI.settings.CSD.show = false;
         
+        % RMS noise inset
+        UI.settings.plotRMSnoiseInset = false;
+        UI.settings.plotRMSnoise_apply_filter = 2;
+        UI.settings.plotRMSnoise_lowerBand = 100;
+        UI.settings.plotRMSnoise_higherBand = 220;
+        
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating figure
         
@@ -379,7 +384,6 @@ end
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background color & primary color (ticks, text and rasters)',menuSelectedFcn,@changeBackgroundColor);
         UI.menu.display.detectedEventsBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected events below traces',menuSelectedFcn,@detectedEventsBelowTrace,'Separator','on');
         UI.menu.display.detectedSpikesBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spikes below traces',menuSelectedFcn,@detectedSpikesBelowTrace);
-        
         UI.menu.display.debug = uimenu(UI.menu.display.topMenu,menuLabel,'Debug','Separator','on',menuSelectedFcn,@toggleDebug);
         
         % Help
@@ -490,8 +494,8 @@ end
         % Time series data
         UI.panel.timeseriesdata.main = uipanel('Title','Time series data','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
         UI.table.timeseriesdata = uitable(UI.panel.timeseriesdata.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0.20 1 0.80],'ColumnWidth',{20 35 100 45},'columnname',{'','Tag','File name','nChan'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@showIntan);
-        UI.panel.timeseriesdata.showTimeseriesBelowTrace = uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','checkbox','Units','normalized','Position',[0 0 0.5 0.20], 'value', 0,'String','Below traces','Callback',@showTimeseriesBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show intan data below traces');
-        uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit input channels');
+        UI.panel.timeseriesdata.showTimeseriesBelowTrace = uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','checkbox','Units','normalized','Position',[0 0 0.5 0.20], 'value', 0,'String','Below traces','Callback',@showTimeseriesBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show time series data below traces');
+        uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
             
         % Defining flexible panel heights
         set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 40 150],'MinimumHeights',[65 210 100 35 100 35 50 30 150]);
@@ -573,11 +577,13 @@ end
         
         % Time series
         UI.panel.timeseries.main = uipanel('Parent',UI.panel.other.main,'title','Time series (*.timeseries.mat)');
-        UI.panel.timeseries.files = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.67 0.98 0.31],'HorizontalAlignment','left','Callback',@setTimeseriesData);
-        UI.panel.timeseries.show = uicontrol('Parent',UI.panel.timeseries.main,'Style','checkbox','Units','normalized','Position',[0.01 0.34 0.485 0.33], 'value', 0,'String','Show','Callback',@showTimeSeries,'KeyPressFcn', @keyPress,'tooltip','Show timeseries data');
-        uicontrol('Parent',UI.panel.timeseries.main,'Style','pushbutton','Units','normalized','Position',[0.505 0.34 0.485 0.33],'String','Full trace','Callback',@plotTimeSeries,'KeyPressFcn', @keyPress,'tooltip','Show full trace in separate figure');
-        UI.panel.timeseries.lowerBoundary = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'Edit', 'String', num2str(UI.settings.timeseries.lowerBoundary), 'Units','normalized', 'Position', [0.01 0 0.485 0.33],'HorizontalAlignment','center','tooltip','Lower bound','Callback',@setTimeSeriesBoundary);
-        UI.panel.timeseries.upperBoundary = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'Edit', 'String', num2str(UI.settings.timeseries.upperBoundary), 'Units','normalized', 'Position', [0.505 0 0.485 0.33],'HorizontalAlignment','center','tooltip','Higher bound','Callback',@setTimeSeriesBoundary);
+        UI.panel.timeseries.files = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.72 0.98 0.26],'HorizontalAlignment','left','Callback',@setTimeseriesData);
+        UI.panel.timeseries.show = uicontrol('Parent',UI.panel.timeseries.main,'Style','checkbox','Units','normalized','Position',[0.01 0.45 0.485 0.27], 'value', 0,'String','Show','Callback',@showTimeSeries,'KeyPressFcn', @keyPress,'tooltip','Show timeseries data');
+        uicontrol('Parent',UI.panel.timeseries.main,'Style','pushbutton','Units','normalized','Position',[0.505 0.45 0.485 0.27],'String','Full trace','Callback',@plotTimeSeries,'KeyPressFcn', @keyPress,'tooltip','Show full trace in separate figure');
+        uicontrol('Parent',UI.panel.timeseries.main,'Style', 'text', 'String', 'Lower limit', 'Units','normalized', 'Position', [0.0 0.25 0.5 0.19],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.timeseries.main,'Style', 'text', 'String', 'Upper limit', 'Units','normalized', 'Position', [0.5 0.25 0.5 0.19],'HorizontalAlignment','center');
+        UI.panel.timeseries.lowerBoundary = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'Edit', 'String', num2str(UI.settings.timeseries.lowerBoundary), 'Units','normalized', 'Position', [0.01 0 0.485 0.26],'HorizontalAlignment','center','tooltip','Lower bound','Callback',@setTimeSeriesBoundary);
+        UI.panel.timeseries.upperBoundary = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'Edit', 'String', num2str(UI.settings.timeseries.upperBoundary), 'Units','normalized', 'Position', [0.505 0 0.485 0.26],'HorizontalAlignment','center','tooltip','Higher bound','Callback',@setTimeSeriesBoundary);
         
         % States
         UI.panel.states.main = uipanel('Parent',UI.panel.other.main,'title','States (*.states.mat)');
@@ -623,8 +629,17 @@ end
         UI.panel.csd.main = uipanel('Parent',UI.panel.other.main,'title','Current Source Density');
         UI.panel.csd.showCSD = uicontrol('Parent',UI.panel.csd.main,'Style', 'checkbox','String','Show Current Source Density', 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.98 0.98],'Callback',@show_CSD,'HorizontalAlignment','left');
         
+        % plotRMSnoiseInset
+        UI.panel.RMSnoiseInset.main = uipanel('Parent',UI.panel.other.main,'title','RMS noise inset');
+        UI.panel.RMSnoiseInset.showRMSnoiseInset = uicontrol('Parent',UI.panel.RMSnoiseInset.main,'Style', 'checkbox','String','Show plot inset', 'value', 0, 'Units','normalized', 'Position', [0.01 0.67 0.48 0.30],'Callback',@plotRMSnoiseInset,'HorizontalAlignment','left');
+        UI.panel.RMSnoiseInset.filter = uicontrol('Parent',UI.panel.RMSnoiseInset.main,'Style', 'popup','String',{'No filter','Ephys filter','Custom filter'}, 'value', UI.settings.plotRMSnoise_apply_filter, 'Units','normalized', 'Position', [0.50 0.67 0.49 0.30],'Callback',@plotRMSnoiseInset,'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.RMSnoiseInset.main,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.35 0.5 0.26],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.RMSnoiseInset.main,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.35 0.5 0.26],'HorizontalAlignment','center');
+        UI.panel.RMSnoiseInset.lowerBand  = uicontrol('Parent',UI.panel.RMSnoiseInset.main,'Style', 'Edit', 'String', num2str(UI.settings.plotRMSnoise_lowerBand), 'Units','normalized', 'Position', [0.01 0.01 0.48 0.36],'Callback',@plotRMSnoiseInset,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
+        UI.panel.RMSnoiseInset.higherBand = uicontrol('Parent',UI.panel.RMSnoiseInset.main,'Style', 'Edit', 'String', num2str(UI.settings.plotRMSnoise_higherBand), 'Units','normalized', 'Position', [0.5 0.01 0.49 0.36],'Callback',@plotRMSnoiseInset,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
+        
         % Defining flexible panel heights
-        set(UI.panel.other.main, 'Heights', [200 95 95 140 95 50],'MinimumHeights',[220 100 100 150 150 50]);
+        set(UI.panel.other.main, 'Heights', [200 110 95 140 95 50 90],'MinimumHeights',[220 120 100 150 150 50 90]);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -1042,6 +1057,47 @@ end
             ia2(isx) = ia;
             
             line(raster.x/size(ephys.traces,1)*UI.settings.windowDuration, raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color','m', 'HitTest','off');
+        end
+        
+        % Plotting RMS noise inset
+        if UI.settings.plotRMSnoiseInset
+            % Shows RMS noise in a small inset plot in the upper right corner
+            if UI.settings.plotRMSnoise_apply_filter == 1
+                rms1 = rms(ephys.raw/(UI.settings.scalingFactor/1000000));
+            elseif UI.settings.plotRMSnoise_apply_filter == 2
+                rms1 = rms(ephys.traces/(UI.settings.scalingFactor/1000000));
+            else
+                if int_gt_0(UI.settings.plotRMSnoise_lowerBand,ephys.sr) && int_gt_0(UI.settings.plotRMSnoise_higherBand,ephys.sr)
+                    UI.settings.plotRMSnoise_apply_filter = false;
+                    UI.settings.plotRMSnoise_apply_filter = 1;
+                    UI.panel.RMSnoiseInset.filter.Value = 1;
+                    return
+                elseif int_gt_0(UI.settings.plotRMSnoise_lowerBand,ephys.sr) && ~int_gt_0(UI.settings.plotRMSnoise_higherBand,ephys.sr)
+                    [UI.settings.RMSnoise_filter.b1, UI.settings.RMSnoise_filter.a1] = butter(3, UI.settings.plotRMSnoise_higherBand/(ephys.sr/2), 'low');
+                elseif int_gt_0(UI.settings.plotRMSnoise_higherBand,ephys.sr) && ~int_gt_0(UI.settings.plotRMSnoise_lowerBand,ephys.sr)
+                    [UI.settings.RMSnoise_filter.b1, UI.settings.RMSnoise_filter.a1] = butter(3, UI.settings.plotRMSnoise_lowerBand/(ephys.sr/2), 'high');
+                else
+                    [UI.settings.RMSnoise_filter.b1, UI.settings.RMSnoise_filter.a1] = butter(3, [UI.settings.plotRMSnoise_lowerBand,UI.settings.plotRMSnoise_higherBand]/(ephys.sr/2), 'bandpass');
+                end
+                rms1(UI.channelOrder) = rms(filtfilt(UI.settings.RMSnoise_filter.b1, UI.settings.RMSnoise_filter.a1, ephys.raw(:,UI.channelOrder)));
+            end
+            k_channels = 0;
+            xlim1 = [0,numel([UI.channels{:}])+1];
+            ylim1 = [min(rms1([UI.channels{:}])),max(rms1([UI.channels{:}]))];
+            
+            % Drawing background
+            p1 = patch([5*UI.settings.windowDuration/6,UI.settings.windowDuration,UI.settings.windowDuration,5*UI.settings.windowDuration/6]-0.01,[0.75 0.75 1 1]-0.01,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
+            alpha(p1,0.4);
+            for iShanks = UI.settings.electrodeGroupsToPlot
+                channels = UI.channels{iShanks};
+                [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
+                channels = UI.channelOrder(ia);
+                markerColor = UI.colors(iShanks,:);
+                x_data = (1:numel(channels))+k_channels;
+                y_data = rms1(channels);
+                line((x_data-xlim1(1))/diff(xlim1)*UI.settings.windowDuration/6+5*UI.settings.windowDuration/6-0.01,(y_data-ylim1(1))/diff(ylim1)*0.25+0.74, 'HitTest','off','Color', markerColor,'Marker','o','LineStyle','-','linewidth',2,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
+                k_channels = k_channels + numel(channels);
+            end
         end
         
         % Plotting channel numbers
@@ -1561,7 +1617,8 @@ end
                 line([1;1]*data.events.(UI.settings.eventData).added(idx3)'-t1,ydata2*ones(1,numel(idx3)),'Marker','none','LineStyle','--','color','c', 'HitTest','off','linewidth',linewidth);
             end
         end
-            
+        
+        % Plotting processing steps
         if UI.settings.processing_steps && isfield(data.events.(UI.settings.eventData),'processing_steps')
             fields2plot = fieldnames(data.events.(UI.settings.eventData).processing_steps);
             UI.colors_processing_steps = hsv(numel(fields2plot));
@@ -1591,11 +1648,15 @@ end
                 text(1/400+UI.settings.windowDuration/2,1,spec_text,'color',[1 1 1],'FontWeight', 'Bold','BackgroundColor',UI.settings.textBackground, 'HitTest','off','Units','normalized','verticalalignment','top')
             end
         end
+        
+        % Plotting event intervals
         if UI.settings.showEventsIntervals
             statesData = data.events.(UI.settings.eventData).timestamps(idx,:)-t1;
             p1 = patch(double([statesData,flip(statesData,2)])',[ydata2(1);ydata2(1);ydata2(2);ydata2(2)]*ones(1,size(statesData,1)),'g','EdgeColor','g','HitTest','off');
             alpha(p1,0.1);
         end
+        
+        % Highlighting detection channel
         if isfield(data.events.(UI.settings.eventData),'detectorParams')
             detector_channel = data.events.(UI.settings.eventData).detectorParams.channel+1;
         elseif isfield(data.events.(UI.settings.eventData),'detectorinfo') & isfield(data.events.(UI.settings.eventData).detectorinfo,'detectionchannel')
@@ -1682,10 +1743,13 @@ end
 
     function viewSessionMetaData(~,~)
         % Opens the gui_session for the current session to editing metadata
-        data.session = gui_session(data.session);
-        initData(basepath,basename);
-        initTraces;
-        uiresume(UI.fig);
+        [session1,~,statusExit] = gui_session(data.session);
+        if statusExit
+            data.session = session1;
+            initData(basepath,basename);
+            initTraces;
+            uiresume(UI.fig);
+        end
     end
 
     function openSessionDirectory(~,~)
@@ -2111,6 +2175,21 @@ end
             UI.menu.display.detectedSpikesBelowTrace.Checked = 'off';
         end
         initTraces
+        uiresume(UI.fig);
+    end
+    
+    function plotRMSnoiseInset(~,~)
+        if UI.panel.RMSnoiseInset.showRMSnoiseInset.Value == 1
+            UI.settings.plotRMSnoiseInset = true;
+        else
+            UI.settings.plotRMSnoiseInset = false;
+        end        
+        UI.settings.plotRMSnoise_apply_filter = UI.panel.RMSnoiseInset.filter.Value;
+        if UI.panel.RMSnoiseInset.filter.Value == 3
+            UI.settings.plotRMSnoise_lowerBand = str2num(UI.panel.RMSnoiseInset.lowerBand.String);
+            UI.settings.plotRMSnoise_higherBand = str2num(UI.panel.RMSnoiseInset.higherBand.String);
+        end
+        
         uiresume(UI.fig);
     end
     
@@ -3249,7 +3328,7 @@ end
         % Generating Probe layout visualization (Channel coordinates)
         UI.settings.chanCoordsToPlot = 1:data.session.extracellular.nChannels;
         delete(UI.chanCoordsAxes.Children)
-        if isfield(data.session.extracellular,'chanCoords')
+        if isfield(data.session.extracellular,'chanCoords') && ~isempty(data.session.extracellular.chanCoords.x) && ~isempty(data.session.extracellular.chanCoords.y)
             chanCoordsVisualization(data.session.extracellular.chanCoords,UI.chanCoordsAxes);
             updateChanCoordsColorHighlight
             
@@ -3836,7 +3915,8 @@ end
                 data.events.(UI.settings.eventData).flagged = [];
             end
             UI.panel.events.flagCount.String = ['nFlags: ', num2str(numel(data.events.(UI.settings.eventData).flagged))];
-            epoch_plotElements.events = line(UI.epochAxes,data.events.(UI.settings.eventData).time,0.1,'color',UI.settings.primaryColor, 'HitTest','off','Marker',UI.settings.rasterMarker,'LineStyle','none');
+            t_stamps = data.events.(UI.settings.eventData).time;
+            epoch_plotElements.events = line(UI.epochAxes,t_stamps,0.1*ones(size(t_stamps)),'color',UI.settings.primaryColor, 'HitTest','off','Marker',UI.settings.rasterMarker,'LineStyle','none');
         else
             UI.settings.showEvents = false;
             UI.panel.events.eventNumber.String = '';
@@ -4754,10 +4834,13 @@ end
     end
     
     function editIntanMeta(~,~)
-        data.session = gui_session(data.session,[],'inputs');
-        initData(basepath,basename);
-        initTraces;
-        uiresume(UI.fig);
+        [session1,~,statusExit] = gui_session(data.session,[],'inputs');
+        if statusExit
+            data.session = session1;
+            initData(basepath,basename);
+            initTraces;
+            uiresume(UI.fig);
+        end
     end
     
     function showTimeseriesBelowTrace(~,~)
