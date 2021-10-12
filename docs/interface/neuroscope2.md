@@ -101,7 +101,7 @@ Below embedded function are called to initialize various elements and during dat
 * `initData`: Initializes data handles and visualization elements derived from the data.
 * `initInputs` Initializes any user-specific input (optional)
 * `initTraces`: Initilizes trace, including offsets, sorting, applying filters. Called when changing the window size, amplification hiding/showing channels or groups.
-* `plotData`: Main call visualizing all data types. `plotData` is further separated in sub-calls for plotting ephys data, spikes, states, events, time series, behavior, trial data and intan digital and analog traces.
+* `plotData`: Main call visualizing all data types. `plotData` is further separated in sub-calls for plotting ephys data (`plot_ephys`), spikes (`plotSpikeData` and `plotKilosortData`, `plotKlustaData`, `plotSpykingcircusData`), states (`plotTemporalStates`), events (`plotEventData`), time series (Matlab time series files; `plotTimeSeriesData`) , behavior (`plotBehavior`), trial data (`plotTrials`) and other time series data (e.g. digital TTL pulses or extra analog signals; `plotAnalog` and `plotDigital`).
 
 Use these calls if you want to customize or add additional functionality. 
 
