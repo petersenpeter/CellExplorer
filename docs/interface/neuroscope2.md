@@ -62,8 +62,10 @@ NeuroScope2('session',session)
 ### Open a session from the File menu in NeuroScope2
 A new dataset can be loaded from the File menu in NeuroScope2. Select `Load session from file`, to open a file dialog and select any file from the basepath of the session you want to open, that contains the basename, e.g. `basename.session.mat`.
 
-### Display Intan's digital and analog files in NeuroScope2
-Intan files are treated as time series and the metadata is stored in the session struct. To load the files you must first specify required metadata e.g. filename, number of channels, sampling rate. The metadata can be imported from Intan's `info.rhd`. In the session GUI `gui_session.m` go to the File menu and select __Import time series from Intan info.rhd__, this will import the metadata as shown in the screenshot below. Save the changes and close the gui.
+### Display digital and analog files in NeuroScope2
+Other time series data can also be shown in NeuroScope2, including both analog and digital signals. You can use the session GUI `gui_session.m` for manual entry of the required time series metadata (e.g. filename, number of channels, sampling rate) as described [here](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata).
+
+Intan's analog and digital files are treated as time series and the metadata is stored in the session struct. The metadata can be imported from Intan's `info.rhd`. In the session GUI `gui_session.m` go to the File menu and select __Import time series from Intan info.rhd__, this will import the metadata as shown in the screenshot below. Save the changes and close the gui.
 
 <a href="https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_inputs.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_inputs.png)</a>
 
