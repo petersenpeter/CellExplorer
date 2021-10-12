@@ -35,7 +35,7 @@ You can view CellExplorer, Buzcode, and other .mat structures:
 The screenshot above shows a 128 channels recording with two ripple events highlighted, the spike raster below is color coded and sorted by putative cell types.
 
 ### Interface elements
-The interface consist of side panel and a main plot axis. Below the main axis are further navigational elements. The side-panel has three tabs focused on: 1. the raw data, plotting styles and settings, and general metadata, 2. spikes data and 3. other data types and analysus, including events, time series, states, behavior, spectrogram, and Current Source density.
+The interface consist of side panel and a main plot axis. Below the main axis are further navigational elements. The side-panel has three tabs focused on: 1. the ephys data, plotting styles and settings, 2. spikes data and 3. other data types and data analysis, including events, time series, states, behavior, spectrogram, RMS noise plot, and a Current Source density visualization.
 
 ## Metadata
 NeuroScope2 uses the [session struct](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) for session level metadata. Please see [this tutorial](https://cellexplorer.org/tutorials/metadata-tutorial/) on how to generate and fill out the metadata. Metadata can be imported from multiple sources: an existing `basename.xml` file (NeuroSuite), from Intan's `info.rhd` file, from KiloSort's `rez.mat` file and from a `basename.sessionInfo.mat` (Buzcode) file.
@@ -101,7 +101,7 @@ Below embedded function are called to initialize various elements and during dat
 * `initData`: Initializes data handles and visualization elements derived from the data.
 * `initInputs` Initializes any user-specific input (optional)
 * `initTraces`: Initilizes trace, including offsets, sorting, applying filters. Called when changing the window size, amplification hiding/showing channels or groups.
-* `plotData`: Main call visualizing all data types. `plotData` is further separated in sub-calls for plotting ephys data (`plot_ephys`), spikes (`plotSpikeData` and `plotKilosortData`, `plotKlustaData`, `plotSpykingcircusData`), states (`plotTemporalStates`), events (`plotEventData`), time series (Matlab time series files; `plotTimeSeriesData`) , behavior (`plotBehavior`), trial data (`plotTrials`) and other time series data (e.g. digital TTL pulses or extra analog signals; `plotAnalog` and `plotDigital`).
+* `plotData`: Main call visualizing all data types. `plotData` contains sub-calls for plotting ephys data (`plot_ephys`), spikes (`plotSpikeData` and `plotKilosortData`, `plotKlustaData`, `plotSpykingcircusData`), states (`plotTemporalStates`), events (`plotEventData`), time series (Matlab time series files; `plotTimeSeriesData`) , behavior (`plotBehavior`), trial data (`plotTrials`) and other time series data (e.g. digital TTL pulses or extra analog signals; `plotAnalog` and `plotDigital`).
 
 Use these calls if you want to customize or add additional functionality. 
 
