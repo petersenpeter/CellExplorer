@@ -675,13 +675,11 @@ function updateUI
             % Double kernel-histogram with scatter plot
             set(UI.axes(1),'Position', [0.30 0.30 0.685 0.675], 'visible', 'on', 'Clipping','on');
             set(h_scatter2,'Position', [0.30 0.01 0.685 0.2], 'visible', 'on');
-            set(h_scatter3,'Position', [0.01 0.30 0.2 0.675], 'visible', 'on');
+            set(h_scatter3,'Position', [0.015 0.30 0.19 0.675], 'visible', 'on');
             
             h_scatter2.YLabel.String = UI.preferences.rainCloudNormalization;
             h_scatter3.YLabel.String = UI.preferences.rainCloudNormalization;
 
-%             set(UI.fig,'CurrentAxes',UI.axes(1))
-%             view(h_scatter3,[90 -90])
             if UI.checkbox.logx.Value == 1
                 set(h_scatter2, 'XScale', 'log')
             else
@@ -696,19 +694,19 @@ function updateUI
             
             set(UI.fig,'CurrentAxes',UI.axes(1))
         else
-            set(UI.axes(1),'Position', [0.058812664907652   0.049837398373984   0.931187335092348   0.923495934959349], 'visible', 'on', 'Clipping','on');
+            set(UI.axes(1),'visible', 'on', 'Clipping','on');
             set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
             set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
             set(UI.fig,'CurrentAxes',UI.axes(1))
         end
-
+        
         if ((strcmp(UI.preferences.referenceData, 'Image') && ~isempty(reference_cell_metrics)) || (strcmp(UI.preferences.groundTruthData, 'Image')) && ~isempty(groundTruth_cell_metrics)) && UI.checkbox.logy.Value == 1
             yyaxis right, hold on
             UI.axes(1).YAxis(1).Color = 'k'; 
             UI.axes(1).YAxis(2).Color = 'k';
         end
 
-        UI.axes(1).YLabel.String = UI.labels.(UI.plot.yTitle); 
+        UI.axes(1).YLabel.String = UI.labels.(UI.plot.yTitle)       ; 
         UI.axes(1).XLabel.String = UI.labels.(UI.plot.xTitle); 
         set(UI.axes(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
         xlim auto, ylim auto, zlim auto, axis tight
@@ -1129,7 +1127,7 @@ function updateUI
     % % % % % 3D plot
     
     elseif UI.preferences.customPlotHistograms == 3
-        set(UI.axes(1),'Position', [0.058812664907652   0.049837398373984   0.931187335092348   0.923495934959349], 'visible', 'on');
+        set(UI.axes(1), 'visible', 'on');
         set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
         set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
         set(UI.fig,'CurrentAxes',UI.axes(1))
@@ -1272,7 +1270,7 @@ function updateUI
         
     elseif UI.preferences.customPlotHistograms == 4
         
-        set(UI.axes(1),'Position', [0.058812664907652   0.049837398373984   0.931187335092348   0.923495934959349], 'visible', 'on', 'Clipping','on');
+        set(UI.axes(1), 'visible', 'on', 'Clipping','on');
         set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
         set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
         set(UI.fig,'CurrentAxes',UI.axes(1))
@@ -9124,8 +9122,19 @@ end
 
     function customPlotStyle
         if exist('h_scatter','var') && any(ishandle(h_scatter))
-        	delete(h_scatter)
+            delete(h_scatter)
         end
+        delete(UI.panel.subfig_ax(1).Children)
+        UI.axes(1) = axes('Parent',UI.panel.subfig_ax(1),'NextPlot','add');
+        UI.axes(1).Title.String = 'Custom group plot';
+        h_scatter2 = axes('Parent',UI.panel.subfig_ax(1),'Position', [0.30 0.01 0.685 0.2], 'visible', 'off','Xticklabels',[],'NextPlot','add');
+        h_scatter3 = axes('Parent',UI.panel.subfig_ax(1),'Position', [0.01 0.30 0.2 0.675], 'visible', 'off','Xticklabels',[],'NextPlot','add');
+        view(h_scatter3,[90 -90])
+        % Adding listeners to axes
+        UI.xLimListener = addlistener(UI.axes(1), 'YLim', 'PostSet', @(src,evt) set_lims(h_scatter3,'XLim', UI.axes(1),'YLim'));
+        UI.yLimListener = addlistener(h_scatter3, 'XLim', 'PostSet', @(src,evt) set_lims(UI.axes(1),'YLim', h_scatter3,'XLim'));
+
+        
         if UI.popupmenu.metricsPlot.Value == 1
             UI.preferences.customPlotHistograms = 1;
             UI.checkbox.logz.Enable = 'Off';
