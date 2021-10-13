@@ -727,16 +727,16 @@ end
 if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(contains(parameters.excludeMetrics,{'monoSynaptic_connections'}))
     spkExclu = setSpkExclu('monoSynaptic_connections',parameters);
     dispLog('MonoSynaptic connections',basename)
-    if ~exist(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'file')
+    if ~exist(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'file') 
         mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections);
         if parameters.manualAdjustMonoSyn
             dispLog('Loading MonoSynaptic GUI for manual adjustment',basename)
             mono_res = gui_MonoSyn(mono_res);
         end
-        save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+        save(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
     else
         disp('  Loading previous detected MonoSynaptic connections')
-        load(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res');
+        load(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'mono_res');
         if parameters.includeInhibitoryConnections && (~isfield(mono_res,'sig_con_inhibitory') || (isfield(mono_res,'sig_con_inhibitory') && isempty(mono_res.sig_con_inhibitory_all)))
             disp('  Detecting MonoSynaptic inhibitory connections')
             mono_res_old = mono_res;
@@ -747,10 +747,10 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
                 dispLog('Loading MonoSynaptic GUI for manual adjustment',basename)
                 mono_res = gui_MonoSyn(mono_res);
             end
-            save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+            save(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
         elseif parameters.forceReload == true && parameters.manualAdjustMonoSyn
             mono_res = gui_MonoSyn(mono_res);
-            save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+            save(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
         end
     end
     

@@ -2,3 +2,5 @@
 .DS_Store
 CellExplorer.sublime-workspace
 CellExplorer.sublime-project
+*data_NeuroScope2.mat
+*.asv
