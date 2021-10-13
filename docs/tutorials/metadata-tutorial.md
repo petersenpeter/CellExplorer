@@ -1,10 +1,10 @@
 ---
 layout: default
-title: Generate metadata struct
+title: Session metadata struct
 parent: Tutorials
 nav_order: 2
 ---
-# Metadata tutorial
+# Session metadata tutorial
 {: .no_toc}
 This tutorial shows you how to generate the [session metadata struct](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) used by CellExplorer. 
 ![Flow chart](https://buzsakilab.com/wp/wp-content/uploads/2020/05/Flowcharts_Metadata.png){: .mt-4}
