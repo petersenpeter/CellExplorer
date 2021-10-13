@@ -47,7 +47,7 @@ function cell_metrics = CellExplorer(varargin)
 % Shortcuts to built-in functions:
 % Initialization: initializeSession, initializeUI, 
 % Data handling: saveDialog, restoreBackup, importGroundTruth, DatabaseSessionDialog, defineReferenceData, initializeReferenceData, defineGroupData
-% UI: hoverCallback, updateUI, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics
+% UI: hoverCallback, updateUI, GroupAction, defineSpikesPlots, keyPress, FromPlot, GroupSelectFromPlot, ScrolltoZoomInPlot, brainRegionDlg, tSNE_redefineMetrics, customPlotStyle
 % Plotting: customPlot, plotGroupData, plotSummaryFigures, runBenchMark
 
 if isdeployed % Check for if CellExplorer is running as a deployed app (compiled .exe or .app for windows and mac respectively)
@@ -672,11 +672,7 @@ function updateUI
     
     if any(UI.preferences.customPlotHistograms == [1,2])
         if UI.preferences.customPlotHistograms == 2 || strcmp(UI.preferences.referenceData, 'Histogram') || strcmp(UI.preferences.groundTruthData, 'Histogram')
-            % Double kernel-histogram with scatter plot
-            set(UI.axes(1),'Position', [0.30 0.30 0.685 0.675], 'visible', 'on', 'Clipping','on');
-            set(h_scatter2,'Position', [0.30 0.01 0.685 0.2], 'visible', 'on');
-            set(h_scatter3,'Position', [0.015 0.30 0.19 0.675], 'visible', 'on');
-            
+            % Double kernel-histogram with scatter plot            
             h_scatter2.YLabel.String = UI.preferences.rainCloudNormalization;
             h_scatter3.YLabel.String = UI.preferences.rainCloudNormalization;
 
@@ -690,23 +686,16 @@ function updateUI
                 set(h_scatter3, 'XScale', 'log')
             else
                 set(h_scatter3, 'XScale', 'linear')
-            end
-            
-            set(UI.fig,'CurrentAxes',UI.axes(1))
-        else
-            set(UI.axes(1),'visible', 'on', 'Clipping','on');
-            set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
-            set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
-            set(UI.fig,'CurrentAxes',UI.axes(1))
+            end  
         end
-        
+        set(UI.fig,'CurrentAxes',UI.axes(1))
         if ((strcmp(UI.preferences.referenceData, 'Image') && ~isempty(reference_cell_metrics)) || (strcmp(UI.preferences.groundTruthData, 'Image')) && ~isempty(groundTruth_cell_metrics)) && UI.checkbox.logy.Value == 1
             yyaxis right, hold on
             UI.axes(1).YAxis(1).Color = 'k'; 
             UI.axes(1).YAxis(2).Color = 'k';
         end
 
-        UI.axes(1).YLabel.String = UI.labels.(UI.plot.yTitle)       ; 
+        UI.axes(1).YLabel.String = UI.labels.(UI.plot.yTitle); 
         UI.axes(1).XLabel.String = UI.labels.(UI.plot.xTitle); 
         set(UI.axes(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
         xlim auto, ylim auto, zlim auto, axis tight
@@ -1127,14 +1116,11 @@ function updateUI
     % % % % % 3D plot
     
     elseif UI.preferences.customPlotHistograms == 3
-        set(UI.axes(1), 'visible', 'on');
-        set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
-        set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
         set(UI.fig,'CurrentAxes',UI.axes(1))
 %         hold on
         UI.axes(1).YLabel.String = UI.labels.(UI.plot.yTitle); UI.axes(1).YLabel.Interpreter = 'tex';
         UI.axes(1).XLabel.String = UI.labels.(UI.plot.xTitle); UI.axes(1).XLabel.Interpreter = 'tex';
-        set(UI.axes(1), 'Clipping','off','XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
+        set(UI.axes(1), 'XTickMode', 'auto', 'XTickLabelMode', 'auto', 'YTickMode', 'auto', 'YTickLabelMode', 'auto', 'ZTickMode', 'auto', 'ZTickLabelMode', 'auto'),
         xlim auto, ylim auto, zlim auto, axis tight
         
         % Setting linear/log scale
@@ -1269,10 +1255,6 @@ function updateUI
     % % % % % Rain cloud plot
         
     elseif UI.preferences.customPlotHistograms == 4
-        
-        set(UI.axes(1), 'visible', 'on', 'Clipping','on');
-        set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
-        set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
         set(UI.fig,'CurrentAxes',UI.axes(1))
         
         if ~isempty(UI.classes.colors)
@@ -1442,7 +1424,7 @@ function updateUI
         end
         
         plotGroupData(cell_metrics.troughToPeak * 1000,cell_metrics.acg_tau_rise,plotConnections(2),highlightCurrentCell)
-        
+        axis tight
         if strcmp(UI.preferences.groundTruthData, 'None') && ~strcmp(UI.preferences.referenceData, 'None') && ~isempty(fig2_axislimit_x_reference) && ~isempty(fig2_axislimit_y_reference)
             xlim(fig2_axislimit_x_reference), ylim(fig2_axislimit_y_reference)
         elseif ~strcmp(UI.preferences.groundTruthData, 'None') && strcmp(UI.preferences.referenceData, 'None') && ~isempty(fig2_axislimit_x_groundTruth) && ~isempty(fig2_axislimit_y_groundTruth)
@@ -1452,6 +1434,8 @@ function updateUI
             ylim([min(fig2_axislimit_y_groundTruth(1),fig2_axislimit_y_reference(1)),max(fig2_axislimit_y_groundTruth(2),fig2_axislimit_y_reference(2))])
         elseif diff(fig2_axislimit_x) & diff(fig2_axislimit_y)
             xlim(fig2_axislimit_x), ylim(fig2_axislimit_y)
+        else
+            axis tight
         end
         xlim21 = xlim;
         ylim21 = ylim;
@@ -1476,7 +1460,7 @@ function updateUI
             legendScatter22 = line(xlim21(1)+100*line_histograms_Y./max(line_histograms_Y),10.^(groundTruthData.y1'*ones(1,length(clusClas_list))),'LineStyle','-','linewidth',1,'HitTest','off');
             set(legendScatter22, {'color'}, num2cell(UI.classes.colors3,2),'Marker','none');
             xlim(xlim21), ylim((ylim21))
-            yyaxis left, hold on
+            yyaxis right
         elseif strcmp(UI.preferences.groundTruthData, 'Image') && ~isempty(groundTruth_cell_metrics)
             yyaxis left
             xlim(xlim21), ylim(log10(ylim21))
@@ -1500,7 +1484,7 @@ function updateUI
             legendScatter22 = line(xlim21(1)+100*line_histograms_Y./max(line_histograms_Y),10.^(referenceData.y1'*ones(1,length(clusClas_list))),'LineStyle','-','linewidth',1,'HitTest','off');
             set(legendScatter22, {'color'}, num2cell(UI.classes.colors2,2));
             xlim(xlim21), ylim((ylim21))
-            yyaxis left, hold on
+            yyaxis right
         elseif strcmp(UI.preferences.referenceData, 'Image') && ~isempty(reference_cell_metrics)
             yyaxis left
             xlim(xlim21), ylim(log10(ylim21))
@@ -3895,18 +3879,18 @@ end
                 case 'All'
                     xdata = [plotX1(UI1.params.a1);plotX1(UI1.params.a2);nan(1,length(UI1.params.a2))];
                     ydata = [plotY1(UI1.params.a1);plotY1(UI1.params.a2);nan(1,length(UI1.params.a2))];
-                    line(xdata(:),ydata(:),'color','k','HitTest','off')
+                    line(xdata(:),ydata(:),'color','k','HitTest','off','LineStyle','-')
                 case {'Selected','Upstream','Downstream','Up & downstream'}
                     if highlightCurrentCell
                         if ~isempty(UI1.params.inbound)
                             xdata = [plotX1(UI1.params.incoming);plotX1(UI1.params.a2(UI1.params.inbound));nan(1,length(UI1.params.a2(UI1.params.inbound)))];
                             ydata = [plotY1(UI1.params.incoming);plotY1(UI1.params.a2(UI1.params.inbound));nan(1,length(UI1.params.a2(UI1.params.inbound)))];
-                            line(xdata,ydata,'color','b','HitTest','off')
+                            line(xdata,ydata,'color','b','HitTest','off','LineStyle','-')
                         end
                         if ~isempty(UI1.params.outbound)
                             xdata = [plotX1(UI1.params.a1(UI1.params.outbound));plotX1(UI1.params.outgoing);nan(1,length(UI1.params.outgoing))];
                             ydata = [plotY1(UI1.params.a1(UI1.params.outbound));plotY1(UI1.params.outgoing);nan(1,length(UI1.params.outgoing))];
-                            line(xdata(:),ydata(:),'color','m','HitTest','off')
+                            line(xdata(:),ydata(:),'color','m','HitTest','off','LineStyle','-')
                         end
                     end
             end
@@ -4656,6 +4640,7 @@ end
             UI.panel.tabgroup2.SelectedTab = UI.tabs.referenceData;
             initReferenceDataTab
         end
+        customPlotStyle
         uiresume(UI.fig);
     end
 
@@ -4718,6 +4703,7 @@ end
             UI.panel.tabgroup2.SelectedTab = UI.tabs.groundTruthData;
             initGroundTruthTab
         end
+        customPlotStyle
         uiresume(UI.fig);
     end
 
@@ -6619,7 +6605,6 @@ end
         % Called when scrolling/zooming
         % Checks first, if a plot is underneath the curser
         axnum = getAxisBelowCursor;
-%         clickPlotRegular = false;
         if isfield(UI,'panel') && ~isempty(axnum) && UI.scroll
             if axnum == 10
                 handle34 = UI.axis.legends;
@@ -6708,7 +6693,6 @@ end
                 applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction);
             end
         end
-%         clickPlotRegular = true;
         
         function applyZoom(globalZoom1,cursorPosition,axesLimits,globalZoomLog1,direction)
             
@@ -6890,8 +6874,8 @@ end
             c = [u,v];
             
             if strcmpi(selectiontype, 'alt')
+                % Closing polygon
                 if ~isempty(polygon1.coords)
-%                     hold on,
                     polygon1.handle(polygon1.counter+1) = line([polygon1.coords(:,1);polygon1.coords(1,1)],[polygon1.coords(:,2);polygon1.coords(1,2)],'Marker','.','color','k', 'HitTest','off');
                 end
                 if polygon1.counter > 0
@@ -6903,15 +6887,18 @@ end
                 set(polygon1.handle(find(ishandle(polygon1.handle))),'Visible','off');
                 
             elseif strcmpi(selectiontype, 'extend') && polygon1.counter > 0
+                % Removing last polygon point
                 polygon1.coords = polygon1.coords(1:end-1,:);
                 set(polygon1.handle(polygon1.counter),'Visible','off');
                 polygon1.counter = polygon1.counter-1;
                 
             elseif strcmpi(selectiontype, 'extend') && polygon1.counter == 0
+                % Canceling polygon selection
                 clickPlotRegular = true;
                 set(UI.fig,'Pointer','arrow')
                 
             elseif strcmpi(selectiontype, 'normal')
+                % Drawing polygion
                 polygon1.coords = [polygon1.coords;c];
                 polygon1.counter = polygon1.counter +1;
                 polygon1.handle(polygon1.counter) = line(polygon1.coords(:,1),polygon1.coords(:,2),'Marker','.','color','k','HitTest','off');
@@ -9177,6 +9164,21 @@ end
             UI.checkbox.logMarkerSize.Enable = 'Off';
             UI.preferences.plot3axis = 0;
         end
+        
+        if UI.preferences.customPlotHistograms == 2 || (UI.preferences.customPlotHistograms == 1 && (strcmp(UI.preferences.referenceData, 'Histogram') || strcmp(UI.preferences.groundTruthData, 'Histogram')))
+            % Double kernel-histogram with scatter plot
+            set(UI.axes(1),'Position', [0.30 0.30 0.685 0.675], 'visible', 'on', 'Clipping','on');
+            set(h_scatter2,'Position', [0.30 0.01 0.685 0.2], 'visible', 'on');
+            set(h_scatter3,'Position', [0.015 0.30 0.19 0.675], 'visible', 'on');
+        elseif UI.preferences.customPlotHistograms == 3    
+            set(UI.axes(1),'visible', 'on', 'Clipping','off');
+            set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
+            set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
+        else
+            set(UI.axes(1),'visible', 'on', 'Clipping','on');
+            set(h_scatter2,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
+            set(h_scatter3,'Position', [-1 -1 0.1 0.1], 'visible', 'off');
+        end
         uiresume(UI.fig);
     end
 
@@ -10769,7 +10771,7 @@ end
         % % % % % % % % % % % % % % % % % % % %
         % Select subset of cell type
         updateCellCount
-        uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Putative Cell types','HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.displaySettings,'Style','text','Position',[1 62 50 10],'Units','normalized','String','Putative cell types','HorizontalAlignment','center');
         UI.listbox.cellTypes = uicontrol('Parent',UI.panel.displaySettings,'Style','listbox','Position',[0 73 148 48],'Units','normalized','String',strcat(UI.preferences.cellTypes,' (',cell_class_count,')'),'max',10,'min',1,'Value',1:length(UI.preferences.cellTypes),'Callback',@(src,evnt)buttonSelectSubset(),'KeyPressFcn', {@keyPress},'tooltip','Displayed putative cell types. Select to filter');
         
         % Number of plots
