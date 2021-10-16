@@ -9,7 +9,7 @@ nav_order: 8
 
 This tutorial covers how to generate the behavioral structs, firing rate maps, and show them in CellExplorer.
 
- The necessary steps are:
+__The steps are:__
 1. Get session info and spikes 
 2. Import behavior data into CellExplorer/Buzcode data container/format
 3. Get TTL pulses/global time
@@ -19,15 +19,16 @@ This tutorial covers how to generate the behavioral structs, firing rate maps, a
 5. Generate the firing rate maps
 6. Run CellExplorer Processing pipeline
 
+## 1. Get session info and spikes
 
-## 1. Load session info and spikes
+Load session info and spikes:
 
 ```m
 basepath = pwd;
 session = loadSession(basepath); % Loading session info
 ```
 
-Loading spikes struct
+Loading spikes struct:
 ```m
 spikes = loadSpikes('session',session);
 ```
@@ -50,7 +51,7 @@ optitrack = optitrack2buzcode('session',session);
 % optitrack = loadStruct('optitrack','behavior','session',session);
 ```
 
-2. Import TTL pulses from Intan used to synchronize the Intan ephys system with optitrack. 
+Import TTL pulses from Intan used to synchronize the Intan ephys system with optitrack. 
 
 In this case, Intan works as the global clock. This will also save a struct with the digital input: `basename.intanDig.digitalseries.mat`.
 
@@ -119,10 +120,9 @@ lineartrack.trials = getTrials_lineartrack(lineartrack.position.linearized,linea
 Now we can save the struct
 ```m
 saveStruct(lineartrack,'behavior','session',session);
-```
-% After this you can load the generated file in Matlab
-```m
-lineartrack = loadStruct('lineartrack','behavior','session',session);
+
+% After this you can load the generated file in Matlab:
+%lineartrack = loadStruct('lineartrack','behavior','session',session);
 ```
 
 ## 4.2 Circular track
@@ -133,12 +133,12 @@ Now, we can realign the temporal states and generate the new behavioral data str
 OptitrackSync = session.inputs.OptitrackSync.channels; % TTL channel recorded by intan
 ```
 
-% Extending the original behavioral data
+Extend the original behavioral data
 ```m
 circular_track = optitrack;
 ```
 
-Defining timestamps via the TTL-pulses from Optitrack recorded with intan
+Define timestamps via the TTL-pulses from Optitrack recorded with intan
 ```m
 circular_track.timestamps = intanDig.on{OptitrackSync}(1:numel(circular_track.timestamps));
 circular_track.timestamps = circular_track.timestamps(:)';
@@ -150,7 +150,7 @@ circular_track.position.y = circular_track.position.y+circular_track.offsets(2);
 circular_track.position.z = circular_track.position.z+circular_track.offsets(3);
 ```
 
-Rotating the positional data if necessary
+Rotate the positional data if necessary
 ```m
 circular_track.rotation = []; % degrees
 if ~isempty(circular_track.rotation)
@@ -161,9 +161,7 @@ if ~isempty(circular_track.rotation)
 end
 ```
 
-Next we define maze parameters
-
-These are used for linearization and defining states on the maze (e.g. left/right)
+Next we define maze parameters. These parameters are used for the linearization and to define states on the maze (e.g. left/right arm)
 ```m
 maze.type = 'theta';
 maze.radius_in = 96.5/2;
@@ -182,7 +180,7 @@ maze.boundary{4} = [15,40];
 maze.boundary{5} = [maze.radius_in-3.25,maze.polar_theta_limits(2)];
 ```
 
-Defining trials:
+Define the trials struct:
 ```m
 [trials,circular_track] = getTrials_thetamaze(circular_track,maze);
 
@@ -193,15 +191,13 @@ circular_track.states.arm_rim(circular_track.position.polar_rho > maze.polar_rho
 circular_track.stateNames.arm_rim = {'arm','rim'};
 ```
 
-Linearizing and defining boundaries
+Linearize and defining boundaries
 ```m
 circular_track.position.linearized = linearize_pos_v2(circular_track,maze);
 circular_track.limits.linearized = [0,diff(maze.pos_y_limits) + diff(maze.polar_theta_limits)-5];
 circular_track.boundaries.linearized = [0,diff(maze.pos_y_limits), diff(maze.pos_y_limits)+ abs(maze.polar_theta_limits(1))-5];
 circular_track.boundaryNames.linearized = {'Central arm','Left side','Right side'};
-```
 
-```m
 % Setting a minimum speed threshold
 circular_track.speed_th = 10;
 
@@ -213,7 +209,7 @@ end
 circular_track.stateNames.left_right = {'Left','Right'};
 ```
 
-Saving behavioral data
+Save the behavioral data
 ```m
 saveStruct(circular_track,'behavior','session',session);
 saveStruct(trials,'behavior','session',session);
@@ -224,17 +220,17 @@ saveStruct(trials,'behavior','session',session);
 
 ## 5. Generate firingratemaps
 
-Generating the linearized firing rate map
+Generate the linearized firing rate map
 ```m
 ratemap = generate_FiringRateMap_1D('spikes',spikes,'behavior',circular_track,'session',session,'x_label','Theta maze position (cm)');
 ```
 
-Generating trial-wise firing rate map
+Generate trial-wise firing rate map
 ```m
 ratemap_Trials = generate_FiringRateMap_1D('spikes',spikes,'behavior',circular_track,'states',circular_track.trials,'dataName','ratemap_Trials','session',session,'x_label','Theta maze position (cm)');
 ```
 
-Generating left-right firing rate map
+Generate left-right firing rate map
 ```m
 ratemap_LeftRight = generate_FiringRateMap_1D('spikes',spikes,'behavior',circular_track,'states',circular_track.states.left_right,'stateNames',circular_track.stateNames.left_right,'dataName','ratemap_LeftRight','session',session,'x_label','Theta maze position (cm)');
 ```
@@ -253,4 +249,3 @@ cell_metrics = ProcessCellMetrics('session',session);
 
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
-
