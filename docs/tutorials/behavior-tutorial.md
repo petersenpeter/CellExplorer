@@ -10,23 +10,17 @@ nav_order: 8
 This tutorial covers how to generate the behavioral structs, firing rate maps, and show them in CellExplorer.
 
  The necessary steps are:
- ## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
-0. Get session info and spikes 
-1. Import behavior data into CellExplorer/Buzcode data container/format
-2. Get TTL pulses/global time
-3. Define behavior struct with limits/boundaries/trials. Two examples
-3.1. Linear track
-3.1. Theta maze
-4. Generate the firing rate maps
-5. Run CellExplorer Processing pipeline
+1. Get session info and spikes 
+2. Import behavior data into CellExplorer/Buzcode data container/format
+3. Get TTL pulses/global time
+4. Define behavior struct with limits/boundaries/trials. Two examples
+4. 1. Linear track
+4. 1. Theta maze
+5. Generate the firing rate maps
+6. Run CellExplorer Processing pipeline
 
 
-## 0. Load session info and spikes
+## 1. Load session info and spikes
 
 ```m
 basepath = pwd;
@@ -38,7 +32,7 @@ Loading spikes struct
 spikes = loadSpikes('session',session);
 ```
 
-## 1. Importing behavioral tracking from optitrack
+## 2. Importing behavioral tracking from optitrack
 
 First we import the raw behavioral tracking into a Matlab struct:
 the optitrack output contains timestamps (from optitrack) and position data 
@@ -73,7 +67,7 @@ intanDig = intanDigital2buzcode(session);
 
 ## 3. Define behavior struct with limits/boundaries/trials 
 
-## 3.1. Linear track
+## 4.1. Linear track
 
 Now, we can realign the temporal states and generate the new behavioral data struct 
 ```m
@@ -131,7 +125,7 @@ saveStruct(lineartrack,'behavior','session',session);
 lineartrack = loadStruct('lineartrack','behavior','session',session);
 ```
 
-## 3.2 Circular track
+## 4.2 Circular track
 
 Now, we can realign the temporal states and generate the new behavioral data struct 
 
@@ -167,7 +161,7 @@ if ~isempty(circular_track.rotation)
 end
 ```
 
-### Next we define maze parameters
+Next we define maze parameters
 
 These are used for linearization and defining states on the maze (e.g. left/right)
 ```m
@@ -188,7 +182,7 @@ maze.boundary{4} = [15,40];
 maze.boundary{5} = [maze.radius_in-3.25,maze.polar_theta_limits(2)];
 ```
 
-### Defining trials:
+Defining trials:
 ```m
 [trials,circular_track] = getTrials_thetamaze(circular_track,maze);
 
@@ -199,7 +193,7 @@ circular_track.states.arm_rim(circular_track.position.polar_rho > maze.polar_rho
 circular_track.stateNames.arm_rim = {'arm','rim'};
 ```
 
-### Linearizing and defining boundaries
+Linearizing and defining boundaries
 ```m
 circular_track.position.linearized = linearize_pos_v2(circular_track,maze);
 circular_track.limits.linearized = [0,diff(maze.pos_y_limits) + diff(maze.polar_theta_limits)-5];
@@ -219,7 +213,7 @@ end
 circular_track.stateNames.left_right = {'Left','Right'};
 ```
 
-### Saving behavioral data
+Saving behavioral data
 ```m
 saveStruct(circular_track,'behavior','session',session);
 saveStruct(trials,'behavior','session',session);
@@ -228,24 +222,24 @@ saveStruct(trials,'behavior','session',session);
 % circular_track = loadStruct('circular_track','behavior','session',session);
 % trials = loadStruct('trials','behavior','session',session);
 
-## 4. Generate firingratemaps
+## 5. Generate firingratemaps
 
-### Generating the linearized firing rate map
+Generating the linearized firing rate map
 ```m
 ratemap = generate_FiringRateMap_1D('spikes',spikes,'behavior',circular_track,'session',session,'x_label','Theta maze position (cm)');
 ```
 
-### Generating trial-wise firing rate map
+Generating trial-wise firing rate map
 ```m
 ratemap_Trials = generate_FiringRateMap_1D('spikes',spikes,'behavior',circular_track,'states',circular_track.trials,'dataName','ratemap_Trials','session',session,'x_label','Theta maze position (cm)');
 ```
 
-### Generating left-right firing rate map
+Generating left-right firing rate map
 ```m
 ratemap_LeftRight = generate_FiringRateMap_1D('spikes',spikes,'behavior',circular_track,'states',circular_track.states.left_right,'stateNames',circular_track.stateNames.left_right,'dataName','ratemap_LeftRight','session',session,'x_label','Theta maze position (cm)');
 ```
 
-## 5. Run CellExplorer's Processing pipeline
+## 6. Run CellExplorer's Processing pipeline
 
 The Processing pipeline will detect and import the firing rate maps, detect place fields and calculate spatial information.
 
