@@ -14,8 +14,8 @@ __The steps are:__
 2. Import behavior data into CellExplorer/Buzcode data container/format
 3. Get TTL pulses/global time
 4. Define behavior struct with limits/boundaries/trials. Two examples
-4. 1. Linear track
-4. 1. Theta maze
+   4. Linear track
+   4. Theta maze
 5. Generate the firing rate maps
 6. Run CellExplorer Processing pipeline
 
@@ -66,9 +66,9 @@ intanDig = intanDigital2buzcode(session);
 % intanDig = loadStruct('intanDig','digitalseries','session',session);
 ```
 
-## 3. Define behavior struct with limits/boundaries/trials 
+## 4. Define behavior struct with limits/boundaries/trials 
 
-## 4.1. Linear track
+### 4.1. Linear track
 
 Now, we can realign the temporal states and generate the new behavioral data struct 
 ```m
@@ -125,7 +125,7 @@ saveStruct(lineartrack,'behavior','session',session);
 %lineartrack = loadStruct('lineartrack','behavior','session',session);
 ```
 
-## 4.2 Circular track
+### 4.2 Circular track
 
 Now, we can realign the temporal states and generate the new behavioral data struct 
 
@@ -213,10 +213,11 @@ Save the behavioral data
 ```m
 saveStruct(circular_track,'behavior','session',session);
 saveStruct(trials,'behavior','session',session);
-```
+
 % After this you can load the generated files:
 % circular_track = loadStruct('circular_track','behavior','session',session);
 % trials = loadStruct('trials','behavior','session',session);
+```
 
 ## 5. Generate firingratemaps
 
