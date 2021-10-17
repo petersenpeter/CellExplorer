@@ -7,7 +7,7 @@ nav_order: 8
 # Behavior pipeline tutorial
 {: .no_toc}
 
-This tutorial covers how to generate the behavioral structs, firing rate maps, and show them in CellExplorer.
+This tutorial covers how to generate the behavioral structs, firing rate maps, and show them in CellExplorer. The tutorial is also available as a Matlab script: [behavioral_data_Tutorial](https://github.com/petersenpeter/CellExplorer/blob/master/tutorials/behavioral_data_Tutorial.m).
 
 __The steps are:__
 1. Get session info and spikes 
@@ -68,7 +68,7 @@ intanDig = intanDigital2buzcode(session);
 
 ## 4. Define behavior struct with limits/boundaries/trials 
 
-### 4.1. Linear track
+### 4.a Linear track
 
 Now, we can realign the temporal states and generate the new behavioral data struct 
 ```m
@@ -125,7 +125,7 @@ saveStruct(lineartrack,'behavior','session',session);
 %lineartrack = loadStruct('lineartrack','behavior','session',session);
 ```
 
-### 4.2 Circular track
+### 4.b Circular track
 
 Now, we can realign the temporal states and generate the new behavioral data struct 
 
