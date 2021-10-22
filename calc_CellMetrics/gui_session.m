@@ -276,7 +276,10 @@ tabsList2 = {'General','Epochs','Animal subject','Extracellular','Spike sorting'
 if exist('parameters','var') && ~isempty(parameters)
     tabsList = ['parameters',tabsList];
     tabsList2 = ['CellExplorer',tabsList2];
+elseif ~exist('parameters','var')
+    parameters = [];
 end
+
 UI.panel.title2 = uicontrol('Parent',UI.panel.left,'Style', 'text', 'String', 'Groups','ForegroundColor','w','HorizontalAlignment','center', 'fontweight', 'bold','Units','normalized','BackgroundColor',[0. 0.3 0.7],'FontSize',11);
 for iTabs = 1:numel(tabsList)
     UI.buttons.(tabsList{iTabs}) = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Units','normalized','String',tabsList2{iTabs},'Callback',@changeTab);
@@ -572,7 +575,8 @@ UI.table.spikeSorting = uitable(UI.tabs.spikeSorting,'Data',tableData,'Position'
 uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add sorting','Callback',@(src,evnt)addSpikeSorting,'Units','normalized','tooltip','Add spike sorting set');
 uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit sorting','Callback',@(src,evnt)editSpikeSorting,'Units','normalized','tooltip','Edit selected spike sorting set');
 uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[235, 5, 130, 32],'String','Delete sorting(s)','Callback',@(src,evnt)deleteSpikeSorting,'Units','normalized','tooltip','Delete selected spike sorting set(s)');
-
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[500, 5, 50, 32],'String',char(8593),'Callback',@(src,evnt)moveUpSpikeSorting,'Units','normalized','tooltip','Move selected spike sorting(s) up');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[555, 5 50, 32],'String',char(8595),'Callback',@(src,evnt)moveDownSpikeSorting,'Units','normalized','tooltip','Move selected spike sorting(s) down');
 % % % % % % % % % % % % % % % % % % % % %
 % Brain regions
 
@@ -2471,6 +2475,37 @@ uiwait(UI.fig)
         end
     end
 
+    
+    function moveDownSpikeSorting
+        if ~isempty(UI.table.spikeSorting.Data) && ~isempty(find([UI.table.spikeSorting.Data{:,1}], 1))
+            cell2move = [UI.table.spikeSorting.Data{:,1}];
+            offset = cumsumWithReset2(cell2move);
+            newOrder = 1:length(session.spikeSorting);
+            newOrder1 = newOrder+offset;
+            [~,newOrder] = sort(newOrder1);
+            session.spikeSorting = session.spikeSorting(newOrder);
+            updateSpikeSortingList
+            UI.table.spikeSorting.Data(find(ismember(newOrder,find(cell2move))),1) = {true};
+        else
+            helpdlg('Please select the spike sorting(s) to move','Error')
+        end
+    end
+    
+    function moveUpSpikeSorting
+        if ~isempty(UI.table.spikeSorting.Data) && ~isempty(find([UI.table.spikeSorting.Data{:,1}], 1))
+            cell2move = [UI.table.spikeSorting.Data{:,1}];
+            offset = cumsumWithReset(cell2move);
+            newOrder = 1:length(session.spikeSorting);
+            newOrder1 = newOrder-offset;
+            [~,newOrder] = sort(newOrder1);
+            session.spikeSorting = session.spikeSorting(newOrder);
+            updateSpikeSortingList
+            UI.table.spikeSorting.Data(find(ismember(newOrder,find(cell2move))),1) = {true};
+        else
+            helpdlg('Please select the spike sorting(s) to move','Error')
+        end
+    end
+
     function addSpikeSorting(behaviorIn)
         % Add new behavior to session struct
         if exist('behaviorIn','var')
@@ -3042,7 +3077,7 @@ uiwait(UI.fig)
             end
             updateSpikeSortingList
         elseif evnt.Indices(1,2)==6
-            session.spikeSorting{edit_group}.relativePath = evnt.NewData;
+            session.spikeSorting{edit_group}.spikeSorter = evnt.NewData;
         elseif evnt.Indices(1,2)==7   
             session.spikeSorting{edit_group}.notes = evnt.NewData;
         elseif evnt.Indices(1,2)==8  
