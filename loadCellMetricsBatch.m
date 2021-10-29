@@ -216,7 +216,9 @@ for iii = 1:length(cell_metrics2)
                     fields1 = fieldnames(cell_metrics.(cell_metrics_fieldnames{ii}));
                     for k = 1:numel(fields1)
                         if isfield(cell_metrics_batch,cell_metrics_fieldnames{ii}) && isfield(cell_metrics_batch.(cell_metrics_fieldnames{ii}),fields1{k})
-                            cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}) = [cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}), cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k})+h];
+                            cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}) =...
+                                [reshape(cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}),1,[]),...
+                                reshape(cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k}),1,[])+h];
                         else
                             cell_metrics_batch.(cell_metrics_fieldnames{ii}).(fields1{k}) = cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k})+h;
                         end
