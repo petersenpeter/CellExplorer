@@ -934,7 +934,7 @@ if any(contains(parameters.metrics,{'spatial_metrics','all'})) && ~any(contains(
                 end
                 
                 for j = 1:cell_metrics.general.cellCount
-                    cell_metrics.spatialPeakRate(j) = max(firingRateMap.map{j});
+                    cell_metrics.spatialPeakRate(j) = max(firingRateMap.map{j}(:));
                     
                     % Finding place cells/fields
                     temp = place_cell_condition(firingRateMap.map{j});
