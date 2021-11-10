@@ -51,13 +51,14 @@ end
 toc
 
 if p.Results.showFigures
-figure, subplot(3,1,1)
-histogram(ThetaModulationIndex,40),xlabel('Theta modulation index'), ylabel('Count')
-subplot(3,1,2)
-histogram(BurstIndex_Royer2012,40),xlabel('BurstIndex Royer2012'), ylabel('Count')
-subplot(3,1,3)
-histogram(BurstIndex_Doublets,40),xlabel('BurstIndex Doublets'), ylabel('Count')
+    figure, subplot(3,1,1)
+    histogram(ThetaModulationIndex,40),xlabel('Theta modulation index'), ylabel('Count')
+    subplot(3,1,2)
+    histogram(BurstIndex_Royer2012,40),xlabel('BurstIndex Royer2012'), ylabel('Count')
+    subplot(3,1,3)
+    histogram(BurstIndex_Doublets,40),xlabel('BurstIndex Doublets'), ylabel('Count')
 end
+
 acg_metrics.acg_wide = acg_wide;
 acg_metrics.acg_narrow = acg_narrow;
 acg_metrics.thetaModulationIndex = ThetaModulationIndex;

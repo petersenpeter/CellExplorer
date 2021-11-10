@@ -22,10 +22,6 @@ function session = sessionTemplate(input1,varargin)
 % session = sessionTemplate(basepath,'showGUI',true)                % Load from basepath and shows gui
 % session = sessionTemplate(basepath,'basename','name_of_session')
 
-% By Peter Petersen
-% petersen.peter@gmail.com
-% Last edited: 30-07-2021
-
 p = inputParser;
 addRequired(p,'input1',@(X) (ischar(X) && exist(X,'dir')) || isstruct(X)); % specify a valid path or an existing session struct
 addParameter(p,'basename',[],@isstr);
@@ -54,7 +50,7 @@ elseif isstruct(input1)
     end
 end
 
-% Loading existing basename.session.mat file if exist
+% Loading existing basename.session.mat file if it exists
 if isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
@@ -95,7 +91,7 @@ end
 % Extracellular
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % This section will set some default extracellular parameters. You can comment this out if you are importing these parameters another way. 
-% Extracellular parameters from a Neuroscope xml and buzcode sessionInfo file will be imported as well
+% Extracellular parameters from a Neuroscope basename.xml and buzcode basename.sessionInfo.mat file will be imported as well
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'sr')) || isempty(session.extracellular.sr))
     session.extracellular.sr = 20000;           % Sampling rate of raw data
     session.extracellular.srLfp = 1250;         % Sampling rate of LFP data

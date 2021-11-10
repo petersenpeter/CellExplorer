@@ -103,12 +103,13 @@ addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 addParameter(p,'saveBackup',true,@islogical);
 addParameter(p,'fileFormat','mat',@isstr);
-addParameter(p,'summaryFigures',false,@islogical);
-addParameter(p,'debugMode',false,@islogical);
 addParameter(p,'transferFilesFromClusterpath',true,@islogical);
-addParameter(p,'showFigures',true,@islogical);
-addParameter(p,'showWaveforms',true,@islogical);
 
+% Plot related parameters
+addParameter(p,'showFigures',false,@islogical);
+addParameter(p,'showWaveforms',true,@islogical);
+addParameter(p,'summaryFigures',false,@islogical);
+addParameter(p,'debugMode',false,@islogical);     
  
 parse(p,varargin{:})
 
@@ -267,10 +268,10 @@ if ~isempty(parameters.spikes)
     parameters.spikes = [];
 else
     dispLog('Getting spikes',basename)
-    spikes{1} = loadSpikes('session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'getWaveformsFromDat',parameters.getWaveformsFromDat,'showWaveforms',parameters.showFigures);
+    spikes{1} = loadSpikes('session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'getWaveformsFromDat',parameters.getWaveformsFromDat,'showWaveforms',parameters.showWaveforms);
 end
 if parameters.getWaveformsFromDat && (~isfield(spikes{1},'processinginfo') || ~isfield(spikes{1}.processinginfo.params,'WaveformsSource') || ~strcmp(spikes{1}.processinginfo.params.WaveformsSource,'dat file') || spikes{1}.processinginfo.version<3.5 || parameters.forceReloadSpikes == true)
-    spikes{1} = loadSpikes('forceReload',true,'spikes',spikes{1},'session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'showWaveforms',parameters.showFigures);
+    spikes{1} = loadSpikes('forceReload',true,'spikes',spikes{1},'session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'showWaveforms',parameters.showWaveforms);
 end
 if ~isfield(spikes{1},'total')
     spikes{1}.total = cellfun(@(X) length(X),spikes{1}.times);
@@ -430,7 +431,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         field2copy = {'filtWaveform_std','rawWaveform','rawWaveform_std','rawWaveform_all','filtWaveform_all','timeWaveform_all','channels_all','filtWaveform','timeWaveform'};
         field2copyNewNames = {'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time'};
         if parameters.getWaveformsFromDat && (any(~isfield(spikes{spkExclu},field2copy)) || parameters.forceReload == true) && (spkExclu==2  || ~isempty(parameters.restrictToIntervals))
-            spikes{spkExclu} = getWaveformsFromDat(spikes{spkExclu},session,'showWaveforms',parameters.showFigures);
+            spikes{spkExclu} = getWaveformsFromDat(spikes{spkExclu},session,'showWaveforms',parameters.showWaveforms);
         end
         cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
         if isfield(spikes{spkExclu},'peakVoltage_expFitLengthConstant')
@@ -561,21 +562,24 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 ydata{j} = [];
             end
         end
+        
         if parameters.showFigures
-        fig1 = figure('Name', 'Length constant and Trilateration','NumberTitle', 'off','position',[100,100,1000,800]);
-        subplot(2,2,1), hold on
-        for j = 1:cell_metrics.general.cellCount
-            plot(xdata{j},ydata{j})
-        end
-        title('Spike amplitude (all)'), xlabel('Distance (µm)'), ylabel('µV')
-        subplot(2,2,2), hold off,
-        histogram(cell_metrics.peakVoltage_expFit,20), xlabel('Length constant (µm)')
-        subplot(2,2,3), hold on
-        plot(cell_metrics.peakVoltage,cell_metrics.peakVoltage_expFit,'ok')
-        ylabel('Length constant (µm)'), xlabel('Peak voltage (µV)')
-        subplot(2,2,4), hold on
-        plot(cell_metrics.general.chanCoords.x,cell_metrics.general.chanCoords.y,'.k'), hold on
-        plot(cell_metrics.trilat_x,cell_metrics.trilat_y,'ob'), xlabel('x position (µm)'), ylabel('y position (µm)')
+            fig1 = figure('Name', 'Length constant and Trilateration','position',[100,100,900,700],'visible','off');
+            movegui(fig1,'center')
+            subplot(2,2,1), hold on
+            for j = 1:cell_metrics.general.cellCount
+                plot(xdata{j},ydata{j})
+            end
+            title('Spike amplitude (all)'), xlabel('Distance (µm)'), ylabel('µV')
+            subplot(2,2,2), hold off,
+            histogram(cell_metrics.peakVoltage_expFit,20), xlabel('Length constant (µm)')
+            subplot(2,2,3), hold on
+            plot(cell_metrics.peakVoltage,cell_metrics.peakVoltage_expFit,'ok')
+            ylabel('Length constant (µm)'), xlabel('Peak voltage (µV)')
+            subplot(2,2,4), hold on
+            plot(cell_metrics.general.chanCoords.x,cell_metrics.general.chanCoords.y,'.k'), hold on
+            plot(cell_metrics.trilat_x,cell_metrics.trilat_y,'ob'), xlabel('x position (µm)'), ylabel('y position (µm)')
+            set(fig1,'visible','on')
         end
     end
     
@@ -679,7 +683,7 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
     end
     if ~all(isfield(cell_metrics,{'acg','thetaModulationIndex','burstIndex_Royer2012','burstIndex_Doublets','acg_tau_decay','acg_tau_rise'})) || parameters.forceReload == true
         dispLog('ACG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets',basename)
-        acg_metrics = calc_ACG_metrics(spikes{spkExclu},sr,'showFigures',parameters.showFigures);
+        acg_metrics = calc_ACG_metrics(spikes{spkExclu},sr,'showFigures',parameters.debugMode);
         
         cell_metrics.acg.wide = acg_metrics.acg_wide; % Wide: 1000ms wide CCG with 1ms bins
         cell_metrics.acg.narrow = acg_metrics.acg_narrow; % Narrow: 100ms wide CCG with 0.5ms bins

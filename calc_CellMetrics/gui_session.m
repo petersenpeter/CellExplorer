@@ -40,16 +40,20 @@ UI.list.species = {'Unknown','Rat', 'Mouse','Red-eared Turtles','Human'}; % anim
 % strain and strain_species must be added in a paired manner (number of strains == number of strain_species):
 UI.list.strain = {'Unknown','C57B1/6','B6/FVB Hybrid','BALB/cJ','Red-eared slider','DBA2/J','Brown Norway','Fischer 344','Long Evans','Sprague Dawleys','Wistar','Tumor','Epilepsy'}; % animal strains
 UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Human','Human'}; % animal strains parent in species, must be added as well with a new strain
+
 % data precision types (Matlab data types)
 UI.list.precision = {'double','single','int8','int16','int32','int64','uint8','uint16','uint32','uint64'};
 
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
 
-% Parameters in cell metrics pipeline
-UI.list.params = {'getWaveformsFromDat','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','showFigures','summaryFigures','forceReload','forceReloadSpikes','keepCellClassification','saveMat','saveBackup'};
+% Parameters in ProcessCellmetrics pipeline
+UI.list.params = {'getWaveformsFromDat','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','showWaveforms','showFigures','summaryFigures','debugMode','forceReload','forceReloadSpikes','keepCellClassification','saveMat','saveBackup'};
+UI.list.params_tooltip = {'Spike waveforms are extracted from the raw data','exclude manipulation intervals when calculating metrics','Shows a GUI for manual curation of monosynaptic connections','Detect inhibitory connections (more prone to false positives)','Shows the waveform extraction figure','Shows intermediate figures generated in ProcessCellmetrics','Show a summary figure per cell','Shows figures for debugging the cell metrics extraction','force reload all metrics','force reload spikes data','Keep existing cell-type classification','Save cell metrics','Make backup of existing cell_metrics'};
+
 if enableDatabase
     UI.list.params =  {UI.list.params{:},'submitToDatabase'};
+    UI.list.params_tooltip =  {UI.list.params_tooltip{:},'Submit cell metrics to the Buzsaki lab databank'};
 end
 
 layout = {};
@@ -234,6 +238,10 @@ uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate common coordinates',men
 % CellExplorer
 UI.menu.CellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
 uimenu(UI.menu.CellExplorer.topMenu,menuLabel,'Validate metadata',menuSelectedFcn,@performStructValidation,'Accelerator','V');
+uimenu(UI.menu.CellExplorer.topMenu,menuLabel,'Edit preferences',menuSelectedFcn,@edit_preferences_ProcessCellMetrics);
+
+%     uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 210, 195, 30],'String','Validate metadata','Callback',@(src,evnt)performStructValidation,'Units','normalized','tooltip','Validate metadata for CellExplorer');
+%     uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 180, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics,'tooltip','Edit preferences for ProcessCellmetrics');
 
 % Database
 UI.menu.buzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
@@ -315,15 +323,19 @@ if exist('parameters','var') && ~isempty(parameters)
 
     % Parameters
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Parameters', 'Position', [10, 320, 288, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    
     for iParams = 1:length(UI.list.params)
         if iParams <=4
             offset = 10;
+            numOffset = 0;
         elseif iParams >8
             offset = 410;
+            numOffset = 8;
         else
             offset = 210;
+            numOffset = 4;
         end
-        UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.parameters,'Style','checkbox','Position',[offset 305-rem(iParams-1,4)*18 260 15],'Units','normalized','String',UI.list.params{iParams});
+        UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.parameters,'Style','checkbox','Position',[offset 305-(iParams-numOffset-1)*18 260 15],'Units','normalized','String',UI.list.params{iParams},'tooltip',UI.list.params_tooltip{iParams});
     end
     
     if isdeployed
@@ -337,14 +349,12 @@ if exist('parameters','var') && ~isempty(parameters)
     end
     
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Cell-type classification schema', 'Position', [10, 225, 200, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.edit.classification_schema = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', classification_schema_list, 'value', classification_schema_value, 'Position', [5, 200, 200, 20],'HorizontalAlignment','left','Units','normalized');
+    UI.edit.classification_schema = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', classification_schema_list, 'value', classification_schema_value, 'Position', [5, 200, 180, 20],'HorizontalAlignment','left','Units','normalized');
     
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'File format', 'Position', [220, 225, 200, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.edit.fileFormat = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', {'mat','nwb','json'}, 'value', 1, 'Position', [215, 200, 200, 20],'HorizontalAlignment','left','Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'File format', 'Position', [220, 225, 100, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.edit.fileFormat = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', {'mat','nwb','json'}, 'value', 1, 'Position', [215, 200, 180, 20],'HorizontalAlignment','left','Units','normalized');
     UI.edit.fileFormat.Value = find(strcmp({'mat','nwb','json'},parameters.fileFormat));
-    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 210, 195, 30],'String','Validate metadata','Callback',@(src,evnt)performStructValidation,'Units','normalized','tooltip','Validate metadata for CellExplorer');
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Preferences', 'Position', [10, 175, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.buttons.preferences = uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 180, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics,'tooltip','Edit preferences for ProcessCellmetrics');
     UI.table.preferences = uitable(UI.tabs.parameters,'Data',{},'Position',[5, 5, 605 , 170],'ColumnWidth',{100 160 320},'columnname',{'Category','Name','Value'},'RowName',[],'ColumnEditable',[false false false],'Units','normalized');
 end
 
@@ -1263,7 +1273,7 @@ uiwait(UI.fig)
     
     function edit_preferences_ProcessCellMetrics(~,~)
         edit preferences_ProcessCellMetrics
-        MsgLog('Prerences are located in preferences_ProcessCellMetrics.m. If you do any changes you have to rerun ProcessCellMetrics.',2)
+        MsgLog('Prerences are located in preferences_ProcessCellMetrics.m. Please rerun ProcessCellMetrics when making changes.',2)
     end
     function buttonUploadToDB
         listing = fieldnames(session);
