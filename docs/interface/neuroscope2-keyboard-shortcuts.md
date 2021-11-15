@@ -20,7 +20,7 @@ dl {
     text-align: right;
     color: black;
     font-weight: normal;
-    font-size: 12px;
+    font-size: 14px;
   }
   dt::after {
     content: " ";
@@ -28,7 +28,7 @@ dl {
   dd {
     margin: 0 0 0 110px;
     padding: 0 0 0.5em 0;
-    font-size: 12px;
+    font-size: 14px;
   }
 </style>
 
@@ -61,11 +61,11 @@ Keyboard shortcuts allow you to quickly interact with your data in NeuroScope2. 
   <dd>Forward in time (quarter window length)</dd>
   <dt>< (left)</dt>
   <dd>Backwards in time (quarter window length)</dd>
-  <dt>Shift + < (right)</dt>
+  <dt>Shift + > (right)</dt>
   <dd>Forward in time (full window length)</dd>
   <dt>Shift + < (left)</dt>
   <dd>Backwards in time (full window length)</dd>
-  <dt>Alt + < (right)</dt>
+  <dt>Alt + > (right)</dt>
   <dd>Forward in time (a tenth window length)</dd>
   <dt>Alt + < (left)</dt>
   <dd>Backwards in time (a tenth window length)</dd>
