@@ -3,8 +3,7 @@ layout: default
 title: Mouse and keyboard shortcuts
 parent: NeuroScope2
 grand_parent: Graphical interface
-nav_order: 1
-has_children: false
+nav_order: 2
 ---
 <style>
 .main-content dd{
@@ -17,9 +16,11 @@ dl {
   dt {
     float: left;
     clear: left;
-    width: 100px;
+    width: 150px;
     text-align: right;
     color: black;
+    font-weight: normal;
+    font-size: 10px;
   }
   dt::after {
     content: " ";
