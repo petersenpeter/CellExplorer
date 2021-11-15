@@ -20,7 +20,7 @@ dl {
     text-align: right;
     color: black;
     font-weight: normal;
-    font-size: 10px;
+    font-size: 12px;
   }
   dt::after {
     content: " ";
@@ -28,6 +28,7 @@ dl {
   dd {
     margin: 0 0 0 110px;
     padding: 0 0 0.5em 0;
+    font-size: 12px;
   }
 </style>
 
