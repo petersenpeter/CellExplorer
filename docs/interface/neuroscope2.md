@@ -3,6 +3,7 @@ layout: default
 title: NeuroScope2
 parent: Graphical interface
 nav_order: 9
+has_children: true
 ---
 {: .no_toc}
 # NeuroScope2
