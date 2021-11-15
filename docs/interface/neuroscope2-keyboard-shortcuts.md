@@ -2,7 +2,9 @@
 layout: default
 title: Mouse and keyboard shortcuts
 parent: NeuroScope2
+grand_parent: Graphical interface
 nav_order: 1
+has_children: false
 ---
 <style>
 .main-content dd{
