@@ -49,7 +49,6 @@ Here is a detailed description of each of the menu elements of NeuroScope2.
 
 | Elements     | Description       | 
 |:-------------|:------------------|
-
 | Open group data dialog | Opens the group data dialog | 
 | Save cell_metrics | Save cell metrics | 
 
