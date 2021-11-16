@@ -2,6 +2,9 @@ contact_links:
   - name: "Discussions"
     url: https://github.com/petersenpeter/CellExplorer/discussions
     about: For any other questions - including if you are unsure about how to perform a given action.
+  - name: "Online documentation"
+    url: https://cellexplorer.org/
+    about: Did you check out the online documentation of data structure, processing pipeline and the graphical interfaces?
   - name: "Online tutorials"
     url: https://cellexplorer.org/tutorials/tutorials/
     about: Did you check out the tutorials to help you get started using CellExplorer?
