@@ -1,0 +1,8 @@
+contact_links:
+  - name: "Other CellExplorer questions, including if you're not sure what to do."
+    url: https://github.com/petersenpeter/CellExplorer/discussions
+    about: Search for similar questions or ask for help there.
+  - name: "Did you check out the online tutorials?"
+    url: https://cellexplorer.org/tutorials/tutorials/
+    about: Tutorials to help you get started using CellExplorer.
+    
