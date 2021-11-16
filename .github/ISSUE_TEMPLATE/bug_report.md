@@ -1,8 +1,8 @@
 ---
 name: Issue report
-about: Create a report to help us improve
+about: Create a report to help us improve CellExplorer
 title: ''
-labels: ''
+labels: bug
 assignees: ''
 
 ---
@@ -26,3 +26,6 @@ If applicable, add screenshots to help explain your problem.
 
 **Additional context**
 Add any other context about the problem here.
+
+**Matlab setpath**
+A common problem is interferences with other toolboxes. If possible, please provide your search path by typing `path` in Matlab:
