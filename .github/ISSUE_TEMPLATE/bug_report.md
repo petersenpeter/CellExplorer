@@ -1,11 +1,17 @@
 ---
-name: Bug report
+name: Issue report
 about: Create a report to help us improve
 title: ''
 labels: ''
 assignees: ''
 
 ---
+
+**Operating system**
+Please provide your operating system
+
+**Matlab version**
+Please provide your Matlab version
 
 **Describe the bug**
 A clear and concise description of what the bug is.
@@ -17,9 +23,6 @@ Please paste your error log here
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
- - OS: 
- - Matlab version: 
 
 **Additional context**
 Add any other context about the problem here.
