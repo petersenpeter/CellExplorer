@@ -5,7 +5,7 @@ for i = 1:length(cellTypes)
     clusClas(strcmp(cell_metrics.putativeCellType,cellTypes{i}))=i;
 end
 
-% Getting connection paris and cells with connections
+% Getting connection pairs and cells with connections
 putativeConnections = cell_metrics.putativeConnections.excitatory;
 putativeConnections_inh = cell_metrics.putativeConnections.inhibitory;
 [cellSubset,~,pairsSubset] = unique([putativeConnections;putativeConnections_inh]);
