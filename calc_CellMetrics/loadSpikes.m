@@ -184,6 +184,7 @@ if parameters.forceReload
             spike_clusters = unique(spike_cluster_index);
             filename1 = fullfile(clusteringpath_full,'cluster_group.tsv');
             filename2 = fullfile(clusteringpath_full,'cluster_groups.csv');
+            filename3 = fullfile(clusteringpath_full,'cluster_KSLabel.tsv');
             if exist(fullfile(clusteringpath_full, 'cluster_ids.npy'),'file') && exist(fullfile(clusteringpath_full, 'shanks.npy'),'file') && exist(fullfile(clusteringpath_full, 'peak_channel.npy'),'file')
                 cluster_ids = readNPY(fullfile(clusteringpath_full, 'cluster_ids.npy'));
                 unit_shanks = readNPY(fullfile(clusteringpath_full, 'shanks.npy'));
@@ -198,16 +199,26 @@ if parameters.forceReload
             if exist(fullfile(clusteringpath_full,'cluster_info.tsv'),'file')
                 cluster_info = tdfread(fullfile(clusteringpath_full,'cluster_info.tsv'));
             end
+            delimiter = '\t';
+            startRow = 2;
+            formatSpec = '%f%s%[^\n\r]';
             if exist(filename1,'file')
-                filename = filename1;
+                % Verifying the file is not empty
+                fileID = fopen(filename1,'r');
+                dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
+                fclose(fileID);
+                if isempty(dataArray{1})
+                    disp(['Noc clusters found in ', filename1,'. Will use the labels from KiloSort'])
+                    filename = filename3;
+                else
+                    filename = filename1;
+                end                    
             elseif exist(filename2,'file')
                 filename = filename2;
             else
                 error('Phy: No cluster group file found (cluster_group.tsv or cluster_groups.csv)')
             end
-            delimiter = '\t';
-            startRow = 2;
-            formatSpec = '%f%s%[^\n\r]';
+            
             fileID = fopen(filename,'r');
             dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
             fclose(fileID);

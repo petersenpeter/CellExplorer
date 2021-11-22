@@ -176,8 +176,9 @@ hManager = uigetmodemanager(UI.fig);
 UI = preferences_CellExplorer(UI);
 
 % Setting last used preferences
-UI.preferences = setLayout_CellExplorer(UI.preferences,1);
-
+if ~summaryFigures
+    UI.preferences = setLayout_CellExplorer(UI.preferences,1);
+end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Checking for Matlab version requirement (Matlab R2017a)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -405,7 +406,9 @@ if ishandle(UI.fig)
 end
 
 % Saving layout-preferences
-setLayout_CellExplorer(UI.preferences,2);
+if ~summaryFigures
+    setLayout_CellExplorer(UI.preferences,2);
+end
 
 % Tracking usage (anonymously)
 trackGoogleAnalytics('CellExplorer',CellExplorerVersion,'metrics',cell_metrics); % Anonymous tracking of usage
@@ -1846,7 +1849,7 @@ end
         elseif strcmp(customPlotSelection,'Waveforms (image)')
             % All waveforms, zscored and shown in a imagesc plot
             plotAxes.XLabel.String = 'Time (ms)';
-            plotAxes.YLabel.String = ['Cells (Sorting: ', UI.preferences.sortingMetric,')'];
+            plotAxes.YLabel.String = ['Cells (sorted)'];
             plotAxes.Title.String = customPlotSelection;
             % Sorted according to trough-to-peak
             [~,UI.preferences.troughToPeakSorted] = sort(cell_metrics.(UI.preferences.sortingMetric)(UI.params.subset));
@@ -1990,8 +1993,8 @@ end
             end
             
         elseif strcmp(customPlotSelection,'Connectivity matrix')
-            plotAxes.XLabel.String = ['Inbound cells (sorting: ', UI.preferences.sortingMetric,')'];
-            plotAxes.YLabel.String = ['Outbound cells (sorting: ', UI.preferences.sortingMetric,')'];
+            plotAxes.XLabel.String = ['Inbound cells (sorted)'];
+            plotAxes.YLabel.String = ['Outbound cells (sorted)'];
             plotAxes.Title.String = customPlotSelection;
             subsetPlots.type = 'image';  % points, curves, image
             if UI.BatchMode
@@ -2552,7 +2555,7 @@ end
             end
             
         elseif strcmp(customPlotSelection,'ISIs (image)')
-            plotAxes.YLabel.String = ['Cells (sorting: ', UI.preferences.sortingMetric,')'];
+            plotAxes.YLabel.String = ['Cells (sorted)'];
             plotAxes.Title.String = customPlotSelection;
             [~,burstIndexSorted] = sort(cell_metrics.(UI.preferences.sortingMetric)(UI.params.subset));
             [~,idx] = find(UI.params.subset(burstIndexSorted) == ii);
@@ -2579,7 +2582,7 @@ end
             
         elseif strcmp(customPlotSelection,'ACGs (image)')
             % All ACGs shown in an image (z-scored). Sorted by the burst-index from Royer 2012
-            plotAxes.YLabel.String = ['Cells (sorting: ', UI.preferences.sortingMetric,')'];
+            plotAxes.YLabel.String = ['Cells (sorted)'];
             plotAxes.Title.String = customPlotSelection;
             [~,burstIndexSorted] = sort(cell_metrics.(UI.preferences.sortingMetric)(UI.params.subset));
             [~,idx] = find(UI.params.subset(burstIndexSorted) == ii);
@@ -2841,7 +2844,8 @@ end
                     line(cell_metrics.spikes.times{ii},idx*ones(numel(cell_metrics.spikes.times{ii}),1),'HitTest','off','Marker',UI.preferences.rasterMarker,'LineStyle','none','color', 'k'), axis tight
                 end
                 
-                axis tight, ax6 = axis;
+                axis tight, ylim([-0.5,length(subset222)+0.5])
+                ax6 = axis;
                 if isfield(general,'epochs')
                     epochVisualization(general.epochs,plotAxes,-0.1*ax6(4),-0.005*ax6(4),ax6(4));
                     axis tight, ax6 = axis;
@@ -8744,11 +8748,12 @@ end
             plotCount = 3;
         else
             plotCount = 4;
-            
+            plotOptions1 = plotOptions;            
         end
         [plotRows,~]= numSubplots(length(plotOptions1)+plotCount);
         
         fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.params.figureSize,'visible','off');
+        movegui(fig,'center')
         if numel(cellIDs)>1
             ce_waitbar1 = waitbar(0,' ','name','Generating summary figure(s)');
         else
@@ -8760,6 +8765,9 @@ end
             elseif ~ishandle(fig) | (~ishandle(ce_waitbar1) & numel(cellIDs)>1)
                 disp('Summary figures canceled by user');
                 break
+            end
+            if ishandle(fig) & plotCellIDs~=-1
+                clf(fig)
             end
             
             if UI.BatchMode
@@ -8878,7 +8886,13 @@ end
         if ishandle(ce_waitbar1)
             close(ce_waitbar1)
         end
-        movegui(fig,'center'), set(fig,'visible','on')
+        
+        if ishandle(fig)
+            set(fig,'visible','on')
+            if plotCellIDs~=-1
+                close(fig)
+            end
+        end        
         
         function ce_savefigure2(fig,savePathIn,fileNameIn,dispSave)
             savePath = fullfile(savePathIn,'summaryFigures');
@@ -8886,9 +8900,7 @@ end
                 mkdir(savePathIn,'summaryFigures')
             end
             saveas(fig,fullfile(savePath,[fileNameIn,'.png']))
-            if plotCellIDs~=-1
-                clf(fig)
-            end
+            
             if exist('dispSave','var') && dispSave
                 disp(['Figure saved: ', fileNameIn])
             end

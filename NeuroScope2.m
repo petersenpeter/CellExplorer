@@ -406,7 +406,7 @@ end
         UI.panel.center = uix.VBox( 'Parent', UI.grid_panels, 'Spacing', 0, 'Padding', 0 ); % Center flex box
         % UI.panel.right = uix.VBoxFlex('Parent',UI.grid_panels,'position',[0 0.66 0.26 0.31]); % Right panel
         set(UI.grid_panels, 'Widths', [220 -1],'MinimumWidths',[220 1]); % set grid panel size
-        
+        set(UI.grid_panels, 'Widths', [220 -1],'MinimumWidths',[5 1]); % set grid panel size
         % Separation of the center box into three panels: title panel, plot panel and lower info panel
         UI.panel.plots = uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.center,'BackgroundColor','k'); % Main plot panel
         UI.panel.info  = uix.HBox('Parent',UI.panel.center, 'Padding', 1); % Lower info panel
@@ -414,9 +414,12 @@ end
         
         % Left panel tabs
         UI.uitabgroup = uiextras.TabPanel('Parent', UI.panel.left, 'Padding', 1,'FontSize',11 ,'TabSize',60);
-        UI.panel.general.main  = uix.VBox('Parent',UI.uitabgroup, 'Padding', 1);
-        UI.panel.spikedata.main  = uix.VBox('Parent',UI.uitabgroup, 'Padding', 1);
-        UI.panel.other.main  = uix.VBox('Parent',UI.uitabgroup, 'Padding', 1);
+        UI.panel.general.main1  = uix.ScrollingPanel('Parent',UI.uitabgroup, 'Padding', 0 );
+        UI.panel.general.main  = uix.VBox('Parent',UI.panel.general.main1, 'Padding', 1);
+        UI.panel.spikedata.main1  = uix.ScrollingPanel('Parent',UI.uitabgroup, 'Padding', 0 );
+        UI.panel.spikedata.main  = uix.VBox('Parent',UI.panel.spikedata.main1, 'Padding', 1);
+        UI.panel.other.main1  = uix.ScrollingPanel('Parent',UI.uitabgroup, 'Padding', 0 );
+        UI.panel.other.main  = uix.VBox('Parent',UI.panel.other.main1, 'Padding', 1);
         UI.uitabgroup.TabNames = {'General', 'Spikes','Other'};
 
         % % % % % % % % % % % % % % % % % % % % % %
@@ -498,7 +501,9 @@ end
         uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
             
         % Defining flexible panel heights
-        set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 40 150],'MinimumHeights',[65 210 100 35 100 35 50 30 150]);
+        set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 40 150],'MinimumHeights',[65 210 160 35 140 35 50 30 150]);
+        UI.panel.general.main1.MinimumWidths = 198;
+        UI.panel.general.main1.MinimumHeights = 935; 
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 2. PANEL: Spikes related metrics
@@ -554,7 +559,9 @@ end
         UI.panel.spikesorting.spykingcircusBelowTrace = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.505 0 0.485 0.32], 'value', 0,'String','Below traces','Callback',@showSpykingcircus,'KeyPressFcn', @keyPress,'tooltip','Show SpyKING CIRCUS spikes below trace');
 
         % Defining flexible panel heights
-        set(UI.panel.spikedata.main, 'Heights', [95 170 100 -200 35 100 95],'MinimumHeights',[95 170 60 60 35 60 95]);
+        set(UI.panel.spikedata.main, 'Heights', [95 170 100 -200 35 100 95],'MinimumHeights',[95 170 60 160 35 60 95]);
+        UI.panel.spikedata.main1.MinimumWidths = 198;
+        UI.panel.spikedata.main1.MinimumHeights = 760;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 3. PANEL: Other datatypes
@@ -640,6 +647,8 @@ end
         
         % Defining flexible panel heights
         set(UI.panel.other.main, 'Heights', [200 110 95 140 95 50 90],'MinimumHeights',[220 120 100 150 150 50 90]);
+        UI.panel.other.main1.MinimumWidths = 198;
+        UI.panel.other.main1.MinimumHeights = 880;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -725,17 +734,17 @@ end
             plotTimeSeriesData(t0,t0+UI.settings.windowDuration,'m')
         end
         
-        % Intan analog
+        % Analog time series
         if UI.settings.intan_showAnalog
             plotAnalog('adc')
         end
         
-        % Intan aux
+        % Time series aux (analog)
         if UI.settings.intan_showAux
             plotAnalog('aux')
         end
         
-        % Intan digital
+        % Digital time series
         if UI.settings.intan_showDigital
             plotDigital('dig')
         end
@@ -1088,6 +1097,8 @@ end
             % Drawing background
             p1 = patch([5*UI.settings.windowDuration/6,UI.settings.windowDuration,UI.settings.windowDuration,5*UI.settings.windowDuration/6]-0.01,[0.75 0.75 1 1]-0.01,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
             alpha(p1,0.4);
+            
+            % Drawing noise curves
             for iShanks = UI.settings.electrodeGroupsToPlot
                 channels = UI.channels{iShanks};
                 [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
@@ -1098,6 +1109,8 @@ end
                 line((x_data-xlim1(1))/diff(xlim1)*UI.settings.windowDuration/6+5*UI.settings.windowDuration/6-0.01,(y_data-ylim1(1))/diff(ylim1)*0.25+0.74, 'HitTest','off','Color', markerColor,'Marker','o','LineStyle','-','linewidth',2,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
                 k_channels = k_channels + numel(channels);
             end
+            text(5*UI.settings.windowDuration/6-0.01,0.741,[' ', num2str(ylim1(1),3),char(181),'V'],'FontWeight', 'Bold','VerticalAlignment', 'bottom','HorizontalAlignment','left','color',UI.settings.primaryColor,'FontSize',12)
+            text(5*UI.settings.windowDuration/6-0.01,0.989,[' ', num2str(ylim1(2),3),char(181),'V'],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left','color',UI.settings.primaryColor,'FontSize',12)
         end
         
         % Plotting channel numbers
