@@ -3365,15 +3365,16 @@ end
             chanCoordsVisualization(data.session.extracellular.chanCoords,UI.chanCoordsAxes);
             updateChanCoordsColorHighlight
             
-            x_lim_data = [min(data.session.extracellular.chanCoords.x),max(data.session.extracellular.chanCoords.x)];
-            y_lim_data = [min(data.session.extracellular.chanCoords.y),max(data.session.extracellular.chanCoords.y)];
-            x_padding = 0.03*diff(x_lim_data);
-            y_padding = 0.03*diff(y_lim_data);
-            if ~verLessThan('matlab', '9.4')
+            image_toolbox_installed = isToolboxInstalled('Image Processing Toolbox');
+            if ~verLessThan('matlab', '9.4') & image_toolbox_installed
+                x_lim_data = [min(data.session.extracellular.chanCoords.x),max(data.session.extracellular.chanCoords.x)];
+                y_lim_data = [min(data.session.extracellular.chanCoords.y),max(data.session.extracellular.chanCoords.y)];
+                x_padding = 0.03*diff(x_lim_data);
+                y_padding = 0.03*diff(y_lim_data);
                 UI.plotpoints.roi_ChanCoords = drawrectangle(UI.chanCoordsAxes,'Position',[x_lim_data(1)-x_padding,y_lim_data(1)-y_padding,1.06*diff(x_lim_data),1.06*diff(y_lim_data)],'LineWidth',2,'FaceAlpha',0.1,'Deletable',false,'FixedAspectRatio',false);
                 addlistener(UI.plotpoints.roi_ChanCoords,'ROIMoved',@updateChanCoordsPlot);
             else
-                warning('Channel coordinates selection only available with Matlab 2018b or later')
+                warning('Channel coordinates selection only available with Matlab 2018b or later and with the Image Processing Toolbox')
             end
         end
         
