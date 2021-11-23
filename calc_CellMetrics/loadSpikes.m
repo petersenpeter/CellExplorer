@@ -174,13 +174,35 @@ if parameters.forceReload
             end
             
         case 'phy' % Loading phy
+            % Required files:
+            % spike_clusters.npy    # Spike cluster indexes
+            % spike_times.npy       # Spike timestamps
+            %
+            % Phy1: 
+            % cluster_group.tsv
+            %
+            % Phy2: 
+            % cluster_groups.csv or cluster_KSLabel.tsv
+            % cluster_info
+            %
+            % Optional:
+            % amplitudes.npy        # Spike amplitudes
+            %
+            % Optional (from Phy plugins):
+            % cluster_ids.npy       # List of cluster ids
+            % shanks.npy            # List of shank ids for the clusters in cluster_ids
+            % peak_channel.npy      # List of peak channels for the clusters in cluster_ids
+            % 
+            
             if ~exist('readNPY.m','file')
                 error('''readNPY.m'' is not in your path and is required to load the python data. Please download it here: https://github.com/kwikteam/npy-matlab.')
             end
             disp('loadSpikes: Loading Phy data')
             spike_cluster_index = readNPY(fullfile(clusteringpath_full, 'spike_clusters.npy'));
             spike_times = readNPY(fullfile(clusteringpath_full, 'spike_times.npy'));
-            spike_amplitudes = readNPY(fullfile(clusteringpath_full, 'amplitudes.npy'));
+            if exist(fullfile(clusteringpath_full, 'amplitudes.npy'),'file')
+                spike_amplitudes = readNPY(fullfile(clusteringpath_full, 'amplitudes.npy'));
+            end
             spike_clusters = unique(spike_cluster_index);
             filename1 = fullfile(clusteringpath_full,'cluster_group.tsv');
             filename2 = fullfile(clusteringpath_full,'cluster_groups.csv');
@@ -233,6 +255,13 @@ if parameters.forceReload
                             spikes.ids{UID} = spikes.ids{UID}(ind_unique);
                             spikes.times{UID} = spikes.ts{UID}/session.extracellular.sr;
                             spikes.cluID(UID) = dataArray{1}(i);
+                            spikes.total(UID) = length(spikes.ts{UID});
+                            
+                            if exist('spike_amplitudes','var')
+                                spikes.amplitudes{UID} = double(spike_amplitudes(spikes.ids{UID}));
+                            end
+                            
+                            % Phy plugins:
                             if exist('cluster_ids','var')
                                 cluster_id = find(cluster_ids == spikes.cluID(UID));
                                 spikes.maxWaveformCh1(UID) = double(peak_channel(cluster_id)); % index 1;
@@ -245,6 +274,7 @@ if parameters.forceReload
                                     end
                                 end
                             end
+                            
                             % New file data format of phy2
                             if exist('cluster_info','var')
                                 if isfield(cluster_info,'id')
@@ -257,8 +287,7 @@ if parameters.forceReload
 %                                 spikes.phy_purity(UID) = cluster_info.purity(temp)+1; % cluster purity
                                 spikes.phy_amp(UID) = cluster_info.amp(temp)+1; % spike amplitude
                             end
-                            spikes.total(UID) = length(spikes.ts{UID});
-                            spikes.amplitudes{UID} = double(spike_amplitudes(spikes.ids{UID}));
+
                             UID = UID+1;
                         end
                     end
@@ -269,7 +298,10 @@ if parameters.forceReload
                     spikes.ids{UID} = spikes.ids{UID}(ind_unique);
                     spikes.times{UID} = spikes.ts{UID}/session.extracellular.sr;
                     spikes.cluID(UID) = dataArray{1}(i);
-                    spikes.amplitudes{UID} = double(spike_amplitudes(spikes.ids{UID}))';
+                    
+                    if exist('spike_amplitudes','var')
+                        spikes.amplitudes{UID} = double(spike_amplitudes(spikes.ids{UID}))';
+                    end
                     UID = UID+1;
                 end
             end

@@ -1258,8 +1258,10 @@ uiwait(UI.fig)
                 web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
             case 'Support'
                 web('https://cellexplorer.org/#support','-new','-browser')
-            case {'- Submit feature request','- Report an issue'}
-                web('https://github.com/petersenpeter/CellExplorer/issues/new','-new','-browser')
+            case '- Report an issue'
+                web('https://github.com/petersenpeter/CellExplorer/issues/new?assignees=&labels=bug&template=bug_report.md&title=','-new','-browser')
+            case '- Submit feature request'
+                web('https://github.com/petersenpeter/CellExplorer/issues/new?assignees=&labels=enhancement&template=feature_request.md&title=','-new','-browser')
             otherwise
                 web('https://cellexplorer.org/','-new','-browser')
         end

@@ -1,8 +1,6 @@
 function basename = basenameFromBasepath(basepath)
-    % Determines a basename from a basepath by scanning the directory 
+    % Determines a basename from a basepath by scanning the directory for common files. If no local files are detected it determines the basename from the directory name
     % Part of CellExplorer, by Peter Petersen
-    
-    % Uses local files to for CellExplorer specific files from the basepath and if none are present it determines the basename from the directory name
     
     extensions = {'.session.mat','.xml','.lfp','.dat'};
     basename = '';
@@ -23,7 +21,6 @@ function basename = basenameFromBasepath(basepath)
         end
     end
     if isempty(basename)
-        disp('Failed to find basepath files');
         [~,basename,~] = fileparts(basepath);
     end
 end

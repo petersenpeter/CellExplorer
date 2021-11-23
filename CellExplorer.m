@@ -1691,8 +1691,8 @@ end
                 set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                 if ~isempty(set1) && numel(set1)>1
                     xdata = cell_metrics.waveforms.time_zscored(:)';
-                    waveforms_mean = nanmean(cell_metrics.waveforms.(zscoreWaveforms1)(:,set1)');
-                    waveforms_std = nanstd(cell_metrics.waveforms.(zscoreWaveforms1)(:,set1)');
+                    waveforms_mean = mean(cell_metrics.waveforms.(zscoreWaveforms1)(:,set1)','omitnan');
+                    waveforms_std = std(cell_metrics.waveforms.(zscoreWaveforms1)(:,set1)','omitnan');
                     patch([xdata,flip(xdata)], [waveforms_mean+waveforms_std,flip(waveforms_mean-waveforms_std)],UI.classes.colors(k,:),'EdgeColor','none','FaceAlpha',.2,'HitTest','off')
                     line(xdata,waveforms_mean, 'color', [UI.classes.colors(k,:)],'HitTest','off','linewidth',2)
                 end
@@ -2234,8 +2234,8 @@ end
                 for k = 1:length(classes2plotSubset)
                     set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                     xdata = [-100:100]/2;
-                    ACGs_mean = nanmean(cell_metrics.acg.narrow(:,set1)./max(cell_metrics.acg.narrow(:,set1)),2)';
-                    ACGs_std = nanstd(cell_metrics.acg.narrow(:,set1)./max(cell_metrics.acg.narrow(:,set1)),0,2)';
+                    ACGs_mean = mean(cell_metrics.acg.narrow(:,set1)./max(cell_metrics.acg.narrow(:,set1)),2,'omitnan')';
+                    ACGs_std = std(cell_metrics.acg.narrow(:,set1)./max(cell_metrics.acg.narrow(:,set1)),0,2,'omitnan')';
                     if plotAcgYLog
                         ACGs_mean(ACGs_mean < 0.1)=0.1;
                     end
@@ -2254,8 +2254,8 @@ end
                 for k = 1:length(classes2plotSubset)
                     set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                     xdata = [-30:30]/2;
-                    ACGs_mean = nanmean(cell_metrics.acg.narrow(41+30:end-40-30,set1)./max(cell_metrics.acg.narrow(41+30:end-40-30,set1)),2)';
-                    ACGs_std = nanstd(cell_metrics.acg.narrow(41+30:end-40-30,set1)./max(cell_metrics.acg.narrow(41+30:end-40-30,set1)),0,2)';
+                    ACGs_mean = mean(cell_metrics.acg.narrow(41+30:end-40-30,set1)./max(cell_metrics.acg.narrow(41+30:end-40-30,set1)),2,'omitnan')';
+                    ACGs_std = std(cell_metrics.acg.narrow(41+30:end-40-30,set1)./max(cell_metrics.acg.narrow(41+30:end-40-30,set1)),0,2,'omitnan')';
                     if plotAcgYLog
                         ACGs_mean(ACGs_mean < 0.1)=0.1;
                     end
@@ -2277,8 +2277,8 @@ end
                     for k = 1:length(classes2plotSubset)
                         set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                         xdata = general.acgs.log10';
-                        ACGs_mean = nanmean(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),2)';
-                        ACGs_std = nanstd(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),0,2)';
+                        ACGs_mean = mean(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),2,'omitnan')';
+                        ACGs_std = std(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),0,2,'omitnan')';
                         if plotAcgYLog
                             ACGs_mean(ACGs_mean < 0.1)=0.1;
                         end
@@ -2296,8 +2296,8 @@ end
                     for k = 1:length(classes2plotSubset)
                         set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                         xdata = general.acgs.log10';
-                        ACGs_mean = nanmean(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),2)';
-                        ACGs_std = nanstd(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),0,2)';
+                        ACGs_mean = mean(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),2,'omitnan')';
+                        ACGs_std = std(cell_metrics.acg.log10(:,set1)./max(cell_metrics.acg.log10(:,set1)),0,2,'omitnan')';
                         if plotAcgYLog
                             ACGs_mean(ACGs_mean < 0.1)=0.1;
                         end
@@ -2318,8 +2318,8 @@ end
                 for k = 1:length(classes2plotSubset)
                     set1 = intersect(find(UI.classes.plot==classes2plotSubset(k)), plotSubset);
                     xdata = [-500:500];
-                    ACGs_mean = nanmean(cell_metrics.acg.wide(:,set1)./max(cell_metrics.acg.wide(:,set1)),2)';
-                    ACGs_std = nanstd(cell_metrics.acg.wide(:,set1)./max(cell_metrics.acg.wide(:,set1)),0,2)';
+                    ACGs_mean = mean(cell_metrics.acg.wide(:,set1)./max(cell_metrics.acg.wide(:,set1)),2,'omitnan')';
+                    ACGs_std = std(cell_metrics.acg.wide(:,set1)./max(cell_metrics.acg.wide(:,set1)),0,2,'omitnan')';
                     if plotAcgYLog
                         ACGs_mean(ACGs_mean < 0.1)=0.1;
                     end
@@ -4501,8 +4501,10 @@ end
                 web('https://cellexplorer.org/interface/interface/','-new','-browser')
             case 'Support'
                  web('https://cellexplorer.org/#support','-new','-browser')
-            case {'- Submit feature request','- Report an issue'}
-                web('https://github.com/petersenpeter/CellExplorer/issues/new','-new','-browser')
+            case '- Report an issue'
+                web('https://github.com/petersenpeter/CellExplorer/issues/new?assignees=&labels=bug&template=bug_report.md&title=','-new','-browser')
+            case '- Submit feature request'
+                web('https://github.com/petersenpeter/CellExplorer/issues/new?assignees=&labels=enhancement&template=feature_request.md&title=','-new','-browser')
             otherwise
                 web('https://CellExplorer.org/','-new','-browser')
         end
@@ -11001,7 +11003,7 @@ end
                 end
             end
             cell_metrics.waveforms.filt_absolute = filtWaveform;
-            cell_metrics.waveforms.filt_zscored = (filtWaveform-nanmean(filtWaveform))./nanstd(filtWaveform);
+            cell_metrics.waveforms.filt_zscored = (filtWaveform-mean(filtWaveform,'omitnan'))./std(filtWaveform,'omitnan');
             
             % 'All raw waveforms'
             if isfield(cell_metrics.waveforms,'raw')
@@ -11014,7 +11016,7 @@ end
                 end
             end
             cell_metrics.waveforms.raw_absolute = rawWaveform;
-            cell_metrics.waveforms.raw_zscored = (rawWaveform-nanmean(rawWaveform))./nanstd(rawWaveform);
+            cell_metrics.waveforms.raw_zscored = (rawWaveform-mean(rawWaveform,'omitnan'))./std(rawWaveform,'omitnan');
             clear rawWaveform
             end
             
@@ -11048,7 +11050,7 @@ end
                         thetaPhaseCurves(:,i) = cell_metrics.responseCurves.thetaPhase{i};
                     end
                 end
-                cell_metrics.responseCurves.thetaPhase_zscored = thetaPhaseCurves;%(thetaPhaseCurves-nanmean(thetaPhaseCurves))./nanstd(thetaPhaseCurves);
+                cell_metrics.responseCurves.thetaPhase_zscored = thetaPhaseCurves;%(thetaPhaseCurves-mean(thetaPhaseCurves,'omitnan'))./std(thetaPhaseCurves,'omitnan');
                 clear thetaPhaseCurves
             end
         end
@@ -11402,7 +11404,7 @@ end
                 end
             end
             if ~isfield(cell_metrics.waveforms,'filt_zscored')  || size(cell_metrics.waveforms.filt,2) ~= size(cell_metrics.waveforms.filt_zscored,2)
-                cell_metrics.waveforms.filt_zscored = (filtWaveform-nanmean(filtWaveform))./nanstd(filtWaveform);
+                cell_metrics.waveforms.filt_zscored = (filtWaveform-mean(filtWaveform,'omitnan'))./std(filtWaveform,'omitnan');
             end
             clear filtWaveform
         end
@@ -11418,7 +11420,7 @@ end
                 end
             end
             if ~isfield(cell_metrics.waveforms,'raw_zscored')  || size(cell_metrics.waveforms.raw,2) ~= size(cell_metrics.waveforms.raw_zscored,2)
-                cell_metrics.waveforms.raw_zscored = (rawWaveform-nanmean(rawWaveform))./nanstd(rawWaveform);
+                cell_metrics.waveforms.raw_zscored = (rawWaveform-mean(rawWaveform,'omitnan'))./std(rawWaveform,'omitnan');
             end
             clear rawWaveform
         end
