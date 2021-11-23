@@ -159,7 +159,7 @@ if ~isfield(session.general,'version') || session.general.version<4
                 session = sessionTemplate(session);
                 disp(['Saving ',session.general.name,'.session.mat'])
                 try
-                    save(fullfile(session.general.name,[basepath,'session.mat']),'session','-v7.3','-nocompression');
+                    save(fullfile(session.general.name,[basepath,'session.mat']),'session');
                     success = 1;
                 catch
                     warning(['Failed to save ',session.general.name,'.session.mat. Location not available']);
@@ -618,7 +618,7 @@ uiwait(UI.fig)
         filename1 = [session.animal.name,'.session.mat'];
         session.general.name = session.animal.name;
         try
-            save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
+            save(fullfile(filepath1, filename1),'session');
             MsgLog(['Animal metadata template saved to: ' fullfile(filepath1, filename1)],2)
         catch
             MsgLog(['Failed to save ',filename1,'. Location not available'],4)
@@ -1169,7 +1169,7 @@ uiwait(UI.fig)
         
         readBackFields;
         try
-            save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
+            save(fullfile(filepath1, filename1),'session');
             MsgLog(['Session struct saved: ' fullfile(filepath1, filename1)],2)
         catch
             MsgLog(['Failed to save ',filename1,'. Location not available'],4)
