@@ -32,9 +32,12 @@ To address this, we built CellExplorer, a framework for analyzing and characteri
 mex -O CCGHeart.c
 mex -O FindInInterval.c
 ```
-4. CellExplorer uses additional MATLAB toolboxes, where one is required for the Processing module.
+4. CellExplorer uses additional MATLAB toolboxes, where three of them are required and two are optional.
   * [Curve Fitting Toolbox](https://se.mathworks.com/products/curvefitting.html) (required).
-  * [Parallel Computing Toolbox](https://se.mathworks.com/products/parallel-computing.html) (optional).
+  * [Signal Processing Toolbox](https://se.mathworks.com/products/signal.html) (required).
+  * [Statistics and Machine Learning Toolbox](https://se.mathworks.com/products/statistics.html) (required).
+  * [Parallel Computing Toolbox](https://se.mathworks.com/products/parallel-computing.html) (optional, allows for parallel processing of certain features).
+  * [Image Processing Toolbox](https://se.mathworks.com/products/image.html) (optional for NeuroScope2).
 
 That's it! Now you can explore the software with below example data or try one of the tutorials with your own data.
 

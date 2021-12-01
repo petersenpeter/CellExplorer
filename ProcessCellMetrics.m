@@ -123,7 +123,8 @@ timerCalcMetrics = tic;
 % Verifying required toolboxes are installed
 installedToolboxes = ver;
 installedToolboxes = {installedToolboxes.Name};
-requiredToolboxes = {'Curve Fitting Toolbox'};
+requiredToolboxes = {'Curve Fitting Toolbox','Signal Processing Toolbox','Statistics and Machine Learning Toolbox'};
+
 missingToolboxes = requiredToolboxes(~ismember(requiredToolboxes,installedToolboxes));
 if ~isempty(missingToolboxes)
     for i = 1:numel(missingToolboxes)
@@ -1011,6 +1012,10 @@ end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Event metrics
+%
+% From detected events files: basepath/basename.*.events.mat
+%
+% The data structure of events should at least contain:
 % 
 % eventName.timestamps
 % eventName.data
@@ -1074,6 +1079,8 @@ end
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Manipulation metrics
 % 
+% From detected manipulation files: basepath/basename.*.manipulation.mat
+%
 % manipulationName.timestamps
 % manipulationName.data
 % manipulationName.processingInfo
@@ -1118,6 +1125,8 @@ end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % States metrics
+%
+% From detected states files: basepath/basename.*.states.mat
 % 
 % stateName.timestamps
 % stateName.data

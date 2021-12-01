@@ -28,7 +28,7 @@ NaNccgR1 = ccgR1;
 for i=1:neuron_num
     NaNccgR1(:,i,i)=NaN(51,1);
 end
-meanCCG = nanmean(NaNccgR1,3);
+meanCCG = mean(NaNccgR1,3,'omitnan');
 
 population_modIndex  = mean(meanCCG([21:31],:))./mean(meanCCG([1:5,47:51],:));
 

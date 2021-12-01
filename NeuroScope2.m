@@ -122,7 +122,7 @@ while t0 >= 0
         UI.elements.lower.performance.String = ['  Processing: ' num2str(toc(UI.timerInterface),3) ' seconds (', num2str(numel(ephys.traces)*2/1024/1024,3) ' MB ephys data)'];
         uiwait(UI.fig);
         
-        % Tracking viewed timestamps in file (can be used by pressing the backspace key)
+        % Tracking viewed timestamps in file (the history can be used by pressing the backspace key)
         UI.settings.stream = false;
         t0 = max([0,min([t0,UI.t_total-UI.settings.windowDuration])]);
         if UI.track && UI.t0_track(end) ~= t0
@@ -205,6 +205,7 @@ end
         UI.settings.text_spacing = 0.016;
         UI.settings.detectedEventsBelowTrace = false;
         UI.settings.detectedSpikesBelowTrace = false;
+        UI.settings.resetZoomOnNavigation = true;
                 
         % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9')
@@ -310,6 +311,8 @@ end
         UI.settings.plotRMSnoise_apply_filter = 2;
         UI.settings.plotRMSnoise_lowerBand = 100;
         UI.settings.plotRMSnoise_higherBand = 220;
+        UI.settings.insetRelativeWidth = 1/4;
+        UI.settings.insetRelativeHeight = 1/4;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating figure
@@ -368,7 +371,7 @@ end
         UI.menu.view.channelSpectrum = uimenu(UI.menu.view.topMenu,menuLabel,'Power spectral density across channels',menuSelectedFcn,@powerSpectralFigure);
         UI.menu.view.channelSpectrum2 = uimenu(UI.menu.view.topMenu,menuLabel,'Power spectral density across channels (log bins; slower)',menuSelectedFcn,@powerSpectralFigure2);
          
-        % Settings
+        % Settings        
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
         UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu',menuSelectedFcn,@ShowHideMenu);
         UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC,'Separator','on');
@@ -378,8 +381,14 @@ end
         UI.menu.display.plotStyleDynamicRange = uimenu(UI.menu.display.topMenu,menuLabel,'Dynamic ephys range plot',menuSelectedFcn,@plotStyleDynamicRange,'Checked','on');
         %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
         UI.menu.display.colorByChannels = uimenu(UI.menu.display.topMenu,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);
+        UI.menu.display.resetZoomOnNavigation = uimenu(UI.menu.display.topMenu,menuLabel,'Reset zoom on navigation',menuSelectedFcn,@resetZoomOnNavigation);
+         if UI.settings.resetZoomOnNavigation
+            UI.menu.display.resetZoomOnNavigation.Checked = 'on';
+        end
+        
         UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
         UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);
+        
         
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background color & primary color (ticks, text and rasters)',menuSelectedFcn,@changeBackgroundColor);
         UI.menu.display.detectedEventsBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected events below traces',menuSelectedFcn,@detectedEventsBelowTrace,'Separator','on');
@@ -685,9 +694,9 @@ end
         
         UI.settings.textOffset = 0;
         
-        if UI.settings.showChannelNumbers
+        if UI.settings.showChannelNumbers && UI.settings.resetZoomOnNavigation 
             set(UI.plot_axis1,'XLim',[-0.01*UI.settings.windowDuration,UI.settings.windowDuration],'YLim',[0,1])
-        else
+        elseif UI.settings.resetZoomOnNavigation 
             set(UI.plot_axis1,'XLim',[0,UI.settings.windowDuration],'YLim',[0,1])
         end
         
@@ -1095,8 +1104,9 @@ end
             ylim1 = [min(rms1([UI.channels{:}])),max(rms1([UI.channels{:}]))];
             
             % Drawing background
-            p1 = patch([5*UI.settings.windowDuration/6,UI.settings.windowDuration,UI.settings.windowDuration,5*UI.settings.windowDuration/6]-0.01,[0.75 0.75 1 1]-0.01,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
-            alpha(p1,0.4);
+            p1 = patch([(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration,UI.settings.windowDuration,UI.settings.windowDuration,(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration]-0.005,[(1-UI.settings.insetRelativeHeight) (1-UI.settings.insetRelativeHeight) 1 1]-0.01,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
+%             p1 = patch([5*UI.settings.windowDuration/6,UI.settings.windowDuration,UI.settings.windowDuration,5*UI.settings.windowDuration/6]-0.01,[0.75 0.75 1 1]-0.01,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
+            alpha(p1,0.6);
             
             % Drawing noise curves
             for iShanks = UI.settings.electrodeGroupsToPlot
@@ -1106,11 +1116,12 @@ end
                 markerColor = UI.colors(iShanks,:);
                 x_data = (1:numel(channels))+k_channels;
                 y_data = rms1(channels);
-                line((x_data-xlim1(1))/diff(xlim1)*UI.settings.windowDuration/6+5*UI.settings.windowDuration/6-0.01,(y_data-ylim1(1))/diff(ylim1)*0.25+0.74, 'HitTest','off','Color', markerColor,'Marker','o','LineStyle','-','linewidth',2,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
+%                 line((x_data-xlim1(1))/diff(xlim1)*UI.settings.windowDuration/6+5*UI.settings.windowDuration/6-0.01,(y_data-ylim1(1))/diff(ylim1)*0.25+0.74, 'HitTest','off','Color', markerColor,'Marker','o','LineStyle','-','linewidth',2,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
+                line((x_data-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(y_data-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.99-UI.settings.insetRelativeHeight), 'HitTest','off','Color', markerColor,'Marker','o','LineStyle','-','linewidth',2,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
                 k_channels = k_channels + numel(channels);
             end
-            text(5*UI.settings.windowDuration/6-0.01,0.741,[' ', num2str(ylim1(1),3),char(181),'V'],'FontWeight', 'Bold','VerticalAlignment', 'bottom','HorizontalAlignment','left','color',UI.settings.primaryColor,'FontSize',12)
-            text(5*UI.settings.windowDuration/6-0.01,0.989,[' ', num2str(ylim1(2),3),char(181),'V'],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left','color',UI.settings.primaryColor,'FontSize',12)
+            text((1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(0.991-UI.settings.insetRelativeHeight),[' ', num2str(ylim1(1),3),char(181),'V'],'FontWeight', 'Bold','VerticalAlignment', 'bottom','HorizontalAlignment','left','color',UI.settings.primaryColor,'FontSize',12)
+            text((1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,0.989,[' ', num2str(ylim1(2),3),char(181),'V'],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left','color',UI.settings.primaryColor,'FontSize',12)
         end
         
         % Plotting channel numbers
@@ -2135,6 +2146,15 @@ end
         end
         uiresume(UI.fig);
     end
+        
+    function resetZoomOnNavigation(~,~)
+        UI.settings.resetZoomOnNavigation = ~UI.settings.resetZoomOnNavigation;
+        if UI.settings.resetZoomOnNavigation
+            UI.menu.display.resetZoomOnNavigation.Checked = 'on';
+        else
+            UI.menu.display.resetZoomOnNavigation.Checked = 'off';
+        end
+    end
     
     function showScalebar(~,~)
         UI.settings.showScalebar = ~UI.settings.showScalebar;
@@ -2279,8 +2299,7 @@ end
             'Q','Increase window duration'; 
             'A','Decrease window duration';
             'C','Highlight ephys channel(s)';
-            'H','View mouse and keyboard shortcuts (this page)';
-            
+                        
             '   ',''; 
             '','<html><b>Data streaming</b></html>';
             'shift + space','Stream data from current time'; 
@@ -2299,9 +2318,10 @@ end
             
             '   ',''; 
             '','<html><b>Other shortcuts</b></html>';
+            'H','View mouse and keyboard shortcuts (this page)';
             [scs,'O'],'Open session from file'; 
-            [scs,'C'],'Open the file directory of the selected cell'; 
-            [scs,'D'],'Opens session from BuzLabDB';
+            [scs,'C'],'Open the file directory of the current session'; 
+            [scs,'D'],'Opens session from the Buzsaki lab database';
             [scs,'V'],'Visit the CellExplorer website in your browser';
             '',''; '','<html><b>Visit the CellExplorer website for further help and documentation</html></b>'; };
         if ismac
@@ -3345,15 +3365,16 @@ end
             chanCoordsVisualization(data.session.extracellular.chanCoords,UI.chanCoordsAxes);
             updateChanCoordsColorHighlight
             
-            x_lim_data = [min(data.session.extracellular.chanCoords.x),max(data.session.extracellular.chanCoords.x)];
-            y_lim_data = [min(data.session.extracellular.chanCoords.y),max(data.session.extracellular.chanCoords.y)];
-            x_padding = 0.03*diff(x_lim_data);
-            y_padding = 0.03*diff(y_lim_data);
-            if ~verLessThan('matlab', '9.4')
+            image_toolbox_installed = isToolboxInstalled('Image Processing Toolbox');
+            if ~verLessThan('matlab', '9.4') & image_toolbox_installed
+                x_lim_data = [min(data.session.extracellular.chanCoords.x),max(data.session.extracellular.chanCoords.x)];
+                y_lim_data = [min(data.session.extracellular.chanCoords.y),max(data.session.extracellular.chanCoords.y)];
+                x_padding = 0.03*diff(x_lim_data);
+                y_padding = 0.03*diff(y_lim_data);
                 UI.plotpoints.roi_ChanCoords = drawrectangle(UI.chanCoordsAxes,'Position',[x_lim_data(1)-x_padding,y_lim_data(1)-y_padding,1.06*diff(x_lim_data),1.06*diff(y_lim_data)],'LineWidth',2,'FaceAlpha',0.1,'Deletable',false,'FixedAspectRatio',false);
                 addlistener(UI.plotpoints.roi_ChanCoords,'ROIMoved',@updateChanCoordsPlot);
             else
-                warning('Channel coordinates selection only available with Matlab 2018b or later')
+                warning('Channel coordinates selection only available with Matlab 2018b or later and with the Image Processing Toolbox')
             end
         end
         
@@ -5154,8 +5175,10 @@ end
                 web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
             case 'Support'
                  web('https://cellexplorer.org/#support','-new','-browser')
-            case {'- Submit feature request','- Report an issue'}
-                web('https://github.com/petersenpeter/CellExplorer/issues/new','-new','-browser')
+            case '- Report an issue'
+                web('https://github.com/petersenpeter/CellExplorer/issues/new?assignees=&labels=bug&template=bug_report.md&title=','-new','-browser')
+            case '- Submit feature request'
+                web('https://github.com/petersenpeter/CellExplorer/issues/new?assignees=&labels=enhancement&template=feature_request.md&title=','-new','-browser')
             otherwise
                 web('https://cellexplorer.org/','-new','-browser')
         end
