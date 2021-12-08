@@ -844,8 +844,13 @@ if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(
         deepSuperficial_ChClass = deepSuperficialfromRipple.channelClass;% cell_deep_superficial
         cell_metrics.general.deepSuperficial_file = deepSuperficial_file;
         for j = 1:cell_metrics.general.cellCount
-            cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial OK
-            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial_distance
+            try
+                cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial OK
+                cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial_distance
+            catch
+                cell_metrics.deepSuperficial(j) = {'Unknown'};
+                cell_metrics.deepSuperficialDistance(j) = NaN;    
+            end
         end
     end
 end
