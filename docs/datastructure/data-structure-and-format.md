@@ -19,6 +19,9 @@ CellExplorer uses one main path for each session called `basepath`. The basepath
 ## Data structures
 Each type of data is saved in its own MATLAB structure, where a subset of the structures are inherited from [buzcode](https://github.com/buzsakilab/buzcode). Please see the list of data containers in the next section.  CellExplorer is fully compatible with the Buzcode toolbox repository.
 
+## Example dataset
+There is an example dataset available to help understanding the data structure. The dataset contains: a .dat file (raw ephys data; 62GB), a .lfp file (lowpass filtered and downsampled data file; 4 GB), session.mat, spikes, events, behavior, trials, timeseries, states, firingRateMap, cell_metrics, mono_res, and spike sorted data processed with KiloSort and curated in Phy. Available from our [Webshare](https://buzsakilab.nyumc.org/datasets/PetersenP/CellExplorerExampleData/MS22/Peter_MS22_180629_110319_concat/) and our [Globus endpoint](https://app.globus.org/file-manager?origin_id=188a6110-96db-11eb-b7a9-f57b2d55370d&origin_path=%2FPetersenP%2FCellExplorerExampleData%2FMS22%2FPeter_MS22_180629_110319_concat%2F). The size of the full dataset  is 75GB, but files can be downloaded individual. 
+
 ### Session metadata
 A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The session struct contains all session-level metadata. The session struct can be generated using the [sessionTemplate.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/sessionTemplate.m) and inspected with [gui_session.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/gui_session.m). The `basename.session.mat` files should be stored in the basepath. It is structured as defined below:
 
