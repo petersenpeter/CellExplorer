@@ -32,7 +32,7 @@ if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
     
     load(fullfile(basepath,[basename,'.ripples.events.mat']))
     
-    SWRunitMetrics = main(basepath,spikes{1},ripples,cell_metrics);
+    SWRunitMetrics = main(basepath,spikes{1},ripples);
     
     % single cell metrics to cell_metrics
     cell_metrics.ripple_particip = SWRunitMetrics.particip';
@@ -77,8 +77,7 @@ if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
                     end
                     SWRunitMetrics = main(basepath,...
                         spikes{spkExclu},...
-                        current_ripples,...
-                        cell_metrics);
+                        current_ripples);
                     
                     % single cell metrics to cell_metrics
                     cell_metrics.(['ripple_particip_' statenames{iStates}]) = SWRunitMetrics.particip';
@@ -102,7 +101,7 @@ else
 end
 end
 
-function SWRunitMetrics = main(basepath,spikes,ripples,cell_metrics)
+function SWRunitMetrics = main(basepath,spikes,ripples)
 ripSpk = getRipSpikes('basepath',basepath,...
     'spikes',spikes,...
     'events',ripples.timestamps,...
