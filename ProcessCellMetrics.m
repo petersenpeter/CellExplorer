@@ -89,7 +89,7 @@ addParameter(p,'ignoreEventTypes',{'MergePoints'},@iscell);
 addParameter(p,'ignoreManipulationTypes',{'cooling'},@iscell);
 addParameter(p,'ignoreStateTypes',{'StateToIgnore'},@iscell);
 addParameter(p,'excludeManipulationIntervals',true,@islogical);
-addParameter(p,'metricsToExcludeManipulationIntervals',{'waveform_metrics','PCA_features','acg_metrics','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','psth_metrics'},@iscell); % 'other_metrics'
+addParameter(p,'metricsToExcludeManipulationIntervals',{'waveform_metrics','PCA_features','acg_metrics','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','psth_metrics'},@iscell);
 
 addParameter(p,'keepCellClassification',true,@islogical);
 addParameter(p,'manualAdjustMonoSyn',true,@islogical);
@@ -277,6 +277,10 @@ end
 if ~isfield(spikes{1},'total')
     spikes{1}.total = cellfun(@(X) length(X),spikes{1}.times);
 end
+if ~isfield(spikes{1},'spindices')
+    spikes{1}.spindices = generateSpinDices(spikes{1}.times);
+end
+
 if ~isempty(parameters.restrictToIntervals)
     if size(parameters.restrictToIntervals,2) ~= 2
         error('restrictToIntervals has to be a Nx2 matrix')
@@ -310,6 +314,7 @@ if ~isempty(parameters.restrictToIntervals)
         spikes{1}.spindices = generateSpinDices(spikes{1}.times);
     end
 end
+
 
 if parameters.excludeManipulationIntervals
     dispLog('Excluding manipulation events',basename)
