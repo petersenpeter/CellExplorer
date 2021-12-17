@@ -722,11 +722,11 @@ function updateUI
         if UI.checkbox.logx.Value == 1
             AA = cell_metrics.(UI.plot.xTitle)(UI.params.subset);
             AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
-            fig1_axislimit_x = [min(AA,'omitnan'),max(AA,'omitnan')];
+            fig1_axislimit_x = [min(AA,[],'omitnan'),max(AA,[],'omitnan')];
         else
             AA = cell_metrics.(UI.plot.xTitle)(UI.params.subset);
             AA = AA( ~isnan(AA) & ~isinf(AA));
-            fig1_axislimit_x = [min(AA,'omitnan'),max(AA,'omitnan')];
+            fig1_axislimit_x = [min(AA,[],'omitnan'),max(AA,[],'omitnan')];
         end
         if isempty(fig1_axislimit_x)
             fig1_axislimit_x = [0 1];
@@ -736,11 +736,11 @@ function updateUI
         if UI.checkbox.logy.Value == 1
             AA = cell_metrics.(UI.plot.yTitle)(UI.params.subset);
             AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
-            fig1_axislimit_y = [min(AA,'omitnan'),max(AA)];
+            fig1_axislimit_y = [min(AA,[],'omitnan'),max(AA,[],'omitnan')];
         else
             AA = cell_metrics.(UI.plot.yTitle)(UI.params.subset);
             AA = AA( ~isnan(AA) & ~isinf(AA));
-            fig1_axislimit_y = [min(AA,'omitnan'),max(AA)];
+            fig1_axislimit_y = [min(AA,[],'omitnan'),max(AA,[],'omitnan')];
         end
         if isempty(fig1_axislimit_y)
             fig1_axislimit_y = [0 1];
@@ -754,21 +754,21 @@ function updateUI
         elseif strcmp(UI.preferences.referenceData, 'Image') && ~isempty(reference_cell_metrics) && UI.checkbox.logx.Value == 0 && isfield(reference_cell_metrics,UI.plot.xTitle) && isfield(reference_cell_metrics,UI.plot.yTitle)
             if ~exist('referenceData1','var') || ~isfield(referenceData1,'z') || ~strcmp(referenceData1.x_field,UI.plot.xTitle) || ~strcmp(referenceData1.y_field,UI.plot.yTitle) || referenceData1.x_log ~= UI.checkbox.logx.Value || referenceData1.y_log ~= UI.checkbox.logy.Value || ~strcmp(referenceData1.plotType, 'Image')
                 if UI.checkbox.logx.Value == 1
-                    referenceData1.x = linspace(log10(min([reference_cell_metrics.(UI.plot.xTitle),fig1_axislimit_x(1)],'omitnan')),log10(max([reference_cell_metrics.(UI.plot.xTitle),fig1_axislimit_x(2)],'omitnan')),UI.preferences.binCount);
+                    referenceData1.x = linspace(log10(min([reference_cell_metrics.(UI.plot.xTitle),fig1_axislimit_x(1)],[],'omitnan')),log10(max([reference_cell_metrics.(UI.plot.xTitle),fig1_axislimit_x(2)],[],'omitnan')),UI.preferences.binCount);
                     xdata = log10(reference_cell_metrics.(UI.plot.xTitle));
                 else
-                    referenceData1.x = linspace(min([reference_cell_metrics.(UI.plot.xTitle),fig1_axislimit_x(1)],'omitnan'),max([reference_cell_metrics.(UI.plot.xTitle),fig1_axislimit_x(2)],'omitnan'),UI.preferences.binCount);
+                    referenceData1.x = linspace(min([reference_cell_metrics.(UI.plot.xTitle),fig1_axislimit_x(1)],[],'omitnan'),max([reference_cell_metrics.(UI.plot.xTitle),fig1_axislimit_x(2)],[],'omitnan'),UI.preferences.binCount);
                     xdata = reference_cell_metrics.(UI.plot.xTitle);
                 end
                 if UI.checkbox.logy.Value == 1
                     AA = reference_cell_metrics.(UI.plot.yTitle);
                     AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
-                    referenceData1.y = linspace(log10(min([AA,fig1_axislimit_y(1)],'omitnan')),log10(max([AA,fig1_axislimit_y(2)],'omitnan')),UI.preferences.binCount);
+                    referenceData1.y = linspace(log10(min([AA,fig1_axislimit_y(1)],[],'omitnan')),log10(max([AA,fig1_axislimit_y(2)],[],'omitnan')),UI.preferences.binCount);
                     ydata = log10(reference_cell_metrics.(UI.plot.yTitle));
                 else
                     AA = reference_cell_metrics.(UI.plot.yTitle);
                     AA = AA( ~isnan(AA) & ~isinf(AA));
-                    referenceData1.y = linspace(min([AA,fig1_axislimit_y(1)],'omitnan'),max([AA,fig1_axislimit_y(2)],'omitnan'),UI.preferences.binCount);
+                    referenceData1.y = linspace(min([AA,fig1_axislimit_y(1)],[],'omitnan'),max([AA,fig1_axislimit_y(2)],[],'omitnan'),UI.preferences.binCount);
                     ydata = reference_cell_metrics.(UI.plot.yTitle);
                 end
                 referenceData1.x_field = UI.plot.xTitle;
@@ -810,17 +810,17 @@ function updateUI
                 if ~exist('groundTruthData1','var') || ~isfield(groundTruthData1,'z') || ~strcmp(groundTruthData1.x_field,UI.plot.xTitle) || ~strcmp(groundTruthData1.y_field,UI.plot.yTitle) || groundTruthData1.x_log ~= UI.checkbox.logx.Value || groundTruthData1.y_log ~= UI.checkbox.logy.Value
                     
                     if UI.checkbox.logx.Value == 1
-                        groundTruthData1.x = linspace(log10(min([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)],'omitnan')),log10(max([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)],'omitnan')),UI.preferences.binCount);
+                        groundTruthData1.x = linspace(log10(min([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)],[],'omitnan')),log10(max([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)],[],'omitnan')),UI.preferences.binCount);
                         xdata = log10(groundTruth_cell_metrics.(UI.plot.xTitle));
                     else
-                        groundTruthData1.x = linspace(min([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)],'omitnan'),max([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)],'omitnan'),UI.preferences.binCount);
+                        groundTruthData1.x = linspace(min([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)],[],'omitnan'),max([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)],[],'omitnan'),UI.preferences.binCount);
                         xdata = groundTruth_cell_metrics.(UI.plot.xTitle);
                     end
                     if UI.checkbox.logy.Value == 1
-                        groundTruthData1.y = linspace(log10(min([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)],'omitnan')),log10(max([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)],'omitnan')),UI.preferences.binCount);
+                        groundTruthData1.y = linspace(log10(min([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)],[],'omitnan')),log10(max([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)],[],'omitnan')),UI.preferences.binCount);
                         ydata = log10(groundTruth_cell_metrics.(UI.plot.yTitle));
                     else
-                        groundTruthData1.y = linspace(min([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)],'omitnan'),max([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)],'omitnan'),UI.preferences.binCount);
+                        groundTruthData1.y = linspace(min([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)],[],'omitnan'),max([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)],[],'omitnan'),UI.preferences.binCount);
                         ydata = groundTruth_cell_metrics.(UI.plot.yTitle);
                     end
                     
@@ -867,7 +867,7 @@ function updateUI
                 if UI.checkbox.logx.Value == 1
                     AA = groundTruth_cell_metrics.(UI.plot.xTitle)(idx);
                     AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
-                    fig1_axislimit_x_groundTruth = [min(AA,'omitnan'),max(AA)];
+                    fig1_axislimit_x_groundTruth = [min(AA,[],'omitnan'),max(AA,[],'omitnan')];
                 else
                     fig1_axislimit_x_groundTruth = [min(groundTruth_cell_metrics.(UI.plot.xTitle)(idx)),max(groundTruth_cell_metrics.(UI.plot.xTitle)(idx))];
                 end
@@ -879,7 +879,7 @@ function updateUI
                 if UI.checkbox.logy.Value == 1
                     AA = groundTruth_cell_metrics.(UI.plot.yTitle)(idx);
                     AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
-                    fig1_axislimit_y_groundTruth = [min(AA,'omitnan'),max(AA)];
+                    fig1_axislimit_y_groundTruth = [min(AA,[],'omitnan'),max(AA,[],'omitnan')];
                 else
                     fig1_axislimit_y_groundTruth = [min(groundTruth_cell_metrics.(UI.plot.yTitle)(idx)),max(groundTruth_cell_metrics.(UI.plot.yTitle)(idx))];
                 end
@@ -895,7 +895,7 @@ function updateUI
                 if UI.checkbox.logx.Value == 1
                     AA = reference_cell_metrics.(UI.plot.xTitle)(idx);
                     AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
-                    fig1_axislimit_x_reference = [min(AA,'omitnan'),max(AA)];
+                    fig1_axislimit_x_reference = [min(AA,[],'omitnan'),max(AA,[],'omitnan')];
                 else
                     fig1_axislimit_x_reference = [min(reference_cell_metrics.(UI.plot.xTitle)(idx)),max(reference_cell_metrics.(UI.plot.xTitle)(idx))];
                 end
@@ -907,7 +907,7 @@ function updateUI
                 if UI.checkbox.logy.Value == 1
                     AA = reference_cell_metrics.(UI.plot.yTitle)(idx);
                     AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
-                    fig1_axislimit_y_reference = [min(AA,'omitnan'),max(AA)];
+                    fig1_axislimit_y_reference = [min(AA,[],'omitnan'),max(AA,[],'omitnan')];
                 else
                     fig1_axislimit_y_reference = [min(reference_cell_metrics.(UI.plot.yTitle)(idx)),max(reference_cell_metrics.(UI.plot.yTitle)(idx))];
                 end
@@ -1000,17 +1000,17 @@ function updateUI
             
 %             
 %                 if UI.checkbox.logx.Value == 1
-%                     groundTruthData1.x = linspace(log10(min([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)],'omitnan')),log10(max([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)],'omitnan')),UI.preferences.binCount);
+%                     groundTruthData1.x = linspace(log10(min([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)],[],'omitnan')),log10(max([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)],[],'omitnan')),UI.preferences.binCount);
 %                     xdata = log10(groundTruth_cell_metrics.(UI.plot.xTitle));
 %                 else
-%                     groundTruthData1.x = linspace(min([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)],'omitnan'),max([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)],'omitnan'),UI.preferences.binCount);
+%                     groundTruthData1.x = linspace(min([fig1_axislimit_x(1),groundTruth_cell_metrics.(UI.plot.xTitle)],[],'omitnan'),max([fig1_axislimit_x(2),groundTruth_cell_metrics.(UI.plot.xTitle)],[],'omitnan'),UI.preferences.binCount);
 %                     xdata = groundTruth_cell_metrics.(UI.plot.xTitle);
 %                 end
 %                 if UI.checkbox.logy.Value == 1
-%                     groundTruthData1.y = linspace(log10(min([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)],'omitnan')),log10(max([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)],'omitnan')),UI.preferences.binCount);
+%                     groundTruthData1.y = linspace(log10(min([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)],[],'omitnan')),log10(max([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)],[],'omitnan')),UI.preferences.binCount);
 %                     ydata = log10(groundTruth_cell_metrics.(UI.plot.yTitle));
 %                 else
-%                     groundTruthData1.y = linspace(min([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)],'omitnan'),max([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)],'omitnan'),UI.preferences.binCount);
+%                     groundTruthData1.y = linspace(min([fig1_axislimit_y(1),groundTruth_cell_metrics.(UI.plot.yTitle)],[],'omitnan'),max([fig1_axislimit_y(2),groundTruth_cell_metrics.(UI.plot.yTitle)],[],'omitnan'),UI.preferences.binCount);
 %                     ydata = groundTruth_cell_metrics.(UI.plot.yTitle);
 %                 end
 %                 groundTruthData1.x_field = UI.plot.xTitle;
@@ -1056,10 +1056,10 @@ function updateUI
                 AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
                 BB = cell_metrics.(UI.plot.xTitle);
                 BB = BB( ~isnan(BB) & ~isinf(BB) & BB>0);
-                referenceData1.x = linspace(log10(min([BB,AA],'omitnan')),log10(max([BB,AA],'omitnan')),UI.preferences.binCount);
+                referenceData1.x = linspace(log10(min([BB,AA],[],'omitnan')),log10(max([BB,AA],[],'omitnan')),UI.preferences.binCount);
                 xdata = log10(reference_cell_metrics.(UI.plot.xTitle));
             else
-                referenceData1.x = linspace(min([cell_metrics.(UI.plot.xTitle),reference_cell_metrics.(UI.plot.xTitle)],'omitnan'),max([cell_metrics.(UI.plot.xTitle),reference_cell_metrics.(UI.plot.xTitle)],'omitnan'),UI.preferences.binCount);
+                referenceData1.x = linspace(min([cell_metrics.(UI.plot.xTitle),reference_cell_metrics.(UI.plot.xTitle)],[],'omitnan'),max([cell_metrics.(UI.plot.xTitle),reference_cell_metrics.(UI.plot.xTitle)],[],'omitnan'),UI.preferences.binCount);
                 xdata = reference_cell_metrics.(UI.plot.xTitle);
             end
             if UI.checkbox.logy.Value == 1
@@ -1067,14 +1067,14 @@ function updateUI
                 AA = AA( ~isnan(AA) & ~isinf(AA) & AA>0);
                 BB = cell_metrics.(UI.plot.yTitle);
                 BB = BB( ~isnan(BB) & ~isinf(BB) & BB>0);
-                referenceData1.y = linspace(log10(min([BB,AA],'omitnan')),log10(max([BB,AA],'omitnan')),UI.preferences.binCount);
+                referenceData1.y = linspace(log10(min([BB,AA],[],'omitnan')),log10(max([BB,AA],[],'omitnan')),UI.preferences.binCount);
                 ydata = log10(reference_cell_metrics.(UI.plot.yTitle));
             else
                 AA = reference_cell_metrics.(UI.plot.yTitle);
                 AA = AA( ~isnan(AA) & ~isinf(AA));
                 BB = cell_metrics.(UI.plot.yTitle);
                 BB = BB( ~isnan(BB) & ~isinf(BB));
-                referenceData1.y = linspace(min([BB,AA],'omitnan'),max([BB,AA],'omitnan'),UI.preferences.binCount);
+                referenceData1.y = linspace(min([BB,AA],[],'omitnan'),max([BB,AA],[],'omitnan'),UI.preferences.binCount);
                 ydata = reference_cell_metrics.(UI.plot.yTitle);
             end
             referenceData1.x_field = UI.plot.xTitle;
@@ -1319,10 +1319,10 @@ function updateUI
             end
             
             axis tight
-            if min(plotX(UI.params.subset),'omitnan') ~= max(plotX(UI.params.subset),'omitnan') & UI.checkbox.logx.Value == 0
-                xlim([min(plotX(UI.params.subset),'omitnan'),max(plotX(UI.params.subset),'omitnan')])
-            elseif min(plotX(UI.params.subset),'omitnan') ~= max(plotX(UI.params.subset),'omitnan') & UI.checkbox.logx.Value == 1 && any(plotX>0)
-                xlim([min(plotX(intersect(UI.params.subset,find(plotX>0))),'omitnan'),max(plotX(intersect(UI.params.subset,find(plotX>0))),'omitnan')])
+            if min(plotX(UI.params.subset),[],'omitnan') ~= max(plotX(UI.params.subset),[],'omitnan') & UI.checkbox.logx.Value == 0
+                xlim([min(plotX(UI.params.subset),[],'omitnan'),max(plotX(UI.params.subset),[],'omitnan')])
+            elseif min(plotX(UI.params.subset),[],'omitnan') ~= max(plotX(UI.params.subset),[],'omitnan') & UI.checkbox.logx.Value == 1 && any(plotX>0)
+                xlim([min(plotX(intersect(UI.params.subset,find(plotX>0))),[],'omitnan'),max(plotX(intersect(UI.params.subset,find(plotX>0))),[],'omitnan')])
             end
             plotStatRelationship(plotX,0.015,UI.checkbox.logx.Value,ylim1) % Generates KS group statistics
 
@@ -1356,8 +1356,7 @@ function updateUI
             end
             if UI.preferences.displayInhibitoryPostsynapticCells && ~isempty(UI.cells.inhibitoryPostsynaptic_subset)
                 line(plotX(UI.cells.inhibitoryPostsynaptic_subset), plotY1(UI.cells.inhibitoryPostsynaptic_subset),'Marker','*','LineStyle','none','color',UI.preferences.putativeConnectingMarkers{4},'HitTest','off')
-            end
-            
+            end            
             
             if contains(UI.plot.xTitle,'_num')
                 xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5]),
@@ -3594,11 +3593,11 @@ end
         if logAxis
             X1 = X1(X1>0 & ~isinf(X1) & ~isnan(X1));
             X1 = X1(X1>0);
-            x_bins = linspace(log10(min([xlim1(1),X1],'omitnan')),log10(max([xlim1(2),X1],'omitnan')),UI.preferences.binCount);
+            x_bins = linspace(log10(min([xlim1(1),X1],[],'omitnan')),log10(max([xlim1(2),X1],[],'omitnan')),UI.preferences.binCount);
             X1 = log10(X1);
         else
             X1 = X1(~isinf(X1) & ~isnan(X1));
-            x_bins = linspace(min([xlim1(1),X1],'omitnan'),max([xlim1(2),X1],'omitnan'),UI.preferences.binCount);
+            x_bins = linspace(min([xlim1(1),X1],[],'omitnan'),max([xlim1(2),X1],[],'omitnan'),UI.preferences.binCount);
         end
         
         line_histograms = [];
@@ -3843,7 +3842,7 @@ end
         for m = 1:length(unique(UI.classes.plot(UI.params.subset)))
             temp1 = UI.params.subset(find(plotClas_subset==ids(m)));
             idx = find(plotClas_subset==ids(m));
-            fitEnds = [min(X1(temp1),'omitnan'),max(X1(temp1),'omitnan')];
+            fitEnds = [min(X1(temp1),[],'omitnan'),max(X1(temp1),[],'omitnan')];
             if length(temp1)>1
                 P = polyfit(X1(temp1),Y1(temp1),1);
                 yfit = P(1)*fitEnds+P(2);
@@ -10184,10 +10183,10 @@ end
                 end
             end
             axis tight, title(fieldName, 'interpreter', 'none'), %yticks([]),
-            if min(cell_metrics.(fieldName)(UI.params.subset),'omitnan') ~= max(cell_metrics.(fieldName)(UI.params.subset),'omitnan') && log_axis == 0
-                xlim([min(cell_metrics.(fieldName)(UI.params.subset),'omitnan'),max(cell_metrics.(fieldName)(UI.params.subset),'omitnan')])
-            elseif min(cell_metrics.(fieldName)(UI.params.subset),'omitnan') ~= max(cell_metrics.(fieldName)(UI.params.subset),'omitnan') && log_axis == 1 && any(cell_metrics.(fieldName)>0)
-                xlim([min(cell_metrics.(fieldName)(intersect(UI.params.subset,find(cell_metrics.(fieldName)>0))),'omitnan'),max(cell_metrics.(fieldName)(intersect(UI.params.subset,find(cell_metrics.(fieldName)>0))),'omitnan')])
+            if min(cell_metrics.(fieldName)(UI.params.subset),[],'omitnan') ~= max(cell_metrics.(fieldName)(UI.params.subset),[],'omitnan') && log_axis == 0
+                xlim([min(cell_metrics.(fieldName)(UI.params.subset),[],'omitnan'),max(cell_metrics.(fieldName)(UI.params.subset),[],'omitnan')])
+            elseif min(cell_metrics.(fieldName)(UI.params.subset),[],'omitnan') ~= max(cell_metrics.(fieldName)(UI.params.subset),[],'omitnan') && log_axis == 1 && any(cell_metrics.(fieldName)>0)
+                xlim([min(cell_metrics.(fieldName)(intersect(UI.params.subset,find(cell_metrics.(fieldName)>0))),[],'omitnan'),max(cell_metrics.(fieldName)(intersect(UI.params.subset,find(cell_metrics.(fieldName)>0))),[],'omitnan')])
             end
             if plotStats
                 plotStatRelationship(cell_metrics.(fieldName),stats_offset,log_axis,ylim1) % Generates KS group statistics
