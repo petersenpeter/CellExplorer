@@ -6,35 +6,52 @@ grand_parent: Graphical interface
 nav_order: 1
 ---
 
-# UI elements
+# UI elements of NeuroScope2
 
 <a href="https://buzsakilab.com/wp/wp-content/uploads/2021/11/NeuroScope2.png">![NeuroScope2](https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope_screenshot_lowress.jpg)</a>
 
 
 ### NeuroScope2 interface elements
 
-The interface consists of a side panel and a main plot axis. Below the main axis are further navigational elements. The side-panel has three tabs: 
-1. General (ephys raw traces, plotting styles and settings)
-2. Spikes (spikes, cell metrics, and derived data)
-3. Other (other data types and data analysis, including events, time series, states, behavior, spectrogram, RMS noise plot, a Current Source density visualization, and a RMS noise inset). There are [keyboard shortcuts]({{"/interface/neuroscope2-keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in NeuroScope2 to see the keyboard shortcuts.
+The interface consists of a side panel, a main plot axis and a navigation bar below the main axis. The side-panel has three tabs: 
+1. General 
+   - Navigation
+   - Extracellular traces
+   - Electrode groups 
+   - Channel tags
+   - Session notes
+   - Session epochs
+   - Time series data
+2. Spikes
+   - Spikes
+   - Cell metrics
+   - Putative cell types
+   - List of cells
+   - Population dynamics
+   - Other spike sorting formats
+3. Other - other data types and data analysis, including:
+   - Events
+   - Time series
+   - States
+   - Behavior
+   - Spectrogram
+   - Current Source density visualization
+   - RMS noise inset
+
+There are [keyboard shortcuts]({{"/interface/neuroscope2-keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in NeuroScope2 to see the keyboard shortcuts.
 
 <a href="https://buzsakilab.com/wp/wp-content/uploads/2021/12/NeuroScope2_side_menu.png">![NeuroScope2 side menu](https://buzsakilab.com/wp/wp-content/uploads/2021/12/NeuroScope2_side_menu.png)</a>
 
 ## General tab
 
-Contains ephys raw traces, plotting styles and settings.
-
 ### Navigation
 The Navigation panel allows you can navigate and select which cell to display.
-+ `Left arrow`: navigate to the next cell.
-+ `Right arrow`: navigate to the previous cell.
-+ `GoTo`: Opens a dialog box that allows you go to a specific cell, or session when visualizing a batch of sessions.
-*Mouse actions in plots*
-+ `Left mouse click`: Pan the plot around the location of the mouse cursor. In the 3D group plot a `Left mouse click` allows you to rotate the 3D plot.
-+ `Mouse scroll wheel`: zoom in or out at the location of the mouse cursor.
-+ `Middle mouse click`: go to nearest cell. 
-+ `Right mouse click`: select nearest cell. Cell point/trace is highlighted and Cell ID is displayed for selected cell(s).
-
++ `Play icon`: Stream data from current time. 
++ `Left arrow`: Backwards in time (quarter window length).
++ `Up arrow`: Increase ephys amplitude.
++ `Down arrow`: Decrease ephys amplitude.
++ `Right arrow`: Forward in time (quarter window length).
++ `Double Play icon`: Stream data from end of file. 
 
 ### Extracellular traces
 
@@ -45,7 +62,7 @@ Loading and plotting ephys data.
 2. Range: Shows a sample count optimized for the screen resolution. For each sample the max and the min is plotted of data in the corresponding temporal range. The range plot have an extra setting allowing for a dynamic switching between 
 3. Raw: Raw data at full sampling rate
 4. LFP: Shows content of a .LFP file, typically the raw data has been lowpass-filtered and downsampled to 1250Hz before this. All samples are shown.
-5. Image: Raw data displayed with the imagesc function
+5. Image: Raw data displayed with the `imagesc` function
 6. No ephys traces
 When navigating a recording, only data not currently in memory (shown on the screen) will be loaded.
 
@@ -76,7 +93,6 @@ The session epochs panel shows a temporal axis color coded by epochs (`session.e
 Time series are extra data which can be shown together with the primary ephys data. This includes analog and digital signals. The time series are defined i the session struct `session.timeSeries` and can be edited with the session GUI. Time series can be shown on top of the ephys traces (normalized range) or below the ephys traces. 
 
 ## Spikes tab
-Contains parameters and elements for spikes, cell metrics, and derived data.
 
 ### Spikes
 + `Show spikes`: Shows spikes data if available (`basename.spikes.cellinfo.mat`).
@@ -91,7 +107,7 @@ Contains parameters and elements for spikes, cell metrics, and derived data.
 + `Group data`: Allows for filtering cells by group tags
 + `Color groups`: Group cells by a cell metric (e.g. putative cell type, monosynaptic effect, brain regions or other labels)
 + `Sorting`: Cell metric used for vertical sorting units when plotting them below the ephys traces. 
-+ `Filter`: Text filter applied to charactor fields in cell metrics to filter cells by.
++ `Filter`: Text filter applied to character fields in cell metrics to filter cells by.
 
 ### Putative cell types
 Filter cells by putative cell type labels. 
@@ -110,10 +126,9 @@ Shows the population average spiking rate.
 Allows for plotting single units from KiloSort, KlustaKwik or Spyking Circus data files. 
 
 ## Other tab
-The other tab contains other data types and data analysis, including events, time series, states, behavior, spectrogram, RMS noise plot, a Current Source density visualization, and a RMS noise inset. 
 
 ### Events
-Events files (basename.eventName.events.mat) are automatically detected and listed in the top dropdown field. Select from the list to load the events data. Events can be navigated either through event numbers, 
+Events files (basename.eventName.events.mat) are automatically detected and listed in the top drop-down field. Select from the list to load it. Events can be navigated either through event numbers, randomly or by using the left and right arrow buttons.
 
 + `Show events`: Show events as vertical lines.
 + `Below traces`: Show events below the ephys traces.
@@ -126,21 +141,25 @@ Events files (basename.eventName.events.mat) are automatically detected and list
 
 
 ### Time series
+Time series files (basename.timeseriesName.timeseries.mat) are automatically detected and listed in the drop-down field. Select from the list to load it.
 
-
-### State
-
++ `Show`: Show selected time serie on top of the ephys traces in the range defined in the limit text fields.
 
 ### States
+States  files (basename.statesName.states.mat) are automatically detected and listed in the drop-down field. Select from the list to load it. States can be navigated either through state numbers or by using the left and right arrow buttons.
 
 
 ### Behavior
+Behavior  files (basename.behaviorName.behavior.mat) are automatically detected and listed in the drop-down field. Select from the list to load it. Behavior data can be shown as a 2d projected plot inset, or as a linearized version on the main plot axis. 
+
+Behavioral trials (basename.behaviorName.behavior.mat) can be navigated either through trial number or by using the left and right arrow buttons.
 
 
 ### Spectrogram
-
+Shows a spectrogram below the ephys traces from specified channel. The window width (in seconds) can be altered, together with the frequency span and frequency step size (Hz). 
 
 ### Current Source Density
-
+Shows a Current Source Density (CSD) on top of the ephys traces. 
 
 ### RMS noise inset
+Shows a RMS noise inset for all channel in the upper right corner. The raw traces, the current filters or a custom filter can be used. The custom filter is specified by the lower and higher filter settings (Hz). The filter applied is a 3rd order Zero-phase digital butter filter. 
