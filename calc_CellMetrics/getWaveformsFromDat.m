@@ -155,6 +155,11 @@ for i = 1:length(unitsToProcess)
         wfF(:,:,jjj) = filtfilt(b1, a1, wf(:,:,jjj));
     end
     wfF = permute(wfF,[3,1,2]);
+    
+    for jjj = 1 : nChannels
+        wf(:,:,jjj) = detrend(wf(:,:,jjj));
+    end    
+    
     wf = permute(wf,[3,1,2]);
     wfF2 = mean(wfF(goodChannels,:,:),3)';
     [~, maxWaveformCh1] = max(max(wfF2(window_interval,:))-min(wfF2(window_interval,:)));
@@ -167,9 +172,8 @@ for i = 1:length(unitsToProcess)
             spikes.shankID(ii) = jj;
         end
     end
-    
-    wf2 = mean(wf,3);
-    rawWaveform_all = detrend(wf2 - mean(wf2,2));
+
+    rawWaveform_all = mean(wf,3);
     spikes.rawWaveform{ii} = rawWaveform_all(spikes.maxWaveformCh1(ii),window_interval);
     rawWaveform_std = std((wf(spikes.maxWaveformCh1(ii),:,:)-mean(wf(spikes.maxWaveformCh1(ii),:,:),3)),0,3);
     filtWaveform_all = mean(wfF,3);
