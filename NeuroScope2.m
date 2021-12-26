@@ -29,7 +29,7 @@ spikes_raster = []; % Spike raster (used for highlighting, to minimize computati
 epoch_plotElements.t0 = [];
 epoch_plotElements.events = [];
 score = [];
- 
+raster = [];
 if isdeployed % Check for if NeuroScope2 is running as a deployed app (compiled .exe or .app for windows and mac respectively)
     if ~isempty(varargin) % If a file name is provided it will load it.
         [basepath,basename,ext] = fileparts(varargin{1});
@@ -116,7 +116,8 @@ while t0 >= 0
         
         % Update UI text and slider
         UI.elements.lower.time.String = num2str(t0);
-        UI.elements.lower.slider.Value = min([t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
+%         UI.elements.lower.slider.Value = min([t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
+        
         if UI.settings.debug
             drawnow
         end
@@ -208,6 +209,7 @@ end
         UI.settings.detectedEventsBelowTrace = false;
         UI.settings.detectedSpikesBelowTrace = false;
         UI.settings.resetZoomOnNavigation = false;
+        UI.settings.replayRefreshInterval = 0.50;
         UI.timers.slider = tic;
                 
         % Only Matlab 2020b and forward support vertical markers unfortunately
@@ -234,8 +236,9 @@ end
         UI.settings.showWaveformsBelowTrace = true;
         UI.settings.showDetectedSpikeWaveforms = false;
         UI.settings.showDetectedSpikesPCAspace = false;
-        UI.settings.waveformsRelativeWidth = 1/16;
-        
+        UI.settings.colorDetectedSpikesByWidth = false;        
+        UI.settings.interneuronMaxWidth = 0.5; % in ms
+        UI.settings.waveformsRelativeWidth = 1/16;        
 
         % Performance settings
         UI.settings.plotStyleDynamicRange = true; % If true, in the range plot mode, all samples will be shown below a temporal threshold (default: 1.2 sec)
@@ -251,8 +254,8 @@ end
         UI.settings.spikesGroupColors = 1;
         UI.settings.showPopulationRate = false;
         UI.settings.populationRateBelowTrace = false;
-        UI.settings.populationRateWindow = 0.001; % in seconds 
-        UI.settings.populationRateSmoothing = 35; % in seconds 
+        UI.settings.populationRateWindow = 0.001; % seconds 
+        UI.settings.populationRateSmoothing = 35; % nBins 
         UI.settings.spikeRasterLinewidth = 1.2;
         UI.settings.showSpikeWaveforms = false;
         UI.settings.showSpikesPCAspace = false;
@@ -382,7 +385,7 @@ end
         UI.menu.view.channelSpectrum = uimenu(UI.menu.view.topMenu,menuLabel,'Power spectral density across channels',menuSelectedFcn,@powerSpectralFigure);
         UI.menu.view.channelSpectrum2 = uimenu(UI.menu.view.topMenu,menuLabel,'Power spectral density across channels (log bins; slower)',menuSelectedFcn,@powerSpectralFigure2);
          
-        % Settings        
+        % Settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
         UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu',menuSelectedFcn,@ShowHideMenu);
         UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC,'Separator','on');
@@ -393,20 +396,18 @@ end
         %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
         UI.menu.display.colorByChannels = uimenu(UI.menu.display.topMenu,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);
         UI.menu.display.resetZoomOnNavigation = uimenu(UI.menu.display.topMenu,menuLabel,'Reset zoom on navigation',menuSelectedFcn,@resetZoomOnNavigation);
-         if UI.settings.resetZoomOnNavigation
+        if UI.settings.resetZoomOnNavigation
             UI.menu.display.resetZoomOnNavigation.Checked = 'on';
         end
         
         UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
-        UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);
-        
-        
+        UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);        
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background color & primary color (ticks, text and rasters)',menuSelectedFcn,@changeBackgroundColor);
         UI.menu.display.detectedEventsBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected events below traces',menuSelectedFcn,@detectedEventsBelowTrace,'Separator','on');
         UI.menu.display.detectedSpikesBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spikes below traces',menuSelectedFcn,@detectedSpikesBelowTrace,'Separator','on');
         UI.menu.display.showDetectedSpikeWaveforms = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spike waveforms',menuSelectedFcn,@showDetectedSpikeWaveforms);
-        UI.menu.display.showDetectedSpikesPCAspace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spike PCA space',menuSelectedFcn,@showDetectedSpikesPCAspace);
-        
+        UI.menu.display.showDetectedSpikesPCAspace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spike PCA space (beta feature)',menuSelectedFcn,@showDetectedSpikesPCAspace);
+        UI.menu.display.colorDetectedSpikesByWidth = uimenu(UI.menu.display.topMenu,menuLabel,'Color detected spikes by waveform width',menuSelectedFcn,@toggleColorDetectedSpikesByWidth);
         UI.menu.display.debug = uimenu(UI.menu.display.topMenu,menuLabel,'Debug','Separator','on',menuSelectedFcn,@toggleDebug);
         
         % Help
@@ -980,8 +981,9 @@ end
             end
         elseif UI.settings.plotStyle == 5
             % Image representation
+            UI.dataRange.ephys
             timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
-            multiplier = [size(ephys.traces,1)-1:-1:0]/(size(ephys.traces,1)-1)*0.9+0.05;
+            multiplier = [size(ephys.traces,1)-1:-1:0]/(size(ephys.traces,1)-1)*diff(UI.dataRange.ephys)+UI.dataRange.ephys(1);
             imagesc(UI.plot_axis1,timeLine,multiplier,ephys.traces(:,UI.channelOrder)', 'HitTest','off')
         elseif UI.settings.plotStyle == 6
             % No traces
@@ -1050,17 +1052,33 @@ end
             raster.x(idx2remove) = [];
             raster.y(idx2remove) = []; 
             raster.channel(idx2remove) = [];
-                
+            
+            % Showing waveforms of detected spikes
+            if UI.settings.showDetectedSpikeWaveforms
+                if UI.settings.colorDetectedSpikesByWidth
+                    raster = plotSpikeWaveforms(raster,UI.settings.primaryColor,5);
+                else
+                    plotSpikeWaveforms(raster,UI.settings.primaryColor,2);
+                end
+            end
+            
             if UI.settings.showSpikes && ~UI.settings.detectedSpikesBelowTrace
                 markerType = 'o';
             else
                 markerType = UI.settings.rasterMarker;
             end
-            line(UI.plot_axis1,raster.x, raster.y,'Marker',markerType,'LineStyle','none','color',UI.settings.primaryColor, 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
             
-            % Showing waveforms of detected spikes
-            if UI.settings.showDetectedSpikeWaveforms
-                plotSpikeWaveforms(raster,UI.settings.primaryColor,2)
+            % Plotting spike rasters
+            if UI.settings.showDetectedSpikeWaveforms && UI.settings.colorDetectedSpikesByWidth
+                raster.spike_identity;
+                unique_electrodeGroups = unique(raster.spike_identity);
+                spike_identity_colormap = [0.2 0.2 1; 1 0.2 0.2];
+                for i = 1:numel(unique_electrodeGroups)
+                    idx_uids = raster.spike_identity == i;
+                    line(UI.plot_axis1,raster.x(idx_uids), raster.y(idx_uids),'Marker',markerType,'LineStyle','none','color',spike_identity_colormap(unique_electrodeGroups(i),:), 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
+                end
+            else
+                line(UI.plot_axis1,raster.x, raster.y,'Marker',markerType,'LineStyle','none','color',UI.settings.primaryColor, 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
             end
             
         end
@@ -1490,13 +1508,10 @@ end
         end
     end
 
-    function plotSpikeWaveforms(raster,lineColor,plotStyle)
+    function raster = plotSpikeWaveforms(raster,lineColor,plotStyle)
         
         wfWin_sec = 0.0008; % Default: 2*0.8ms window size
         wfWin = round(wfWin_sec * ephys.sr); % Windows size in sample
-        
-        % raster.channel(diff(raster.x)<0.001/sr)=[];
-        % raster.x(diff(raster.x)<0.001/sr)=[];
         
         raster.channel(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
         raster.idx(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
@@ -1519,7 +1534,11 @@ end
                 startIndicies2 = (timestamps - wfWin)+1;
                 stopIndicies2 = (timestamps + wfWin);
                 X2 = cumsum(accumarray(cumsum([1;stopIndicies2(:)-startIndicies2(:)+1]),[startIndicies2(:);0]-[0;stopIndicies2(:)]-1)+1);
-                ephys_data = (1000000/UI.settings.scalingFactor)*ephys.traces(:,i)';
+                if plotStyle == 5 && ~UI.settings.filterTraces
+                    ephys_data = ephys.filt(:,i)';
+                else                   
+                    ephys_data = (1000000/UI.settings.scalingFactor)*ephys.traces(:,i)';
+                end
                 
                 wf = reshape(double(ephys_data(X2(1:end-1))),1,(wfWin*2),[]);
                 wf2 = reshape(permute(wf,[2,1,3]),(wfWin*2),[]);
@@ -1558,6 +1577,7 @@ end
                     ydata = [waveforms(:,idx_uids);nan(1,sum(idx_uids))];
                     line(UI.plot_axis1,xdata(:),ydata(:), 'color', [uid_colormap(i,:),0.4],'HitTest','off')
                 end
+                
             elseif plotStyle == 3 % Electrode groups
                 raster.electrodeGroup(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
                 unique_electrodeGroups = unique(raster.electrodeGroup);
@@ -1568,10 +1588,34 @@ end
                     ydata = [waveforms(:,idx_uids);nan(1,sum(idx_uids))];
                     line(UI.plot_axis1,xdata(:),ydata(:), 'color', [electrodeGroup_colormap(unique_electrodeGroups(i),:),0.4],'HitTest','off')
                 end
+                
             elseif plotStyle == 2 % Single group
                 xdata = [waveforms_xdata;nan(1,size(waveforms,2))];
                 ydata = [waveforms;nan(1,size(waveforms,2))];
                 line(UI.plot_axis1,xdata(:),ydata(:), 'color', [lineColor,0.4],'HitTest','off')
+                
+            elseif plotStyle == 5 % Colored by spike waveform width
+                
+                [~,idx_min] = min(waveforms(round(wfWin_sec*ephys.sr):end,:));
+                [~,idx_max] = max(waveforms(round(wfWin_sec*ephys.sr):end,:));
+                spike_width = idx_max-idx_min;
+                spike_identity = double(spike_width>UI.settings.interneuronMaxWidth*ephys.sr/1000)+1;
+                raster.spike_identity = spike_identity;
+                unique_electrodeGroups = unique(spike_identity);
+                spike_identity_colormap = [0.3 0.3 1; 1 0.3 0.3];
+                labels_cell_types = {'Narrow waveform','Wide waveform'};
+                k = 1;
+                textString = {};
+                for i = 1:numel(unique_electrodeGroups)
+                    idx_uids = spike_identity == i;
+                    xdata = [waveforms_xdata(:,idx_uids);nan(1,sum(idx_uids))];
+                    ydata = [waveforms(:,idx_uids);nan(1,sum(idx_uids))];
+                    line(UI.plot_axis1,xdata(:),ydata(:), 'color', [spike_identity_colormap(unique_electrodeGroups(i),:),0.5],'HitTest','off')
+                    textString{k} = ['\color[rgb]{',num2strCommaSeparated(spike_identity_colormap(unique_electrodeGroups(i),:)),'} ',labels_cell_types{unique_electrodeGroups(i)}];
+                    k = k+1;
+                end
+                text(UI.plot_axis1,1/400,UI.dataRange.spikeWaveforms(2)-0.005,textString,'FontWeight', 'Bold','BackgroundColor',UI.settings.textBackground,'VerticalAlignment', 'top','Units','normalized','HorizontalAlignment','left','HitTest','off','Interpreter','tex')
+
             elseif plotStyle == 4
                 raster.UID(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
                 putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
@@ -1607,13 +1651,20 @@ end
             startIndicies2 = (raster1 - wfWin)*nChannels+1;
             stopIndicies2 = (raster1 + wfWin)*nChannels;
             X2 = cumsum(accumarray(cumsum([1;stopIndicies2(:)-startIndicies2(:)+1]),[startIndicies2(:);0]-[0;stopIndicies2(:)]-1)+1);
-            ephys_data = ephys.traces(:,UI.channels{UI.settings.PCAspace_electrodeGroup})';
+            if isfield(ephys,'filt')
+                ephys_data = ephys.filt(:,UI.channels{UI.settings.PCAspace_electrodeGroup})';
+            else
+                ephys_data = ephys.traces(:,UI.channels{UI.settings.PCAspace_electrodeGroup})';
+            end
             wf = reshape(double(ephys_data(X2(1:end-1))),nChannels,(wfWin*2),[]);
+%             wf = zscore(wf,0,2);
             wf2 = reshape(permute(wf,[2,1,3]),nChannels*(wfWin*2),[]);
             
             % PCA spike representation
             % if isempty(wf2)
-            [abc,score] = pca((wf2-mean(wf2))./std(wf2),'NumComponents',2);
+            abc = pca(wf2,'NumComponents',2);
+%             [abc,score] = pca((wf2-mean(wf2,2)),'NumComponents',2);
+%             [abc,score] = pca((wf2-mean(wf2,2))./std(wf2,0,2),'NumComponents',2);
             % end
             
             % Drawing background
@@ -1625,7 +1676,7 @@ end
             % Drawing PCA values
             xlim1 = [min(abc(:,1)),max(abc(:,1))];
             ylim1 = [min(abc(:,2)),max(abc(:,2))];
-            line(UI.plot_axis1,(abc(:,1)-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(abc(:,2)-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight), 'HitTest','off','Color', lineColor,'Marker','o','LineStyle','none','linewidth',2,'MarkerFaceColor',lineColor,'MarkerEdgeColor',lineColor)
+            line(UI.plot_axis1,(abc(:,1)-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth*UI.settings.windowDuration+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(abc(:,2)-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight), 'HitTest','off','Color', lineColor,'Marker','o','LineStyle','none','linewidth',2,'MarkerFaceColor',lineColor,'MarkerEdgeColor',lineColor)
         end
     end
     
@@ -1898,7 +1949,7 @@ end
             markerColor = UI.colors(iShanks,:);
             x_data = (1:numel(channels))+k_channels;
             y_data = rms1(channels);
-            line(UI.plot_axis1,(x_data-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(y_data-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight), 'HitTest','off','Color', markerColor,'Marker','o','LineStyle','-','linewidth',2,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
+            line(UI.plot_axis1,(x_data-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth*UI.settings.windowDuration+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(y_data-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight), 'HitTest','off','Color', markerColor,'Marker','o','LineStyle','-','linewidth',2,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
             k_channels = k_channels + numel(channels);
         end
         text(UI.plot_axis1,(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(0.986-UI.settings.insetRelativeHeight),[' ', num2str(ylim1(1),3),char(181),'V'],'FontWeight', 'Bold','VerticalAlignment', 'bottom','HorizontalAlignment','left','color',UI.settings.primaryColor,'FontSize',12)
@@ -2085,124 +2136,6 @@ end
             web(['https://buzsakilab.com/wp/animals/?frm_search=', data.session.animal.name],'-new','-browser')
         else
             web('https://buzsakilab.com/wp/animals/','-new','-browser')
-        end
-    end
-    
-    function ScrolltoZoomInPlot(~,evnt)
-        handle34 = UI.plot_axis1;
-        um_axes = get(handle34,'CurrentPoint');
-        u = um_axes(1,1);
-        v = um_axes(1,2);
-        cursorPosition = [u;v];
-        b = get(handle34,'Xlim');
-        c = get(handle34,'Ylim');
-        axesLimits = [b;c];
-        globalZoom1 = [[0,UI.settings.windowDuration];[0,1]];
-        if evnt.VerticalScrollCount<0
-            direction = 1;% positive scroll direction (zoom out)
-        else
-            direction = -1; % Negative scroll direction (zoom in)
-        end
-        applyZoom(globalZoom1,cursorPosition,axesLimits,direction);
-        
-        function applyZoom(globalZoom1,cursorPosition,axesLimits,direction)
-            zoomInFactor = 0.85;
-            zoomOutFactor = 1.6;
-            u = cursorPosition(1);
-            v = cursorPosition(2);
-            b = axesLimits(1,:);
-            c = axesLimits(2,:);
-            
-            if direction == 1 % zoom in
-                
-                if u < b(1) || u > b(2)
-                    % Vertical scrolling
-                    y1 = max(globalZoom1(2,1),v-diff(c)/2*zoomInFactor);
-                    y2 = min(globalZoom1(2,2),v+diff(c)/2*zoomInFactor);
-                    if y2>y1
-                        ylim([y1,y2]);
-                    end
-                elseif v < c(1) || v > c(2)
-                    % Horizontal scrolling
-                    x1 = max(globalZoom1(1,1),u-diff(b)/2*zoomInFactor);
-                    x2 = min(globalZoom1(1,2),u+diff(b)/2*zoomInFactor);
-                    if x2>x1
-                        xlim([x1,x2]);
-                    end
-                else
-                    % Global scrolling
-                    x1 = max(globalZoom1(1,1),u-diff(b)/2*zoomInFactor);
-                    x2 = min(globalZoom1(1,2),u+diff(b)/2*zoomInFactor);
-                    if x2>x1
-                        xlim([x1,x2]);
-                    end
-                    y1 = max(globalZoom1(2,1),v-diff(c)/2*zoomInFactor);
-                    y2 = min(globalZoom1(2,2),v+diff(c)/2*zoomInFactor);
-                    if y2>y1
-                        ylim([y1,y2]);
-                    end
-                end
-            elseif direction == -1
-                % Positive scrolling direction (zoom out)
-                if u < b(1) || u > b(2)
-                    % Vertical scrolling
-                    y1 = max(globalZoom1(2,1),v-diff(c)/2*zoomOutFactor);
-                    y2 = min(globalZoom1(2,2),v+diff(c)/2*zoomOutFactor);
-                    if y1 == globalZoom1(2,1)
-                        y2 = min([globalZoom1(2,2),y1 + diff(c)*2]);
-                    end
-                    if y2 == globalZoom1(2,2)
-                        y1 = max([globalZoom1(2,1),y2 - diff(c)*2]);
-                    end
-                    if y2>y1
-                        ylim([y1,y2]);
-                    end
-                elseif v < c(1) || v > c(2)
-                    % Horizontal scrolling
-                    x1 = max(globalZoom1(1,1),u-diff(b)/2*zoomOutFactor);
-                    x2 = min(globalZoom1(1,2),u+diff(b)/2*zoomOutFactor);
-                    if x1 == globalZoom1(1,1)
-                        x2 = min([globalZoom1(1,2),x1 + diff(b)*2]);
-                    end
-                    if x2 == globalZoom1(1,2)
-                        x1 = max([globalZoom1(1,1),x2 - diff(b)*2]);
-                    end
-                    if x2>x1
-                        xlim([x1,x2]);
-                    end
-                else
-                    % Global scrolling
-                    x1 = max(globalZoom1(1,1),u-diff(b)/2*zoomOutFactor);
-                    x2 = min(globalZoom1(1,2),u+diff(b)/2*zoomOutFactor);
-                    y1 = max(globalZoom1(2,1),v-diff(c)/2*zoomOutFactor);
-                    y2 = min(globalZoom1(2,2),v+diff(c)/2*zoomOutFactor);
-                    
-                    if x1 == globalZoom1(1,1)
-                        x2 = min([globalZoom1(1,2),x1 + diff(b)*2]);
-                    end
-                    if x2 == globalZoom1(1,2)
-                        x1 = max([globalZoom1(1,1),x2 - diff(b)*2]);
-                    end
-                    if y1 == globalZoom1(2,1)
-                        y2 = min([globalZoom1(2,2),y1 + diff(c)*2]);
-                    end
-                    if y2 == globalZoom1(2,2)
-                        y1 = max([globalZoom1(2,1),y2 - diff(c)*2]);
-                    end
-                    
-                    if x2>x1
-                        xlim([x1,x2]);
-                    end
-                    if y2>y1
-                        ylim([y1,y2]);
-                    end
-                end
-            else
-                % Reset zoom
-                xlim(globalZoom1(1,:));
-                ylim(globalZoom1(2,:));
-                zlim(globalZoom1(3,:));
-            end
         end
     end
 
@@ -2394,6 +2327,27 @@ end
         uiresume(UI.fig);
     end
     
+    function toggleColorDetectedSpikesByWidth(~,~)
+        UI.settings.colorDetectedSpikesByWidth = ~UI.settings.colorDetectedSpikesByWidth;
+
+        if UI.settings.colorDetectedSpikesByWidth
+            answer = inputdlg('Max trough-to-peak of interneurons (ms)','Waveform width boundary', [1 50],{num2str(UI.settings.interneuronMaxWidth)});
+            if ~isempty(answer) && isnumeric(str2double(answer{1})) && str2double(answer{1}) > 0
+                UI.settings.interneuronMaxWidth = str2double(answer{1});
+                UI.menu.display.colorDetectedSpikesByWidth.Checked = 'on';
+                UI.settings.showDetectedSpikeWaveforms = true;
+                UI.menu.display.showDetectedSpikeWaveforms.Checked = 'on';
+            else
+                UI.settings.colorDetectedSpikesByWidth = false;
+                UI.menu.display.colorDetectedSpikesByWidth.Checked = 'off';
+            end
+        else
+            UI.menu.display.colorDetectedSpikesByWidth.Checked = 'off';
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
+    
     function showDetectedSpikesPCAspace(~,~)
         UI.settings.showDetectedSpikesPCAspace = ~UI.settings.showDetectedSpikesPCAspace;
         if UI.settings.showDetectedSpikesPCAspace
@@ -2554,7 +2508,7 @@ end
             
             while UI.settings.stream
                 streamTic = tic;
-                t0 = t0+0.5*UI.settings.windowDuration;
+                t0 = t0+UI.settings.replayRefreshInterval*UI.settings.windowDuration;
                 t0 = max([0,min([t0,UI.t_total-UI.settings.windowDuration])]);
                 if ~ishandle(UI.fig)
                     return
@@ -3310,7 +3264,7 @@ end
                 offset = offset + UI.offsets.(list{i}) + padding;
             end
         end
-
+        UI.dataRange.ephys = [offset+UI.settings.ephys_padding,1-UI.settings.ephys_padding+offset*UI.settings.ephys_padding];
         % Initialize the trace data with current metadata and configuration
         UI.channels = data.session.extracellular.electrodeGroups.channels;
         if isfield(data.session,'channelTags')
