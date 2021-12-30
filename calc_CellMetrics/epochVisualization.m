@@ -15,14 +15,17 @@ function epochVisualization(epochs,axes,y1,y2,y3)
             text(axes,epochs{i}.startTime,y2,[' ',num2str(i)],'color','k','VerticalAlignment', 'top','Margin',1,'interpreter','none','HitTest','off') % ,'fontweight', 'bold'
         end
         if isfield(epochs{i},'startTime') && nargin==5
-            if isfield(epochs{i},'behavioralParadigm')
-                label = epochs{i}.behavioralParadigm;
-            elseif isfield(epochs{i},'name')
+            if isfield(epochs{i},'name')
                 label = epochs{i}.name;
+            elseif isfield(epochs{i},'behavioralParadigm')
+                label = epochs{i}.behavioralParadigm;
             else
                 label = [];
             end
             if ~isempty(label)
+                if isnumeric(label)
+                   label = num2str(label); 
+                end
                 line(axes,[epochs{i}.startTime epochs{i}.startTime],[y2 y3],'color','k','linestyle','--','HitTest','off','linewidth',1);
                 text(epochs{i}.startTime, y3, label, 'HitTest','off','HorizontalAlignment','right','VerticalAlignment','top','Rotation',90,'Interpreter', 'none','BackgroundColor',[1 1 1 0.7],'margin',0.1);
             end
