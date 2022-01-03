@@ -1,14 +1,15 @@
 function NeuroScope2(varargin)
 % % % % % % % % % % % % % % % % % % % % % % % % %
-% NeuroScope2 (BETA) is a visualizer for electrophysiological recordings. It is inspired by the original Neuroscope (http://neurosuite.sourceforge.net/)
+% NeuroScope2 (BETA) is a visualizer for electrophysiological recordings. It was inspired by the original Neuroscope (http://neurosuite.sourceforge.net/)
 % and made to mimic its features, but built upon Matlab and the data structure of CellExplorer, making it much easier to hack/customize, 
 % and faster than the original NeuroScope. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
-% https://cellexplorer.org/interface/neuroscope2/
+% Learn more at: https://cellexplorer.org/interface/neuroscope2/
 %
 % Major features:
-% - Live trace filter with spike and event detection, single channel spectrogram
+% - Multiple plotting styles and colors, electrode groups, channel tags, highlight, filter and hide channels
+% - Live trace analysis: filters, spike and event detection, single channel spectrogram, RMS-noise-plot, CSD and spike waveforms
 % - Plot multiple data streams together (ephys + analog + digital signals)
-% - Plot CellExplorer/Buzcode structures: spikes, cell_metrics, events, timeseries, states, behavior, trials
+% - Plot CellExplorer/Buzcode structures: spikes, cell metrics, events, timeseries, states, behavior, trials
 %
 % Example calls:
 %    NeuroScope2
@@ -17,6 +18,12 @@ function NeuroScope2(varargin)
 %
 % By Peter Petersen
 % % % % % % % % % % % % % % % % % % % % % % % % %
+
+% Shortcuts
+% initUI, initData, initInputs, initTraces, 
+% plotData, plot_ephys, plotSpikeData, plotSpectrogram, plotTemporalStates, plotEventData, plotTimeSeriesData, 
+% plotAnalog, plotDigital, plotBehavior, plotTrials, plotRMSnoiseInset, plotSpikesPCAspace
+
 
 % Global variables
 UI = []; % Struct with UI elements and settings
@@ -116,7 +123,7 @@ while t0 >= 0
         
         % Update UI text and slider
         UI.elements.lower.time.String = num2str(t0);
-%         UI.elements.lower.slider.Value = min([t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
+        UI.elements.lower.slider.Value = min([t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
         
         if UI.settings.debug
             drawnow
@@ -200,8 +207,7 @@ end
         UI.settings.primaryColor = 'w';
         UI.settings.showChannelNumbers = false;
         UI.settings.channelList = [];
-        UI.settings.brainRegionsToHide = [];
-        UI.settings.removeDC = false;
+        UI.settings.brainRegionsToHide = [];        
         UI.settings.showScalebar = false;
         UI.settings.narrowPadding = false;
         UI.settings.ephys_padding = 0.05; % Initial padding above and below ephys traces
@@ -229,16 +235,18 @@ end
         UI.settings.plotEnergy = 0;
         UI.settings.energyWindow = 0.030; % in seconds
         UI.settings.detectEvents = false;
-        UI.settings.eventThreshold = 100; % in µV
+        UI.settings.eventThreshold = 100; % in micro V
         UI.settings.filterTraces = false;
+        UI.settings.medianFilter = false;
+        UI.settings.removeDC = false;
         UI.settings.detectSpikes = false;
-        UI.settings.spikesDetectionThreshold = -100; % in µV
+        UI.settings.spikesDetectionThreshold = -100; % in micro V
         UI.settings.showWaveformsBelowTrace = true;
         UI.settings.showDetectedSpikeWaveforms = false;
         UI.settings.showDetectedSpikesPCAspace = false;
         UI.settings.colorDetectedSpikesByWidth = false;        
         UI.settings.interneuronMaxWidth = 0.5; % in ms
-        UI.settings.waveformsRelativeWidth = 1/16;        
+        UI.settings.waveformsRelativeWidth = 1/16;
 
         % Performance settings
         UI.settings.plotStyleDynamicRange = true; % If true, in the range plot mode, all samples will be shown below a temporal threshold (default: 1.2 sec)
@@ -260,6 +268,7 @@ end
         UI.settings.showSpikeWaveforms = false;
         UI.settings.showSpikesPCAspace = false;
         UI.settings.PCAspace_electrodeGroup = 1;
+        UI.settings.showSpikeMatrix = false;
         
         % Cell metrics
         UI.settings.useMetrics = false;
@@ -389,6 +398,7 @@ end
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
         UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu',menuSelectedFcn,@ShowHideMenu);
         UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC,'Separator','on');
+        UI.menu.display.medianFilter = uimenu(UI.menu.display.topMenu,menuLabel,'Median filter',menuSelectedFcn,@medianFilter);        
         UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);
         UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
         UI.menu.display.narrowPadding = uimenu(UI.menu.display.topMenu,menuLabel,'Narrow ephys padding',menuSelectedFcn,@narrowPadding);
@@ -459,12 +469,12 @@ end
         
         % Electrophysiology
         UI.panel.general.filter = uipanel('Parent',UI.panel.general.main,'title','Extracellular traces');
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot style', 'Units','normalized', 'Position', [0.01 0.87 0.3 0.1],'HorizontalAlignment','left');
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot colors', 'Units','normalized', 'Position', [0.01 0.74 0.3 0.1],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot style', 'Units','normalized', 'Position', [0.01 0.87 0.3 0.1],'HorizontalAlignment','left','tooltip','Select plot style');
+        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot colors', 'Units','normalized', 'Position', [0.01 0.74 0.3 0.1],'HorizontalAlignment','left','tooltip','Select plot colors/greyscale');
         UI.panel.general.plotStyle = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Downsampled','Range','Raw','LFP (*.lfp file)','Image','No ephys traces'}, 'value', UI.settings.plotStyle, 'Units','normalized', 'Position', [0.3 0.86 0.69 0.12],'Callback',@changePlotStyle,'HorizontalAlignment','left');
         UI.panel.general.colorScale = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 75%','Colors 50%','Colors 25%','Grey-scale','Grey-scale 75%','Grey-scale 50%','Grey-scale 25%'}, 'value', 1, 'Units','normalized', 'Position', [0.3 0.73 0.69 0.12],'Callback',@changeColorScale,'HorizontalAlignment','left');
-        UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.62 0.5 0.11],'Callback',@changeTraceFilter,'HorizontalAlignment','left');
-        UI.panel.general.extraSpacing = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Group spacing', 'value', 0, 'Units','normalized', 'Position', [0.5 0.62 0.5 0.11],'Callback',@extraSpacing,'HorizontalAlignment','left');
+        UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.62 0.5 0.11],'Callback',@changeTraceFilter,'HorizontalAlignment','left','tooltip','Filter ephys traces');
+        UI.panel.general.extraSpacing = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Group spacing', 'value', 0, 'Units','normalized', 'Position', [0.5 0.62 0.5 0.11],'Callback',@extraSpacing,'HorizontalAlignment','left','tooltip','Spacing between channels from different electrode groups');
         if UI.settings.extraSpacing
             UI.panel.general.extraSpacing.Value = 1;
         end
@@ -533,19 +543,23 @@ end
         % 2. PANEL: Spikes related metrics
         % Spikes
         UI.panel.spikes.main = uipanel('Parent',UI.panel.spikedata.main,'title','Spikes  (*.spikes.cellinfo.mat)');
-        UI.panel.spikes.showSpikes = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Show spikes', 'value', 0, 'Units','normalized', 'Position', [0.01 0.80 0.48 0.19],'Callback',@toggleSpikes,'HorizontalAlignment','left');
-        UI.panel.spikes.showSpikesBelowTrace = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Below traces', 'value', 0, 'Units','normalized', 'Position', [0.51 0.80 0.75 0.19],'Callback',@showSpikesBelowTrace,'HorizontalAlignment','left');
-        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', ' Colors: ', 'Units','normalized', 'Position', [0 0.60 0.35 0.19],'HorizontalAlignment','left');
-        UI.panel.spikes.setSpikesGroupColors = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {'UID','Single color','Electrode groups'}, 'Units','normalized', 'Position', [0.35 0.60 0.64 0.19],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesGroupColors);
-        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', ' Sorting/Ydata: ', 'Units','normalized', 'Position', [0.0 0.40 0.4 0.19],'HorizontalAlignment','left');
-        UI.panel.spikes.setSpikesYData = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.35 0.40 0.64 0.19],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesYData);
+        UI.panel.spikes.showSpikes = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Show spikes', 'value', 0, 'Units','normalized', 'Position', [0.01 0.85 0.48 0.14],'Callback',@toggleSpikes,'HorizontalAlignment','left','tooltip','Load and show spike rasters');
+        UI.panel.spikes.showSpikesBelowTrace = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Below traces', 'value', 0, 'Units','normalized', 'Position', [0.51 0.85 0.75 0.14],'Callback',@showSpikesBelowTrace,'HorizontalAlignment','left','tooltip','Show spike rasters below ephys traces');
+        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', ' Colors: ', 'Units','normalized', 'Position', [0 0.68 0.35 0.16],'HorizontalAlignment','left','tooltip','Define color groups');
+        UI.panel.spikes.setSpikesGroupColors = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {'UID','Single color','Electrode groups'}, 'Units','normalized', 'Position', [0.35 0.68 0.64 0.16],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesGroupColors);
+        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', ' Sorting/Ydata: ', 'Units','normalized', 'Position', [0.0 0.51 0.4 0.16],'HorizontalAlignment','left','tooltip','Only applies to rasters shown below ephys traces');
+        UI.panel.spikes.setSpikesYData = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.35 0.51 0.64 0.16],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesYData);
 
-       	uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', 'Width ', 'Units','normalized', 'Position', [0.37 0.2 0.3 0.16],'HorizontalAlignment','right');
-        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', 'Electrode group ', 'Units','normalized', 'Position', [0.17 0.01 0.5 0.16],'HorizontalAlignment','right');
-        UI.panel.spikes.showSpikeWaveforms = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Waveforms', 'value', 0, 'Units','normalized', 'Position', [0.01 0.2 0.43 0.19],'Callback',@showSpikeWaveforms,'HorizontalAlignment','left');
-        UI.panel.spikes.waveformsRelativeWidth = uicontrol('Parent',UI.panel.spikes.main,'Style', 'Edit', 'String',num2str(UI.settings.waveformsRelativeWidth), 'Units','normalized', 'Position', [0.67 0.20 0.32 0.19],'HorizontalAlignment','center','Callback',@showSpikeWaveforms);
-        UI.panel.spikes.showSpikesPCAspace = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','PCAs', 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.23 0.19],'Callback',@showSpikesPCAspace,'HorizontalAlignment','left');
-        UI.panel.spikes.PCA_electrodeGroup = uicontrol('Parent',UI.panel.spikes.main,'Style', 'Edit', 'String', num2str(UI.settings.PCAspace_electrodeGroup), 'Units','normalized', 'Position', [0.67 0.01 0.32 0.19],'HorizontalAlignment','center','Callback',@showSpikesPCAspace);
+       	uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', 'Width ', 'Units','normalized', 'Position', [0.37 0.34 0.3 0.16],'HorizontalAlignment','right','tooltip','Relative width of the spike waveforms');        
+        UI.panel.spikes.showSpikeWaveforms = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Waveforms', 'value', 0, 'Units','normalized', 'Position', [0.01 0.34 0.43 0.16],'Callback',@showSpikeWaveforms,'HorizontalAlignment','left','tooltip','Show spike waveforms below ephys traces');
+        UI.panel.spikes.waveformsRelativeWidth = uicontrol('Parent',UI.panel.spikes.main,'Style', 'Edit', 'String',num2str(UI.settings.waveformsRelativeWidth), 'Units','normalized', 'Position', [0.67 0.34 0.32 0.16],'HorizontalAlignment','center','Callback',@showSpikeWaveforms);
+        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', 'Electrode group ', 'Units','normalized', 'Position', [0.17 0.17 0.5 0.16],'HorizontalAlignment','right','tooltip','Electrode group that the PCA representation is applied to');
+        UI.panel.spikes.showSpikesPCAspace = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','PCAs', 'value', 0, 'Units','normalized', 'Position', [0.01 0.17 0.23 0.16],'Callback',@showSpikesPCAspace,'HorizontalAlignment','left');
+        UI.panel.spikes.PCA_electrodeGroup = uicontrol('Parent',UI.panel.spikes.main,'Style', 'Edit', 'String', num2str(UI.settings.PCAspace_electrodeGroup), 'Units','normalized', 'Position', [0.67 0.17 0.32 0.16],'HorizontalAlignment','center','Callback',@showSpikesPCAspace);
+        
+        UI.panel.spikes.showSpikeMatrix = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Show matrix', 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.45 0.15],'Callback',@showSpikeMatrix,'HorizontalAlignment','left');
+        %UI.panel.spikes.setSpikesGroupColors = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {'UID','Single color','Electrode groups'}, 'Units','normalized', 'Position', [0.35 0.60 0.64 0.16],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesGroupColors);
+        
         
         % Cell metrics
         UI.panel.cell_metrics.main = uipanel('Parent',UI.panel.spikedata.main,'title','Cell metrics (*.cell_metrics.cellinfo.mat)');
@@ -590,9 +604,9 @@ end
         UI.panel.spikesorting.spykingcircusBelowTrace = uicontrol('Parent',UI.panel.spikesorting.main,'Style','checkbox','Units','normalized','Position',[0.505 0 0.485 0.32], 'value', 0,'String','Below traces','Callback',@showSpykingcircus,'KeyPressFcn', @keyPress,'tooltip','Show SpyKING CIRCUS spikes below trace');
 
         % Defining flexible panel heights
-        set(UI.panel.spikedata.main, 'Heights', [135 170 100 -200 35 100 95],'MinimumHeights',[135 170 60 160 35 60 95]);
+        set(UI.panel.spikedata.main, 'Heights', [160 170 100 -200 35 100 95],'MinimumHeights',[160 170 60 160 35 60 95]);
         UI.panel.spikedata.main1.MinimumWidths = 198;
-        UI.panel.spikedata.main1.MinimumHeights = 800;
+        UI.panel.spikedata.main1.MinimumHeights = 825;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 3. PANEL: Other datatypes
@@ -820,8 +834,8 @@ end
             colors = ones(size(UI.colors))/(UI.settings.greyScaleTraces-4);
             colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
         end
-        % Setting booean for validating ephys loading and plotting
         
+        % Setting booleans for validating ephys loading and plotting        
         ephys.loaded = false;
         ephys.plotted = false;
         if UI.settings.plotStyle == 4 % lfp file
@@ -895,11 +909,16 @@ end
             return
         end
         
-        % Removing DC
+        % Removing DC (substraction of the mean of each channel)
         if UI.settings.removeDC
             ephys.traces = ephys.raw-mean(ephys.raw);
         else
             ephys.traces = ephys.raw;
+        end
+        
+        % Median filter (substraction of the median at each sample across channels)
+        if UI.settings.medianFilter
+            ephys.traces = ephys.traces-median(ephys.traces,2);
         end
         
         if UI.settings.filterTraces && UI.settings.plotStyle == 4
@@ -988,7 +1007,7 @@ end
         elseif UI.settings.plotStyle == 6
             % No traces
             
-        else
+        else % UI.settings.plotStyle == [3,4]
             % Raw data
             timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
             for iShanks = electrodeGroupsToPlot
@@ -1033,11 +1052,11 @@ end
                     raster.idx = [raster.idx;idx];
                     raster.x = [raster.x;idx/ephys.sr];
                     raster.channel = [raster.channel;UI.channelOrder(i)*ones(size(idx))];
-                    if UI.settings.plotStyle == 5
-                        raster.y = [raster.y;-UI.channelScaling(idx,UI.channelOrder(i))];
-                    elseif UI.settings.detectedSpikesBelowTrace
+                    if UI.settings.detectedSpikesBelowTrace
                         raster_y = diff(UI.dataRange.detectedSpikes)*(-UI.channelScaling(idx,UI.channelOrder(i)))+UI.dataRange.detectedSpikes(1)+0.004;
                         raster.y = [raster.y;raster_y];
+                    elseif any(UI.settings.plotStyle == [5,6])
+                        raster.y = [raster.y;-UI.channelScaling(idx,UI.channelOrder(i))];    
                     else
                         raster.y = [raster.y;ephys.traces(idx,UI.channelOrder(i))-UI.channelScaling(idx,UI.channelOrder(i))];
                     end
@@ -1096,10 +1115,13 @@ end
                 end
                 if ~isempty(idx)
                     raster.x = [raster.x;idx];
+                    
                     if UI.settings.detectedEventsBelowTrace
                         raster_y = diff(UI.dataRange.detectedEvents)*(-UI.channelScaling(idx,i))+UI.dataRange.detectedEvents(1)+0.004;
                         raster.y = [raster.y;raster_y];
-                    else                        
+                    elseif any(UI.settings.plotStyle == [5,6])
+                        raster.y = [raster.y;-UI.channelScaling(idx,UI.channelOrder(i))];    
+                    else
                         raster.y = [raster.y;ephys.traces(idx,i)-UI.channelScaling(idx,i)];
                     end
                 end
@@ -1352,7 +1374,7 @@ end
                     traces = ephys.traces_min-UI.channelOffset;
                     idx3 = sub2ind(size(traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
                     spikes_raster.y = traces(idx3);
-                elseif UI.settings.plotStyle == 5
+                elseif any(UI.settings.plotStyle == [5,6])
                     idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
                     idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
                     idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
@@ -1457,8 +1479,8 @@ end
                 elseif UI.settings.spikesGroupColors == 3
                     unique_electrodeGroups = unique(spikes_raster.electrodeGroup);
                     electrodeGroup_colormap = UI.colors;
-                    for i = unique_electrodeGroups
-                        idx3 = spikes_raster.electrodeGroup==i;                        
+                    for i = 1:numel(unique_electrodeGroups)
+                        idx3 = spikes_raster.electrodeGroup==unique_electrodeGroups(i);                        
                         if any(idx3)
                             populationRate = histcounts(spikes_raster.x(idx3),populationBins)/UI.settings.populationRateWindow/2;
                             if UI.settings.populationRateSmoothing == 1
@@ -1472,7 +1494,7 @@ end
                                 populationRate = conv(populationRate,ce_gausswin(UI.settings.populationRateSmoothing)'/sum(ce_gausswin(UI.settings.populationRateSmoothing)),'same');
                             end
                             populationRate = (populationRate/max(populationRate))*diff(UI.dataRange.populationRate)+UI.dataRange.populationRate(1)+0.001;
-                            line(populationBins, populationRate,'Marker','none','LineStyle','-','color',electrodeGroup_colormap(i,:), 'HitTest','off','linewidth',1.5);
+                            line(populationBins, populationRate,'Marker','none','LineStyle','-','color',electrodeGroup_colormap(unique_electrodeGroups(i),:), 'HitTest','off','linewidth',1.5);
                         end
                     end
                     
@@ -1493,7 +1515,7 @@ end
                 end
             end
             if UI.settings.showSpikeWaveforms
-                plotSpikeWaveforms(spikes_raster,UI.settings.primaryColor,UI.settings.spikesGroupColors)
+                plotSpikeWaveforms(spikes_raster,UI.settings.primaryColor,UI.settings.spikesGroupColors);
             end
             
             % Showing detected spikes in a spike-waveform-PCA plot inset
@@ -1505,6 +1527,33 @@ end
                 end                    
                 plotSpikesPCAspace(spikes_raster,[0.5 0.5 1],drawBackground)
             end
+            
+            if UI.settings.showSpikeMatrix
+                plotSpikeMatrix
+            end
+        end
+    end
+
+    function plotSpikeMatrix
+        t1 = t0;
+        t2 = t0+UI.settings.windowDuration;
+        idx = ismember(data.spikes.spindices(:,2),UI.params.subsetTable ) & ismember(data.spikes.spindices(:,2),UI.params.subsetCellType) & ismember(data.spikes.spindices(:,2),UI.params.subsetFilter) & ismember(data.spikes.spindices(:,2),UI.params.subsetGroups)  & data.spikes.spindices(:,1) > t1 & data.spikes.spindices(:,1) < t2;
+        if any(idx)
+            abc = histcounts(data.spikes.spindices(idx,2),1:data.spikes.numcells+1);
+            plotRows = numSubplots(data.spikes.numcells);
+            cell_spikematrix = zeros(1,plotRows(1)*plotRows(2));
+            cell_spikematrix(1:data.spikes.numcells) = abc;
+            cell_spikematrix = fliplr(reshape(cell_spikematrix,plotRows(2),plotRows(1)))';
+            
+            p1 = patch(UI.plot_axis1,[(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration,UI.settings.windowDuration,UI.settings.windowDuration,(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration]-0.005,[(1-UI.settings.insetRelativeHeight) (1-UI.settings.insetRelativeHeight) 1 1]-0.015,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
+            alpha(p1,0.6);
+                
+            h = imagesc(UI.plot_axis1,[0.5:plotRows(2)]/plotRows(2)*UI.settings.insetRelativeWidth*UI.settings.windowDuration+(0.995-UI.settings.insetRelativeWidth)*UI.settings.windowDuration,[0.5:plotRows(1)]/plotRows(1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight),cell_spikematrix, 'AlphaData', .8);
+            set(h, 'AlphaData', cell_spikematrix) 
+            % Drawing PCA values
+%             xlim1 = [min(abc(:,1)),max(abc(:,1))];
+%             ylim1 = [min(abc(:,2)),max(abc(:,2))];
+%             line(UI.plot_axis1,(abc(:,1)-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth*UI.settings.windowDuration+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(abc(:,2)-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight), 'HitTest','off','Color', lineColor,'Marker','o','LineStyle','none','linewidth',2,'MarkerFaceColor',lineColor,'MarkerEdgeColor',lineColor)
         end
     end
 
@@ -1634,9 +1683,6 @@ end
     end
     
     function plotSpikesPCAspace(raster,lineColor,drawBackground)
-
-%         raster = sort(raster);
-%         raster(diff(raster)<0.001/data.session.extracellular.sr)=[];
         
         wfWin_sec = 0.0008; % Default: 2*0.8ms window size
         wfWin = round(wfWin_sec * ephys.sr); % Windows size in sample
@@ -1657,16 +1703,9 @@ end
                 ephys_data = ephys.traces(:,UI.channels{UI.settings.PCAspace_electrodeGroup})';
             end
             wf = reshape(double(ephys_data(X2(1:end-1))),nChannels,(wfWin*2),[]);
-%             wf = zscore(wf,0,2);
             wf2 = reshape(permute(wf,[2,1,3]),nChannels*(wfWin*2),[]);
-            
-            % PCA spike representation
-            % if isempty(wf2)
             abc = pca(wf2,'NumComponents',2);
-%             [abc,score] = pca((wf2-mean(wf2,2)),'NumComponents',2);
-%             [abc,score] = pca((wf2-mean(wf2,2))./std(wf2,0,2),'NumComponents',2);
-            % end
-            
+
             % Drawing background
             if drawBackground
                 p1 = patch(UI.plot_axis1,[(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration,UI.settings.windowDuration,UI.settings.windowDuration,(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration]-0.005,[(1-UI.settings.insetRelativeHeight) (1-UI.settings.insetRelativeHeight) 1 1]-0.015,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
@@ -2392,7 +2431,17 @@ end
         end
         uiresume(UI.fig);
     end
-    
+
+    function medianFilter(~,~)
+        UI.settings.medianFilter = ~UI.settings.medianFilter;
+        if UI.settings.medianFilter
+            UI.menu.display.medianFilter.Checked = 'on';
+        else
+            UI.menu.display.medianFilter.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+
     function ShowHideMenu(~,~)
         % Hide/show menubar
         if UI.settings.displayMenu == 0
@@ -3228,12 +3277,19 @@ end
             UI.settings.showSpikesPCAspace = false;
             UI.panel.spikes.showSpikesPCAspace.Value = 0;
             warndlg('The electrode group for the PCA space is not valid','Error')
-        end
-        
+        end        
         initTraces
         uiresume(UI.fig);
     end
         
+    function showSpikeMatrix(~,~)
+        if UI.panel.spikes.showSpikeMatrix.Value == 1
+            UI.settings.showSpikeMatrix = true;
+        else
+            UI.settings.showSpikeMatrix = false;
+        end
+        uiresume(UI.fig);
+    end
 
     function initTraces
         set(UI.fig,'Renderer','opengl');
@@ -3629,10 +3685,23 @@ end
     end
     
     function movingSlider(src,evnt)
-        Value = evnt.AffectedObject.Value;
-        t0 = valid_t0((UI.t_total-UI.settings.windowDuration)*Value/100);
-        UI.elements.lower.time.String = num2str(t0);
-        plotData
+        if gco == UI.elements.lower.slider
+            t0 = valid_t0((UI.t_total-UI.settings.windowDuration)*evnt.AffectedObject.Value/100);
+            UI.elements.lower.time.String = num2str(t0);
+            
+            UI.selectedChannels = [];
+            UI.selectedUnits = [];
+            
+            % Plotting data
+            plotData;
+            
+            % Updating epoch axes
+            if ishandle(epoch_plotElements.t0)
+                delete(epoch_plotElements.t0)
+            end
+            epoch_plotElements.t0 = line(UI.epochAxes,[t0,t0],[0,1],'color','k', 'HitTest','off','linewidth',1);
+            UI.settings.stream = false;
+        end
     end
 
     function ClickPlot(~,~)
