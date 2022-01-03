@@ -515,24 +515,54 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             xlabel(handle_subfig3,'x position (µm)'), ylabel(handle_subfig3,'y position (µm)')
             drawnow
         end
+        channels = cat(2,session.extracellular.electrodeGroups.channels{:});
         for j = 1:cell_metrics.general.cellCount
             if ~isnan(cell_metrics.peakVoltage(j)) && isfield(cell_metrics.waveforms,'filt_all')
                 % Trilateration
                 peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
                 [~,idx] = sort(range(cell_metrics.waveforms.filt_all{j}'),'descend');
-                
-                try
-                    trilat_nChannels = min([16,numel(peakVoltage)]);
-                    bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
-                    beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
-                
-                    trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels),peakVoltage(idx(1:trilat_nChannels)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
+%                     trilat_nChannels = min([16,numel(peakVoltage)]);
+%                     bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
+                    
+%                     ch_idx = ismember(channels,bestChannels);
+%                     x = cell_metrics.general.chanCoords.x(ch_idx);
+%                     y = cell_metrics.general.chanCoords.y(ch_idx);
+%                     x = x(idx);
+%                     y = y(idx);
+%                     
+%                     beta0 = [cell_metrics.general.chanCoords.x(1),...
+%                         cell_metrics.general.chanCoords.y(1)]; % initial position                    
+%                     trilat_pos = trilat(x,y,...
+%                         peakVoltage(idx(1:trilat_nChannels)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
+                                  
+                    ch_idx = ismember(channels,cell_metrics.waveforms.channels_all{j});
+                    x = cell_metrics.general.chanCoords.x(ch_idx);
+                    y = cell_metrics.general.chanCoords.y(ch_idx);
+                    x_beta = x(idx);
+                    y_beta = y(idx);
+                    trilat_pos = trilat(x,y,peakVoltage,[x_beta(1),y_beta(1)],0);
+                                        
                     cell_metrics.trilat_x(j) = trilat_pos(1);
                     cell_metrics.trilat_y(j) = trilat_pos(2);
-                catch
-                    cell_metrics.trilat_x(j) = cell_metrics.general.chanCoords.x(idx(1));
-                    cell_metrics.trilat_y(j) = cell_metrics.general.chanCoords.y(idx(1));
-                end
+
+%                 % Trilateration
+%                 peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
+%                 [~,idx] = sort(range(cell_metrics.waveforms.filt_all{j}'),'descend');
+%                 
+%                 trilat_nChannels = min([16,numel(peakVoltage)]);
+%                 bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
+%                                 
+%                 beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),...
+%                     cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
+%                 
+%                 trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),...
+%                     cell_metrics.general.chanCoords.y(bestChannels),...
+%                     peakVoltage(idx(1:trilat_nChannels)),beta0,0);
+%                 
+%                 cell_metrics.trilat_x(j) = trilat_pos(1);
+%                 cell_metrics.trilat_y(j) = trilat_pos(2);
+                
+                    
                 % Length constant
                 x1 = cell_metrics.general.chanCoords.x;
                 y1 = cell_metrics.general.chanCoords.y;
@@ -843,10 +873,13 @@ if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(
         deepSuperficial_ChDistance = deepSuperficialfromRipple.channelDistance; %
         deepSuperficial_ChClass = deepSuperficialfromRipple.channelClass;% cell_deep_superficial
         cell_metrics.general.deepSuperficial_file = deepSuperficial_file;
+        
+        ripple_channels = cat(2,cell_metrics.general.SWR.ripple_channels{:});
         for j = 1:cell_metrics.general.cellCount
             try
-                cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial OK
-                cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial_distance
+                ch_idx = ripple_channels == spikes{spkExclu}.maxWaveformCh1(j);
+                cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(ch_idx);
+                cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(ch_idx);
             catch
                 cell_metrics.deepSuperficial(j) = {'Unknown'};
                 cell_metrics.deepSuperficialDistance(j) = NaN;    
