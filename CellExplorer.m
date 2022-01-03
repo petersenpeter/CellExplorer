@@ -5466,9 +5466,12 @@ end
                 subset = 1:cell_metrics.general.cellCount;
             end
             saveStateToHistory(subset)
+            
+            ripple_channels = cat(2,deepSuperficialfromRipple.ripple_channels{:});
             for j = subset
-                cell_metrics.deepSuperficial(j) = deepSuperficialfromRipple.channelClass(cell_metrics.maxWaveformCh1(j));
-                cell_metrics.deepSuperficialDistance(j) = deepSuperficialfromRipple.channelDistance(cell_metrics.maxWaveformCh1(j));
+                ch_idx = ripple_channels == cell_metrics.maxWaveformCh1(j);
+                cell_metrics.deepSuperficial(j) = deepSuperficialfromRipple.channelClass(ch_idx);
+                cell_metrics.deepSuperficialDistance(j) = deepSuperficialfromRipple.channelDistance(ch_idx);
             end
             for j = 1:length(UI.preferences.deepSuperficial)
                 cell_metrics.deepSuperficial_num(strcmp(cell_metrics.deepSuperficial,UI.preferences.deepSuperficial{j}))=j;
