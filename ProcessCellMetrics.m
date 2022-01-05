@@ -530,8 +530,8 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                     cell_metrics.trilat_x(j) = trilat_pos(1);
                     cell_metrics.trilat_y(j) = trilat_pos(2);
                 catch
-                    cell_metrics.trilat_x(j) = cell_metrics.general.chanCoords.x(idx(1));
-                    cell_metrics.trilat_y(j) = cell_metrics.general.chanCoords.y(idx(1));
+                    cell_metrics.trilat_x(j) = beta0(1);
+                    cell_metrics.trilat_y(j) = beta0(2);
                 end
                 % Length constant
                 x1 = cell_metrics.general.chanCoords.x;
