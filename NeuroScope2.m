@@ -217,6 +217,11 @@ end
         UI.settings.resetZoomOnNavigation = false;
         UI.settings.replayRefreshInterval = 0.50;
         UI.timers.slider = tic;
+        if ismac
+            UI.settings.fontsize = 11;
+        else
+            UI.settings.fontsize = 9;
+        end
                 
         % Only Matlab 2020b and forward support vertical markers unfortunately
         if verLessThan('matlab','9.9')
@@ -439,15 +444,15 @@ end
         
         UI.panel.center = uix.VBox( 'Parent', UI.grid_panels, 'Spacing', 0, 'Padding', 0 ); % Center flex box
         % UI.panel.right = uix.VBoxFlex('Parent',UI.grid_panels,'position',[0 0.66 0.26 0.31]); % Right panel
-        set(UI.grid_panels, 'Widths', [220 -1],'MinimumWidths',[220 1]); % set grid panel size
-        set(UI.grid_panels, 'Widths', [220 -1],'MinimumWidths',[5 1]); % set grid panel size
+        set(UI.grid_panels, 'Widths', [250 -1],'MinimumWidths',[220 1]); % set grid panel size
+        set(UI.grid_panels, 'Widths', [250 -1],'MinimumWidths',[5 1]); % set grid panel size
         % Separation of the center box into three panels: title panel, plot panel and lower info panel
         UI.panel.plots = uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.center,'BackgroundColor','k'); % Main plot panel
         UI.panel.info  = uix.HBox('Parent',UI.panel.center, 'Padding', 1); % Lower info panel
         set(UI.panel.center, 'Heights', [-1 20]); % set center panel size
         
         % Left panel tabs
-        UI.uitabgroup = uiextras.TabPanel('Parent', UI.panel.left, 'Padding', 1,'FontSize',11 ,'TabSize',60);
+        UI.uitabgroup = uiextras.TabPanel('Parent', UI.panel.left, 'Padding', 1,'FontSize',UI.settings.fontsize ,'TabSize',60);
         UI.panel.general.main1  = uix.ScrollingPanel('Parent',UI.uitabgroup, 'Padding', 0 );
         UI.panel.general.main  = uix.VBox('Parent',UI.panel.general.main1, 'Padding', 1);
         UI.panel.spikedata.main1  = uix.ScrollingPanel('Parent',UI.uitabgroup, 'Padding', 0 );
@@ -490,21 +495,21 @@ end
         UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.7 0.01 0.29 0.12],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
         
         % Electrode groups
-        UI.uitabgroup_channels = uiextras.TabPanel('Parent', UI.panel.general.main, 'Padding', 1,'FontSize',11 ,'TabSize',45);
+        UI.uitabgroup_channels = uiextras.TabPanel('Parent', UI.panel.general.main, 'Padding', 1,'FontSize',UI.settings.fontsize ,'TabSize',50);
         UI.panel.electrodeGroups.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
         UI.panel.chanelList.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
         UI.panel.brainRegions.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
         UI.panel.chanCoords.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
         UI.uitabgroup_channels.TabNames = {'Groups', 'Channels','Regions','Layout'};
         
-        UI.table.electrodeGroups = uitable(UI.panel.electrodeGroups.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 20 45 150},'columnname',{'','','Group','Channels        '},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editElectrodeGroups,'CellSelectionCallback',@ClicktoSelectFromTable);
+        UI.table.electrodeGroups = uitable(UI.panel.electrodeGroups.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 20 45 200},'columnname',{'','','Group','Channels        '},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editElectrodeGroups,'CellSelectionCallback',@ClicktoSelectFromTable);
         UI.panel.electrodeGroupsButtons = uipanel('Parent',UI.panel.general.main);
         
         % Channel list
         UI.listbox.channelList = uicontrol('Parent',UI.panel.chanelList.main,'Style','listbox','Position',[0 0 1 1],'Units','normalized','String',{'1'},'min',0,'Value',1,'fontweight', 'bold','Callback',@buttonChannelList,'KeyPressFcn', {@keyPress});
 
         % Brain regions
-        UI.table.brainRegions = uitable(UI.panel.brainRegions.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 45 100 45},'columnname',{'','Region','Channels','Groups'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editBrainregionList);
+        UI.table.brainRegions = uitable(UI.panel.brainRegions.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 45 125 45},'columnname',{'','Region','Channels','Groups'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editBrainregionList);
         
         % Channel coordinates
         UI.chanCoordsAxes = axes('Parent',UI.panel.chanCoords.main,'Units','Normalize','Position',[0 0 1 1],'YLim',[0,1],'YTick',[],'XTick',[]); axis tight
@@ -530,13 +535,13 @@ end
         
         % Time series data
         UI.panel.timeseriesdata.main = uipanel('Title','Time series data','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
-        UI.table.timeseriesdata = uitable(UI.panel.timeseriesdata.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0.20 1 0.80],'ColumnWidth',{20 35 100 45},'columnname',{'','Tag','File name','nChan'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@showIntan);
+        UI.table.timeseriesdata = uitable(UI.panel.timeseriesdata.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0.20 1 0.80],'ColumnWidth',{20 35 125 45},'columnname',{'','Tag','File name','nChan'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@showIntan);
         UI.panel.timeseriesdata.showTimeseriesBelowTrace = uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','checkbox','Units','normalized','Position',[0 0 0.5 0.20], 'value', 0,'String','Below traces','Callback',@showTimeseriesBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show time series data below traces');
         uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
             
         % Defining flexible panel heights
         set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 40 150],'MinimumHeights',[65 210 160 35 140 35 50 30 150]);
-        UI.panel.general.main1.MinimumWidths = 198;
+        UI.panel.general.main1.MinimumWidths = 218;
         UI.panel.general.main1.MinimumHeights = 935; 
         
         % % % % % % % % % % % % % % % % % % % % % %
@@ -550,22 +555,21 @@ end
         uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', ' Sorting/Ydata: ', 'Units','normalized', 'Position', [0.0 0.51 0.4 0.16],'HorizontalAlignment','left','tooltip','Only applies to rasters shown below ephys traces');
         UI.panel.spikes.setSpikesYData = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.35 0.51 0.64 0.16],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesYData);
 
-       	uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', 'Width ', 'Units','normalized', 'Position', [0.37 0.34 0.3 0.16],'HorizontalAlignment','right','tooltip','Relative width of the spike waveforms');        
+       	uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', 'Width ', 'Units','normalized', 'Position', [0.37 0.34 0.3 0.13],'HorizontalAlignment','right','tooltip','Relative width of the spike waveforms');        
         UI.panel.spikes.showSpikeWaveforms = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Waveforms', 'value', 0, 'Units','normalized', 'Position', [0.01 0.34 0.43 0.16],'Callback',@showSpikeWaveforms,'HorizontalAlignment','left','tooltip','Show spike waveforms below ephys traces');
         UI.panel.spikes.waveformsRelativeWidth = uicontrol('Parent',UI.panel.spikes.main,'Style', 'Edit', 'String',num2str(UI.settings.waveformsRelativeWidth), 'Units','normalized', 'Position', [0.67 0.34 0.32 0.16],'HorizontalAlignment','center','Callback',@showSpikeWaveforms);
-        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', 'Electrode group ', 'Units','normalized', 'Position', [0.17 0.17 0.5 0.16],'HorizontalAlignment','right','tooltip','Electrode group that the PCA representation is applied to');
+        uicontrol('Parent',UI.panel.spikes.main,'Style', 'text', 'String', 'Electrode group ', 'Units','normalized', 'Position', [0.17 0.17 0.5 0.13],'HorizontalAlignment','right','tooltip','Electrode group that the PCA representation is applied to');
         UI.panel.spikes.showSpikesPCAspace = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','PCAs', 'value', 0, 'Units','normalized', 'Position', [0.01 0.17 0.23 0.16],'Callback',@showSpikesPCAspace,'HorizontalAlignment','left');
         UI.panel.spikes.PCA_electrodeGroup = uicontrol('Parent',UI.panel.spikes.main,'Style', 'Edit', 'String', num2str(UI.settings.PCAspace_electrodeGroup), 'Units','normalized', 'Position', [0.67 0.17 0.32 0.16],'HorizontalAlignment','center','Callback',@showSpikesPCAspace);
         
         UI.panel.spikes.showSpikeMatrix = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Show matrix', 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.45 0.15],'Callback',@showSpikeMatrix,'HorizontalAlignment','left');
         %UI.panel.spikes.setSpikesGroupColors = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {'UID','Single color','Electrode groups'}, 'Units','normalized', 'Position', [0.35 0.60 0.64 0.16],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesGroupColors);
         
-        
         % Cell metrics
         UI.panel.cell_metrics.main = uipanel('Parent',UI.panel.spikedata.main,'title','Cell metrics (*.cell_metrics.cellinfo.mat)');
-        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Color groups', 'Units','normalized','Position', [0 0.74 0.5 0.13],'HorizontalAlignment','left');
-        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Sorting','Units','normalized','Position', [0 0.47 1 0.13],'HorizontalAlignment','left');
-        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Filter', 'Units','normalized','Position', [0 0.17 1 0.13], 'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Color groups', 'Units','normalized','Position', [0 0.74 0.5 0.12],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Sorting','Units','normalized','Position', [0 0.47 1 0.12],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'text', 'String', '  Filter', 'Units','normalized','Position', [0 0.17 1 0.12], 'HorizontalAlignment','left');
         UI.panel.cell_metrics.useMetrics = uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'checkbox','String','Use metrics', 'value', 0, 'Units','normalized','Position', [0 0.85 0.5 0.15], 'Callback',@toggleMetrics,'HorizontalAlignment','left');
         UI.panel.cell_metrics.defineGroupData = uicontrol('Parent',UI.panel.cell_metrics.main,'Style','pushbutton','Units','normalized','Position',[0.5 0.82 0.49 0.18],'String','Group data','Callback',@defineGroupData,'KeyPressFcn', @keyPress,'tooltip','Filter and highlight by groups','Enable','off'); 
         UI.panel.cell_metrics.groupMetric = uicontrol('Parent',UI.panel.cell_metrics.main,'Style', 'popup', 'String', {''}, 'Units','normalized','Position', [0.01 0.6 0.98 0.15],'HorizontalAlignment','left','Enable','off','Callback',@setGroupMetric);
@@ -577,7 +581,7 @@ end
         
         % Table with list of cells
         UI.panel.cellTable.main = uipanel('Parent',UI.panel.spikedata.main,'title','List of cells');
-        UI.table.cells = uitable(UI.panel.cellTable.main,'Data', {false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 25 93 55},'columnname',{'','#','Cell type','Rate (Hz)'},'RowName',[],'ColumnEditable',[true false false false],'ColumnFormat',{'logical','char','char','numeric'},'CellEditCallback',@editCellTable,'Enable','off');
+        UI.table.cells = uitable(UI.panel.cellTable.main,'Data', {false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 25 118 55},'columnname',{'','#','Cell type','Rate (Hz)'},'RowName',[],'ColumnEditable',[true false false false],'ColumnFormat',{'logical','char','char','numeric'},'CellEditCallback',@editCellTable,'Enable','off');
         UI.panel.metricsButtons = uipanel('Parent',UI.panel.spikedata.main);
         uicontrol('Parent',UI.panel.metricsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.32 0.98],'String','All','Callback',@metricsButtons,'KeyPressFcn', @keyPress,'tooltip','Show all cells');
         uicontrol('Parent',UI.panel.metricsButtons,'Style','pushbutton','Units','normalized','Position',[0.34 0.01 0.32 0.98],'String','None','Callback',@metricsButtons,'KeyPressFcn', @keyPress,'tooltip','Hide all cells');
@@ -605,7 +609,7 @@ end
 
         % Defining flexible panel heights
         set(UI.panel.spikedata.main, 'Heights', [160 170 100 -200 35 100 95],'MinimumHeights',[160 170 60 160 35 60 95]);
-        UI.panel.spikedata.main1.MinimumWidths = 198;
+        UI.panel.spikedata.main1.MinimumWidths = 218;
         UI.panel.spikedata.main1.MinimumHeights = 825;
         
         % % % % % % % % % % % % % % % % % % % % % %
@@ -632,8 +636,8 @@ end
         UI.panel.timeseries.files = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.72 0.98 0.26],'HorizontalAlignment','left','Callback',@setTimeseriesData);
         UI.panel.timeseries.show = uicontrol('Parent',UI.panel.timeseries.main,'Style','checkbox','Units','normalized','Position',[0.01 0.45 0.485 0.27], 'value', 0,'String','Show','Callback',@showTimeSeries,'KeyPressFcn', @keyPress,'tooltip','Show timeseries data');
         uicontrol('Parent',UI.panel.timeseries.main,'Style','pushbutton','Units','normalized','Position',[0.505 0.45 0.485 0.27],'String','Full trace','Callback',@plotTimeSeries,'KeyPressFcn', @keyPress,'tooltip','Show full trace in separate figure');
-        uicontrol('Parent',UI.panel.timeseries.main,'Style', 'text', 'String', 'Lower limit', 'Units','normalized', 'Position', [0.0 0.25 0.5 0.19],'HorizontalAlignment','center');
-        uicontrol('Parent',UI.panel.timeseries.main,'Style', 'text', 'String', 'Upper limit', 'Units','normalized', 'Position', [0.5 0.25 0.5 0.19],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.timeseries.main,'Style', 'text', 'String', 'Lower limit', 'Units','normalized', 'Position', [0.0 0.25 0.5 0.18],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.timeseries.main,'Style', 'text', 'String', 'Upper limit', 'Units','normalized', 'Position', [0.5 0.25 0.5 0.18],'HorizontalAlignment','center');
         UI.panel.timeseries.lowerBoundary = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'Edit', 'String', num2str(UI.settings.timeseries.lowerBoundary), 'Units','normalized', 'Position', [0.01 0 0.485 0.26],'HorizontalAlignment','center','tooltip','Lower bound','Callback',@setTimeSeriesBoundary);
         UI.panel.timeseries.upperBoundary = uicontrol('Parent',UI.panel.timeseries.main,'Style', 'Edit', 'String', num2str(UI.settings.timeseries.upperBoundary), 'Units','normalized', 'Position', [0.505 0 0.485 0.26],'HorizontalAlignment','center','tooltip','Higher bound','Callback',@setTimeSeriesBoundary);
         
@@ -668,13 +672,13 @@ end
         uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Window width (sec)', 'Units','normalized', 'Position', [0.01 0.40 0.49 0.17],'HorizontalAlignment','left');
         UI.panel.spectrogram.spectrogramWindow = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.window), 'Units','normalized', 'Position', [0.505 0.40 0.485 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
         
-        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Low freq (Hz)', 'Units','normalized', 'Position', [0.01 0.20 0.32 0.16],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Low freq (Hz)', 'Units','normalized', 'Position', [0.01 0.20 0.32 0.14],'HorizontalAlignment','left');
         UI.panel.spectrogram.freq_low = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.freq_low), 'Units','normalized', 'Position', [0.01 0.01 0.32 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
         
-        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Step size (Hz)', 'Units','normalized', 'Position', [0.34 0.20 0.32 0.16],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Step size (Hz)', 'Units','normalized', 'Position', [0.34 0.20 0.32 0.14],'HorizontalAlignment','center');
         UI.panel.spectrogram.freq_step_size = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.freq_step_size), 'Units','normalized', 'Position', [0.34 0.01 0.32 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
         
-        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','High freq (Hz)', 'Units','normalized', 'Position', [0.67 0.20 0.32 0.16],'HorizontalAlignment','right');
+        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','High freq (Hz)', 'Units','normalized', 'Position', [0.67 0.20 0.32 0.14],'HorizontalAlignment','right');
         UI.panel.spectrogram.freq_high = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.freq_high), 'Units','normalized', 'Position', [0.67 0.01 0.32 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
         
         % Current Source Density
@@ -692,7 +696,7 @@ end
         
         % Defining flexible panel heights
         set(UI.panel.other.main, 'Heights', [200 110 95 140 95 50 90],'MinimumHeights',[220 120 100 150 150 50 90]);
-        UI.panel.other.main1.MinimumWidths = 198;
+        UI.panel.other.main1.MinimumWidths = 218;
         UI.panel.other.main1.MinimumHeights = 880;
         
         % % % % % % % % % % % % % % % % % % % % % %
@@ -2357,11 +2361,16 @@ end
     
     function showDetectedSpikeWaveforms(~,~)
         UI.settings.showDetectedSpikeWaveforms = ~UI.settings.showDetectedSpikeWaveforms;
-        if UI.settings.showDetectedSpikeWaveforms
+        if UI.settings.showDetectedSpikeWaveforms && isfield(data.session.extracellular,'chanCoords')
             UI.menu.display.showDetectedSpikeWaveforms.Checked = 'on';
+        elseif UI.settings.showDetectedSpikeWaveforms
+            UI.menu.display.showDetectedSpikeWaveforms.Checked = 'off';
+            UI.settings.showDetectedSpikeWaveforms = false;
+            warndlg('ChanCoords have not been defined for this session','Error')
         else
             UI.menu.display.showDetectedSpikeWaveforms.Checked = 'off';
         end
+        
         initTraces
         uiresume(UI.fig);
     end
@@ -3250,8 +3259,12 @@ end
         
     function showSpikeWaveforms(~,~)
         numeric_gt_0 = @(n) ~isempty(n) && isnumeric(n) && (n > 0) && (n <= 1); % numeric and greater than 0 and less or equal than 1
-        if UI.panel.spikes.showSpikeWaveforms.Value == 1
+        if UI.panel.spikes.showSpikeWaveforms.Value == 1 && isfield(data.session.extracellular,'chanCoords')
             UI.settings.showSpikeWaveforms = true;
+        elseif UI.panel.spikes.showSpikeWaveforms.Value == 1
+            UI.settings.showSpikeWaveforms = false;
+            UI.panel.spikes.showSpikeWaveforms.Value = 0;
+            warndlg('ChanCoords have not been defined for this session','Error')
         else
             UI.settings.showSpikeWaveforms = false;
         end

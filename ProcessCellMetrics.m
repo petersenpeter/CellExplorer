@@ -476,11 +476,13 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     % Channel coordinates map, trilateration and length constant determined from waveforms across channels
     if ~all(isfield(cell_metrics,{'trilat_x','trilat_y','peakVoltage_expFit'})) || parameters.forceReload == true
         chanCoordsFile = fullfile(basepath,[basename,'.chanCoords.channelInfo.mat']);
-        if isfield(session.extracellular,'chanCoords') && isfield(session.extracellular.chanCoords,'x') && isfield(session.extracellular.chanCoords,'y')
+        if isfield(session.extracellular,'chanCoords') && isfield(session.extracellular.chanCoords,'x') && isfield(session.extracellular.chanCoords,'y') && ~isempty(session.extracellular.chanCoords.x) && ~isempty(session.extracellular.chanCoords.y)
+            disp('   Using existing channel coordinates')
             chanCoords = session.extracellular.chanCoords;
             chanCoords.x = chanCoords.x(:);
             chanCoords.y = chanCoords.y(:);
         elseif exist(chanCoordsFile,'file')
+            disp(['   Loading channel coordinates from file: ' chanCoordsFile])            
             load(chanCoordsFile,'chanCoords');
             chanCoords.x = chanCoords.x(:);
             chanCoords.y = chanCoords.y(:);
@@ -488,22 +490,22 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         else
             chanCoords = {};
             if exist(fullfile(basepath,'chanMap.mat'),'file') % Will look for a chanMap file with default name (compatible with KiloSort)
+                disp('   Importing chanCoords from chanMap.mat file (e.g. from KiloSort)')
                 chanMap = load(fullfile(basepath,'chanMap.mat'));
                 chanCoords.x = chanMap.xcoords(:);
                 chanCoords.y = chanMap.ycoords(:);
             elseif isfield(session,'analysisTags') && isfield(session.analysisTags,'chanMapFile')
                 % You can use a different filename that must be specified in: session.analysisTags.chanMapFile
                 chanMap = load(fullfile(basepath,session.analysisTags.chanMapFile));
+                disp(['   Loading channel coordinates from chanCoords file: ' chanMap])     
                 chanCoords.x = chanMap.xcoords(:);
                 chanCoords.y = chanMap.ycoords(:);
             else
                 disp('  Generating chanCoords')
                 chanCoords = generateChanCoords(session);
-            end
-            
+            end            
             session.extracellular.chanCoords = chanCoords;
-        end
-        
+        end        
         cell_metrics.general.chanCoords = chanCoords;
         
         % Fit exponential

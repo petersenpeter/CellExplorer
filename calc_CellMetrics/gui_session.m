@@ -554,7 +554,7 @@ end
 % Channel coordinates (Layout)
 UI.tabs.chanCoords = uitab(UI.channelGroups,'Title','Channel coordinates');
 
-uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Layout', 'Position', [5, 340, 240, 20],'HorizontalAlignment','left','Units','normalized');
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Layout (e.g. linear, poly2, poly3, poly5, staggered)', 'Position', [5, 340, 290, 20],'HorizontalAlignment','left','Units','normalized');
 UI.edit.chanCoords_layout = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 315, 290, 25],'HorizontalAlignment','left','Units','normalized');
 
 uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Shank spacing (µm)', 'Position', [315, 340, 240, 20],'HorizontalAlignment','left','Units','normalized');
@@ -587,6 +587,7 @@ uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[120, 5,
 uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[235, 5, 130, 32],'String','Delete sorting(s)','Callback',@(src,evnt)deleteSpikeSorting,'Units','normalized','tooltip','Delete selected spike sorting set(s)');
 uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[500, 5, 50, 32],'String',char(8593),'Callback',@(src,evnt)moveUpSpikeSorting,'Units','normalized','tooltip','Move selected spike sorting(s) up');
 uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[555, 5 50, 32],'String',char(8595),'Callback',@(src,evnt)moveDownSpikeSorting,'Units','normalized','tooltip','Move selected spike sorting(s) down');
+
 % % % % % % % % % % % % % % % % % % % % %
 % Brain regions
 
