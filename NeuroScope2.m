@@ -4607,7 +4607,7 @@ end
                     data.behavior.(UI.settings.behaviorData).limits.linearized = [min(data.behavior.(UI.settings.behaviorData).position.linearized),max(data.behavior.(UI.settings.behaviorData).position.linearized)];
                 end
                 if ~isfield(data.behavior.(UI.settings.behaviorData),'sr')
-                    keyboard
+                    data.behavior.(UI.settings.behaviorData).sr = 1/diff(data.behavior.(UI.settings.behaviorData).timestamps(1:2));
                 end
             end
             UI.settings.showBehavior = true;
