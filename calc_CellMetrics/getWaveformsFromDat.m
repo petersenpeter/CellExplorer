@@ -81,9 +81,9 @@ if ~isempty(session) && isfield(session,'channelTags') && isfield(session.channe
     badChannels = unique(badChannels);
 end
 if ~isempty(badChannels)
-    disp(['Bad channels detected: ' num2str(badChannels)])
+    badChannels_message = ['Bad channels detected: ' num2str(badChannels)];
 else
-    disp('No bad channels detected')
+    badChannels_message = 'No bad channels detected. ';
 end
 
 % Removing channels that does not exist in SpkGrps
@@ -98,8 +98,20 @@ else
 end
 nGoodChannels = length(goodChannels);
 
-[b1, a1] = butter(3, filtFreq/sr*2, 'bandpass');
-disp('Getting waveforms from dat file')
+int_gt_0 = @(n,sr) (isempty(n)) || (n <= 0 ) || (n >= sr/2) || isnan(n);
+
+if int_gt_0(filtFreq(1),sr) && ~int_gt_0(filtFreq(1),sr)
+    [b1, a1] = butter(3, filtFreq(2)/sr*2, 'low');
+    filter_message = ['Lowpass filter applied: ' num2str(filtFreq(2)),' Hz. '];
+elseif int_gt_0(filtFreq(2),sr) && ~int_gt_0(filtFreq(1),sr)
+    [b1, a1] = butter(3, filtFreq(1)/sr*2, 'high');
+    filter_message = ['Highpass filter applied: ' num2str(filtFreq(1)),' Hz. '];
+else
+    [b1, a1] = butter(3, [filtFreq(1),filtFreq(2)]/sr*2, 'bandpass');
+    filter_message = ['Bandpass filter applied: ', num2str(filtFreq(1)) ,' - ',num2str(filtFreq(2)),' Hz. '];
+end
+
+disp(['Getting waveforms from dat file (nPull=', num2str(nPull),'). ', filter_message, badChannels_message])
 if showWaveforms
     fig1 = figure('Name', ['Getting waveforms for ' basename],'NumberTitle', 'off','position',[100,100,1000,800]);
     movegui('center');
@@ -155,6 +167,11 @@ for i = 1:length(unitsToProcess)
         wfF(:,:,jjj) = filtfilt(b1, a1, wf(:,:,jjj));
     end
     wfF = permute(wfF,[3,1,2]);
+    
+    for jjj = 1 : nChannels
+        wf(:,:,jjj) = detrend(wf(:,:,jjj));
+    end    
+    
     wf = permute(wf,[3,1,2]);
     wfF2 = mean(wfF(goodChannels,:,:),3)';
     [~, maxWaveformCh1] = max(max(wfF2(window_interval,:))-min(wfF2(window_interval,:)));
@@ -167,9 +184,8 @@ for i = 1:length(unitsToProcess)
             spikes.shankID(ii) = jj;
         end
     end
-    
-    wf2 = mean(wf,3);
-    rawWaveform_all = detrend(wf2 - mean(wf2,2));
+
+    rawWaveform_all = mean(wf,3);
     spikes.rawWaveform{ii} = rawWaveform_all(spikes.maxWaveformCh1(ii),window_interval);
     rawWaveform_std = std((wf(spikes.maxWaveformCh1(ii),:,:)-mean(wf(spikes.maxWaveformCh1(ii),:,:),3)),0,3);
     filtWaveform_all = mean(wfF,3);

@@ -372,3 +372,6 @@ The data is organized into data-type specific containers, a concept introduced b
 * `basename.*.behavior.mat`: behavior data, including position tracking.
 * `basename.*.states.mat`: brain states derived data including SWS/REM/awake and up/down states.
 * `basename.*.intracellular.mat`: intracellular data.
+
+## Example dataset
+There is an example dataset available to help understanding the data structure. The dataset contains: a .dat file (raw ephys data; 62GB), a .lfp file (lowpass filtered and downsampled data file; 4 GB), session.mat, spikes, events, behavior, trials, timeseries, states, firingRateMap, cell_metrics, mono_res, and spike sorted data processed with KiloSort and curated in Phy. Available from our [Webshare](https://buzsakilab.nyumc.org/datasets/PetersenP/CellExplorerExampleData/MS22/Peter_MS22_180629_110319_concat/) and our [Globus endpoint](https://app.globus.org/file-manager?origin_id=188a6110-96db-11eb-b7a9-f57b2d55370d&origin_path=%2FPetersenP%2FCellExplorerExampleData%2FMS22%2FPeter_MS22_180629_110319_concat%2F). The size of the full dataset  is 75GB, but files can be downloaded individual. 

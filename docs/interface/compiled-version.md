@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Compiled version
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 8
 ---
 # Compiled versions of CellExplorer
@@ -20,4 +21,4 @@ Follow below direction to compile CellExplorer yourself:
 * If you use these files on a new system, you need to use the installer (MyAppInstaller_web) that is generated when compiling CellExplorer.
 
 ### Compiled versions of NeuroScope2 and gui_session
-[NeuroScope2](https://cellexplorer.org/interface/neuroscope2/#compiled-versions-of-neuroscope2) and [gui_session](https://cellexplorer.org/interface/gui_session/) are also available as compiled versions. Please see the dedicated pages. 
+[NeuroScope2](https://cellexplorer.org/interface/neuroscope2-compiled-version/) and [gui_session](https://cellexplorer.org/interface/gui_session/#compiled-versions-of-gui_session) are also available as compiled versions. Please see the dedicated pages. 
