@@ -1,8 +1,8 @@
 ---
 layout: default
-title: Session metadata interface
+title: Session metadata
 parent: Graphical interfaces
-nav_order: 9
+nav_order: 3
 ---
 {: .no_toc}
 # GUI for session metadata
