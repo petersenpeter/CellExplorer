@@ -1,7 +1,7 @@
 ---
 layout: default
 title: NeuroScope2
-parent: Graphical interface
+parent: Graphical interfaces
 nav_order: 9
 has_children: true
 ---
