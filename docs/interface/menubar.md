@@ -207,4 +207,4 @@ This menu is for lab members that has credentials to the Buzsaki lab databank at
 |:-------------|:------------------|
 | Keyboard shortcuts   | Shows a window with the list of keyboard shortcuts | 
 | CellExplorer website | Open the [CellExplorer website](https://cellexplorer.org/) in your browser | 
-| Tutorials            | Open the [tutorials page](https://cellexplorer.org/tutorials/tutorials/) from the CellExplorer website in your browser | 
+| Tutorials            | Open the [tutorials page](https://cellexplorer.org/tutorials/) from the CellExplorer website in your browser | 
