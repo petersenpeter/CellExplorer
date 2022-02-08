@@ -530,8 +530,8 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                     cell_metrics.trilat_x(j) = trilat_pos(1);
                     cell_metrics.trilat_y(j) = trilat_pos(2);
                 catch
-                    cell_metrics.trilat_x(j) = cell_metrics.general.chanCoords.x(idx(1));
-                    cell_metrics.trilat_y(j) = cell_metrics.general.chanCoords.y(idx(1));
+                    cell_metrics.trilat_x(j) = beta0(1);
+                    cell_metrics.trilat_y(j) = beta0(2);
                 end
                 % Length constant
                 x1 = cell_metrics.general.chanCoords.x;
@@ -844,8 +844,13 @@ if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(
         deepSuperficial_ChClass = deepSuperficialfromRipple.channelClass;% cell_deep_superficial
         cell_metrics.general.deepSuperficial_file = deepSuperficial_file;
         for j = 1:cell_metrics.general.cellCount
-            cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial OK
-            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial_distance
+            try
+                cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial OK
+                cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial_distance
+            catch
+                cell_metrics.deepSuperficial(j) = {'Unknown'};
+                cell_metrics.deepSuperficialDistance(j) = NaN;    
+            end
         end
     end
 end
@@ -934,7 +939,7 @@ if any(contains(parameters.metrics,{'spatial_metrics','all'})) && ~any(contains(
                 end
                 
                 for j = 1:cell_metrics.general.cellCount
-                    cell_metrics.spatialPeakRate(j) = max(firingRateMap.map{j});
+                    cell_metrics.spatialPeakRate(j) = max(firingRateMap.map{j}(:));
                     
                     % Finding place cells/fields
                     temp = place_cell_condition(firingRateMap.map{j});

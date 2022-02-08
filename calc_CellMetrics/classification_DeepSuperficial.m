@@ -173,6 +173,10 @@ for jj = 1:session.extracellular.nElectrodeGroups
     % Get list of channels belong to electrode group (1-indexed)
     ripple_channels{jj} = session.extracellular.electrodeGroups.channels{jj};
     
+    % remove ripple channels that are labeled 'Bad' 
+    ripple_channels{jj}(ismember(ripple_channels{jj},channels_to_exclude)) = [];
+    
+   
     % Loading .lfp file
     if exist(fullfile(basepath,[basename '.lfp']),'file')
         signal = 0.000195 * double(LoadBinary(fullfile(basepath,[basename '.lfp']),...
@@ -197,7 +201,7 @@ for jj = 1:session.extracellular.nElectrodeGroups
     
     ripple_average{jj} = mean(ripple_ave2,3);
     ripple_power{jj} = sum(ripple_average{jj}.^2)./max(sum(ripple_average{jj}.^2));
-    ripple_amplitude{jj} = mean(ripple_average{jj})/max(abs(mean(ripple_average{jj})));
+    ripple_amplitude{jj} = double(mean(ripple_average{jj})/max(abs(mean(ripple_average{jj}))));
     
     % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
     % First algorithm (check new algorithm below)
@@ -225,7 +229,7 @@ for jj = 1:session.extracellular.nElectrodeGroups
         % Performs a linear interpolation to determine the reversal point.
         % This limits the variance that can exist because of variance in
         % the ripple amplitude and due to sub-optimal probe layouts 
-        threshold = interp1(ripple_amplitude{jj},[1:size(ripple_average{jj},2)],0);
+        threshold = interp1(unique(ripple_amplitude{jj}),[1:size(unique(ripple_amplitude{jj}),2)],0);
         deepSuperficial_ChClass3(ripple_channels{jj}([1:threshold])) = repmat({'Deep'},length([1:threshold]),1);
         deepSuperficial_ChClass3(ripple_channels{jj}([ceil(threshold):size(ripple_average{jj},2)])) = repmat({'Superficial'},length([ceil(threshold):size(ripple_average{jj},2)]),1);
         deepSuperficial_ChDistance3(ripple_channels{jj}) = (1:size(ripple_average{jj},2))-threshold;

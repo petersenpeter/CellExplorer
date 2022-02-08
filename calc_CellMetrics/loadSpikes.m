@@ -912,6 +912,10 @@ end
 if isfield(sessionInfo,'AnatGrps') && isfield(sessionInfo.AnatGrps,'Skip')
     channelOrder = [sessionInfo.AnatGrps.Channels]+1;
     skip = find([sessionInfo.AnatGrps.Skip]);
+    if ~isfield(session,'channelTags')
+        session.channelTags.Bad.channels = channelOrder(skip);
+        return
+    end
     if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'Channels')
         session.channelTags.Bad.channels = [session.channelTags.Bad.channels, channelOrder(skip)];
     else
