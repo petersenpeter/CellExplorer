@@ -2,7 +2,7 @@
 layout: default
 title: UI elements
 parent: NeuroScope2
-grand_parent: Graphical interface
+grand_parent: Graphical interfaces
 nav_order: 1
 ---
 

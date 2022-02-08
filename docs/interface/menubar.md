@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Menu bar
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 4
 ---
 # CellExplorer Menu Bar

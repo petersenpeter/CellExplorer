@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Keyboard shortcuts
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 5
 ---
 <style>

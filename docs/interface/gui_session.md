@@ -1,7 +1,7 @@
 ---
 layout: default
-title: Session metadata
-parent: Graphical interface
+title: Session metadata interface
+parent: Graphical interfaces
 nav_order: 9
 ---
 {: .no_toc}

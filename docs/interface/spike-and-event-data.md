@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Spike and event data
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 5
 ---
 # Spike and event data

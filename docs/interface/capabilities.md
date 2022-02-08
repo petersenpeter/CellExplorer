@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Capabilities
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 2
 ---
 # Capabilities

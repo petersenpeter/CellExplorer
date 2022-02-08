@@ -43,13 +43,13 @@ function waveform_metrics = calc_waveform_metrics(waveforms,sr_in,varargin)
     wave_align = [];
     wave_diff_cut = [];
     
-    t_before = [];
-    t_after = [];
+    peaktoTrough = [];
+    troughtoPeak = [];
     peakA = [];
     peakB = [];
     trough = [];
     width1 = [];
-    t_after_diff = [];
+    derivative_TroughtoPeak = [];
     Itest = [];
     Itest2 = [];
     
@@ -67,30 +67,43 @@ function waveform_metrics = calc_waveform_metrics(waveforms,sr_in,varargin)
             if waveform_metrics.polarity(m) > 0
                 wave = -wave;
             end
-            wave_diff{m} = diff(wave);
-            wave_diff2{m} = diff(wave,2);
+            
+            % Trough
             [MIN2,I2] = min(wave(trough_interval(1):trough_interval(2))); % trough_interval
+            trough_idx = I2+trough_interval(1);
+            
+            % Trough to peak (I4)
+            [MAX4,troughtoPeak_idx] = max(wave(trough_idx:end));
+            troughtoPeak(m) = troughtoPeak_idx/sr*1000;
+            
+            % Peak to Trough
+            [MAX3,I3] = max(wave(1:trough_idx-1));
+            peaktoTrough(m) = (trough_idx-1-I3)/sr*1000;
+            
+            % Waveform derivative
+            wave_diff{m} = diff(wave);
+            wave_diff2{m} = diff(wave,2);            
             [MIN2_diff,I2_diff] = min(wave_diff{m}(trough_interval_1stDerivative(1):trough_interval_1stDerivative(2))); % 1st deriv
             [MIN2_diff2,I2_diff2] = min(wave_diff2{m}(trough_interval_2stDerivative(1):trough_interval_2stDerivative(2))); % 2nd deriv, trough_interval_2stDerivative
-            [MAX3,I3] = max(wave(1:I2+trough_interval(1)-1));
-            [MAX4,I4] = max(wave(I2+trough_interval(1):end));
+            
+            % derivative_TroughtoPeak
             [MAX4_diff,I4_diff] = max(wave_diff{m}(I2_diff+trough_interval_1stDerivative(1):end));
-            t_before(m) = I2+trough_interval(1)-1-I3;
-            t_after(m) = I4;
-            t_after_diff(m) = I4_diff;
+            derivative_TroughtoPeak(m) = I4_diff/sr*1000;
+            
+            % Peak values
             peakA(m) = MAX3;
             peakB(m) = MAX4;
             trough(m) = MIN2;
             Itest(m) = I2;
             Itest2(m) = length(wave)-(idx_45+I2);
             
-            indexes = I3:I2+I4+trough_interval(1)-1;
+            indexes = I3:I2+troughtoPeak_idx+trough_interval(1)-1;
             if p.Results.showFigures
                 subplot(3,2,1), hold on
-                plot([-(I2+trough_interval(1)-1)+1:1:0,1:1:(length(wave)-(I2+trough_interval(1)-1))]/sr*1000,wave,'Color',[0,0,0,0.1],'linewidth',2), axis tight
+                plot([-(trough_idx-1)+1:1:0,1:1:(length(wave)-(trough_idx-1))]/sr*1000,wave,'Color',[0,0,0,0.1],'linewidth',2), axis tight
                 plot(0,MIN2,'.b') % Min
-                plot((-(I2+trough_interval(1)-1)+I3)/sr*1000,MAX3,'.r') % Max
-                plot(I4/sr*1000,MAX4,'.g') % Max
+                plot((-(trough_idx-1)+I3)/sr*1000,MAX3,'.r') % Max
+                plot(troughtoPeak_idx/sr*1000,MAX4,'.g') % Max
                 title('Waveforms'),xlabel('Time (ms)'),ylabel('Z-scored')
                 
                 subplot(3,2,3), hold on
@@ -103,17 +116,17 @@ function waveform_metrics = calc_waveform_metrics(waveforms,sr_in,varargin)
                 title('2nd derivative waveforms'),xlabel('Time (ms)'),ylabel('Z-scored')
             end
         else
-            t_before(m) = nan;
-            t_after(m) = nan;
-            t_after_diff(m) = nan;
+            peaktoTrough(m) = nan;
+            troughtoPeak(m) = nan;
+            derivative_TroughtoPeak(m) = nan;
             peakA(m) = nan;
             peakB(m) = nan;
             trough(m) = nan;
         end
     end
-    waveform_metrics.peaktoTrough = t_before/sr*1000;
-    waveform_metrics.troughtoPeak = t_after/sr*1000;
-    waveform_metrics.derivative_TroughtoPeak = t_after_diff/sr*1000;
+    waveform_metrics.peaktoTrough = peaktoTrough;
+    waveform_metrics.troughtoPeak = troughtoPeak;
+    waveform_metrics.derivative_TroughtoPeak = derivative_TroughtoPeak;
     waveform_metrics.peakA = peakA;
     waveform_metrics.peakB = peakB;
     waveform_metrics.ab_ratio = (peakB-peakA)./(peakA+peakB);
@@ -122,25 +135,25 @@ function waveform_metrics = calc_waveform_metrics(waveforms,sr_in,varargin)
     if p.Results.showFigures
         axis tight
         subplot(6,2,2)
-        hist(waveform_metrics.peaktoTrough,0:0.0250:0.90);
+        hist(waveform_metrics.peaktoTrough,0:0.0250:max(waveform_metrics.peaktoTrough));
         h = findobj(gca, 'Type','patch');
         set(h(1), 'FaceColor','r')
         title('Peak-to-Trough'), axis tight
         
         subplot(6,2,4)
-        hist(waveform_metrics.troughtoPeak,0:0.0250:1);
+        hist(waveform_metrics.troughtoPeak,0:0.0250:max(waveform_metrics.troughtoPeak));
         h = findobj(gca, 'Type','patch');
         set(h(1), 'FaceColor','g')
         title('Trough-to-Peak'), axis tight
         
         subplot(6,2,6)
-        hist((t_before+t_after)/sr*1000,0:0.0250:1.25);
+        hist(peaktoTrough+troughtoPeak,0:0.0250:max(peaktoTrough+troughtoPeak));
         h = findobj(gca, 'Type','patch');
         set(h(1), 'FaceColor','y')
         title('Peak-to-Peak'), axis tight
         
         subplot(6,2,8)
-        hist(waveform_metrics.derivative_TroughtoPeak,0:0.0250:0.8);
+        hist(waveform_metrics.derivative_TroughtoPeak,0:0.01:max(waveform_metrics.derivative_TroughtoPeak));
         h = findobj(gca, 'Type','patch');
         set(h(1), 'FaceColor','m')
         title('Trough-to-Peak (1st derivative)'), axis tight
@@ -150,7 +163,7 @@ function waveform_metrics = calc_waveform_metrics(waveforms,sr_in,varargin)
         title('Peak/Trough'), axis tight
         
         subplot(6,2,12)
-        hist(waveform_metrics.ab_ratio,30);
+        hist(waveform_metrics.ab_ratio,40);
         title('AB-ratio'), axis tight
         
         set(fig,'visible','on')
