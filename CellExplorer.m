@@ -1542,7 +1542,7 @@ function updateUI
     end
     
     % % % % % % % % % % % % % % % % % % % % % %
-    % Separate legends in side panel 
+    % Separate legends in side panel (this is much faster than Matlab's own legend)
     updateLegends
     
     % % % % % % % % % % % % % % % % % % % % % %
@@ -3336,7 +3336,7 @@ end
             
         elseif contains(customPlotSelection,{'Waveforms ('})
             
-            plotAxes.XLabel.String = 'Time (ms)';
+            plotAxes.XLabel.String = 'Samples';
             plotAxes.YLabel.String = ['Voltage (',char(181),'V)'];
             plotAxes.Title.String = customPlotSelection;
             field2plot = customPlotSelection(12:end-1);
@@ -4495,9 +4495,9 @@ end
         end
         switch source
             case '- Tutorials'
-                web('https://CellExplorer.org/tutorials/tutorials/','-new','-browser')
+                web('https://CellExplorer.org/tutorials/','-new','-browser')
             case '- Graphical interface'
-                web('https://cellexplorer.org/interface/interface/','-new','-browser')
+                web('https://cellexplorer.org/interface/cellexplorer/','-new','-browser')
             case 'Support'
                  web('https://cellexplorer.org/#support','-new','-browser')
             case '- Report an issue'
