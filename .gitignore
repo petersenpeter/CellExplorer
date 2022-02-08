@@ -5,3 +5,5 @@ CellExplorer.sublime-project
 *.asv
 calc_CellMetrics/data_NeuroScope2.mat
 calc_CellMetrics/last_preferences_CellExplorer.mat
+calc_CellMetrics/mex/CCGHeart.mexw64
+calc_CellMetrics/mex/FindInInterval.mexw64
