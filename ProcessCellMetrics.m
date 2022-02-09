@@ -422,6 +422,7 @@ end
 cell_metrics.general.basepath = basepath;
 cell_metrics.general.basename = basename;
 cell_metrics.general.cellCount = numel(spikes{1}.times);
+cell_metrics.general.saveAs = parameters.saveAs;
 
 % Saving spike times to metrics
 cell_metrics.spikes.times = spikes{1}.times;
