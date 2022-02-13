@@ -923,12 +923,16 @@ function updateUI
                 xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5001]),
 %                 UI.axes(1).XLabel.String = UI.plot.xTitle(1:end-4);
                 UI.axes(1).XLabel.Interpreter = 'none';
+            else
+                UI.axes(1).XLabel.Interpreter = 'tex';
             end
             if contains(UI.plot.yTitle,'_num')
                 yticks([1:length(groups_ids.(UI.plot.yTitle))]), yticklabels(groups_ids.(UI.plot.yTitle)),ytickangle(65),
                 ylim([0.5,length(groups_ids.(UI.plot.yTitle))+0.5001]),
 %                 UI.axes(1).YLabel.String = UI.plot.yTitle(1:end-4); 
                 UI.axes(1).YLabel.Interpreter = 'none';
+            else
+                UI.axes(1).YLabel.Interpreter = 'tex';
             end
             if length(unique(UI.classes.plot(UI.params.subset)))==2
 %                 G1 = plotX(UI.params.subset);
@@ -936,11 +940,11 @@ function updateUI
                 if ~isempty(UI.params.subset(G==1)) && ~isempty(UI.params.subset(G==2))
                     if ~all(plotX(UI.params.subset(G==1))) && ~all(plotX(UI.params.subset(G==2)))
                         [h,p] = kstest2(plotX(UI.params.subset(G==1)),plotX(UI.params.subset(G==2)));
-                        text(0.97,0.02,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Rotation',90,'Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
+                        text(0.97,0.02,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Rotation',90,'Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
                     end
                     if ~all(plotY(UI.params.subset(G==1))) && ~all(plotY(UI.params.subset(G==2)))
                         [h,p] = kstest2(plotY(UI.params.subset(G==1)),plotY(UI.params.subset(G==2)));
-                        text(0.02,0.97,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
+                        text(0.02,0.97,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
                     end
                 end
             end
@@ -3351,6 +3355,32 @@ end
                 end
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
+            end
+            
+        elseif contains(customPlotSelection,{'ACGs ('})
+            
+            
+            plotAxes.YLabel.String = ['Rate (Hz)'];
+            plotAxes.Title.String = customPlotSelection;
+            field2plot = customPlotSelection(7:end-1);
+            if isfield(cell_metrics.general.acgs,field2plot)
+                plotXdata = cell_metrics.general.acgs.(field2plot);
+                plotAxes.XLabel.String = 'Time (ms)';
+            else
+                acg_width = (size(cell_metrics.acg.(field2plot),1)-1)/2;
+                plotXdata = [-acg_width:acg_width]';
+                xlim([-acg_width,acg_width])
+                plotAxes.XLabel.String = 'Samples';
+            end
+            
+            plotYdata = cell_metrics.acg.(field2plot)(:,ii);
+            if plotAcgYLog
+                set(plotAxes,'yscale','log')
+                plotYdata(plotYdata < 0.1)=0.1;
+                line(plotXdata, plotYdata,'linewidth',1,'color',col,'HitTest','off')
+            else
+                set(plotAxes,'yscale','linear')
+                bar_from_patch_centered_bins(plotXdata, plotYdata,col)
             end
             
         else
@@ -11103,10 +11133,27 @@ end
         
         % Loading and defining labels
         UI.labels = metrics_labels(UI.lists.metrics);
+        
         % Setting initial settings for plots, popups and listboxes
         UI.popupmenu.xData.String = UI.lists.metrics;
         UI.popupmenu.yData.String = UI.lists.metrics;
         UI.popupmenu.zData.String = UI.lists.metrics;
+        
+        if ~any(strcmp(UI.lists.metrics,UI.preferences.plotXdata))
+            UI.preferences.plotXdata = UI.lists.metrics{1};
+        end
+        
+        if ~any(strcmp(UI.lists.metrics,UI.preferences.plotYdata))
+            UI.preferences.plotYdata = UI.lists.metrics{2};
+        end
+        
+        if~any(strcmp(UI.lists.metrics,UI.preferences.plotZdata))
+            UI.preferences.plotZdata = UI.lists.metrics{3};
+        end
+        
+        if ~any(strcmp(UI.lists.metrics,UI.preferences.plotMarkerSizedata))
+            UI.preferences.plotMarkerSizedata = UI.lists.metrics{4};
+        end
         plotX = cell_metrics.(UI.preferences.plotXdata);
         plotY  = cell_metrics.(UI.preferences.plotYdata);
         plotZ  = cell_metrics.(UI.preferences.plotZdata);
@@ -11166,6 +11213,8 @@ end
         if isfield(cell_metrics.waveforms,'raw')
             waveformOptions = [waveformOptions;'Waveforms (raw single)';'Waveforms (raw all)'];
         end
+        
+        % Adding any extra waveforms
         temp = fieldnames(cell_metrics.waveforms);
         temp(ismember(temp,{'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time','bestChannels'}) | ~structfun(@iscell,cell_metrics.waveforms)) = [];
         for i = 1:length(temp)
@@ -11182,6 +11231,13 @@ end
         acgOptions = {'ACGs (single)';'ACGs (all)';'ACGs (group averages)';'ACGs (image)';'CCGs (image)'};
         if isfield(cell_metrics,'isi')
             acgOptions = [acgOptions;'ISIs (single)';'ISIs (all)';'ISIs (image)'];
+        end
+        
+        % Adding any extra ACGs
+        temp = fieldnames(cell_metrics.acg);
+        temp(ismember(temp,{'wide','narrow','log10','wide_normalized','narrow_normalized','log10_rate','log10_occurence','log10_occurrence'}) | ~structfun(@isnumeric,cell_metrics.acg)) = [];
+        for i = 1:length(temp)
+            acgOptions = [acgOptions;['ACGs (',temp{i},')']];
         end
 
         if isfield(cell_metrics.responseCurves,'thetaPhase_zscored')
