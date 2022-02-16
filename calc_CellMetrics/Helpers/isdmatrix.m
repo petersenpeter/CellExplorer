@@ -15,6 +15,12 @@
 %    % Test if x is a matrix of strictly positive doubles
 %    isdmatrix(x,'>0')
 %
+%    % Special test: test if x is a 3-line matrix of doubles
+%    isdmatrix(x,'#3')
+%
+%    % Special test: test if x is a 2-column matrix of doubles
+%    isdmatrix(x,'@2')
+%
 %  NOTE
 %
 %    The tests ignore NaNs, e.g. isdmatrix([5e-3 nan;4 79]), isdmatrix([1.7 nan 3],'>0') and
@@ -22,11 +28,11 @@
 %
 %  SEE ALSO
 %
-%    See also isdvector, isdscalar, isimatrix, isivector, isiscalar, isstring,
+%    See also isdvector, isdscalar, isimatrix, isivector, isiscalar, isastring,
 %    islscalar, islvector, islmatrix.
 %
 
-% Copyright (C) 2010 by Michaël Zugaro
+% Copyright (C) 2010-2015 by Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -43,13 +49,14 @@ end
 % Test: doubles, two dimensions, two or more columns?
 test = isa(x,'double') & length(size(x)) == 2 & size(x,2) >= 2;
 
-% Ignore NaNs (this reshapes the matrix, but it does not matter for the tests)
-x = x(~isnan(x));
-
 % Optional tests
 for i = 1:length(varargin),
 	try
-		if ~eval(['all(x(:)' varargin{i} ');']), test = false; return; end
+		if varargin{i}(1) == '#',
+			if size(x,1) ~= str2num(varargin{i}(2:end)), test = false; return; end
+		elseif varargin{i}(1) == '@',
+			if size(x,2) ~= str2num(varargin{i}(2:end)), test = false; return; end
+		elseif ~eval(['all(x(~isnan(x))' varargin{i} ');']), test = false; return; end
 	catch err
 		error(['Incorrect test ''' varargin{i} ''' (type ''help <a href="matlab:help isdmatrix">isdmatrix</a>'' for details).']);
 	end

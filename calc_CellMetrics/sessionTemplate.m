@@ -336,10 +336,16 @@ if isfield(sessionInfo,'region')
 end
 
 % Epochs derived from MergePoints
+existsdate = @(x) any(strfind(ismember(x,'1234567890'),[ones(1,6) 0 ones(1,6)])); % check if a date exists
+isdate = @(x) logical(accumarray((strfind(ismember(x,'1234567890'),[ones(1,6) 0 ones(1,6)]) + (-1:12))',1,[length(x) 1])); % find the date if it's in the filename
+existday = @(x) any(strfind(lower(x),'day')); % check if the string "day" exists in the filename
+isday = @(x) logical(accumarray(min(strfind(x,'day'))+(0:find(~ismember(x(min(strfind(x,'day')+3):end),'1234567890'),1)+2)',1,[length(x) 1])); % find which characters are part of the dayX/dayXX expression
 if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'file')
     load(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'MergePoints')
     for i = 1:size(MergePoints.foldernames,2)
         session.epochs{i}.name =  MergePoints.foldernames{i};
+        if existsdate(session.epochs{i}.name), session.epochs{i}.name =  session.epochs{i}.name(~isdate(session.epochs{i}.name)); end % remove the date from the "epochs" suggestion
+        if existday(session.epochs{i}.name), session.epochs{i}.name =  session.epochs{i}.name(~isday(session.epochs{i}.name)); end % remove the date from the "epochs" suggestion
         session.epochs{i}.startTime =  MergePoints.timestamps(i,1);
         session.epochs{i}.stopTime =  MergePoints.timestamps(i,2);
     end
