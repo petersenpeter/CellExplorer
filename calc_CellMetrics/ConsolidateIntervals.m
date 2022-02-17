@@ -105,7 +105,7 @@ if strcmp(strict,'on'),
 	end
 else
 	% (same as above, but replacing e.g. < with <=)
-	for i = 1:length(intervals),
+	for i = 1:size(intervals,1),
 		if done(i), continue; end
 		% Lower (L) and upper (U) interval bounds
 		L = intervals(:,1);
