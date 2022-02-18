@@ -336,16 +336,20 @@ if isfield(sessionInfo,'region')
 end
 
 % Epochs derived from MergePoints
-existsdate = @(x) any(strfind(ismember(x,'1234567890'),[ones(1,6) 0 ones(1,6)])); % check if a date exists
-isdate = @(x) logical(accumarray((strfind(ismember(x,'1234567890'),[ones(1,6) 0 ones(1,6)]) + (-1:12))',1,[length(x) 1])); % find the date if it's in the filename
-existday = @(x) any(strfind(lower(x),'day')); % check if the string "day" exists in the filename
-isday = @(x) logical(accumarray(min(strfind(x,'day'))+(0:find(~ismember(x(min(strfind(x,'day')+3):end),'1234567890'),1)+2)',1,[length(x) 1])); % find which characters are part of the dayX/dayXX expression
+fun_idx2logical = @(index,nElements) logical(accumarray(Restrict(index,[1 nElements]),1,[nElements 1]));
+fun_dateIndex = @(x) strfind(ismember(x,'1234567890'),[ones(1,6) 0 ones(1,6)]); % find the date if it's in the filename (following the format YYMMDD_HHMMSS)
+fun_existsdate = @(x) any(fun_dateIndex(x)); % check if a date exists
+fun_isdate = @(x) fun_idx2logical(min(fun_dateIndex(x))+(-1:12)', length(x)); % flag the characters around the date (character before the date, typically "_" and the date itself).
+fun_dayIndex = @(x) strfind(lower(x),'day'); % find the index of the "d" in "day"
+fun_existday = @(x) any(fun_dayIndex(x)); % check if the string "day" exists in the filename
+fun_isday = @(x) fun_idx2logical(min(strfind(x,'day'))+(0:find(~ismember([x(min(strfind(x,'day')+3):end),'a'],'1234567890'),1)+2)',length(x)); % find which characters are part of the dayX/dayXX expression (by finding the next non-numeric character following "day")
+
 if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'file')
     load(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'MergePoints')
     for i = 1:size(MergePoints.foldernames,2)
         session.epochs{i}.name =  MergePoints.foldernames{i};
-        if existsdate(session.epochs{i}.name), session.epochs{i}.name =  session.epochs{i}.name(~isdate(session.epochs{i}.name)); end % remove the date from the "epochs" suggestion
-        if existday(session.epochs{i}.name), session.epochs{i}.name =  session.epochs{i}.name(~isday(session.epochs{i}.name)); end % remove the date from the "epochs" suggestion
+        while fun_existsdate(session.epochs{i}.name), session.epochs{i}.name =  session.epochs{i}.name(~fun_isdate(session.epochs{i}.name)); end % remove the date from the "epochs" suggestion
+        while fun_existday(session.epochs{i}.name), session.epochs{i}.name =  session.epochs{i}.name(~fun_isday(session.epochs{i}.name)); end % remove the date from the "epochs" suggestion
         session.epochs{i}.startTime =  MergePoints.timestamps(i,1);
         session.epochs{i}.stopTime =  MergePoints.timestamps(i,2);
     end
