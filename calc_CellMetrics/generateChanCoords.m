@@ -19,6 +19,9 @@ layout = 'poly2';
 shankSpacing = 200; % in µm
 verticalSpacing = 20; % in µm
 
+ngroups = session.extracellular.nElectrodeGroups;
+groups = session.extracellular.electrodeGroups.channels;
+
 if isfield(session.animal,'probeImplants')
     source = 'probeImplants';
     layout = session.animal.probeImplants{1}.layout;
@@ -32,10 +35,10 @@ if isfield(session.animal,'probeImplants')
 elseif isfield(session.extracellular,'chanCoords') && isfield(session.extracellular.chanCoords,'layout') && any(strcmpi(session.extracellular.chanCoords.layout,electrodeLayouts))
     source = 'chanCoords parameters';
     layout = session.extracellular.chanCoords.layout;
-    if isfield(session.extracellular.chanCoords,'shankSpacing')
+    if isfield(session.extracellular.chanCoords,'shankSpacing') & ~isempty(session.extracellular.chanCoords.shankSpacing) & isnumeric(session.extracellular.chanCoords.shankSpacing)
         shankSpacing = session.extracellular.chanCoords.shankSpacing;
     end
-    if isfield(session.extracellular.chanCoords,'verticalSpacing')
+    if isfield(session.extracellular.chanCoords,'verticalSpacing') & ~isempty(session.extracellular.chanCoords.verticalSpacing) & isnumeric(session.extracellular.chanCoords.verticalSpacing) & ~isnan(session.extracellular.chanCoords.verticalSpacing)
         verticalSpacing = session.extracellular.chanCoords.verticalSpacing;
     end
 end
@@ -45,9 +48,6 @@ disp(['Generating channel coords from ' source ' information. layout: ', layout,
 %%
 xcoords = [];%eventual output arrays
 ycoords = [];
-
-ngroups = session.extracellular.nElectrodeGroups;
-groups = session.extracellular.electrodeGroups.channels;
 
 switch(layout)
     case {'linear','edge'}
@@ -169,7 +169,7 @@ switch(layout)
             ycoords = cat(1,ycoords,y(:));
         end
     otherwise
-        warning('layout not detected')
+        error('layout not detected')
 end
 [~,I] =  sort(horzcat(groups{:}));
 chanCoords.x = xcoords(I);

@@ -1722,8 +1722,10 @@ end
                         channels2plot =channels2plot(1:size(cell_metrics.waveforms.filt_all{ii},1));
                     end
                     channels2plot = 1:size(cell_metrics.waveforms.filt_all{ii},1);
-                    xdata = repmat([cell_metrics.waveforms.time_all{ii},nan(1,1)],length(channels2plot),1)' + general.chanCoords.x(channels2plot)'/UI.params.chanCoords.x_factor;
-                    ydata = [cell_metrics.waveforms.filt_all{ii}(channels2plot,:),nan(length(channels2plot),1)]' + general.chanCoords.y(channels2plot)'*UI.params.chanCoords.y_factor;
+                    x_offset = general.chanCoords.x(channels2plot)/UI.params.chanCoords.x_factor;
+                    y_offset = general.chanCoords.y(channels2plot)*UI.params.chanCoords.y_factor;
+                    xdata = repmat([cell_metrics.waveforms.time_all{ii},nan(1,1)],length(channels2plot),1)' + x_offset(:)';
+                    ydata = [cell_metrics.waveforms.filt_all{ii}(channels2plot,:),nan(length(channels2plot),1)]' + y_offset(:)';
                     line(xdata(:),ydata(:), 'color', col,'linewidth',1,'HitTest','off')
                 else
                     text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
