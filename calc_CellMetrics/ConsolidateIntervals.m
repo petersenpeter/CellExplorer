@@ -72,6 +72,7 @@ for i = 1:2:length(varargin),
 	end
 end
 
+if size(intervals,2)==1 && size(intervals,1)==2, intervals = intervals'; end
 original = intervals;
 
 % Mark already consolidated intervals to avoid retesting them

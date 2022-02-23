@@ -93,5 +93,10 @@ for i=1:length(rxml.child)
 
 end
 
+if ~isfield(xml,'AnatGrps')
+    xml.AnatGrps.Channels = []; xml.AnatGrps.Skip = []; 
+end
+
+
 
 % general recursive parsing will have to wait.
