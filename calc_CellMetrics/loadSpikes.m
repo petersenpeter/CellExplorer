@@ -284,8 +284,10 @@ if parameters.forceReload
                                 end
                                 spikes.maxWaveformCh(UID) = cluster_info.ch(temp); % max waveform channel
                                 spikes.maxWaveformCh1(UID) = cluster_info.ch(temp)+1; % index 1;
-%                                 spikes.phy_purity(UID) = cluster_info.purity(temp)+1; % cluster purity
+                                spikes.phy_maxWaveformCh1(UID) = cluster_info.ch(temp)+1; % index 1; Also saving the max waveform channel from phy as a separate variable
                                 spikes.phy_amp(UID) = cluster_info.amp(temp)+1; % spike amplitude
+                                % spikes.phy_purity(UID) = cluster_info.purity(temp)+1; % cluster purity
+                                
                             end
 
                             UID = UID+1;
