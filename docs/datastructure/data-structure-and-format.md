@@ -23,11 +23,11 @@ Suppose you have N channels:
 
 $$ c_0, c_1, ... , c_N $$
 
-And if you assume that $$c_i(t)$$ is the value of channel $$ c_i $$ at time $$ t $$, then your data file should be a raw file with values
+And if you assume that `c_i(t)` is the value of channel `c_i` at time t, then your data file should be a raw file with values
 
 $$ c_0(0), c_1(0), ... , c_N(0), c_0(1), ..., c_N(1), ... c_N(T) $$
 
-This is simply the flatten version of your recordings matrix, with size $$ N x T $$. 
+This is simply the flatten version of your recordings matrix, with size `N x T`. 
 
 The related metadata is specified in the session struct:
 
@@ -37,6 +37,8 @@ The related metadata is specified in the session struct:
 * __Least significant bit__: `session.extracellular.leastSignificantBit`. The range/precision in µV. Intan system: 0.195µV/bit.
 
 CellExplorer also uses a `basename.lfp` file - A low-pass filtered and down-sampled raw data file for lfp analysis (for efficient data analysis and data storage; typically down-sampled to 1250Hz). The lfp file is automatically generated in the pipeline from the raw data file - using the script `ce_LFPfromDat`). The sampling rate is specified in the session struct (`session.extracellular.srLfp`). The LFP file has the same channel count and scaling as the dat file.
+
+<p class="callout info">A success message</p>
 
 ## Matlab data structures
 Each type of data is saved in its own MATLAB structure, please see the list of data containers in the next section.
