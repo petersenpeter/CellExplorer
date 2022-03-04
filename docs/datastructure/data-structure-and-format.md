@@ -21,13 +21,13 @@ CellExplorer supports raw binary data files (.dat files). This format is also su
 
 Suppose you have N channels:
 
-$$ c_0, c_1, ... , c_N $$
+$$ c_1, c_2, ... , c_N $$
 
-And if you assume that $c_i(t)$ is the value of channel $c_i$ at time $t$, then your data file should be a raw file with values
+And if you assume that $c_i(t)$ is the value of channel $c_i$ at time $t$, then your data file should be a raw file with values:
 
-$$ c_0(0), c_1(0), ... , c_N(0), c_0(1), ..., c_N(1), ... c_N(T) $$
+$$ c_1(1), c_2(1), ... , c_N(1), c_1(2), ..., c_N(2), ... c_N(T) $$
 
-This is simply the flatten version of your recordings matrix, with size $N x T$. 
+This is simply the flatten version of your recordings matrix, with size $N x T$.
 
 The related metadata is specified in the session struct:
 
