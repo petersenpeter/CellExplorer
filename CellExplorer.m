@@ -90,6 +90,8 @@ else
     
     % Extra inputs
     addParameter(p,'summaryFigures',false,@islogical); % Creates summary figures
+    addParameter(p,'selectSummaryPlotSubset',false,@islogical); % Allows for selection of plots
+    addParameter(p,'keepSummaryFigures',false,@islogical); % Keep existing plots open
     addParameter(p,'plotCellIDs',[],@isnumeric); % Defines which cell ids to plot in the summary figures
     
     % Parsing inputs
@@ -108,6 +110,8 @@ else
     
     % Extra inputs
     summaryFigures = p.Results.summaryFigures;
+    selectSummaryPlotSubset = p.Results.selectSummaryPlotSubset;
+    keepSummaryFigures = p.Results.keepSummaryFigures;
     plotCellIDs = p.Results.plotCellIDs;
 end
 
@@ -351,12 +355,11 @@ setUIfromCellMetrics
 % % % % % % % % % % % % % % % % % % % % % %
 
 if summaryFigures
-    MsgLog('Generating summary figures',-1)
     UI.params.subset = 1:length(cell_metrics.cellID);
 %     highlightCurrentCell = false;
     plotSummaryFigures
     % closes the UI
-    if ishandle(UI.fig)
+    if ishandle(UI.fig) && ~keepSummaryFigures
         close(UI.fig)
     end
     MsgLog('Summary figure(s) generated. Saved to /summaryFigures',-1)
@@ -3331,8 +3334,9 @@ end
                             subset2 = [subset2,set1];
                         end
                     end
-                    subsetPlots.xaxis = Xdata;
-                    subsetPlots.yaxis = Ydata;
+                    [subset2,idx1] = sort(subset2);
+                    subsetPlots.xaxis = Xdata(:,idx1);
+                    subsetPlots.yaxis = Ydata(:,idx1);
                     subsetPlots.subset = subset2;
                 end
                 line(1:numel(cell_metrics.waveforms.peakVoltage_all{ii}),cell_metrics.waveforms.peakVoltage_all{ii}(channelOrder), 'color', col,'linewidth',2,'HitTest','off','Marker','.')
@@ -7493,13 +7497,13 @@ end
                     x_scale = range(x1(:));
                     y_scale = range(y1(:));
                     [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
-                    In = unique(floor(In/length(subsetPlots.xaxis)))+1;
+                    In = unique(floor(In/size(subsetPlots.xaxis,1)))+1;
                     In = min([In,length(subset1)]);
                     iii = subset1(In);
-                    [~,time_index] = min(abs(subsetPlots.xaxis-u));
+                    [~,time_index] = min(abs(subsetPlots.xaxis(:,In)-u));
                     if highlight || hover
-                        hover2highlight.handle2 = line(subsetPlots.xaxis,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                        hover2highlight.handle2 = line(subsetPlots.xaxis(:,In),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index,In),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'Trilaterated position'
@@ -8343,7 +8347,7 @@ end
                             y1 = subsetPlots.yaxis;
                             
                             In2 = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
-                            In2 = unique(floor(In2/length(subsetPlots.xaxis)))+1;
+                            In2 = unique(floor(In2/size(x1,1)))+1;
                             In = subset1(In2);
                             if ~isempty(In2)
                                 line(x1(:,1),y1(:,In2),'linewidth',2, 'HitTest','off')
@@ -8777,11 +8781,17 @@ end
             plotOptions1 = plotOptions(ismember(plotOptions,plotOptions_all));
             if ~UI.BatchMode && isfield(cell_metrics,'putativeConnections') && (isfield(cell_metrics.putativeConnections,'excitatory') || isfield(cell_metrics.putativeConnections,'inhibitory'))
                 plotOptions1 = [plotOptions1;'Connectivity graph'; 'Connectivity matrix'];
-            end
-            plotCount = 3;
+            end            
         else
-            plotCount = 4;
-            plotOptions1 = plotOptions;            
+            plotOptions1 = plotOptions;
+        end
+        plotCount = 4;
+        if selectSummaryPlotSubset
+            InitialValue = find(ismember(plotOptions,plotOptions1));
+            [indx,tf] = listdlg('ListString',plotOptions,'Name','Select plots','InitialValue',InitialValue);
+            if tf
+                plotOptions1 = plotOptions(indx);
+            end
         end
         [plotRows,~]= numSubplots(length(plotOptions1)+plotCount);
         
@@ -8799,9 +8809,12 @@ end
                 disp('Summary figures canceled by user');
                 break
             end
-            if ishandle(fig) & plotCellIDs~=-1
+            if keepSummaryFigures && j>1
+                fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.params.figureSize,'visible','off');
+                movegui(fig,'center')
+            elseif ishandle(fig) & plotCellIDs~=-1 
                 clf(fig)
-            end
+            end            
             
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
@@ -8901,8 +8914,10 @@ end
             highlightCurrentCell = false;
             plotLegends, title('Legend')
             highlightCurrentCell = highlightCurrentCell_pre;
+            
             % Saving figure
             if ishandle(fig)
+                movegui(fig,'center'), set(fig,'visible','on')
                 try
                     if highlight == 0
                         ce_savefigure2(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_SessionSummary_', saveAs],0)
@@ -8910,9 +8925,7 @@ end
                         ce_savefigure2(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_CellSummary_',saveAs,'_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0)
                     end
                 catch 
-                    disp('figure not saved (action canceled by user or directory not available for writing)')
-                    movegui(fig,'center'), set(fig,'visible','on')
-                    
+                    disp('figure not saved (action canceled by user or directory not available for writing)')              
                 end
             end
         end
@@ -8922,7 +8935,7 @@ end
         
         if ishandle(fig)
             set(fig,'visible','on')
-            if plotCellIDs~=-1
+            if all(plotCellIDs ~=-1) && ~keepSummaryFigures
                 close(fig)
             end
         end        
@@ -9058,7 +9071,7 @@ end
                 MsgLog(['Session metadata file not available:' sessionMetaFilename],2)
             end
         else
-            [~,basename,~] = fileparts(pwd);
+            basename = basenameFromBasepath(pwd);
             sessionMetaFilename = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename,'.session.mat']);
             if exist(sessionMetaFilename,'file')
                 gui_session(sessionMetaFilename);
@@ -9440,7 +9453,7 @@ end
                         plot_cells2 = cell_metrics.UID(plot_cells);
                         k = 1;
                         try 
-                        ha = ce_tight_subplot(length(plot_cells),length(plot_cells),[.03 .03],[.06 .05],[.04 .05]);
+                            ha = ce_tight_subplot(length(plot_cells),length(plot_cells),[.03 .03],[.06 .05],[.04 .05]);
                         catch
                             MsgLog(['The number of selected cells are too high (', num2str(length(plot_cells)), ')'],4);
                             return

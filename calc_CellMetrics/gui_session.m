@@ -107,7 +107,7 @@ elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'dir') =
      sessionIn = session;
 else
     basepath = pwd;
-    [~,basename,~] = fileparts(pwd);
+    basename = basenameFromBasepath(basepath);
     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
         disp(['Loading ',basename,'.session.mat from current path']);
         session = loadSession(basepath,basename);

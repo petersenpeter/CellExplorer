@@ -117,8 +117,7 @@ if ~isempty(session)
         LSB = session.extracellular.leastSignificantBit;
     end
 elseif isempty(basename)
-    [~,basename,~] = fileparts(basepath);
-    disp(['Using basepath to determine the basename: ' basename])
+    basename = basenameFromBasepath(basepath);
     temp = dir('Kilosort_*');
     if ~isempty(temp)
         clusteringpath = temp.name; % clusteringpath assumed from Kilosort
@@ -154,11 +153,13 @@ if parameters.forceReload
     end
     
     % If number of channels or electrode groups are missing in the session struct, the script will try to import this from a basename.sessionInfo.mat or a basename.xml file.
-    if ~isfield(session.extracellular,'nChannels') || ~isfield(session.extracellular,'electrodeGroups')
+    if ~isfield(session.extracellular,'nChannels') || ~isfield(session.extracellular,'electrodeGroups') || ~isfield(session.extracellular,'sr')
         if exist(fullfile(session.general.basePath,[session.general.name,'.sessionInfo.mat']),'file')
             session = loadBuzcodeMetadata(session);
         elseif exist(fullfile(session.general.basePath,[session.general.name, '.xml']),'file')
             session = loadNeurosuiteMetadata(session);
+        else
+            session = sessionTemplate(session);
         end
         % TODO: A gui will be shown allowing for manual edits of extracellular parameters        
     end
@@ -237,8 +238,10 @@ if parameters.forceReload
                 end                    
             elseif exist(filename2,'file')
                 filename = filename2;
+            elseif exist(filename3,'file')
+                filename = filename3;
             else
-                error('Phy: No cluster group file found (cluster_group.tsv or cluster_groups.csv)')
+                error('Phy: No cluster group file found (cluster_group.tsv, cluster_groups.csv or cluster_KSLabel.tsv)')
             end
             
             fileID = fopen(filename,'r');
@@ -284,10 +287,9 @@ if parameters.forceReload
                                 end
                                 spikes.maxWaveformCh(UID) = cluster_info.ch(temp); % max waveform channel
                                 spikes.maxWaveformCh1(UID) = cluster_info.ch(temp)+1; % index 1;
-                                spikes.phy_maxWaveformCh1(UID) = cluster_info.ch(temp)+1; % index 1; Also saving the max waveform channel from phy as a separate variable
+                                spikes.phy_maxWaveformCh1(UID) = cluster_info.ch(temp)+1; % index 1; saves the max waveform channel from phy as a separate variable
                                 spikes.phy_amp(UID) = cluster_info.amp(temp)+1; % spike amplitude
-                                % spikes.phy_purity(UID) = cluster_info.purity(temp)+1; % cluster purity
-                                
+                                % spikes.phy_purity(UID) = cluster_info.purity(temp)+1; % cluster purity                                
                             end
 
                             UID = UID+1;
