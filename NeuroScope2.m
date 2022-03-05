@@ -309,21 +309,27 @@ end
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
         UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu',menuSelectedFcn,@ShowHideMenu);
         UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC,'Separator','on');
-        UI.menu.display.medianFilter = uimenu(UI.menu.display.topMenu,menuLabel,'Median filter',menuSelectedFcn,@medianFilter);        
-        UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);
-        UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
+        UI.menu.display.medianFilter = uimenu(UI.menu.display.topMenu,menuLabel,'Median filter',menuSelectedFcn,@medianFilter);
+        UI.menu.display.plotStyleDynamicRange = uimenu(UI.menu.display.topMenu,menuLabel,'Dynamic ephys range plot',menuSelectedFcn,@plotStyleDynamicRange,'Checked','on','Separator','on');
         UI.menu.display.narrowPadding = uimenu(UI.menu.display.topMenu,menuLabel,'Narrow ephys padding',menuSelectedFcn,@narrowPadding);
-        UI.menu.display.plotStyleDynamicRange = uimenu(UI.menu.display.topMenu,menuLabel,'Dynamic ephys range plot',menuSelectedFcn,@plotStyleDynamicRange,'Checked','on');
-        %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
-        UI.menu.display.colorByChannels = uimenu(UI.menu.display.topMenu,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);
         UI.menu.display.resetZoomOnNavigation = uimenu(UI.menu.display.topMenu,menuLabel,'Reset zoom on navigation',menuSelectedFcn,@resetZoomOnNavigation);
         if UI.settings.resetZoomOnNavigation
             UI.menu.display.resetZoomOnNavigation.Checked = 'on';
-        end
+        end   
+        %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
+        UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
+        UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);        
+        UI.menu.display.channelOrder.topMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Channel order','Separator','on');
+        UI.menu.display.channelOrder.option(1) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Electrode groups',menuSelectedFcn,@setChannelOrder);
+        UI.menu.display.channelOrder.option(2) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Flipped electrode groups',menuSelectedFcn,@setChannelOrder);
+        UI.menu.display.channelOrder.option(3) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Ascending channel order',menuSelectedFcn,@setChannelOrder);
+        UI.menu.display.channelOrder.option(4) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Descending channel order',menuSelectedFcn,@setChannelOrder);
+        UI.menu.display.channelOrder.option(UI.settings.channelOrder).Checked = 'on';
+        UI.menu.display.colorByChannels = uimenu(UI.menu.display.topMenu,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels,'Separator','on');
         
-        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap,'Separator','on');
+        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
         UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);        
-        UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background color & primary color (ticks, text and rasters)',menuSelectedFcn,@changeBackgroundColor);
+        UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background color & primary color',menuSelectedFcn,@changeBackgroundColor);
         UI.menu.display.detectedEventsBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected events below traces',menuSelectedFcn,@detectedEventsBelowTrace,'Separator','on');
         UI.menu.display.detectedSpikesBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spikes below traces',menuSelectedFcn,@detectedSpikesBelowTrace,'Separator','on');
         UI.menu.display.showDetectedSpikeWaveforms = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spike waveforms',menuSelectedFcn,@showDetectedSpikeWaveforms);
@@ -882,7 +888,7 @@ end
         end
         
         if UI.settings.colorByChannels
-            channelsList2 = [UI.channels{UI.settings.electrodeGroupsToPlot}];
+            channelsList2 = UI.channelOrder;
             channelsList = {};
             temp = rem(0:numel(channelsList2)-1,UI.settings.nColorGroups)+1;
             for i = 1:max(temp)
@@ -2197,6 +2203,14 @@ end
         end
     end
     
+    function setChannelOrder(src, event)
+        UI.menu.display.channelOrder.option(UI.settings.channelOrder).Checked = 'off';
+        UI.settings.channelOrder = src.Position;
+        UI.menu.display.channelOrder.option(UI.settings.channelOrder).Checked = 'on';
+        initTraces
+        uiresume(UI.fig);
+    end
+    
     function ShowChannelNumbers(~,~)
         UI.settings.showChannelNumbers = ~UI.settings.showChannelNumbers;
         if UI.settings.showChannelNumbers
@@ -2791,6 +2805,15 @@ end
                     UI.settings.brainRegionsToHide = brainRegions(~UI.table.brainRegions.Data{:,1});
                     initTraces;
                     uiresume(UI.fig);
+                elseif UI.uitabgroup_channels.Selection == 4 && isfield(data.session.extracellular,'chanCoords') && ~isempty(data.session.extracellular.chanCoords.x) && ~isempty(data.session.extracellular.chanCoords.y)
+                    image_toolbox_installed = isToolboxInstalled('Image Processing Toolbox');
+                    if ~verLessThan('matlab', '9.4') & image_toolbox_installed
+                        x_lim_data = [min(data.session.extracellular.chanCoords.x),max(data.session.extracellular.chanCoords.x)];
+                        y_lim_data = [min(data.session.extracellular.chanCoords.y),max(data.session.extracellular.chanCoords.y)];
+                        x_padding = 0.03*diff(x_lim_data);
+                        y_padding = 0.03*diff(y_lim_data);
+                        UI.plotpoints.roi_ChanCoords.Position = [x_lim_data(1)-x_padding,y_lim_data(1)-y_padding,1.06*diff(x_lim_data),1.06*diff(y_lim_data)];
+                    end
                 end
             otherwise
                 data.session = gui_session(data.session,[],'extracellular');
@@ -3404,12 +3427,15 @@ end
         end
         
         channels = [UI.channels{UI.settings.electrodeGroupsToPlot}];
-        if UI.settings.plotSorting == 1
-            UI.channelOrder = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
-        elseif UI.settings.plotSorting == 2
+        
+        if UI.settings.channelOrder == 1
             UI.channelOrder = [UI.channels{UI.settings.electrodeGroupsToPlot}];
-%         elseif UI.settings.plotSorting == 3
-%             
+        elseif UI.settings.channelOrder == 2
+            UI.channelOrder = flip([UI.channels{UI.settings.electrodeGroupsToPlot}]);
+        elseif UI.settings.channelOrder == 3
+            UI.channelOrder = sort([UI.channels{UI.settings.electrodeGroupsToPlot}],'ascend');
+        elseif UI.settings.channelOrder == 4
+            UI.channelOrder = sort([UI.channels{UI.settings.electrodeGroupsToPlot}],'descend');
         end
         
         nChannelsToPlot = numel(UI.channelOrder);

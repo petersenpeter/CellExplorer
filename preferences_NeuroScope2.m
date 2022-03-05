@@ -13,7 +13,7 @@ preferences.windowDuration = 1; % window duration in seconds
 preferences.scalingFactor = 50; % Scaling factor
 preferences.plotStyle = 2; % Plot style
 preferences.greyScaleTraces = 1; % Plot colors
-preferences.plotSorting = 2; % Channel sorting 1:Channel order 1:nChannels. 2:
+preferences.channelOrder = 1; % Channel order
 preferences.columnTraces = false; % Plot traces in columns - NOT IMPLEMENTED
 preferences.colorByChannels = false; % Color by channel order
 preferences.nColorGroups = 10; % Number of color groups when coloring by channel order
@@ -28,6 +28,7 @@ preferences.ephys_padding = 0.05; % Initial padding above and below ephys traces
 preferences.text_spacing = 0.016; % Vertical spacing between legends
 preferences.resetZoomOnNavigation = false;
 preferences.replayRefreshInterval = 0.50; % Fraction of window updated in replay mode
+
 if ismac
     preferences.fontsize = 11;
 else
