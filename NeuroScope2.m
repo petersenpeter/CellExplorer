@@ -308,8 +308,8 @@ end
         % Settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
         UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu',menuSelectedFcn,@ShowHideMenu);
-        UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from signal',menuSelectedFcn,@removeDC,'Separator','on');
-        UI.menu.display.medianFilter = uimenu(UI.menu.display.topMenu,menuLabel,'Median filter',menuSelectedFcn,@medianFilter);
+        UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from ephys traces',menuSelectedFcn,@removeDC,'Separator','on');
+        UI.menu.display.medianFilter = uimenu(UI.menu.display.topMenu,menuLabel,'Apply median filter to ephys traces',menuSelectedFcn,@medianFilter);
         UI.menu.display.plotStyleDynamicRange = uimenu(UI.menu.display.topMenu,menuLabel,'Dynamic ephys range plot',menuSelectedFcn,@plotStyleDynamicRange,'Checked','on','Separator','on');
         UI.menu.display.narrowPadding = uimenu(UI.menu.display.topMenu,menuLabel,'Narrow ephys padding',menuSelectedFcn,@narrowPadding);
         UI.menu.display.resetZoomOnNavigation = uimenu(UI.menu.display.topMenu,menuLabel,'Reset zoom on navigation',menuSelectedFcn,@resetZoomOnNavigation);
@@ -4710,9 +4710,9 @@ end
             analysisToolsOptions = cellfun(@(X) X(1:end-2),analysisTools.m,'UniformOutput', false);
             analysisToolsOptions(strcmpi(analysisToolsOptions,'wrapper_example')) = [];
             if ~isempty(analysisToolsOptions)
-                UI.menu.analysis.(analysisToolsPackages{j}).topMenu = uimenu(UI.menu.analysis.topMenu,menuLabel,analysisToolsPackages{j});
+                UI.menu.analysis.(analysisToolsPackages{j}).topMenu = uimenu(UI.menu.analysis.topMenu,menuLabel,analysisToolsPackages{j},'Tag',analysisToolsPackages{j});
                 for i = 1:length(analysisToolsOptions)
-                    UI.menu.analysis.(analysisToolsPackages{j}).(analysisToolsOptions{i}) = uimenu(UI.menu.analysis.(analysisToolsPackages{j}).topMenu,menuLabel,analysisToolsOptions{i},menuSelectedFcn,@analysis_wrapper);
+                    UI.menu.analysis.(analysisToolsPackages{j}).(analysisToolsOptions{i}) = uimenu(UI.menu.analysis.(analysisToolsPackages{j}).topMenu,menuLabel,analysisToolsOptions{i},menuSelectedFcn,@analysis_wrapper,'Tag',analysisToolsOptions{i});
                 end
             end
         end
@@ -4816,7 +4816,31 @@ end
     end
     
     function analysis_wrapper(src,~)
-        out = analysis_tools.(src.Parent.Text).(src.Text)('ephys',ephys,'UI',UI,'data',data);
+        folder1 = src.Parent.Tag;
+        function1 = src.Tag;
+        
+        % Older version of Matlab  did not support below line so introduced the switch
+        % out = analysis_tools.(folder1).(function1)('ephys',ephys,'UI',UI,'data',data);
+        switch(folder1)
+            case 'behavior'
+                out = analysis_tools.behavior.(function1)('ephys',ephys,'UI',UI,'data',data);
+            case 'cell_metrics'
+                out = analysis_tools.cell_metrics.(function1)('ephys',ephys,'UI',UI,'data',data);
+            case 'events'
+                out = analysis_tools.events.(function1)('ephys',ephys,'UI',UI,'data',data);
+            case 'lfp'
+                out = analysis_tools.lfp.(function1)('ephys',ephys,'UI',UI,'data',data);
+            case 'session'
+                out = analysis_tools.session.(function1)('ephys',ephys,'UI',UI,'data',data);
+            case 'spikes'
+                out = analysis_tools.spikes.(function1)('ephys',ephys,'UI',UI,'data',data);
+            case 'states'
+                out = analysis_tools.states.(function1)('ephys',ephys,'UI',UI,'data',data);
+            case 'timeseries'
+                out = analysis_tools.timeseries.(function1)('ephys',ephys,'UI',UI,'data',data);
+            case 'traces'
+                out = analysis_tools.traces.(function1)('ephys',ephys,'UI',UI,'data',data);
+        end
     end
     
     function plotCSD(~,~)
