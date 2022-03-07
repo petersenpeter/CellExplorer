@@ -19,16 +19,13 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters,acti
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Database initialization
-if exist('db_load_settings','file') == 2
+
+enableDatabase = db_is_active;
+
+if enableDatabase
     db_settings = db_load_settings;
-    if ~strcmp(db_settings.credentials.username,'user')
-        enableDatabase = 1;
-    else
-        enableDatabase = 0;
-    end
-else
-    enableDatabase = 0;
 end
+
 uiLoaded = false;
 
 % Lists
