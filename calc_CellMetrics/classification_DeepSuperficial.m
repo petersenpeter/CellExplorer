@@ -91,7 +91,11 @@ catch
     try
         ripple_channel_detector = ripples.detectorinfo.detectionparms.ripple_channel;
     catch
-        ripple_channel_detector = 0;
+        try
+            ripple_channel_detector = ripples.detectorinfo.detectionparms.Channels(1);
+        catch
+            ripple_channel_detector = 0;
+        end
     end
 end
 
