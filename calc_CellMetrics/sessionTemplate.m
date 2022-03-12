@@ -32,6 +32,7 @@ addParameter(p,'basename',[],@isstr);
 addParameter(p,'importSkippedChannels',true,@islogical); % Import skipped channels from the xml as bad channels
 addParameter(p,'importSyncedChannels',true,@islogical);  % Import channel not synchronized between anatomical and spike groups as bad channels
 addParameter(p,'showGUI',false,@islogical);              % Show the session gui
+addParameter(p,'remove_folder_date',false,@islogical);   % removes folder date metadata from epoch name (default:false)
 
 % Parsing inputs
 parse(p,input1,varargin{:})
@@ -39,6 +40,7 @@ basename = p.Results.basename;
 importSkippedChannels = p.Results.importSkippedChannels;
 importSyncedChannels = p.Results.importSyncedChannels;
 showGUI = p.Results.showGUI;
+remove_folder_date = p.Results.remove_folder_date;
 
 % Initializing session struct and defining basepath, if not specified as an input
 if ischar(input1)
@@ -335,35 +337,48 @@ if isfield(sessionInfo,'region')
     end
 end
 
-% Epochs derived from MergePoints
-fun_idx2logical = @(index,nElements) logical(accumarray(Restrict(index,[1 nElements]),1,[nElements 1]));
-% find the date if it's in the filename (following the format YYMMDD_HHMMSS)
-fun_dateIndex = @(x) strfind(ismember(x,'1234567890'),[ones(1,6) 0 ones(1,6)]); 
-% check if a date exists
-fun_existsdate = @(x) any(fun_dateIndex(x)); 
-% flag the characters around the date (character before the date, typically "_" and the date itself).
-fun_isdate = @(x) fun_idx2logical(min(fun_dateIndex(x))+(-1:12)', length(x)); 
-% find the index of the "d" in "day"
-fun_dayIndex = @(x) strfind(lower(x),'day'); 
-% check if the string "day" exists in the filename
-fun_existday = @(x) any(fun_dayIndex(x)); 
-% find which characters are part of the dayX/dayXX expression (by finding the next non-numeric character following "day")
-fun_isday = @(x) fun_idx2logical(min(strfind(x,'day'))+(0:find(~ismember([x(min(strfind(x,'day')+3):end),'a'],'1234567890'),1)+2)',length(x)); 
-
-if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'file')
-    load(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'MergePoints')
-    for i = 1:size(MergePoints.foldernames,2)
-        session.epochs{i}.name =  MergePoints.foldernames{i};
-        % remove the date from the "epochs" suggestion
-        while fun_existsdate(session.epochs{i}.name)
-            session.epochs{i}.name = session.epochs{i}.name(~fun_isdate(session.epochs{i}.name));
+% Add epoch data from mergePoints
+% this first section will remove date metadata if you choose
+if remove_folder_date 
+    % Epochs derived from MergePoints
+    fun_idx2logical = @(index,nElements) logical(accumarray(Restrict(index,[1 nElements]),1,[nElements 1]));
+    % find the date if it's in the filename (following the format YYMMDD_HHMMSS)
+    fun_dateIndex = @(x) strfind(ismember(x,'1234567890'),[ones(1,6) 0 ones(1,6)]);
+    % check if a date exists
+    fun_existsdate = @(x) any(fun_dateIndex(x));
+    % flag the characters around the date (character before the date, typically "_" and the date itself).
+    fun_isdate = @(x) fun_idx2logical(min(fun_dateIndex(x))+(-1:12)', length(x));
+    % find the index of the "d" in "day"
+    fun_dayIndex = @(x) strfind(lower(x),'day');
+    % check if the string "day" exists in the filename
+    fun_existday = @(x) any(fun_dayIndex(x));
+    % find which characters are part of the dayX/dayXX expression (by finding the next non-numeric character following "day")
+    fun_isday = @(x) fun_idx2logical(min(strfind(x,'day'))+(0:find(~ismember([x(min(strfind(x,'day')+3):end),'a'],'1234567890'),1)+2)',length(x));
+    
+    if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'file')
+        load(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'MergePoints')
+        for i = 1:size(MergePoints.foldernames,2)
+            session.epochs{i}.name =  MergePoints.foldernames{i};
+            % remove the date from the "epochs" suggestion
+            while fun_existsdate(session.epochs{i}.name)
+                session.epochs{i}.name = session.epochs{i}.name(~fun_isdate(session.epochs{i}.name));
+            end
+            % remove the date from the "epochs" suggestion
+            while fun_existday(session.epochs{i}.name)
+                session.epochs{i}.name = session.epochs{i}.name(~fun_isday(session.epochs{i}.name));
+            end
+            session.epochs{i}.startTime = MergePoints.timestamps(i,1);
+            session.epochs{i}.stopTime = MergePoints.timestamps(i,2);
         end
-        % remove the date from the "epochs" suggestion
-        while fun_existday(session.epochs{i}.name)
-            session.epochs{i}.name = session.epochs{i}.name(~fun_isday(session.epochs{i}.name));
+    end
+else
+    if exist(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'file')
+        load(fullfile(basepath,[session.general.name,'.MergePoints.events.mat']),'MergePoints')
+        for i = 1:size(MergePoints.foldernames,2)
+            session.epochs{i}.name =  MergePoints.foldernames{i};
+            session.epochs{i}.startTime =  MergePoints.timestamps(i,1);
+            session.epochs{i}.stopTime =  MergePoints.timestamps(i,2);
         end
-        session.epochs{i}.startTime = MergePoints.timestamps(i,1);
-        session.epochs{i}.stopTime = MergePoints.timestamps(i,2);
     end
 end
 
