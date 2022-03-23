@@ -60,7 +60,7 @@ saveDeepSuperficial
 %         plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*gain,'m','linewidth',1)
         
         for jjj = 1:size(deepSuperficialfromRipple.ripple_average{jj},2)
-            % Plotting depth (µm)
+            % Plotting depth (Âµm)
             text(deepSuperficialfromRipple.ripple_time_axis(end)+5,deepSuperficialfromRipple.ripple_average{jj}(1,jjj)-(jjj-1)*gain,[num2str(round(deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{jj}(jjj))))])
             % Plotting channel number (0 indexes)
             text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,-(jjj-1)*gain,num2str(deepSuperficialfromRipple.ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
@@ -114,9 +114,9 @@ saveDeepSuperficial
         ht2 = text(0.01,0.98,'Deep','Units','normalized','FontWeight','Bold','Color','b');
         ht2 = text(0.01,1.02,'Cortical','Units','normalized','FontWeight','Bold','Color',[0.2,0.8,0.2],'HorizontalAlignment','left');
         ht1 = text(0.01,-0.02,'Unknown','Units','normalized','FontWeight','Bold','Color','k','HorizontalAlignment','left');
-        ht1 = text(0.99,1.02,'Depth (µm)','Units','normalized','FontWeight','Bold','Color','k','HorizontalAlignment','Right');
+        ht1 = text(0.99,1.02,'Depth (Âµm)','Units','normalized','FontWeight','Bold','Color','k','HorizontalAlignment','Right');
         %         if ceil(session.extracellular.nSpikeGroups/2) == jj || session.extracellular.nSpikeGroups == jj
-        %             ht3 = text(1.05,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
+        %             ht3 = text(1.05,0.4,'Depth (Âµm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
         %         end
     end
 
@@ -201,7 +201,7 @@ saveDeepSuperficial
         if strcmp(answer,'Yes')
             disp('Saving deep superfical classification')
             try
-                save(deepSuperficial_file,'deepSuperficialfromRipple','-v7.3','-nocompression');
+                save(deepSuperficial_file,'deepSuperficialfromRipple');
             catch
                 warndlg('Failed to save deep superfical classification','Warning');
                 return
