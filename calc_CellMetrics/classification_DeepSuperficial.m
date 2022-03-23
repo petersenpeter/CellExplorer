@@ -180,7 +180,9 @@ for jj = 1:session.extracellular.nElectrodeGroups
     % remove ripple channels that are labeled 'Bad' 
     ripple_channels{jj}(ismember(ripple_channels{jj},channels_to_exclude)) = [];
     
-   
+   if isempty(ripple_channels{jj})
+       continue
+   end
     % Loading .lfp file
     if exist(fullfile(basepath,[basename '.lfp']),'file')
         signal = 0.000195 * double(LoadBinary(fullfile(basepath,[basename '.lfp']),...
