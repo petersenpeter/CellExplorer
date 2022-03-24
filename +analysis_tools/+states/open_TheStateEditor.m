@@ -20,4 +20,4 @@ out = [];
 
 % This function opens the GUI TheStateEditor
 
-TheStateEditor(data.session.general.baseName);
+TheStateEditor(data.session.general.name);

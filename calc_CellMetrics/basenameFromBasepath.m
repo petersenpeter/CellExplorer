@@ -10,18 +10,21 @@ function basename = basenameFromBasepath(basepath)
     % Part of CellExplorer, by Peter Petersen
     
     extensions = {'.session.mat','.xml','.lfp','.dat'};
+    file_exclusions = {'settings.xml','._'};
     basename = '';
+    file = '';
     for i = 1:numel(extensions)
         file1 = dir(fullfile(basepath,['*',extensions{i}]));
         if ~isempty(file1)
             filenames = {file1.name};
             for k = 1:numel(filenames)
-                if ~startsWith(filenames{k}, '._')
+                if ~startsWith(filenames{k},file_exclusions)
                     file = filenames{k};
-                    break
+                    if isempty(basename)
+                        basename = file(1:end-numel(extensions{i}));
+                    end
                 end
             end
-            basename = file(1:end-numel(extensions{i}));
         end
         if ~isempty(basename)
             break

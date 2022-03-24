@@ -4,13 +4,13 @@ function session = loadSession(basepath,basename,varargin)
 % Part of CellExplorer
 % 
 % - Example calls:
-% session = sessionTemplate; % Load session from session struct
-% session = sessionTemplate(basepath); % Load session from session struct
-% session = sessionTemplate(basepath,basename,'showGUI',true); % Load session from session struct
+% session = loadSession;
+% session = loadSession(basepath); % Load session from basepath
+% session = loadSession(basepath,basename,'showGUI',true); % Show GUI
 
 p = inputParser;
-addOptional(p,'basepath',[],@isstr);
-addOptional(p,'basename',[],@isstr);
+addParameter(p,'basepath',[],@ischar);
+addParameter(p,'basename',[],@ischar);
 addParameter(p,'showGUI',false,@islogical); % Show the session gui
 addParameter(p,'sessionTemplate',true,@islogical); % Generates a session struct using the session-template script
 
@@ -24,7 +24,7 @@ if ~exist('basepath','var')
 end
 
 % Determining the basename if not provided
-if ~exist('basename','var')
+if ~exist('basename','var') || isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
 

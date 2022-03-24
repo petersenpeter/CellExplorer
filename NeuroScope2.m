@@ -21,6 +21,7 @@ function NeuroScope2(varargin)
 
 % Shortcuts
 % initUI, initData, initInputs, initTraces, 
+% ClickPlot
 % plotData, plot_ephys, plotSpikeData, plotSpectrogram, plotTemporalStates, plotEventData, plotTimeSeriesData, 
 % plotAnalog, plotDigital, plotBehavior, plotTrials, plotRMSnoiseInset, plotSpikesPCAspace
 
@@ -196,6 +197,7 @@ end
         UI.settings.channelTags.highlight = [];
         UI.settings.normalClick = true;
         UI.settings.addEventonClick = false;
+        UI.settings.columns = 1;
         
         % Spikes settings
         UI.settings.showSpikes = false;
@@ -292,23 +294,18 @@ end
         UI.menu.cellExplorer.saveCellMetrics = uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Save cell_metrics',menuSelectedFcn,@saveCellMetrics);
         uimenu(UI.menu.cellExplorer.topMenu,menuLabel,'Open CellExplorer',menuSelectedFcn,@openCellExplorer);
         
-        % Analysis
-        UI.menu.analysis.topMenu = uimenu(UI.fig,menuLabel,'Analysis');
-        initAnalysisToolsMenu
-        UI.menu.analysis.summaryFigure = uimenu(UI.menu.analysis.topMenu,menuLabel,'Summary figure',menuSelectedFcn,@summaryFigure,'Separator','on');
-        
         % Settings
         UI.menu.display.topMenu = uimenu(UI.fig,menuLabel,'Settings');
         UI.menu.display.ShowHideMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Show full menu',menuSelectedFcn,@ShowHideMenu);
         UI.menu.display.removeDC = uimenu(UI.menu.display.topMenu,menuLabel,'Remove DC from ephys traces',menuSelectedFcn,@removeDC,'Separator','on');
         UI.menu.display.medianFilter = uimenu(UI.menu.display.topMenu,menuLabel,'Apply median filter to ephys traces',menuSelectedFcn,@medianFilter);
-        UI.menu.display.plotStyleDynamicRange = uimenu(UI.menu.display.topMenu,menuLabel,'Dynamic ephys range plot',menuSelectedFcn,@plotStyleDynamicRange,'Checked','on','Separator','on');
+        UI.menu.display.plotTracesInColumns = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces,'Separator','on');
+        UI.menu.display.plotStyleDynamicRange = uimenu(UI.menu.display.topMenu,menuLabel,'Dynamic ephys range plot',menuSelectedFcn,@plotStyleDynamicRange,'Checked','on');
         UI.menu.display.narrowPadding = uimenu(UI.menu.display.topMenu,menuLabel,'Narrow ephys padding',menuSelectedFcn,@narrowPadding);
         UI.menu.display.resetZoomOnNavigation = uimenu(UI.menu.display.topMenu,menuLabel,'Reset zoom on navigation',menuSelectedFcn,@resetZoomOnNavigation);
         if UI.settings.resetZoomOnNavigation
             UI.menu.display.resetZoomOnNavigation.Checked = 'on';
-        end   
-        %UI.menu.display.columnTraces = uimenu(UI.menu.display.topMenu,menuLabel,'Multiple columns',menuSelectedFcn,@columnTraces);
+        end     
         UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
         UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);        
         UI.menu.display.channelOrder.topMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Channel order','Separator','on');
@@ -328,6 +325,11 @@ end
         UI.menu.display.showDetectedSpikesPCAspace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spike PCA space (beta feature)',menuSelectedFcn,@showDetectedSpikesPCAspace);
         UI.menu.display.colorDetectedSpikesByWidth = uimenu(UI.menu.display.topMenu,menuLabel,'Color detected spikes by waveform width',menuSelectedFcn,@toggleColorDetectedSpikesByWidth);
         UI.menu.display.debug = uimenu(UI.menu.display.topMenu,menuLabel,'Debug','Separator','on',menuSelectedFcn,@toggleDebug);
+        
+        % Analysis
+        UI.menu.analysis.topMenu = uimenu(UI.fig,menuLabel,'Analysis');
+        initAnalysisToolsMenu
+        UI.menu.analysis.summaryFigure = uimenu(UI.menu.analysis.topMenu,menuLabel,'Summary figure',menuSelectedFcn,@summaryFigure,'Separator','on');
         
         % BuzLabDB
         if db_is_active
@@ -416,7 +418,7 @@ end
         UI.panel.chanCoords.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
         UI.uitabgroup_channels.TabNames = {'Groups', 'Channels','Regions','Layout'};
         
-        UI.table.electrodeGroups = uitable(UI.panel.electrodeGroups.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 20 45 200},'columnname',{'','','Group','Channels        '},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@editElectrodeGroups,'CellSelectionCallback',@ClicktoSelectFromTable);
+        UI.table.electrodeGroups = uitable(UI.panel.electrodeGroups.main,'Data',{false,'','','',''},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 20 45 200 80},'columnname',{'','','Group','Channels        ','Label'},'RowName',[],'ColumnEditable',[true false false false false],'CellEditCallback',@editElectrodeGroups,'CellSelectionCallback',@ClicktoSelectFromTable);
         UI.panel.electrodeGroupsButtons = uipanel('Parent',UI.panel.general.main);
         
         % Channel list
@@ -429,8 +431,9 @@ end
         UI.chanCoordsAxes = axes('Parent',UI.panel.chanCoords.main,'Units','Normalize','Position',[0 0 1 1],'YLim',[0,1],'YTick',[],'XTick',[]); axis tight
         
         % Group buttons
-        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.98],'String','Show all','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Select all');
-        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.98],'String','Show none','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Deselect all');
+        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.32 0.98],'String','All','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Select all');
+        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.34 0.01 0.32 0.98],'String','None','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Deselect all');
+        uicontrol('Parent',UI.panel.electrodeGroupsButtons,'Style','pushbutton','Units','normalized','Position',[0.67 0.01 0.32 0.98],'String','Edit','Callback',@buttonsElectrodeGroups,'KeyPressFcn', @keyPress,'tooltip','Edit metadata');
         
         % Channel tags
         UI.panel.channelTagsList = uipanel('Parent',UI.panel.general.main,'title','Channel tags');
@@ -451,7 +454,7 @@ end
         UI.panel.timeseriesdata.main = uipanel('Title','Time series data','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
         UI.table.timeseriesdata = uitable(UI.panel.timeseriesdata.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0.20 1 0.80],'ColumnWidth',{20 35 125 45},'columnname',{'','Tag','File name','nChan'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@showIntan);
         UI.panel.timeseriesdata.showTimeseriesBelowTrace = uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','checkbox','Units','normalized','Position',[0 0 0.5 0.20], 'value', 0,'String','Below traces','Callback',@showTimeseriesBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show time series data below traces');
-        uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
+        uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Edit inputs','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
             
         % Defining flexible panel heights
         set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 40 150],'MinimumHeights',[65 210 160 35 140 35 50 30 150]);
@@ -542,7 +545,7 @@ end
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0.33 0.32 0.14],'String',char(8594),'Callback',@nextEvent,'KeyPressFcn', @keyPress,'tooltip','Next event');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.17 0.485 0.14],'String','Flag event','Callback',@flagEvent,'KeyPressFcn', @keyPress,'tooltip','Flag selected event');
         UI.panel.events.flagCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nFlags', 'Units','normalized', 'Position', [0.505 0.17 0.485 0.14],'HorizontalAlignment','center','Enable','off');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.14],'String','Manual event','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.14],'String','Add event','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.14],'String','Save events','Callback',@saveEvent,'KeyPressFcn', @keyPress,'tooltip','Save events');
         
         % Time series
@@ -608,10 +611,22 @@ end
         UI.panel.RMSnoiseInset.lowerBand  = uicontrol('Parent',UI.panel.RMSnoiseInset.main,'Style', 'Edit', 'String', num2str(UI.settings.plotRMSnoise_lowerBand), 'Units','normalized', 'Position', [0.01 0.01 0.48 0.36],'Callback',@toggleRMSnoiseInset,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
         UI.panel.RMSnoiseInset.higherBand = uicontrol('Parent',UI.panel.RMSnoiseInset.main,'Style', 'Edit', 'String', num2str(UI.settings.plotRMSnoise_higherBand), 'Units','normalized', 'Position', [0.5 0.01 0.49 0.36],'Callback',@toggleRMSnoiseInset,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
         
+        % Instantaneous metrics plot
+        UI.panel.instantaneousMetrics.main = uipanel('Parent',UI.panel.other.main,'title','Instantaneous metrics');
+        UI.panel.instantaneousMetrics.showPower = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'checkbox','String','Power', 'value', 0, 'Units','normalized', 'Position', [0.01 0.67 0.30 0.30],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','left');
+        UI.panel.instantaneousMetrics.showFrequency = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'checkbox','String','Frequency', 'value', 0, 'Units','normalized', 'Position', [0.32 0.67 0.36 0.30],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','left');
+        UI.panel.instantaneousMetrics.showPhase = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'checkbox','String','Phase', 'value', 0, 'Units','normalized', 'Position', [0.69 0.67 0.30 0.30],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','left');
+        uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'text', 'String', 'Channel', 'Units','normalized', 'Position', [0.01 0.35 0.32 0.26],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'text', 'String', 'Low freq (Hz)', 'Units','normalized', 'Position', [0.34 0.35 0.32 0.26],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'text', 'String', 'High freq (Hz)', 'Units','normalized', 'Position', [0.67 0.35 0.32 0.26],'HorizontalAlignment','center');
+        UI.panel.instantaneousMetrics.channel    = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'Edit', 'String', num2str(UI.settings.instantaneousMetrics.channel), 'Units','normalized', 'Position', [0.01 0.01 0.32 0.36],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','center','tooltip','Channel');
+        UI.panel.instantaneousMetrics.lowerBand  = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'Edit', 'String', num2str(UI.settings.instantaneousMetrics.lowerBand), 'Units','normalized', 'Position', [0.34 0.01 0.32 0.36],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
+        UI.panel.instantaneousMetrics.higherBand = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'Edit', 'String', num2str(UI.settings.instantaneousMetrics.higherBand), 'Units','normalized', 'Position', [0.67 0.01 0.32 0.36],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
+        
         % Defining flexible panel heights
-        set(UI.panel.other.main, 'Heights', [200 110 95 140 95 50 90],'MinimumHeights',[220 120 100 150 150 50 90]);
+        set(UI.panel.other.main, 'Heights', [200 110 95 140 95 50 90 90],'MinimumHeights',[220 120 100 150 150 50 90 90]);
         UI.panel.other.main1.MinimumWidths = 218;
-        UI.panel.other.main1.MinimumHeights = 880;
+        UI.panel.other.main1.MinimumHeights = 970;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -679,6 +694,11 @@ end
         % Spectrogram
         if UI.settings.spectrogram.show && ephys.loaded
             plotSpectrogram
+        end
+        
+        % Instantaneous metrics
+        if UI.settings.instantaneousMetrics.show && ephys.loaded
+            plotInstantaneousMetrics
         end
         
         % States data
@@ -791,7 +811,7 @@ end
             ephys.sr = sr;
             fileID = UI.fid.lfp;
             
-        else %  dat file
+        else % dat file
             if UI.fid.ephys == -1
                 UI.settings.stream = false;
                 ephys.loaded = false;
@@ -885,7 +905,7 @@ end
         end
         
         % CSD Background plot
-        if UI.settings.CSD.show & numel(UI.channelOrder)>1
+        if UI.settings.CSD.show && numel(UI.channelOrder)>1
             plotCSD
         end
         
@@ -917,8 +937,9 @@ end
             for iShanks = electrodeGroupsToPlot
                 channels = channelsList{iShanks};
                 if ~isempty(channels)
-                    [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
-                    line(UI.plot_axis1,[1:UI.nDispSamples]/UI.nDispSamples*UI.settings.windowDuration,ephys.traces(UI.dispSamples,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:), 'HitTest','off');
+%                     [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
+                    timeLine = ([1:UI.nDispSamples]'/UI.nDispSamples*UI.settings.windowDuration/UI.settings.columns)*ones(1,length(channels))+UI.settings.channels_relative_offset(channels);
+                    line(UI.plot_axis1,timeLine,ephys.traces(UI.dispSamples,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:), 'HitTest','off');
                 end
             end
         elseif UI.settings.plotStyle == 2 && (size(ephys.traces,1) > UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange) % Range values per sample (ala Neuroscope1)
@@ -928,36 +949,52 @@ end
             ephys_traces2 = reshape(ephys_traces3,ceil(UI.settings.plotStyleRangeSamples*UI.settings.windowDuration),[]);
             ephys.traces_min = reshape(min(ephys_traces2),[],size(ephys.traces,2));
             ephys.traces_max = reshape(max(ephys_traces2),[],size(ephys.traces,2));
+
             for iShanks = electrodeGroupsToPlot
                 tist = [];
                 timeLine = [];
                 channels = channelsList{iShanks};
-                [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
+%                 [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
                 tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelOffset(channels);
                 tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelOffset(channels);
                 tist(:,end+1,:) = nan;
-                timeLine1 = repmat([1:size(ephys.traces_min,1)]/size(ephys.traces_min,1)*UI.settings.windowDuration,numel(channels),1)';
+                timeLine1 = repmat([1:size(ephys.traces_min,1)]/size(ephys.traces_min,1)*UI.settings.windowDuration/UI.settings.columns,numel(channels),1)'+UI.settings.channels_relative_offset(channels);
                 timeLine(1,:,:) = timeLine1;
                 timeLine(2,:,:) = timeLine1;
                 timeLine(:,end+1,:) = timeLine(:,end,:);
-                line(UI.plot_axis1,timeLine(:)',tist(:)','color',colorsList(iShanks,:)','LineStyle','-', 'HitTest','off');
+                line(UI.plot_axis1,timeLine(:),tist(:),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off');
             end
+            
         elseif UI.settings.plotStyle == 5
             % Image representation
-            UI.dataRange.ephys
             timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
-            multiplier = [size(ephys.traces,1)-1:-1:0]/(size(ephys.traces,1)-1)*diff(UI.dataRange.ephys)+UI.dataRange.ephys(1);
-            imagesc(UI.plot_axis1,timeLine,multiplier,ephys.traces(:,UI.channelOrder)', 'HitTest','off')
+            
+            if UI.settings.plotTracesInColumns
+                
+                for iShanks = electrodeGroupsToPlot
+                    channels = channelsList{iShanks};
+                    if ~isempty(channels)
+                        multiplier = -UI.channelOffset(channels);
+                        timeLine1 = timeLine/UI.settings.columns+UI.settings.channels_relative_offset(channels(1));
+                        imagesc(UI.plot_axis1,timeLine1,multiplier,ephys.traces(:,channels)', 'HitTest','off')
+                    end
+                end
+            else
+                multiplier = [size(ephys.traces,1)-1:-1:0]/(size(ephys.traces,1)-1)*diff(UI.dataRange.ephys)+UI.dataRange.ephys(1);
+                imagesc(UI.plot_axis1,timeLine,multiplier,ephys.traces(:,UI.channelOrder)', 'HitTest','off')
+            end
+            
         elseif UI.settings.plotStyle == 6
             % No traces
             
         else % UI.settings.plotStyle == [3,4]
             % Raw data
-            timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
+            timeLine = [1:size(ephys.traces,1)]'/size(ephys.traces,1)*UI.settings.windowDuration/UI.settings.columns;
             for iShanks = electrodeGroupsToPlot
                 channels = channelsList{iShanks};
                 if ~isempty(channels)
-                    line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off');
+                    timeLine1 = timeLine*ones(1,length(channels))+UI.settings.channels_relative_offset(channels);
+                    line(UI.plot_axis1,timeLine1,ephys.traces(:,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off');
                 end
             end
         end
@@ -987,28 +1024,34 @@ end
             raster = [];
             raster.idx = [];
             raster.x = [];
+            raster.times = [];
             raster.y = [];
             raster.channel = [];
             
             for i = 1:numel(UI.channelOrder)
                 idx = find(diff(ephys.filt(:,UI.channelOrder(i)) < UI.settings.spikesDetectionThreshold)==1)+1;
+                
                 if ~isempty(idx)
+                    raster.times = [raster.times;idx/ephys.sr];
                     raster.idx = [raster.idx;idx];
-                    raster.x = [raster.x;idx/ephys.sr];
+%                     raster.x = [raster.x;idx/ephys.sr/UI.settings.columns+UI.settings.channels_relative_offset(raster.channel)'];
                     raster.channel = [raster.channel;UI.channelOrder(i)*ones(size(idx))];
                     if UI.settings.detectedSpikesBelowTrace
+                        raster.x = [raster.x;idx/ephys.sr];
                         raster_y = diff(UI.dataRange.detectedSpikes)*(-UI.channelScaling(idx,UI.channelOrder(i)))+UI.dataRange.detectedSpikes(1)+0.004;
                         raster.y = [raster.y;raster_y];
                     elseif any(UI.settings.plotStyle == [5,6])
-                        raster.y = [raster.y;-UI.channelScaling(idx,UI.channelOrder(i))];    
+                        raster.x = [raster.x;idx/ephys.sr/UI.settings.columns+UI.settings.channels_relative_offset(UI.channelOrder(i)*ones(size(idx)))'];
+                        raster.y = [raster.y;-UI.channelScaling(idx,UI.channelOrder(i))];
                     else
+                        raster.x = [raster.x;idx/ephys.sr/UI.settings.columns+UI.settings.channels_relative_offset(UI.channelOrder(i)*ones(size(idx)))'];
                         raster.y = [raster.y;ephys.traces(idx,UI.channelOrder(i))-UI.channelScaling(idx,UI.channelOrder(i))];
                     end
                 end
             end
             
             % Removing artifacts (spike events detected on more than a quater the channels within 1 ms bins (min 20 channels))
-            [~,idxu,idxc] = unique(raster.idx); % Unique values
+%             [~,idxu,idxc] = unique(raster.idx); % Unique values
             [count, ~, idxcount] = histcounts(raster.x*1000,[0:UI.settings.windowDuration*1000]); % count unique values
             idx2remove = count(idxcount)>max([20,numel(UI.channelOrder)/4]); % Finding timepoints to remove
             raster.idx(idx2remove) = [];
@@ -1051,22 +1094,26 @@ end
             raster = [];
             raster.x = [];
             raster.y = [];
-            for i = 1:size(ephys.traces,2)
+%             for i = 1:size(ephys.traces,2)
+            for i = 1:numel(UI.channelOrder)
                 if UI.settings.eventThreshold>0
-                    idx = find(diff(ephys.traces(:,i)/(UI.settings.scalingFactor/1000000) > UI.settings.eventThreshold)==1);
+                    idx = find(diff(ephys.traces(:,UI.channelOrder(i))/(UI.settings.scalingFactor/1000000) > UI.settings.eventThreshold)==1);
                 else
-                    idx = find(diff(ephys.traces(:,i)/(UI.settings.scalingFactor/1000000) < UI.settings.eventThreshold)==1);
+                    idx = find(diff(ephys.traces(:,UI.channelOrder(i))/(UI.settings.scalingFactor/1000000) < UI.settings.eventThreshold)==1);
                 end
                 if ~isempty(idx)
-                    raster.x = [raster.x;idx];
+%                     raster.x = [raster.x;idx];
                     
                     if UI.settings.detectedEventsBelowTrace
-                        raster_y = diff(UI.dataRange.detectedEvents)*(-UI.channelScaling(idx,i))+UI.dataRange.detectedEvents(1)+0.004;
+                        raster.x = [raster.x;idx/ephys.sr];
+                        raster_y = diff(UI.dataRange.detectedEvents)*(-UI.channelScaling(idx,UI.channelOrder(i)))+UI.dataRange.detectedEvents(1)+0.004;
                         raster.y = [raster.y;raster_y];
                     elseif any(UI.settings.plotStyle == [5,6])
+                        raster.x = [raster.x;idx/ephys.sr];
                         raster.y = [raster.y;-UI.channelScaling(idx,UI.channelOrder(i))];    
                     else
-                        raster.y = [raster.y;ephys.traces(idx,i)-UI.channelScaling(idx,i)];
+                        raster.x = [raster.x;idx/ephys.sr/UI.settings.columns+UI.settings.channels_relative_offset(UI.channelOrder(i)*ones(size(idx)))'];
+                        raster.y = [raster.y;ephys.traces(idx,UI.channelOrder(i))-UI.channelScaling(idx,UI.channelOrder(i))];
                     end
                 end
             end
@@ -1076,16 +1123,17 @@ end
             isx = find(ismember(ia2,[UI.channels{UI.settings.electrodeGroupsToPlot}]));
             ia2(isx) = ia;
             
-            line(UI.plot_axis1,raster.x/size(ephys.traces,1)*UI.settings.windowDuration, raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color','m', 'HitTest','off');
+            line(UI.plot_axis1,raster.x, raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color','m', 'HitTest','off');
         end
         
         % Plotting channel numbers
         if UI.settings.showChannelNumbers
-            if UI.settings.plotStyle < 5
-                text(UI.plot_axis1,zeros(1,numel(UI.channelOrder)),ephys.traces(1,UI.channelOrder)-UI.channelOffset(UI.channelOrder),strcat(cellstr(num2str(UI.channelOrder')),{' '}),'color',UI.settings.primaryColor,'VerticalAlignment', 'middle','HorizontalAlignment','right','HitTest','off')
-            else
-                text(UI.plot_axis1,zeros(1,numel(UI.channelOrder)),-UI.channelOffset(UI.channelOrder),strcat(cellstr(num2str(UI.channelOrder')),{' '}),'color',UI.settings.primaryColor,'VerticalAlignment', 'middle','HorizontalAlignment','right','HitTest','off')
-            end
+            text(UI.plot_axis1,zeros(1,numel(UI.channelOrder))+UI.settings.channels_relative_offset(UI.channelOrder),-UI.channelOffset(UI.channelOrder),strcat(cellstr(num2str(UI.channelOrder')),{' '}),'color',UI.settings.primaryColor,'VerticalAlignment', 'middle','HorizontalAlignment','right','HitTest','off')
+%             if UI.settings.plotStyle < 5
+%                 
+%             else
+%                 text(UI.plot_axis1,zeros(1,numel(UI.channelOrder)),-UI.channelOffset(UI.channelOrder),strcat(cellstr(num2str(UI.channelOrder')),{' '}),'color',UI.settings.primaryColor,'VerticalAlignment', 'middle','HorizontalAlignment','right','HitTest','off')
+%             end
         end
         
         % Plotting scale bar
@@ -1163,14 +1211,16 @@ end
                 tist(1,:,:) = ephys.traces_min(:,channels)-UI.channelOffset(channels);
                 tist(2,:,:) = ephys.traces_max(:,channels)-UI.channelOffset(channels);
                 tist(:,end+1,:) = nan;
-                timeLine1 = repmat([1:size(ephys.traces_min,1)]/size(ephys.traces_min,1)*UI.settings.windowDuration,numel(channels),1)';
+%                 timeLine1 = repmat([1:size(ephys.traces_min,1)]/size(ephys.traces_min,1)*UI.settings.windowDuration,numel(channels),1)';
+                timeLine1 = repmat([1:size(ephys.traces_min,1)]/size(ephys.traces_min,1)*UI.settings.windowDuration/UI.settings.columns,numel(channels),1)'+UI.settings.channels_relative_offset(channels);
                 timeLine(1,:,:) = timeLine1;
                 timeLine(2,:,:) = timeLine1;
                 timeLine(:,end+1,:) = timeLine(:,end,:);
                 line(UI.plot_axis1,timeLine(:)',tist(:)','LineStyle','-', 'HitTest','off','linewidth',1.2,'color',colorLine);
             else
-                timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
-                line(UI.plot_axis1,timeLine,ephys.traces(:,channels)-UI.channelOffset(channels),'LineStyle','-', 'HitTest','off','linewidth',1.2,'color',colorLine);
+                timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration/UI.settings.columns;
+                timeLine1 = timeLine*ones(1,length(channels))+UI.settings.channels_relative_offset(channels);
+                line(UI.plot_axis1,timeLine1,ephys.traces(:,channels)-UI.channelOffset(channels),'LineStyle','-', 'HitTest','off','linewidth',1.2,'color',colorLine);
             end
         end
     end
@@ -1278,8 +1328,7 @@ end
         
         spikes_raster = [];
         if any(spin_idx)
-            spikes_raster.x = data.spikes.spindices(spin_idx,1)-t1;
-            spikes_raster.idx = round(spikes_raster.x*ephys.sr);
+            spikes_raster.times = data.spikes.spindices(spin_idx,1)-t1;
             spikes_raster.UID = data.spikes.spindices(spin_idx,2);
             if isfield(data.spikes,'shankID')
                 spikes_raster.electrodeGroup = data.spikes.shankID(spikes_raster.UID)';
@@ -1287,6 +1336,8 @@ end
             spikes_raster.channel = data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))';
             
             if UI.settings.spikesBelowTrace
+                spikes_raster.x = spikes_raster.times;
+                spikes_raster.idx = round(spikes_raster.x*ephys.sr);
                 idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
                 if UI.settings.useSpikesYData
                     spikes_raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(spin_idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1)+0.004;
@@ -1300,32 +1351,36 @@ end
                     spikes_raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(spin_idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1)+0.004;
                 end
             else
+                spikes_raster.x = (data.spikes.spindices(spin_idx,1)-t1)/UI.settings.columns+UI.settings.channels_relative_offset(spikes_raster.channel)';
+                spikes_raster.idx = round(spikes_raster.times*ephys.sr);
+                
                 % Aligning timestamps and determining trace value for each spike
                 if UI.settings.plotStyle == 1
-                    idx2 = round(spikes_raster.x*UI.nDispSamples/UI.settings.windowDuration);
+                    idx2 = round(spikes_raster.times*UI.nDispSamples/UI.settings.windowDuration);
                     idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
-                    traces = ephys.traces(UI.dispSamples,:)-UI.channelOffset(:);
-                    idx3 = sub2ind(size(traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
+                    traces = ephys.traces(UI.dispSamples,:)-UI.channelOffset;
+                    idx3 = sub2ind(size(traces),idx2,spikes_raster.channel);
                     spikes_raster.y = traces(idx3);
-                
+                    
                 elseif UI.settings.plotStyle == 2 && (size(ephys.traces,1) > UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange)
-                    idx2 = round(spikes_raster.x*size(ephys.traces_min,1)/UI.settings.windowDuration);
+                    idx2 = round(spikes_raster.times*size(ephys.traces_min,1)/UI.settings.windowDuration);
                     idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
                     traces = ephys.traces_min-UI.channelOffset;
-                    idx3 = sub2ind(size(traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
+                    idx3 = sub2ind(size(traces),idx2,spikes_raster.channel);
                     spikes_raster.y = traces(idx3);
                 elseif any(UI.settings.plotStyle == [5,6])
-                    idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
+                    idx2 = round(spikes_raster.times*size(ephys.traces,1)/UI.settings.windowDuration);
                     idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
-                    idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
+                    idx3 = sub2ind(size(ephys.traces),idx2,spikes_raster.channel);
                     spikes_raster.y = -UI.channelScaling(idx3);
                 else
-                    idx2 = round(spikes_raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
+                    idx2 = round(spikes_raster.times*size(ephys.traces,1)/UI.settings.windowDuration);
                     idx2(idx2==0)= 1; % realigning spikes events outside a low sampled trace
-                    idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(spin_idx,2))');
+                    idx3 = sub2ind(size(ephys.traces),idx2,spikes_raster.channel);
                     spikes_raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
                 end
             end
+             
             if UI.settings.spikesGroupColors == 4
                 putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
                 UI.colors_metrics = eval([UI.settings.spikesColormap,'(',num2str(numel(putativeCellTypes)),')']);
@@ -1495,8 +1550,8 @@ end
         wfWin_sec = 0.0008; % Default: 2*0.8ms window size
         wfWin = round(wfWin_sec * ephys.sr); % Windows size in sample
         
-        raster.channel(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
-        raster.idx(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
+        raster.channel(raster.times<=wfWin_sec | raster.times>=UI.settings.windowDuration-wfWin_sec)=[];
+        raster.idx(raster.times<=wfWin_sec | raster.times>=UI.settings.windowDuration-wfWin_sec)=[];
 
         channels_with_spikes = unique(raster.channel);
         
@@ -1549,7 +1604,7 @@ end
             
             % Drawing waveforms
             if plotStyle == 1 % UID
-                raster.UID(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
+                raster.UID(raster.times<=wfWin_sec | raster.times>=UI.settings.windowDuration-wfWin_sec)=[];
                 uid = raster.UID;
                 unique_uids = unique(uid);
                 uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(unique_uids)),')']);
@@ -1561,7 +1616,7 @@ end
                 end
                 
             elseif plotStyle == 3 % Electrode groups
-                raster.electrodeGroup(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
+                raster.electrodeGroup(raster.times<=wfWin_sec | raster.times>=UI.settings.windowDuration-wfWin_sec)=[];
                 unique_electrodeGroups = unique(raster.electrodeGroup);
                 electrodeGroup_colormap = UI.colors;
                 for i = 1:numel(unique_electrodeGroups)
@@ -1596,7 +1651,7 @@ end
                 end
 
             elseif plotStyle == 4
-                raster.UID(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
+                raster.UID(raster.times<=wfWin_sec | raster.times>=UI.settings.windowDuration-wfWin_sec)=[];
                 putativeCellTypes = unique(data.cell_metrics.(UI.params.groupMetric));
                 UI.colors_metrics = eval([UI.settings.spikesColormap,'(',num2str(numel(putativeCellTypes)),')']);
                 for i = 1:numel(putativeCellTypes)
@@ -1617,12 +1672,12 @@ end
         wfWin_sec = 0.0008; % Default: 2*0.8ms window size
         wfWin = round(wfWin_sec * ephys.sr); % Windows size in sample
             
-        raster.channel(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];
-        raster.idx(raster.x<=wfWin_sec | raster.x>=UI.settings.windowDuration-wfWin_sec)=[];        
+        raster.channel(raster.times<=wfWin_sec | raster.times>=UI.settings.windowDuration-wfWin_sec)=[];
+        raster.idx(raster.times<=wfWin_sec | raster.times>=UI.settings.windowDuration-wfWin_sec)=[];        
         raster1 = raster.idx(ismember(raster.channel,UI.channels{UI.settings.PCAspace_electrodeGroup}));
         
         % Pulling waveforms
-        if ~isempty(raster1)
+        if ~isempty(raster1) && numel(raster1)>1
             nChannels = numel(UI.channels{UI.settings.PCAspace_electrodeGroup});
             startIndicies2 = (raster1 - wfWin)*nChannels+1;
             stopIndicies2 = (raster1 + wfWin)*nChannels;
@@ -1632,8 +1687,9 @@ end
             else
                 ephys_data = ephys.traces(:,UI.channels{UI.settings.PCAspace_electrodeGroup})';
             end
-            wf = reshape(double(ephys_data(X2(1:end-1))),nChannels,(wfWin*2),[]);
+            wf = reshape(ephys_data(X2(1:end-1)),nChannels,(wfWin*2),[]);
             wf2 = reshape(permute(wf,[2,1,3]),nChannels*(wfWin*2),[]);
+            
             abc = pca(wf2,'NumComponents',2);
 
             % Drawing background
@@ -1650,13 +1706,30 @@ end
     end
     
     function highlightUnits(units2plot,t1,t2)
+        idx = ismember(spikes_raster.UID,units2plot);
+        uid = spikes_raster.UID(idx);
+        raster_x = spikes_raster.x(idx);
+        raster_y = spikes_raster.y(idx);
+        uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(units2plot)),')']);
+        if numel(units2plot) == 1
+            UI.iLine = mod(UI.iLine,7)+1;
+            colorLine = UI.colorLine(UI.iLine,:);
+            line(raster_x, raster_y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorLine, 'HitTest','off','linewidth',3);
+        else
+            for i = 1:numel(units2plot)
+                idx_uids = uid == units2plot(i);
+                line(raster_x(idx_uids), raster_y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off','linewidth',3);
+            end
+        end        
+    end
+    
+    function highlightUnits_old(units2plot,t1,t2)
         
         % Plots spikes
         idx = ismember(data.spikes.spindices(:,2),units2plot) & ismember(data.spikes.spindices(:,2),UI.params.subsetTable ) & ismember(data.spikes.spindices(:,2),UI.params.subsetCellType) & ismember(data.spikes.spindices(:,2),UI.params.subsetFilter) & ismember(data.spikes.spindices(:,2),UI.params.subsetGroups)  & data.spikes.spindices(:,1) > t1 & data.spikes.spindices(:,1) < t2;
         if any(idx)
             raster = [];
-            raster.x = data.spikes.spindices(idx,1)-t1;
-            idx2 = ceil(raster.x*size(ephys.traces,1)/UI.settings.windowDuration);
+            raster.x = data.spikes.spindices(idx,1)-t1;            
             if UI.settings.spikesBelowTrace
                 if UI.settings.useSpikesYData
                     raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1)+0.002;
@@ -1670,6 +1743,8 @@ end
                     raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1)+0.002;
                 end
             else
+                idx2 = round(raster.x*size(ephys.traces,1)*ephys.sr);
+%                 spikes_raster.x = (data.spikes.spindices(idx,1)-t1)/UI.settings.columns+UI.settings.channels_relative_offset(spikes_raster.channel)';
                 idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(idx,2))');
                 raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
             end
@@ -1682,10 +1757,10 @@ end
                 colorLine = UI.colorLine(UI.iLine,:);
                 line(raster.x, raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorLine, 'HitTest','off','linewidth',3);
             else
-            for i = 1:numel(unique_uids)
-                idx_uids = uid == unique_uids(i);
-                line(raster.x(idx_uids), raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off','linewidth',3);
-            end
+                for i = 1:numel(unique_uids)
+                    idx_uids = uid == unique_uids(i);
+                    line(raster.x(idx_uids), raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off','linewidth',3);
+                end
             end
         end
     end
@@ -1765,27 +1840,29 @@ end
         end
         
         idx = find(data.events.(UI.settings.eventData).time >= t1 & data.events.(UI.settings.eventData).time <= t2);
+        
         % Plotting flagged events in a different color
         if isfield(data.events.(UI.settings.eventData),'flagged')
             idx2 = ismember(idx,data.events.(UI.settings.eventData).flagged);
             if any(idx2)
-                line([1;1]*data.events.(UI.settings.eventData).time(idx(idx2))'-t1,ydata2*ones(1,sum(idx2)),'Marker','none','LineStyle','-','color','m', 'HitTest','off','linewidth',linewidth);
+                plotEventLines(data.events.(UI.settings.eventData).time(idx(idx2))-t1,'m',linewidth)
             end
             idx(idx2) = [];
         end
         
         % Plotting events 
         if any(idx)
-            line([1;1]*data.events.(UI.settings.eventData).time(idx)'-t1,ydata2*ones(1,numel(idx)),'Marker','none','LineStyle','-','color',colorIn1, 'HitTest','off','linewidth',linewidth);
+            plotEventLines(data.events.(UI.settings.eventData).time(idx)-t1,colorIn1,linewidth)
         end
         
         % Plotting added events 
         if isfield(data.events.(UI.settings.eventData),'added') && ~isempty(isfield(data.events.(UI.settings.eventData),'added'))
             idx3 = find(data.events.(UI.settings.eventData).added >= t1 & data.events.(UI.settings.eventData).added <= t2);
             if any(idx3)
-                line([1;1]*data.events.(UI.settings.eventData).added(idx3)'-t1,ydata2*ones(1,numel(idx3)),'Marker','none','LineStyle','--','color','c', 'HitTest','off','linewidth',linewidth);
+                plotEventLines(data.events.(UI.settings.eventData).added(idx3)-t1,'c',linewidth)
             end
         end
+
         
         % Plotting processing steps
         if UI.settings.processing_steps && isfield(data.events.(UI.settings.eventData),'processing_steps')
@@ -1835,6 +1912,22 @@ end
         if ~isempty(detector_channel) && ismember(detector_channel,UI.channelOrder)
             highlightTraces(detector_channel,UI.settings.primaryColor)
         end
+        
+        function plotEventLines(timestamps,clr,linewidth)
+            timestamps = timestamps(:)';
+            if UI.settings.plotTracesInColumns &&  ~UI.settings.showEventsBelowTrace
+                timestamps1 = timestamps'/UI.settings.columns+UI.settings.channels_relative_offset(UI.channelOrder);
+                xdata3 = ones(3,1)*timestamps1(:)';
+                
+                ydata3 = zeros(length(timestamps),1)-UI.channelOffset(UI.channelOrder);
+                ydata3 = [-UI.settings.columns_height/2;UI.settings.columns_height/2;nan]+ydata3(:)';
+
+                line(xdata3(:),ydata3(:),'Marker','none','LineStyle','-','color',clr, 'HitTest','off','linewidth',linewidth);
+            else
+                line([1;1]*timestamps,ydata2*ones(1,numel(timestamps)),'Marker','none','LineStyle','-','color',clr, 'HitTest','off','linewidth',linewidth);
+            end
+            
+        end
     end
 
     function plotTimeSeriesData(t1,t2,colorIn)
@@ -1877,6 +1970,66 @@ end
             if ismember(UI.settings.spectrogram.channel,UI.channelOrder)
                 highlightTraces(UI.settings.spectrogram.channel,'m')
             end
+        end
+    end
+    
+    function plotInstantaneousMetrics
+        % sr = ephys.sr;
+        
+        if int_gt_0(UI.settings.instantaneousMetrics.lowerBand,ephys.sr) && int_gt_0(UI.settings.instantaneousMetrics.higherBand,ephys.sr)
+            return
+        elseif int_gt_0(UI.settings.instantaneousMetrics.lowerBand,ephys.sr) && ~int_gt_0(UI.settings.instantaneousMetrics.higherBand,ephys.sr)
+            [UI.settings.instantaneousMetrics.b1, UI.settings.instantaneousMetrics.a1] = butter(3, UI.settings.instantaneousMetrics.higherBand/(ephys.sr/2), 'low');
+        elseif int_gt_0(UI.settings.instantaneousMetrics.higherBand,ephys.sr) && ~int_gt_0(UI.settings.instantaneousMetrics.lowerBand,ephys.sr)
+            [UI.settings.instantaneousMetrics.b1, UI.settings.instantaneousMetrics.a1] = butter(3, UI.settings.instantaneousMetrics.lowerBand/(ephys.sr/2), 'high');
+        else
+            [UI.settings.instantaneousMetrics.b1, UI.settings.instantaneousMetrics.a1] = butter(3, [UI.settings.instantaneousMetrics.lowerBand,UI.settings.instantaneousMetrics.higherBand]/(ephys.sr/2), 'bandpass');
+        end
+        filtered = filtfilt(UI.settings.instantaneousMetrics.b1, UI.settings.instantaneousMetrics.a1, ephys.raw(:,UI.settings.instantaneousMetrics.channel))';
+
+        timestamps = [1:length(filtered)]/ephys.sr;
+        
+        % Compute instantaneous phase and amplitude
+        h = hilbert(filtered);
+        phase = angle(h);
+        amplitude = abs(h);
+        unwrapped = unwrap(phase);
+        
+        % Compute instantaneous frequency
+%         frequency = diff(medfilt1(unwrapped,12*16))./diff(timestamps)/(2*pi);
+        frequency = diff(unwrapped)./diff(timestamps)/(2*pi);
+        
+        dataRange = diff(UI.dataRange.instantaneousMetrics)/(UI.settings.instantaneousMetrics.showFrequency+UI.settings.instantaneousMetrics.showPower+UI.settings.instantaneousMetrics.showPhase+1);
+        
+        k = (UI.settings.instantaneousMetrics.showFrequency+UI.settings.instantaneousMetrics.showPower+UI.settings.instantaneousMetrics.showPhase);
+        addLegend('Instantaneous metrics');
+        
+        filtered = ((filtered-min(filtered))/(max(filtered)-min(filtered)))*dataRange+UI.dataRange.instantaneousMetrics(1)+dataRange*k+0.001;
+        line(timestamps, filtered,'Marker','none','LineStyle','-','color','m', 'HitTest','off','linewidth',1);
+        addLegend('Filtered trace',[1 0 1]);
+        k = k-1;
+        
+        if UI.settings.instantaneousMetrics.showFrequency
+            frequency = (frequency/max(frequency))*dataRange+UI.dataRange.instantaneousMetrics(1)+dataRange*k+0.001;
+            line(timestamps(1:end-1), frequency,'Marker','none','LineStyle','-','color','g', 'HitTest','off','linewidth',1);
+            addLegend('Frequency',[0 1 0]);
+            k = k-1;
+        end
+        if UI.settings.instantaneousMetrics.showPower
+            amplitude = (amplitude/max(amplitude))*dataRange+UI.dataRange.instantaneousMetrics(1)+dataRange*k+0.001;
+            line(timestamps, amplitude,'Marker','none','LineStyle','-','color','r', 'HitTest','off','linewidth',1);
+            addLegend('Amplitude',[1 0 0]);
+            k = k-1;
+        end
+        
+        if UI.settings.instantaneousMetrics.showPhase
+            phase = ((phase+pi)/(2*pi))*dataRange+UI.dataRange.instantaneousMetrics(1)+dataRange*k+0.001;
+            line(timestamps, phase,'Marker','.','LineStyle','none','color','b', 'HitTest','off','linewidth',1);
+            addLegend('Phase',[0 0 1]);            
+        end
+        
+        if ismember(UI.settings.instantaneousMetrics.channel,UI.channelOrder)
+            highlightTraces(UI.settings.instantaneousMetrics.channel,'m')
         end
     end
     
@@ -2205,7 +2358,7 @@ end
         end
     end
     
-    function setChannelOrder(src, event)
+    function setChannelOrder(src,~)
         UI.menu.display.channelOrder.option(UI.settings.channelOrder).Checked = 'off';
         UI.settings.channelOrder = src.Position;
         UI.menu.display.channelOrder.option(UI.settings.channelOrder).Checked = 'on';
@@ -2220,6 +2373,7 @@ end
         else
             UI.menu.display.ShowChannelNumbers.Checked = 'off';
         end
+        initTraces
         resetZoom
         uiresume(UI.fig);
     end
@@ -2348,6 +2502,52 @@ end
             UI.settings.plotRMSnoise_higherBand = str2num(UI.panel.RMSnoiseInset.higherBand.String);
         end
         
+        uiresume(UI.fig);
+    end
+    
+    function toggleInstantaneousMetrics(~,~)
+        numeric_gt_0 = @(n) ~isempty(n) && isnumeric(n) && (n > 0); % numeric and greater than 0
+        numeric_gt_oe_0 = @(n) ~isempty(n) && isnumeric(n) && (n >= 0); % Numeric and greater than or equal to 0
+        
+        if UI.panel.instantaneousMetrics.showPower.Value == 1
+            UI.settings.instantaneousMetrics.showPower = true;
+        else
+            UI.settings.instantaneousMetrics.showPower = false;
+        end
+        
+        if UI.panel.instantaneousMetrics.showFrequency.Value == 1
+            UI.settings.instantaneousMetrics.showFrequency = true;
+        else
+            UI.settings.instantaneousMetrics.showFrequency = false;
+        end
+        
+        if UI.panel.instantaneousMetrics.showPhase.Value == 1
+            UI.settings.instantaneousMetrics.showPhase = true;
+        else
+            UI.settings.instantaneousMetrics.showPhase = false;
+        end
+        
+        % Channel to use
+        channelnumber = str2num(UI.panel.instantaneousMetrics.channel.String);
+        if isnumeric(channelnumber) && channelnumber>0 && channelnumber<=data.session.extracellular.nChannels
+            UI.settings.instantaneousMetrics.channel = channelnumber;
+            UI.settings.instantaneousMetrics.show = true;
+        else
+            UI.settings.instantaneousMetrics.show = false;
+            MsgLog('The channel is not valid',4);
+        end
+        
+        if UI.settings.instantaneousMetrics.showPower || UI.settings.instantaneousMetrics.showFrequency || UI.settings.instantaneousMetrics.showPhase
+            UI.settings.instantaneousMetrics.show = true;
+        else
+            UI.settings.instantaneousMetrics.show = false;
+        end
+                
+        % Frequency range and step size
+        UI.settings.instantaneousMetrics.lowerBand = str2num(UI.panel.instantaneousMetrics.lowerBand.String);
+        UI.settings.instantaneousMetrics.higherBand = str2num(UI.panel.instantaneousMetrics.higherBand.String);
+        
+        initTraces
         uiresume(UI.fig);
     end
     
@@ -2780,7 +2980,7 @@ end
     function buttonsElectrodeGroups(src,~)
         % handles the three buttons under the electrode groups table
         switch src.String
-            case 'Show none'
+            case 'None'
                 if UI.uitabgroup_channels.Selection==1
                     UI.table.electrodeGroups.Data(:,1) = {false};
                     editElectrodeGroups
@@ -2794,7 +2994,7 @@ end
                     initTraces;
                     uiresume(UI.fig);
                 end
-            case 'Show all'
+            case 'All'
                 if UI.uitabgroup_channels.Selection==1
                     UI.table.electrodeGroups.Data(:,1) = {true};
                     editElectrodeGroups
@@ -2839,7 +3039,7 @@ end
                     selectedChannels = num2str(UI.selectedChannels);
                 end
                 answer = inputdlg({'Tag name (e.g. Bad, Ripple, Theta)','Channels','Groups'},'Add channel tag', [1 50; 1 50; 1 50],{'',selectedChannels,''});
-                if ~isempty(answer) && ~strcmp(answer{1},'') && isvarname(answer{1}) && ~ismember(answer{1},fieldnames(data.session.channelTags))
+                if ~isempty(answer) && ~strcmp(answer{1},'') && isvarname(answer{1}) && (~isfield(data.session,'channelTags') || ~ismember(answer{1},fieldnames(data.session.channelTags)))
                     if ~isempty(answer{2}) && isnumeric(str2num(answer{2})) && all(str2num(answer{2})>0)
                         data.session.channelTags.(answer{1}).channels = str2num(answer{2});
                     end
@@ -2850,7 +3050,7 @@ end
                     uiresume(UI.fig);
                 end
             case 'Delete tag(s)'
-                if isfield(data.session,'channelTags') && length(fieldnames(data.session.channelTags))>0
+                if isfield(data.session,'channelTags') && ~isempty(fieldnames(data.session.channelTags))
                     list = fieldnames(data.session.channelTags);
                     [indx,tf] = listdlg('ListString',list,'name','Delete tag(s)','PromptString','Select tag(s) to delete');
                     if ~isempty(indx)
@@ -2877,8 +3077,12 @@ end
         if ~isfield(data,'spikes') && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
             data.spikes = loadSpikes('session',data.session);
             data.spikes.spindices = generateSpinDices(data.spikes.times);
-            if ~isfield(data.spikes,'maxWaveformCh1')
+            if ~isfield(data.spikes,'maxWaveformCh1') && isfield(data.spikes,'maxWaveformCh')
                 data.spikes.maxWaveformCh1 = data.spikes.maxWaveformCh+1;
+            elseif ~isfield(data.spikes,'maxWaveformCh1')
+                for i = 1:data.spikes.numcells
+                    data.spikes.maxWaveformCh1(i) = data.session.extracellular.electrodeGroups.channels{data.spikes.shankID(i)}(1);
+                end
             end
         elseif ~exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
             UI.panel.spikes.showSpikes.Value = 0;
@@ -3361,6 +3565,7 @@ end
         UI.offsets.behavior = 0.08 * (UI.settings.showBehaviorBelowTrace && UI.settings.plotBehaviorLinearized && UI.settings.showBehavior);
         UI.offsets.states   = 0.04 * (UI.settings.showStates);
         UI.offsets.spectrogram = 0.25 * (UI.settings.spectrogram.show);
+        UI.offsets.instantaneousMetrics = 0.20 * (UI.settings.instantaneousMetrics.show);
         UI.offsets.events   = 0.04 * ((UI.settings.showEventsBelowTrace || UI.settings.processing_steps) && UI.settings.showEvents);
         UI.offsets.kilosort = 0.08 * (UI.settings.showKilosort && UI.settings.kilosortBelowTrace);
         UI.offsets.klusta = 0.08 * (UI.settings.showKlusta && UI.settings.klustaBelowTrace);
@@ -3448,14 +3653,39 @@ end
         UI.channelMap(channels_1(find(idx))) = channels(idx2(idx2~=0));
         padding = UI.settings.ephys_padding + 0.5./numel(UI.channelOrder);
         
+        UI.settings.channels_relative_offset = zeros(1,data.session.extracellular.nChannels);
+        
+        if UI.settings.plotTracesInColumns
+            if UI.settings.showChannelNumbers
+                electrodegroup_spacing = 0.13;
+            else
+               	electrodegroup_spacing = 0.03;
+            end
+            UI.settings.columns = numel(UI.settings.electrodeGroupsToPlot)+numel(UI.settings.electrodeGroupsToPlot)*electrodegroup_spacing;
+            for i = 1:length(UI.settings.electrodeGroupsToPlot)
+                UI.settings.channels_relative_offset(UI.channels{UI.settings.electrodeGroupsToPlot(i)})=((i-1)/numel(UI.settings.electrodeGroupsToPlot))*UI.settings.windowDuration+UI.settings.windowDuration*electrodegroup_spacing/2/numel(UI.settings.electrodeGroupsToPlot);
+            end
+        else
+            UI.settings.columns = 1;
+        end
+        
         if nChannelsToPlot == 1
         	channelOffset = 0.5;
         elseif nChannelsToPlot == 0
             channelOffset = [];
+        elseif UI.settings.plotTracesInColumns
+            nChannelsInGroups = cellfun(@numel,UI.channels(UI.settings.electrodeGroupsToPlot));
+            nChannelsInGroups_cumsum = [0,cumsum(nChannelsInGroups)];
+            vertical_Offset = [0:max(nChannelsInGroups)-1]/(max(nChannelsInGroups)-1)*(1-2*padding)*(1-offset)+padding*(1-offset);
+            channelOffset = zeros(1,nChannelsToPlot);
+            for i = 1:numel(UI.settings.electrodeGroupsToPlot)
+                channels = (1:nChannelsInGroups(i))+nChannelsInGroups_cumsum(i);
+                channelOffset(channels) = vertical_Offset(1:nChannelsInGroups(i));
+            end
+            UI.settings.columns_height = (vertical_Offset(2)-vertical_Offset(1))*0.8;
         elseif UI.settings.extraSpacing && ~isempty(UI.settings.electrodeGroupsToPlot) && UI.settings.plotStyle < 5
             nChannelsInGroups = cellfun(@numel,UI.channels(UI.settings.electrodeGroupsToPlot));
             channelList = [];
-%             channelList = (0:nChannelsInGroups(1)-1);
             for i = 1:numel(UI.settings.electrodeGroupsToPlot)
                 channelList = [channelList,(0:nChannelsInGroups(i)-1)+numel(channelList)+i*1.5];
             end
@@ -3481,6 +3711,7 @@ end
         UI.plot_axis1.XAxis.TickValues = [0:0.5:UI.settings.windowDuration];
         UI.plot_axis1.XAxis.MinorTickValues = [0:0.01:UI.settings.windowDuration];
         UI.fig.UserData.scalingFactor = UI.settings.scalingFactor;
+        UI.fig.UserData.scalingTemporalFactor = UI.settings.columns;
         if UI.settings.plotStyle == 3
             UI.fig.UserData.rangeData = true;
         else
@@ -3583,7 +3814,7 @@ end
             UI.panel.notes.text.String = data.session.general.notes;
         end
         
-        updateChannelGroupsList
+        updateElectrodeGroupsList
         updateChannelTags
         updateChannelList
         updateBrainRegionList
@@ -3772,20 +4003,23 @@ end
     function ClickPlot(~,~)
         UI.settings.stream = false;
         % handles clicks on the main axes
-        switch get(UI.fig, 'selectiontype')
-            case 'normal' % left mouse button
+        um_axes = get(UI.plot_axis1,'CurrentPoint');
+        t_click = um_axes(1,1);
+        if UI.settings.plotTracesInColumns
+            t_click = (t_click-max(UI.settings.channels_relative_offset(UI.channelOrder((t_click-UI.settings.channels_relative_offset(UI.channelOrder))>0))))*UI.settings.columns;
+        end
+        t_click = t_click+UI.t0;
                 
+        switch get(UI.fig, 'selectiontype')
+            case 'normal' % left mouse button                
                 % Adding new event
                 if UI.settings.addEventonClick
-                    um_axes = get(UI.plot_axis1,'CurrentPoint');
-                    t_event = um_axes(1,1)+UI.t0;
-                    data.events.(UI.settings.eventData).added = unique([data.events.(UI.settings.eventData).added;t_event]);
-                    UI.elements.lower.performance.String = ['Event added: ',num2str(t_event),' sec'];
+                    data.events.(UI.settings.eventData).added = unique([data.events.(UI.settings.eventData).added;t_click]);
+                    UI.elements.lower.performance.String = ['Event added: ',num2str(t_click),' sec'];
                     UI.settings.addEventonClick = false;
                     uiresume(UI.fig);
                 else % Otherwise show cursor time
-                    um_axes = get(UI.plot_axis1,'CurrentPoint');
-                    UI.elements.lower.performance.String = ['Cursor: ',num2str(um_axes(1,1)+UI.t0),' sec'];
+                    UI.elements.lower.performance.String = ['Cursor: ',num2str(t_click),' sec'];
                 end
                 
             case 'alt' % right mouse button
@@ -3794,13 +4028,11 @@ end
                 if UI.settings.addEventonClick && ~isempty(data.events.(UI.settings.eventData).added)
                     idx3 = find(data.events.(UI.settings.eventData).added >= UI.t0 & data.events.(UI.settings.eventData).added <= UI.t0+UI.settings.windowDuration);
                     if any(idx3)
-                        um_axes = get(UI.plot_axis1,'CurrentPoint');
-                        t_event = um_axes(1,1)+UI.t0;
                         eventsInWindow = data.events.(UI.settings.eventData).added(idx3);
-                        [~,idx] = min(abs(eventsInWindow-t_event));
-                        t_event = data.events.(UI.settings.eventData).added(idx3(idx));
+                        [~,idx] = min(abs(eventsInWindow-t_click));
+                        t_click = data.events.(UI.settings.eventData).added(idx3(idx));
                         data.events.(UI.settings.eventData).added(idx3(idx)) = [];
-                        UI.elements.lower.performance.String = ['Event deleted: ',num2str(t_event),' sec'];
+                        UI.elements.lower.performance.String = ['Event deleted: ',num2str(t_click),' sec'];
                         UI.settings.addEventonClick = false;
                         uiresume(UI.fig);
                     else
@@ -3810,10 +4042,9 @@ end
                 end
                 
             case 'extend' % middle mouse button
-                um_axes = get(UI.plot_axis1,'CurrentPoint');
                 if UI.settings.normalClick
                     channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
-                    x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration)';
+                    x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration/UI.settings.columns)'+UI.settings.channels_relative_offset(channels);
                     y1 = (ephys.traces(:,channels)-UI.channelOffset(channels));
                     [~,In] = min(hypot((x1(:)-um_axes(1,1)),(y1(:)-um_axes(1,2))));
                     In = unique(floor(In/size(x1,1)))+1;
@@ -3835,8 +4066,7 @@ end
                 resetZoom
                 
             otherwise
-                um_axes = get(UI.plot_axis1,'CurrentPoint');
-                UI.elements.lower.performance.String = ['Cursor: ',num2str(um_axes(1,1)+UI.t0),' sec'];
+                UI.elements.lower.performance.String = ['Cursor: ',num2str(t_click),' sec'];
         end
     end
     
@@ -4046,7 +4276,7 @@ end
         uiresume(UI.fig);
     end
 
-    function updateChannelGroupsList
+    function updateElectrodeGroupsList
         % Updates the list of electrode groups
         
         if isfield(data.session.extracellular,'electrodeGroups')
@@ -4069,10 +4299,16 @@ end
                 tableData{fn,2} = colored_string{fn};
                 tableData{fn,3} = [num2str(fn),' (',num2str(length(data.session.extracellular.electrodeGroups.channels{fn})),')'];
                 tableData{fn,4} = ['<HTML>' num2str(data.session.extracellular.electrodeGroups.channels{fn})];
+                if isfield(data.session.extracellular.electrodeGroups,'label') && numel(data.session.extracellular.electrodeGroups.label)>=fn && ~isempty(data.session.extracellular.electrodeGroups.label{fn})
+                    tableData{fn,5} = data.session.extracellular.electrodeGroups.label{fn};
+                else
+                    tableData{fn,5} = '';
+                end
+                
             end
             UI.table.electrodeGroups.Data = tableData;
         else
-            UI.table.electrodeGroups.Data = {false,'','',''};
+            UI.table.electrodeGroups.Data = {false,'','','',''};
         end
         UI.settings.electrodeGroupsToPlot = 1:data.session.extracellular.nElectrodeGroups;
     end
@@ -4234,7 +4470,7 @@ end
     function toogleDetectSpikes(~,~)
         if UI.panel.general.detectSpikes.Value == 1
             UI.settings.detectSpikes = true;
-            if isnumeric(str2num(UI.panel.general.detectThreshold.String))
+            if isnumeric(str2num(UI.panel.general.detectThreshold.String)) && ~isempty(str2num(UI.panel.general.detectThreshold.String))
                 UI.settings.spikesDetectionThreshold = str2num(UI.panel.general.detectThreshold.String);
             end
         else
@@ -4849,7 +5085,7 @@ end
         % Current source density plot
         % Original code from FMA
         % By Michaël Zugaro
-        timeLine = [1:size(ephys.traces,1)]/size(ephys.traces,1)*UI.settings.windowDuration;
+        timeLine = [1:size(ephys.traces,1)]'/size(ephys.traces,1)*UI.settings.windowDuration/UI.settings.columns;
         for iShanks = UI.settings.electrodeGroupsToPlot
             channels = UI.channels{iShanks};
             [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
@@ -4863,8 +5099,9 @@ end
                 d = d(1:2:size(d,1),:);
                 %
                 markerColor = UI.colors(iShanks,:);
+                timeLine1 = timeLine+UI.settings.channels_relative_offset(channels(1));
                 multiplier = -linspace(max(UI.channelOffset(channels)),min(UI.channelOffset(channels)),size(d,2));
-                pcolor(UI.plot_axis1,timeLine,multiplier,flipud(transpose(d)));
+                pcolor(UI.plot_axis1,timeLine1,multiplier,flipud(transpose(d)));
             end
         end
 
@@ -5369,13 +5606,14 @@ end
     end
     
     function columnTraces(~,~)
-        UI.settings.columnTraces = ~UI.settings.columnTraces;
-        if UI.settings.columnTraces
-            UI.menu.display.columnTraces.Checked = 'on';
+        UI.settings.plotTracesInColumns = ~UI.settings.plotTracesInColumns;
+        if UI.settings.plotTracesInColumns
+            UI.menu.display.plotTracesInColumns.Checked = 'on';
         else
-            UI.menu.display.columnTraces.Checked = 'off';
+            UI.menu.display.plotTracesInColumns.Checked = 'off';
         end
         initTraces;
+        uiresume(UI.fig);
     end
 
     function changeBackgroundColor(~,~)

@@ -14,8 +14,8 @@ function intanDig = intanDigital2buzcode(session)
 
 if exist(fullfile(session.general.basePath,session.timeSeries.dig.fileName))
     filename_full = fullfile(session.general.basePath,session.timeSeries.dig.fileName);
-elseif exist(fullfile(session.general.basePath,[session.general.baseName,'_digitalin.dat']))
-    filename_full = fullfile(session.general.basePath,[session.general.baseName,'_digitalin.dat']);
+elseif exist(fullfile(session.general.basePath,[session.general.name,'_digitalin.dat']))
+    filename_full = fullfile(session.general.basePath,[session.general.name,'_digitalin.dat']);
 elseif exist(fullfile(session.general.basePath,'digitalin.dat'))
     filename_full = fullfile(session.general.basePath,'digitalin.dat');
 else
@@ -55,7 +55,7 @@ intanDig.processinginfo.function = 'intanDigital2buzcode';
 intanDig.processinginfo.version = 1;
 intanDig.processinginfo.date = now;
 intanDig.processinginfo.params.basepath = session.general.basePath;
-intanDig.processinginfo.params.basename = session.general.baseName;
+intanDig.processinginfo.params.basename = session.general.name;
 intanDig.processinginfo.params.filename_full = filename_full;
 
 try

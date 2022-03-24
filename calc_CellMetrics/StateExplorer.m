@@ -3,7 +3,7 @@ function dataIn = StateExplorer(dataIn,varargin)
     % StateExplorer (BETA) is a visualizer for state data. StateExplorer is part of CellExplorer - https://CellExplorer.org/
     %
     % INPUTS:
-    %   If a struct is provided, it must have these required fields:
+    %   If a struct is provided, required fields are:
     %   dataIn.timestamps
     %   dataIn.data
     %
@@ -220,6 +220,7 @@ function dataIn = StateExplorer(dataIn,varargin)
         UI.settings.colormap = 'hsv';
         UI.settings.statesOnTrace = [];
         UI.settings.statesIntervals = [];
+        UI.settings.timescale_option = 1; % 1: seconds, 2: minutes, 3: hours
         
         % Event settings
         UI.settings.showEvents = false;
@@ -260,6 +261,15 @@ function dataIn = StateExplorer(dataIn,varargin)
         UI.menu.processing.topMenu = uimenu(UI.fig,menuLabel,'Processing');
         uimenu(UI.menu.processing.topMenu,menuLabel,'Remove short intervals',menuSelectedFcn,@removeShortIntervals);
         
+        % Settings menu
+        UI.menu.settings.topMenu = uimenu(UI.fig,menuLabel,'Settings');
+        UI.menu.settings.timescale.topMenu = uimenu(UI.menu.settings.topMenu,menuLabel,'Time scale');
+        UI.menu.settings.timescale.option(1) = uimenu(UI.menu.settings.timescale.topMenu,menuLabel,'seconds',menuSelectedFcn,@setTimeScale);
+        UI.menu.settings.timescale.option(2) = uimenu(UI.menu.settings.timescale.topMenu,menuLabel,'minutes',menuSelectedFcn,@setTimeScale);
+        UI.menu.settings.timescale.option(3) = uimenu(UI.menu.settings.timescale.topMenu,menuLabel,'hours',menuSelectedFcn,@setTimeScale);
+        UI.menu.settings.timescale.option(4) = uimenu(UI.menu.settings.timescale.topMenu,menuLabel,'milliseconds',menuSelectedFcn,@setTimeScale);
+        
+        UI.menu.settings.timescale.option(UI.settings.timescale_option).Checked = 'on';
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating UI/panels
         
@@ -311,7 +321,7 @@ function dataIn = StateExplorer(dataIn,varargin)
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
         % Main axes
-        UI.plot_axis1 = axes('Parent',UI.panel.plots,'Units','Normalize','Position',[0.015 0.135 0.984 0.865],'ButtonDownFcn',@ClickPlot,'XMinorTick','on');
+        UI.plot_axis1 = axes('Parent',UI.panel.plots,'Units','Normalize','Position',[0.015 0.15 0.984 0.85],'ButtonDownFcn',@ClickPlot,'XMinorTick','on');
         % states axis
         UI.plot_axis4 = axes('Parent',UI.panel.plots,'Units','Normalize','Position',[0.015 0.005 0.984 0.1],'ButtonDownFcn',@ClickPlot,'XMinorTick','on','Visible', 'on','YLim',[0 1],'YTickLabel',[],'XTickLabel',[]); ylabel(UI.plot_axis4,'States')
         % Event axis
@@ -330,24 +340,34 @@ function dataIn = StateExplorer(dataIn,varargin)
     end
     
     function plotData
+        if UI.settings.timescale_option == 1
+            UI.settings.timescale = 1;
+            UI.plot_axis1.XLabel.String = 'Time (seconds)';
+        elseif UI.settings.timescale_option == 2
+            UI.settings.timescale = 60;
+            UI.plot_axis1.XLabel.String = 'Time (minutes)';
+            
+        elseif UI.settings.timescale_option == 3
+            UI.settings.timescale = 3600;
+            UI.plot_axis1.XLabel.String = 'Time (hours)';
+        elseif UI.settings.timescale_option == 4
+            UI.settings.timescale = 0.001;
+            UI.plot_axis1.XLabel.String = 'Time (ms)';
+        end
+        
         delete(UI.plot_axis1.Children)
         delete(UI.plot_axis4.Children)
         
         set(UI.fig,'CurrentAxes',UI.plot_axis1)
-        line(UI.plot_axis1,dataIn.timestamps_lowress,dataIn.data_lowress, 'HitTest','off','color','k'), axis tight;
+        line(UI.plot_axis1,dataIn.timestamps_lowress/UI.settings.timescale,dataIn.data_lowress, 'HitTest','off','color','k'), axis tight;
+        
         xlim1 = UI.plot_axis1.XLim;
         UI.zoom.global{1}(1,:) = xlim1;
         UI.zoom.global{1}(2,:) = UI.plot_axis1.YLim;
         UI.zoom.global{1}(3,:) = UI.plot_axis1.ZLim;
-        UI.zoom.globalLog{1} = [0,0,0];
-        
+        UI.zoom.globalLog{1} = [0,0,0];        
         UI.plot_axis4.XLim = xlim1;
-%         if UI.settings.showEvents
-%             UI.plot_axis3.XLim = xlim1;
-%         end
-%         if UI.settings.showStates
-%             UI.plot_axis2.XLim = xlim1;
-%         end
+        
         % States
         if ~isempty(UI.settings.statesOnTrace)
             plotStatesOnTrace(0,inf)
@@ -497,6 +517,13 @@ function dataIn = StateExplorer(dataIn,varargin)
         end
     end
     
+    function setTimeScale(src,~)
+        UI.menu.settings.timescale.option(UI.settings.timescale_option).Checked = 'off';
+        UI.settings.timescale_option = src.Position;
+        UI.menu.settings.timescale.option(UI.settings.timescale_option).Checked = 'on';
+        uiresume(UI.fig);
+    end
+    
     function saveStates(~,~)
         if isfield(dataIn,'states')
             if isfield(dataIn,'inputname')
@@ -643,7 +670,7 @@ function dataIn = StateExplorer(dataIn,varargin)
         end
         
         UI.plot_axis4.Position = [0.015 0.005+offset 0.984 0.1];
-        UI.plot_axis1.Position = [0.015 0.135+offset 0.984 0.865-offset];
+        UI.plot_axis1.Position = [0.015 0.15+offset 0.984 0.85-offset];
     end
     
     function ScrolltoZoomInPlot(h,event,direction)
@@ -966,8 +993,7 @@ function dataIn = StateExplorer(dataIn,varargin)
     
     function p1 = plotStates(statesData)
         ydata = [0 1];
-        %         line(UI.plot_axis1, states,[ydata,flip(ydata)],'Marker','none','LineStyle','-','color','r', 'HitTest','off')
-        p1 = patch(UI.plot_axis4,double([statesData,flip(statesData,2)])',[ydata(1);ydata(1);ydata(2);ydata(2)]*ones(1,size(statesData,1)),'k','EdgeColor','k','HitTest','off');
+        p1 = patch(UI.plot_axis4,double([statesData,flip(statesData,2)])'/UI.settings.timescale,[ydata(1);ydata(1);ydata(2);ydata(2)]*ones(1,size(statesData,1)),'k','EdgeColor','k','HitTest','off');
         alpha(p1,0.3);
     end
     
@@ -985,21 +1011,22 @@ function dataIn = StateExplorer(dataIn,varargin)
             ydata = [0; 1];
             states1  = dataIn.states;
             stateNames =  UI.settings.states;
-            
+            k = 1;
             for jj = UI.settings.statesIntervals
                 if size(states1.(stateNames{jj}),2) == 2 && size(states1.(stateNames{jj}),1) > 0
                     idx = (states1.(stateNames{jj})(:,1)<t2 & states1.(stateNames{jj})(:,2)>t1);
                     if any(idx)
-                        ydata1(1) = ydata(1)+diff(ydata)/numel(stateNames)*(jj-1);
-                        ydata1(2) = ydata(1)+diff(ydata)/numel(stateNames)*(jj);
-                        statesData2 = states1.(stateNames{jj})(idx,:);
+                        ydata1(1) = ydata(1)+diff(ydata)/numel(UI.settings.statesIntervals)*(k-1);
+                        ydata1(2) = ydata(1)+diff(ydata)/numel(UI.settings.statesIntervals)*(k);
+                        statesData2 = states1.(stateNames{jj})(idx,:)/UI.settings.timescale;
                         p1 = patch(UI.plot_axis4,double([statesData2,flip(statesData2,2)])',[ydata1(1);ydata1(1);ydata1(2);ydata1(2)]*ones(1,size(statesData2,1)),UI.settings.clr_states(jj,:),'EdgeColor',UI.settings.clr_states(jj,:),'HitTest','off');
                         alpha(p1,0.3);
-                        text(UI.plot_axis4,0.005,0.005+(jj-1)*0.15,stateNames{jj},'FontWeight', 'Bold','Color',UI.settings.clr_states(jj,:)*0.8,'margin',1,'BackgroundColor',[1 1 1 0.7], 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized'), axis tight
+                        text(UI.plot_axis4,0.005,0.005+(k-1)*0.15,stateNames{jj},'FontWeight', 'Bold','Color',UI.settings.clr_states(jj,:)*0.8,'margin',1,'BackgroundColor',[1 1 1 0.7], 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized'), axis tight
                     else
-                        text(UI.plot_axis4,0.005,0.005+(jj-1)*0.15,stateNames{jj},stateNames{jj},'color',[0.5 0.5 0.5],'FontWeight', 'Bold','BackgroundColor',[1 1 1 0.7],'margin',1, 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized')
+                        text(UI.plot_axis4,0.005,0.005+(k-1)*0.15,stateNames{jj},stateNames{jj},'color',[0.5 0.5 0.5],'FontWeight', 'Bold','BackgroundColor',[1 1 1 0.7],'margin',1, 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized')
                     end
                 end
+                k = k+1;
             end
         end
     end
@@ -1022,7 +1049,7 @@ function dataIn = StateExplorer(dataIn,varargin)
                     if any(idx)
                         ydata1(1) = ydata(1)+diff(ydata)/numel(stateNames)*(jj-1)+diff(ydata)/10;
                         ydata1(2) = ydata(1)+diff(ydata)/numel(stateNames)*(jj);
-                        statesData2 = states1.(stateNames{jj})(idx,:);
+                        statesData2 = states1.(stateNames{jj})(idx,:)/UI.settings.timescale;
                         p1 = patch(ax1,double([statesData2,flip(statesData2,2)])',[ydata1(1);ydata1(1);ydata1(2);ydata1(2)]*ones(1,size(statesData2,1)),clr_states(jj,:),'EdgeColor',clr_states(jj,:),'HitTest','off');
                         alpha(p1,0.3);
                         text(ax1,0.005,0.005+(jj-1)*0.15,stateNames{jj},'FontWeight', 'Bold','Color',clr_states(jj,:)*0.8,'margin',1,'BackgroundColor',[1 1 1 0.7], 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized'), axis tight
@@ -1049,7 +1076,7 @@ function dataIn = StateExplorer(dataIn,varargin)
                         for i = 1:numel(idx)
                             statesData2 = states1.(stateNames{jj})(idx(i),:);
                             indices = InIntervals(dataIn.timestamps_lowress,statesData2);
-                            line(UI.plot_axis1,dataIn.timestamps_lowress(indices),dataIn.data_lowress(indices),'Marker','none','LineStyle','-', 'HitTest','off','Color',UI.settings.clr_states(jj,:),'linewidth',2)
+                            line(UI.plot_axis1,dataIn.timestamps_lowress(indices)/UI.settings.timescale,dataIn.data_lowress(indices),'Marker','none','LineStyle','-', 'HitTest','off','Color',UI.settings.clr_states(jj,:),'linewidth',2)
                         end
                         text(0.005,0.005+(jj-1)*0.025,stateNames{jj},'FontWeight', 'Bold','Color',UI.settings.clr_states(jj,:)*0.8,'margin',1,'BackgroundColor',[1 1 1 0.7], 'HitTest','off','VerticalAlignment', 'bottom','Units','normalized'), axis tight
                     else
@@ -1085,7 +1112,7 @@ function dataIn = StateExplorer(dataIn,varargin)
         function raster_line(ax1,x1,y_lim,color)
             x_data = [1;1;nan]*x1;
             y_data = [y_lim;nan]*ones(1,numel(x1));
-            line(ax1,x_data(:),y_data(:),'Marker','none','LineStyle','-','color',color, 'HitTest','off','linewidth',0.5);
+            line(ax1,x_data(:)/UI.settings.timescale,y_data(:),'Marker','none','LineStyle','-','color',color, 'HitTest','off','linewidth',0.5);
         end
     end
     

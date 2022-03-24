@@ -65,11 +65,12 @@ if content.continue
     variable_name = content.output{10};
     absoluteThresholds = content.output{11};
 
-    detect_ripples1 = false;
-    if exist(fullfile(data.session.general.basePath,[data.session.general.baseName,'.',variable_name,'.events.mat']))
+    if exist(fullfile(data.session.general.basePath,[data.session.general.name,'.',variable_name,'.events.mat']))
         answer = questdlg('Overwrite existing ripples file?','Ripples already detected');
         if strcmp(answer,'Yes')
             detect_ripples1 = true;
+        else
+            detect_ripples1 = false;
         end
     else
         detect_ripples1 = true;

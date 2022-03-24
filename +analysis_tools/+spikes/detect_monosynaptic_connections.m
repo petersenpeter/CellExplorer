@@ -23,7 +23,7 @@ out = [];
 if isfield(data,'spikes') & isfield(data.spikes,'spindices')
     calculate_mono_synaptic_connections = false;
     
-    if exist(fullfile(data.session.general.basePath,[data.session.general.baseName,'.mono_res.cellinfo.mat']))
+    if exist(fullfile(data.session.general.basePath,[data.session.general.name,'.mono_res.cellinfo.mat']))
         answer = questdlg('Overwrite existing monosynaptic connections?','Connections already detected');
         if strcmp(answer,'Yes')
             calculate_mono_synaptic_connections = true;
@@ -35,7 +35,7 @@ if isfield(data,'spikes') & isfield(data.spikes,'spindices')
     if calculate_mono_synaptic_connections
         mono_res = ce_MonoSynConvClick(data.spikes,'includeInhibitoryConnections',false); % detects the monosynaptic connections
         mono_res = gui_MonoSyn(mono_res); % Shows the GUI for manual curation
-        save(fullfile(data.session.general.basePath,[data.session.genera.baseName,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+        save(fullfile(data.session.general.basePath,[data.session.general.name,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
     end    
 else
     msgbox('Load spikes data before detecting monosynaptic connections the raster.','NeuroScope2','help')

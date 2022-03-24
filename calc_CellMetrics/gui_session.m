@@ -29,14 +29,14 @@ end
 uiLoaded = false;
 
 % Lists
-UI.list.sortingMethod = {'KiloSort','KiloSort2','KiloSort3','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','MountainSort','IronClust','MClust','Wave_clus','custom'}; % Spike sorting methods
-UI.list.sortingFormat = {'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus','custom'}; % Spike sorting formats
+UI.list.sortingMethod = sort({'KiloSort','KiloSort2','KiloSort3','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','Klustasuite','MountainSort','IronClust','MClust','Wave_clus','custom'}); % Spike sorting methods
+UI.list.sortingFormat = sort({'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Klustasuite','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus','custom'}); % Spike sorting formats
 UI.list.inputsType = {'adc','aux','dat','dig'}; % input data types
 UI.list.sessionTypes = {'Acute','Chronic','Unknown'}; % session types
 UI.list.species = {'Unknown','Rat', 'Mouse','Red-eared Turtles','Human'}; % animal species
 % strain and strain_species must be added in a paired manner (number of strains == number of strain_species):
 UI.list.strain = {'Unknown','C57B1/6','B6/FVB Hybrid','BALB/cJ','Red-eared slider','DBA2/J','Brown Norway','Fischer 344','Long Evans','Sprague Dawleys','Wistar','Tumor','Epilepsy'}; % animal strains
-UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Human','Human'}; % animal strains parent in species, must be added as well with a new strain
+UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Human','Human'}; % animal strain parent in species, must be added with a new strain
 
 % data precision types (Matlab data types)
 UI.list.precision = {'double','single','int8','int16','int32','int64','uint8','uint16','uint32','uint64'};
@@ -141,7 +141,11 @@ else
                 end
             case 'Load session template file'
                 loadSessionTemplate
-                sessionIn = session;
+                if exist('session','var')
+                    sessionIn = session;
+                else
+                    return
+                end
             otherwise
                 return
         end
@@ -215,11 +219,12 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Generate session template file',menuSelec
 uimenu(UI.menu.file.topMenu,menuLabel,'Load session template file',menuSelectedFcn,@(~,~)loadSessionTemplate);
 
 uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata with template script',menuSelectedFcn,@(~,~)importMetadataTemplate,'Separator','on');
-uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort',menuSelectedFcn,@(~,~)importKiloSort);
-uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from Phy',menuSelectedFcn,@(~,~)importPhy);
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort (rez.mat file)',menuSelectedFcn,@(~,~)importKiloSort);
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from Phy (from folder)',menuSelectedFcn,@(~,~)importPhy);
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from Klustaviewa (*.kwik file)',menuSelectedFcn,@(~,~)importKlustaviewa);
 uimenu(UI.menu.file.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML,'Separator','on','Accelerator','I');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import bad channels from xml file',menuSelectedFcn,@importBadChannelsFromXML,'Accelerator','S');
-uimenu(UI.menu.file.topMenu,menuLabel,'Import time series from Intan info.rhd',menuSelectedFcn,@importMetaFromIntan,'Accelerator','T');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import time series from Intan (info.rhd)',menuSelectedFcn,@importMetaFromIntan,'Accelerator','T');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import merge points (*.mergePoints.events.mat)',menuSelectedFcn,@importEpochsIntervalsFromMergePoints,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import epoch info from parent sessions',menuSelectedFcn,@importFromFiles);
 
@@ -359,10 +364,12 @@ end
 % General
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session name (basename)', 'Position', [10, 498, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 475, 600, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The name of the session (basename)'));
+UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 475, 540, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The name of the session (basename)'));
+UI.edit.locate_basename_button = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[560, 475, 50, 25],'String','...','Callback',@locate_basename,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Basepath', 'Position', [10, 448, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 425, 600, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The path to the dataset'));
+UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 425, 540, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The path to the dataset'));
+UI.edit.locate_basepath_button = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[560, 425, 50, 25],'String','...','Callback',@locate_basepath,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', UI.list.sessionTypes, 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Session type'));
@@ -401,7 +408,45 @@ UI.edit.sessionDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 600, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 600, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 200);
 
-
+    function locate_basename(~,~)
+        [file1,basepath1] = uigetfile('*.*','Please select a file with the basename in it from the basepath');
+        if ~isequal(file1,0)
+            [~,file2,~]=fileparts(file1);
+            session.general.name = file2;
+            UI.edit.session.String = file2;
+            session.general.basePath = basepath1;
+            UI.edit.basepath.String = basepath1;
+            UI.fig.Name = ['Session metadata: ',session.general.name];
+        end
+    end
+    
+    function locate_basepath(~,~)
+        
+        if ~isempty(session.general.basePath) && ~isequal(session.general.basePath,0)
+            basepath0 = session.general.basePath;
+        else
+            basepath0 = pwd;
+        end
+        basepath1 = uigetdir(basepath0,'Please select the basepath folder');
+        if ~isempty(basepath1) && ~isequal(basepath1,0)
+            session.general.basePath = basepath1;
+            UI.edit.basepath.String = basepath1;
+        end
+    end
+    
+    function locate_fileName(~,~)
+        [file1,basepath1] = uigetfile('*.*','Please select the raw data file');
+        if ~isequal(file1,0)
+            file2 = fullfile(basepath1,file1);
+            file2 = erase(file2,session.general.basePath);
+            if any(strcmp(file2(1),{'/','\'}))
+                file2 = file2(2:end);
+            end
+            session.extracellular.fileName = file2;
+            UI.edit.fileName.String = file2;            
+        end
+    end
+    
 % % % % % % % % % % % % % % % % % % % % %
 % Epochs
 
@@ -515,7 +560,8 @@ uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nSamples', 
 UI.edit.nSamples = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 475, 210, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Number of samples'));
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'File name (optional)', 'Position', [10, 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.fileName = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 180, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Optional file name of binary file (if different from sessionName.dat)'));
+UI.edit.fileName = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 150, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Optional file name of binary file (if different from sessionName.dat)'));
+UI.edit.locate_fileName_button = uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[160, 425, 30, 25],'String','...','Callback',@locate_fileName,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [200, 448, 220, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 425, 190, 25],'HorizontalAlignment','left','Units','normalized','tooltip',['Least significant bit (', char(181),'V/bit, Intan=0.195, Amplipex=0.3815']);
@@ -1328,18 +1374,15 @@ uiwait(UI.fig)
     end
 
     function saveSessionFile
-        if ~strcmp(pwd,UI.edit.basepath.String)
-            answer = questdlg('Base path is different from current path. Where would you like to save the session struct to','Location','basepath','Current path','Select location','basepath');
+        if ~contains(pwd,UI.edit.basepath.String)
+            answer = questdlg('Where would you like to save the session struct to?','Location','basepath','Select location','basepath');
         else
             answer = 'basepath';
         end
         switch answer
             case 'basepath'
                 filepath1 = UI.edit.basepath.String;
-                filename1 = [UI.edit.session.String,'.session.mat'];
-            case 'Current path'
-                filepath1 = pwd;
-                filename1 = [UI.edit.session.String,'.session.mat'];
+                filename1 = [UI.edit.session.String,'.session.mat'];            
             case 'Select location'
                 [filename1,filepath1] = uiputfile([UI.edit.session.String,'.session.mat']);
             otherwise
@@ -3312,16 +3355,33 @@ uiwait(UI.fig)
     
     function importPhy
         clusteringpath_full = uigetdir(session.general.basePath,'Phy folder');
-        if ~isempty(clusteringpath_full)
+        if ~isempty(clusteringpath_full) && ~isequal(clusteringpath_full,0)
             MsgLog('Importing Phy metadata...',0)
             session = loadPhyMetadata(session,clusteringpath_full);
-%             session = loadKiloSortMetadata(session,rezFile);
             updateChannelGroupsList('electrodeGroups')
             updateChannelGroupsList('spikeGroups')
             updateChanCoords
             UIsetString(session.extracellular,'nChannels'); % Number of channels
 %             UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
 %             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
+            
+            MsgLog('Phy metadata imported via phy folder',2)
+        else
+            MsgLog('Phy data folder does not exist',4)
+        end
+    end
+    
+    function importKlustaviewa
+        [file2,basepath2] = uigetfile('*.kwik','Please select the *.kwik file');
+        kwik_file = fullfile(basepath2,file2);
+        if ~isempty(kwik_file) && ~isequal(kwik_file,0)
+            MsgLog('Importing klustaviewa metadata...',0)
+            session = loadKlustaviewaMetadata(session,kwik_file);
+            updateChannelGroupsList('electrodeGroups')
+            updateChannelGroupsList('spikeGroups')
+            updateChanCoords
+            UIsetString(session.extracellular,'nChannels'); % Number of channels
+            UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
             
             MsgLog('Phy metadata imported via phy folder',2)
         else
