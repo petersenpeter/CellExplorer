@@ -3314,10 +3314,10 @@ uiwait(UI.fig)
     end
 
     function importGroupsFromXML
-        xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
-        if exist(xml_filepath,'file')
+        [file2,basepath2] = uigetfile('*.kwik','Please select the *.kwik file');
+        xml_filepath = fullfile(basepath2,file2);
+        if ~isempty(xml_filepath) && ~isequal(xml_filepath,0)
             MsgLog('Importing groups from XML...',0)
-            
             session = import_xml2session(xml_filepath,session);
             updateChannelGroupsList('electrodeGroups')
             updateChannelGroupsList('spikeGroups')
@@ -3325,8 +3325,6 @@ uiwait(UI.fig)
             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
             UIsetString(session.extracellular,'nChannels'); % Number of channels
             MsgLog('XML imported',2)
-        else
-            MsgLog(['xml file not accessible: ' xml_filepath],4)
         end
     end
     
@@ -3362,12 +3360,8 @@ uiwait(UI.fig)
             updateChannelGroupsList('spikeGroups')
             updateChanCoords
             UIsetString(session.extracellular,'nChannels'); % Number of channels
-%             UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
-%             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
             
             MsgLog('Phy metadata imported via phy folder',2)
-        else
-            MsgLog('Phy data folder does not exist',4)
         end
     end
     
@@ -3381,11 +3375,8 @@ uiwait(UI.fig)
             updateChannelGroupsList('spikeGroups')
             updateChanCoords
             UIsetString(session.extracellular,'nChannels'); % Number of channels
-            UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
-            
-            MsgLog('Phy metadata imported via phy folder',2)
-        else
-            MsgLog('Phy data folder does not exist',4)
+            UIsetString(session.extracellular,'sr'); % Sampling rate of dat file            
+            MsgLog('klustaviewa imported from kwik file',2)
         end
     end
     
@@ -3500,8 +3491,9 @@ uiwait(UI.fig)
     end
 
     function importBadChannelsFromXML(~,~)
-        xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
-        if exist(xml_filepath,'file')
+        [file2,basepath2] = uigetfile('*.kwik','Please select the *.kwik file');
+        xml_filepath = fullfile(basepath2,file2);
+        if ~isempty(xml_filepath) && ~isequal(xml_filepath,0)
             sessionInfo = LoadXml(xml_filepath);
             
             % Removing dead channels by the skip parameter in the xml
@@ -3517,7 +3509,7 @@ uiwait(UI.fig)
                 badChannels_synced = [];
             end
             
-            if isfield(session,'channelTags') & isfield(session.channelTags,'Bad')
+            if isfield(session,'channelTags') && isfield(session.channelTags,'Bad')
                 session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,badChannels_skipped,badChannels_synced]);
             else
                 session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);

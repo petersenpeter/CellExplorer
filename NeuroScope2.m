@@ -5438,18 +5438,26 @@ end
     end
 
     function exportPlotData(src,~)
+        answer = inputdlg({'Note'},'Add note to export',[1 50],{''});
+        
         UI.settings.stream = false;
         timestamp = datestr(now, '_dd-mm-yyyy_HH.MM.SS');
         % Adding text elemenets with timestamps and windows size
-        text(UI.plot_axis1,0,1,[' Session: ', UI.data.basename, ', Basepath: ', UI.data.basepath],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left','color',UI.settings.primaryColor,'Units','normalized')
-        text(UI.plot_axis1,1,1,['Start time: ', num2str(UI.t0), ' sec, Duration: ', num2str(UI.settings.windowDuration), ' sec '],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','right','color',UI.settings.primaryColor,'Units','normalized')
+        text_string1 = [' Session: ', UI.data.basename, ',   Basepath: ', UI.data.basepath];
+        if ~isempty(answer) && ~isempty(answer{1})
+           text_string1 = [text_string1,'.   Notes: ', answer{1}]; 
+        end
+        text_string2 = ['Start time: ', num2str(UI.t0), ' sec, Duration: ', num2str(UI.settings.windowDuration), ' sec '];
+        text(UI.plot_axis1,0,1,text_string1,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left', 'color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
+        text(UI.plot_axis1,1,1,text_string2,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','right','color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
         
         % Adding scalebar
         if ~UI.settings.showScalebar
             plot(UI.plot_axis1,[0.005,0.005],[0.93,0.98],'-','linewidth',3,'color',UI.settings.primaryColor)
-            text(UI.plot_axis1,0.005,0.955,['  ',num2str(0.05/(UI.settings.scalingFactor)*1000,3),' mV'],'FontWeight', 'Bold','VerticalAlignment', 'middle','HorizontalAlignment','left','color',UI.settings.primaryColor)
+            text(UI.plot_axis1,0.01,0.955,[num2str(0.05/(UI.settings.scalingFactor)*1000,3),' mV'],'FontWeight', 'Bold','VerticalAlignment', 'middle','HorizontalAlignment','left','color',UI.settings.primaryColor,'BackgroundColor',UI.settings.textBackground)
         end
         drawnow
+        
         if strcmp(src.Text,'Export to .png file (image)')
             if ~verLessThan('matlab','9.8') 
                 exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope',timestamp, '.png']))
