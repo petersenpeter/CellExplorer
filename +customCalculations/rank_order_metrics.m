@@ -70,11 +70,14 @@ end
 end
 
 function rankStats = main(basepath,spikes,ripples)
-ripSpk = getRipSpikes('basepath',basepath,...
-    'spikes',spikes,...
-    'events',ripples.timestamps,...
-    'saveMat',false);
-
+try
+    ripSpk = getRipSpikes('basepath',basepath,...
+        'spikes',spikes,...
+        'events',ripples.timestamps,...
+        'saveMat',false);
+catch
+    ripSpk = getRipSpikes(spikes,ripples,'saveMat',false);
+end
 rankStats.rankUnits = RankOrder_units(ripSpk);
 end
 

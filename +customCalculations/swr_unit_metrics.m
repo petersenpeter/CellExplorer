@@ -102,10 +102,15 @@ end
 end
 
 function SWRunitMetrics = main(basepath,spikes,ripples)
-ripSpk = getRipSpikes('basepath',basepath,...
-    'spikes',spikes,...
-    'events',ripples.timestamps,...
-    'saveMat',false);
+try
+    ripSpk = getRipSpikes('basepath',basepath,...
+        'spikes',spikes,...
+        'events',ripples.timestamps,...
+        'saveMat',false);
+catch
+    ripSpk = getRipSpikes(spikes,ripples,'saveMat',false);
+end
 firingRate = spikes.total / (spikes.spindices(end,1) - spikes.spindices(1,1));
 SWRunitMetrics = unitSWRmetrics(ripSpk,spikes,'baseFR',firingRate');
 end
+
