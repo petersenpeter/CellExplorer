@@ -20,7 +20,7 @@ A clear and concise description of what the bug is.
 Please paste your error log here
 
 **Session struct**
-If relevant please provide your session Matlab struct (`basename.session.mat`) by zipping it and dragging it into this text field. This will ease the troubleshooting. 
+If relevant, please provide your session Matlab struct (`basename.session.mat`) by zipping it and dragging it into this text field. This will ease the troubleshooting. 
 
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
