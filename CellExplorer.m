@@ -1328,9 +1328,15 @@ function updateUI
             
             axis tight
             if nanmin(plotX(UI.params.subset)) ~= nanmax(plotX(UI.params.subset)) & UI.checkbox.logx.Value == 0
-                xlim([nanmin(plotX(UI.params.subset)),nanmax(plotX(UI.params.subset))])
+                try
+                    xlim([nanmin(plotX(UI.params.subset)),nanmax(plotX(UI.params.subset))])
+                catch
+                end
             elseif nanmin(plotX(UI.params.subset)) ~= nanmax(plotX(UI.params.subset)) & UI.checkbox.logx.Value == 1 && any(plotX>0)
-                xlim([nanmin(plotX(intersect(UI.params.subset,find(plotX>0)))),nanmax(plotX(intersect(UI.params.subset,find(plotX>0))))])
+                try
+                    xlim([nanmin(plotX(intersect(UI.params.subset,find(plotX>0)))),nanmax(plotX(intersect(UI.params.subset,find(plotX>0))))])
+                catch
+                end
             end
             plotStatRelationship(plotX,0.015,UI.checkbox.logx.Value,ylim1) % Generates KS group statistics
 
