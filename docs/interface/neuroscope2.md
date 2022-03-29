@@ -73,6 +73,8 @@ Intan's analog and digital files are treated as time series and the metadata is 
 
 <a href="https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_behavior.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_behavior_lowress.jpg)</a>
 
+The screenshot above shows a 128 channels recording with digital pulses shown below and a behavior-plot-inset in the lower right corner. The spike raster below tre traces is color coded and sorted by electrode groups.
+
 ## About the software implementation
 NeuroScope2 can be modified and hacked and additional functionality can be implement by using the data structured and main calls described in below sections.
 
