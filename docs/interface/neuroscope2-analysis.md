@@ -1,8 +1,8 @@
 ---
 layout: default
-title: UI elements
+title: Custom analysis
 parent: NeuroScope2
-grand_parent: Custom analysis
+grand_parent: Graphical interfaces
 nav_order: 4
 ---
 
