@@ -7,47 +7,49 @@ nav_order: 4
 ---
 
 # Perform custom analysis directly from NeuroScope2
-You can add your own custom functions that can be run from NeuroScope2 from the menu called Analysis. Basically, you have to create a wrapper for whatever function you want to call outside NeuroScope2. There are a lot of examples included, that you can take inspiration from.
+You can add your own custom functions that can be run from NeuroScope2 from the menu called Analysis. Basically, you create a wrapper function for what you want to call outside NeuroScope2. There are a lot of examples included, that you can take inspiration from. The analysis tools are located in the `+analysis_tools`  folder. 
 
 ## Organization of analysis tools and included functions 
-
 The analysis menu and underlying `+analysis_tools` folder are organized according to the underlying data types of CellExplorer. Various functions are already included:
+
 ### behavior: 
-   - 2D and 
-   - 3D plot of behavior
-   
+- 2D and 
+- 3D plot of behavior
+
 ### cell_metrics
-   - run ProcessCellMetrics 
-   - open CellExplorer
-   - Plot metrics for a subset of cells, including CCGs and other built-in plots from CellExplorer
+- run ProcessCellMetrics 
+- open CellExplorer
+- Plot metrics for a subset of cells, including CCGs and other built-in plots from CellExplorer
 
 ### events
-   - detect ripples. Shows a dialog first, allowing for defining input parameters
+- detect ripples. Shows a dialog first, allowing for defining input parameters
+
 ### lfp
-   - generate the .lfp file from the raw data
+- generate the .lfp file from the raw data
 
 ### session
-   - Plot channel coordinates
+- Plot channel coordinates
 
 ### spikes
-   - Detect monosynaptic connections
-   - plot CCGs
-   - plot spike-rasters
+- Detect monosynaptic connections
+- plot CCGs
+- plot spike-rasters
 
 ### states
-   - Detect brain states (`SleepScoreMaster` - requires the Buzcode Matlab toolbox).
-   - Edit brain states in (`TheStateEditor` - requires the Buzcode Matlab toolbox).
+- Detect brain states (`SleepScoreMaster` - requires the Buzcode toolbox).
+- Edit brain states in (`TheStateEditor` - requires the Buzcode toolbox).
+
 ### timeseries
-   - open StateExplorer
+- open StateExplorer
 
 ### traces
-   - Plot correlation between channels
-   - Plot RMS noise across channels
-   - Show power spectral density across channels on a linear scale
-   - Show power spectral density across channels on a log scale
-   - Show temporal offsets between channels
+- Plot correlation between channels
+- Plot RMS noise across channels
+- Show power spectral density across channels on a linear scale
+- Show power spectral density across channels on a log scale
+- Show temporal offsets between channels
 
-The folders' purpose is purely for organization but they are hard-coded in NeuroScope2, so they should not be renamed. 
+The folder structure is purely for organization but the names are hard-coded in NeuroScope2, so they should not be altered. 
 
 ## Wrapper example provided
 
