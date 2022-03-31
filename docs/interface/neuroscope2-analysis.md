@@ -9,37 +9,47 @@ nav_order: 4
 # Perform custom analysis directly from NeuroScope2
 You can add your own custom functions that can be run from NeuroScope2 from the menu called Analysis. Basically, you have to create a wrapper for whatever function you want to call outside NeuroScope2. There are a lot of examples included, that you can take inspiration from.
 
-### Organization of analysis tools and included functions 
+## Organization of analysis tools and included functions 
 
 The analysis menu and underlying `+analysis_tools` folder are organized according to the underlying data types of CellExplorer. Various functions are already included:
-1. behavior: 
-   - 2D and 3D plot of behavior
-2. cell_metrics
-   - run ProcessCellMetrics and CellExplorer directly from NeuroScope2
+### behavior: 
+   - 2D and 
+   - 3D plot of behavior
+   
+### cell_metrics
+   - run ProcessCellMetrics 
+   - open CellExplorer
    - Plot metrics for a subset of cells, including CCGs and other built-in plots from CellExplorer
-3. events
+
+### events
    - detect ripples. Shows a dialog first, allowing for defining input parameters
-4. lfp
-   - generate a .lfp file from the raw data
-5. session
+### lfp
+   - generate the .lfp file from the raw data
+
+### session
    - Plot channel coordinates
-6. spikes
-   - Detect monosynaptic connections, plot CCGs, plot spike-rasters
-7. states
-   - Detect brain states (`SleepScoreMaster`; requires the Buzcode Matlab toolbox).
-   - Edit brain states in `TheStateEditor`
-8. timeseries
+
+### spikes
+   - Detect monosynaptic connections
+   - plot CCGs
+   - plot spike-rasters
+
+### states
+   - Detect brain states (`SleepScoreMaster` - requires the Buzcode Matlab toolbox).
+   - Edit brain states in (`TheStateEditor` - requires the Buzcode Matlab toolbox).
+### timeseries
    - open StateExplorer
-9. traces
-   - Correlation between channels
+
+### traces
+   - Plot correlation between channels
    - Plot RMS noise across channels
-   - Power spectral density across channels on a linear scale
-   - Power spectral density across channels on a log scale
-   - Temporal offsets between channels 
+   - Show power spectral density across channels on a linear scale
+   - Show power spectral density across channels on a log scale
+   - Show temporal offsets between channels
 
 The folders' purpose is purely for organization but they are hard-coded in NeuroScope2, so they should not be renamed. 
 
-### Wrapper example provided
+## Wrapper example provided
 
 The wrapper example is located in the +traces folder ([`wrapper_example.m`](https://github.com/petersenpeter/CellExplorer/blob/master/%2Banalysis_tools/%2Btraces/wrapper_example.m)), use it to built your own analysis functions. 
 
