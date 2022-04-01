@@ -54,27 +54,46 @@ saveDeepSuperficial
 
     function plotDeepSuperficial(spikegroup)
         jj = spikegroup;
-        plot((deepSuperficialfromRipple.SWR_diff{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_diff{jj},2)-1]*gain,'-k','linewidth',2), hold on, %grid on
-%         plot((deepSuperficialfromRipple.SWR_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_amplitude{jj},2)-1]*gain,'k','linewidth',1)
+        plot((deepSuperficialfromRipple.SWR_diff{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,...
+            -[0:size(deepSuperficialfromRipple.SWR_diff{jj},2)-1]*gain,...
+            '-k','linewidth',2), hold on,
+        %grid on
+        %         plot((deepSuperficialfromRipple.SWR_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.SWR_amplitude{jj},2)-1]*gain,'k','linewidth',1)
         % Plotting ripple amplitude along vertical axis
-%         plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*gain,'m','linewidth',1)
+        %         plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*gain,'m','linewidth',1)
         
         for jjj = 1:size(deepSuperficialfromRipple.ripple_average{jj},2)
             % Plotting depth (µm)
-            text(deepSuperficialfromRipple.ripple_time_axis(end)+5,deepSuperficialfromRipple.ripple_average{jj}(1,jjj)-(jjj-1)*gain,[num2str(round(deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{jj}(jjj))))])
+            text(deepSuperficialfromRipple.ripple_time_axis(end)+5,...
+                deepSuperficialfromRipple.ripple_average{jj}(1,jjj)-(jjj-1)*gain,...
+                [num2str(round(deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{jj}(jjj))))])
             % Plotting channel number (0 indexes)
-            text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,-(jjj-1)*gain,num2str(deepSuperficialfromRipple.ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
+            text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,...
+                -(jjj-1)*gain,...
+                num2str(deepSuperficialfromRipple.ripple_channels{jj}(jjj)-1),...
+                'HorizontalAlignment','Right')
             
             % Plotting assigned channel labels
             if strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Superficial')
-                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*gain,'or','linewidth',2)
-                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'r')
+                
+                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,...
+                    -(jjj-1)*gain,'or','linewidth',2)
+                plot(deepSuperficialfromRipple.ripple_time_axis,...
+                    deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'r')
+                
             elseif strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Deep')
-                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*gain,'ob','linewidth',2)
-                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'b')
+                
+                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,...
+                    -(jjj-1)*gain,'ob','linewidth',2)
+                plot(deepSuperficialfromRipple.ripple_time_axis,...
+                    deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'b')
+                
             elseif strcmp(deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{jj}(jjj)),'Cortical')
-                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*gain,'og','linewidth',2)
-                plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'g')
+                
+                plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,...
+                    -(jjj-1)*gain,'og','linewidth',2)
+                plot(deepSuperficialfromRipple.ripple_time_axis,...
+                    deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'g')
             else
                 plot((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-(jjj-1)*gain,'ok')
                 plot(deepSuperficialfromRipple.ripple_time_axis,deepSuperficialfromRipple.ripple_average{jj}(:,jjj)-(jjj-1)*gain,'k')
@@ -153,36 +172,46 @@ saveDeepSuperficial
                 assignCortical
             case 'u'
                 assignUnknown
-                
         end
     end
 
     function assignDeep
-        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}) = repmat({'Deep'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}));
+        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}) =...
+            repmat({'Deep'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}));
         uiresume(h);
     end
 
     function assignSuperficial
-        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}) = repmat({'Superficial'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}));
+        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}) =...
+            repmat({'Superficial'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}));
         uiresume(h);
     end
 
     function assignCortical
-        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}) = repmat({'Cortical'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}));
+        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}) =...
+            repmat({'Cortical'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}));
         uiresume(h);
     end
 
     function assignUnknown
-        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}) = repmat({'Unknown'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}));
+        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}) =...
+            repmat({'Unknown'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}));
         uiresume(h);
     end
 
     function assignReversal
         reversal = DeepSuperficialReversal.Value-1;
-        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}(1:reversal)) = repmat({'Deep'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}(1:reversal)));
-        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}(reversal+1:end)) = repmat({'Superficial'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}(reversal+1:end)));
+        
+        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}(1:reversal)) =...
+            repmat({'Deep'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}(1:reversal)));
+        
+        deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}(reversal+1:end)) =...
+            repmat({'Superficial'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}(reversal+1:end)));
         VerticalSpacing = deepSuperficialfromRipple.processinginfo.params.verticalSpacing;
-        deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{spikegroup}) = ([1:length(deepSuperficialfromRipple.ripple_channels{spikegroup})]-reversal)*VerticalSpacing;
+        
+        deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{spikegroup}) =...
+            ([1:length(deepSuperficialfromRipple.ripple_channels{spikegroup})]-reversal)*VerticalSpacing;
+        
         uiresume(h);
     end
 
