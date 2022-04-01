@@ -7,7 +7,7 @@ nav_order: 4
 ---
 
 # Perform custom analysis directly from NeuroScope2
-You can add your own custom functions that can be run from NeuroScope2 from the menu called Analysis. Basically, you create a wrapper function for what you want to call outside NeuroScope2. There are a lot of examples included, that you can take inspiration from. The analysis tools are located in the `+analysis_tools`  folder. 
+You can add your own custom functions that can be run from NeuroScope2 from the menu called Analysis. You must create a wrapper function for what you want to call outside NeuroScope2. There are a lot of examples included, that you can take inspiration from. The analysis tools are located in the `+analysis_tools`  folder. Please see the wrapper example at the bottom of this page.
 
 ## Organization of analysis tools and included functions 
 The analysis menu and underlying `+analysis_tools` folder are organized according to the underlying data types of CellExplorer. Various functions are already included:
@@ -36,8 +36,8 @@ The analysis menu and underlying `+analysis_tools` folder are organized accordin
 - plot spike-rasters
 
 ### states
-- Detect brain states (`SleepScoreMaster` - requires the Buzcode toolbox).
-- Edit brain states in (`TheStateEditor` - requires the Buzcode toolbox).
+- Detect brain states using `SleepScoreMaster` - requires the Buzcode toolbox.
+- Edit brain states in `TheStateEditor` - requires the Buzcode toolbox.
 
 ### timeseries
 - open StateExplorer
