@@ -23,7 +23,7 @@ out = [];
 
 calculate_mono_synaptic_connections = false;
 
-mono_res_file = fullfile(data.session.general.basePath,[data.session.general.baseName,'.mono_res.cellinfo.mat']);
+mono_res_file = fullfile(data.session.general.basePath,[data.session.general.name,'.mono_res.cellinfo.mat']);
 
 if exist(mono_res_file)
     gui_MonoSyn(mono_res_file); % Shows the GUI for manual curation
@@ -38,7 +38,7 @@ if calculate_mono_synaptic_connections
     if isfield(data,'spikes')
         mono_res = ce_MonoSynConvClick(data.spikes,'includeInhibitoryConnections',false); % detects the monosynaptic connections
         mono_res = gui_MonoSyn(mono_res); % Shows the GUI for manual curation
-        save(fullfile(data.session.general.basePath,[data.session.genera.baseName,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+        save(fullfile(data.session.general.basePath,[data.session.general.name,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
     else
         msgbox('Please load the spikes data first.','NeuroScope2','help')
     end

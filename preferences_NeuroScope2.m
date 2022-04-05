@@ -14,7 +14,7 @@ preferences.scalingFactor = 50; % Scaling factor
 preferences.plotStyle = 2; % Plot style
 preferences.greyScaleTraces = 1; % Plot colors
 preferences.channelOrder = 1; % Channel order
-preferences.columnTraces = false; % Plot traces in columns - NOT IMPLEMENTED
+preferences.plotTracesInColumns = false; % Plot traces in columns
 preferences.colorByChannels = false; % Color by channel order
 preferences.nColorGroups = 10; % Number of color groups when coloring by channel order
 preferences.displayMenu = 0; % Show the regular Matlab menu
@@ -28,6 +28,8 @@ preferences.ephys_padding = 0.05; % Initial padding above and below ephys traces
 preferences.text_spacing = 0.016; % Vertical spacing between legends
 preferences.resetZoomOnNavigation = false;
 preferences.replayRefreshInterval = 0.50; % Fraction of window updated in replay mode
+preferences.insetRelativeWidth = 1/4;
+preferences.insetRelativeHeight = 1/4;
 
 if ismac
     preferences.fontsize = 11;
@@ -127,5 +129,12 @@ preferences.plotRMSnoiseInset = false;
 preferences.plotRMSnoise_apply_filter = 2;
 preferences.plotRMSnoise_lowerBand = 100;
 preferences.plotRMSnoise_higherBand = 220;
-preferences.insetRelativeWidth = 1/4;
-preferences.insetRelativeHeight = 1/4;
+
+% Instantaneous metrics plot
+preferences.instantaneousMetrics.show = false;
+preferences.instantaneousMetrics.showPower = false;
+preferences.instantaneousMetrics.showFrequency = false;
+preferences.instantaneousMetrics.showPhase = false;
+preferences.instantaneousMetrics.channel = 1;
+preferences.instantaneousMetrics.lowerBand = 100;
+preferences.instantaneousMetrics.higherBand = 220;
