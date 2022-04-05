@@ -675,15 +675,15 @@ if parameters.forceReload
             disp('loadSpikes: Loading Klustakwik data')
             UID = 0;
             shanks_new = [];
-            if isnan(shanks)
-                fileList = dir(fullfile(clusteringpath_full,[basename,'.res.*']));
-                fileList = {fileList.name};
-                for i = 1:length(fileList)
-                    temp = strsplit(fileList{i},'.res.');
-                    shanks_new = [shanks_new,str2double(temp{2})];
-                end
-                shanks = sort(shanks_new);
+
+            fileList = dir(fullfile(clusteringpath_full,[basename,'.res.*']));
+            fileList = {fileList.name};
+            for i = 1:length(fileList)
+                temp = strsplit(fileList{i},'.res.');
+                shanks_new = [shanks_new,str2double(temp{2})];
             end
+            shanks = sort(shanks_new);
+
             for shank = shanks
                 disp(['Loading shank #' num2str(shank) '/' num2str(length(shanks)) ])
                 if ~raw_clusters
