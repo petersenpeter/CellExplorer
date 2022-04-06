@@ -1241,7 +1241,7 @@ uiwait(UI.fig)
         else
             session.extracellular.chanCoords.shankSpacing = [];
         end
-        if ~isempty(UI.edit.chanCoords_shankSpacing.String) 
+        if ~isempty(UI.edit.chanCoords_verticalSpacing.String)
             session.extracellular.chanCoords.verticalSpacing = str2double(UI.edit.chanCoords_verticalSpacing.String);
         else
             session.extracellular.chanCoords.verticalSpacing = [];
