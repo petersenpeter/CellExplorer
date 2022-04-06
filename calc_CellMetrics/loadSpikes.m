@@ -674,18 +674,19 @@ if parameters.forceReload
         case {'klustakwik', 'neurosuite'}
             disp('loadSpikes: Loading Klustakwik data')
             UID = 0;
-            shanks_new = [];
-
-            fileList = dir(fullfile(clusteringpath_full,[basename,'.res.*']));
-            fileList = {fileList.name};
-            for i = 1:length(fileList)
-                temp = strsplit(fileList{i},'.res.');
-                shanks_new = [shanks_new,str2double(temp{2})];
+            electrodeGroups_detected = [];
+            if isnan(electrodeGroups)
+                fileList = dir(fullfile(clusteringpath_full,[basename,'.res.*']));
+                fileList = {fileList.name};
+                for i = 1:length(fileList)
+                    temp = strsplit(fileList{i},'.res.');
+                    electrodeGroups_detected = [electrodeGroups_detected,str2double(temp{2})];
+                end
+                electrodeGroups = sort(electrodeGroups_detected);
             end
-            shanks = sort(shanks_new);
 
-            for shank = shanks
-                disp(['Loading shank #' num2str(shank) '/' num2str(length(shanks)) ])
+            for shank = electrodeGroups
+                disp(['Loading shank #' num2str(shank) '/' num2str(length(electrodeGroups)) ])
                 if ~raw_clusters
                     cluster_index = load(fullfile(clusteringpath_full, [basename '.clu.' num2str(shank)]));
                     time_stamps = load(fullfile(clusteringpath_full,[basename '.res.' num2str(shank)]));
