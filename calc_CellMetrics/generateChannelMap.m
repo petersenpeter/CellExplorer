@@ -17,8 +17,17 @@ parse(p,varargin{:})
 reorder = p.Results.reorder;
 
 electrodeLayouts = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
-
+% sometimes, probImplants is empty, adjust for that here
 if isfield(session.animal,'probeImplants')
+    if ~isempty(session.animal.probeImplants)
+        use_probImplant = true;
+    else
+        use_probImplant = false;
+    end
+else
+    use_probImplant = false;
+end
+if use_probImplant
     source = 'probeImplants';
     layout = session.animal.probeImplants{1}.layout;
     if isfield(session.animal.probeImplants{1},'shankSpacing')

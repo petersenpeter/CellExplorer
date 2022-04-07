@@ -322,7 +322,7 @@ saveOnExitDialog
             answer = questdlg('Do you want to save the manual monosynaptic curration?', 'Save monosynaptic curration', 'Yes','No','Yes');
             if strcmp(answer,'Yes')
                 try
-                    save(mono_res_input,'mono_res','-v7.3');
+                    save(mono_res_input,'mono_res');
                 catch
                     warndlg('Failed to save the mono_res file.')
                 end
