@@ -1423,8 +1423,6 @@ if any(contains(parameters.removeMetrics,{'deepSuperficial'}))
     field2remove = {'deepSuperficial','deepSuperficialDistance'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
-    cell_metrics.deepSuperficial = repmat({'Unknown'},1,cell_metrics.general.cellCount);
-    cell_metrics.deepSuperficialDistance = nan(1,cell_metrics.general.cellCount);
 end
 
 if ~isfield(cell_metrics,'deepSuperficial')
