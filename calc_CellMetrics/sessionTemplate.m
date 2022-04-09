@@ -109,7 +109,7 @@ if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~i
     session.extracellular.nSpikeGroups = session.extracellular.nElectrodeGroups;
 end
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'leastSignificantBit')) || isempty(session.extracellular.leastSignificantBit))
-    session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
+    session.extracellular.leastSignificantBit = 0.195; % (in ÂµV) Intan = 0.195, Amplipex = 0.3815
 end
 if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'probeDepths')) || isempty(session.extracellular.probeDepths))
     session.extracellular.probeDepths = 0;
@@ -208,7 +208,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 if ~isfield(session,'analysisTags') || (isfield(session,'analysisTags') && (~isfield(session.analysisTags,'probesLayout')) || isempty(session.analysisTags.probesLayout))
     session.analysisTags.probesLayout = 'poly2'; % Probe layout: linear,staggered,poly2,edge,poly3,poly5
-    session.analysisTags.probesVerticalSpacing = 10; % (µm) Vertical spacing between sites.
+    session.analysisTags.probesVerticalSpacing = 20; % (Âµm) Vertical spacing between sites.
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
