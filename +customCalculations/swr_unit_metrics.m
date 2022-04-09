@@ -110,7 +110,13 @@ try
 catch
     ripSpk = getRipSpikes(spikes,ripples,'saveMat',false);
 end
-firingRate = spikes.total / (spikes.spindices(end,1) - spikes.spindices(1,1));
+
+try
+    firingRate = spikes.total / (spikes.spindices(end,1) - spikes.spindices(1,1));
+catch
+    spikes.spindices = generateSpinDices(spikes.times);
+    firingRate = spikes.total / (spikes.spindices(end,1) - spikes.spindices(1,1));
+end
 SWRunitMetrics = unitSWRmetrics(ripSpk,spikes,'baseFR',firingRate');
 end
 
