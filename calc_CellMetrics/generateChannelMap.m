@@ -71,11 +71,11 @@ switch(layout)
             tchannels  = groups{a};
             for i =1:length(tchannels)
                 x(i) = 0;
-                y(i) = -(i-1);
+                y(i) = -(i-1)*verticalSpacing;
             end
             x = x+(a-1)*shankSpacing;
             xcoords = cat(1,xcoords,x(:));
-            ycoords = cat(1,ycoords,y(:))*verticalSpacing;
+            ycoords = cat(1,ycoords,y(:));
         end
     case 'staggered'
         horz_offset = flip([0,8.5,17:4:520]);
