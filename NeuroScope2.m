@@ -3917,7 +3917,7 @@ end
             updateChanCoordsColorHighlight
             
             image_toolbox_installed = isToolboxInstalled('Image Processing Toolbox');
-            if ~verLessThan('matlab', '9.4') & image_toolbox_installed
+            if ~verLessThan('matlab', '9.5') & image_toolbox_installed
                 x_lim_data = [min(data.session.extracellular.chanCoords.x),max(data.session.extracellular.chanCoords.x)];
                 y_lim_data = [min(data.session.extracellular.chanCoords.y),max(data.session.extracellular.chanCoords.y)];
                 x_padding = 0.03*diff(x_lim_data);
