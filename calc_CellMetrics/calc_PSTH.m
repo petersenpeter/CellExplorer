@@ -6,7 +6,7 @@ function PSTH = calc_PSTH(event,spikes,varargin)
 % spikes : spikes formatted according to the CellExplorer's convention
 % 
 % OUTPUT
-% psth
+% PSTH : struct
 % 
 % Dependencies: CCG
 
@@ -74,7 +74,6 @@ binsPre = 1:floor(binDistribution(1)*length(binsToKeep));
 binsEvents = floor(binDistribution(1)*length(binsToKeep))+1:floor((binDistribution(1)+binDistribution(2))*length(binsToKeep));
 binsPost = floor((binDistribution(1)+binDistribution(2))*length(binsToKeep))+1:length(binsToKeep);
 
-
 % spike_times = spikes.spindices(:,1);
 % spike_cluster_index = spikes.spindices(:,2);
 % [spike_times,index] = sort([spike_times;event_times(:)]);
@@ -85,7 +84,7 @@ binsPost = floor((binDistribution(1)+binDistribution(2))*length(binsToKeep))+1:l
 
 % Calculating PSTH
 PSTH_out = [];
-for j = 1:numel(spikes.times)
+for j = 1:numel(spikes.times)   
     [spike_times,index] = sort([spikes.times{j};event_times(:)]);
     spike_cluster_index = [ones(size(spikes.times{j}));2*ones(size(event_times(:)))];
     [ccg,time] = CCG(spike_times,spike_cluster_index(index),'binSize',binSize,'duration',(duration+padding)*2);

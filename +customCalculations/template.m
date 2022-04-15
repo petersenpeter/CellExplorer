@@ -12,11 +12,7 @@ function cell_metrics = template(cell_metrics,session,spikes,parameters)
     %
     % OUTPUT
     % cell_metrics - updated cell_metrics struct
-
-    % By Peter Petersen
-    % petersen.peter@gmail.com
-    % Last updated 07-06-2020
-    
+   
     
 
 end

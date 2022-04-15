@@ -91,7 +91,7 @@ switch processing
         trace = (trace-1.25)/0.00495;
         trace(find(abs(diff(trace)) > 0.3)) = nan;
         trace(trace > 50 | trace < 0) = nan;
-        trace = nanconv(trace,gausswin(200)','edge');
+        trace = nanconv(trace,ce_gausswin(200)','edge');
         trace = fillmissing(trace,'linear');
         data_out.data = trace;
         data_out.sr = sr/downsample_samples;
@@ -100,10 +100,10 @@ switch processing
         plot(data_out.timestamps,data_out.data,'-k')
         ylabel('Temperature'), xlabel('Time (s)'), axis tight
         
-    case 'thermistor'
+    case 'thermistor_10000'
         disp('Processing thermistor')
         thermistorT = trace * 0.000050354; % convert to volts
-        thermistorT = 18010./(3.3./thermistorT-1); % potentiometer resistance is 20210 Ohm
+        thermistorT = 10000./(3.3./thermistorT-1); % potentiometer resistance is 10000 Ohm
         thermistorT = 1./(1/310.15 + 1/3454 * log(thermistorT/14015));
         trace = thermistorT - 273.15; % Translating from Kelvin to Celcius
         idx1 = find(diff(trace)<-5);
@@ -111,7 +111,7 @@ switch processing
         idx1 = unique([idx1,idx1+1,idx1-1,idx1-2,idx1+2,idx2,idx2+1,idx2+2,idx2-1,idx2-2]); 
         trace(idx1) = nan;
         trace(trace > 50 | trace < 0) = nan;
-        trace = nanconv(trace,gausswin(200)','edge');
+        trace = nanconv(trace,ce_gausswin(200)','edge');
         trace = fillmissing(trace,'linear');
         data_out.data = trace;
         data_out.sr = sr/downsample_samples;
@@ -120,6 +120,28 @@ switch processing
         figure,
         plot(data_out.timestamps,data_out.data,'-k')
         ylabel('Temperature'), xlabel('Time (s)'), axis tight
+    case 'thermistor_20210'
+        disp('Processing thermistor')
+        thermistorT = trace * 0.000050354; % convert to volts
+%         thermistorT = 18010./(3.3./thermistorT-1); % potentiometer resistance is 20210 Ohm
+        thermistorT = 20210./(3.3./thermistorT-1); % potentiometer resistance is 20210 Ohm
+        thermistorT = 1./(1/310.15 + 1/3454 * log(thermistorT/14015));
+        trace = thermistorT - 273.15; % Translating from Kelvin to Celcius
+        idx1 = find(diff(trace)<-5);
+        idx2 = find(diff(trace)>5);
+        idx1 = unique([idx1,idx1+1,idx1-1,idx1-2,idx1+2,idx2,idx2+1,idx2+2,idx2-1,idx2-2]); 
+        trace(idx1) = nan;
+        trace(trace > 50 | trace < 0) = nan;
+        trace = nanconv(trace,ce_gausswin(200)','edge');
+        trace = fillmissing(trace,'linear');
+        data_out.data = trace;
+        data_out.sr = sr/downsample_samples;
+        data_out.timestamps = [1:length(data_out.data)]/data_out.sr;
+        
+        figure,
+        plot(data_out.timestamps,data_out.data,'-k')
+        ylabel('Temperature'), xlabel('Time (s)'), axis tight
+        
     case 'wheel_position'
         disp('Processing wheel position')
         % Translating into volts
@@ -139,7 +161,7 @@ switch processing
         data_out.wheel_radius = wheel_radius;
         data_out.velocity = data_out.sr*wheel_radius*diff(unwrap(data_out.position));
         % Smoothing the velocity and adding a sample
-        data_out.velocity = [nanconv(data_out.velocity,gausswin(250)'/sum(gausswin(250)),'edge'),0];
+        data_out.velocity = [nanconv(data_out.velocity,ce_gausswin(250)'/sum(ce_gausswin(250)),'edge'),0];
         data_out.units.velocity = 'cm/s';
         % Plotting wheel position and speed.
         figure,

@@ -6,8 +6,6 @@ function spikes = getWaveformsFromDat(spikes,session,varargin)
 % Spikes struct:            https://cellexplorer.org/datastructure/data-structure-and-format/#spikes
 % session metadata struct:  https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata
 %
-% By Peter Petersen
-% petersen.peter@gmail.com
 % Last edited: 21-12-2020
 
 % Loading preferences
@@ -18,13 +16,14 @@ addParameter(p,'unitsToProcess',1:size(spikes.times,2), @isnumeric);
 addParameter(p,'nPull',preferences.waveform.nPull, @isnumeric); % number of spikes to pull out (default: 600)
 addParameter(p,'wfWin_sec', preferences.waveform.wfWin_sec, @isnumeric); % Larger size of waveform windows for filterning. total width in seconds (default: 0.004)
 addParameter(p,'wfWinKeep', preferences.waveform.wfWinKeep, @isnumeric); % half width in seconds (default: 0.0008)
-addParameter(p,'showWaveforms', preferences.waveform.showWaveforms, @islogical);
+addParameter(p,'showWaveforms', true, @islogical);
 addParameter(p,'filtFreq',[500,8000], @isnumeric); % Band pass filter (default: 500Hz - 8000Hz)
 addParameter(p,'keepWaveforms_filt', false, @islogical); % Keep all extracted filtered waveforms
 addParameter(p,'keepWaveforms_raw', false, @islogical); % Keep all extracted raw waveforms
 addParameter(p,'saveFig', false, @islogical); % Save figure with data
 addParameter(p,'extraLabel', '', @ischar); % Extra labels in figures
 addParameter(p,'getBadChannelsFromDat', true, @islogical); % Determining any extra bad channels from noiselevel of .dat file
+
 parse(p,varargin{:})
 
 unitsToProcess = p.Results.unitsToProcess;
@@ -52,13 +51,23 @@ if isfield(session.extracellular,'fileName') && ~isempty(session.extracellular.f
 else
     fileNameRaw = [basename '.dat'];
 end
+try
+    precision = session.extracellular.precision;
+catch
+    precision = 'int16';
+end
 
 badChannels = [];
 timerVal = tic;
 
+if filtFreq(2) > sr/2
+    filtFreq(2) = sr/2-1;
+end
 % Determining any extra bad channels from noiselevel of .dat file
 if params.getBadChannelsFromDat
-    session = getBadChannelsFromDat(session);
+    try
+        session = getBadChannelsFromDat(session,'filtFreq',filtFreq);
+    end
 end
 
 % Removing channels marked as Bad in session struct
@@ -71,7 +80,11 @@ if ~isempty(session) && isfield(session,'channelTags') && isfield(session.channe
     end
     badChannels = unique(badChannels);
 end
-disp(['Bad channels detected: ' num2str(badChannels)])
+if ~isempty(badChannels)
+    badChannels_message = ['Bad channels detected: ' num2str(badChannels)];
+else
+    badChannels_message = 'No bad channels detected. ';
+end
 
 % Removing channels that does not exist in SpkGrps
 if isfield(session.extracellular,'spikeGroups')
@@ -85,8 +98,20 @@ else
 end
 nGoodChannels = length(goodChannels);
 
-[b1, a1] = butter(3, filtFreq/sr*2, 'bandpass');
-disp('Getting waveforms from dat file')
+int_gt_0 = @(n,sr) (isempty(n)) || (n <= 0 ) || (n >= sr/2) || isnan(n);
+
+if int_gt_0(filtFreq(1),sr) && ~int_gt_0(filtFreq(1),sr)
+    [b1, a1] = butter(3, filtFreq(2)/sr*2, 'low');
+    filter_message = ['Lowpass filter applied: ' num2str(filtFreq(2)),' Hz. '];
+elseif int_gt_0(filtFreq(2),sr) && ~int_gt_0(filtFreq(1),sr)
+    [b1, a1] = butter(3, filtFreq(1)/sr*2, 'high');
+    filter_message = ['Highpass filter applied: ' num2str(filtFreq(1)),' Hz. '];
+else
+    [b1, a1] = butter(3, [filtFreq(1),filtFreq(2)]/sr*2, 'bandpass');
+    filter_message = ['Bandpass filter applied: ', num2str(filtFreq(1)) ,' - ',num2str(filtFreq(2)),' Hz. '];
+end
+
+disp(['Getting waveforms from dat file (nPull=', num2str(nPull),'). ', filter_message, badChannels_message])
 if showWaveforms
     fig1 = figure('Name', ['Getting waveforms for ' basename],'NumberTitle', 'off','position',[100,100,1000,800]);
     movegui('center');
@@ -102,7 +127,7 @@ end
 s = dir(fullfile(basepath,fileNameRaw));
 
 duration = s.bytes/(2*nChannels*sr);
-rawData = memmapfile(fullfile(basepath,fileNameRaw),'Format','int16','writable',false);
+rawData = memmapfile(fullfile(basepath,fileNameRaw),'Format',precision,'writable',false);
 % DATA = rawData.Data;
 
 % Fit exponential
@@ -142,6 +167,11 @@ for i = 1:length(unitsToProcess)
         wfF(:,:,jjj) = filtfilt(b1, a1, wf(:,:,jjj));
     end
     wfF = permute(wfF,[3,1,2]);
+    
+    for jjj = 1 : nChannels
+        wf(:,:,jjj) = detrend(wf(:,:,jjj));
+    end    
+    
     wf = permute(wf,[3,1,2]);
     wfF2 = mean(wfF(goodChannels,:,:),3)';
     [~, maxWaveformCh1] = max(max(wfF2(window_interval,:))-min(wfF2(window_interval,:)));
@@ -154,9 +184,8 @@ for i = 1:length(unitsToProcess)
             spikes.shankID(ii) = jj;
         end
     end
-    
-    wf2 = mean(wf,3);
-    rawWaveform_all = detrend(wf2 - mean(wf2,2));
+
+    rawWaveform_all = mean(wf,3);
     spikes.rawWaveform{ii} = rawWaveform_all(spikes.maxWaveformCh1(ii),window_interval);
     rawWaveform_std = std((wf(spikes.maxWaveformCh1(ii),:,:)-mean(wf(spikes.maxWaveformCh1(ii),:,:),3)),0,3);
     filtWaveform_all = mean(wfF,3);
@@ -204,40 +233,41 @@ for i = 1:length(unitsToProcess)
         spikes.peakVoltage_expFitLengthConstant(ii) = nan;
     end
     time = ([-ceil(wfWin_sec/2*sr)*(1/sr):1/sr:(ceil(wfWin_sec/2*sr)-1)*(1/sr)])*1000;
-    if ishandle(fig1)
+    if showWaveforms 
+        if ishandle(fig1)
         figure(fig1)
         subplot(5,3,[1,4]), hold off
-        plot(time,wfF2), hold on, plot(time,wfF2(:,maxWaveformCh1),'k','linewidth',2),title('All channels'),ylabel('Mean filtered waveforms (uV)'),hold off
+        plot(time,wfF2), hold on, plot(time,wfF2(:,maxWaveformCh1),'k','linewidth',2), xlabel('Time (ms)'),title('All channels'),ylabel('Average filtered waveforms across channels (\muV)','Interpreter','tex'),hold off
         subplot(5,3,[2,5]), hold off,
         plot(time,permute(wfF(spikes.maxWaveformCh1(ii),:,:),[2,3,1])), hold on
         plot(time,mean(permute(wfF(spikes.maxWaveformCh1(ii),:,:),[2,3,1]),2),'k','linewidth',2),
-        title(['Peak channel (',num2str(spikes.maxWaveformCh1(ii)),')']),ylabel('All filtered waveforms (uV)')
+        title(['Peak channel = ',num2str(spikes.maxWaveformCh1(ii))]),ylabel('Filtered waveforms from peak channel (\muV)','Interpreter','tex'), xlabel('Time (ms)')
         
         subplot(5,3,[7,10]), hold off,
         plot(spikes.timeWaveform{ii},vertcat(spikes.rawWaveform{1:ii})'), hold on
-        plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Raw waveforms (uV)'), xlim([-0.8,0.8])
+        plot(spikes.timeWaveform{ii},spikes.rawWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Raw waveforms (\muV)','Interpreter','tex'), xlim([-0.8,0.8])
         subplot(5,3,[8,11]), hold off,
         plot(spikes.timeWaveform{ii},vertcat(spikes.filtWaveform{1:ii})'), hold on
-        plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Filtered waveforms (uV)'), xlim([-0.8,0.8])
+        plot(spikes.timeWaveform{ii},spikes.filtWaveform{ii},'-k','linewidth',1.5), xlabel('Time (ms)'), ylabel('Filtered waveforms (\muV)','Interpreter','tex'), xlim([-0.8,0.8])
         subplot(5,3,3), hold off
-        plot(permute(range((wfF(spikes.maxWaveformCh1(ii),window_interval,:)),2),[3,2,1]),'.b')
-        title('Spikes across time (uV)')
+        plot(spkTmp/sr,permute(range((wfF(spikes.maxWaveformCh1(ii),window_interval,:)),2),[3,2,1]),'.b')
+        ylabel('Amplitude (\muV)','Interpreter','tex'), xlabel('Time (sec)'), title(['Spike amplitudes (nPull=' num2str(nPull),')'])
         subplot(5,3,6), hold off
         plot(spikes.peakVoltage_sorted{ii},'.-b'), hold on
         plot(x,fitCoeffValues(1)*exp(-x/fitCoeffValues(2))+fitCoeffValues(3),'r'),
-        title(['Length constant (\lambda) = ',num2str(spikes.peakVoltage_expFitLengthConstant(ii),2)]), xlabel('Sorted channels'), ylabel('Amplitude (uV)'), xlim([1,nChannelFit])
+        title(['Length constant (\lambda) = ',num2str(spikes.peakVoltage_expFitLengthConstant(ii),2)],'Interpreter','tex'), xlabel('Sorted channels'), ylabel('Amplitude (\muV)','Interpreter','tex'), xlim([1,nChannelFit])
         subplot(5,3,9), hold on
-        plot(spikes.peakVoltage_sorted{ii}), title('Processed units'), xlabel('Sorted channels'), ylabel('Amplitude (uV)'), xlim([1,nChannelFit])
+        plot(spikes.peakVoltage_sorted{ii}), title('Processed units'), xlabel('Sorted channels'), ylabel('Amplitude (\muV)','Interpreter','tex'), xlim([1,nChannelFit])
         subplot(5,3,12), hold off,
-        histogram(spikes.peakVoltage_expFitLengthConstant(unitsToProcess(1:i)),20), title('Length constant (\lambda)'), axis tight
+        histogram(spikes.peakVoltage_expFitLengthConstant(unitsToProcess(1:i)),20), xlabel('Length constant (\lambda)','Interpreter','tex'), ylabel('Occurances'), axis tight
         subplot(5,3,15), hold off,
-        histogram(spikes.peakVoltage(unitsToProcess(1:i)),20), title('Amplitudes (uV)'), axis tight
+        histogram(spikes.peakVoltage(unitsToProcess(1:i)),20), xlabel('Amplitudes (\muV)','Interpreter','tex'), ylabel('Occurances'), axis tight
         
         subplot(10,3,[28,29]), hold off, title(['Extraction progress for session: ' basename ,' ', extraLabel],'interpreter','none')
         rectangle('Position',[0,0,100*i/length(unitsToProcess),1],'FaceColor',[0, 0.4470, 0.7410],'EdgeColor',[0, 0.4470, 0.7410] ,'LineWidth',1), xlim([0,100]), ylim([0,1]), set(gca,'xtick',[],'ytick',[])
         xlabel(['Waveforms: ',num2str(i),'/',num2str(length(unitsToProcess)),'. ', num2str(round(toc(timerVal)-t1)),' sec/unit, Duration: ', num2str(round(toc(timerVal)/60)), '/', num2str(round(toc(timerVal)/60/i*length(unitsToProcess))),' minutes']);
         
-        if saveFig & ishandle(fig1)
+        if saveFig && ishandle(fig1)
             % Saving figure
             saveFig1.path = 1; saveFig1.fileFormat = 1; saveFig1.save = 1;
             ce_savefigure(fig1,basepath,[basename, '.getWaveformsFromDat_cell_', num2str(unitsToProcess(i))],0,saveFig1)
@@ -248,21 +278,22 @@ for i = 1:length(unitsToProcess)
         clear rawWaveform rawWaveform_std filtWaveform filtWaveform_std
         clear rawData
         error('Waveform extraction canceled by user by closing figure window.')
+        end
     end
     clear wf wfF wf2 wfF2
 end
 
+spikes.processinginfo.params.WaveformsSource = 'dat file';
+spikes.processinginfo.params.WaveformsFiltFreq = filtFreq;
+spikes.processinginfo.params.Waveforms_nPull = nPull;
+spikes.processinginfo.params.WaveformsWin_sec = wfWin_sec;
+spikes.processinginfo.params.WaveformsWinKeep = wfWinKeep;
+spikes.processinginfo.params.WaveformsFilterType = 'butter';
+clear rawWaveform rawWaveform_std filtWaveform filtWaveform_std
+clear rawData
+
 % Plots
-if ishandle(fig1)
-    spikes.processinginfo.params.WaveformsSource = 'dat file';
-    spikes.processinginfo.params.WaveformsFiltFreq = filtFreq;
-    spikes.processinginfo.params.Waveforms_nPull = nPull;
-    spikes.processinginfo.params.WaveformsWin_sec = wfWin_sec;
-    spikes.processinginfo.params.WaveformsWinKeep = wfWinKeep;
-    spikes.processinginfo.params.WaveformsFilterType = 'butter';
-    clear rawWaveform rawWaveform_std filtWaveform filtWaveform_std
-    clear rawData
-    disp(['Waveform extraction complete. Total duration: ' num2str(round(toc(timerVal)/60)),' minutes'])
+if showWaveforms && ishandle(fig1)
     fig1.Name = [basename, ': Waveform extraction complete. ',num2str(i),' cells processed.  ', num2str(round(toc(timerVal)/60)) ' minutes total'];
     
     % Saving a summary figure for all cells
@@ -272,4 +303,5 @@ if ishandle(fig1)
         disp(['getWaveformsFromDat: Summary figure saved to ', fullfile(basepath, 'SummaryFigures', [basename, '.getWaveformsFromDat', timestamp]),'.png'])
     end
 end
+disp(['Waveform extraction complete. Total duration: ' num2str(round(toc(timerVal)/60)),' minutes'])
 end

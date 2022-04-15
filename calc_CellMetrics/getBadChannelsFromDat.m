@@ -10,7 +10,7 @@ function [session,noiseLevel] = getBadChannelsFromDat(session,varargin)
 % Last edited: 22-12-2020
 
 p = inputParser;
-addParameter(p,'nPull',1000, @isnumeric); % number of sample windows to pull out (default: 100)
+addParameter(p,'nPull',1000, @isnumeric); % number of sample windows to pull out (default: 1000)
 addParameter(p,'wfWin_sec', 0.005, @isnumeric); % Larger size of waveform windows for filterning. total width in seconds (default: 0.004)
 addParameter(p,'showWaveforms', true, @islogical);
 addParameter(p,'filtFreq',[500,8000], @isnumeric); % Band pass filter (default: 500Hz - 8000Hz)
@@ -47,6 +47,12 @@ else
     fileNameRaw = [basename '.dat'];
 end
 
+try
+    precision = session.extracellular.precision;
+catch
+    precision = 'int16';
+end
+
 badChannels = [];
 timerVal = tic;
 
@@ -70,7 +76,7 @@ end
 s = dir(fullfile(basepath,fileNameRaw));
 
 duration = s.bytes/(2*nChannels*sr);
-rawData = memmapfile(fullfile(basepath,fileNameRaw),'Format','int16','writable',false);
+rawData = memmapfile(fullfile(basepath,fileNameRaw),'Format',precision,'writable',false);
 
 % Fit exponential
 g = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});

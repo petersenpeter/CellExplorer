@@ -14,6 +14,11 @@ forceReload = p.Results.forceReload;
 saveMat = p.Results.saveMat;
 saveAs = p.Results.saveAs;
 
+% Theta band
+Fpass = [4,11];
+freqlist = [Fpass(1):0.1:Fpass(2)];
+
+% Output file
 saveAsFullfile = fullfile(session.general.basePath,[session.general.name,'.',saveAs,'.lfp.mat']);
 
 ch_theta = session.channelTags.Theta.channels;
@@ -42,7 +47,7 @@ if ~exist(saveAsFullfile,'file') || forceReload
     srLfp = session.extracellular.srLfp;
     disp('Calculating the instantaneous theta frequency')
     signal = session.extracellular.leastSignificantBit * double(LoadBinary(fullfile(session.general.basePath,[session.general.name '.lfp']),'nChannels',session.extracellular.nChannels,'channels',ch_theta,'precision','int16','frequency',srLfp)); % ,'start',start,'duration',duration
-    Fpass = [4,11];
+    
     Wn_theta = [Fpass(1)/(srLfp/2) Fpass(2)/(srLfp/2)]; % normalized by the nyquist frequency
     [btheta,atheta] = butter(3,Wn_theta);
     signal_filtered = filtfilt(btheta,atheta,signal)';
@@ -55,8 +60,7 @@ if ~exist(saveAsFullfile,'file') || forceReload
     ThetaInstantFreq(ThetaInstantFreq>12) = nan;
     ThetaInstantFreq = nanconv(ThetaInstantFreq,ce_gausswin(7)/sum(ce_gausswin(7)),'edge');
     
-    % Theta frequency
-    freqlist = [4:0.1:11];
+    % Theta frequency estimated using the spectrogram
     [wt,w,wt_t] = spectrogram(signal_filtered,srLfp,2*srLfp/10,freqlist,srLfp);
     wt = medfilt2(abs(wt),[2,10]);
     h = 1/10*ones(10,1);
@@ -79,9 +83,5 @@ if ~exist(saveAsFullfile,'file') || forceReload
         save(saveAsFullfile,'InstantaneousTheta')
         disp('InstantaneousTheta saved to disk')
     end
-    clear signal signal_filtered
-    if saveMat
-        save(saveAsFullfile,'InstantaneousTheta')
-    end
-    clear signal signal_filtered
+    clear signal signal_filtered    
 end

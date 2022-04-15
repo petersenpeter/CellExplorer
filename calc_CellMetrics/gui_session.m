@@ -19,34 +19,38 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters,acti
 
 % % % % % % % % % % % % % % % % % % % % % %
 % Database initialization
-if exist('db_load_settings','file') == 2
+
+enableDatabase = db_is_active;
+
+if enableDatabase
     db_settings = db_load_settings;
-    if ~strcmp(db_settings.credentials.username,'user')
-        enableDatabase = 1;
-    else
-        enableDatabase = 0;
-    end
-else
-    enableDatabase = 0;
 end
+
 uiLoaded = false;
 
 % Lists
-UI.list.sortingMethod = {'KiloSort','KiloSort2','KiloSort3','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','MountainSort','IronClust','MClust','Wave_clus','custom'}; % Spike sorting methods
-UI.list.sortingFormat = {'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus','custom'}; % Spike sorting formats
+UI.list.sortingMethod = sort({'KiloSort','KiloSort2','KiloSort3','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','Klustasuite','MountainSort','IronClust','MClust','Wave_clus','custom'}); % Spike sorting methods
+UI.list.sortingFormat = sort({'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Klustasuite','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus','custom'}); % Spike sorting formats
 UI.list.inputsType = {'adc','aux','dat','dig'}; % input data types
 UI.list.sessionTypes = {'Acute','Chronic','Unknown'}; % session types
 UI.list.species = {'Unknown','Rat', 'Mouse','Red-eared Turtles','Human'}; % animal species
+% strain and strain_species must be added in a paired manner (number of strains == number of strain_species):
 UI.list.strain = {'Unknown','C57B1/6','B6/FVB Hybrid','BALB/cJ','Red-eared slider','DBA2/J','Brown Norway','Fischer 344','Long Evans','Sprague Dawleys','Wistar','Tumor','Epilepsy'}; % animal strains
-UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Human','Human'}; % animal strains parent in species
+UI.list.strain_species = {'Unknown','Mouse','Mouse','Mouse','Red-eared Turtles','Mouse','Rat','Rat','Rat','Rat','Rat','Human','Human'}; % animal strain parent in species, must be added with a new strain
+
+% data precision types (Matlab data types)
+UI.list.precision = {'double','single','int8','int16','int32','int64','uint8','uint16','uint32','uint64'};
 
 % metrics in cell metrics pipeline
 UI.list.metrics = {'waveform_metrics','PCA_features','acg_metrics','deepSuperficial','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
 
-% Parameters in cell metrics pipeline
-UI.list.params = {'getWaveformsFromDat','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','keepCellClassification','summaryFigures','forceReload','forceReloadSpikes','saveMat','saveBackup','debugMode'};
+% Parameters in ProcessCellmetrics pipeline
+UI.list.params = {'getWaveformsFromDat','excludeManipulationIntervals','manualAdjustMonoSyn','includeInhibitoryConnections','showWaveforms','showFigures','summaryFigures','debugMode','forceReload','forceReloadSpikes','keepCellClassification','saveMat','saveBackup'};
+UI.list.params_tooltip = {'Spike waveforms are extracted from the raw data','exclude manipulation intervals when calculating metrics','Shows a GUI for manual curation of monosynaptic connections','Detect inhibitory connections (more prone to false positives)','Shows the waveform extraction figure','Shows intermediate figures generated in ProcessCellmetrics','Show a summary figure per cell','Shows figures for debugging the cell metrics extraction','force reload all metrics','force reload spikes data','Keep existing cell-type classification','Save cell metrics','Make backup of existing cell_metrics'};
+
 if enableDatabase
     UI.list.params =  {UI.list.params{:},'submitToDatabase'};
+    UI.list.params_tooltip =  {UI.list.params_tooltip{:},'Submit cell metrics to the Buzsaki lab databank'};
 end
 
 layout = {};
@@ -100,7 +104,7 @@ elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'dir') =
      sessionIn = session;
 else
     basepath = pwd;
-    [~,basename,~] = fileparts(pwd);
+    basename = basenameFromBasepath(basepath);
     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
         disp(['Loading ',basename,'.session.mat from current path']);
         session = loadSession(basepath,basename);
@@ -110,13 +114,12 @@ else
         load(fullfile(basepath,'session.mat'),'session');
         sessionIn = session;
     else
-        answer = questdlg([basename,'.session.mat does not exist. Would you like to create one from a template or locate an existing session file?'],'No basename.session.mat file found','Create from template', 'Load from database','Locate file','Create from template');
+        answer = questdlg([basename,'.session.mat does not exist. Would you like to create one from a template or locate an existing session file?'],'No basename.session.mat file found','Create with template script','Load session template file','Locate file','Create with template script');
         % Handle response
         switch answer
-            case 'Create from template'
-                session = sessionTemplate(pwd);
+            case 'Create with template script'
+                session = sessionTemplate(basepath,'basename',basename);
                 sessionIn = session;
-                basepath = session.general.basePath;
             case 'Locate file'
                 [file,basepath] = uigetfile('*.mat','Please select a session.mat file','*.session.mat');
                 if ~isequal(file,0)
@@ -134,6 +137,13 @@ else
                 success = updateFromDB;
                 if success == 0
                     warning('Failed to load session metadata from database');
+                    return
+                end
+            case 'Load session template file'
+                loadSessionTemplate
+                if exist('session','var')
+                    sessionIn = session;
+                else
                     return
                 end
             otherwise
@@ -205,14 +215,19 @@ end
 % File
 UI.menu.file.topMenu = uimenu(UI.fig,menuLabel,'File');
 uimenu(UI.menu.file.topMenu,menuLabel,'Save session file',menuSelectedFcn,@(~,~)saveSessionFile,'Accelerator','S');
-uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort',menuSelectedFcn,@(~,~)importKiloSort,'Separator','on');
-uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata via template script',menuSelectedFcn,@(~,~)importMetadataTemplate);
+uimenu(UI.menu.file.topMenu,menuLabel,'Generate session template file',menuSelectedFcn,@(~,~)generateSessionTemplate,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Load session template file',menuSelectedFcn,@(~,~)loadSessionTemplate);
+
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata with template script',menuSelectedFcn,@(~,~)importMetadataTemplate,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort (rez.mat file)',menuSelectedFcn,@(~,~)importKiloSort);
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from Phy (from folder)',menuSelectedFcn,@(~,~)importPhy);
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from Klustaviewa (*.kwik file)',menuSelectedFcn,@(~,~)importKlustaviewa);
 uimenu(UI.menu.file.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML,'Separator','on','Accelerator','I');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import bad channels from xml file',menuSelectedFcn,@importBadChannelsFromXML,'Accelerator','S');
-uimenu(UI.menu.file.topMenu,menuLabel,'Import time series from Intan info.rhd',menuSelectedFcn,@importMetaFromIntan,'Accelerator','T');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import time series from Intan (info.rhd)',menuSelectedFcn,@importMetaFromIntan,'Accelerator','T');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import merge points (*.mergePoints.events.mat)',menuSelectedFcn,@importEpochsIntervalsFromMergePoints,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import epoch info from parent sessions',menuSelectedFcn,@importFromFiles);
-uimenu(UI.menu.file.topMenu,menuLabel,'Generate animal metadata template',menuSelectedFcn,@(~,~)generateAnimalMetadataTemplate,'Separator','on');
+
 uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI with changes',menuSelectedFcn,@(~,~)CloseMetricsWindow,'Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn,@(~,~)cancelMetricsWindow);
 
@@ -220,29 +235,37 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Exit GUI without changes',menuSelectedFcn
 UI.menu.extracellular.topMenu = uimenu(UI.fig,menuLabel,'Extracellular');
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Validate electrode group(s)',menuSelectedFcn,@validateElectrodeGroup);
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Sync electrode groups',menuSelectedFcn,@(~,~)syncChannelGroups);
-uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate channel map',menuSelectedFcn,@(~,~)generateChannelMap1,'Separator','on');
 uimenu(UI.menu.extracellular.topMenu,menuLabel,'Generate common coordinates',menuSelectedFcn,@(~,~)generateCommonCoordinates1);
 
 % CellExplorer
 UI.menu.CellExplorer.topMenu = uimenu(UI.fig,menuLabel,'CellExplorer');
 uimenu(UI.menu.CellExplorer.topMenu,menuLabel,'Validate metadata',menuSelectedFcn,@performStructValidation,'Accelerator','V');
+uimenu(UI.menu.CellExplorer.topMenu,menuLabel,'Edit preferences',menuSelectedFcn,@edit_preferences_ProcessCellMetrics);
+
+%     uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 210, 195, 30],'String','Validate metadata','Callback',@(src,evnt)performStructValidation,'Units','normalized','tooltip','Validate metadata for CellExplorer');
+%     uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 180, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics,'tooltip','Edit preferences for ProcessCellmetrics');
 
 % Database
+UI.menu.buzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
+uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Update metadata model (equipment, suppliers, probes, optic fibers...)',menuSelectedFcn,@(~,~)db_load_metadata_model);
 if enableDatabase
-    UI.menu.buzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
-    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Upload metadata to DB',menuSelectedFcn,@(~,~)buttonUploadToDB,'Accelerator','U');
+    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Upload metadata to DB',menuSelectedFcn,@(~,~)buttonUploadToDB,'Accelerator','U','Separator','on');
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Download metadata from DB',menuSelectedFcn,@(~,~)buttonUpdateFromDB,'Accelerator','D');
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Edit credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
     uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Edit repository paths',menuSelectedFcn,@editDBrepositories);
-    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Update metadata model',menuSelectedFcn,@(~,~)db_load_metadata_model,'Separator','on');
-    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Get animal metadata',menuSelectedFcn,@(~,~)getAnimalMetadata);
+    uimenu(UI.menu.buzLabDB.topMenu,menuLabel,'Get animal metadata',menuSelectedFcn,@(~,~)getAnimalMetadata,'Separator','on');
 end
 
 % Help
 UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
-uimenu(UI.menu.help.topMenu,menuLabel,'Tutorial on session metadata',menuSelectedFcn,@buttonHelp);
-uimenu(UI.menu.help.topMenu,menuLabel,'Documentation of session metadata structure',menuSelectedFcn,@buttonHelp,'Accelerator','H');
-    
+uimenu(UI.menu.help.topMenu,menuLabel,'CellExplorer website',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'- About gui_session',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'- Tutorial on metadata',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'- Documentation on session metadata',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'Support',menuSelectedFcn,@openWebsite,'Separator','on');
+uimenu(UI.menu.help.topMenu,menuLabel,'- Submit feature request',menuSelectedFcn,@openWebsite);
+uimenu(UI.menu.help.topMenu,menuLabel,'- Report an issue',menuSelectedFcn,@openWebsite);
+
 %% % % % % % % % % % % % % % % % % % % %
 % Initializing tabs
 % % % % % % % % % % % % % % % % % % % %
@@ -263,15 +286,18 @@ tabsList2 = {'General','Epochs','Animal subject','Extracellular','Spike sorting'
 if exist('parameters','var') && ~isempty(parameters)
     tabsList = ['parameters',tabsList];
     tabsList2 = ['CellExplorer',tabsList2];
+elseif ~exist('parameters','var')
+    parameters = [];
 end
+
 UI.panel.title2 = uicontrol('Parent',UI.panel.left,'Style', 'text', 'String', 'Groups','ForegroundColor','w','HorizontalAlignment','center', 'fontweight', 'bold','Units','normalized','BackgroundColor',[0. 0.3 0.7],'FontSize',11);
 for iTabs = 1:numel(tabsList)
     UI.buttons.(tabsList{iTabs}) = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Units','normalized','String',tabsList2{iTabs},'Callback',@changeTab);
     UI.tabs.(tabsList{iTabs}) = uipanel('Parent',UI.panel.main,'Visible','off','Units','normalized','Position',[0 0 600 600],'BorderType','none');
 end
 uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.left);
-UI.button.ok = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[10, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI whlie keeping changes. \nDoes not save to file'));
-UI.button.save = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized','Interruptible','off','tooltip',sprintf('Save to session.mat file'));
+UI.button.ok = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[10, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI whlie keeping changes. \nDoes not save changes to basename.session.mat file'));
+UI.button.save = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized','Interruptible','off','tooltip',sprintf('Save changes to basename.session.mat file'));
 UI.button.cancel = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[230, 5, 100, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI without keeping any changes'));
 
 set(UI.panel.left, 'Heights', [20,32*ones(size(tabsList)),-1,30,30,30],'MinimumHeights',[20,32*ones(size(tabsList)),5,30,30,30],'Spacing', 3);
@@ -299,15 +325,19 @@ if exist('parameters','var') && ~isempty(parameters)
 
     % Parameters
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Parameters', 'Position', [10, 320, 288, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    
     for iParams = 1:length(UI.list.params)
         if iParams <=4
             offset = 10;
+            numOffset = 0;
         elseif iParams >8
             offset = 410;
+            numOffset = 8;
         else
             offset = 210;
+            numOffset = 4;
         end
-        UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.parameters,'Style','checkbox','Position',[offset 305-rem(iParams-1,4)*18 260 15],'Units','normalized','String',UI.list.params{iParams});
+        UI.checkbox.params(iParams) = uicontrol('Parent',UI.tabs.parameters,'Style','checkbox','Position',[offset 305-(iParams-numOffset-1)*18 260 15],'Units','normalized','String',UI.list.params{iParams},'tooltip',UI.list.params_tooltip{iParams});
     end
     
     if isdeployed
@@ -321,14 +351,12 @@ if exist('parameters','var') && ~isempty(parameters)
     end
     
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Cell-type classification schema', 'Position', [10, 225, 200, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.edit.classification_schema = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', classification_schema_list, 'value', classification_schema_value, 'Position', [5, 200, 200, 20],'HorizontalAlignment','left','Units','normalized');
+    UI.edit.classification_schema = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', classification_schema_list, 'value', classification_schema_value, 'Position', [5, 200, 180, 20],'HorizontalAlignment','left','Units','normalized');
     
-    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'File format', 'Position', [220, 225, 200, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.edit.fileFormat = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', {'mat','nwb','json'}, 'value', 1, 'Position', [215, 200, 200, 20],'HorizontalAlignment','left','Units','normalized');
+    uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'File format', 'Position', [220, 225, 100, 15],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+    UI.edit.fileFormat = uicontrol('Parent',UI.tabs.parameters,'Style', 'popup', 'String', {'mat','nwb','json'}, 'value', 1, 'Position', [215, 200, 180, 20],'HorizontalAlignment','left','Units','normalized');
     UI.edit.fileFormat.Value = find(strcmp({'mat','nwb','json'},parameters.fileFormat));
-    uicontrol('Parent',UI.tabs.parameters,'Style','pushbutton','Position',[415, 210, 195, 30],'String','Validate metadata','Callback',@(src,evnt)performStructValidation,'Units','normalized');
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Preferences', 'Position', [10, 175, 200, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-    UI.buttons.preferences = uicontrol('Parent',UI.tabs.parameters,'Style', 'pushbutton', 'String', 'Edit preferences', 'Position', [415, 180, 195, 30],'HorizontalAlignment','right','Units','normalized','Callback',@edit_preferences_ProcessCellMetrics);
     UI.table.preferences = uitable(UI.tabs.parameters,'Data',{},'Position',[5, 5, 605 , 170],'ColumnWidth',{100 160 320},'columnname',{'Category','Name','Value'},'RowName',[],'ColumnEditable',[false false false],'Units','normalized');
 end
 
@@ -336,10 +364,12 @@ end
 % General
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session name (basename)', 'Position', [10, 498, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 475, 600, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The name of the session (basename)'));
+UI.edit.session = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', session.general.name, 'Position', [10, 475, 540, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The name of the session (basename)'));
+UI.edit.locate_basename_button = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[560, 475, 50, 25],'String','...','Callback',@locate_basename,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Basepath', 'Position', [10, 448, 300, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 425, 600, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The path to the dataset'));
+UI.edit.basepath = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 425, 540, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('The path to the dataset'));
+UI.edit.locate_basepath_button = uicontrol('Parent',UI.tabs.general,'Style','pushbutton','Position',[560, 425, 50, 25],'String','...','Callback',@locate_basepath,'Units','normalized','Interruptible','off');
 
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Session type', 'Position', [10, 398, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.sessionType = uicontrol('Parent',UI.tabs.general,'Style', 'popup', 'String', UI.list.sessionTypes, 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Session type'));
@@ -378,19 +408,58 @@ UI.edit.sessionDBbutton = uicontrol('Parent',UI.tabs.general,'Style','pushbutton
 uicontrol('Parent',UI.tabs.general,'Style', 'text', 'String', 'Notes', 'Position', [10, 148, 600, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', '', 'Position', [10, 10, 600, 140],'HorizontalAlignment','left','Units','normalized', 'Min', 0, 'Max', 200);
 
-
+    function locate_basename(~,~)
+        [file1,basepath1] = uigetfile('*.*','Please select a file with the basename in it from the basepath');
+        if ~isequal(file1,0)
+            [~,file2,~]=fileparts(file1);
+            session.general.name = file2;
+            UI.edit.session.String = file2;
+            session.general.basePath = basepath1;
+            UI.edit.basepath.String = basepath1;
+            UI.fig.Name = ['Session metadata: ',session.general.name];
+        end
+    end
+    
+    function locate_basepath(~,~)
+        
+        if ~isempty(session.general.basePath) && ~isequal(session.general.basePath,0)
+            basepath0 = session.general.basePath;
+        else
+            basepath0 = pwd;
+        end
+        basepath1 = uigetdir(basepath0,'Please select the basepath folder');
+        if ~isempty(basepath1) && ~isequal(basepath1,0)
+            session.general.basePath = basepath1;
+            UI.edit.basepath.String = basepath1;
+        end
+    end
+    
+    function locate_fileName(~,~)
+        [file1,basepath1] = uigetfile('*.*','Please select the raw data file');
+        if ~isequal(file1,0)
+            file2 = fullfile(basepath1,file1);
+            file2 = erase(file2,session.general.basePath);
+            if any(strcmp(file2(1),{'/','\'}))
+                file2 = file2(2:end);
+            end
+            session.extracellular.fileName = file2;
+            UI.edit.fileName.String = file2;            
+        end
+    end
+    
 % % % % % % % % % % % % % % % % % % % % %
 % Epochs
 
 tableData = {false,'','',''};
 % uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false true true true true true true true true],'ColumnFormat',{'logical','numeric','char','numeric','numeric','char','char','char','char','char'},'Units','normalized','CellEditCallback',@editEpochsTableData);
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit','Callback',@(src,evnt)editEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[235, 5 110, 32],'String','Delete','Callback',@(src,evnt)deleteEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[350, 5, 110, 32],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 5, 50, 32],'String',char(8593),'Callback',@(src,evnt)moveUpEpoch,'Units','normalized');
-uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[555, 5 50, 32],'String',char(8595),'Callback',@(src,evnt)moveDownEpoch,'Units','normalized');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[5, 5, 90, 32],'String','Add','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off','tooltip','Add new epoch');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[100, 5, 90, 32],'String','Edit','Callback',@(src,evnt)editEpoch,'Units','normalized','tooltip','Add selected epoch');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[195, 5 100, 32],'String','Delete','Callback',@(src,evnt)deleteEpoch,'Units','normalized','tooltip','Delete selected epoch(s)');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[300, 5, 100, 32],'String','Duplicate','Callback',@(src,evnt)duplicateEpoch,'Units','normalized','tooltip','Duplicate selected epoch');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[405, 5, 90, 32],'String','Visualize','Callback',@(src,evnt)visualizeEpoch,'Units','normalized','tooltip','Visualize epoch(s)');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[500, 5, 50, 32],'String',char(8593),'Callback',@(src,evnt)moveUpEpoch,'Units','normalized','tooltip','Move selected epoch(s) up');
+uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[555, 5 50, 32],'String',char(8595),'Callback',@(src,evnt)moveDownEpoch,'Units','normalized','tooltip','Move selected epoch(s) down');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Animal
@@ -416,6 +485,7 @@ UI.animalMetadata = uitabgroup('units','pixels','Position',[0, 0, 616, 365],'Par
 % Implanted probes tab
 layout.probeImplants.name = 'probeImplants';
 layout.probeImplants.title = 'Probe implants';
+layout.probeImplants.title_singular = 'probe implant';
 layout.probeImplants.field_names = {'probe','brainRegion','ap','ml','depth','ap_angle','ml_angle','rotation'};
 layout.probeImplants.field_title = {'Probe','Brain region','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle','Rotation'};
 layout.probeImplants.field_required = [true true false false false false false false];
@@ -430,7 +500,8 @@ generateTabdata(layout.probeImplants)
 
 % Optic fibers tab
 layout.opticFiberImplants.name = 'opticFiberImplants';
-layout.opticFiberImplants.title = 'Optic fibers implants';
+layout.opticFiberImplants.title = 'Optic fiber implants';
+layout.opticFiberImplants.title_singular = 'optic fiber implant';
 layout.opticFiberImplants.field_names = {'opticFiber','brainRegion','ap','ml','depth','ap_angle','ml_angle','notes'};
 layout.opticFiberImplants.field_title = {'Optic fiber','Target region','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle','Notes'};
 layout.opticFiberImplants.field_required = [true false false false false false false false];
@@ -447,6 +518,7 @@ generateTabdata(layout.opticFiberImplants)
 % Surgeries tab
 layout.surgeries.name = 'surgeries';
 layout.surgeries.title = 'Surgeries';
+layout.surgeries.title_singular = 'surgery';
 layout.surgeries.field_names = {'date','start_time','end_time','weight','type_of_surgery','room','persons_involved','anesthesia','analgesics','antibiotics','complications','notes'};
 layout.surgeries.field_title = {'Date','Start time','End time','Weight (g)','Type of Surgery','Room','Persons involved','Anesthesia','Analgesics','Antibiotics','Complications','Notes'};
 layout.surgeries.field_required = [true true true false false false false false false false false false];
@@ -461,6 +533,7 @@ generateTabdata(layout.surgeries)
 % Virus injections tab
 layout.virusInjections.name = 'virusInjections';
 layout.virusInjections.title = 'Virus injections';
+layout.virusInjections.title_singular = 'virus injection';
 layout.virusInjections.field_names = {'virus','brainRegion','injection_schema','notes','injection_volume','injection_rate','ap','ml','depth','ap_angle','ml_angle'};
 layout.virusInjections.field_title = {'Virus','Target region','Injection schema','Notes','Injection volume (nL)','Injection rate (nL/s)','AP (mm)','ML (mm)','Depth (mm)','AP angle','ML angle'};
 layout.virusInjections.field_required = [true true false false false false false false false false false];
@@ -487,13 +560,14 @@ uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'nSamples', 
 UI.edit.nSamples = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 475, 210, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Number of samples'));
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'File name (optional)', 'Position', [10, 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.fileName = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 180, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Optional file name of binary file (if different from sessionName.dat)'));
+UI.edit.fileName = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 425, 150, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Optional file name of binary file (if different from sessionName.dat)'));
+UI.edit.locate_fileName_button = uicontrol('Parent',UI.tabs.extracellular,'Style','pushbutton','Position',[160, 425, 30, 25],'String','...','Callback',@locate_fileName,'Units','normalized','Interruptible','off');
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (µV; Intan: 0.195)', 'Position', [200, 448, 220, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Least significant bit (ï¿½V; Intan: 0.195)', 'Position', [200, 448, 220, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.leastSignificantBit = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [200, 425, 190, 25],'HorizontalAlignment','left','Units','normalized','tooltip',['Least significant bit (', char(181),'V/bit, Intan=0.195, Amplipex=0.3815']);
 
-uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (e.g. int16)', 'Position', [400 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [400, 425, 210, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('e.g. int16'));
+uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Precision (numeric data type)', 'Position', [400 448, 180, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
+UI.edit.precision = uicontrol('Parent',UI.tabs.extracellular,'Style', 'popup', 'String', UI.list.precision, 'Position', [400, 425, 210, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('e.g. int16'));
 
 uicontrol('Parent',UI.tabs.extracellular,'Style', 'text', 'String', 'Equipment', 'Position', [10, 398, 310, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.equipment = uicontrol('Parent',UI.tabs.extracellular,'Style', 'Edit', 'String', '', 'Position', [10, 375, 380, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Hardware equipment use'));
@@ -513,80 +587,105 @@ for iGroups = 1:2
     UI.tabs.(groups{iGroups}) = uitab(UI.channelGroups,'Title',titles{iGroups});
     UI.list.tableData = {false,'','',''};
     UI.table.(groups{iGroups}) = uitable(UI.tabs.(groups{iGroups}),'Data',UI.list.tableData,'Position',[1, 45, 616, 320],'Tag',groups{iGroups},'ColumnWidth',{20 45 400 120},'columnname',{'','Group','Channels','Labels'},'RowName',[],'ColumnEditable',[true false true true],'Units','normalized','CellEditCallback',@editElectrodeTableData);
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[5, 5, 110, 32],'Tag',groups{iGroups},'String','Add','Callback',@addElectrodeGroup,'Units','normalized');
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[120, 5, 110, 32],'Tag',groups{iGroups},'String','Edit','Callback',@addElectrodeGroup,'Units','normalized');
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[235, 5, 130, 32],'Tag',groups{iGroups},'String','Delete','Callback',@deleteElectrodeGroup,'Units','normalized');
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[510, 5, 50, 32],'Tag',groups{iGroups},'String',char(8593),'Callback',@moveElectrodes,'Units','normalized');
-    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[565, 5, 50, 32],'Tag',groups{iGroups},'String',char(8595),'Callback',@moveElectrodes,'Units','normalized');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[5, 5, 110, 32],'Tag',groups{iGroups},'String','Add','Callback',@addElectrodeGroup,'Units','normalized','tooltip','Add new group');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[120, 5, 110, 32],'Tag',groups{iGroups},'String','Edit','Callback',@addElectrodeGroup,'Units','normalized','tooltip','Edit selected group');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[235, 5, 130, 32],'Tag',groups{iGroups},'String','Delete','Callback',@deleteElectrodeGroup,'Units','normalized','tooltip','Delete selected group(s)');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[510, 5, 50, 32],'Tag',groups{iGroups},'String',char(8593),'Callback',@moveElectrodes,'Units','normalized','tooltip','Move selected group(s) up');
+    uicontrol('Parent',UI.tabs.(groups{iGroups}),'Style','pushbutton','Position',[565, 5, 50, 32],'Tag',groups{iGroups},'String',char(8595),'Callback',@moveElectrodes,'Units','normalized','tooltip','Move selected group(s) down');
 end
+
+% Channel coordinates (Layout)
+UI.tabs.chanCoords = uitab(UI.channelGroups,'Title','Channel coordinates');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Layout (e.g. linear, poly2, poly3, poly5, staggered)', 'Position', [5, 340, 290, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_layout = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 315, 290, 25],'HorizontalAlignment','left','Units','normalized');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Shank spacing (ï¿½m)', 'Position', [315, 340, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_shankSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [315, 315, 290, 25],'HorizontalAlignment','left','Units','normalized');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Source', 'Position', [5, 290, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_source = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 265, 290, 25],'HorizontalAlignment','left','Units','normalized');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'Vertical spacing (ï¿½m)', 'Position', [315, 290, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_verticalSpacing = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [315, 265, 290, 25],'HorizontalAlignment','left','Units','normalized');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'x coordinates (ï¿½m)', 'Position', [5, 235, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_x = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [5, 50, 290, 185],'HorizontalAlignment','left','Min',1,'Max',10,'Units','normalized');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style', 'text', 'String', 'y coordinates (ï¿½m)', 'Position', [315, 235, 240, 20],'HorizontalAlignment','left','Units','normalized');
+UI.edit.chanCoords_y = uicontrol('Parent',UI.tabs.chanCoords,'Style', 'Edit', 'String', '', 'Position', [315, 50, 290, 185],'HorizontalAlignment','left','Min',1,'Max',10,'Units','normalized');
+
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[5, 5, 145, 32],'String','Import','Callback',@importChannelMap1,'Units','normalized','tooltip','Import channel coordinates from chanCoords file or KiloSort chanMap file');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[155, 5, 145, 32],'String','Export','Callback',@exportChannelMap1,'Units','normalized','tooltip','Export channel coordinates to chanCoords file');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[315, 5, 145, 32],'String','Generate','Callback',@generateChannelMap1,'Units','normalized','tooltip','Generate channel coordinates from parameters');
+uicontrol('Parent',UI.tabs.chanCoords,'Style','pushbutton','Position',[470, 5, 145, 32],'String','Plot','Callback',@plotChannelMap1,'Units','normalized','tooltip','Plot channel coordinates');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
 
 tableData = {false,'','',''};
 UI.table.spikeSorting = uitable(UI.tabs.spikeSorting,'Data',tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 75 75 148 62 75 46 50 60},'columnname',{'','Method','Format','Relative path','Channels','Spike sorter','Notes','Metrics','Currated'},'RowName',[],'ColumnEditable',[true true true true true true true true true],'Units','normalized','ColumnFormat',{'logical',UI.list.sortingMethod,UI.list.sortingFormat,'char','char','char','char','logical','logical'},'CellEditCallback',@editSpikeSortingTableData);
-uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add sorting','Callback',@(src,evnt)addSpikeSorting,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit sorting','Callback',@(src,evnt)editSpikeSorting,'Units','normalized');
-uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[235, 5, 130, 32],'String','Delete sorting(s)','Callback',@(src,evnt)deleteSpikeSorting,'Units','normalized');
-% uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[330, 10, 160, 30],'String','Import sorting?','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add sorting','Callback',@(src,evnt)addSpikeSorting,'Units','normalized','tooltip','Add spike sorting set');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit sorting','Callback',@(src,evnt)editSpikeSorting,'Units','normalized','tooltip','Edit selected spike sorting set');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[235, 5, 130, 32],'String','Delete sorting(s)','Callback',@(src,evnt)deleteSpikeSorting,'Units','normalized','tooltip','Delete selected spike sorting set(s)');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[500, 5, 50, 32],'String',char(8593),'Callback',@(src,evnt)moveUpSpikeSorting,'Units','normalized','tooltip','Move selected spike sorting(s) up');
+uicontrol('Parent',UI.tabs.spikeSorting,'Style','pushbutton','Position',[555, 5 50, 32],'String',char(8595),'Callback',@(src,evnt)moveDownSpikeSorting,'Units','normalized','tooltip','Move selected spike sorting(s) down');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Brain regions
 
 UI.list.tableData = {false,'','','',''};
 UI.table.brainRegion = uitable(UI.tabs.brainRegions,'Data',UI.list.tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 70 280 95 147},'columnname',{'','Region','Channels','Electrode groups','Notes'},'RowName',[],'ColumnEditable',[true false true true true],'Units','normalized','CellEditCallback',@editBrainregionTableData);
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add region','Callback',@(src,evnt)addRegion,'Units','normalized');
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit region','Callback',@(src,evnt)editRegion,'Units','normalized');
-uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[235, 5, 120, 32],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion,'Units','normalized');
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add region','Callback',@(src,evnt)addRegion,'Units','normalized','tooltip','Add new brain region');
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit region','Callback',@(src,evnt)editRegion,'Units','normalized','tooltip','Edit selected brain region');
+uicontrol('Parent',UI.tabs.brainRegions,'Style','pushbutton','Position',[235, 5, 120, 32],'String','Delete region(s)','Callback',@(src,evnt)deleteRegion,'Units','normalized','tooltip','Delete selected brain region(s)');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Channel tags
 
 tableData = {false,'','',''};
 UI.table.tags = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 300, 616, 220],'ColumnWidth',{20 130 315 147},'columnname',{'','Channel tag','Channels','Electrode groups'},'RowName',[],'ColumnEditable',[true false true true],'Units','normalized','CellEditCallback',@editTagsTableData);
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add tag','Callback',@(src,evnt)addTag,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit tag','Callback',@(src,evnt)editTag,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 260, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized');
-% uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[470, 260, 140, 30],'String','Import bad channels','Callback',@(src,evnt)importBadChannelsFromXML,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add tag','Callback',@(src,evnt)addTag,'Units','normalized','tooltip','Add new channel tag');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit tag','Callback',@(src,evnt)editTag,'Units','normalized','tooltip','Edit selected channel tag');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 260, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteTag,'Units','normalized','tooltip','Delete selected channel tag(s)');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Analysis tags
 
 tableData = {false,'','',''};
 UI.table.analysis = uitable(UI.tabs.channelTags,'Data',tableData,'Position',[1, 45, 616, 210],'ColumnWidth',{20 250 342},'columnname',{'','Analysis tag','Value'},'RowName',[],'ColumnEditable',[true false true],'Units','normalized','CellEditCallback',@editAnalysisTagsTableData);
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tag','Callback',@(src,evnt)addAnalysis,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tag','Callback',@(src,evnt)editAnalysis,'Units','normalized');
-uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tag','Callback',@(src,evnt)addAnalysis,'Units','normalized','tooltip','Add new analysis tag');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tag','Callback',@(src,evnt)editAnalysis,'Units','normalized','tooltip','Edit selected analysis tag');
+uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tag(s)','Callback',@(src,evnt)deleteAnalysis,'Units','normalized','tooltip','Delete selected analysis tag(s)');
 % uicontrol('Parent',UI.tabs.channelTags,'Style','pushbutton','Position',[340, 10, 110, 30],'String','Duplicate tag','Callback',@(src,evnt)duplicateAnalysis,'Units','normalized');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Time series
 
 tableData = {false,'','',''};
-UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 616, 220],'ColumnWidth',{20 90 105 60 70 40 60 90 76},'columnname',{'','Time series tag','File name', 'Precision', 'nChannels', 'sr', 'nSamples', 'least significant bit', 'Equipment'},'RowName',[],'ColumnEditable',[true false true true true true true true true],'Units','normalized','CellEditCallback',@editTimeSeriesTableData);
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 260, 120, 32],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized');
-% UI.button.importMetaFromIntan = uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[500, 10, 110, 30],'String','Import from Intan','Callback',@(src,evnt)importMetaFromIntan,'Units','normalized');
+UI.table.timeSeries = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 300, 616, 220],'ColumnWidth',{20 90 105 70 50 40 60 90 76},'columnname',{'','Time series tag','File name', 'Precision', 'nChan', 'sr', 'nSamples', 'least significant bit', 'Equipment'},'ColumnFormat',{'logical','char','char',UI.list.precision,'numeric','numeric','numeric','numeric','char'},'RowName',[],'ColumnEditable',[true false true true true true true true true],'Units','normalized','CellEditCallback',@editTimeSeriesTableData);
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 260, 110, 32],'String','Add time serie','Callback',@(src,evnt)addTimeSeries,'Units','normalized','tooltip','Add new time serie');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 260, 110, 32],'String','Edit time serie','Callback',@(src,evnt)editTimeSeries,'Units','normalized','tooltip','Edit selected time serie');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 260, 120, 32],'String','Delete time serie(s)','Callback',@(src,evnt)deleteTimeSeries,'Units','normalized','tooltip','Delete selected time serie(s)');
 
 % % % % % % % % % % % % % % % % % % % % %
 % Inputs
 
 tableData = {false,'','',''};
 UI.table.inputs = uitable(UI.tabs.inputs,'Data',tableData,'Position',[1, 45, 616, 210],'ColumnWidth',{20 120 75 70 140 187},'columnname',{'','Input tag','Channels','Type','Equipment','Description'},'ColumnFormat',{'logical','char','char',UI.list.inputsType,'char','char'},'RowName',[],'ColumnEditable',[true false true true true true true],'Units','normalized','CellEditCallback',@editInputsTableData);
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized');
-uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add input','Callback',@(src,evnt)addInput,'Units','normalized','tooltip','Add new input');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit input','Callback',@(src,evnt)editInput,'Units','normalized','tooltip','Edit selected input');
+uicontrol('Parent',UI.tabs.inputs,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete input(s)','Callback',@(src,evnt)deleteInput,'Units','normalized','tooltip','Delete selected input(s)');
 
 % % % % % % % % % % % % % % % % % % % % %
 % BehavioralTracking
 
 tableData = {false,'','',''};
 UI.table.behaviors = uitable(UI.tabs.behaviors,'Data',tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 180 100 50 80 75 107},'columnname',{'','Filenames','Equipment','Epoch','Type','Frame rate','Notes'},'RowName',[],'ColumnEditable',[true true true true true true true],'Units','normalized','CellEditCallback',@editBehaviorTableData);
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tracking','Callback',@(src,evnt)addBehavior,'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tracking','Callback',@(src,evnt)editBehavior,'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tracking(s)','Callback',@(src,evnt)deleteBehavior,'Units','normalized');
-uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[350, 5, 110, 32],'String','Duplicate tracking','Callback',@(src,evnt)duplicateBehavior,'Units','normalized');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[5, 5, 110, 32],'String','Add tracking','Callback',@(src,evnt)addBehavior,'Units','normalized','tooltip','Add new tracking');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[120, 5, 110, 32],'String','Edit tracking','Callback',@(src,evnt)editBehavior,'Units','normalized','tooltip','Edit selected tracking');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[235, 5, 110, 32],'String','Delete tracking(s)','Callback',@(src,evnt)deleteBehavior,'Units','normalized','tooltip','Delete selected tracking(s)');
+uicontrol('Parent',UI.tabs.behaviors,'Style','pushbutton','Position',[350, 5, 110, 32],'String','Duplicate tracking','Callback',@(src,evnt)duplicateBehavior,'Units','normalized','tooltip','Duplicate selected tracking(s)');
 
 % Loading session struct into gui
 importSessionStruct
@@ -611,17 +710,79 @@ uiwait(UI.fig)
 % Embedded functions 
 % % % % % % % % % % % % % % % % % % % % %
 
-    function generateAnimalMetadataTemplate(~,~)
+    function generateSessionTemplate(~,~)
         readBackFields;
-        pathparts = strsplit(session.general.basePath,filesep);
-        filepath1 = session.general.basePath(1:end-numel(pathparts{end}));
-        filename1 = [session.animal.name,'.session.mat'];
-        session.general.name = session.animal.name;
-        try
-            save(fullfile(filepath1, filename1),'session');
-            MsgLog(['Animal metadata template saved to: ' fullfile(filepath1, filename1)],2)
-        catch
-            MsgLog(['Failed to save ',filename1,'. Location not available'],4)
+        listing = fieldnames(session);
+        filename1 = session.general.name;
+        output = dialog_general('dialog_title','Create template file','list_options',listing,'list_title','Select the data types to save to the template file','list_value',1:numel(listing),'list_max',numel(listing),'text1_value',filename1,'text1_title','Filename (*.session.mat)');
+        % [indx,~] = listdlg('PromptString','Select the data types to save to the template file','ListString',listing,'SelectionMode','multiple','ListSize',[300,220],'InitialValue',1:numel(listing),'Name','Create template file');
+        if ~isempty(output)
+            indx = output.list_value;
+            filename1 = [output.text1_value,'.session.mat'];
+            session_template = {};
+            S = {};
+            for i = 1:numel(indx)
+                fieldname1 = listing{indx(i)};
+                S.session.(fieldname1) = session.(fieldname1);
+            end
+
+            session_templates_path = what('session_templates');
+            filepath1 = session_templates_path.path;
+            
+            fullfile1 = fullfile(filepath1, filename1);
+            % try
+            save(fullfile1, '-struct', 'S')
+            MsgLog(['Session metadata template saved to: ' fullfile1],2)
+            %             catch
+            %                 MsgLog(['Failed to save ',fullfile1,'. Location not available'],4)
+            %             end
+        end
+        
+    end
+    
+    function loadSessionTemplate(~,~)
+        if isdeployed
+            return
+            % classification_schema_list = {'standard'};
+            % classification_schema_value = 1;
+        else
+            session_templates_variables = what('session_templates');
+            session_templates_list = session_templates_variables.mat;
+            if ~isempty(session_templates_list)
+                [indx,~] = listdlg('PromptString','Select metadata template','ListString',session_templates_list,'SelectionMode','single','ListSize',[300,220],'InitialValue',1,'Name','Session metadata template');
+                if ~isempty(indx)
+                    session_template = load(fullfile(session_templates_variables.path,session_templates_list{indx}),'session');
+                    listing = fieldnames(session_template.session);
+                    for i = 1:numel(listing)
+                        fieldname1 = listing{i};
+                        if strcmp(fieldname1,'general') && exist('session','var')
+                            session_template.session.general = rmfield(session.general,{'name','baseName','basePath','sessionName','entryID','repositories','projects','repositoriesDataOrganization','duration','entryCreated','entryCreatedBy','entryUpdated','entryUpdatedBy'});
+                            general_fields = fieldnames(session_template.session.general);
+                            for j = 1:numel(general_fields)
+                                session.general.(general_fields{j}) = session_template.session.general.(general_fields{j});
+                            end
+                        elseif strcmp(fieldname1,'general') && ~exist('session','var')
+                            field2remove = {'baseName','sessionName','entryID','repositories','projects','repositoriesDataOrganization','duration','entryCreated','entryCreatedBy','entryUpdated','entryUpdatedBy'};
+                            idx = isfield(session_template.session.general,field2remove);
+                            session_template.session.general = rmfield(session_template.session.general,field2remove(idx));
+                            general_fields = fieldnames(session_template.session.general);
+                            for j = 1:numel(general_fields)
+                                session.general.(general_fields{j}) = session_template.session.general.(general_fields{j});
+                            end
+                            session.general.basePath = basepath;
+                            session.general.name = basename;
+                        else
+                            session.(fieldname1) = session_template.session.(fieldname1);
+                        end
+                    end
+                    if uiLoaded
+                        importSessionStruct
+                    end
+                    MsgLog('Session metadata template loaded. Session name and basepath not altered.',2)
+                end
+            else
+                MsgLog('No metadata templates exist',2)
+            end
         end
     end
     
@@ -634,13 +795,13 @@ uiwait(UI.fig)
         set(UI.tabs.panels.(metadataStruct.name).main, 'Heights', [-1 39]); % set center panel size
         UI.table.(metadataStruct.name) = uitable(UI.tabs.panels.(metadataStruct.name).table,'Data',UI.list.tableData,'Tag',metadataStruct.name,'Units','normalized','Position',[0, 0, 1, 1],'ColumnWidth',[20, metadataStruct.column_widths],'columnname',{'',metadataStruct.field_title{:}},'ColumnFormat',{'logical',metadataStruct.column_format{:}},'RowName',[],'ColumnEditable',[true metadataStruct.column_editable],'Units','normalized','CellEditCallback',@editTableData);
         updateAnimalMeta(metadataStruct.name)
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[10, 0, 110, 32],'String','Add','Callback',@animalMeta,'Units','normalized');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Edit','Callback',@animalMeta,'Units','normalized');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Duplicate','Callback',@animalMeta,'Units','normalized');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[250, 0, 130, 32],'String','Delete','Callback',@animalMeta,'Units','normalized');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[10, 0, 110, 32],'String','Add','Callback',@animalMeta,'Units','normalized','tooltip',['Add new ' metadataStruct.title_singular]);
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Edit','Callback',@animalMeta,'Units','normalized','tooltip',['Edit selected ' metadataStruct.title_singular]);
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[130, 0, 110, 32],'String','Duplicate','Callback',@animalMeta,'Units','normalized','tooltip',['Duplicate selected ' metadataStruct.title_singular]);
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'Position',[250, 0, 130, 32],'String','Delete','Callback',@animalMeta,'Units','normalized','tooltip',['Delete selected ' metadataStruct.title_singular]);
         uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','text','String','');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8593),'Callback',@moveIt,'Units','normalized');
-        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8595),'Callback',@moveIt,'Units','normalized');
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8593),'Callback',@moveIt,'Units','normalized','tooltip',['Move selected ', metadataStruct.title_singular, ' up']);
+        uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8595),'Callback',@moveIt,'Units','normalized','tooltip',['Move selected ', metadataStruct.title_singular,' down']);
         set(UI.tabs.panels.(metadataStruct.name).buttons, 'Widths', [110 110 110 110 -1 50 50],'MinimumWidths',[110 110 110 110 10 50 50],'Spacing', 3);
     end
     
@@ -1027,13 +1188,15 @@ uiwait(UI.fig)
         UIsetString(session.extracellular,'nChannels');
         UIsetString(session.extracellular,'sr');
         UIsetString(session.extracellular,'nSamples');
-        UIsetString(session.extracellular,'precision');
+        UIsetValue(UI.edit.precision,session.extracellular.precision)
+%         UIsetString(session.extracellular,'precision');
         UIsetString(session.extracellular,'leastSignificantBit');
         UIsetString(session.extracellular,'fileName');
         UIsetString(session.extracellular,'equipment');
         UIsetString(session.extracellular,'srLfp');
         updateChannelGroupsList('electrodeGroups')
         updateChannelGroupsList('spikeGroups')
+        updateChanCoords
         updateSpikeSortingList
         updateBrainRegionList
         updateTagList
@@ -1041,6 +1204,48 @@ uiwait(UI.fig)
         updateBehaviorsList
         updateAnalysisList
         updateTimeSeriesList
+        
+    end
+    function updateChanCoords
+        if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
+            if isfield(session.extracellular.chanCoords,'x')
+                UI.edit.chanCoords_x.String = num2strCommaSeparated(session.extracellular.chanCoords.x(:)');
+            end
+            if isfield(session.extracellular.chanCoords,'y')
+                UI.edit.chanCoords_y.String = num2strCommaSeparated(session.extracellular.chanCoords.y(:)');
+            end
+            if isfield(session.extracellular.chanCoords,'source')
+                UI.edit.chanCoords_source.String = session.extracellular.chanCoords.source;
+            end
+            if isfield(session.extracellular.chanCoords,'layout')
+                UI.edit.chanCoords_layout.String = session.extracellular.chanCoords.layout;
+            end
+            if isfield(session.extracellular.chanCoords,'shankSpacing')
+                UI.edit.chanCoords_shankSpacing.String = num2str(session.extracellular.chanCoords.shankSpacing);
+            end
+            if isfield(session.extracellular.chanCoords,'verticalSpacing')
+                UI.edit.chanCoords_verticalSpacing.String = num2str(session.extracellular.chanCoords.verticalSpacing);
+            end
+        end
+    end
+    
+    function readBackChanCoords
+        session.extracellular.chanCoords.x = eval(['[',UI.edit.chanCoords_x.String,']']);
+        session.extracellular.chanCoords.y = eval(['[',UI.edit.chanCoords_y.String,']']);
+        session.extracellular.chanCoords.x = session.extracellular.chanCoords.x(:);
+        session.extracellular.chanCoords.y = session.extracellular.chanCoords.y(:);
+        session.extracellular.chanCoords.source = UI.edit.chanCoords_source.String;
+        session.extracellular.chanCoords.layout = UI.edit.chanCoords_layout.String;
+        if ~isempty(UI.edit.chanCoords_shankSpacing.String) 
+            session.extracellular.chanCoords.shankSpacing = str2double(UI.edit.chanCoords_shankSpacing.String);
+        else
+            session.extracellular.chanCoords.shankSpacing = [];
+        end
+        if ~isempty(UI.edit.chanCoords_verticalSpacing.String)
+            session.extracellular.chanCoords.verticalSpacing = str2double(UI.edit.chanCoords_verticalSpacing.String);
+        else
+            session.extracellular.chanCoords.verticalSpacing = [];
+        end
     end
     
     function updateStrain
@@ -1079,13 +1284,33 @@ uiwait(UI.fig)
     function editDBrepositories(~,~)
         edit db_local_repositories.m
     end
-    function buttonHelp(src,~)
-        if strcmp(src.(menuLabel),'Tutorial on session metadata')
-            web('https://cellexplorer.org/tutorials/metadata-tutorial/','-new','-browser')
+    
+    
+    function openWebsite(src,~)
+        % Opens the CellExplorer website in your browser
+        if isprop(src,'Text')
+            source = src.Text;
         else
-            web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
+            source = '';
+        end
+        switch source
+            case '- About gui_session'
+                web('https://cellexplorer.org/interface/gui_session/','-new','-browser')
+            case '- Tutorial on metadata'
+                web('https://cellexplorer.org/tutorials/metadata-tutorial/','-new','-browser')
+            case '- Documentation on session metadata'
+                web('https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata','-new','-browser')
+            case 'Support'
+                web('https://cellexplorer.org/#support','-new','-browser')
+            case '- Report an issue'
+                web('https://github.com/petersenpeter/CellExplorer/issues/new?assignees=&labels=bug&template=bug_report.md&title=','-new','-browser')
+            case '- Submit feature request'
+                web('https://github.com/petersenpeter/CellExplorer/issues/new?assignees=&labels=enhancement&template=feature_request.md&title=','-new','-browser')
+            otherwise
+                web('https://cellexplorer.org/','-new','-browser')
         end
     end
+
     
     function performStructValidation(~,~)
         readBackFields;
@@ -1094,7 +1319,7 @@ uiwait(UI.fig)
     
     function edit_preferences_ProcessCellMetrics(~,~)
         edit preferences_ProcessCellMetrics
-        MsgLog('Prerences are located in preferences_ProcessCellMetrics.m. If you do any changes you have to rerun ProcessCellMetrics.',2)
+        MsgLog('Prerences are located in preferences_ProcessCellMetrics.m. Please rerun ProcessCellMetrics when making changes.',2)
     end
     function buttonUploadToDB
         listing = fieldnames(session);
@@ -1149,18 +1374,15 @@ uiwait(UI.fig)
     end
 
     function saveSessionFile
-        if ~strcmp(pwd,UI.edit.basepath.String)
-            answer = questdlg('Base path is different from current path. Where would you like to save the session struct to','Location','basepath','Current path','Select location','basepath');
+        if ~contains(pwd,UI.edit.basepath.String)
+            answer = questdlg('Where would you like to save the session struct to?','Location','basepath','Select location','basepath');
         else
             answer = 'basepath';
         end
         switch answer
             case 'basepath'
                 filepath1 = UI.edit.basepath.String;
-                filename1 = [UI.edit.session.String,'.session.mat'];
-            case 'Current path'
-                filepath1 = pwd;
-                filename1 = [UI.edit.session.String,'.session.mat'];
+                filename1 = [UI.edit.session.String,'.session.mat'];            
             case 'Select location'
                 [filename1,filepath1] = uiputfile([UI.edit.session.String,'.session.mat']);
             otherwise
@@ -1263,8 +1485,10 @@ uiwait(UI.fig)
         session.extracellular.nSpikeGroups = numel(session.extracellular.spikeGroups.channels);
         
         session.extracellular.fileName = UI.edit.fileName.String;
-        session.extracellular.precision = UI.edit.precision.String;
+        session.extracellular.precision = UI.edit.precision.String{UI.edit.precision.Value};
         session.extracellular.equipment = UI.edit.equipment.String;
+        
+        readBackChanCoords
     end
     
     function cancelMetricsWindow
@@ -1623,25 +1847,25 @@ uiwait(UI.fig)
             initElectrodeGroups = '';
         end
         % Opens dialog
-        UI.dialog.brainRegion = dialog('Position', [300, 300, 620, 400],'Name','Brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
+        UI.dialog.brainRegion = dialog('Position', [300, 300, 620, 550],'Name','Brain region','WindowStyle','modal'); movegui(UI.dialog.brainRegion,'center')
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 373, 600, 20],'HorizontalAlignment','left');
-        brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 350, 600, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Search term', 'Position', [10, 523, 600, 20],'HorizontalAlignment','left');
+        brainRegionsTextfield = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', '', 'Position', [10, 500, 600, 25],'Callback',@(src,evnt)filterBrainRegionsList,'HorizontalAlignment','left');
         if exist('regionIn','var')
             brainRegionsTextfield.Enable = 'off';
         end
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Selct brain region below', 'Position', [10, 320, 600, 20],'HorizontalAlignment','left');
-        brainRegionsList = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'ListBox', 'String', brainRegions_list, 'Position', [10, 100, 600, 220],'Value',InitBrainRegion);
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', 'Selct brain region below', 'Position', [10, 470, 600, 20],'HorizontalAlignment','left');
+        brainRegionsList = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'ListBox', 'String', brainRegions_list, 'Position', [10, 250, 600, 220],'Value',InitBrainRegion);
         if exist('regionIn','var')
             brainRegionsList.Enable = 'off';
         end
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 73, 280, 20],'HorizontalAlignment','left');
-        brainRegionsChannels = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 280, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 223, 600, 20],'HorizontalAlignment','left');
+        brainRegionsChannels = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 600, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
-        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [300, 73, 310, 20],'HorizontalAlignment','left');
-        brainRegionsElectrodeGroups = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [300, 50, 310, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.brainRegion,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 73, 600, 20],'HorizontalAlignment','left');
+        brainRegionsElectrodeGroups = uicontrol('Parent',UI.dialog.brainRegion,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 50, 600, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[10, 10, 280, 30],'String','Save region','Callback',@(src,evnt)CloseBrainRegions_dialog);
         uicontrol('Parent',UI.dialog.brainRegion,'Style','pushbutton','Position',[300, 10, 310, 30],'String','Cancel','Callback',@(src,evnt)CancelBrainRegions_dialog);
@@ -1740,18 +1964,18 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.tags = dialog('Position', [300, 300, 500, 150],'Name','Channel tag','WindowStyle','modal'); movegui(UI.dialog.tags,'center')
+        UI.dialog.tags = dialog('Position', [300, 300, 500, 300],'Name','Channel tag','WindowStyle','modal'); movegui(UI.dialog.tags,'center')
         
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', 'Channel tag name (e.g. Theta, Gamma, Bad, Cortical, Ripple, RippleNoise)', 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
-        tagsTextfield = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', InitTag, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', 'Channel tag name (e.g. Theta, Gamma, Bad, Cortical, Ripple, RippleNoise)', 'Position', [10, 273, 480, 20],'HorizontalAlignment','left');
+        tagsTextfield = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', InitTag, 'Position', [10, 250, 480, 25],'HorizontalAlignment','left');
         if exist('regionIn','var')
             tagsTextfield.Enable = 'off';
         end
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 73, 230, 20],'HorizontalAlignment','left');
-        tagsChannels = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initChannels, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 223, 230, 20],'HorizontalAlignment','left');
+        tagsChannels = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [250, 73, 240, 20],'HorizontalAlignment','left');
-        tagsElectrodeGroups = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [250, 50, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
+        tagsElectrodeGroups = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.tags,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save tag','Callback',@(src,evnt)CloseTags_dialog);
         uicontrol('Parent',UI.dialog.tags,'Style','pushbutton','Position',[250, 10, 240, 30],'String','Cancel','Callback',@(src,evnt)CancelTags_dialog);
@@ -2137,6 +2361,12 @@ uiwait(UI.fig)
             helpdlg('Please select the epoch to duplicate','Error')
         end
     end
+    
+    function visualizeEpoch
+        figure
+        epochVisualization(session.epochs,gca,0,1,0.95), xlabel('Time (s)'), title('Epochs')
+        yticks([]), axis tight
+    end
 
 %% % Behavior
 
@@ -2298,6 +2528,37 @@ uiwait(UI.fig)
         end
     end
 
+    
+    function moveDownSpikeSorting
+        if ~isempty(UI.table.spikeSorting.Data) && ~isempty(find([UI.table.spikeSorting.Data{:,1}], 1))
+            cell2move = [UI.table.spikeSorting.Data{:,1}];
+            offset = cumsumWithReset2(cell2move);
+            newOrder = 1:length(session.spikeSorting);
+            newOrder1 = newOrder+offset;
+            [~,newOrder] = sort(newOrder1);
+            session.spikeSorting = session.spikeSorting(newOrder);
+            updateSpikeSortingList
+            UI.table.spikeSorting.Data(find(ismember(newOrder,find(cell2move))),1) = {true};
+        else
+            helpdlg('Please select the spike sorting(s) to move','Error')
+        end
+    end
+    
+    function moveUpSpikeSorting
+        if ~isempty(UI.table.spikeSorting.Data) && ~isempty(find([UI.table.spikeSorting.Data{:,1}], 1))
+            cell2move = [UI.table.spikeSorting.Data{:,1}];
+            offset = cumsumWithReset(cell2move);
+            newOrder = 1:length(session.spikeSorting);
+            newOrder1 = newOrder-offset;
+            [~,newOrder] = sort(newOrder1);
+            session.spikeSorting = session.spikeSorting(newOrder);
+            updateSpikeSortingList
+            UI.table.spikeSorting.Data(find(ismember(newOrder,find(cell2move))),1) = {true};
+        else
+            helpdlg('Please select the spike sorting(s) to move','Error')
+        end
+    end
+
     function addSpikeSorting(behaviorIn)
         % Add new behavior to session struct
         if exist('behaviorIn','var')
@@ -2368,21 +2629,21 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.spikeSorting = dialog('Position', [300, 300, 500, 225],'Name','Spike sorting','WindowStyle','modal'); movegui(UI.dialog.spikeSorting,'center')
+        UI.dialog.spikeSorting = dialog('Position', [300, 300, 500, 375],'Name','Spike sorting','WindowStyle','modal'); movegui(UI.dialog.spikeSorting,'center')
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting method', 'Position', [10, 198, 230, 20],'HorizontalAlignment','left');
-        spikeSortingMethod = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingMethod, 'Position', [10, 175, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting method', 'Position', [10, 348, 230, 20],'HorizontalAlignment','left');
+        spikeSortingMethod = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingMethod, 'Position', [10, 325, 230, 25],'HorizontalAlignment','left');
         UIsetValue(spikeSortingMethod,InitMethod)
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting format', 'Position', [250, 198, 240, 20],'HorizontalAlignment','left');
-        spikeSortinFormat = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingFormat, 'Position', [250, 175, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting format', 'Position', [250 348, 240, 20],'HorizontalAlignment','left');
+        spikeSortinFormat = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingFormat, 'Position', [250, 325, 240, 25],'HorizontalAlignment','left');
         UIsetValue(spikeSortinFormat,initFormat) 
         
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Relative path', 'Position', [10, 148, 230, 20],'HorizontalAlignment','left');
-        spikeSortingRelativePath = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initRelativePath, 'Position', [10, 125, 230, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Relative path', 'Position', [10, 298, 480, 20],'HorizontalAlignment','left');
+        spikeSortingRelativePath = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initRelativePath, 'Position', [10, 275, 480, 25],'HorizontalAlignment','left');
 
-        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Channels', 'Position', [250, 148, 240, 20],'HorizontalAlignment','left');
-        spikeSortingChannels = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initChannels, 'Position', [250, 125, 240, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Channels', 'Position', [10, 248, 240, 20],'HorizontalAlignment','left');
+        spikeSortingChannels = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initChannels, 'Position', [10, 125, 480, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Spike sorter', 'Position', [10, 98, 230, 20],'HorizontalAlignment','left');
         spikeSortingSpikeSorter = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initSpikeSorter, 'Position', [10, 75, 230, 25],'HorizontalAlignment','left');
@@ -2549,9 +2810,12 @@ uiwait(UI.fig)
             initType = behaviorIn;
             % precision
             if isfield(session.timeSeries.(behaviorIn),'precision')
-                initPrecision = session.timeSeries.(behaviorIn).precision;
+                initPrecision_value = find(strcmp(session.timeSeries.(behaviorIn).precision,UI.list.precision));
+                if isempty(initPrecision_value)
+                    initPrecision_value=1;
+                end
             else
-                initPrecision = '';
+                initPrecision_value = 1;
             end
             % nChannels
             if isfield(session.timeSeries.(behaviorIn),'nChannels')
@@ -2586,7 +2850,7 @@ uiwait(UI.fig)
         else 
             InitFileName = '';
             initType = 'adc';
-            initPrecision = 'int16';
+            initPrecision_value = 1;
             initnChannels = '';
             initSr = '';
             initnSamples = '';
@@ -2607,7 +2871,7 @@ uiwait(UI.fig)
             timeSeriesType.Enable = 'off';
         end
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Precision', 'Position', [10, 173, 230, 20],'HorizontalAlignment','left');
-        timeSeriesPrecision = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initPrecision, 'Position', [10, 150, 230, 25],'HorizontalAlignment','left');
+        timeSeriesPrecision = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'popup', 'String', UI.list.precision,'Value',initPrecision_value, 'Position', [10, 150, 230, 25],'HorizontalAlignment','left');
 
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'nChannels', 'Position', [250, 173, 240, 20],'HorizontalAlignment','left');
         timeSeriesnChannels = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initnChannels, 'Position', [250, 150, 240, 25],'HorizontalAlignment','left');
@@ -2634,7 +2898,7 @@ uiwait(UI.fig)
             if isvarname(timeSeriesType.String{timeSeriesType.Value})
                 SelectedBehavior = timeSeriesType.String{timeSeriesType.Value};
                 session.timeSeries.(SelectedBehavior).fileName = timeSeriesFileName.String;             
-                session.timeSeries.(SelectedBehavior).precision = timeSeriesPrecision.String;
+                session.timeSeries.(SelectedBehavior).precision = timeSeriesPrecision.String{timeSeriesPrecision.Value};
                 if ~isempty(timeSeriesnChannels.String)
                     session.timeSeries.(SelectedBehavior).nChannels = str2double(timeSeriesnChannels.String);
                 else
@@ -2735,13 +2999,13 @@ uiwait(UI.fig)
         end
         
         % Opens dialog
-        UI.dialog.electrodes = dialog('Position', [300, 300, 500, 200],'Name','Electrode group','WindowStyle','modal'); movegui(UI.dialog.electrodes,'center')
+        UI.dialog.electrodes = dialog('Position', [300, 300, 500, 300],'Name','Electrode group','WindowStyle','modal'); movegui(UI.dialog.electrodes,'center')
         
-        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Group (nGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 173, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 150, 480, 25],'HorizontalAlignment','left','enable', 'off');
+        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Group (nGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 273, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsSpikeGroups = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 250, 480, 25],'HorizontalAlignment','left','enable', 'off');
         
-        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 123, 480, 20],'HorizontalAlignment','left');
-        spikeGroupsChannels = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 25],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 223, 480, 20],'HorizontalAlignment','left');
+        spikeGroupsChannels = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
         uicontrol('Parent',UI.dialog.electrodes,'Style', 'text', 'String', 'Label', 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
         spikeGroupsLabel = uicontrol('Parent',UI.dialog.electrodes,'Style', 'Edit', 'String', initLabel, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
@@ -2866,7 +3130,7 @@ uiwait(UI.fig)
             end
             updateSpikeSortingList
         elseif evnt.Indices(1,2)==6
-            session.spikeSorting{edit_group}.relativePath = evnt.NewData;
+            session.spikeSorting{edit_group}.spikeSorter = evnt.NewData;
         elseif evnt.Indices(1,2)==7   
             session.spikeSorting{edit_group}.notes = evnt.NewData;
         elseif evnt.Indices(1,2)==8  
@@ -3042,7 +3306,7 @@ uiwait(UI.fig)
             elseif any(sort(channels) ~= [1:session.extracellular.nChannels])
                 helpdlg('Channels are not ranging from 1 : nChannels','Error')
             else
-                msgbox('Channels verified succesfully!');
+                msgbox('Channels validated! (1:nChannels represented in the electrode groups)');
             end
         else
             msgbox('Error: No electrode groups found.');
@@ -3050,10 +3314,10 @@ uiwait(UI.fig)
     end
 
     function importGroupsFromXML
-        xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
-        if exist(xml_filepath,'file')
+        [file2,basepath2] = uigetfile('*.kwik','Please select the *.kwik file');
+        xml_filepath = fullfile(basepath2,file2);
+        if ~isempty(xml_filepath) && ~isequal(xml_filepath,0)
             MsgLog('Importing groups from XML...',0)
-            
             session = import_xml2session(xml_filepath,session);
             updateChannelGroupsList('electrodeGroups')
             updateChannelGroupsList('spikeGroups')
@@ -3061,8 +3325,6 @@ uiwait(UI.fig)
             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
             UIsetString(session.extracellular,'nChannels'); % Number of channels
             MsgLog('XML imported',2)
-        else
-            MsgLog(['xml file not accessible: ' xml_filepath],4)
         end
     end
     
@@ -3078,7 +3340,8 @@ uiwait(UI.fig)
             rezFile = fullfile(rezFile.folder,rezFile.name);
             MsgLog('Importing KiloSort metadata...',0)
             session = loadKiloSortMetadata(session,rezFile);
-            updateChannelGroupsList
+            updateChannelGroupsList('electrodeGroups')
+            updateChannelGroupsList('spikeGroups')
             UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
             UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
             UIsetString(session.extracellular,'nChannels'); % Number of channels
@@ -3088,10 +3351,40 @@ uiwait(UI.fig)
         end
     end
     
+    function importPhy
+        clusteringpath_full = uigetdir(session.general.basePath,'Phy folder');
+        if ~isempty(clusteringpath_full) && ~isequal(clusteringpath_full,0)
+            MsgLog('Importing Phy metadata...',0)
+            session = loadPhyMetadata(session,clusteringpath_full);
+            updateChannelGroupsList('electrodeGroups')
+            updateChannelGroupsList('spikeGroups')
+            updateChanCoords
+            UIsetString(session.extracellular,'nChannels'); % Number of channels
+            
+            MsgLog('Phy metadata imported via phy folder',2)
+        end
+    end
+    
+    function importKlustaviewa
+        [file2,basepath2] = uigetfile('*.kwik','Please select the *.kwik file');
+        kwik_file = fullfile(basepath2,file2);
+        if ~isempty(kwik_file) && ~isequal(kwik_file,0)
+            MsgLog('Importing klustaviewa metadata...',0)
+            session = loadKlustaviewaMetadata(session,kwik_file);
+            updateChannelGroupsList('electrodeGroups')
+            updateChannelGroupsList('spikeGroups')
+            updateChanCoords
+            UIsetString(session.extracellular,'nChannels'); % Number of channels
+            UIsetString(session.extracellular,'sr'); % Sampling rate of dat file            
+            MsgLog('klustaviewa imported from kwik file',2)
+        end
+    end
+    
     function importMetadataTemplate
-        MsgLog('Importing metadata using template',0)
+        MsgLog('Importing metadata using template script',0)
         session = sessionTemplate(session);
-        updateChannelGroupsList
+        updateChannelGroupsList('electrodeGroups')
+        updateChannelGroupsList('spikeGroups')
         UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
         UIsetString(session.extracellular,'srLfp'); % Sampling rate of lfp file
         UIsetString(session.extracellular,'nChannels'); % Number of channels
@@ -3107,46 +3400,100 @@ uiwait(UI.fig)
         elseif strcmp(answer,'Cancel')
             return
         end
-        updateChannelGroupsList
+        updateChannelGroupsList('electrodeGroups')
+        updateChannelGroupsList('spikeGroups')
     end
     
     function generateCommonCoordinates1
         generateCommonCoordinates(session)
     end
     
-    function generateChannelMap1
+    function importChannelMap1(~,~)
+        answer = questdlg('What format do you want to import?','Import channel coordinates','Channel coordinates (chancoords)', 'Channelmap (chanmap)','Cancel','Channel coordinates (chancoords)');
+        if ~isempty(answer)
+            if strcmp(answer,'Channel coordinates (chancoords)')
+                chanCoords_filepath =fullfile(session.general.basePath,[session.general.name,'.chanCoords.channelInfo.mat']);
+                if exist(chanCoords_filepath,'file')
+                    session.extracellular.chanCoords = loadStruct('chanCoords','channelInfo','session',session);
+                    updateChanCoords;
+                    plotChannelMap1
+                    MsgLog(['Imported channel coordinates from basepath: ' chanCoords_filepath],2)
+                else
+                    MsgLog(['chanCoords file not available: ' chanCoords_filepath],4)
+                end
+            elseif strcmp(answer,'Channelmap (chanmap)')
+                [file,basepath] = uigetfile('*.mat','Please select the chanMap.mat file','chanMap.mat');
+                if ~isequal(file,0)
+                    temp = load(fullfile(basepath,file));
+                    session.extracellular.chanCoords.x = nan(session.extracellular.nChannels,1);
+                    session.extracellular.chanCoords.y = nan(session.extracellular.nChannels,1);
+                    session.extracellular.chanCoords.x(temp.chanMap) = temp.xcoords(:);
+                    session.extracellular.chanCoords.y(temp.chanMap) = temp.ycoords(:);
+                    session.extracellular.chanCoords.source = 'chanMap.mat';
+                    updateChanCoords; 
+                    plotChannelMap1
+                    MsgLog(['Imported channel map: ' file],2)
+                end
+            end
+        end
+    end
+    
+    function generateChannelMap1(~,~)
+        readBackChanCoords
         [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
         if isfield(session.animal,'probes') && exist(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'file')
-            disp('Loading predefined chanCoords')
             load(fullfile(CellExplorer_path,'+ChanCoords',[session.animal.probeImplants{1}.probe,'.probes.chanCoords.channelInfo.mat']),'chanCoords');
+            session.extracellular.chanCoords = chanCoords;
+            MsgLog('Loaded predefined channel coordinates',2)
         else
-            chanMap = generateChannelMap(session);
-            chanCoords.x = chanMap.xcoords(:);
-            chanCoords.y = chanMap.ycoords(:);
-            chanCoords.source = chanMap.source;
-            chanCoords.layout = chanMap.layout;
-            chanCoords.shankSpacing = chanMap.shankSpacing;
+            chanCoords = generateChanCoords(session);
+            MsgLog('Generated new channel coordinates. Check command window for details',2)
         end
-        x_range = range(chanCoords.x);
-        y_range = range(chanCoords.y);
-        if x_range > y_range
-            fig_width = 1600;
-            fig_height = ceil(fig_width*y_range/x_range)+200;
-        else
-            fig_height = 1000;
-            fig_width = ceil(fig_height*x_range/y_range)+200;
-        end
-        fig1 = figure('Name','Channel map','position',[5,5,fig_width,fig_height]); movegui(fig1,'center')
-        plot(chanCoords.x,chanCoords.y,'.k'), hold on
-        text(chanCoords.x,chanCoords.y,num2str([1:numel(chanCoords.x)]'),'VerticalAlignment', 'bottom','HorizontalAlignment','center');
-        title({' ','Channel map',' '}), xlabel('X (um)'), ylabel('Y (um)'), 
+        session.extracellular.chanCoords = chanCoords;
+        updateChanCoords;
+        plotChannelMap1
+    end
+    
+    function exportChannelMap1(~,~)
+        readBackChanCoords
         % Saving chanCoords to basename.chanCoords.channelInfo.mat file
-        saveStruct(chanCoords,'channelInfo','session',session);
+        if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
+            chanCoords = session.extracellular.chanCoords;
+            saveStruct(chanCoords,'channelInfo','session',session);
+            MsgLog(['Exported channel coords to basepath: ' session.general.basePath],2)
+        else
+            MsgLog('No channel coords data available',4)
+        end
+    end
+    
+    function plotChannelMap1(~,~)
+        readBackChanCoords
+        if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
+            chanCoords = session.extracellular.chanCoords;
+            x_range = range(chanCoords.x);
+            y_range = range(chanCoords.y);
+            if x_range > y_range
+                fig_width = 1600;
+                fig_height = ceil(fig_width*y_range/x_range)+200;
+            else
+                fig_height = 1000;
+                fig_width = ceil(fig_height*x_range/y_range)+200;
+            end
+            fig1 = figure('Name','Channel coordinates','position',[5,5,fig_width,fig_height],'visible','off'); movegui(fig1,'center')
+            ax1 = axes(fig1);
+            plot(ax1,chanCoords.x,chanCoords.y,'.k'), hold on
+            text(ax1,chanCoords.x,chanCoords.y,num2str([1:numel(chanCoords.x)]'),'VerticalAlignment', 'bottom','HorizontalAlignment','center');
+            title(ax1,{' ','Channel coordinates',' '}), xlabel(ax1,'X (um)'), ylabel(ax1,'Y (um)')
+            set(fig1,'visible','on')
+        else
+            MsgLog('No channel coords data available',4)
+        end
     end
 
     function importBadChannelsFromXML(~,~)
-        xml_filepath = fullfile(UI.edit.basepath.String,[UI.edit.session.String, '.xml']);
-        if exist(xml_filepath,'file')
+        [file2,basepath2] = uigetfile('*.kwik','Please select the *.kwik file');
+        xml_filepath = fullfile(basepath2,file2);
+        if ~isempty(xml_filepath) && ~isequal(xml_filepath,0)
             sessionInfo = LoadXml(xml_filepath);
             
             % Removing dead channels by the skip parameter in the xml
@@ -3162,7 +3509,7 @@ uiwait(UI.fig)
                 badChannels_synced = [];
             end
             
-            if isfield(session,'channelTags') & isfield(session.channelTags,'Bad')
+            if isfield(session,'channelTags') && isfield(session.channelTags,'Bad')
                 session.channelTags.Bad.channels = unique([session.channelTags.Bad.channels,badChannels_skipped,badChannels_synced]);
             else
                 session.channelTags.Bad.channels = unique([badChannels_skipped,badChannels_synced]);
@@ -3211,7 +3558,7 @@ uiwait(UI.fig)
                 disp(message)
             end
             if any(priority == 2)
-                msgbox(message,'Message',dialog1);
+                msgbox(message,'gui_session',dialog1);
             end
             if any(priority == 3)
                 warning(message)

@@ -84,8 +84,8 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
         disp('ce_MonoSynConvClick: You do not have the ce_ProbSynMat.m matrix describing the likelihood of experimentally validated connectivty given excess syncrony')
     end
     
-    validationDuration = @(x) assert(isnumeric(x) && length(X) == 1 && X>0, 'Duration must be numeric and positive');
-    validationBinsize = @(x) assert(isnumeric(x) && length(X) == 1 && X>0, 'Binsize must be numeric and positive');
+    validationDuration = @(x) assert(isnumeric(x) && length(x) == 1 && x>0, 'Duration must be numeric and positive');
+    validationBinsize = @(x) assert(isnumeric(x) && length(x) == 1 && x>0, 'Binsize must be numeric and positive');
     validationEpoch = @(x) assert(isnumeric(x) && (size(x,2) == 2), 'Epoch must be numeric and of size nx2');
     validationIncludeInhibitoryConnections = @(x) assert(isnumeric(x) || islogical(x), 'Epoch must be numeric and of size nx2');
     

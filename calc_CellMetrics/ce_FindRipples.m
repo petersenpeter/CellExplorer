@@ -3,7 +3,7 @@ function [ripples] = ce_FindRipples(varargin)
 %
 % USAGE
 %    ripples = ce_FindRipples(session); % This requires the ripple channel defined in the session struct: session.channelTags.Ripple.channels = 1;
-%    ripples = ce_FindRipples(session,);
+%       You still have to define processing parameters 
 %    OR
 %    ripples = ce_FindRipples(lfp.data,lfp.timestamps,<options>)
 %    OR
@@ -88,7 +88,7 @@ addParameter(p,'passband',[130 200],@isnumeric)
 addParameter(p,'EMGThresh',.9,@isnumeric);
 addParameter(p,'saveMat',false,@islogical);
 addParameter(p,'minDuration',20,@isnumeric)
-addParameter(p,'plotType',2,@isnumeric)
+addParameter(p,'plotType',1,@isnumeric)
 
     
 if isstruct(varargin{1})  % if first arg is a session struct
@@ -114,7 +114,7 @@ elseif isstr(varargin{1})  % if first arg is basepath (string)
     EMGThresh = p.Results.EMGThresh;
     basename = bz_BasenameFromBasepath(p.Results.basepath);
     basepath = p.Results.basepath;
-    lfp = bz_GetLFP(p.Results.channel-1,'basepath',p.Results.basepath,'basename',basename);%currently cannot take path inputs
+    lfp = bz_GetLFP(p.Results.channel-1,'basepath',p.Results.basepath,'basename',basename); % currently cannot take path inputs
     signal = bz_Filter(double(lfp.data),'filter','butter','passband',passband,'order', 3);
     timestamps = lfp.timestamps;
 elseif isnumeric(varargin{1}) % if first arg is filtered LFP (numeric)
@@ -291,10 +291,14 @@ ripples = [timestamps(thirdPass(:,1)) timestamps(peakPosition) ...
            timestamps(thirdPass(:,2)) peakNormalizedPower];
 duration = ripples(:,3)-ripples(:,1);
 ripples(duration>maxRippleDuration/1000,:) = NaN;
+disp(['Long ripples removed: ' num2str(sum(duration>maxRippleDuration/1000))])
+ripples = ripples((all((~isnan(ripples)),2)),:);
+
 %disp(['After duration test: ' num2str(size(ripples,1)) ' events.']);
 
 % Discard ripples that are too short
 ripples(duration<minRippleDuration/1000,:) = NaN;
+disp(['Short ripples removed: ' num2str(sum(duration<minRippleDuration/1000))])
 ripples = ripples((all((~isnan(ripples)),2)),:);
 
 disp(['After duration test: ' num2str(size(ripples,1)) ' events.']);
@@ -319,8 +323,25 @@ if ~isempty(noise)
             squaredNoise = bz_Filter(double(noise),'filter','butter','passband',passband,'order', 3).^2;
         end
     end
-	window = ones(windowLength,1)/windowLength;
-	normalizedSquaredNoise = unity(Filter0(window,sum(squaredNoise,2)),sd,[]);
+    window = ones(windowLength,1)/windowLength;
+    
+    if p.Results.absoluteThresholds
+        normalizedSquaredNoise = Filter0(window,sum(squaredNoise,2));
+       
+%         [filt_b filt_a] = cheby2(4,50,(passband+diff(passband))/(0.5*session.extracellular.srLfp));
+%         signal2 = filtfilt(filt_b,filt_a,double(lfp));
+%         squaredSignal2 = signal2.^2;
+%         normalizedSquaredSignal2 = Filter0(window,sum(squaredSignal2,2));
+%         if ~isempty(keep)
+%             normalizedSquaredSignal2 = normalizedSquaredSignal2(keep);
+%         end
+    else
+%         [normalizedSquaredSignal,sd] = unity(Filter0(window,sum(squaredSignal,2)),sd,keep);
+        normalizedSquaredNoise = unity(Filter0(window,sum(squaredNoise,2)),sd,[]);
+    end
+    
+    
+	
 	excluded = logical(zeros(size(ripples,1),1));
 	% Exclude ripples when concomittent noise crosses high detection threshold
 	previous = 1;

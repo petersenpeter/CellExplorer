@@ -1,22 +1,48 @@
-function session = loadSession(basepath,basename)
-% Loads an existing basename.session.mat file from the basepath. If no
-% basepath is providede it will try to load from current directory
+function session = loadSession(basepath,basename,varargin)
+% Loads the session struct from existing basename.session.mat file from basepath. If no  basepath is providede it will try to load from current directory
+% If the basename.session.mat is not available the session struct will be generated using the sessionTemplate script.
+% Part of CellExplorer
+% 
+% - Example calls:
+% session = loadSession;
+% session = loadSession(basepath); % Load session from basepath
+% session = loadSession(basepath,basename,'showGUI',true); % Show GUI
 
-% By Peter Petersen
-% Last edited: 29-06-2021
+p = inputParser;
+addParameter(p,'basepath',[],@ischar);
+addParameter(p,'basename',[],@ischar);
+addParameter(p,'showGUI',false,@islogical); % Show the session gui
+addParameter(p,'sessionTemplate',true,@islogical); % Generates a session struct using the session-template script
 
+% Parsing inputs
+parse(p,varargin{:})
+parameters = p.Results;
 
+% Setting current folder as basepath if not provided
 if ~exist('basepath','var')
     basepath = pwd;
 end
 
-if ~exist('basename','var')
+% Determining the basename if not provided
+if ~exist('basename','var') || isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
+
 file = fullfile(basepath,[basename,'.session.mat']);
 if exist(file,'file')
+    % Loads an existing session struct from the basepath: basename.session.mat
     load(fullfile(basepath,[basename,'.session.mat']),'session')
+elseif parameters.sessionTemplate
+    % Generates the session struct using the sessionTemplate script if no file exist
+    session = sessionTemplate(basepath,'basename',basename);
 else
+    % Returns an error
     error('No session file exist')
 end
+
 session.general.basePath = basepath;
+
+% Shows session GUI if requested by user
+if parameters.showGUI
+    session = gui_session(session);
+end

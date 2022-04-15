@@ -103,11 +103,7 @@ else
         basepath = pwd;
     end
     if isempty(basename)
-        s = regexp(basepath, filesep, 'split');
-        if isempty(s{end})
-            s = s(1:end-1);
-        end
-        basename = s{end};
+        basename = basenameFromBasepath(basepath);
     end
 end
 
@@ -121,6 +117,7 @@ if exist(file,'file')
             load(file,'cell_metrics')
             cell_metrics.general.basepath = basepath;
             cell_metrics.general.fileFormat = params.fileFormat;
+            cell_metrics.general.saveAs = params.saveAs;
             
         case 'nwb'
             cell_metrics = loadNwbCellMetrics(file);

@@ -14,23 +14,18 @@ function mono_res = gui_MonoSyn(mono_res_input,UID)
 % Original function (bz_PlotMonoSyn) by: Sam, Gabrielle & ...?
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 17-06-2020
+% Last edited: 01-03-2022
 
 if ~exist('mono_res_input','var')
     basepath = pwd;
-    [~,basename,~] = fileparts(basepath);
-    if exist(fullfile(basepath,[basename,'.session.mat']),'file')
-        disp(['gui_MonoSyn: Loading ',basename,'.session.mat']);
-        load(fullfile(basepath,[basename,'.session.mat']),'session');
-        sessionIn = session;
-        mono_res_input = fullfile(basepath,[basename,'.mono_res.cellinfo.mat']);
-        if exist(mono_res_input,'file')
-            disp(['gui_MonoSyn: Loading mono_res file: ', mono_res_input])
-            load(mono_res_input,'mono_res');
-        else
-            warning('gui_MonoSyn: Could not locage the mono_res file')
-            return
-        end
+    basename = basenameFromBasepath(basepath);
+    mono_res_input = fullfile(basepath,[basename,'.mono_res.cellinfo.mat']);
+    if exist(mono_res_input,'file')
+        disp(['gui_MonoSyn: Loading mono_res file: ', mono_res_input])
+        load(mono_res_input,'mono_res');
+    else
+        warning('gui_MonoSyn: Could not locage the mono_res file')
+        return
     end
 elseif ischar(mono_res_input) && exist(mono_res_input,'file')
     disp('gui_MonoSyn: Loading mono_res file')
@@ -39,7 +34,6 @@ elseif isstruct(mono_res_input)
     mono_res = mono_res_input;
 end
 
-disp('gui_MonoSyn: Loading GUI')
 ccgR = mono_res.ccgR;
 completeIndex = mono_res.completeIndex;
 binSize = mono_res.binSize;
@@ -317,10 +311,10 @@ saveOnExitDialog
         else
             mono_res.sig_con_inhibitory = keep_con;
         end
-        if ischar(mono_res_input)
-            disp('Saving mono_res file')
+        if ischar(mono_res_input)            
             answer = questdlg('Do you want to save the manual monosynaptic curration?', 'Save monosynaptic curration', 'Yes','No','Yes');
             if strcmp(answer,'Yes')
+                disp('Saving mono_res file')
                 try
                     save(mono_res_input,'mono_res');
                 catch

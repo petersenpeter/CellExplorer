@@ -70,8 +70,8 @@ heading_anchors: true
 aux_links:
   "Code on GitHub":
     - "//github.com/petersenpeter/CellExplorer"
-  "Manuscript on bioRxiv":
-    - "https://doi.org/10.1101/2020.05.07.083436"
+  "Paper in Neuron":
+    - "https://www.sciencedirect.com/science/article/pii/S0896627321006565"
 
 
 # Makes Aux links open in a new tab. Default is false
