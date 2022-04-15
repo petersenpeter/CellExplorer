@@ -1,4 +1,4 @@
-function [status,interval,index] = InIntervals(values,intervals,varargin)
+function [status,interval,index] = ce_InIntervals(values,intervals,varargin)
 
 %InIntervals - Test which values fall in a list of intervals.
 %
