@@ -22,7 +22,8 @@ spikes_restrict.spindices = generateSpinDices(spikes_restrict.times);
 % Calculate the CCG across all cells
 binSize = 0.001; % 1ms bin size
 duration = 0.1; % -50ms:50ms window
-[ccg,t] = CCG(spikes_restrict.spindices(:,1),spikes_restrict.spindices(:,2),'binSize',binSize,'duration',duration);
+sr = spikes.sr; % Sampling rate of your recording
+[ccg,t] = CCG(spikes_restrict.spindices(:,1),spikes_restrict.spindices(:,2),'binSize',binSize,'duration',duration,'Fs',1/sr);
 
 figure, 
 % Plotting the autocorrelogram (ACG) of the eight cell

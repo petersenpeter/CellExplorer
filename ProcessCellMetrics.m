@@ -736,7 +736,7 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
     spkExclu = setSpkExclu('monoSynaptic_connections',parameters);
     dispLog('MonoSynaptic connections',basename)
     if ~exist(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'file') 
-        mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections);
+        mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections,'sr',sr);
         if parameters.manualAdjustMonoSyn
             dispLog('Loading MonoSynaptic GUI for manual adjustment',basename)
             mono_res = gui_MonoSyn(mono_res);
@@ -748,7 +748,7 @@ if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(
         if parameters.includeInhibitoryConnections && (~isfield(mono_res,'sig_con_inhibitory') || (isfield(mono_res,'sig_con_inhibitory') && isempty(mono_res.sig_con_inhibitory_all)))
             disp('  Detecting MonoSynaptic inhibitory connections')
             mono_res_old = mono_res;
-            mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections);
+            mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections,'sr',sr);
             mono_res.sig_con_excitatory = mono_res_old.sig_con;
             mono_res.sig_con = mono_res_old.sig_con;
             if parameters.manualAdjustMonoSyn
