@@ -22,8 +22,10 @@ Here is a detailed description of each of the menu elements of NeuroScope2.
 | Elements | Description       | 
 |:-------------|:------------------|
 | About NeuroScope2 | Shows dialog with basic info about NeuroScope2 |
-| Quit               | Quit NeuroScope2. This will save automatically save the session metadata. Closing the main window has the same effect. |
+| Benchmark NeuroScope2 | Perform a benchmark of NeuroScope2 testing its performance with a variable number of channels and windows widths |
 | Perform test suite of NeuroScope2 | Performs tests of most actions available in the side menu. The test suite can also be executed from the terminal by providing the parameter as an input: `NeuroScope2('performTestSuite',true)`. |
+| Quit               | Quit NeuroScope2. This will save automatically save the session metadata. Closing the main window has the same effect. |
+
 
 ### File
 
