@@ -60,13 +60,14 @@ preferences.spikesDetectionThreshold = -100; % in micro V
 preferences.showWaveformsBelowTrace = true;
 preferences.showDetectedSpikeWaveforms = false;
 preferences.showDetectedSpikesPCAspace = false;
+preferences.showDetectedSpikesPopulationRate = false;
 preferences.colorDetectedSpikesByWidth = false;
 preferences.interneuronMaxWidth = 0.5; % in ms
 preferences.waveformsRelativeWidth = 1/16;
 
 % Performance settings
 preferences.plotStyleDynamicRange = true; % If true, in the range plot mode, all samples will be shown below a temporal threshold (default: 1.2 sec)
-preferences.plotStyleDynamicThreshold = 24000; % in samples, threshold for switching between range and raw data presentation (Matlab plots linearly fast up to a certain number of points after which the performance changes and the range plotting style becomes faster)
+preferences.plotStyleDynamicThreshold = 23000; % in samples, threshold for switching between range and raw data presentation (Matlab plots linearly fast up to a certain number of points after which the performance changes and the range plotting style becomes faster)
 preferences.plotStyleRangeSamples = 4; % average samples per second of data. Default: 4; Higher value will show less data points
 
 % Spikes settings
@@ -76,7 +77,7 @@ preferences.spikesYData = ''; % Metric applied to sort spikes shown below the tr
 preferences.spikesColormap = 'hsv'; % The colormap applied to units
 preferences.spikesGroupColors = 1;
 preferences.showPopulationRate = false;
-preferences.populationRateBelowTrace = false;
+preferences.populationRateBelowTrace = true;
 preferences.populationRateWindow = 0.001; % seconds
 preferences.populationRateSmoothing = 35; % nBins
 preferences.spikeRasterLinewidth = 1.2;

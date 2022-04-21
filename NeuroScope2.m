@@ -1001,11 +1001,16 @@ end
         else % UI.settings.plotStyle == [3,4]
             % Raw data
             timeLine = [1:size(ephys.traces,1)]'/size(ephys.traces,1)*UI.settings.windowDuration/UI.settings.columns;
+            n_pieces = ceil(size(ephys.traces,1)/UI.settings.plotStyleDynamicThreshold);
             for iShanks = electrodeGroupsToPlot
                 channels = channelsList{iShanks};
                 if ~isempty(channels)
                     timeLine1 = timeLine*ones(1,length(channels))+UI.settings.channels_relative_offset(channels);
-                    line(UI.plot_axis1,timeLine1,ephys.traces(:,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off');
+                    for i = 1:n_pieces
+                        max_pieces = min(i*UI.settings.plotStyleDynamicThreshold,size(ephys.traces,1));
+                        piece = [(i-1)*UI.settings.plotStyleDynamicThreshold+1:max_pieces];
+                        line(UI.plot_axis1,timeLine1(piece),ephys.traces(piece,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off');
+                    end
                 end
             end
         end
