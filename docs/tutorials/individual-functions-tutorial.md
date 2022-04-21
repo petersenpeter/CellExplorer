@@ -44,7 +44,8 @@ waveform_metrics = calc_waveform_metrics(spikes,sr);
 
 ### ACG and CCG metrics
 ```m
-acg_metrics = calc_ACG_metrics(spikes);
+sr = session.extracellular.sr;
+acg_metrics = calc_ACG_metrics(spikes,sr);
 ```
 ### fit ACGs
 From the calculated ACGs (previous section) you can calculate the ACG fits:
@@ -99,7 +100,7 @@ gui_DeepSuperficial(deepSuperficialfromRipple;
 First calculate the spindices (the input format of the CCG function), if they are missing in the spikes struct:
 
 ```m
-spikes_restrict.spindices = generateSpinDices(spikes_restrict.times);
+spikes.spindices = generateSpinDices(spikes.times);
 ```
 
 Next calculate the CCGs between all pairs of cells
@@ -107,7 +108,8 @@ Next calculate the CCGs between all pairs of cells
 ```m
 binSize = 0.001; % 1ms bin size
 duration = 0.1; % -50ms:50ms window
-[ccg,t] = CCG(spikes.spindices(:,1),spikes.spindices(:,2),'binSize',binSize,'duration',duration);
+sr = spikes.sr; % Sampling rate (Hz)
+[ccg,t] = CCG(spikes.spindices(:,1),spikes.spindices(:,2),'binSize',binSize,'duration',duration,'Fs',1/sr);
 ```
 
 Finally, to plot the ACGs and CCGs write

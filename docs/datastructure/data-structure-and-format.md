@@ -153,7 +153,7 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
 * `inputs`
   * `inputTag` : unique name, e.g. temperature, stimPulses, OptitrackTTL
     * `equipment` : hardware used to acquire the data
-    * `inputType` : adc, aux, dat, dig ...
+    * `inputType` : adc, aux, dig, dat, ...
     * `channels` : list of channels (1-indexed)
     * `description`
 * `analysisTags`
