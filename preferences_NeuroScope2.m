@@ -134,7 +134,7 @@ preferences.plotRMSnoise_higherBand = 220;
 % Instantaneous metrics plot
 preferences.instantaneousMetrics.show = false;
 preferences.instantaneousMetrics.showPower = false;
-preferences.instantaneousMetrics.showFrequency = false;
+preferences.instantaneousMetrics.showSignal = false;
 preferences.instantaneousMetrics.showPhase = false;
 preferences.instantaneousMetrics.channel = 1;
 preferences.instantaneousMetrics.lowerBand = 100;

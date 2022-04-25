@@ -624,9 +624,9 @@ end
         
         % Instantaneous metrics plot
         UI.panel.instantaneousMetrics.main = uipanel('Parent',UI.panel.other.main,'title','Instantaneous metrics');
-        UI.panel.instantaneousMetrics.showPower = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'checkbox','String','Power', 'value', 0, 'Units','normalized', 'Position', [0.01 0.67 0.30 0.30],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','left');
-        UI.panel.instantaneousMetrics.showFrequency = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'checkbox','String','Frequency', 'value', 0, 'Units','normalized', 'Position', [0.32 0.67 0.36 0.30],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','left');
-        UI.panel.instantaneousMetrics.showPhase = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'checkbox','String','Phase', 'value', 0, 'Units','normalized', 'Position', [0.69 0.67 0.30 0.30],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','left');
+        UI.panel.instantaneousMetrics.showPower = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'checkbox','String','Power', 'value', 0, 'Units','normalized', 'Position',   [0.01 0.67 0.32 0.30],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','left');
+        UI.panel.instantaneousMetrics.showPhase = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'checkbox','String','Phase', 'value', 0, 'Units','normalized', 'Position',   [0.34 0.67 0.32 0.30],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','left');
+        UI.panel.instantaneousMetrics.showSignal = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'checkbox','String','Signal', 'value', 0, 'Units','normalized', 'Position', [0.67 0.67 0.32 0.30],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','left');
         uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'text', 'String', 'Channel', 'Units','normalized', 'Position', [0.01 0.35 0.32 0.26],'HorizontalAlignment','center');
         uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'text', 'String', 'Low freq (Hz)', 'Units','normalized', 'Position', [0.34 0.35 0.32 0.26],'HorizontalAlignment','center');
         uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'text', 'String', 'High freq (Hz)', 'Units','normalized', 'Position', [0.67 0.35 0.32 0.26],'HorizontalAlignment','center');
@@ -2073,22 +2073,24 @@ end
 %         frequency = diff(medfilt1(unwrapped,12*16))./diff(timestamps)/(2*pi);
         frequency = diff(unwrapped)./diff(timestamps)/(2*pi);
         
-        dataRange = diff(UI.dataRange.instantaneousMetrics)/(UI.settings.instantaneousMetrics.showFrequency+UI.settings.instantaneousMetrics.showPower+UI.settings.instantaneousMetrics.showPhase+1);
+        dataRange = diff(UI.dataRange.instantaneousMetrics)/(UI.settings.instantaneousMetrics.showSignal+UI.settings.instantaneousMetrics.showPower+UI.settings.instantaneousMetrics.showPhase+0.001);
         
-        k = (UI.settings.instantaneousMetrics.showFrequency+UI.settings.instantaneousMetrics.showPower+UI.settings.instantaneousMetrics.showPhase);
+        k = (UI.settings.instantaneousMetrics.showSignal+UI.settings.instantaneousMetrics.showPower+UI.settings.instantaneousMetrics.showPhase);
         addLegend('Instantaneous metrics');
-        
-        filtered = ((filtered-min(filtered))/(max(filtered)-min(filtered)))*dataRange+UI.dataRange.instantaneousMetrics(1)+dataRange*k+0.001;
-        line(timestamps, filtered,'Marker','none','LineStyle','-','color','m', 'HitTest','off','linewidth',1);
-        addLegend('Filtered trace',[1 0 1]);
         k = k-1;
-        
-        if UI.settings.instantaneousMetrics.showFrequency
-            frequency = (frequency/max(frequency))*dataRange+UI.dataRange.instantaneousMetrics(1)+dataRange*k+0.001;
-            line(timestamps(1:end-1), frequency,'Marker','none','LineStyle','-','color','g', 'HitTest','off','linewidth',1);
-            addLegend('Frequency',[0 1 0]);
+        filtered = ((filtered-min(filtered))/(max(filtered)-min(filtered)))*dataRange+UI.dataRange.instantaneousMetrics(1)+dataRange*k+0.001;
+        if UI.settings.instantaneousMetrics.showSignal
+            line(timestamps, filtered,'Marker','none','LineStyle','-','color','m', 'HitTest','off','linewidth',1);
+            addLegend('Filtered trace',[1 0 1]);
             k = k-1;
         end
+        
+%         if UI.settings.instantaneousMetrics.showFrequency
+%             frequency = (frequency/max(frequency))*dataRange+UI.dataRange.instantaneousMetrics(1)+dataRange*k+0.001;
+%             line(timestamps(1:end-1), frequency,'Marker','none','LineStyle','-','color','g', 'HitTest','off','linewidth',1);
+%             addLegend('Frequency',[0 1 0]);
+%             k = k-1;
+%         end
         if UI.settings.instantaneousMetrics.showPower
             amplitude = (amplitude/max(amplitude))*dataRange+UI.dataRange.instantaneousMetrics(1)+dataRange*k+0.001;
             line(timestamps, amplitude,'Marker','none','LineStyle','-','color','r', 'HitTest','off','linewidth',1);
@@ -2602,10 +2604,10 @@ end
             UI.settings.instantaneousMetrics.showPower = false;
         end
         
-        if UI.panel.instantaneousMetrics.showFrequency.Value == 1
-            UI.settings.instantaneousMetrics.showFrequency = true;
+        if UI.panel.instantaneousMetrics.showSignal.Value == 1
+            UI.settings.instantaneousMetrics.showSignal = true;
         else
-            UI.settings.instantaneousMetrics.showFrequency = false;
+            UI.settings.instantaneousMetrics.showSignal = false;
         end
         
         if UI.panel.instantaneousMetrics.showPhase.Value == 1
@@ -2624,7 +2626,7 @@ end
             MsgLog('The channel is not valid',4);
         end
         
-        if UI.settings.instantaneousMetrics.showPower || UI.settings.instantaneousMetrics.showFrequency || UI.settings.instantaneousMetrics.showPhase
+        if UI.settings.instantaneousMetrics.showPower || UI.settings.instantaneousMetrics.showSignal || UI.settings.instantaneousMetrics.showPhase
             UI.settings.instantaneousMetrics.show = true;
         else
             UI.settings.instantaneousMetrics.show = false;
@@ -2867,6 +2869,9 @@ end
         % Test window durations 
         disp('Testing window duration')
         benchmarkDuration(false)
+        
+        UI.settings.plotStyle = 3; 
+        UI.settings.windowDuration = 1;
         
         % Test amplitudes
         scalingFactor = [1 10 100];
@@ -3385,9 +3390,13 @@ end
         UI.settings.CSD.show = false;
         
         % RMS Noise inset
+        disp('Testing RMS inset')
         UI.panel.RMSnoiseInset.showRMSnoiseInset.Value = 1;
         toggleRMSnoiseInset
-        plotData
+        for j = 1:10
+            randomize_t0
+            plotData
+        end
         
         UI.panel.RMSnoiseInset.filter.Value = 1;
         toggleRMSnoiseInset
@@ -3401,12 +3410,55 @@ end
         UI.panel.RMSnoiseInset.lowerBand.String = '100';
         UI.panel.RMSnoiseInset.higherBand.String = '200';
         toggleRMSnoiseInset
-        plotData
+        for j = 1:10
+            randomize_t0
+            plotData
+        end
         
         UI.panel.RMSnoiseInset.showRMSnoiseInset.Value = 0;
         
-        % Instantaneous metrics (todo)
+        % Instantaneous metrics
+        disp('Testing instantaneous metrics')
+        UI.panel.instantaneousMetrics.showPower.Value = 1;
+        UI.panel.instantaneousMetrics.showSignal.Value = 1;
+        UI.panel.instantaneousMetrics.showPhase.Value = 1;
+        toggleInstantaneousMetrics
+        for j = 1:10
+            randomize_t0
+            plotData
+        end
         
+        UI.panel.instantaneousMetrics.showPower.Value = 1;
+        UI.panel.instantaneousMetrics.showSignal.Value = 1;
+        UI.panel.instantaneousMetrics.showPhase.Value = 0;
+        toggleInstantaneousMetrics
+        for j = 1:10
+            randomize_t0
+            plotData
+        end
+        
+        UI.panel.instantaneousMetrics.showPower.Value = 0;
+        UI.panel.instantaneousMetrics.showSignal.Value = 1;
+        UI.panel.instantaneousMetrics.showPhase.Value = 1;
+        toggleInstantaneousMetrics
+        for j = 1:10
+            randomize_t0
+            plotData
+        end
+        
+        UI.panel.instantaneousMetrics.showPower.Value = 1;
+        UI.panel.instantaneousMetrics.showSignal.Value = 0;
+        UI.panel.instantaneousMetrics.showPhase.Value = 0;
+        toggleInstantaneousMetrics
+        for j = 1:10
+            randomize_t0
+            plotData
+        end
+        
+        UI.panel.instantaneousMetrics.showPower.Value = 0;
+        UI.panel.instantaneousMetrics.showSignal.Value = 0;
+        UI.panel.instantaneousMetrics.showPhase.Value = 0;
+        toggleInstantaneousMetrics
         
         % % % % % % % % % % % % %
         % Resetting settings
@@ -3436,7 +3488,7 @@ end
         channelOrder = [data.session.extracellular.electrodeGroups.channels{:}];
         UI.elements.lower.performance.String = 'Benchmarking...';
         
-        for j_displays = [1,2,3]
+        for j_displays = 1:5
             if ~UI.settings.stream
                 return
             end
@@ -3471,7 +3523,7 @@ end
             title(gca1,'Benchmark of NeuroScope2'),
             xlabel(gca1,'Channels'),
             ylabel(gca1,'Plotting time (sec)')
-            legend({'Downsampled','Range','Raw'})
+            legend({'Downsampled','Range','Raw','LFP','Image'})
             
             movegui(fig_benchmark,'center'), set(fig_benchmark,'visible','on')
         end
@@ -3489,7 +3541,7 @@ end
         UI.elements.lower.performance.String = 'Benchmarking...';
         durations = 0.3:0.1:2;
         
-        for j_displays = 1:3
+        for j_displays = 1:5
             if ~UI.settings.stream
                 return
             end
@@ -3532,7 +3584,7 @@ end
             title(gca1,'Benchmark of windows duration in NeuroScope2'),
             xlabel(gca1,'Window duration (sec)'),
             ylabel(gca1,'Plotting time (sec)')
-            legend({'Downsampled','Range','Raw'})            
+            legend({'Downsampled','Range','Raw','LFP','Image'})
             movegui(fig_benchmark,'center'), set(fig_benchmark,'visible','on')
         end
         

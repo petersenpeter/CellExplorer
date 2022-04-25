@@ -26,7 +26,7 @@ To address this, we built CellExplorer, a framework for analyzing and characteri
 
 ## Getting started
 1. [Clone](x-github-client://openRepo/https://github.com/petersenpeter/CellExplorer), fork, or [download](https://github.com/petersenpeter/CellExplorer/archive/master.zip) the repository (cloning or forking is recommended).
-2. Add the local repository to your MATLAB setpath. 
+2. Add the local repository to your MATLAB setpath (make sure to select __Add with subfolders...__). 
 3. The pipeline uses two c-code files that must be compiled `CCGHeart.c` and `FindInInterval.c` (originally part of the FMA toolbox). Compiled versions are included for Windows 64bit and Intel Mac 64bit, but you still have to compile them if your OS version is different. __If you are using Linux__ you have to compile the scripts. In MATLAB, go to `CellExplorer/calc_CellMetrics/mex/` and run these line:
 ```m
 mex -O CCGHeart.c
