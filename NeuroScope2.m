@@ -118,9 +118,13 @@ while UI.t0 >= 0
     if ~ishandle(UI.fig)
         break
     else
-        
-        UI.selectedChannels = [];
-        UI.selectedUnits = [];
+        if ~UI.settings.stickySelection
+            UI.selectedChannels = [];
+            UI.selectedChannelsColors = [];
+            
+            UI.selectedUnits = [];            
+            UI.selectedUnitsColors = [];
+        end
         
         % Plotting data
         plotData;
@@ -194,7 +198,8 @@ end
         UI.iLine = 1;
         UI.colorLine = lines(256);
         UI.freeText = '';
-        UI.selectedChannels = [];  
+        UI.selectedChannels = [];
+        UI.selectedChannelsColors = [];
         UI.legend = {};
         UI.settings.saveMetadata = true; % Save metadata on exit
         UI.settings.fileRead = 'bof';
@@ -317,24 +322,32 @@ end
             UI.menu.display.resetZoomOnNavigation.Checked = 'on';
         end
         UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
-        UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);        
+        UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);     
+        UI.menu.display.stickySelection = uimenu(UI.menu.display.topMenu,menuLabel,'Sticky selection of channels',menuSelectedFcn,@setStickySelection);
+        
         UI.menu.display.channelOrder.topMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Channel order','Separator','on');
         UI.menu.display.channelOrder.option(1) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Electrode groups',menuSelectedFcn,@setChannelOrder);
         UI.menu.display.channelOrder.option(2) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Flipped electrode groups',menuSelectedFcn,@setChannelOrder);
         UI.menu.display.channelOrder.option(3) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Ascending channel order',menuSelectedFcn,@setChannelOrder);
         UI.menu.display.channelOrder.option(4) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Descending channel order',menuSelectedFcn,@setChannelOrder);
         UI.menu.display.channelOrder.option(UI.settings.channelOrder).Checked = 'on';
-        UI.menu.display.colorByChannels = uimenu(UI.menu.display.topMenu,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels,'Separator','on');
         
-        UI.menu.display.changeColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
-        UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.topMenu,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);        
-        UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.topMenu,menuLabel,'Change background color & primary color',menuSelectedFcn,@changeBackgroundColor);
-        UI.menu.display.detectedEventsBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected events below traces',menuSelectedFcn,@detectedEventsBelowTrace,'Separator','on');
-        UI.menu.display.detectedSpikesBelowTrace = uimenu(UI.menu.display.topMenu,menuLabel,'Show detected spikes below traces',menuSelectedFcn,@detectedSpikesBelowTrace,'Separator','on');
-        UI.menu.display.showDetectedSpikeWaveforms = uimenu(UI.menu.display.topMenu,menuLabel,'Show waveforms of detected spikes',menuSelectedFcn,@showDetectedSpikeWaveforms);
-        UI.menu.display.showDetectedSpikesPCAspace = uimenu(UI.menu.display.topMenu,menuLabel,'Show PCA space of detected spikes (beta feature)',menuSelectedFcn,@showDetectedSpikesPCAspace);
-        UI.menu.display.colorDetectedSpikesByWidth = uimenu(UI.menu.display.topMenu,menuLabel,'Color detected spikes by waveform width',menuSelectedFcn,@toggleColorDetectedSpikesByWidth);
-        UI.menu.display.showDetectedSpikesPopulationRate = uimenu(UI.menu.display.topMenu,menuLabel,'Show population rate of detected spikes',menuSelectedFcn,@showDetectedSpikesPopulationRate);
+        UI.menu.display.colormap = uimenu(UI.menu.display.topMenu,menuLabel,'Color maps');
+        UI.menu.display.colorByChannels = uimenu(UI.menu.display.colormap,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);        
+        UI.menu.display.changeColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
+        UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);        
+        UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.colormap,menuLabel,'Change background color & primary color',menuSelectedFcn,@changeBackgroundColor);
+        
+        UI.menu.display.detectedSpikes = uimenu(UI.menu.display.topMenu,menuLabel,'Detected spikes','Separator','on');
+        UI.menu.display.detectedSpikesBelowTrace = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show below traces',menuSelectedFcn,@detectedSpikesBelowTrace);
+        UI.menu.display.showDetectedSpikesPopulationRate = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show population rate ',menuSelectedFcn,@showDetectedSpikesPopulationRate);
+        UI.menu.display.showDetectedSpikeWaveforms = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show waveforms',menuSelectedFcn,@showDetectedSpikeWaveforms);
+        UI.menu.display.colorDetectedSpikesByWidth = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Color by waveform width',menuSelectedFcn,@toggleColorDetectedSpikesByWidth);
+        UI.menu.display.showDetectedSpikesPCAspace = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show PCA space (beta feature)',menuSelectedFcn,@showDetectedSpikesPCAspace);
+        
+        UI.menu.display.detectedEvents = uimenu(UI.menu.display.topMenu,menuLabel,'Detected events');
+        UI.menu.display.detectedEventsBelowTrace = uimenu(UI.menu.display.detectedEvents,menuLabel,'Show below traces',menuSelectedFcn,@detectedEventsBelowTrace);
+
         UI.menu.display.debug = uimenu(UI.menu.display.topMenu,menuLabel,'Debug','Separator','on',menuSelectedFcn,@toggleDebug);
         
         % Analysis
@@ -1027,6 +1040,14 @@ end
             end
         end
         
+        if UI.settings.stickySelection && ~isempty(UI.selectedChannels)
+            for i = 1:length(UI.selectedChannels)
+                if ismember(UI.selectedChannels(i), UI.channelOrder)
+                    highlightTraces(UI.selectedChannels(i),UI.selectedChannelsColors(i,:));
+                end
+            end
+        end
+        
         % Detecting and plotting spikes
         if UI.settings.detectSpikes && ~isempty(UI.channelOrder)
             [UI.settings.filter.b2, UI.settings.filter.a2] = butter(3, 500/(ephys.sr/2), 'high');
@@ -1462,7 +1483,13 @@ end
                     end
                 end
                 if ~isempty(uids_toHighlight)
-                    highlightUnits(unique(uids_toHighlight),t1,t2);
+                    highlightUnits(unique(uids_toHighlight),[]);
+                end
+            end
+            
+            if UI.settings.stickySelection && ~isempty(UI.selectedUnits)
+                for i = 1:length(UI.selectedUnits)
+                    highlightUnits(UI.selectedUnits(i),UI.selectedUnitsColors(i,:));
                 end
             end
             
@@ -1779,64 +1806,28 @@ end
         end
     end
     
-    function highlightUnits(units2plot,t1,t2)
+    function highlightUnits(units2plot,colorIn)
+        % Highlight ephys channel(s)
+        if ~isempty(colorIn)
+            colorLine = colorIn;
+        else
+            UI.iLine = mod(UI.iLine,7)+1;
+            colorLine = UI.colorLine(UI.iLine,:);
+        end
         idx = ismember(spikes_raster.UID,units2plot);
         uid = spikes_raster.UID(idx);
         raster_x = spikes_raster.x(idx);
         raster_y = spikes_raster.y(idx);
-        uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(units2plot)),')']);
+        
         if numel(units2plot) == 1
-            UI.iLine = mod(UI.iLine,7)+1;
-            colorLine = UI.colorLine(UI.iLine,:);
             line(raster_x, raster_y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorLine, 'HitTest','off','linewidth',3);
         else
+            uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(units2plot)),')']);
             for i = 1:numel(units2plot)
                 idx_uids = uid == units2plot(i);
                 line(raster_x(idx_uids), raster_y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off','linewidth',3);
             end
         end        
-    end
-    
-    function highlightUnits_old(units2plot,t1,t2)
-        
-        % Plots spikes
-        idx = ismember(data.spikes.spindices(:,2),units2plot) & ismember(data.spikes.spindices(:,2),UI.params.subsetTable ) & ismember(data.spikes.spindices(:,2),UI.params.subsetCellType) & ismember(data.spikes.spindices(:,2),UI.params.subsetFilter) & ismember(data.spikes.spindices(:,2),UI.params.subsetGroups)  & data.spikes.spindices(:,1) > t1 & data.spikes.spindices(:,1) < t2;
-        if any(idx)
-            raster = [];
-            raster.x = data.spikes.spindices(idx,1)-t1;            
-            if UI.settings.spikesBelowTrace
-                if UI.settings.useSpikesYData
-                    raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1)+0.002;
-                else
-                    if UI.settings.useMetrics
-                        [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric));
-                        [~,sortIdx] = sort(sortIdx);
-                    else
-                        sortIdx = 1:data.spikes.numcells;
-                    end
-                    raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1)+0.002;
-                end
-            else
-                idx2 = round(raster.x*size(ephys.traces,1)*ephys.sr);
-%                 spikes_raster.x = (data.spikes.spindices(idx,1)-t1)/UI.settings.columns+UI.settings.channels_relative_offset(spikes_raster.channel)';
-                idx3 = sub2ind(size(ephys.traces),idx2,data.spikes.maxWaveformCh1(data.spikes.spindices(idx,2))');
-                raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
-            end
-            
-            uid = data.spikes.spindices(idx,2);
-            unique_uids = unique(uid);
-            uid_colormap = eval([UI.settings.spikesColormap,'(',num2str(numel(unique_uids)),')']);
-            if numel(unique_uids) == 1
-                UI.iLine = mod(UI.iLine,7)+1;
-                colorLine = UI.colorLine(UI.iLine,:);
-                line(raster.x, raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color',colorLine, 'HitTest','off','linewidth',3);
-            else
-                for i = 1:numel(unique_uids)
-                    idx_uids = uid == unique_uids(i);
-                    line(raster.x(idx_uids), raster.y(idx_uids),'Marker',UI.settings.rasterMarker,'LineStyle','none','color',uid_colormap(i,:), 'HitTest','off','linewidth',3);
-                end
-            end
-        end
     end
 
     function plotKilosortData(t1,t2,colorIn)
@@ -2452,6 +2443,15 @@ end
         initTraces
         resetZoom
         uiresume(UI.fig);
+    end
+    
+    function setStickySelection(~,~)
+        UI.settings.stickySelection = ~UI.settings.stickySelection;
+        if UI.settings.stickySelection
+            UI.menu.display.stickySelection.Checked = 'on';
+        else
+            UI.menu.display.stickySelection.Checked = 'off';
+        end
     end
         
     function resetZoomOnNavigation(~,~)
@@ -4777,14 +4777,18 @@ end
                     In = unique(floor(In/size(x1,1)))+1;
                     In = channels(In);
                     highlightTraces(In,[])
-                    UI.selectedChannels = unique([In,UI.selectedChannels],'stable');
+                    [UI.selectedChannels,idxColors] = unique([In,UI.selectedChannels],'stable');
+                    UI.selectedChannelsColors = [UI.colorLine(UI.iLine,:); UI.selectedChannelsColors];
+                    UI.selectedChannelsColors = UI.selectedChannelsColors(idxColors,:);
                     UI.elements.lower.performance.String = ['Channel(s): ',num2str(UI.selectedChannels)];
                 elseif UI.settings.showSpikes && ~UI.settings.normalClick
                     [~,In] = min(hypot((spikes_raster.x(:)-um_axes(1,1)),(spikes_raster.y(:)-um_axes(1,2))));
                     UID = spikes_raster.UID(In);
                     if ~isempty(UID)
-                        highlightUnits(UID,UI.t0,UI.t0+UI.settings.windowDuration);
-                        UI.selectedUnits = unique([UID,UI.selectedUnits],'stable');
+                        highlightUnits(UID,[]);
+                        [UI.selectedUnits,idxColors] = unique([UID,UI.selectedUnits],'stable');
+                        UI.selectedUnitsColors = [UI.colorLine(UI.iLine,:); UI.selectedUnitsColors];
+                        UI.selectedUnitsColors = UI.selectedUnitsColors(idxColors,:);
                         UI.elements.lower.performance.String = ['Unit(s) selected: ',num2str(UI.selectedUnits)];
                     end
                 end
@@ -5636,6 +5640,7 @@ end
                 if ~isfield(temp,'timestamps')
                     MsgLog(['Failed to load behavior data - no timestamps: ' UI.settings.behaviorData],4);
                     UI.panel.behavior.showBehavior.Value = 0;
+                    UI.settings.showBehavior = false;
                     return
                 end
                 data.behavior.(UI.settings.behaviorData) = temp;
