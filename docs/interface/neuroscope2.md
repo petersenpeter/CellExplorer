@@ -39,7 +39,7 @@ The screenshot above shows a 128 channels recording with two ripple events highl
 The interface consist of side panel and a main plot axis. Below the main axis are further navigational elements. The side-panel has three tabs focused on: 1. the ephys data, plotting styles and settings, 2. spikes data and 3. other data types and data analysis, including events, time series, states, behavior, spectrogram, RMS noise plot, and a Current Source density visualization.
 
 ### Benchmarks
-NeuroScope2 is substantial faster than the original NeuroScope. Below figures capture the display time for various window durations (left; i.e. number of samples) and channel count (right) for the 5 plotting styles. The benchmarks were performed on an Apple iMac (5K display) with a 4.2HHz Quad-Core Intel Core i7 with 64GB of ram, and a Radeon Pro 580 8 GB graphics card.
+NeuroScope2 is substantial faster than the original NeuroScope. Below figures capture the display time for various window durations (left; i.e. number of samples) and channel count (right) for the 5 plotting styles. The benchmarks were performed on an Apple iMac (5K display) with a 4.2GHz Quad-Core Intel Core i7 with 64GB of ram, and a Radeon Pro 580 8 GB graphics card and data stored on an external SSD.
 
 ![Benchmarks of NeuroScope2](https://buzsakilab.com/wp/wp-content/uploads/2022/05/benchmark_window_duration-01.png)
 
