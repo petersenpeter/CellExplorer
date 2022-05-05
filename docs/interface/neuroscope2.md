@@ -38,6 +38,11 @@ The screenshot above shows a 128 channels recording with two ripple events highl
 ### Interface elements
 The interface consist of side panel and a main plot axis. Below the main axis are further navigational elements. The side-panel has three tabs focused on: 1. the ephys data, plotting styles and settings, 2. spikes data and 3. other data types and data analysis, including events, time series, states, behavior, spectrogram, RMS noise plot, and a Current Source density visualization.
 
+### Benchmarks
+NeuroScope2 is substantial faster than the original NeuroScope. Below figures capture the display time for various window durations (left; i.e. number of samples) and channel count (right) for the 5 plotting styles. The benchmarks were performed on an Apple iMac (5K display) with a 4.2GHz Quad-Core Intel Core i7 with 64GB of ram, a Radeon Pro 580 8 GB graphics card, and data stored on an external SSD. The test was performed on a 128 channel recording, sampled at 20KHz.
+
+![Benchmarks of NeuroScope2](https://buzsakilab.com/wp/wp-content/uploads/2022/05/benchmark_window_duration-01.png)
+
 ## Metadata
 NeuroScope2 uses the [session struct](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) for session level metadata. Please see [this tutorial](https://cellexplorer.org/tutorials/metadata-tutorial/) on how to generate and fill out the metadata. Metadata can be imported from multiple sources: an existing `basename.xml` file (NeuroSuite), from Intan's `info.rhd` file, from KiloSort's `rez.mat` file and from a `basename.sessionInfo.mat` (Buzcode) file.
 

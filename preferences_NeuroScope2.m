@@ -30,6 +30,7 @@ preferences.resetZoomOnNavigation = false;
 preferences.replayRefreshInterval = 0.50; % Fraction of window updated in replay mode
 preferences.insetRelativeWidth = 1/4;
 preferences.insetRelativeHeight = 1/4;
+preferences.stickySelection = false;
 
 if ismac
     preferences.fontsize = 11;
