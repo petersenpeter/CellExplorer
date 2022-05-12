@@ -7,7 +7,7 @@ function preferences = preferences_ProcessCellMetrics(session)
 % Last edited: 29-06-2021
 
 % General
-preferences.general.probesVerticalSpacing = 10; % 10um spacing between channels
+preferences.general.probesVerticalSpacing = 20; % 20um spacing between channels
 preferences.general.probesLayout = 'poly2';     % Default probe layout
 
 % Loading spike data
