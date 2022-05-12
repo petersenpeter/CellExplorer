@@ -131,7 +131,7 @@ while temp444 == 1
     
     prs = sig_con(any(sig_con==allcel(i),2),:);
     [plotRows,~]= numSubplots(max(3+size(prs,1),4));
-    ha = ce_tight_subplot(plotRows(1),plotRows(2),[.03 .03],[.05 .05],[.02 .015]); %  ce_tight_subplot(Nh, Nw, gap, marg_h, marg_w)
+    ha = ce_tight_subplot(plotRows(1),plotRows(2),[.035 .03],[.055 .055],[.02 .015]); %  ce_tight_subplot(Nh, Nw, gap, marg_h, marg_w)
     
     % Keeping track of selected cells
     if connectionsDisplayed == 1
@@ -275,7 +275,8 @@ while temp444 == 1
             xlim([1.02*axhpos3(1),axhpos3(2)])
             plot([0;0],[0;1]*size(zdata,1)+0.5,'m', 'HitTest','off')
 %             xlabel('CCGs (black marker: reference cell)')
-            ha(j).XLabel.String = 'CCGs (black marker: reference cell)';
+%             ha(j).XLabel.String = 'CCGs (black marker: reference cell)';
+            text(0.995,0.99,'CCGs with reference cell (black marker = ACG)','HorizontalAlignment','right','VerticalAlignment','top', 'HitTest','off','BackgroundColor',[1 1 1 0.9],'margin',1,'Units','normalized','fontweight', 'bold')
         else
             bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0), hold on
             ylim2 = ha(j).YLim;
@@ -292,7 +293,8 @@ while temp444 == 1
                 grid off
             end
 %             xlabel('Reference Cell ACG');
-            ha(j).XLabel.String = 'Reference Cell ACG';
+%             ha(j).XLabel.String = 'Reference Cell ACG';
+            text(0.995,0.99,'Reference Cell ACG','HorizontalAlignment','right','VerticalAlignment','top', 'HitTest','off','BackgroundColor',[1 1 1 0.9],'margin',1,'Units','normalized','fontweight', 'bold')
             
             uiwait(UI.fig);
         end

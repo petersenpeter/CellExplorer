@@ -24,7 +24,7 @@ function NeuroScope2(varargin)
 % ClickPlot, performTestSuite
 % plotData, plot_ephys, plotSpikeData, plotSpectrogram, plotTemporalStates, plotEventData, plotTimeSeriesData, 
 % plotAnalog, plotDigital, plotBehavior, plotTrials, plotRMSnoiseInset, plotSpikesPCAspace
-
+% showEvents, showBehavior
 
 % Global variables
 UI = []; % Struct with UI elements and settings
@@ -2870,7 +2870,7 @@ end
         disp('Testing window duration')
         benchmarkDuration(false)
         
-        UI.settings.plotStyle = 3; 
+        UI.settings.plotStyle = 3;
         UI.settings.windowDuration = 1;
         
         % Test amplitudes
@@ -3495,22 +3495,30 @@ end
             i_stream = 1;
             UI.settings.plotStyle = j_displays;
             while UI.settings.stream && i_stream*5<=numel(channelOrder)
-                UI.t0 = UI.t0+UI.settings.windowDuration;
-                UI.t0 = max([0,min([UI.t0,UI.t_total-UI.settings.windowDuration])]);
-                
                 UI.settings.channelList = channelOrder(1:i_stream*5);
-                initTraces
-                
+                initTraces                
                 if ~ishandle(UI.fig)
                     return
                 end
-                streamTic = tic;
-                plotData
                 if showStats
                     drawnow
+                    nRuns = 10;
+                else
+                    nRuns = 1;
                 end
-                streamToc = toc(streamTic);
-                benchmarkValues(j_displays,i_stream) = streamToc;
+                streamToc = zeros(1,nRuns);
+                for i = 1:nRuns
+                    UI.t0 = UI.t0+UI.settings.windowDuration;
+                    UI.t0 = max([0,min([UI.t0,UI.t_total-UI.settings.windowDuration])]);
+                    streamTic = tic;
+                    UI.forceNewData = true;
+                    plotData
+                    if showStats
+                        drawnow
+                    end
+                    streamToc(i) = toc(streamTic);
+                end
+                benchmarkValues(j_displays,i_stream) = mean(streamToc);
                 i_stream = i_stream+1;
                 UI.elements.lower.performance.String = ['Benchmarking ',num2str(i_stream*5),'/', num2str(numel(channelOrder))];
             end
@@ -3551,10 +3559,6 @@ end
             UI.forceNewData = true;
             uiresume(UI.fig);
             while UI.settings.stream && i_stream<=numel(durations)
-                UI.t0 = UI.t0+UI.settings.windowDuration;
-                UI.t0 = max([0,min([UI.t0,UI.t_total-UI.settings.windowDuration])]);
-                
-%                 UI.settings.channelList = channelOrder;
                 UI.settings.windowDuration = durations(i_stream);
                 UI.elements.lower.windowsSize.String = num2str(UI.settings.windowDuration);
                 initTraces
@@ -3564,14 +3568,25 @@ end
                 if ~ishandle(UI.fig)
                     return
                 end
-                streamTic = tic;
-                UI.forceNewData = true;
-                plotData
                 if showStats
                     drawnow
+                    nRuns = 10;
+                else
+                    nRuns = 1;
                 end
-                streamToc = toc(streamTic);
-                benchmarkValues(j_displays,i_stream) = streamToc;
+                streamToc = zeros(1,nRuns);
+                for i = 1:nRuns
+                    UI.t0 = UI.t0+UI.settings.windowDuration;
+                    UI.t0 = max([0,min([UI.t0,UI.t_total-UI.settings.windowDuration])]);
+                    streamTic = tic;
+                    UI.forceNewData = true;
+                    plotData
+                    if showStats
+                        drawnow
+                    end
+                    streamToc(i) = toc(streamTic);
+                end
+                benchmarkValues(j_displays,i_stream) = mean(streamToc);
                 i_stream = i_stream+1;
                 UI.elements.lower.performance.String = ['Benchmarking ',num2str(i_stream),'/', num2str(numel(durations))];
             end
