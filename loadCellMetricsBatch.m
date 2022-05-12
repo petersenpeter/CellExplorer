@@ -167,6 +167,9 @@ if ishandle(ce_waitbar)
 end
 cell_metrics_batch.putativeConnections.excitatory = [];
 cell_metrics_batch.putativeConnections.inhibitory = [];
+cell_metrics_batch.putativeConnections.excitatoryTransProb = [];
+cell_metrics_batch.putativeConnections.inhibitoryTransProb = [];
+
 for ii = 1:length(cell_metrics_fieldnames)
     if strcmp(subfieldstypes{ii},'cell')
         cell_metrics_batch.(cell_metrics_fieldnames{ii}) = cell(1,sum(batch_benchmark.file_cell_count));
@@ -205,11 +208,24 @@ for iii = 1:length(cell_metrics2)
             
             % Handles putative connections
             if strcmp(cell_metrics_fieldnames{ii},'putativeConnections')
-                if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatory') && isfield(cell_metrics_batch,'putativeConnections') && isfield(cell_metrics,'putativeConnections')
+                if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatory')
                     cell_metrics_batch.putativeConnections.excitatory = [cell_metrics_batch.putativeConnections.excitatory; cell_metrics.putativeConnections.excitatory+h];
                 end
-                if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory') && isfield(cell_metrics_batch,'putativeConnections') && isfield(cell_metrics,'putativeConnections')
+                if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory')
                     cell_metrics_batch.putativeConnections.inhibitory = [cell_metrics_batch.putativeConnections.inhibitory; cell_metrics.putativeConnections.inhibitory+h];
+                end
+                
+                % Transmission probabilities
+                if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatoryTransProb')
+                    cell_metrics_batch.putativeConnections.excitatoryTransProb = [cell_metrics_batch.putativeConnections.excitatoryTransProb, cell_metrics.putativeConnections.excitatoryTransProb];
+                elseif isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatory')
+                    cell_metrics_batch.putativeConnections.excitatoryTransProb = [cell_metrics_batch.putativeConnections.excitatoryTransProb, nan(1,size(cell_metrics.putativeConnections.excitatory,1))];
+                end
+                
+                if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitoryTransProb')
+                    cell_metrics_batch.putativeConnections.inhibitoryTransProb = [cell_metrics_batch.putativeConnections.inhibitoryTransProb, cell_metrics.putativeConnections.inhibitoryTransProb];
+                elseif isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory')
+                    cell_metrics_batch.putativeConnections.inhibitoryTransProb = [cell_metrics_batch.putativeConnections.inhibitoryTransProb, nan(1,size(cell_metrics.putativeConnections.inhibitory,1))];
                 end
                 
             % Handles groups,tags,groundTruthClassification
