@@ -98,7 +98,7 @@ UI.preferences.autoSaveVarName = 'cell_metrics';   % Variable name used in autos
 % Cell type classification definitions
 UI.preferences.cellTypes = {'Unknown','Pyramidal Cell','Narrow Interneuron','Wide Interneuron'};
 UI.preferences.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
-UI.preferences.tags = {'Good','Bad','Noise','InverseSpike'};
+UI.preferences.tags = {'Good','Bad','Noise','InverseSpike','bad_waveform'};
 UI.preferences.groundTruth = {'PV','NOS1','GAT1','SST','Axoaxonic'};
 UI.preferences.groupDataMarkers = ce_append(["o","d","s","*","+"],["m","k","g"]'); 
 
