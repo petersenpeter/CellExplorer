@@ -1,10 +1,10 @@
 ---
 layout: default
-title: Standard cell metrics
+title: Cell metrics
 parent: Data structure
 nav_order: 3
 ---
-# Standard cell metrics
+# Cell metrics
 {: .no_toc}
 CellExplorer used a single Matlab struct for handling all cell metrics called `cell_metrics`. The `cell_metrics` struct consists of three types of fields for handling different types of data: double, char cells and structs. Fields must be defined for all cells in the session (1xnCells). Single numeric values are saved to numeric fields with double precision, and character/string fields are saved in char cell arrays. Time series data like waveforms and session parameters are stored in standard struct fields.
 
@@ -103,7 +103,7 @@ Please see the [channel maps tutorial](https://cellexplorer.org/tutorials/channe
 * `putativeCellType`: Putative cell types. [See the dedicated page about cell-type classification]({{"/pipeline/cell-type-classification/"|absolute_url}}).
 
 ## Monosynaptic connections
-* `putativeConnections`: putative connections determined from cross correlograms. Contains two fields: `excitatory` and `inhibitory`, each contains connections pairs.
+* `putativeConnections`: putative connections determined from cross correlograms. Contains two fields: `excitatory` and `inhibitory`, each contains connections pairs. Transmission probabilities are also stored in  `excitatoryTransProb` and `inhibitoryTransProb`. 
 
 ## Sorting quality metrics
 Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscience. 2005.](https://www.ncbi.nlm.nih.gov/pubmed/15680687)
