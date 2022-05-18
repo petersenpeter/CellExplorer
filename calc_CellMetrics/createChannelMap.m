@@ -1,10 +1,15 @@
-function chanMap = createChannelMap(session)
-% Creates a channelmap compatible with KiloSort. 
+function chanMap = createChannelMap(session,varargin)
+% Creates a channelmap compatible with KiloSort.
 % Original custom function by Brendon Watson and Sam McKenzie
 
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 27-05-2020
+
+p = inputParser;
+addParameter(p,'reorder',true) % reorder coords for when channels are not 1:n
+parse(p,varargin{:})
+reorder = p.Results.reorder;
 
 basepath = session.general.basePath;
 basename = session.general.name;
@@ -99,7 +104,7 @@ switch(electrode_type)
             ycoords = cat(1,ycoords,y(:));
         end
     case 'twohundred'
-        for a= 1:ngroups 
+        for a= 1:ngroups
             x = [];
             y = [];
             tchannels  = groups{a};
@@ -116,6 +121,14 @@ switch(electrode_type)
             ycoords = cat(1,ycoords,y(:));
         end
 end
-[~,I] =  sort(horzcat(groups{:}));
-chanMap.xcoords = xcoords(I)';
-chanMap.ycoords = ycoords(I)';
+
+if reorder
+    [~,I] =  sort(horzcat(groups{:}));
+    chanMap.xcoords = xcoords(I)';
+    chanMap.ycoords = ycoords(I)';
+else
+    chanMap.xcoords = xcoords';
+    chanMap.ycoords = ycoords';
+end
+
+end
