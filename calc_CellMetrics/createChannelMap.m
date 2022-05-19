@@ -15,6 +15,7 @@ basepath = session.general.basePath;
 basename = session.general.name;
 electrode_type = session.analysisTags.probesLayout;
 inter_shanks_distance = 200;
+verticalSpacing = session.analysisTags.probesVerticalSpacing;
 
 electrodeTypes = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
 if ~any(strcmpi(electrode_type,electrodeTypes))
@@ -31,6 +32,19 @@ ngroups = session.extracellular.nElectrodeGroups;
 groups = session.extracellular.electrodeGroups.channels;
 
 switch(electrode_type)
+    case {'linear','edge'}
+        for a= 1:ngroups
+            x = [];
+            y = [];
+            tchannels  = groups{a};
+            for i =1:length(tchannels)
+                x(i) = 0;
+                y(i) = -(i-1)*verticalSpacing;
+            end
+            x = x+(a-1)*inter_shanks_distance;
+            xcoords = cat(1,xcoords,x(:));
+            ycoords = cat(1,ycoords,y(:));
+        end
     case 'staggered'
         horz_offset = flip([0,8.5,17:4:520]);
         horz_offset(1:2:end) = -horz_offset(1:2:end);
