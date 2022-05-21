@@ -867,7 +867,7 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
     dispLog('Theta metrics',basename);
     
     InstantaneousTheta = calcInstantaneousTheta2(session);
-    load(fullfile(basepath,[basename,'.animal.behavior.mat']),'animal');
+    load(fullfile(basepath,[basename,'.animal.behavior.mat']),'behavior');
     theta_bins = preferences.theta.bins;
     cell_metrics.thetaPhasePeak = nan(1,cell_metrics.general.cellCount);
     cell_metrics.thetaPhaseTrough = nan(1,cell_metrics.general.cellCount);
@@ -885,7 +885,7 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
         spikes2.times{j} = spikes2.times{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{Theta_channel})/session.extracellular.srLfp);
         spikes2.ts_eeg{j} = ceil(spikes2.ts{j}/16);
         spikes2.theta_phase{j} = InstantaneousTheta.signal_phase{Theta_channel}(spikes2.ts_eeg{j});
-        spikes2.speed{j} = interp1(animal.time,animal.speed,spikes2.times{j});
+        spikes2.speed{j} = interp1(behavior.timestamps,behavior.speed,spikes2.times{j});
         if sum(spikes2.speed{j} > 10)> preferences.theta.min_spikes % only calculated if the unit has above min_spikes (default: 500)
             
             [counts,centers] = histcounts(spikes2.theta_phase{j}(spikes2.speed{j} > preferences.theta.speed_threshold),theta_bins, 'Normalization', 'probability');
