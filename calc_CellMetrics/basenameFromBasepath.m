@@ -23,7 +23,7 @@ function basename = basenameFromBasepath(basepath)
         end
     end
     if isempty(basename)
-        disp('Failed to find basepath files');
+        warning('Failed to find basepath files');
         [~,basename,~] = fileparts(basepath);
     end
 end
