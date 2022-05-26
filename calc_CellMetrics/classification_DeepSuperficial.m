@@ -284,7 +284,7 @@ for jj = 1:session.extracellular.nElectrodeGroups
             end
         else
             deepSuperficial_ChClass(ripple_channels{jj}) = repmat({'Superficial'},length(ripple_channels{jj}),1); % Superficial
-            if SWR_diff2(1)*5>min(SWR_diff2)  && SWR_diff2(1) < 0
+            if ~isempty(SWR_diff2) && SWR_diff2(1)*5>min(SWR_diff2)  && SWR_diff2(1) < 0
                 deepSuperficial_ChDistance(ripple_channels{jj}) = (1:size(SWR_diff{jj},2))+1;
             end
         end
