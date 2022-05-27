@@ -232,7 +232,9 @@ for i = 1:length(unitsToProcess)
     else
         spikes.peakVoltage_expFitLengthConstant(ii) = nan;
     end
-    time = ([-ceil(wfWin_sec/2*sr)*(1/sr):1/sr:(ceil(wfWin_sec/2*sr)-1)*(1/sr)])*1000;
+    % time = ([-ceil(wfWin_sec/2*sr)*(1/sr):1/sr:(ceil(wfWin_sec/2*sr)-1)*(1/sr)])*1000;
+    time = [-wfWin_sec/2:1/sr:wfWin_sec/2]*1000;
+    time = time(1:size(wfF2,1));
     if showWaveforms 
         if ishandle(fig1)
         figure(fig1)
