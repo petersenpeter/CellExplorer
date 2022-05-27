@@ -7,3 +7,6 @@ calc_CellMetrics/data_NeuroScope2.mat
 calc_CellMetrics/last_preferences_CellExplorer.mat
 calc_CellMetrics/mex/CCGHeart.mexw64
 calc_CellMetrics/mex/FindInInterval.mexw64
+db/db_metadata_model.mat
++groundTruthData/groundTruth_cell_metrics.cellinfo.mat
++groundTruthData/groundTruth_cell_list.mat
