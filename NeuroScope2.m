@@ -39,6 +39,8 @@ epoch_plotElements.t0 = [];
 epoch_plotElements.events = [];
 score = [];
 raster = [];
+sliderMovedManually = false;
+
 if isdeployed % Check for if NeuroScope2 is running as a deployed app (compiled .exe or .app for windows and mac respectively)
     if ~isempty(varargin) % If a file name is provided it will load it.
         [basepath,basename,ext] = fileparts(varargin{1});
@@ -137,8 +139,8 @@ while UI.t0 >= 0
         
         % Update UI text and slider
         UI.elements.lower.time.String = num2str(UI.t0);
+        sliderMovedManually = false;
         UI.elements.lower.slider.Value = min([UI.t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
-        
         if UI.settings.debug
             drawnow
         end
@@ -660,8 +662,9 @@ end
         UI.elements.lower.scalingText = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', ' Scaling ', 'Units','normalized', 'Position', [0.0 0 0.05 0.8],'HorizontalAlignment','right');
         UI.elements.lower.scaling = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', num2str(UI.settings.scalingFactor), 'Units','normalized', 'Position', [0.05 0 0.05 1],'HorizontalAlignment','right','tooltip','Ephys scaling','Callback',@setScaling);
         UI.elements.lower.performance = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Performance', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','center','KeyPressFcn', @keyPress);
-        UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider);
+        UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider,'Tag','slider');
         addlistener(UI.elements.lower.slider, 'Value', 'PostSet',@movingSlider);
+        sliderMovedManually = true;
         set(UI.panel.info, 'Widths', [70 80 120 60 120 60 280 -1],'MinimumWidths',[70 80 120 60 60 60 250  1]); % set grid panel size
         
         % % % % % % % % % % % % % % % % % % % % % %
@@ -676,6 +679,7 @@ end
         UI.Pix_SS = UI.Pix_SS(3)*2;
         
         setScalingText
+        
     end
 
     function plotData
@@ -1914,9 +1918,9 @@ end
         events_idx = find(strcmp(eventName,UI.data.detectecFiles.events));
         
         % Setting y-limits of event rasters        
-        if UI.settings.processing_steps && ~any(UI.settings.showEventsBelowTrace)
+        if UI.settings.processing_steps && ~any(UI.settings.showEventsBelowTrace & UI.settings.showEvents)
             ydata2 = [UI.dataRange.processing(2);1];
-        elseif any(UI.settings.showEventsBelowTrace) && ~UI.settings.showEventsBelowTrace(events_idx)
+        elseif any(UI.settings.showEventsBelowTrace & UI.settings.showEvents) && ~UI.settings.showEventsBelowTrace(events_idx)
             ydata2 = [ydata(2);1];
         elseif ~UI.settings.showEventsBelowTrace(events_idx)
             ydata2 = [0;1];
@@ -1942,6 +1946,7 @@ end
             idx2 = ismember(idx,data.events.(eventName).flagged);
             if any(idx2)
                 plotEventLines(data.events.(eventName).time(idx(idx2))-t1,'m',linewidth)
+                addLegend('Flagged events',[1, 0, 1]);
             end
             idx(idx2) = [];
         end
@@ -1956,6 +1961,7 @@ end
             idx3 = find(data.events.(eventName).added >= t1 & data.events.(eventName).added <= t2);
             if any(idx3)
                 plotEventLines(data.events.(eventName).added(idx3)-t1,'c',linewidth)
+                addLegend('Added events',[0, 1, 1]);
             end
         end
         spec_text = {};
@@ -2861,6 +2867,7 @@ end
         if ~UI.settings.stream
             UI.settings.stream = true;
             UI.settings.fileRead = 'eof';
+            sliderMovedManually = false;
             UI.elements.lower.slider.Value = 100;
             while UI.settings.stream
                 UI.t0 = UI.t_total-UI.settings.windowDuration;
@@ -3259,7 +3266,7 @@ end
                 UI.settings.showEvents(j) = true;
                 showEvents(j)
                 
-                if UI.settings.showEvents
+                if any(UI.settings.showEvents)
                     disp(['Testing events: ', UI.settings.eventData])
                     UI.t0 = data.events.(UI.settings.eventData).time(1)-UI.settings.windowDuration/2;
                     UI.t0 = data.events.(UI.settings.eventData).time(end)-UI.settings.windowDuration/2;
@@ -4744,7 +4751,8 @@ end
         end
     end
 
-    function moveSlider(src,~)
+    function moveSlider(src,evnt)
+        sliderMovedManually = true;
         UI.settings.stream = false;
         s1 = dir(UI.data.fileName);
         s2 = dir(UI.data.fileNameLFP);
@@ -4754,16 +4762,20 @@ end
         elseif ~isempty(s2)
             filesize = s2.bytes;
             UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.srLfp*2);
-        end
+        end        
     end
     
     function movingSlider(src,evnt)
-        if gco == UI.elements.lower.slider
+        if sliderMovedManually
             UI.t0 = valid_t0((UI.t_total-UI.settings.windowDuration)*evnt.AffectedObject.Value/100);
             UI.elements.lower.time.String = num2str(UI.t0);
             
-            UI.selectedChannels = [];
-            UI.selectedUnits = [];
+            if ~UI.settings.stickySelection
+                UI.selectedChannels = [];
+                UI.selectedUnits = [];
+                UI.selectedUnits = [];
+                UI.selectedUnitsColors = [];
+            end
             
             % Plotting data
             plotData;
@@ -4773,8 +4785,9 @@ end
                 delete(epoch_plotElements.t0)
             end
             epoch_plotElements.t0 = line(UI.epochAxes,[UI.t0,UI.t0],[0,1],'color','k', 'HitTest','off','linewidth',1);
-            UI.settings.stream = false;
+            UI.settings.stream = false;            
         end
+        sliderMovedManually = true;
     end
 
     function ClickPlot(~,~)
