@@ -1,4 +1,4 @@
-function chanCoords = generateChanCoords(session)
+function chanCoords = generateChanCoords(session,varargin)
 % Generates channel coordinates
 % Original custom function by Brendon Watson and Sam McKenzie (from the KiloSortWrapper)
 
@@ -15,6 +15,15 @@ p = inputParser;
 addParameter(p,'reorder',true) % reorder coords for when channels are not 1:n
 parse(p,varargin{:})
 reorder = p.Results.reorder;
+
+% Default parameters
+source = 'defaults';
+layout = 'poly2';
+shankSpacing = 200; % in µm
+verticalSpacing = 20; % in µm
+
+ngroups = session.extracellular.nElectrodeGroups;
+groups = session.extracellular.electrodeGroups.channels;
 
 electrodeLayouts = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
 % sometimes, probImplants is empty, adjust for that here
@@ -178,13 +187,23 @@ switch(layout)
 end
 if reorder
     [~,I] =  sort(horzcat(groups{:}));
-    chanMap.xcoords = xcoords(I)';
-    chanMap.ycoords = ycoords(I)';
+    chanCoords.x = xcoords(I);
+    chanCoords.y = ycoords(I);
+    chanCoords.x = chanCoords.x(:);
+    chanCoords.y = chanCoords.y(:);
+    chanCoords.source = source;
+    chanCoords.layout = layout;
+    chanCoords.shankSpacing = shankSpacing;
+    chanCoords.verticalSpacing = verticalSpacing;
 else
-    chanMap.xcoords = xcoords';
-    chanMap.ycoords = ycoords';
+    chanCoords.xcoords = xcoords';
+    chanCoords.ycoords = ycoords';
+    chanCoords.x = chanCoords.x(:);
+    chanCoords.y = chanCoords.y(:);
+    chanCoords.source = source;
+    chanCoords.layout = layout;
+    chanCoords.shankSpacing = shankSpacing;
+    chanCoords.verticalSpacing = verticalSpacing;
 end
-chanMap.source = source;
-chanMap.layout = layout;
-chanMap.shankSpacing = shankSpacing;
+
 
