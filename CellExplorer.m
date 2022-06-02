@@ -90,6 +90,8 @@ else
     
     % Extra inputs
     addParameter(p,'summaryFigures',false,@islogical); % Creates summary figures
+    addParameter(p,'selectSummaryPlotSubset',false,@islogical); % Allows for selection of plots
+    addParameter(p,'keepSummaryFigures',false,@islogical); % Keep existing plots open
     addParameter(p,'plotCellIDs',[],@isnumeric); % Defines which cell ids to plot in the summary figures
     
     % Parsing inputs
@@ -108,6 +110,8 @@ else
     
     % Extra inputs
     summaryFigures = p.Results.summaryFigures;
+    selectSummaryPlotSubset = p.Results.selectSummaryPlotSubset;
+    keepSummaryFigures = p.Results.keepSummaryFigures;
     plotCellIDs = p.Results.plotCellIDs;
 end
 
@@ -199,15 +203,10 @@ warning('off','MATLAB:Axes:NegativeDataInLogAxis')
 % Database initialization
 % % % % % % % % % % % % % % % % % % % % % %
 
-if exist('db_load_settings','file')
+enableDatabase = db_is_active;
+
+if enableDatabase
     db_settings = db_load_settings;
-    if ~strcmp(db_settings.credentials.username,'user')
-        enableDatabase = 1;
-    else
-        enableDatabase = 0;
-    end
-else
-    enableDatabase = 0;
 end
 
 % % % % % % % % % % % % % % % % % % % % % %
@@ -351,12 +350,11 @@ setUIfromCellMetrics
 % % % % % % % % % % % % % % % % % % % % % %
 
 if summaryFigures
-    MsgLog('Generating summary figures',-1)
     UI.params.subset = 1:length(cell_metrics.cellID);
 %     highlightCurrentCell = false;
     plotSummaryFigures
     % closes the UI
-    if ishandle(UI.fig)
+    if ishandle(UI.fig) && ~keepSummaryFigures
         close(UI.fig)
     end
     MsgLog('Summary figure(s) generated. Saved to /summaryFigures',-1)
@@ -923,12 +921,16 @@ function updateUI
                 xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5001]),
 %                 UI.axes(1).XLabel.String = UI.plot.xTitle(1:end-4);
                 UI.axes(1).XLabel.Interpreter = 'none';
+            else
+                UI.axes(1).XLabel.Interpreter = 'tex';
             end
             if contains(UI.plot.yTitle,'_num')
                 yticks([1:length(groups_ids.(UI.plot.yTitle))]), yticklabels(groups_ids.(UI.plot.yTitle)),ytickangle(65),
                 ylim([0.5,length(groups_ids.(UI.plot.yTitle))+0.5001]),
 %                 UI.axes(1).YLabel.String = UI.plot.yTitle(1:end-4); 
                 UI.axes(1).YLabel.Interpreter = 'none';
+            else
+                UI.axes(1).YLabel.Interpreter = 'tex';
             end
             if length(unique(UI.classes.plot(UI.params.subset)))==2
 %                 G1 = plotX(UI.params.subset);
@@ -936,11 +938,11 @@ function updateUI
                 if ~isempty(UI.params.subset(G==1)) && ~isempty(UI.params.subset(G==2))
                     if ~all(plotX(UI.params.subset(G==1))) && ~all(plotX(UI.params.subset(G==2)))
                         [h,p] = kstest2(plotX(UI.params.subset(G==1)),plotX(UI.params.subset(G==2)));
-                        text(0.97,0.02,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Rotation',90,'Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
+                        text(0.97,0.02,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Rotation',90,'Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
                     end
                     if ~all(plotY(UI.params.subset(G==1))) && ~all(plotY(UI.params.subset(G==2)))
                         [h,p] = kstest2(plotY(UI.params.subset(G==1)),plotY(UI.params.subset(G==2)));
-                        text(0.02,0.97,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Interpreter', 'none','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
+                        text(0.02,0.97,['h=', num2str(h), ', p=',num2str(p,3)],'Units','normalized','Interpreter', 'none','HitTest','off','BackgroundColor',[1 1 1 0.7],'margin',0.5)
                     end
                 end
             end
@@ -1542,7 +1544,7 @@ function updateUI
     end
     
     % % % % % % % % % % % % % % % % % % % % % %
-    % Separate legends in side panel 
+    % Separate legends in side panel (this is much faster than Matlab's own legend)
     updateLegends
     
     % % % % % % % % % % % % % % % % % % % % % %
@@ -1718,8 +1720,10 @@ end
                         channels2plot =channels2plot(1:size(cell_metrics.waveforms.filt_all{ii},1));
                     end
                     channels2plot = 1:size(cell_metrics.waveforms.filt_all{ii},1);
-                    xdata = repmat([cell_metrics.waveforms.time_all{ii},nan(1,1)],length(channels2plot),1)' + general.chanCoords.x(channels2plot)'/UI.params.chanCoords.x_factor;
-                    ydata = [cell_metrics.waveforms.filt_all{ii}(channels2plot,:),nan(length(channels2plot),1)]' + general.chanCoords.y(channels2plot)'*UI.params.chanCoords.y_factor;
+                    x_offset = general.chanCoords.x(channels2plot)/UI.params.chanCoords.x_factor;
+                    y_offset = general.chanCoords.y(channels2plot)*UI.params.chanCoords.y_factor;
+                    xdata = repmat([cell_metrics.waveforms.time_all{ii},nan(1,1)],length(channels2plot),1)' + x_offset(:)';
+                    ydata = [cell_metrics.waveforms.filt_all{ii}(channels2plot,:),nan(length(channels2plot),1)]' + y_offset(:)';
                     line(xdata(:),ydata(:), 'color', col,'linewidth',1,'HitTest','off')
                 else
                     text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
@@ -3325,8 +3329,9 @@ end
                             subset2 = [subset2,set1];
                         end
                     end
-                    subsetPlots.xaxis = Xdata;
-                    subsetPlots.yaxis = Ydata;
+                    [subset2,idx1] = sort(subset2);
+                    subsetPlots.xaxis = Xdata(:,idx1);
+                    subsetPlots.yaxis = Ydata(:,idx1);
                     subsetPlots.subset = subset2;
                 end
                 line(1:numel(cell_metrics.waveforms.peakVoltage_all{ii}),cell_metrics.waveforms.peakVoltage_all{ii}(channelOrder), 'color', col,'linewidth',2,'HitTest','off','Marker','.')
@@ -3336,7 +3341,7 @@ end
             
         elseif contains(customPlotSelection,{'Waveforms ('})
             
-            plotAxes.XLabel.String = 'Time (ms)';
+            plotAxes.XLabel.String = 'Samples';
             plotAxes.YLabel.String = ['Voltage (',char(181),'V)'];
             plotAxes.Title.String = customPlotSelection;
             field2plot = customPlotSelection(12:end-1);
@@ -3351,6 +3356,32 @@ end
                 end
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center','Interpreter', 'none')
+            end
+            
+        elseif contains(customPlotSelection,{'ACGs ('})
+            
+            
+            plotAxes.YLabel.String = ['Rate (Hz)'];
+            plotAxes.Title.String = customPlotSelection;
+            field2plot = customPlotSelection(7:end-1);
+            if isfield(cell_metrics.general.acgs,field2plot)
+                plotXdata = cell_metrics.general.acgs.(field2plot);
+                plotAxes.XLabel.String = 'Time (ms)';
+            else
+                acg_width = (size(cell_metrics.acg.(field2plot),1)-1)/2;
+                plotXdata = [-acg_width:acg_width]';
+                xlim([-acg_width,acg_width])
+                plotAxes.XLabel.String = 'Samples';
+            end
+            
+            plotYdata = cell_metrics.acg.(field2plot)(:,ii);
+            if plotAcgYLog
+                set(plotAxes,'yscale','log')
+                plotYdata(plotYdata < 0.1)=0.1;
+                line(plotXdata, plotYdata,'linewidth',1,'color',col,'HitTest','off')
+            else
+                set(plotAxes,'yscale','linear')
+                bar_from_patch_centered_bins(plotXdata, plotYdata,col)
             end
             
         else
@@ -4495,9 +4526,9 @@ end
         end
         switch source
             case '- Tutorials'
-                web('https://CellExplorer.org/tutorials/tutorials/','-new','-browser')
+                web('https://CellExplorer.org/tutorials/','-new','-browser')
             case '- Graphical interface'
-                web('https://cellexplorer.org/interface/interface/','-new','-browser')
+                web('https://cellexplorer.org/interface/cellexplorer/','-new','-browser')
             case 'Support'
                  web('https://cellexplorer.org/#support','-new','-browser')
             case '- Report an issue'
@@ -7461,13 +7492,13 @@ end
                     x_scale = range(x1(:));
                     y_scale = range(y1(:));
                     [~,In] = min(hypot((x1(:)-u)/x_scale,(y1(:)-v)/y_scale));
-                    In = unique(floor(In/length(subsetPlots.xaxis)))+1;
+                    In = unique(floor(In/size(subsetPlots.xaxis,1)))+1;
                     In = min([In,length(subset1)]);
                     iii = subset1(In);
-                    [~,time_index] = min(abs(subsetPlots.xaxis-u));
+                    [~,time_index] = min(abs(subsetPlots.xaxis(:,In)-u));
                     if highlight || hover
-                        hover2highlight.handle2 = line(subsetPlots.xaxis,y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
-                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
+                        hover2highlight.handle2 = line(subsetPlots.xaxis(:,In),y1(:,In),'linewidth',2, 'HitTest','off','color',colorLine);
+                        hover2highlight.handle1 = text(subsetPlots.xaxis(time_index,In),y1(time_index,In)+text_offset,getTextLabel(iii),'VerticalAlignment', 'bottom','HorizontalAlignment','center', 'HitTest','off', 'FontSize', 12,'BackgroundColor',[1 1 1 0.7],'margin',0.5);
                     end
                     
                 case 'Trilaterated position'
@@ -8311,7 +8342,7 @@ end
                             y1 = subsetPlots.yaxis;
                             
                             In2 = find(inpolygon(x1(:),y1(:), polygon_coords(:,1)',polygon_coords(:,2)'));
-                            In2 = unique(floor(In2/length(subsetPlots.xaxis)))+1;
+                            In2 = unique(floor(In2/size(x1,1)))+1;
                             In = subset1(In2);
                             if ~isempty(In2)
                                 line(x1(:,1),y1(:,In2),'linewidth',2, 'HitTest','off')
@@ -8745,11 +8776,17 @@ end
             plotOptions1 = plotOptions(ismember(plotOptions,plotOptions_all));
             if ~UI.BatchMode && isfield(cell_metrics,'putativeConnections') && (isfield(cell_metrics.putativeConnections,'excitatory') || isfield(cell_metrics.putativeConnections,'inhibitory'))
                 plotOptions1 = [plotOptions1;'Connectivity graph'; 'Connectivity matrix'];
-            end
-            plotCount = 3;
+            end            
         else
-            plotCount = 4;
-            plotOptions1 = plotOptions;            
+            plotOptions1 = plotOptions;
+        end
+        plotCount = 4;
+        if selectSummaryPlotSubset
+            InitialValue = find(ismember(plotOptions,plotOptions1));
+            [indx,tf] = listdlg('ListString',plotOptions,'Name','Select plots','InitialValue',InitialValue);
+            if tf
+                plotOptions1 = plotOptions(indx);
+            end
         end
         [plotRows,~]= numSubplots(length(plotOptions1)+plotCount);
         
@@ -8767,9 +8804,12 @@ end
                 disp('Summary figures canceled by user');
                 break
             end
-            if ishandle(fig) & plotCellIDs~=-1
+            if keepSummaryFigures && j>1
+                fig = figure('Name','CellExplorer','NumberTitle','off','pos',UI.params.figureSize,'visible','off');
+                movegui(fig,'center')
+            elseif ishandle(fig) & plotCellIDs~=-1 
                 clf(fig)
-            end
+            end            
             
             if UI.BatchMode
                 batchIDs1 = cell_metrics.batchIDs(cellIDs(j));
@@ -8869,8 +8909,10 @@ end
             highlightCurrentCell = false;
             plotLegends, title('Legend')
             highlightCurrentCell = highlightCurrentCell_pre;
+            
             % Saving figure
             if ishandle(fig)
+                movegui(fig,'center'), set(fig,'visible','on')
                 try
                     if highlight == 0
                         ce_savefigure2(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_SessionSummary_', saveAs],0)
@@ -8878,9 +8920,7 @@ end
                         ce_savefigure2(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_CellSummary_',saveAs,'_cell_', num2str(cell_metrics.UID(cellIDs(j)))],0)
                     end
                 catch 
-                    disp('figure not saved (action canceled by user or directory not available for writing)')
-                    movegui(fig,'center'), set(fig,'visible','on')
-                    
+                    disp('figure not saved (action canceled by user or directory not available for writing)')              
                 end
             end
         end
@@ -8890,7 +8930,7 @@ end
         
         if ishandle(fig)
             set(fig,'visible','on')
-            if plotCellIDs~=-1
+            if all(plotCellIDs ~=-1) && ~keepSummaryFigures
                 close(fig)
             end
         end        
@@ -9026,7 +9066,7 @@ end
                 MsgLog(['Session metadata file not available:' sessionMetaFilename],2)
             end
         else
-            [~,basename,~] = fileparts(pwd);
+            basename = basenameFromBasepath(pwd);
             sessionMetaFilename = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename,'.session.mat']);
             if exist(sessionMetaFilename,'file')
                 gui_session(sessionMetaFilename);
@@ -9408,7 +9448,7 @@ end
                         plot_cells2 = cell_metrics.UID(plot_cells);
                         k = 1;
                         try 
-                        ha = ce_tight_subplot(length(plot_cells),length(plot_cells),[.03 .03],[.06 .05],[.04 .05]);
+                            ha = ce_tight_subplot(length(plot_cells),length(plot_cells),[.03 .03],[.06 .05],[.04 .05]);
                         catch
                             MsgLog(['The number of selected cells are too high (', num2str(length(plot_cells)), ')'],4);
                             return
@@ -10499,12 +10539,14 @@ end
         uimenu(UI.menu.session.topMenu,menuLabel,'Open directory of current session',menuSelectedFcn,@openSessionDirectory,'Accelerator','C','Separator','on');
         
         % BuzLabDB
-        UI.menu.BuzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
-        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Load session(s) from BuzLabDB',menuSelectedFcn,@DatabaseSessionDialog,'Accelerator','D');
-        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Edit credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
-        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Edit repository paths',menuSelectedFcn,@editDBrepositories);
-        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current session on website',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
-        uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current animal subject on website',menuSelectedFcn,@showAnimalInWebDB);
+        if enableDatabase
+            UI.menu.BuzLabDB.topMenu = uimenu(UI.fig,menuLabel,'BuzLabDB');
+            uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Load session(s) from BuzLabDB',menuSelectedFcn,@DatabaseSessionDialog,'Accelerator','D');
+            uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Edit credentials',menuSelectedFcn,@editDBcredentials,'Separator','on');
+            uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'Edit repository paths',menuSelectedFcn,@editDBrepositories);
+            uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current session on website',menuSelectedFcn,@openSessionInWebDB,'Separator','on');
+            uimenu(UI.menu.BuzLabDB.topMenu,menuLabel,'View current animal subject on website',menuSelectedFcn,@showAnimalInWebDB);
+        end
         
         % Help
         UI.menu.help.topMenu = uimenu(UI.fig,menuLabel,'Help');
@@ -11103,10 +11145,27 @@ end
         
         % Loading and defining labels
         UI.labels = metrics_labels(UI.lists.metrics);
+        
         % Setting initial settings for plots, popups and listboxes
         UI.popupmenu.xData.String = UI.lists.metrics;
         UI.popupmenu.yData.String = UI.lists.metrics;
         UI.popupmenu.zData.String = UI.lists.metrics;
+        
+        if ~any(strcmp(UI.lists.metrics,UI.preferences.plotXdata))
+            UI.preferences.plotXdata = UI.lists.metrics{1};
+        end
+        
+        if ~any(strcmp(UI.lists.metrics,UI.preferences.plotYdata))
+            UI.preferences.plotYdata = UI.lists.metrics{2};
+        end
+        
+        if~any(strcmp(UI.lists.metrics,UI.preferences.plotZdata))
+            UI.preferences.plotZdata = UI.lists.metrics{3};
+        end
+        
+        if ~any(strcmp(UI.lists.metrics,UI.preferences.plotMarkerSizedata))
+            UI.preferences.plotMarkerSizedata = UI.lists.metrics{4};
+        end
         plotX = cell_metrics.(UI.preferences.plotXdata);
         plotY  = cell_metrics.(UI.preferences.plotYdata);
         plotZ  = cell_metrics.(UI.preferences.plotZdata);
@@ -11166,6 +11225,8 @@ end
         if isfield(cell_metrics.waveforms,'raw')
             waveformOptions = [waveformOptions;'Waveforms (raw single)';'Waveforms (raw all)'];
         end
+        
+        % Adding any extra waveforms
         temp = fieldnames(cell_metrics.waveforms);
         temp(ismember(temp,{'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time','bestChannels'}) | ~structfun(@iscell,cell_metrics.waveforms)) = [];
         for i = 1:length(temp)
@@ -11182,6 +11243,13 @@ end
         acgOptions = {'ACGs (single)';'ACGs (all)';'ACGs (group averages)';'ACGs (image)';'CCGs (image)'};
         if isfield(cell_metrics,'isi')
             acgOptions = [acgOptions;'ISIs (single)';'ISIs (all)';'ISIs (image)'];
+        end
+        
+        % Adding any extra ACGs
+        temp = fieldnames(cell_metrics.acg);
+        temp(ismember(temp,{'wide','narrow','log10','wide_normalized','narrow_normalized','log10_rate','log10_occurence','log10_occurrence'}) | ~structfun(@isnumeric,cell_metrics.acg)) = [];
+        for i = 1:length(temp)
+            acgOptions = [acgOptions;['ACGs (',temp{i},')']];
         end
 
         if isfield(cell_metrics.responseCurves,'thetaPhase_zscored')

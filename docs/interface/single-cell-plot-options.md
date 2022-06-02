@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Single cell plot options
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 3
 ---
 # Single cell plot options

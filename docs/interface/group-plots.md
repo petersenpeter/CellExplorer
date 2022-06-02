@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Group plots
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 3
 ---
 # Group plots

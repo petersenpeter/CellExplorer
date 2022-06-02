@@ -1,4 +1,4 @@
-function acg_metrics = calc_ACG_metrics(spikes,sr,varargin)%(clustering_path,sr,TimeRestriction)
+function acg_metrics = calc_ACG_metrics(spikes,sr,varargin)
 % Two autocorrelograms are calculated:  narrow (100ms, 0.5ms bins) and wide (1s, 1ms bins) using the CCG function (for speed)
 %
 % Further three metrics are derived from these:

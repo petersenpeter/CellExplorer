@@ -1,7 +1,8 @@
 ---
 layout: default
 title: UI elements
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 1
 ---
 # UI elements

@@ -2,13 +2,13 @@
 layout: default
 title: UI elements
 parent: NeuroScope2
-grand_parent: Graphical interface
+grand_parent: Graphical interfaces
 nav_order: 1
 ---
 
 # UI elements of NeuroScope2
 
-<a href="https://buzsakilab.com/wp/wp-content/uploads/2021/11/NeuroScope2.png">![NeuroScope2](https://buzsakilab.com/wp/wp-content/uploads/2021/02/NeuroScope_screenshot_lowress.jpg)</a>
+<a href="https://buzsakilab.com/wp/wp-content/uploads/2021/11/NeuroScope2.png">![NeuroScope2](https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_1_lowress.jpg)</a>
 
 
 ### NeuroScope2 interface elements
@@ -154,7 +154,6 @@ Behavior  files (basename.behaviorName.behavior.mat) are automatically detected 
 
 Behavioral trials (basename.behaviorName.behavior.mat) can be navigated either through trial number or by using the left and right arrow buttons.
 
-
 ### Spectrogram
 Shows a spectrogram below the ephys traces from specified channel. The window width (in seconds) can be altered, together with the frequency span and frequency step size (Hz). 
 
@@ -163,3 +162,8 @@ Shows a Current Source Density (CSD) on top of the ephys traces.
 
 ### RMS noise inset
 Shows a RMS noise inset for all channel in the upper right corner. The raw traces, the current filters or a custom filter can be used. The custom filter is specified by the lower and higher filter settings (Hz). The filter applied is a 3rd order Zero-phase digital butter filter. 
+
+<a href="https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_spectrogram.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_spectrogram_lowress.jpg)</a>
+
+The screenshot above shows a 128 channels recording with a spectrogram shown below the traces for the channel highlighted in white. A RMS-noise channel-inset is shown in the upper right corner, showing the signal RMS-amplitude across the color-coded channels, The RMS-amplitude was calculated from the filtered traces (custom filter: 100Hz to 220Hz) . The spike raster is color-coded and sorted by putative cell types.
+

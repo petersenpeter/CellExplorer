@@ -14,23 +14,18 @@ function mono_res = gui_MonoSyn(mono_res_input,UID)
 % Original function (bz_PlotMonoSyn) by: Sam, Gabrielle & ...?
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 17-06-2020
+% Last edited: 01-03-2022
 
 if ~exist('mono_res_input','var')
     basepath = pwd;
-    [~,basename,~] = fileparts(basepath);
-    if exist(fullfile(basepath,[basename,'.session.mat']),'file')
-        disp(['gui_MonoSyn: Loading ',basename,'.session.mat']);
-        load(fullfile(basepath,[basename,'.session.mat']),'session');
-        sessionIn = session;
-        mono_res_input = fullfile(basepath,[basename,'.mono_res.cellinfo.mat']);
-        if exist(mono_res_input,'file')
-            disp(['gui_MonoSyn: Loading mono_res file: ', mono_res_input])
-            load(mono_res_input,'mono_res');
-        else
-            warning('gui_MonoSyn: Could not locage the mono_res file')
-            return
-        end
+    basename = basenameFromBasepath(basepath);
+    mono_res_input = fullfile(basepath,[basename,'.mono_res.cellinfo.mat']);
+    if exist(mono_res_input,'file')
+        disp(['gui_MonoSyn: Loading mono_res file: ', mono_res_input])
+        load(mono_res_input,'mono_res');
+    else
+        warning('gui_MonoSyn: Could not locage the mono_res file')
+        return
     end
 elseif ischar(mono_res_input) && exist(mono_res_input,'file')
     disp('gui_MonoSyn: Loading mono_res file')
@@ -39,7 +34,6 @@ elseif isstruct(mono_res_input)
     mono_res = mono_res_input;
 end
 
-disp('gui_MonoSyn: Loading GUI')
 ccgR = mono_res.ccgR;
 completeIndex = mono_res.completeIndex;
 binSize = mono_res.binSize;
@@ -137,7 +131,7 @@ while temp444 == 1
     
     prs = sig_con(any(sig_con==allcel(i),2),:);
     [plotRows,~]= numSubplots(max(3+size(prs,1),4));
-    ha = ce_tight_subplot(plotRows(1),plotRows(2),[.03 .03],[.05 .05],[.02 .015]); %  ce_tight_subplot(Nh, Nw, gap, marg_h, marg_w)
+    ha = ce_tight_subplot(plotRows(1),plotRows(2),[.035 .03],[.055 .055],[.02 .015]); %  ce_tight_subplot(Nh, Nw, gap, marg_h, marg_w)
     
     % Keeping track of selected cells
     if connectionsDisplayed == 1
@@ -281,7 +275,8 @@ while temp444 == 1
             xlim([1.02*axhpos3(1),axhpos3(2)])
             plot([0;0],[0;1]*size(zdata,1)+0.5,'m', 'HitTest','off')
 %             xlabel('CCGs (black marker: reference cell)')
-            ha(j).XLabel.String = 'CCGs (black marker: reference cell)';
+%             ha(j).XLabel.String = 'CCGs (black marker: reference cell)';
+            text(0.995,0.99,'CCGs with reference cell (black marker = ACG)','HorizontalAlignment','right','VerticalAlignment','top', 'HitTest','off','BackgroundColor',[1 1 1 0.9],'margin',1,'Units','normalized','fontweight', 'bold')
         else
             bar_from_patch(t,ccgR(:,allcel(i),allcel(i)),'k',0), hold on
             ylim2 = ha(j).YLim;
@@ -298,7 +293,8 @@ while temp444 == 1
                 grid off
             end
 %             xlabel('Reference Cell ACG');
-            ha(j).XLabel.String = 'Reference Cell ACG';
+%             ha(j).XLabel.String = 'Reference Cell ACG';
+            text(0.995,0.99,'Reference Cell ACG','HorizontalAlignment','right','VerticalAlignment','top', 'HitTest','off','BackgroundColor',[1 1 1 0.9],'margin',1,'Units','normalized','fontweight', 'bold')
             
             uiwait(UI.fig);
         end
@@ -317,10 +313,10 @@ saveOnExitDialog
         else
             mono_res.sig_con_inhibitory = keep_con;
         end
-        if ischar(mono_res_input)
-            disp('Saving mono_res file')
+        if ischar(mono_res_input)            
             answer = questdlg('Do you want to save the manual monosynaptic curration?', 'Save monosynaptic curration', 'Yes','No','Yes');
             if strcmp(answer,'Yes')
+                disp('Saving mono_res file')
                 try
                     save(mono_res_input,'mono_res','-v7.3');
                 catch

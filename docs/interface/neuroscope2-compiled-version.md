@@ -2,7 +2,7 @@
 layout: default
 title: Compiled version
 parent: NeuroScope2
-grand_parent: Graphical interface
+grand_parent: Graphical interfaces
 nav_order: 9
 ---
 
