@@ -39,6 +39,8 @@ epoch_plotElements.t0 = [];
 epoch_plotElements.events = [];
 score = [];
 raster = [];
+sliderMovedManually = false;
+
 if isdeployed % Check for if NeuroScope2 is running as a deployed app (compiled .exe or .app for windows and mac respectively)
     if ~isempty(varargin) % If a file name is provided it will load it.
         [basepath,basename,ext] = fileparts(varargin{1});
@@ -137,8 +139,8 @@ while UI.t0 >= 0
         
         % Update UI text and slider
         UI.elements.lower.time.String = num2str(UI.t0);
+        sliderMovedManually = false;
         UI.elements.lower.slider.Value = min([UI.t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
-        
         if UI.settings.debug
             drawnow
         end
@@ -242,7 +244,7 @@ end
         % Intan settings
         UI.settings.intan_showAnalog = false;
         UI.settings.intan_showAux = false;
-        UI.settings.intan_showDigital = false;      
+        UI.settings.intan_showDigital = false;
         
         % Cell metrics
         UI.params.cellTypes = [];
@@ -557,20 +559,19 @@ end
         % 3. PANEL: Other datatypes
         % Events
         UI.panel.events.navigation = uipanel('Parent',UI.panel.other.main,'title','Events (*.events.mat)');
-        UI.panel.events.files = uicontrol('Parent',UI.panel.events.navigation,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.85 0.98 0.13],'HorizontalAlignment','left','Callback',@setEventData);
-        UI.panel.events.showEvents = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.01 0.75 0.5 0.1], 'value', 0,'String','Show events','Callback',@showEvents,'KeyPressFcn', @keyPress,'tooltip','Show events');
-        UI.panel.events.showEventsBelowTrace = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.505 0.75 0.485 0.1], 'value', 0,'String','Below traces','Callback',@showEventsBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show events below traces');
-        UI.panel.events.showEventsIntervals = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.01 0.65 0.458 0.1], 'value', 0,'String','Intervals','Callback',@showEventsIntervals,'KeyPressFcn', @keyPress,'tooltip','Show events intervals');
-        UI.panel.events.processing_steps = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.505 0.65 0.458 0.1], 'value', 0,'String','Processing','Callback',@processing_steps,'KeyPressFcn', @keyPress,'tooltip','Show processing steps');
-        UI.panel.events.eventNumber = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.485 0.485 0.14],'HorizontalAlignment','center','tooltip','Event number','Callback',@gotoEvents);
-        UI.panel.events.eventCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nEvents', 'Units','normalized', 'Position', [0.505 0.485 0.485 0.14],'HorizontalAlignment','center','Enable','off');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.33 0.32 0.14],'String',char(8592),'Callback',@previousEvent,'KeyPressFcn', @keyPress,'tooltip','Previous event');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0.33 0.32 0.14],'String','Random','Callback',@(src,evnt)randomEvent,'KeyPressFcn', @keyPress,'tooltip','Random event');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0.33 0.32 0.14],'String',char(8594),'Callback',@nextEvent,'KeyPressFcn', @keyPress,'tooltip','Next event');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.17 0.485 0.14],'String','Flag event','Callback',@flagEvent,'KeyPressFcn', @keyPress,'tooltip','Flag selected event');
-        UI.panel.events.flagCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nFlags', 'Units','normalized', 'Position', [0.505 0.17 0.485 0.14],'HorizontalAlignment','center','Enable','off');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.14],'String','Add event','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.14],'String','Save events','Callback',@saveEvent,'KeyPressFcn', @keyPress,'tooltip','Save events');
+        UI.table.eventsdata = uitable(UI.panel.events.navigation,'Data', {'','',false,false,false},'Units','normalized','Position',[0 0.54 1 0.46],'ColumnWidth',{20 65 42 50 45},'columnname',{'','Name','Show','Active','Below'},'RowName',[],'ColumnEditable',[false false true true true],'CellEditCallback',@setEventData,'CellSelectionCallback',@ClicktoSelectFromTable3);
+
+        UI.panel.events.showEventsIntervals = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.01 0.45 0.458 0.08], 'value', 0,'String','Intervals','Callback',@showEventsIntervals,'KeyPressFcn', @keyPress,'tooltip','Show events intervals');
+        UI.panel.events.processing_steps = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.505 0.45 0.458 0.08], 'value', 0,'String','Processing','Callback',@processing_steps,'KeyPressFcn', @keyPress,'tooltip','Show processing steps');
+        UI.panel.events.eventNumber = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.34 0.485 0.09],'HorizontalAlignment','center','tooltip','Event number','Callback',@gotoEvents);
+        UI.panel.events.eventCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nEvents', 'Units','normalized', 'Position', [0.505 0.34 0.485 0.09],'HorizontalAlignment','center','Enable','off');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.23 0.32 0.10],'String',char(8592),'Callback',@previousEvent,'KeyPressFcn', @keyPress,'tooltip','Previous event');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0.23 0.32 0.10],'String','Random','Callback',@(src,evnt)randomEvent,'KeyPressFcn', @keyPress,'tooltip','Random event');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0.23 0.32 0.10],'String',char(8594),'Callback',@nextEvent,'KeyPressFcn', @keyPress,'tooltip','Next event');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.12 0.485 0.10],'String','Flag event','Callback',@flagEvent,'KeyPressFcn', @keyPress,'tooltip','Flag selected event');
+        UI.panel.events.flagCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nFlags', 'Units','normalized', 'Position', [0.505 0.12 0.485 0.10],'HorizontalAlignment','center','Enable','off');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.10],'String','Add event','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.10],'String','Save events','Callback',@saveEvent,'KeyPressFcn', @keyPress,'tooltip','Save events');
         
         % Time series
         UI.panel.timeseries.main = uipanel('Parent',UI.panel.other.main,'title','Time series (*.timeseries.mat)');
@@ -648,9 +649,9 @@ end
         UI.panel.instantaneousMetrics.higherBand = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'Edit', 'String', num2str(UI.settings.instantaneousMetrics.higherBand), 'Units','normalized', 'Position', [0.67 0.01 0.32 0.36],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
         
         % Defining flexible panel heights
-        set(UI.panel.other.main, 'Heights', [200 110 95 140 95 50 90 90],'MinimumHeights',[220 120 100 150 150 50 90 90]);
+        set(UI.panel.other.main, 'Heights', [240 110 95 140 95 50 90 90],'MinimumHeights',[260 120 100 150 150 50 90 90]);
         UI.panel.other.main1.MinimumWidths = 218;
-        UI.panel.other.main1.MinimumHeights = 970;
+        UI.panel.other.main1.MinimumHeights = 1010;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -661,8 +662,9 @@ end
         UI.elements.lower.scalingText = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', ' Scaling ', 'Units','normalized', 'Position', [0.0 0 0.05 0.8],'HorizontalAlignment','right');
         UI.elements.lower.scaling = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', num2str(UI.settings.scalingFactor), 'Units','normalized', 'Position', [0.05 0 0.05 1],'HorizontalAlignment','right','tooltip','Ephys scaling','Callback',@setScaling);
         UI.elements.lower.performance = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Performance', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','center','KeyPressFcn', @keyPress);
-        UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider);
+        UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider,'Tag','slider');
         addlistener(UI.elements.lower.slider, 'Value', 'PostSet',@movingSlider);
+        sliderMovedManually = true;
         set(UI.panel.info, 'Widths', [70 80 120 60 120 60 280 -1],'MinimumWidths',[70 80 120 60 60 60 250  1]); % set grid panel size
         
         % % % % % % % % % % % % % % % % % % % % % %
@@ -677,6 +679,7 @@ end
         UI.Pix_SS = UI.Pix_SS(3)*2;
         
         setScalingText
+        
     end
 
     function plotData
@@ -732,8 +735,23 @@ end
         end
         
         % Event data
-        if UI.settings.showEvents
-            plotEventData(UI.t0,UI.t0+UI.settings.windowDuration,UI.settings.primaryColor,'m')
+        if any(UI.settings.showEvents)
+            if sum(UI.settings.showEvents)>1
+                addLegend('Events:')
+            end
+            for i = 1:numel(UI.settings.showEvents)
+                if UI.settings.showEvents(i)
+                    eventName = UI.data.detectecFiles.events{i};
+                    if sum(UI.settings.showEvents)>1
+                        if strcmp(UI.settings.eventData,eventName)
+                            addLegend(eventName,UI.settings.primaryColor);
+                        else
+                            addLegend(eventName,UI.colors_events(i,:));
+                        end
+                    end
+                    plotEventData(eventName,UI.t0,UI.t0+UI.settings.windowDuration,UI.colors_events(i,:));                    
+                end
+            end
         end
         
         % Time series
@@ -1335,7 +1353,7 @@ end
                 end
                 
                 % Showing events in the 2D behavior plot
-                if UI.settings.showEvents
+                if any(UI.settings.showEvents)
                     idx = find(data.events.(UI.settings.eventData).time >= t1 & data.events.(UI.settings.eventData).time <= t2);
                     % Plotting flagged events in a different color
                     if isfield(data.events.(UI.settings.eventData),'flagged')
@@ -1890,97 +1908,125 @@ end
         end
     end
 
-    function plotEventData(t1,t2,colorIn1,colorIn2)
+    function plotEventData(eventName,t1,t2,colorIn1)
+        if strcmp(UI.settings.eventData,eventName)
+        	colorIn1 = UI.settings.primaryColor;
+        end
+        
         % Plot events
         ydata = UI.dataRange.events';
-        if ~UI.settings.showEventsBelowTrace && UI.settings.processing_steps
+        events_idx = find(strcmp(eventName,UI.data.detectecFiles.events));
+        
+        % Setting y-limits of event rasters        
+        if UI.settings.processing_steps && ~any(UI.settings.showEventsBelowTrace & UI.settings.showEvents)
+            ydata2 = [UI.dataRange.processing(2);1];
+        elseif any(UI.settings.showEventsBelowTrace & UI.settings.showEvents) && ~UI.settings.showEventsBelowTrace(events_idx)
+            ydata2 = [ydata(2);1];
+        elseif ~UI.settings.showEventsBelowTrace(events_idx)
             ydata2 = [0;1];
         else
-            ydata2 = ydata;
-        end  
-        if UI.settings.showEventsBelowTrace && UI.settings.showEvents
+            nBelow = sum(UI.settings.showEvents & UI.settings.showEventsBelowTrace);
+            y_height = diff(ydata)/nBelow;
+            events_idx_below = find(strcmp(eventName,UI.data.detectecFiles.events(UI.settings.showEvents & UI.settings.showEventsBelowTrace)))-1;
+            ydata2 = [ydata(1);ydata(1)+y_height]+y_height*events_idx_below;
+        end
+        
+        % Setting linewidth
+        if UI.settings.showEventsBelowTrace(events_idx)
             linewidth = 1.5;
         else
             linewidth = 0.8;
         end
         
-        idx = find(data.events.(UI.settings.eventData).time >= t1 & data.events.(UI.settings.eventData).time <= t2);
+        % Detmermining events within 
+        idx = find(data.events.(eventName).time >= t1 & data.events.(eventName).time <= t2);
         
         % Plotting flagged events in a different color
-        if isfield(data.events.(UI.settings.eventData),'flagged')
-            idx2 = ismember(idx,data.events.(UI.settings.eventData).flagged);
+        if isfield(data.events.(eventName),'flagged')
+            idx2 = ismember(idx,data.events.(eventName).flagged);
             if any(idx2)
-                plotEventLines(data.events.(UI.settings.eventData).time(idx(idx2))-t1,'m',linewidth)
+                plotEventLines(data.events.(eventName).time(idx(idx2))-t1,'m',linewidth)
+                addLegend('Flagged events',[1, 0, 1]);
             end
             idx(idx2) = [];
         end
         
         % Plotting events 
         if any(idx)
-            plotEventLines(data.events.(UI.settings.eventData).time(idx)-t1,colorIn1,linewidth)
+            plotEventLines(data.events.(eventName).time(idx)-t1,colorIn1,linewidth)
         end
         
         % Plotting added events 
-        if isfield(data.events.(UI.settings.eventData),'added') && ~isempty(isfield(data.events.(UI.settings.eventData),'added'))
-            idx3 = find(data.events.(UI.settings.eventData).added >= t1 & data.events.(UI.settings.eventData).added <= t2);
+        if isfield(data.events.(eventName),'added') && ~isempty(isfield(data.events.(eventName),'added'))
+            idx3 = find(data.events.(eventName).added >= t1 & data.events.(eventName).added <= t2);
             if any(idx3)
-                plotEventLines(data.events.(UI.settings.eventData).added(idx3)-t1,'c',linewidth)
+                plotEventLines(data.events.(eventName).added(idx3)-t1,'c',linewidth)
+                addLegend('Added events',[0, 1, 1]);
             end
         end
-
-        
-        % Plotting processing steps
-        if UI.settings.processing_steps && isfield(data.events.(UI.settings.eventData),'processing_steps')
-            fields2plot = fieldnames(data.events.(UI.settings.eventData).processing_steps);
-            UI.colors_processing_steps = hsv(numel(fields2plot));
-            ydata1 = [0;0.005]+ydata(1);
-            addLegend(['Processing steps: ' UI.settings.eventData])
-            for i = 1:numel(fields2plot)
-                idx5 = find(data.events.(UI.settings.eventData).processing_steps.(fields2plot{i}) >= t1 & data.events.(UI.settings.eventData).processing_steps.(fields2plot{i}) <= t2);
-                if any(idx5)
-                    line([1;1]*data.events.(UI.settings.eventData).processing_steps.(fields2plot{i})(idx5)'-t1,0.005*i+ydata1*ones(1,numel(idx5)),'Marker','none','LineStyle','-','color',UI.colors_processing_steps(i,:), 'HitTest','off','linewidth',1.3);
-                    addLegend(strrep(fields2plot{i}, '_', ' '),UI.colors_processing_steps(i,:)*0.8);
-                else
-                    addLegend(fields2plot{i},[0.5, 0.5, 0.5]);
+        spec_text = {};
+        if strcmp(UI.settings.eventData,eventName)
+            % Plotting processing steps
+            if UI.settings.processing_steps && isfield(data.events.(eventName),'processing_steps')
+                fields2plot = fieldnames(data.events.(eventName).processing_steps);
+                UI.colors_processing_steps = hsv(numel(fields2plot));
+                ydata1 = UI.dataRange.processing(1)+[0;diff(UI.dataRange.processing)/10];
+%                 addLegend(['Processing steps: ' eventName])
+                for i = 1:numel(fields2plot)
+                    idx5 = find(data.events.(eventName).processing_steps.(fields2plot{i}) >= t1 & data.events.(eventName).processing_steps.(fields2plot{i}) <= t2);
+                    if any(idx5)
+                        line([1;1]*data.events.(eventName).processing_steps.(fields2plot{i})(idx5)'-t1,0.00435*i+ydata1*ones(1,numel(idx5)),'Marker','none','LineStyle','-','color',UI.colors_processing_steps(i,:), 'HitTest','off','linewidth',2);
+                        addLegend(strrep(fields2plot{i}, '_', ' '),UI.colors_processing_steps(i,:)*0.8);
+                    else
+                        addLegend(fields2plot{i},[0.5, 0.5, 0.5]);
+                    end
+                end
+                
+                % Specs
+                idx_center = find(data.events.(eventName).time == t1+UI.settings.windowDuration/2);
+                if ~isempty(idx_center)
+                    if isfield(data.events.(eventName),'peakNormedPower')
+                        spec_text = [spec_text;['Power: ', num2str(data.events.(eventName).peakNormedPower(idx_center))]];
+                    end                    
                 end
             end
-
-            % Specs
-            idx_center = find(data.events.(UI.settings.eventData).time == t1+UI.settings.windowDuration/2);
-            if ~isempty(idx_center)
-                spec_text = {};
-                if isfield(data.events.(UI.settings.eventData),'timestamps')
-                    spec_text = [spec_text;['Duration: ', num2str(diff(data.events.(UI.settings.eventData).timestamps(idx_center,:))),' sec']];
+            
+            % Plotting event intervals
+            if UI.settings.showEventsIntervals
+                statesData = data.events.(eventName).timestamps(idx,:)-t1;
+                p1 = patch(double([statesData,flip(statesData,2)])',[ydata2(1);ydata2(1);ydata2(2);ydata2(2)]*ones(1,size(statesData,1)),'g','EdgeColor','g','HitTest','off');
+                alpha(p1,0.1);
+                % Duration text
+                idx_center = find(data.events.(eventName).time == t1+UI.settings.windowDuration/2);
+                if ~isempty(idx_center)
+                    if isfield(data.events.(eventName),'timestamps')
+                        spec_text = [spec_text;['Duration: ', num2str(diff(data.events.(eventName).timestamps(idx_center,:))),' sec']];
+                    end
                 end
-                if isfield(data.events.(UI.settings.eventData),'peakNormedPower')
-                    spec_text = [spec_text;['Power: ', num2str(data.events.(UI.settings.eventData).peakNormedPower(idx_center))]];
-                end
+            end
+            
+            if ~isempty(spec_text)
                 text(1/400+UI.settings.windowDuration/2,1,spec_text,'color',[1 1 1],'FontWeight', 'Bold','BackgroundColor',UI.settings.textBackground, 'HitTest','off','Units','normalized','verticalalignment','top')
+            end            
+            
+            % Highlighting detection channel
+            if isfield(data.events.(eventName),'detectorParams')
+                detector_channel = data.events.(eventName).detectorParams.channel+1;
+            elseif isfield(data.events.(eventName),'detectorinfo') & isfield(data.events.(eventName).detectorinfo,'detectionchannel')
+                detector_channel = data.events.(eventName).detectorinfo.detectionchannel+1;
+            else
+                detector_channel = [];
             end
+            if ~isempty(detector_channel) && ismember(detector_channel,UI.channelOrder)
+                highlightTraces(detector_channel,UI.settings.primaryColor)
+            end
+            
         end
         
-        % Plotting event intervals
-        if UI.settings.showEventsIntervals
-            statesData = data.events.(UI.settings.eventData).timestamps(idx,:)-t1;
-            p1 = patch(double([statesData,flip(statesData,2)])',[ydata2(1);ydata2(1);ydata2(2);ydata2(2)]*ones(1,size(statesData,1)),'g','EdgeColor','g','HitTest','off');
-            alpha(p1,0.1);
-        end
-        
-        % Highlighting detection channel
-        if isfield(data.events.(UI.settings.eventData),'detectorParams')
-            detector_channel = data.events.(UI.settings.eventData).detectorParams.channel+1;
-        elseif isfield(data.events.(UI.settings.eventData),'detectorinfo') & isfield(data.events.(UI.settings.eventData).detectorinfo,'detectionchannel')
-            detector_channel = data.events.(UI.settings.eventData).detectorinfo.detectionchannel+1;
-        else
-            detector_channel = [];
-        end
-        if ~isempty(detector_channel) && ismember(detector_channel,UI.channelOrder)
-            highlightTraces(detector_channel,UI.settings.primaryColor)
-        end
         
         function plotEventLines(timestamps,clr,linewidth)
             timestamps = timestamps(:)';
-            if UI.settings.plotTracesInColumns &&  ~UI.settings.showEventsBelowTrace
+            if UI.settings.plotTracesInColumns &&  ~UI.settings.showEventsBelowTrace(events_idx)
                 timestamps1 = timestamps'/UI.settings.columns+UI.settings.channels_relative_offset(UI.channelOrder);
                 xdata3 = ones(3,1)*timestamps1(:)';
                 
@@ -1990,8 +2036,8 @@ end
                 line(xdata3(:),ydata3(:),'Marker','none','LineStyle','-','color',clr, 'HitTest','off','linewidth',linewidth);
             else
                 line([1;1]*timestamps,ydata2*ones(1,numel(timestamps)),'Marker','none','LineStyle','-','color',clr, 'HitTest','off','linewidth',linewidth);
-            end
-            
+                
+            end            
         end
     end
 
@@ -2821,6 +2867,7 @@ end
         if ~UI.settings.stream
             UI.settings.stream = true;
             UI.settings.fileRead = 'eof';
+            sliderMovedManually = false;
             UI.elements.lower.slider.Value = 100;
             while UI.settings.stream
                 UI.t0 = UI.t_total-UI.settings.windowDuration;
@@ -3213,60 +3260,59 @@ end
         
         % % % % % % % % % % % % %
         % Events
-        if ~isempty(UI.panel.events.files.String)
-            for j = 1:length(UI.panel.events.files.String)
-                UI.panel.events.files.Value = j;
-                UI.settings.eventData = UI.panel.events.files.String{UI.panel.events.files.Value};
-                UI.settings.showEvents = false;
-                showEvents
+        if ~isempty(UI.data.detectecFiles.events)
+            for j = 1:length(UI.data.detectecFiles.events)
+                UI.settings.eventData = UI.data.detectecFiles.events{j};
+                UI.settings.showEvents(j) = true;
+                showEvents(j)
                 
-                if UI.settings.showEvents
+                if any(UI.settings.showEvents)
                     disp(['Testing events: ', UI.settings.eventData])
-                UI.t0 = data.events.(UI.settings.eventData).time(1)-UI.settings.windowDuration/2;
-                UI.t0 = data.events.(UI.settings.eventData).time(end)-UI.settings.windowDuration/2;
-                
-                % processing_steps
-                UI.settings.processing_steps = true;
-                initTraces
-                randomEvent
-                
-                UI.settings.processing_steps = false;
-                initTraces
-                randomEvent
-                
-                % showEventsBelowTrace
-                UI.settings.showEventsBelowTrace = true;
-                initTraces
-                randomEvent
-                
-                UI.settings.showEventsBelowTrace = false;
-                initTraces
-                randomEvent
-                
-                % showEventsIntervals
-                UI.settings.showEventsIntervals = true;
-                initTraces
-                randomEvent
-                
-                UI.settings.showEventsIntervals = false;
-                initTraces
-                randomEvent
-                
-                flagEvent
-                flagEvent
-                
-                for i = 1:10
+                    UI.t0 = data.events.(UI.settings.eventData).time(1)-UI.settings.windowDuration/2;
+                    UI.t0 = data.events.(UI.settings.eventData).time(end)-UI.settings.windowDuration/2;
+                    
+                    % processing_steps
+                    UI.settings.processing_steps = true;
+                    initTraces
                     randomEvent
-                end
+                    
+                    UI.settings.processing_steps = false;
+                    initTraces
+                    randomEvent
+                    
+                    % showEventsBelowTrace
+                    UI.settings.showEventsBelowTrace(j) = true;
+                    initTraces
+                    randomEvent
+                    
+                    UI.settings.showEventsBelowTrace(j) = false;
+                    initTraces
+                    randomEvent
+                    
+                    % showEventsIntervals
+                    UI.settings.showEventsIntervals = true;
+                    initTraces
+                    randomEvent
+                    
+                    UI.settings.showEventsIntervals = false;
+                    initTraces
+                    randomEvent
+                    
+                    flagEvent
+                    flagEvent
+                    
+                    for i = 1:10
+                        randomEvent
+                    end
                 else
                     disp(['Not events testing for: ', UI.settings.eventData])
                 end
             end
         else
-            disp('No events testing')            
+            disp('No events testing')
         end
-        UI.panel.events.showEvents.Value = 0;
-        UI.settings.showEvents = false;
+        UI.table.eventsdata.Data(:,4) = {false};
+        UI.settings.showEvents(:) = false;
         
         % % % % % % % % % % % % %
         % States
@@ -4306,7 +4352,8 @@ end
         UI.offsets.states   = 0.04 * (UI.settings.showStates);
         UI.offsets.spectrogram = 0.25 * (UI.settings.spectrogram.show);
         UI.offsets.instantaneousMetrics = 0.20 * (UI.settings.instantaneousMetrics.show);
-        UI.offsets.events   = 0.04 * ((UI.settings.showEventsBelowTrace || UI.settings.processing_steps) && UI.settings.showEvents);
+        UI.offsets.processing = 0.04 * (UI.settings.processing_steps && any(UI.settings.showEvents));
+        UI.offsets.events   = 0.04 * any(UI.settings.showEventsBelowTrace & UI.settings.showEvents);
         UI.offsets.kilosort = 0.08 * (UI.settings.showKilosort && UI.settings.kilosortBelowTrace);
         UI.offsets.klusta = 0.08 * (UI.settings.showKlusta && UI.settings.klustaBelowTrace);
         UI.offsets.spykingcircus = 0.08 * (UI.settings.showSpykingcircus && UI.settings.spykingcircusBelowTrace);
@@ -4473,12 +4520,11 @@ end
         end
         
         if exist('parameters','var') &&~isempty(parameters.events)
-            idx = find(strcmp(parameters.events,UI.panel.events.files.String));
+            idx = find(strcmp(parameters.events,UI.data.detectecFiles.events));
             if ~isempty(idx)
-                UI.panel.events.files.Value = idx;
-                UI.settings.eventData = UI.panel.events.files.String{UI.panel.events.files.Value};
-                UI.settings.showEvents = false;
-                showEvents
+                UI.settings.eventData = UI.data.detectecFiles.events{idx};
+                UI.settings.showEvents(idx) = true;
+                showEvents(idx)
             end
         end
     end
@@ -4514,7 +4560,6 @@ end
         UI.panel.spikesorting.showKilosort.Value = 0;
         UI.panel.spikesorting.showKlusta.Value = 0;
         UI.panel.spikesorting.showSpykingcircus.Value = 0;
-        UI.panel.events.showEvents.Value = 0;
         UI.panel.timeseries.show.Value = 0;
         UI.panel.states.showStates.Value = 0;
         UI.panel.behavior.showBehavior.Value = 0;
@@ -4614,12 +4659,9 @@ end
         
         % Detecting CellExplorer/Buzcode files
         UI.data.detectecFiles = detectCellExplorerFiles(UI.data.basepath,UI.data.basename);
-        if isfield(UI.data.detectecFiles,'events') && ~isempty(UI.data.detectecFiles.events)
-            UI.panel.events.files.String = UI.data.detectecFiles.events;
-            UI.settings.eventData = UI.data.detectecFiles.events{1};
-        else
-            UI.panel.events.files.String = {''};
-        end
+        
+        updateEventsDataList
+        
         if isfield(UI.data.detectecFiles,'timeseries') && ~isempty(UI.data.detectecFiles.timeseries)
             UI.panel.timeseries.files.String = UI.data.detectecFiles.timeseries;
             UI.settings.timeseriesData = UI.data.detectecFiles.timeseries{1};
@@ -4709,7 +4751,8 @@ end
         end
     end
 
-    function moveSlider(src,~)
+    function moveSlider(src,evnt)
+        sliderMovedManually = true;
         UI.settings.stream = false;
         s1 = dir(UI.data.fileName);
         s2 = dir(UI.data.fileNameLFP);
@@ -4719,16 +4762,20 @@ end
         elseif ~isempty(s2)
             filesize = s2.bytes;
             UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.srLfp*2);
-        end
+        end        
     end
     
     function movingSlider(src,evnt)
-        if gco == UI.elements.lower.slider
+        if sliderMovedManually
             UI.t0 = valid_t0((UI.t_total-UI.settings.windowDuration)*evnt.AffectedObject.Value/100);
             UI.elements.lower.time.String = num2str(UI.t0);
             
-            UI.selectedChannels = [];
-            UI.selectedUnits = [];
+            if ~UI.settings.stickySelection
+                UI.selectedChannels = [];
+                UI.selectedUnits = [];
+                UI.selectedUnits = [];
+                UI.selectedUnitsColors = [];
+            end
             
             % Plotting data
             plotData;
@@ -4738,8 +4785,9 @@ end
                 delete(epoch_plotElements.t0)
             end
             epoch_plotElements.t0 = line(UI.epochAxes,[UI.t0,UI.t0],[0,1],'color','k', 'HitTest','off','linewidth',1);
-            UI.settings.stream = false;
+            UI.settings.stream = false;            
         end
+        sliderMovedManually = true;
     end
 
     function ClickPlot(~,~)
@@ -4963,6 +5011,19 @@ end
             uiresume(UI.fig);
         end
     end
+    
+    function ClicktoSelectFromTable3(~,evnt)
+        if ~isempty(evnt.Indices) && size(evnt.Indices,1) == 1 && evnt.Indices(2) == 1
+            colorpick = UI.colors_events(evnt.Indices(1),:);
+            colorpick = userSetColor(colorpick,'Channel tag color');
+            UI.colors_events(evnt.Indices(1),:) = colorpick;
+            classColorsHex = rgb2hex(UI.colors_events);
+            classColorsHex = cellstr(classColorsHex(:,2:end));
+            colored_string = strcat('<html><BODY bgcolor="',classColorsHex','">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</BODY></html>');
+            UI.table.eventsdata.Data{evnt.Indices(1),1} = colored_string{evnt.Indices(1)};
+            uiresume(UI.fig);
+        end
+    end
 
     function changePlotStyle(~,~)
         UI.settings.plotStyle = UI.panel.general.plotStyle.Value;
@@ -5105,6 +5166,31 @@ end
         UI.table.brainRegions.Data =  tableData;
     end
     
+    function updateEventsDataList        
+        % Updates the list of events
+        tableData = {};
+        if isfield(UI.data.detectecFiles,'events') && ~isempty(UI.data.detectecFiles.events)
+            UI.colors_events = lines(numel(UI.data.detectecFiles.events))*0.8;
+            classColorsHex = rgb2hex(UI.colors_events);
+            classColorsHex = cellstr(classColorsHex(:,2:end));
+            colored_string = strcat('<html><BODY bgcolor="',classColorsHex','">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</BODY></html>');
+            UI.channelTags = UI.data.detectecFiles.events;
+            nTags = numel(UI.channelTags);
+            for i = 1:nTags
+                tableData{i,1} = colored_string{i};
+                tableData{i,2} = UI.channelTags{i};
+                tableData{i,3} = false;
+                tableData{i,4} = false;
+                tableData{i,5} = false;
+            end
+            UI.table.eventsdata.Data = tableData;
+            UI.settings.showEventsBelowTrace = false(1,numel(UI.data.detectecFiles.events));
+            UI.settings.showEvents = false(1,numel(UI.data.detectecFiles.events));
+        else
+            UI.table.eventsdata.Data =  {''};
+        end
+    end
+    
     function updateTimeSeriesDataList
         if isfield(data.session,'timeSeries') & ~isempty(data.session.timeSeries)
             timeSeries = fieldnames(data.session.timeSeries);
@@ -5240,23 +5326,62 @@ end
     end
 
 % % Event functions
-    function setEventData(~,~)
-        UI.settings.eventData = UI.panel.events.files.String{UI.panel.events.files.Value};
-        UI.settings.showEvents = false;
-        showEvents
+    function setEventData(src,evnt)
+        table_call_column = evnt.Indices(2);
+        table_call_row = evnt.Indices(1);
+        value1 = evnt.EditData;
+        eventName = UI.data.detectecFiles.events{table_call_row};
+        if table_call_column==3 % Show
+            if value1
+                UI.settings.eventData = eventName;
+                UI.settings.showEvents(table_call_row) = true;
+                showEvents(table_call_row)
+                UI.table.eventsdata.Data(:,4) = {false};
+                UI.table.eventsdata.Data{table_call_row,4} = true;                
+                setActiveEvents(value1)
+            else
+                UI.settings.showEvents(table_call_row) = false;
+                UI.table.eventsdata.Data{table_call_row,4} = false;
+                if strcmp(UI.settings.eventData,eventName) && any(UI.settings.showEvents)
+                    idx = find(UI.settings.showEvents);
+                    eventName = UI.data.detectecFiles.events{idx(1)};
+                    UI.table.eventsdata.Data{idx(1),4} = true;    
+                    UI.settings.eventData = eventName;
+                    setActiveEvents(true)
+                else
+                    setActiveEvents(false)
+                end
+                initTraces
+                uiresume(UI.fig);
+            end
+        elseif table_call_column==4 % Active
+            if value1                
+                if src.Data{table_call_row,3}
+                    UI.settings.eventData = eventName;
+                    UI.table.eventsdata.Data(:,4) = {false};
+                    UI.table.eventsdata.Data{table_call_row,4} = true;
+                    setActiveEvents(value1)
+                else
+                    UI.table.eventsdata.Data{table_call_row,4} = false;
+                end
+                uiresume(UI.fig);
+            else
+                UI.table.eventsdata.Data{table_call_row,4} = true;
+            end
+        elseif table_call_column==5 % Below
+            if value1
+                UI.settings.showEventsBelowTrace(table_call_row) = true;
+            else
+                UI.settings.showEventsBelowTrace(table_call_row) = false;
+            end
+            initTraces
+            uiresume(UI.fig);
+        end
     end
 
-    function showEvents(~,~)
+    function showEvents(table_call_row)
         % Loading event data
-        if ishandle(epoch_plotElements.events)
-            delete(epoch_plotElements.events)
-        end
-        
-        if UI.settings.showEvents
-            UI.settings.showEvents = false;
-            UI.panel.events.eventNumber.String = '';
-            UI.panel.events.showEvents.Value = 0;
-        elseif exist(fullfile(basepath,[basename,'.',UI.settings.eventData,'.events.mat']),'file')
+        if exist(fullfile(basepath,[basename,'.',UI.settings.eventData,'.events.mat']),'file')
             if ~isfield(data,'events') || ~isfield(data.events,UI.settings.eventData)
                 data.events.(UI.settings.eventData) = loadStruct(UI.settings.eventData,'events','session',data.session);
                 if ~isfield(data.events.(UI.settings.eventData),'time')
@@ -5267,9 +5392,22 @@ end
                     end
                 end
             end
-            UI.settings.showEvents = true;
+            UI.settings.showEvents(table_call_row) = true;
+        else
+            UI.settings.showEvents(table_call_row) = false;
+            UI.table.eventsdata.Data{table_call_row,3} = false;
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
+    
+    function setActiveEvents(state_value1)
+        if ishandle(epoch_plotElements.events)
+            delete(epoch_plotElements.events)
+        end
+        
+        if state_value1
             UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
-            UI.panel.events.showEvents.Value = 1;
             UI.panel.events.eventCount.String = ['nEvents: ' num2str(numel(data.events.(UI.settings.eventData).time))];
             if ~isfield(data.events.(UI.settings.eventData),'flagged')
                 data.events.(UI.settings.eventData).flagged = [];
@@ -5278,12 +5416,10 @@ end
             t_stamps = data.events.(UI.settings.eventData).time;
             epoch_plotElements.events = line(UI.epochAxes,t_stamps,0.1*ones(size(t_stamps)),'color',UI.settings.primaryColor, 'HitTest','off','Marker',UI.settings.rasterMarker,'LineStyle','none');
         else
-            UI.settings.showEvents = false;
             UI.panel.events.eventNumber.String = '';
-            UI.panel.events.showEvents.Value = 0;
+            UI.panel.events.flagCount.String = '';
+            UI.panel.events.eventCount.String =  '';
         end
-        initTraces
-        uiresume(UI.fig);
     end
 
     function processing_steps(~,~)
@@ -5292,18 +5428,6 @@ end
             UI.settings.processing_steps = true;
         else
             UI.settings.processing_steps = false;
-        end
-        initTraces
-        uiresume(UI.fig);
-    end
-
-    function showEventsBelowTrace(~,~)
-        if UI.settings.showEventsBelowTrace
-            UI.settings.showEventsBelowTrace = false;
-            UI.panel.events.showEventsBelowTrace.Value = 0;
-        else
-            UI.settings.showEventsBelowTrace = true;
-            UI.panel.events.showEventsBelowTrace.Value = 1;
         end
         initTraces
         uiresume(UI.fig);
@@ -5342,10 +5466,7 @@ end
     
     function nextEvent(~,~)
         UI.settings.stream = false;
-        if ~UI.settings.showEvents
-            showEvents
-        end
-        if UI.settings.showEvents
+        if any(UI.settings.showEvents)
             idx = 1:numel(data.events.(UI.settings.eventData).time);
             UI.settings.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)>UI.t0+UI.settings.windowDuration/2,1);
             UI.settings.iEvent = idx(UI.settings.iEvent1);
@@ -5353,16 +5474,13 @@ end
                 UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
                 UI.t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
                 uiresume(UI.fig);
-            end
+            end            
         end
     end
 
     function gotoEvents(~,~)
         UI.settings.stream = false;
-        if ~UI.settings.showEvents
-            showEvents
-        end
-        if UI.settings.showEvents
+        if any(UI.settings.showEvents)
             UI.settings.iEvent = str2num(UI.panel.events.eventNumber.String);
             if ~isempty(UI.settings.iEvent) && isnumeric(UI.settings.iEvent) && UI.settings.iEvent <= numel(data.events.(UI.settings.eventData).time) && UI.settings.iEvent > 0
                 UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
@@ -5373,10 +5491,7 @@ end
     end
     function previousEvent(~,~)
         UI.settings.stream = false;
-        if ~UI.settings.showEvents
-            showEvents
-        end
-        if UI.settings.showEvents
+        if any(UI.settings.showEvents)
             idx = 1:numel(data.events.(UI.settings.eventData).time);
             UI.settings.iEvent1 = find(data.events.(UI.settings.eventData).time(idx)<UI.t0+UI.settings.windowDuration/2,1,'last');
             UI.settings.iEvent = idx(UI.settings.iEvent1);
@@ -5390,10 +5505,7 @@ end
 
     function randomEvent(~,~)
         UI.settings.stream = false;
-        if ~UI.settings.showEvents
-            showEvents
-        end
-        if UI.settings.showEvents
+        if any(UI.settings.showEvents)
             UI.settings.iEvent = ceil(numel(data.events.(UI.settings.eventData).time)*rand(1));
             UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
             UI.t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
@@ -5403,10 +5515,7 @@ end
 
     function nextPowerEvent(~,~)
         UI.settings.stream = false;
-        if ~UI.settings.showEvents
-            showEvents
-        end
-        if isfield(data.events.(UI.settings.eventData),'peakNormedPower')
+        if any(UI.settings.showEvents) && isfield(data.events.(UI.settings.eventData),'peakNormedPower')
             [~,idx] = sort(data.events.(UI.settings.eventData).peakNormedPower,'descend');
             test = find(idx==UI.settings.iEvent);
             if ~isempty(test) && test < numel(idx) && test >= 1
@@ -5420,10 +5529,7 @@ end
 
     function previousPowerEvent(~,~)
         UI.settings.stream = false;
-        if ~UI.settings.showEvents
-            showEvents
-        end
-        if isfield(data.events.(UI.settings.eventData),'peakNormedPower')
+        if any(UI.settings.showEvents) && isfield(data.events.(UI.settings.eventData),'peakNormedPower')
             [~,idx] = sort(data.events.(UI.settings.eventData).peakNormedPower,'descend');
             test = find(idx==UI.settings.iEvent);
             if ~isempty(test) &&  test <= numel(idx) && test > 1
@@ -5437,10 +5543,7 @@ end
 
     function maxPowerEvent(~,~)
         UI.settings.stream = false;
-        if ~UI.settings.showEvents
-            showEvents
-        end
-        if UI.settings.showEvents && isfield(data.events.(UI.settings.eventData),'peakNormedPower')
+        if any(UI.settings.showEvents) && isfield(data.events.(UI.settings.eventData),'peakNormedPower')
             [~,UI.settings.iEvent] = max(data.events.(UI.settings.eventData).peakNormedPower);
             UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
             UI.t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
@@ -5450,10 +5553,7 @@ end
 
     function minPowerEvent(~,~)
         UI.settings.stream = false;
-        if ~UI.settings.showEvents
-            showEvents
-        end
-        if UI.settings.showEvents && isfield(data.events.(UI.settings.eventData),'peakNormedPower')
+        if any(UI.settings.showEvents) && isfield(data.events.(UI.settings.eventData),'peakNormedPower')
             [~,UI.settings.iEvent] = min(data.events.(UI.settings.eventData).peakNormedPower);
             UI.panel.events.eventNumber.String = num2str(UI.settings.iEvent);
             UI.t0 = data.events.(UI.settings.eventData).time(UI.settings.iEvent)-UI.settings.windowDuration/2;
@@ -5463,7 +5563,7 @@ end
     
     function flagEvent(~,~)
         UI.settings.stream = false;
-        if UI.settings.showEvents
+        if any(UI.settings.showEvents)
             if ~isfield(data.events.(UI.settings.eventData),'flagged')
                 data.events.(UI.settings.eventData).flagged = [];
             end
@@ -5483,7 +5583,7 @@ end
     
     function addEvent(~,~)
         UI.settings.stream = false;
-        if UI.settings.showEvents
+        if any(UI.settings.showEvents)
             if ~isfield(data.events.(UI.settings.eventData),'added')
                 data.events.(UI.settings.eventData).added = [];
             end
@@ -5763,8 +5863,13 @@ end
         end
         
         % Event data
-        if UI.settings.showEvents
-            plotEventData(0,UI.t_total,UI.settings.primaryColor,'m')
+        if any(UI.settings.showEvents)
+            for i = 1:numel(UI.settings.showEvents)
+                if UI.settings.showEvents(i)
+                    eventName = UI.data.detectecFiles.events{i};
+                    plotEventData(eventName,0,UI.t_total,UI.colors_events(i,:))
+                end
+            end
         end
         
         % Time series
