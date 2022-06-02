@@ -76,7 +76,7 @@ try
         'events',ripples.timestamps,...
         'saveMat',false);
 catch
-    ripSpk = getRipSpikes('basepath',basepath,spikes,ripples,'saveMat',false);
+    ripSpk = getRipSpikes(spikes,ripples,'saveMat',false,'basepath',basepath);
 end
 rankStats.rankUnits = RankOrder_units(ripSpk);
 end
