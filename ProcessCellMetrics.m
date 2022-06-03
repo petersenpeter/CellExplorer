@@ -520,11 +520,21 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             xlabel(handle_subfig3,'x position (µm)'), ylabel(handle_subfig3,'y position (µm)')
             drawnow
         end
+        if isfield(session.channelTags,'Bad')
+            badChannels = zeros(1,size(cell_metrics.waveforms.filt_all{1},1));
+            badChannels(session.channelTags.Bad.channels) = true;
+        else
+            badChannels = [];
+        end
         for j = 1:cell_metrics.general.cellCount
             if ~isnan(cell_metrics.peakVoltage(j)) && isfield(cell_metrics.waveforms,'filt_all')
                 % Trilateration
                 peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
-                [~,idx] = sort(range(cell_metrics.waveforms.filt_all{j}'),'descend');
+                peakVoltage(find(badChannels)) = NaN;
+                filt_all = cell_metrics.waveforms.filt_all{j}';
+                filt_all(:,find(badChannels)) = 0;
+                [~,idx] = sort(range(filt_all),'descend');
+                clear filt_all
                 
                 trilat_nChannels = min([16,numel(peakVoltage)]);
                 bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
