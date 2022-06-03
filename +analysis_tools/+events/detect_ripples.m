@@ -47,13 +47,13 @@ variable_name = 'ripples';
 content.title = 'Ripple detection parameters'; % dialog title
 content.columns = 2; % 1 or 2 columns
 content.field_names = {'ripple_channel','noise_channel','passband_low','passband_high','duration_min','duration_max','threshold_min','threshold_max','EMGThresh','variable_name','absoluteThresholds'}; % name of the variables/fields
-content.field_title = {'Ripple channel (1-index)','Noise channel (1-index)','Passband low (Hz)','Passband high (Hz)','Min duration (ms)','Max duration max (ms)','Threshold min (defaults: 2*std or 18 µV)','Threshold max (defaults: 5*std or 48µV)','EMG threshold','Variable name','Absolute thresholds'}; % Titles shown above the fields
+content.field_title = {'Ripple channel (1-index)','Noise channel (1-index)','Passband low (Hz)','Passband high (Hz)','Min duration (ms)','Max duration max (ms)','Threshold min (defaults: 2*std or 18 µV)','Threshold max (defaults: 5*std or 48µV)','EMG threshold','Variable name','Use an absolute thresholds'}; % Titles shown above the fields
 content.field_style = {'edit','edit','edit','edit','edit','edit','edit','edit','edit','edit','checkbox'}; % popupmenu, edit, checkbox, radiobutton, togglebutton, listbox
 content.field_default = {ripple_channel,noise_channel,passband_low,passband_high,duration_min,duration_max,threshold_min,threshold_max,EMGThresh,variable_name,absoluteThresholds}; % default values
 content.format = {'numeric','numeric','numeric','numeric','numeric','numeric','numeric','numeric','numeric','char','logical'}; % char, numeric, logical (boolean)
 content.field_options = {'text','text','text','text','text','text','text','text','text','text','text'}; % options for popupmenus
 content.field_required = [true false true true true true true true false true false]; % field required?
-
+content.field_tooltip = {'Ripple channel (1-index)','Noise channel (1-index)','Passband low (Hz)','Passband high (Hz)','Min duration (ms)','Max duration max (ms)','In factors of std or absolute value','In factors of std or absolute value','EMG threshold','Variable name','Use an absolute or a relative threshold'};
 content = content_dialog(content);
 
 if content.continue

@@ -4,8 +4,8 @@ function out = plot_CCGs(varargin)
 p = inputParser;
 
 % The inputs are NeuroScope2 variables:
-addParameter(p,'ephys',[],@isstruct); % UI: struct with UI elements and settings of NeuroScope2
-addParameter(p,'UI',[],@isstruct); % ephys: Struct with ephys data for current shown time interval, e.g. ephys.raw (raw unprocessed data), ephys.traces (processed data)
+addParameter(p,'UI',[],@isstruct); % UI: struct with UI elements and settings of NeuroScope2
+addParameter(p,'ephys',[],@isstruct); % ephys: Struct with ephys data for current shown time interval, e.g. ephys.raw (raw unprocessed data), ephys.traces (processed data)
 addParameter(p,'data',[],@isstruct); % data: contains all external data loaded like data.session, data.spikes, data.events, data.states, data.behavior
 parse(p,varargin{:})
 
@@ -32,7 +32,8 @@ if isfield(data,'spikes')
         spike_times = data.spikes.spindices(:,1);
         spike_cluster_index = data.spikes.spindices(:,2);
         [~, ~, spike_cluster_index] = unique(spike_cluster_index);
-        [ccg2,time2] = CCG(spike_times,spike_cluster_index,'binSize',0.0005,'duration',0.100,'norm','rate');
+        sr = data.session.extracellular.sr;
+        [ccg2,time2] = CCG(spike_times,spike_cluster_index,'binSize',0.0005,'duration',0.100,'norm','rate','Fs',1/sr);
         ccgFigure = figure('Name',['CCGs for cell-pairs ', num2str(plot_cells)],'NumberTitle','off','pos',[50 50 800 600],'visible','off');
         
         k = 1;
