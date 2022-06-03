@@ -428,10 +428,18 @@ cell_metrics.spikes.times = spikes{1}.times;
 
 if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'waveform_metrics'}))
     spkExclu = setSpkExclu('waveform_metrics',parameters);
+
+    bad_channels = get_bad_channels(session);
+    if isempty(bad_channels)
+        good_channels = 1:session.extracellular.nChannels;
+    else
+        good_channels = setdiff(1:session.extracellular.nChannels,bad_channels);
+    end
+    
     if ~all(isfield(cell_metrics,{'waveforms','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || ~all(isfield(cell_metrics.waveforms,{'filt','filt_all'})) || parameters.forceReload == true
         dispLog('Getting waveforms',basename);
-        field2copy = {'filtWaveform_std','rawWaveform','rawWaveform_std','rawWaveform_all','filtWaveform_all','timeWaveform_all','channels_all','filtWaveform','timeWaveform','peakVoltage_all'};
-        field2copyNewNames = {'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time','peakVoltage_all'};
+        field2copy = {'filtWaveform_std','rawWaveform','rawWaveform_std','rawWaveform_all','filtWaveform_all','timeWaveform_all','channels_all','filtWaveform','timeWaveform'};
+        field2copyNewNames = {'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time'};
         if parameters.getWaveformsFromDat && (any(~isfield(spikes{spkExclu},field2copy)) || parameters.forceReload == true) && (spkExclu==2  || ~isempty(parameters.restrictToIntervals))
             spikes{spkExclu} = getWaveformsFromDat(spikes{spkExclu},session,'showWaveforms',parameters.showWaveforms);
         end
@@ -453,6 +461,13 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 else
                     cell_metrics.waveforms.bestChannels{j} = [];
                 end
+            end
+        end
+        
+        if isfield(spikes{spkExclu},'filtWaveform_all')
+            for j = 1:cell_metrics.general.cellCount
+                cell_metrics.waveforms.peakVoltage_all{j} = nan(1,session.extracellular.nChannels);
+                cell_metrics.waveforms.peakVoltage_all{j}(good_channels) = range(spikes{spkExclu}.filtWaveform_all{j}(good_channels,:),2);
             end
         end
         
@@ -520,11 +535,16 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             xlabel(handle_subfig3,'x position (�m)'), ylabel(handle_subfig3,'y position (�m)')
             drawnow
         end
+        
         for j = 1:cell_metrics.general.cellCount
             if ~isnan(cell_metrics.peakVoltage(j)) && isfield(cell_metrics.waveforms,'filt_all')
                 % Trilateration
                 peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
-                [~,idx] = sort(range(cell_metrics.waveforms.filt_all{j}'),'descend');
+                peakVoltage(bad_channels) = NaN;
+                filt_all = cell_metrics.waveforms.filt_all{j}';
+                filt_all(:,bad_channels) = 0;
+                [~,idx] = sort(range(filt_all),'descend');
+                clear filt_all
                 
                 trilat_nChannels = min([16,numel(peakVoltage)]);
                 bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));

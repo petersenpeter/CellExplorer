@@ -10,6 +10,7 @@ content.field_default = {'test1',true,'text',5,'text','text','text','text'}; % d
 content.format = {'char','logical','char','numeric','char','char','char','char'}; % char, numeric, logical (boolean)
 content.field_options = {'text','text','text','text',{'Chronic','Acute'},'text','text','text'}; % options for popupmenus
 content.field_required = [true true true false false false false false]; % field required?
+content.field_tooltip = {'Date','Start time','End time','Weight (g)','Type of Surgery','Room','Persons involved','Anesthesia'}; % Tooltip shown when hovering with mouse above field
 
 % Shows the content dialog
 content = content_dialog(content);
@@ -55,6 +56,7 @@ content.field_default = {ripple_channel,noise_channel,passband_low,passband_high
 content.format = {'numeric','numeric','numeric','numeric','numeric','numeric','numeric','numeric','numeric','char','logical','logical'}; % char, numeric, logical (boolean)
 content.field_options = {'text','text','text','text','text','text','text','text','text','text','text','text'}; % options for popupmenus
 content.field_required = [true false true true true true true true false true false false]; % field required?
+content.field_tooltip = {'Ripple channel (1-index)','Noise channel (1-index)','Passband low (Hz)','Passband high (Hz)','Min duration (ms)','Max duration max (ms)','In factors of std or absolute value','In factors of std or absolute value','EMG threshold','Variable name','Use an absolute or a relative threshold'};
 
 content = content_dialog(content);
 

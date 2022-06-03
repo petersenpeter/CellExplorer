@@ -30,7 +30,8 @@ if isfield(data,'cell_metrics')
             spike_times = spindices(:,1);
             spike_cluster_index = spindices(:,2);
             [~, ~, spike_cluster_index] = unique(spike_cluster_index);
-            [ccg2,time2] = CCG(spike_times,spike_cluster_index,'binSize',0.0005,'duration',0.100,'norm','rate');
+            sr = data.session.extracellular.sr;
+            [ccg2,time2] = CCG(spike_times,spike_cluster_index,'binSize',0.0005,'duration',0.100,'norm','rate','Fs',1/sr);
             
             data.cell_metrics.general.ccg = ccg2;
             data.cell_metrics.general.ccg_time = time2;

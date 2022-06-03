@@ -4,10 +4,11 @@ function content = content_dialog(content)
     % 
     % Input: 
     %    content: a struct with fields:
-    %       .title: dialog title
+    %       .title: dialog title 
     %       .columns: 1 or 2 columns of fields
     %       .field_names: name of the variables/fields
     %       .field_title: Titles shown above the fields
+    %       .field_tooltip: tooltip for field
     %       .field_style: popupmenu, edit, checkbox, radiobutton, togglebutton, listbox
     %       .field_default: default values
     %       .format: char, numeric, logical (boolean)
@@ -49,7 +50,7 @@ function content = content_dialog(content)
         for i = 1:numel(content.field_names)
             
             % Determining the horizontal offset
-            if rem(i,2) == 1 | content.columns == 1
+            if rem(i,2) == 1 || content.columns == 1
                 horizontal_offset = 10;
                 % Determining vertical offset
                 vertical_offset = vertical_offset-50;
@@ -61,27 +62,26 @@ function content = content_dialog(content)
                 string_title = [content.field_title{i},' *'];
             else
                 string_title = content.field_title{i};
-            end
+            end                       
             
             if any(strcmp(content.field_style{i},{'edit','popupmenu'}))
-                titles1.(content.field_names{i}) = uicontrol('Parent',UI.dialog,'Style', 'text', 'String', string_title, 'Position', [horizontal_offset, vertical_offset+25, width_fields, 20],'HorizontalAlignment','left');
+                titles1.(content.field_names{i}) = uicontrol('Parent',UI.dialog,'Style', 'text', 'String', string_title, 'Position', [horizontal_offset, vertical_offset+25, width_fields, 20],'HorizontalAlignment','left','tooltip',content.field_tooltip{i});
             end
             
             if strcmp(content.field_style{i},'edit')
-                UI.fields.(content.field_names{i}) = uicontrol('Parent',UI.dialog,'Style', 'edit','Tag',content.field_names{i}, 'String', content.field_default{i}, 'Position', [horizontal_offset, vertical_offset, width_fields, 25],'HorizontalAlignment','left');
+                UI.fields.(content.field_names{i}) = uicontrol('Parent',UI.dialog,'Style', 'edit','Tag',content.field_names{i}, 'String', content.field_default{i}, 'Position', [horizontal_offset, vertical_offset, width_fields, 25],'HorizontalAlignment','left','tooltip',content.field_tooltip{i});
 
             elseif strcmp(content.field_style{i},'checkbox')
-                UI.fields.(content.field_names{i}) = uicontrol('Parent',UI.dialog,'Style', 'checkbox','Tag',content.field_names{i}, 'String', content.field_title{i}, 'Position', [horizontal_offset, vertical_offset, width_fields, 25],'HorizontalAlignment','left','value',content.field_default{i});
+                UI.fields.(content.field_names{i}) = uicontrol('Parent',UI.dialog,'Style', 'checkbox','Tag',content.field_names{i}, 'String', content.field_title{i}, 'Position', [horizontal_offset, vertical_offset, width_fields, 25],'HorizontalAlignment','left','value',content.field_default{i},'tooltip',content.field_tooltip{i});
                 
             elseif strcmp(content.field_style{i},'popupmenu')
                 value1 = find(strcmp(content.field_options{i},content.field_default{i}));
                 if isempty(value1)
                     value1 = 1;
                 end
-                UI.fields.(content.field_names{i}) = uicontrol('Parent',UI.dialog,'Style', 'popupmenu','Tag',content.field_names{i}, 'String', content.field_options{i}, 'Position', [horizontal_offset, vertical_offset, width_fields, 25],'HorizontalAlignment','left','value',value1);
+                UI.fields.(content.field_names{i}) = uicontrol('Parent',UI.dialog,'Style', 'popupmenu','Tag',content.field_names{i}, 'String', content.field_options{i}, 'Position', [horizontal_offset, vertical_offset, width_fields, 25],'HorizontalAlignment','left','value',value1,'tooltip',content.field_tooltip{i});
              
-            end
-            
+            end            
         end
 
         uicontrol('Parent',UI.dialog,'Style','pushbutton','Position',[10, 10, width_buttons, 30],'String','OK','Callback',@close_dialog);
