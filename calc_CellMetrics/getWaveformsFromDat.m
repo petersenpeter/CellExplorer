@@ -57,7 +57,6 @@ catch
     precision = 'int16';
 end
 
-badChannels = [];
 timerVal = tic;
 
 if filtFreq(2) > sr/2
@@ -71,30 +70,22 @@ if params.getBadChannelsFromDat
 end
 
 % Removing channels marked as Bad in session struct
-if ~isempty(session) && isfield(session,'channelTags') && isfield(session.channelTags,'Bad')
-    if isfield(session.channelTags.Bad,'channels') && ~isempty(session.channelTags.Bad.channels)
-        badChannels = [badChannels,session.channelTags.Bad.channels];
-    end
-    if isfield(session.channelTags.Bad,'electrodeGroups') && ~isempty(session.channelTags.Bad.electrodeGroups)
-        badChannels = [badChannels,electrodeGroups{session.channelTags.Bad.electrodeGroups}];
-    end
-    badChannels = unique(badChannels);
-end
-if ~isempty(badChannels)
-    badChannels_message = ['Bad channels detected: ' num2str(badChannels)];
+bad_channels = get_bad_channels(session);
+if ~isempty(bad_channels)
+    badChannels_message = ['Bad channels detected: ' num2str(bad_channels)];
 else
     badChannels_message = 'No bad channels detected. ';
 end
 
 % Removing channels that does not exist in SpkGrps
 if isfield(session.extracellular,'spikeGroups')
-    badChannels = [badChannels,setdiff([electrodeGroups{:}],[session.extracellular.spikeGroups.channels{:}])];
+    bad_channels = [bad_channels,setdiff([electrodeGroups{:}],[session.extracellular.spikeGroups.channels{:}])];
 end
 
-if isempty(badChannels)
+if isempty(bad_channels)
     goodChannels = 1:nChannels;
 else
-    goodChannels = setdiff(1:nChannels,badChannels);
+    goodChannels = setdiff(1:nChannels,bad_channels);
 end
 nGoodChannels = length(goodChannels);
 
