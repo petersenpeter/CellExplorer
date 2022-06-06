@@ -1974,7 +1974,7 @@ uiwait(UI.fig)
         uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 223, 230, 20],'HorizontalAlignment','left');
         tagsChannels = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Electrode groups (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
         tagsElectrodeGroups = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.tags,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save tag','Callback',@(src,evnt)CloseTags_dialog);
