@@ -115,7 +115,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     
     if ~isempty(p.Results.sr)
         sr = p.Results.sr;
-    elseif isempty(p.Results.sr) && isfield(spikes,'sr')
+    elseif isfield(spikes,'sr')
         sr = spikes.sr;
     else
         sr = 20000;

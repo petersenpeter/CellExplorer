@@ -1974,7 +1974,7 @@ uiwait(UI.fig)
         uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Channels (nChannels = ',num2str(session.extracellular.nChannels),')'], 'Position', [10, 223, 230, 20],'HorizontalAlignment','left');
         tagsChannels = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initChannels, 'Position', [10, 100, 480, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
-        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Spike group (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
+        uicontrol('Parent',UI.dialog.tags,'Style', 'text', 'String', ['Electrode groups (nElectrodeGroups = ',num2str(session.extracellular.nElectrodeGroups),')'], 'Position', [10, 73, 480, 20],'HorizontalAlignment','left');
         tagsElectrodeGroups = uicontrol('Parent',UI.dialog.tags,'Style', 'Edit', 'String', initElectrodeGroups, 'Position', [10, 50, 480, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.tags,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save tag','Callback',@(src,evnt)CloseTags_dialog);
@@ -3409,30 +3409,38 @@ uiwait(UI.fig)
     end
     
     function importChannelMap1(~,~)
-        answer = questdlg('What format do you want to import?','Import channel coordinates','Channel coordinates (chancoords)', 'Channelmap (chanmap)','Cancel','Channel coordinates (chancoords)');
+        answer = questdlg('What format do you want to import?','Import channel coordinates','Channel coordinates (chancoords)', 'Channelmap (KiloSort)','Cancel','Channel coordinates (chancoords)');
         if ~isempty(answer)
             if strcmp(answer,'Channel coordinates (chancoords)')
                 chanCoords_filepath =fullfile(session.general.basePath,[session.general.name,'.chanCoords.channelInfo.mat']);
                 if exist(chanCoords_filepath,'file')
-                    session.extracellular.chanCoords = loadStruct('chanCoords','channelInfo','session',session);
-                    updateChanCoords;
-                    plotChannelMap1
-                    MsgLog(['Imported channel coordinates from basepath: ' chanCoords_filepath],2)
+                    try
+                        session.extracellular.chanCoords = loadStruct('chanCoords','channelInfo','session',session);
+                        updateChanCoords;
+                        plotChannelMap1
+                        MsgLog(['Imported channel coordinates from basepath: ' chanCoords_filepath],2)
+                    catch
+                        MsgLog('chanCoords import failed:',4)
+                    end
                 else
                     MsgLog(['chanCoords file not available: ' chanCoords_filepath],4)
                 end
             elseif strcmp(answer,'Channelmap (chanmap)')
                 [file,basepath] = uigetfile('*.mat','Please select the chanMap.mat file','chanMap.mat');
                 if ~isequal(file,0)
-                    temp = load(fullfile(basepath,file));
-                    session.extracellular.chanCoords.x = nan(session.extracellular.nChannels,1);
-                    session.extracellular.chanCoords.y = nan(session.extracellular.nChannels,1);
-                    session.extracellular.chanCoords.x(temp.chanMap) = temp.xcoords(:);
-                    session.extracellular.chanCoords.y(temp.chanMap) = temp.ycoords(:);
-                    session.extracellular.chanCoords.source = 'chanMap.mat';
-                    updateChanCoords; 
-                    plotChannelMap1
-                    MsgLog(['Imported channel map: ' file],2)
+                    try
+                        temp = load(fullfile(basepath,file));
+                        session.extracellular.chanCoords.x = nan(session.extracellular.nChannels,1);
+                        session.extracellular.chanCoords.y = nan(session.extracellular.nChannels,1);
+                        session.extracellular.chanCoords.x(temp.chanMap) = temp.xcoords(:);
+                        session.extracellular.chanCoords.y(temp.chanMap) = temp.ycoords(:);
+                        session.extracellular.chanCoords.source = 'chanMap.mat';
+                        updateChanCoords;
+                        plotChannelMap1
+                        MsgLog(['Imported channel map: ' file],2)
+                    catch
+                        MsgLog('Channelmap import failed',4)
+                    end
                 end
             end
         end
