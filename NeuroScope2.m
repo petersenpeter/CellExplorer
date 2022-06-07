@@ -3790,7 +3790,7 @@ end
                 elseif UI.uitabgroup_channels.Selection == 3
                     UI.table.brainRegions.Data(:,1) = {true};
                     brainRegions = fieldnames(data.session.brainRegions);
-                    UI.settings.brainRegionsToHide = brainRegions(~UI.table.brainRegions.Data{:,1});
+                    UI.settings.brainRegionsToHide = brainRegions(~vertcat(UI.table.brainRegions.Data{:,1}));
                     initTraces;
                     uiresume(UI.fig);
                 elseif UI.uitabgroup_channels.Selection == 4 && isfield(data.session.extracellular,'chanCoords') && ~isempty(data.session.extracellular.chanCoords.x) && ~isempty(data.session.extracellular.chanCoords.y)
