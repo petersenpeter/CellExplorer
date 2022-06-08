@@ -350,6 +350,11 @@ deepSuperficialfromRipple.processinginfo.function = 'classification_deepSuperfic
 deepSuperficialfromRipple.processinginfo.date = now;
 deepSuperficialfromRipple.processinginfo.params.verticalSpacing = VerticalSpacing;
 deepSuperficialfromRipple.processinginfo.params.electrodeGroupsToExclude = electrodeGroupsToExclude;
+if isfield(session.extracellular,'chanCoords')
+    deepSuperficialfromRipple.processinginfo.params.deepSuperficial_ChDistance_method = 'chanCoords';
+else
+    deepSuperficialfromRipple.processinginfo.params.deepSuperficial_ChDistance_method = 'VerticalSpacing';
+end
 if saveMat
     save(fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']),'deepSuperficialfromRipple');
 end
