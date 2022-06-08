@@ -13,11 +13,13 @@ end
 if ~exist('basename','var')
     [~,basename,~] = fileparts(basepath);
 end
+
 spikegroup = 1;
 deepSuperficial_file = fullfile(basepath, [basename,'.deepSuperficialfromRipple.channelinfo.mat']);
 gain = 0.1;
 if exist(deepSuperficial_file,'file')
     load(deepSuperficial_file,'deepSuperficialfromRipple');
+    load(fullfile(basepath, [basename,'.session.mat']),'session');
 else
     warndlg([deepSuperficial_file,' does not exist!'],'adjust Deep-Superficial')
     return
@@ -208,10 +210,15 @@ saveDeepSuperficial
         deepSuperficialfromRipple.channelClass(deepSuperficialfromRipple.ripple_channels{spikegroup}(reversal+1:end)) =...
             repmat({'Superficial'},1,length(deepSuperficialfromRipple.ripple_channels{spikegroup}(reversal+1:end)));
         VerticalSpacing = deepSuperficialfromRipple.processinginfo.params.verticalSpacing;
-        
-        deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{spikegroup}) =...
-            ([1:length(deepSuperficialfromRipple.ripple_channels{spikegroup})]-reversal)*VerticalSpacing;
-        
+        if isfield(session.extracellular,'chanCoords')
+            y = session.extracellular.chanCoords.y(deepSuperficialfromRipple.ripple_channels{spikegroup});
+            y = abs(y - max(y));
+            reversal = interp1(1:length(deepSuperficialfromRipple.ripple_channels{spikegroup}),y,reversal);
+            deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{spikegroup}) = y-reversal;
+        else
+            deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{spikegroup}) =...
+                ([1:length(deepSuperficialfromRipple.ripple_channels{spikegroup})]-reversal)*VerticalSpacing;
+        end
         uiresume(h);
     end
 
