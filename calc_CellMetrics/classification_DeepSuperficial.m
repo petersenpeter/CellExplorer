@@ -275,17 +275,38 @@ for jj = 1:session.extracellular.nElectrodeGroups
         threshold = interp1(SWR_diff2([indx,indx+1]),[ia2(indx),ia2(indx+1)],0);
         deepSuperficial_ChClass(ripple_channels{jj}([1:threshold])) = repmat({'Deep'},length([1:threshold]),1);
         deepSuperficial_ChClass(ripple_channels{jj}([ceil(threshold):size(SWR_diff{jj},2)])) = repmat({'Superficial'},length([ceil(threshold):size(SWR_diff{jj},2)]),1);
-        deepSuperficial_ChDistance(ripple_channels{jj}) = (1:size(SWR_diff{jj},2))-threshold;
+        
+        if isfield(session.extracellular,'chanCoords')
+            % pull out y coords and flip as chanCoords will start ~0 and go negative
+            y = session.extracellular.chanCoords.y(ripple_channels{jj});
+            y = abs(y - max(y));
+            threshold = interp1(SWR_diff2([indx,indx+1]),[y(indx),y(indx+1)],0);
+            deepSuperficial_ChDistance(ripple_channels{jj}) = y - threshold;
+        else
+            deepSuperficial_ChDistance(ripple_channels{jj}) = (1:size(SWR_diff{jj},2))-threshold;
+        end
     else
         if SWR_slope > 0
             deepSuperficial_ChClass(ripple_channels{jj}) = repmat({'Deep'},length(ripple_channels{jj}),1); % Deep
             if SWR_diff2(end)*5<max(SWR_diff2) && SWR_diff2(end) > 0
-                deepSuperficial_ChDistance(ripple_channels{jj}) = (1:size(SWR_diff{jj},2))-length(ripple_channels{jj})-1;
+                if isfield(session.extracellular,'chanCoords')
+                    y = session.extracellular.chanCoords.y(ripple_channels{jj});
+                    y = abs(y - max(y));
+                    deepSuperficial_ChDistance(ripple_channels{jj}) = y - max(y);
+                else
+                    deepSuperficial_ChDistance(ripple_channels{jj}) = (1:size(SWR_diff{jj},2))-length(ripple_channels{jj})-1;
+                end
             end
         else
             deepSuperficial_ChClass(ripple_channels{jj}) = repmat({'Superficial'},length(ripple_channels{jj}),1); % Superficial
             if ~isempty(SWR_diff2) && SWR_diff2(1)*5>min(SWR_diff2)  && SWR_diff2(1) < 0
-                deepSuperficial_ChDistance(ripple_channels{jj}) = (1:size(SWR_diff{jj},2))+1;
+                if isfield(session.extracellular,'chanCoords')
+                    y = session.extracellular.chanCoords.y(ripple_channels{jj});
+                    y = abs(y - max(y));
+                    deepSuperficial_ChDistance(ripple_channels{jj}) = y;
+                else
+                    deepSuperficial_ChDistance(ripple_channels{jj}) = (1:size(SWR_diff{jj},2))+1;
+                end
             end
         end
     end
@@ -307,10 +328,10 @@ if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'electr
         deepSuperficial_ChClass(ripple_channels{jj}) = repmat({''},length(ripple_channels{jj}),1);
     end
 end
-
-deepSuperficial_ChDistance3 = deepSuperficial_ChDistance3 * VerticalSpacing;
-deepSuperficial_ChDistance = deepSuperficial_ChDistance * VerticalSpacing;
-
+if ~isfield(session.extracellular,'chanCoords')
+    deepSuperficial_ChDistance3 = deepSuperficial_ChDistance3 * VerticalSpacing;
+    deepSuperficial_ChDistance = deepSuperficial_ChDistance * VerticalSpacing;
+end
 % Saving the result to basename.deepSuperficialfromRipple.channelinfo.mat  
 deepSuperficialfromRipple.channel = [1:length(deepSuperficial_ChDistance)]'; % 1-indexed
 deepSuperficialfromRipple.channelClass = deepSuperficial_ChClass';
