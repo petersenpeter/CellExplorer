@@ -3893,6 +3893,9 @@ end
             idx_toKeep = [];
             for i = 1:numel(spikes_fields)
                 if strcmp(UI.settings.spikesYDataType{i},'cell')
+                    if ~isfield(data.spikes,'total')
+                        data.spikes.total = cellfun(@numel, data.spikes.times);
+                    end
                     if all(all([cellfun(@(X) size(X,1), data.spikes.(spikes_fields{i}));cellfun(@(X) size(X,2), data.spikes.(spikes_fields{i}))] == [data.spikes.total;ones(1,data.spikes.numcells)])) || all(all([cellfun(@(X) size(X,1), data.spikes.(spikes_fields{i}));cellfun(@(X) size(X,2), data.spikes.(spikes_fields{i}))] == [ones(1,data.spikes.numcells);data.spikes.total]))
                         idx_toKeep = [idx_toKeep,i];
                     end
