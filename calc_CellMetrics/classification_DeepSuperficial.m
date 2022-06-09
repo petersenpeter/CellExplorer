@@ -181,29 +181,29 @@ for jj = 1:session.extracellular.nElectrodeGroups
    if isempty(ripple_channels{jj})
        continue
    end
+   
     % Loading .lfp file
-    if exist(fullfile(basepath,[basename '.lfp']),'file')
-        signal = 0.000195 * double(LoadBinary(fullfile(basepath,[basename '.lfp']),...
-            'nChannels',nChannels,...
-            'channels',ripple_channels{jj},...
-            'precision','int16',...
-            'frequency',srLfp));
+    if exist(fullfile(basepath,[basename '.lfp']),'file')        
+        fileName = fullfile(basepath,[basename '.lfp']);
     elseif exist(fullfile(basepath,[basename '.eeg']),'file')
-        signal = 0.000195 * double(LoadBinary(fullfile(basepath,[basename '.eeg']),...
-            'nChannels',nChannels,...
-            'channels',ripple_channels{jj},...
-            'precision','int16',...
-            'frequency',srLfp));
+        fileName = fullfile(basepath,[basename '.eeg']);
+    else
+        error('lfp file not found')
     end
+    
+    filenamestruct = dir(fileName);
+    dataTypeNBytes = numel(typecast(cast(0, 'int16'), 'uint8')); % determine number of bytes per sample
+    nSamp = filenamestruct.bytes/(nChannels*dataTypeNBytes);  % Number of samples per channel
+    mmf = memmapfile(fileName, 'Format', {'int16', [nChannels,nSamp], 'data'},'Writable',false);
+
     ripple_ave2 = [];
-    
     % Only include ripples outside 151 samples from the start/end of the lfp file
-    ripples.peaks = ripples.peaks(find(ripples.peaks*srLfp>151 & ripples.peaks*srLfp<size(signal,1)-151));
+    ripples.peaks = ripples.peaks(find(ripples.peaks*srLfp>151 & ripples.peaks*srLfp<nSamp-151));
     for i = 1:size(ripples.peaks,1)
-        ripple_ave2(:,:,i) = signal(round(ripples.peaks(i)*srLfp)-150:round(ripples.peaks(i)*srLfp)+150,:);
+        ts_idx = round(ripples.peaks(i)*srLfp)-150:round(ripples.peaks(i)*srLfp)+150;
+        ripple_ave2(:,:,i) = mmf.Data.data(ripple_channels{jj},ts_idx);
     end
-    
-    ripple_average{jj} = mean(ripple_ave2,3);
+    ripple_average{jj} = mean(ripple_ave2 * 0.000195,3)';
     ripple_power{jj} = sum(ripple_average{jj}.^2)./max(sum(ripple_average{jj}.^2));
     ripple_amplitude{jj} = double(mean(ripple_average{jj})/max(abs(mean(ripple_average{jj}))));
     
