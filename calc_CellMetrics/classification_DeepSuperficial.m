@@ -42,6 +42,7 @@ p = inputParser;
 addParameter(p,'buzcode',false,@islogical); % Defines whether bz_FindRipples or ce_FindRipples is called
 addParameter(p,'saveMat',true,@islogical); % Defines if a mat file is created
 addParameter(p,'saveFig',true,@islogical); % Defines if the summary figure is saved to basepath
+addParameter(p,'skip_cortical',true,@islogical); % Defines if the summary figure is saved to basepath
 addParameter(p,'basepath',[]);
 
 % Parsing inputs
@@ -49,6 +50,7 @@ parse(p,varargin{:})
 buzcode = p.Results.buzcode;
 saveMat = p.Results.saveMat;
 saveFig = p.Results.saveFig;
+skip_cortical = p.Results.skip_cortical;
 basepath = p.Results.basepath;
 
 % Gets basepath and basename from session struct
@@ -197,14 +199,18 @@ end
 
 SWR_slope = [];
 for jj = 1:session.extracellular.nElectrodeGroups
-    % Analysing the electrode groups separately
-    fprintf(['Analysing electrode group ', num2str(jj),', ']);
-    
     % Get list of channels belong to electrode group (1-indexed)
     ripple_channels{jj} = session.extracellular.electrodeGroups.channels{jj};
     
     % remove ripple channels that are labeled 'Bad'
     ripple_channels{jj}(ismember(ripple_channels{jj},channels_to_exclude)) = [];
+    
+    if any(jj == electrodeGroupsToExclude) & skip_cortical
+        fprintf(['Skipping cortical electrode group ', num2str(jj),', ']);
+        continue
+    end
+    % Analysing the electrode groups separately
+    fprintf(['Analysing electrode group ', num2str(jj),', ']);
     
     if isempty(ripple_channels{jj})
         continue
@@ -340,7 +346,6 @@ for jj = 1:session.extracellular.nElectrodeGroups
     end
 end
 
-clear signal
 % Labels channels Cortical if electrode group has channelTags
 if isfield(session.channelTags,'Cortical') && ~isempty(session.channelTags.Cortical.electrodeGroups)
     for jj = session.channelTags.Cortical.electrodeGroups
