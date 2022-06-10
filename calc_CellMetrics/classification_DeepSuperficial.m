@@ -197,7 +197,7 @@ end
 % Main algorithm  (two versions below)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-SWR_slope = [];
+% set up output vars in order to be the same size
 for jj = 1:session.extracellular.nElectrodeGroups
     % Get list of channels belong to electrode group (1-indexed)
     ripple_channels{jj} = session.extracellular.electrodeGroups.channels{jj};
@@ -205,7 +205,17 @@ for jj = 1:session.extracellular.nElectrodeGroups
     % remove ripple channels that are labeled 'Bad'
     ripple_channels{jj}(ismember(ripple_channels{jj},channels_to_exclude)) = [];
     
-    if any(jj == electrodeGroupsToExclude) & skip_cortical
+    ripple_average{jj} = ones(301,length(ripple_channels{jj}))*nan;
+    ripple_power{jj} = ripple_channels{jj}*nan;
+    ripple_amplitude{jj} = ripple_channels{jj}*nan;
+    SWR_diff{jj} = ripple_channels{jj}*nan;
+    SWR_amplitude{jj} = ripple_channels{jj}*nan;
+end
+
+SWR_slope = [];
+for jj = 1:session.extracellular.nElectrodeGroups
+
+    if any(jj == electrodeGroupsToExclude) && skip_cortical
         fprintf(['Skipping cortical electrode group ', num2str(jj),', ']);
         continue
     end
