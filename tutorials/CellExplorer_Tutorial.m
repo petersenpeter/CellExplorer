@@ -22,8 +22,9 @@ cell_metrics = ProcessCellMetrics('session', session);
 cell_metrics = CellExplorer('metrics',cell_metrics); 
 
 %% 3.2 Open several session from basepaths
-basepaths = {'/your/data/path/basename_1/','/your/data/path/basename_2/'};
-cell_metrics = loadCellMetricsBatch('basepaths',basepaths);
+basenames = {'basename1','basename2'};
+basepaths = {'/your/data/path/basename1/','/your/data/path/basename2/'};
+cell_metrics = loadCellMetricsBatch('basepaths',basepaths,'basenames',basenames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 
 %% 4. load a subset of units fullfilling multiple of criterium
