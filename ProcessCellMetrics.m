@@ -258,7 +258,7 @@ if parameters.transferFilesFromClusterpath && isfield(session,'spikeSorting') &&
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Getting spikes  -  excluding user specified- and manipulation intervals
+% Getting spikes  -  excluding user specified- and manipulation intervals  
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 sr = session.extracellular.sr;
@@ -456,7 +456,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         if isfield(spikes{spkExclu},'maxWaveform_all')
             for j = 1:cell_metrics.general.cellCount
                 if numel(spikes{spkExclu}.maxWaveform_all)>=j && ~isempty(spikes{spkExclu}.maxWaveform_all{j})
-                    nChannelFit = min([16,length(spikes{spkExclu}.maxWaveform_all{j}),length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
+                    nChannelFit = min([preferences.waveform.trilat_nChannels,length(spikes{spkExclu}.maxWaveform_all{j}),length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
                     cell_metrics.waveforms.bestChannels{j} = spikes{spkExclu}.maxWaveform_all{j}(1:nChannelFit);
                 else
                     cell_metrics.waveforms.bestChannels{j} = [];
@@ -546,7 +546,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 [~,idx] = sort(range(filt_all),'descend');
                 clear filt_all
                 
-                trilat_nChannels = min([16,numel(peakVoltage)]);
+                trilat_nChannels = min([preferences.waveform.trilat_nChannels,numel(peakVoltage)]);
                 bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
                 beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
                 trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels),peakVoltage(idx(1:trilat_nChannels)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
@@ -560,7 +560,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 v = cell_metrics.trilat_y(j);
                 [channel_distance,idx2] = sort(hypot((x1(:)-u),(y1(:)-v)));
                 
-                nChannelFit = min([16,length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
+                nChannelFit = min([trilat_nChannels,length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
                 x = 1:nChannelFit;
                 y = peakVoltage(idx(x));
                 x2 = channel_distance(1:nChannelFit)';
@@ -620,15 +620,16 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             for j = 1:cell_metrics.general.cellCount
                 if ~isnan(cell_metrics.peakVoltage(j))
                     peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
+                    trilat_nChannels = min([preferences.waveform.trilat_nChannels,numel(peakVoltage)]);
                     [~,idx] = sort(peakVoltage,'descend');
-                    bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:16));
+                    bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
                     beta0 = [cell_metrics.general.ccf.x(bestChannels(1)),cell_metrics.general.ccf.y(bestChannels(1)),cell_metrics.general.ccf.z(bestChannels(1))]; % initial position
                     if isnan(beta0)
                         cell_metrics.ccf_x(j) = nan;
                         cell_metrics.ccf_y(j) = nan;
                         cell_metrics.ccf_z(j) = nan;
                     else
-                        trilat_pos = trilat3([cell_metrics.general.ccf.x(bestChannels),cell_metrics.general.ccf.y(bestChannels),cell_metrics.general.ccf.z(bestChannels)],peakVoltage(idx(1:16)),beta0,0);
+                        trilat_pos = trilat3([cell_metrics.general.ccf.x(bestChannels),cell_metrics.general.ccf.y(bestChannels),cell_metrics.general.ccf.z(bestChannels)],peakVoltage(idx(1:trilat_nChannels)),beta0,0);
                         cell_metrics.ccf_x(j) = trilat_pos(1);
                         cell_metrics.ccf_y(j) = trilat_pos(2);
                         cell_metrics.ccf_z(j) = trilat_pos(3);
