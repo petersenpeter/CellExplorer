@@ -17,6 +17,7 @@ preferences.loadSpikes.labelsToRead = {'good'};     % allows you to load units w
 preferences.waveform.nPull = 600;               % number of spikes to pull out (default: 600)
 preferences.waveform.wfWin_sec = 0.004;         % Larger window of the waveform for filtering (to avoid edge effects). Total width in seconds [default 4ms]
 preferences.waveform.wfWinKeep = 0.0008;        % half width of the waveform. In seconds [default 0.8ms]
+preferences.waveform.trilat_nChannels = 16;     % Maximum number of channels used for trilateration 
 preferences.waveform.showWaveforms = true;
 
 % PSTHs / Events / Manipulations
