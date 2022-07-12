@@ -9,7 +9,7 @@ has_children: true
 # NeuroScope2
 NeuroScope2 is a data viewer for raw and processed extracellular data acquired using multi-site silicon probes, tetrodes or single wires. It is written in Matlab, maintaining many of the original functions of [NeuroScope](http://neurosuite.sourceforge.net/), but with many enhancements. It can be used to explore existing data and to stream data being collected and can handle multiple data streams simultaneously - e.g. digital, analog, and aux channels from Intan - together with the raw ephys data. As NeuroScope2 is written in MATLAB, it is hackable, adaptable and easily expandable. It is much faster than the original NeuroScope, and functions fully within the data types of CellExplorer, using the `session` struct for metadata.
 
-<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1_lowress.jpeg)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1.png">![NeuroScope2](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1_lowress.jpeg)</a>
 
 {: .no_toc}
 ## Table of contents
@@ -31,7 +31,7 @@ You can view CellExplorer, Buzcode, and other .mat structures:
 * [timeseries](https://cellexplorer.org/datastructure/data-structure-and-format/#time-series): Show time series data.
 * Other spike sorting data formats: KiloSort, Klustakwik, and Spyking Circus.
 
-<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_ripple.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_ripple_lowress.jpg)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_ripple.png">![NeuroScope2](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_ripple_lowress.jpeg)</a>
 
 The screenshot above shows a 128 channels recording with two ripple events highlighted, the spike raster below is color coded and sorted by putative cell types.
 
@@ -76,7 +76,7 @@ Other time series data can also be shown in NeuroScope2, including both analog a
 
 Intan's analog and digital files are treated as time series and the metadata is stored in the session struct. The metadata can be imported from Intan's `info.rhd`. In the session GUI `gui_session.m` go to the File menu and select __Import time series from Intan info.rhd__, this will import the metadata as shown in the screenshot below. Save the changes and close the gui.
 
-<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_behavior.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_behavior_lowress.jpg)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_behavior.png">![NeuroScope2](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_behavior_lowress.jpeg)</a>
 
 The screenshot above shows a 128 channels recording with digital pulses shown below and a behavior-plot-inset in the lower right corner. The spike raster below tre traces is color coded and sorted by electrode groups.
 
