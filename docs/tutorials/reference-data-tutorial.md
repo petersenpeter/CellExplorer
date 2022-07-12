@@ -22,7 +22,7 @@ The Buzsaki lab is sharing a large set of datasets and a large set of these sess
 Once a selection has been made, you can skip step 2 and 3. The reference data is not displayed in the t-SNE plot. The video below shows the steps in CellExplorer:
 
 <video width="100%" height="auto" controls="controls">
-  <source src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/ReferenceDataTutorial.mp4" type="video/mp4">
+  <source src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/videos/ReferenceDataTutorial.mp4" type="video/mp4">
 </video>
 
 Below figure shows the various ways to plot reference data in CellExplorer:
