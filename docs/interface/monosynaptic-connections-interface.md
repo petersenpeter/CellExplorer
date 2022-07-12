@@ -9,7 +9,7 @@ nav_order: 9
 
 Monosynaptic connections, both excitatory and inhibitory connections, are determined in the processing pipeline. You can visualize the connections and perform manual curation in a graphical interface. 
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/03/MonoSyn3.png)
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/MonoSyn3.png)
 
 1. Launch the monoSyn GUI providing the path to your data:
 ```m

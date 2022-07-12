@@ -22,16 +22,16 @@ The fiting is performed in the script [`fit_ACG.m`](https://github.com/petersenp
 ### Fitting method
 Below figure shows three example fits for a typical wide interneuron (top row), narrow interneuron and a pyramidal cell. The contribution of each exponential function is shown in the second row for the three examples. The exponential decay components captures the slow decay of the ACG (red curves) while the rise and burst components together describes the fast rise and burstiness of the cells.
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/ACG_fit_summary_taus2.png" width="80%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/ACG_fit_summary_taus2.png" width="80%"></p>
 
 ### Components of the fit and example fits
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/11/ACG_fit_summary_taus.png){: .mt-4}
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/ACG_fit_summary_taus.png){: .mt-4}
 
 ### Performance
 The performance is captured in below figure showing the R^2 values for each fit across 4000 hippocampal cells plotted against the number of spikes.
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/ACG_fit_summary_R_squared.png" width="70%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/ACG_fit_summary_R_squared.png" width="70%"></p>
 
 ### Limitations to the fit
 The fit performs quite well for in vivo data from various brain regions, yet there are cases where this does not hold up. Manipulations should generally be excluded if it results in drastically altered spiking dynamics. Poor fit has been observed in recordings with observed seizures and other pathological conditions as well as in slice recordings where the spiking dynamics can look quite different.

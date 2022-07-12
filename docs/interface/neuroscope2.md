@@ -9,7 +9,7 @@ has_children: true
 # NeuroScope2
 NeuroScope2 is a data viewer for raw and processed extracellular data acquired using multi-site silicon probes, tetrodes or single wires. It is written in Matlab, maintaining many of the original functions of [NeuroScope](http://neurosuite.sourceforge.net/), but with many enhancements. It can be used to explore existing data and to stream data being collected and can handle multiple data streams simultaneously - e.g. digital, analog, and aux channels from Intan - together with the raw ephys data. As NeuroScope2 is written in MATLAB, it is hackable, adaptable and easily expandable. It is much faster than the original NeuroScope, and functions fully within the data types of CellExplorer, using the `session` struct for metadata.
 
-<a href="https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_1.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_1_lowress.jpg)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1_lowress.jpg)</a>
 
 {: .no_toc}
 ## Table of contents
@@ -31,7 +31,7 @@ You can view CellExplorer, Buzcode, and other .mat structures:
 * [timeseries](https://cellexplorer.org/datastructure/data-structure-and-format/#time-series): Show time series data.
 * Other spike sorting data formats: KiloSort, Klustakwik, and Spyking Circus.
 
-<a href="https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_ripple.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_ripple_lowress.jpg)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_ripple.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_ripple_lowress.jpg)</a>
 
 The screenshot above shows a 128 channels recording with two ripple events highlighted, the spike raster below is color coded and sorted by putative cell types.
 
@@ -41,7 +41,7 @@ The interface consist of side panel and a main plot axis. Below the main axis ar
 ### Benchmarks
 NeuroScope2 is substantial faster than the original NeuroScope. Below figures capture the display time for various window durations (left; i.e. number of samples) and channel count (right) for the 5 plotting styles. The benchmarks were performed on an Apple iMac (5K display) with a 4.2GHz Quad-Core Intel Core i7 with 64GB of ram, a Radeon Pro 580 8 GB graphics card, and data stored on an external SSD. The test was performed on a 128 channel recording, sampled at 20KHz.
 
-![Benchmarks of NeuroScope2](https://buzsakilab.com/wp/wp-content/uploads/2022/05/benchmark_window_duration-01.png)
+![Benchmarks of NeuroScope2](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/benchmark_window_duration-01.png)
 
 ## Metadata
 NeuroScope2 uses the [session struct](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) for session level metadata. Please see [this tutorial](https://cellexplorer.org/tutorials/metadata-tutorial/) on how to generate and fill out the metadata. Metadata can be imported from multiple sources: an existing `basename.xml` file (NeuroSuite), from Intan's `info.rhd` file, from KiloSort's `rez.mat` file and from a `basename.sessionInfo.mat` (Buzcode) file.
@@ -68,7 +68,7 @@ NeuroScope2('session',session)
 ### Open a session from the File menu in NeuroScope2
 A new dataset can be loaded from the File menu in NeuroScope2. Select `Load session from file`, to open a file dialog and select any file from the basepath of the session you want to open, that contains the basename, e.g. `basename.session.mat`.
 
-<a href="https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_inputs.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_inputs.png)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_inputs.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_inputs.png)</a>
 
 
 ### Display digital and analog files in NeuroScope2
@@ -76,7 +76,7 @@ Other time series data can also be shown in NeuroScope2, including both analog a
 
 Intan's analog and digital files are treated as time series and the metadata is stored in the session struct. The metadata can be imported from Intan's `info.rhd`. In the session GUI `gui_session.m` go to the File menu and select __Import time series from Intan info.rhd__, this will import the metadata as shown in the screenshot below. Save the changes and close the gui.
 
-<a href="https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_behavior.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2022/03/NeuroScope2_screenshot_behavior_lowress.jpg)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_behavior.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_behavior_lowress.jpg)</a>
 
 The screenshot above shows a 128 channels recording with digital pulses shown below and a behavior-plot-inset in the lower right corner. The spike raster below tre traces is color coded and sorted by electrode groups.
 

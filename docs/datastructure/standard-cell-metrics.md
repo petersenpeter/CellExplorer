@@ -83,7 +83,7 @@ $$
 * `ab_ratio`: Waveform asymmetry; the ratio between the two positive peaks `(peakB-peakA)/(peakA+peakB)`.
 * `peakVoltage`: Peak voltage (µV) Defined from the channel with the maximum high-pass filtered waveform. `max(waveform)-min(waveform)`.
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/WaveformFeatures.png" width="50%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/WaveformFeatures.png" width="50%"></p>
 
 ### Channel maps
 Two channel maps are currently supported by CellExplorer, that are determined from the amplitude of the average waveform across channels.

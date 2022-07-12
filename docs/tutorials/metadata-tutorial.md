@@ -7,7 +7,7 @@ nav_order: 2
 # Session metadata tutorial
 {: .no_toc}
 This tutorial shows you how to generate the [session metadata struct](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) used by CellExplorer. 
-![Flow chart](https://buzsakilab.com/wp/wp-content/uploads/2020/05/Flowcharts_Metadata.png){: .mt-4}
+![Flow chart](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Flowcharts_Metadata.png){: .mt-4}
 
 1. Define the basepath of the dataset to run. A valid dataset should consist of a binary raw data file and spike sorted data. 
 ```m
@@ -27,7 +27,7 @@ session = sessionTemplate(basepath);
 session = gui_session(session);
 ```
 Below is a screenshot of the metadata interface with metadata entered:
-![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_general.png)
+![Metadata interface](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_general.png)
 
 4. You can validate the entered metadata by running the verification script:
 ```m
@@ -35,4 +35,4 @@ validateSessionStruct(session);
 ```
 This will show a table, with missing required fields highlighted in red, and unused optional fields in blue. The verification can also be run from the session GUI:
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2021/04/verification.png" width="75%"></p>{: .mt-4}
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/verification.png" width="75%"></p>{: .mt-4}

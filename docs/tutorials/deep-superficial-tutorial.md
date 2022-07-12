@@ -23,7 +23,7 @@ classification_DeepSuperficial(session);
 Please see the description of input and related files [here]({{"/pipeline/hippocampal-metrics/#deep-superficial-metrics"|absolute_url}}).
 
 ## Using the graphical interface for curating deep-superficial assignments
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/02/gui_deepSuperficial.png){: .mt-4}
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_deepSuperficial.png){: .mt-4}
 
 1. Launch the deep-superficial GUI providing the path to your data `path_to_data` and the `basename` (optional):
 ```m

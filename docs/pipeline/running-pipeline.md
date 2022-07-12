@@ -22,15 +22,15 @@ The flowcharts below show the processes in details. The boxes are color coded ac
 
 ### Preparing experimental metadata
 First step is gathering metadata in the session struct. This struct can contain all metadata necessary for calculating the cell metrics. You can use the `sessionTemplate` to extract and define the parameters and visualize them with the graphical interface `gui_session` for further manual entry. The templates will scan the basepath for specific files, and import existing metadata to minimize the manual entry. You can customize the template script to fit and extract information relevant to your data. [The session struct is defined here]({{"/datastructure/data-structure-and-format/#session-metadata"|absolute_url}}). The session struct follows the database structure of the Buzsaki Lab and all metadata can be loaded directly from the database for database sessions. See the example code below on how perform the actions in Matlab.
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/05/Flowcharts_Metadata.png){: .mt-4}
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Flowcharts_Metadata.png){: .mt-4}
 
 ### Processing cell_metrics
 Following the definition of metadata, the cell metrics calculation process can be performed. A single script processes all default cell_metrics (which can be customized and expanded). The process is fully automatic, except for the detection of monosynaptic connections, in which a graphical interface is shown for manual curation (the manual step can be turned off). See the [full list of default cell_metrics here]({{"/datastructure/standard-cell-metrics/"|absolute_url}}). Below follows two flowcharts: a simple with the minimal inputs and an advanced flowchart. The advanced chart shows all relevant files that are compatible, auto-detected and loaded by the cell_metrics calculation process.
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/05/Flowcharts_ProcessingModule.png){: .mt-4}
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Flowcharts_ProcessingModule.png){: .mt-4}
 
 ### Running CellExplorer
 CellExplorer can be used with single recording sessions as well as batches of sessions. Batch loading is performed with the script `loadCellMetricsBatch`. The advanced flowchart below further details the capabilities of loading various GUIs from CellExplorer (`gui_session`, `gui_MonoSyn` and `gui_DeelSuperficial`) as well as do spike raster plots, that requires access to the local `spikes` struct and potentially also manipulation and events files when plotting PSTHs.
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/05/Flowcharts_GraphicalInterface.png){: .mt-4}
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Flowcharts_GraphicalInterface.png){: .mt-4}
 
 ## Running pipeline from a data path
 The pipeline follows the data standards [described here]({{"/datastructure/data-structure-and-format/"|absolute_url}}). Saving your data in the specified data formats, integrates your data better with CellExplorer, allowing you to plot spike rasters and event histograms among other things.

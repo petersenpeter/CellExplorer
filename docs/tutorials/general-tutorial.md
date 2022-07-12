@@ -18,11 +18,11 @@ cd(basepath)
 session = sessionTemplate(basepath,'showGUI',true);
 ```
 
-![ProcessCellMetrics_gui](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_general.png)
+![ProcessCellMetrics_gui](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_general.png)
 
 You can use the GUI to inspect the metadata. Make sure that the extracellular tab is filled out correctly for your data (see screenshot below). The template script can extracted existing metadata from a Neuroscope compatible `basename.xml`, from Intan's `info.rhd` file, from KiloSort's `rez.mat` file, and from a `basename.sessionInfo.mat` (Buzcode) file.
 
-![ProcessCellMetrics_gui](https://buzsakilab.com/wp/wp-content/uploads/2021/04/gui_session_extracellular.png)
+![ProcessCellMetrics_gui](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_extracellular.png)
 
 3. Run the cell metrics pipeline `ProcessCellMetrics` using the session struct as input
 ```m
@@ -30,7 +30,7 @@ cell_metrics = ProcessCellMetrics('session', session,'showGUI',true);
 ```
 Setting showGUI to *true* will display the GUI shown below allowing you to validate parameters and settings for `ProcessCellMetrics`. You can click the button __Validate metadata__ to show a table with metadata relevant to the processing. Fields requiring your attention will be highlighted in red; optional fields in blue.
 
-![ProcessCellMetrics_gui](https://buzsakilab.com/wp/wp-content/uploads/2021/04/gui_session_ProcessCellMetrics.png)
+![ProcessCellMetrics_gui](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_ProcessCellMetrics.png)
 
 4. Visualize the cell metrics in CellExplorer
 ```m
