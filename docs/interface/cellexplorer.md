@@ -9,4 +9,4 @@ has_children: true
 {: .no_toc}
 CellExplorer allows you to explore your data on a single cell level.
 
-<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface3.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface-1200x730-1.jpg)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface3.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface-1200x730-1.jpeg)</a>
