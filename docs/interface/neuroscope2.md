@@ -9,7 +9,7 @@ has_children: true
 # NeuroScope2
 NeuroScope2 is a data viewer for raw and processed extracellular data acquired using multi-site silicon probes, tetrodes or single wires. It is written in Matlab, maintaining many of the original functions of [NeuroScope](http://neurosuite.sourceforge.net/), but with many enhancements. It can be used to explore existing data and to stream data being collected and can handle multiple data streams simultaneously - e.g. digital, analog, and aux channels from Intan - together with the raw ephys data. As NeuroScope2 is written in MATLAB, it is hackable, adaptable and easily expandable. It is much faster than the original NeuroScope, and functions fully within the data types of CellExplorer, using the `session` struct for metadata.
 
-<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1_lowress.jpg)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/NeuroScope2_screenshot_1_lowress.jpeg)</a>
 
 {: .no_toc}
 ## Table of contents
