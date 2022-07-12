@@ -13,7 +13,7 @@ This tutorial will guide you through the manual cell-type curation process in Ce
 cell_metrics = CellExplorer('metrics',cell_metrics); 
 ```
 2. Navigate the cells using the keyboard, the graphical buttons (shown below), or by middle-clicking any cell from the plots. 
-<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface_manualcuration.jpg" width="100%">
+<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface_manualcuration.jpeg" width="100%">
 
 3. Assign cell types from the `Cell Assignment` side menu using your mouse (see above screenshot), or the numeric keys (not the keypad). You can add more cell types by clicking `+ Cell-type` in the list of cell-types. You can also do group assignment via the group action menu:
    * Select cell(s) and press `space` to open the group actions menu.
