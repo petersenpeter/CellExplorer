@@ -19,5 +19,5 @@ CellExplorer contains a select set of ground truth data located in `+groundTruth
 Once a selection has been made, you can skip step 2 and 3. __If you have data that you are interested in sharing please contact us__. See the [opto-tagging tutorial](/tutorials/optotagging-tutorial/) for how to analyse and add your own data to the ground truth selection. The ground truth cells are labeled in `cell_metrics.groundTruthClassification`.  The video below shows the above steps in CellExplorer:
 
 <video width="100%" height="auto" controls="controls">
-  <source src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/GroundTruthTutorial.mp4" type="video/mp4">
+  <source src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/videos/GroundTruthTutorial.mp4" type="video/mp4">
 </video>
