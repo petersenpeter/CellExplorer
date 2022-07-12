@@ -13,7 +13,7 @@ CellExplorer is a graphical user interface (GUI), a standardized processing modu
 
 [Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [View code on GitHub](https://github.com/petersenpeter/CellExplorer){: .btn .fs-5 .mb-4 .mb-md-0}
 
-![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface-1200x730-1.jpg)
+![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface-1200x730-1.jpeg)
 
 ## Introduction
 {: .no_toc}
@@ -70,6 +70,6 @@ CellExplorer is funded by the NIH Brain initiative as part of the [Oxytocin U19 
 
 <p align="center">
 	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/brain-logo.png" width="30%">&emsp;&emsp;
-	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/LUNDBECK-logo-RGB.jpg" width="30%">&emsp;&emsp;
+	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/LUNDBECK-logo-RGB.jpeg" width="30%">&emsp;&emsp;
 	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/IndependentResearchFundDenmark.png" width="30%">
 </p>
