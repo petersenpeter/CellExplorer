@@ -70,7 +70,6 @@ CellExplorer is funded by the NIH Brain initiative as part of the [Oxytocin U19 
 
 <p align="center">
 	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/brain_initiative.png" width="20%">&emsp;&emsp;
-  {: .px-4 }
 	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Lundbeck_foundation.png" width="30%">&emsp;&emsp;
 	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/IndependentResearchFundDenmark.png" width="35%">
 </p>
