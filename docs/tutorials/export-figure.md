@@ -30,14 +30,14 @@ When applying settings to the figure (`Apply to Figure`), the figure sometimes r
 If the export figure dialog is not sufficient for your need, you can bring up the main figure menu by pressing `m`.
 
 By following above tutorial you should end up with an exported figure like shown in below image:
-![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-example.png)
+![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Cell-Explorer-example.png)
 
 ## Exporting figures using the action dialog
 1. Select a set of cells, using the mouse and open the actions dialog (press `space` or the `Actions` button in the right panel). If no cell selection is done before opening the action dialog, a cell selection dialog will be shown first: 
-    <p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-dialog.png" width="70%"></p>
+    <p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Cell-Explorer-group-action-dialog.png" width="70%"></p>
 2. Select one of the three `MULTI PLOT OPTIONS` in the actions dialog and press OK.
 3. In the multi plot dialog shown below, select the plots to generate, check the `Save figures` toggle, and define file format (.png or .pdf) and file path (Save to the basepaths, to the CellExplorer path or a user defined path):
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2019/12/Cell-Explorer-group-action-multiplot-dialog.png" width="70%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Cell-Explorer-group-action-multiplot-dialog.png" width="70%"></p>
 
 When you select to save your figures to the CellExplorer path or basepath, they will be saved to a subfolder named `summaryFigures`.
 

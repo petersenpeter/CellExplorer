@@ -73,7 +73,7 @@ aux_links:
   "Paper in Neuron":
     - "https://www.sciencedirect.com/science/article/pii/S0896627321006565"
   "PDF":
-    - "https://buzsakilab.com/wp/wp-content/uploads/formidable/211/Petersen_Neuron_2021.pdf"
+    - "https://raw.githubusercontent.com/petersenpeter/common_resources/main/pdfs/Petersen_Neuron_2021.pdf"
 
 
 # Makes Aux links open in a new tab. Default is false

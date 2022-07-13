@@ -13,7 +13,7 @@ CellExplorer is a graphical user interface (GUI), a standardized processing modu
 
 [Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2} [View code on GitHub](https://github.com/petersenpeter/CellExplorer){: .btn .fs-5 .mb-4 .mb-md-0}
 
-![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorerInterface-1200x730-1.jpg)
+![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface-1200x730-1.jpeg)
 
 ## Introduction
 {: .no_toc}
@@ -60,16 +60,16 @@ Peter C. Petersen, Joshua H. Siegle, Nicholas A. Steinmetz, Sara Mahallati, Gyö
 
 ## Video demonstrating the user-friendly capabilities of CellExplorer
 <video width="100%" height="auto" controls="controls">
-  <source src="https://buzsakilab.com/CellExplorer/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
+  <source src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/videos/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
 </video>
 
-The video can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY) and is [__available for download (60MB)__](https://buzsakilab.com/CellExplorer/CellExplorerMovie.mp4). For best viewing experience on YouTube, select highest resolution and maximize the video.
+The video can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY) and is [__available for download (60MB)__](https://raw.githubusercontent.com/petersenpeter/common_resources/main/videos/CellExplorerMovie.mp4). For best viewing experience on YouTube, select highest resolution and maximize the video.
 
 ## Funding
 CellExplorer is funded by the NIH Brain initiative as part of the [Oxytocin U19 BRAIN Initiative Grant](https://med.nyu.edu/departments-institutes/neuroscience/research/shared-research-resources/oxytocin-u19-brain-initiative-grant), [the Lundbeck Foundation](https://www.lundbeckfonden.com/en/), and the [Independent Research Fund Denmark](https://ufm.dk/en/research-and-innovation/councils-and-commissions/independent-research-fund-Denmark).
 
 <p align="center">
-	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/brain-logo.png" width="30%">&emsp;&emsp;
-	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/LUNDBECK-logo-RGB.jpg" width="30%">&emsp;&emsp;
-	<img src="https://buzsakilab.com/wp/wp-content/uploads/2020/11/IndependentResearchFundDenmark.png" width="30%">
+	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/brain-logo.png" width="30%">&emsp;&emsp;
+	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/LUNDBECK-logo-RGB.jpeg" width="30%">&emsp;&emsp;
+	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/IndependentResearchFundDenmark.png" width="30%">
 </p>

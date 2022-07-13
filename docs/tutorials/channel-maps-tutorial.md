@@ -17,7 +17,7 @@ This tutorial will show you how to generate and use the two channel maps availab
 ### Channel maps examples in CellExplorer
 CellExplorer can show both channel maps as separate plots as shown in below figure. The probe layout can also be shows as an embedded plot in the waveform plots. The same session and cell are shown in all three panels. Two Buzsaki probes with 6 shanks (10 staggered channels per shank), implanted in CA1 in both hemispheres.
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2021/07/Probe_map_and_CCF.png" width="80%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Probe_map_and_CCF.png" width="80%"></p>
 
 ## Channel coordinates (Probe layout)
 The channel maps can be generated manually or with two CellExplorer functions. When you generate the channel maps manually, make sure to save them according to the [data structure](https://cellexplorer.org/datastructure/data-structure-and-format/#channels) of CellExplorer.
@@ -51,7 +51,7 @@ session = session_gui(session);
 Select the _Animal Subject_ tab in the left side-menu. 
 Activate the _Probe implants_ tab and click _Add_. This will open a probe implants window allowing you to provide probe implants information, including your probe, brain region and implant coordinates (see screenshot below). Now, to generate the channel map, close the session gui and run the script below.
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2021/07/session_gui_implant.png" width="80%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/session_gui_implant.png" width="80%"></p>
 
 ```m
 generateChannelMap(session)
@@ -80,7 +80,7 @@ generateChannelMap(session)
 
 The channel map can also be generated directly from the session gui, by selecting __Generate channel map__ from the __Extracellular__ menu. This will generate the chanCoords file and below figure showing an example layout with two NeuroNexus Buzsaki 64 channel probes with a staggered configuration with 8 shanks (200 µm apart).
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2021/07/Channelmap_session_gui.png" width="80%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Channelmap_session_gui.png" width="80%"></p>
 
 #### 3. Generating and using channel coordinates for probe design
 CellExplorer also supports true probe geometries, which must be saved as a chanCoords struct in the CellExporer directory: `+chanCoords/probe_name.probes.chanCoords.channelInfo.mat`. If a probe design has been defined, CellExplorer prioritizes this above other methods. 
@@ -116,5 +116,5 @@ This action requires the implant metadata, and will generate a ccf file, e.g. `b
 
 The common coordinates can also be generated directly from the session gui, by selecting __Generate common coordinates__ from the __Extracellular__ menu. This will generate the chanCoords file and below figure showing an example layout with two Buzsaki 64 probes with a staggered configuration with 8 shanks (200 µm apart) implanted in CA1 in both hemispheres. The vectors signifies implant vectors, and the probes has been rotated along the implant axis to follow the curvature of the Longitudinal Axis of the Hippocampus.
 
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2021/07/CCF_sessio_gui.png" width="80%"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CCF_sessio_gui.png" width="80%"></p>
 
