@@ -23,11 +23,11 @@ To support this separation we have included ground truth opto-tagged interneuron
 
 ### Hippocampal data
 Below figure shows the cell-type separation on hippocampal data from Petersen and Buzsaki (Neuron, 2020), and hippocampal data collected by Viktor Varga (not published yet). The triangles indicate excitatory cells determined from monosynaptic connections. Dark blue: Narrow interneurons, Cyan: Wide interneurons, Red: Pyramidal cells.
-![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/PeterViktorCellExplorerPlot-v3.jpg){: .mt-4}
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/PeterViktorCellExplorerPlot-v3.jpeg){: .mt-4}
 
 ### Cortical data
 Below figure shows the cell type separation applied to the cortical data from Senzai et al., Neuron 2019. The triangles and squares indicate excitatory and inhibitory cells determined from monosynaptic connections. Dark blue: Narrow interneurons, Cyan: Wide interneurons, Red: Pyramidal cells.
-![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/YutaCellExplorerPlot_v2.jpg){: .mt-4}
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/YutaCellExplorerPlot_v2.jpeg){: .mt-4}
 
 ### Ground truth cells
 Below figure shows the various ground truth interneurons projected on the cortical data from the previous figure determined by opto-tagging. [Learn more about the ground truth cells here]({{"/publicdata/ground-truth-data/"|absolute_url}}).

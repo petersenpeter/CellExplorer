@@ -68,7 +68,7 @@ When navigating a recording, only data not currently in memory (shown on the scr
 
 + `Plot color`: Allows you to select from four color intensities (100%, 75%, 50%, and 25%) and four grey scale intensities (100%, 75%, 50%, and 25%) for the ephys traces. Use this when projecting spikes or events on the traces to better highlight them. 
 
-<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/trace_colors.jpg">![Trace color](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/trace_colors.jpeg)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/trace_colors.jpeg">![Trace color](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/trace_colors.jpeg)</a>
 
 + `Filter traces`: Apply a filter to the traces using the Lower and Higher filter setting input fields. If the Lower filter field is empty, only a low-pass filter will be applied. If the Higher filter is empty, only a high-pass filter will be applied. The filter applied is a 3rd order Zero-phase digital butter filter (filter function: `filtfilt`, filter design: `butter`).
 

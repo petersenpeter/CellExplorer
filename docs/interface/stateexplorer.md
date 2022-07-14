@@ -9,7 +9,7 @@ nav_order: 4
 
 StateExplorer is a simple graphical interface for visualizing and curation of states from continues data. 
 
-![StateExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/StateExplorer.jpg)
+![StateExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/StateExplorer.jpeg)
 
 ### Features of StateExplorer
 You can create temporal states from the time series trace, by drawing polygons around the trace or directly by defining the temporal intervals. Intervals can be deleted
@@ -19,7 +19,7 @@ You can create temporal states from the time series trace, by drawing polygons a
 ### Show events and states data in StateExplorer 
 Events and states-data can also be shown in StateExplorer below the main plot
 
-![StateExplorer_withEventsAndStates](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/StateExplorer_withEventsAndStates.jpg)
+![StateExplorer_withEventsAndStates](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/StateExplorer_withEventsAndStates.jpeg)
 
 
 ### Loading data in StateExplorer 
