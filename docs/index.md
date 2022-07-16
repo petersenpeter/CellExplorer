@@ -69,7 +69,7 @@ The video can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v
 CellExplorer is funded by the NIH Brain initiative as part of the [Oxytocin U19 BRAIN Initiative Grant](https://med.nyu.edu/departments-institutes/neuroscience/research/shared-research-resources/oxytocin-u19-brain-initiative-grant), [the Lundbeck Foundation](https://www.lundbeckfonden.com/en/), and the [Independent Research Fund Denmark](https://ufm.dk/en/research-and-innovation/councils-and-commissions/independent-research-fund-Denmark).
 
 <p align="center">
-	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/brain_initiative.png" width="20%">&emsp;&emsp;&emsp;&emsp;
-	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Lundbeck_foundation.png" width="30%">&emsp;&emsp;
+	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/brain_initiative.png" width="19%">&emsp;&emsp;&emsp;&emsp;
+	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Lundbeck_foundation.png" width="23%">&emsp;&emsp;
 	<img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/IndependentResearchFundDenmark.png" width="35%">
 </p>
