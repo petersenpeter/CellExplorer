@@ -8,6 +8,8 @@ nav_order: 3
 {: .no_toc}
 This tutorial will show you how to export cell metrics to a NWB file and import them back from the file. CellExplorer still works with its regular Matlab structs in memory, but you can save (export) and load (import) the cell metrics from a nwb file.
 
+You must install the matnwb toolset as well: https://github.com/NeurodataWithoutBorders/matnwb.
+
 ## Table of contents
 {: .no_toc .text-delta }
 
