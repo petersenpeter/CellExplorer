@@ -3094,7 +3094,7 @@ uiwait(UI.fig)
         elseif evnt.Indices(1,2)==8
             session.epochs{edit_group}.manipulation = evnt.NewData;
         elseif evnt.Indices(1,2)==9
-            session.epochs{edit_group}.stimulus = evnt.NewData;
+            session.epochs{edit_group}.stimuli = evnt.NewData;
         elseif evnt.Indices(1,2)==10
             session.epochs{edit_group}.notes = evnt.NewData;
         end
