@@ -11,9 +11,9 @@ function data = detectCellExplorerFiles(basepath,basename)
             fileList = {fileList.name};
             fileList = split(fileList,'.');
             if size(fileList,2)>1
-                fileList = fileList(:,:,2);
+                fileList = fileList(:,:,end-2);
             else
-                fileList = fileList(2);
+                fileList = fileList(end-2);
             end
             data.(containers{i}) = fileList;
         end
