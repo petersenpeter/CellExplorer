@@ -463,14 +463,21 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 end
             end
         end
-        
-        if isfield(spikes{spkExclu},'filtWaveform_all')
-            for j = 1:cell_metrics.general.cellCount
-                cell_metrics.waveforms.peakVoltage_all{j} = nan(1,session.extracellular.nChannels);
-                cell_metrics.waveforms.peakVoltage_all{j}(good_channels) = range(spikes{spkExclu}.filtWaveform_all{j}(good_channels,:),2);
+        try
+            if isfield(spikes{spkExclu},'filtWaveform_all')
+                for j = 1:cell_metrics.general.cellCount
+                    cell_metrics.waveforms.peakVoltage_all{j} = nan(1,session.extracellular.nChannels);
+                    cell_metrics.waveforms.peakVoltage_all{j}(good_channels) = range(spikes{spkExclu}.filtWaveform_all{j}(good_channels,:),2);
+                end
+            end
+        catch % for older data, you might not have waveforms on every channel
+            if isfield(spikes{spkExclu},'filtWaveform_all')
+                for j = 1:cell_metrics.general.cellCount
+                    cell_metrics.waveforms.peakVoltage_all{j} = nan(1,session.extracellular.nChannels);
+                    cell_metrics.waveforms.peakVoltage_all{j} = range(spikes{spkExclu}.filtWaveform_all{j},2);
+                end
             end
         end
-        
         dispLog('Calculating waveform metrics',basename);
         waveform_metrics = calc_waveform_metrics(spikes{spkExclu},sr,'showFigures',parameters.showFigures);
         cell_metrics.troughToPeak = waveform_metrics.troughtoPeak;
