@@ -99,7 +99,14 @@ if isstruct(varargin{1})  % if first arg is a session struct
     session = p.Results.session;
     basename = session.general.name;
     basepath = session.general.basePath;
-    lfp = double(LoadBinary(fullfile(basepath,[basename, '.lfp']),'nChannels',session.extracellular.nChannels,'channels',session.channelTags.Ripple.channels(1),'precision','int16','frequency',session.extracellular.srLfp));
+    if exist(fullfile(basepath,[basename, '.lfp']),'file')
+        lfp_file = fullfile(basepath,[basename, '.lfp']);
+    elseif exist(fullfile(basepath,[basename, '.eeg']),'file')
+        lfp_file = fullfile(basepath,[basename, '.eeg']);
+    end
+    lfp = double(LoadBinary(lfp_file,'nChannels',session.extracellular.nChannels,...
+        'channels',session.channelTags.Ripple.channels(1),...
+        'precision','int16','frequency',session.extracellular.srLfp));
     % Filtering the lfp trace
     [filt_b filt_a] = cheby2(4,50,passband/(0.5*session.extracellular.srLfp));
     signal = filtfilt(filt_b,filt_a,lfp);
