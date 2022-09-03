@@ -30,7 +30,7 @@ When applying settings to the figure (`Apply to Figure`), the figure sometimes r
 If the export figure dialog is not sufficient for your need, you can bring up the main figure menu by pressing `m`.
 
 By following above tutorial you should end up with an exported figure like shown in below image:
-![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Cell-Explorer-example.png)
+![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/CellExplorerInterface-1200x730-1.jpeg)
 
 ## Exporting figures using the action dialog
 1. Select a set of cells, using the mouse and open the actions dialog (press `space` or the `Actions` button in the right panel). If no cell selection is done before opening the action dialog, a cell selection dialog will be shown first: 
