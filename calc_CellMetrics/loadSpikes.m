@@ -247,6 +247,8 @@ if parameters.forceReload
             
             fileID = fopen(filename,'r');
             dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
+            missingClusters = find(~ismember(spike_clusters,dataArray{1}));
+            dataArray{1} = [dataArray{1}; missingClusters]; dataArray{2} = [dataArray{2}; repmat({'unsorted'},size(missingClusters))]; 
             fclose(fileID);
             UID = 1;
             tol_samples = session.extracellular.sr*5e-4; % 0.5 ms tolerance in timestamp units
