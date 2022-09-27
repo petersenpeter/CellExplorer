@@ -304,16 +304,17 @@ if parameters.forceReload
 
                             % Get waveforms
                             if exist('waveforms','var') && ~parameters.getWaveformsFromDat
-                                [~,channelBase1] = max(max(abs((squeeze(waveforms(i,:,:))))));
+                                waveform = waveforms(spikes.cluID(UID),:,:);
+                                [~,channelBase1] = max(max(abs((squeeze(waveform)))));
 
                                 spikes.maxWaveformCh(UID) = channelBase1-1; % max waveform channel
                                 spikes.maxWaveformCh1(UID) = channelBase1; % index 1;
 
                                 spikes.processinginfo.params.WaveformsSource = 'kilosort template';
-                                spikes.filtWaveform{UID} = squeeze(waveforms(i,:,channelBase1));
+                                spikes.filtWaveform{UID} = squeeze(waveform(:,:,channelBase1));
 
                                 % calc waveform x axis (time in seconds)
-                                [~,midx] = min(min(squeeze(waveforms(i,:,:)),[],2));
+                                [~,midx] = min(min(squeeze(waveform),[],2));
                                 spikes.timeWaveform{UID} = ((1:size(waveforms,2)) - mode(midx)) / session.extracellular.sr * 1000;
 
                                 % Assigning shankID to the unit
