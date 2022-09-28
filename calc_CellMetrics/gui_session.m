@@ -3314,7 +3314,7 @@ uiwait(UI.fig)
     end
 
     function importGroupsFromXML
-        [file2,basepath2] = uigetfile('*.kwik','Please select the *.kwik file');
+        [file2,basepath2] = uigetfile('*.xml','Please select the *.xml file');
         xml_filepath = fullfile(basepath2,file2);
         if ~isempty(xml_filepath) && ~isequal(xml_filepath,0)
             MsgLog('Importing groups from XML...',0)
