@@ -75,10 +75,10 @@ if isdeployed && ~(exist('sessionIn','var') && isstruct(sessionIn))% Check for i
         return
     end
     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
-         session = loadSession(basepath,basename);
-         sessionIn = session;
+        session = loadSession(basepath,basename);
+        sessionIn = session;
     end
-
+    
 elseif exist('sessionIn','var') && isstruct(sessionIn)
     session = sessionIn;
     if isfield(session.general,'basePath')
@@ -94,14 +94,14 @@ elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'file') 
     sessionIn = session;
 elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'dir') == 7
     disp(['Loading from basepath: ' sessionIn]);
-     basepath = sessionIn;
-     [~,basename,~] = fileparts(sessionIn);
-     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
-         session = loadSession(basepath,basename);
-     else
-         session = sessionTemplate(basepath);
-     end
-     sessionIn = session;
+    basepath = sessionIn;
+    [~,basename,~] = fileparts(sessionIn);
+    if exist(fullfile(basepath,[basename,'.session.mat']),'file')
+        session = loadSession(basepath,basename);
+    else
+        session = sessionTemplate(basepath);
+    end
+    sessionIn = session;
 else
     basepath = pwd;
     basename = basenameFromBasepath(basepath);
@@ -322,7 +322,7 @@ if exist('parameters','var') && ~isempty(parameters)
     UI.list.metrics = unique([UI.list.metrics,'other_metrics',parameters.metricsToExcludeManipulationIntervals],'stable');
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Exclude manipulation intervals', 'Position', [415, 500, 195, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     UI.listbox.metricsToExcludeManipulationIntervals = uicontrol('Parent',UI.tabs.parameters,'Style','listbox','Position',[415 340 195 160],'Units','normalized','String',UI.list.metrics,'max',100,'min',0,'Value',compareStringArray(UI.list.metrics,parameters.metricsToExcludeManipulationIntervals),'Units','normalized','tooltip',sprintf('Select metrics to exclude manipulation intervals'));
-
+    
     % Parameters
     uicontrol('Parent',UI.tabs.parameters,'Style', 'text', 'String', 'Parameters', 'Position', [10, 320, 288, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
     
@@ -419,7 +419,7 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
             UI.fig.Name = ['Session metadata: ',session.general.name];
         end
     end
-    
+
     function locate_basepath(~,~)
         
         if ~isempty(session.general.basePath) && ~isequal(session.general.basePath,0)
@@ -433,7 +433,7 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
             UI.edit.basepath.String = basepath1;
         end
     end
-    
+
     function locate_fileName(~,~)
         [file1,basepath1] = uigetfile('*.*','Please select the raw data file');
         if ~isequal(file1,0)
@@ -443,10 +443,10 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
                 file2 = file2(2:end);
             end
             session.extracellular.fileName = file2;
-            UI.edit.fileName.String = file2;            
+            UI.edit.fileName.String = file2;
         end
     end
-    
+
 % % % % % % % % % % % % % % % % % % % % %
 % Epochs
 
@@ -707,7 +707,7 @@ uiLoaded = true;
 uiwait(UI.fig)
 
 %% % % % % % % % % % % % % % % % % % % % %
-% Embedded functions 
+% Embedded functions
 % % % % % % % % % % % % % % % % % % % % %
 
     function generateSessionTemplate(~,~)
@@ -725,7 +725,7 @@ uiwait(UI.fig)
                 fieldname1 = listing{indx(i)};
                 S.session.(fieldname1) = session.(fieldname1);
             end
-
+            
             session_templates_path = what('session_templates');
             filepath1 = session_templates_path.path;
             
@@ -739,7 +739,7 @@ uiwait(UI.fig)
         end
         
     end
-    
+
     function loadSessionTemplate(~,~)
         if isdeployed
             return
@@ -785,7 +785,7 @@ uiwait(UI.fig)
             end
         end
     end
-    
+
     function generateTabdata(metadataStruct)
         UI.list.tableData = {};
         UI.tabs.(metadataStruct.name) = uitab(UI.animalMetadata,'Title',metadataStruct.title);
@@ -804,13 +804,13 @@ uiwait(UI.fig)
         uicontrol('Parent',UI.tabs.panels.(metadataStruct.name).buttons,'Style','pushbutton','Tag',metadataStruct.name,'String',char(8595),'Callback',@moveIt,'Units','normalized','tooltip',['Move selected ', metadataStruct.title_singular,' down']);
         set(UI.tabs.panels.(metadataStruct.name).buttons, 'Widths', [110 110 110 110 -1 50 50],'MinimumWidths',[110 110 110 110 10 50 50],'Spacing', 3);
     end
-    
+
     function editTableData(src,evnt)
         if evnt.Indices(1,2)>1
             session.animal.(src.Tag){evnt.Indices(1,1)}.(layout.(src.Tag).field_names{evnt.Indices(1,2)-1}) = evnt.NewData;
         end
     end
-    
+
     function moveIt(src,~)
         if~isempty(UI.table.(src.Tag).Data) && ~isempty(find([UI.table.(src.Tag).Data{:,1}], 1)) && sum([UI.table.(src.Tag).Data{:,1}])>0
             cell2move = [UI.table.(src.Tag).Data{:,1}];
@@ -830,7 +830,7 @@ uiwait(UI.fig)
             helpdlg('Please select the entry/entries to move','Error')
         end
     end
-    
+
     function animalMeta(src,~)
         animalMetaType = layout.(src.Tag);
         if isfield(session.animal,(src.Tag))
@@ -852,7 +852,7 @@ uiwait(UI.fig)
                 end
                 % Opens dialog
                 UI.dialog.animal = dialog('Position', [300, 330, 330, numel(animalMetaType.field_names)*50+50],'Name',animalMetaType.title,'WindowStyle','modal'); movegui(UI.dialog.animal,'center')
-
+                
                 % Filling in dialog
                 for i = 1:numel(animalMetaType.field_names)
                     if animalMetaType.field_required(i)
@@ -865,66 +865,66 @@ uiwait(UI.fig)
                     if strcmp(animalMetaType.field_style{i},'edit')
                         if strcmp(src.String,'Edit') & isfield(session.animal.(src.Tag){entry},animalMetaType.field_names{i})
                             string1 = session.animal.(src.Tag){entry}.(animalMetaType.field_names{i});
-                        else 
+                        else
                             string1 = '';
                         end
                         fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'Edit','Tag',animalMetaType.field_names{i}, 'String', string1, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left');
-                    
+                        
                     elseif strcmp(animalMetaType.field_style{i},'popup')
                         
-                    if ~strcmp(animalMetaType.field_relationship{i},'text') && strcmp(animalMetaType.field_type{i},'brainRegions')
-                        % Add new brain region to session struct
-                        brainRegions = load('BrainRegions.mat'); brainRegions = brainRegions.BrainRegions;
-                        brainRegions_list = strcat(brainRegions(:,2),' (',brainRegions(:,1),')');
-                        
-                        if strcmp(src.String,'Edit')
-                            value1 = find(strcmp(brainRegions(:,2),session.animal.(src.Tag){entry}.(animalMetaType.field_names{i})));
-                            if isempty(value1)
+                        if ~strcmp(animalMetaType.field_relationship{i},'text') && strcmp(animalMetaType.field_type{i},'brainRegions')
+                            % Add new brain region to session struct
+                            brainRegions = load('BrainRegions.mat'); brainRegions = brainRegions.BrainRegions;
+                            brainRegions_list = strcat(brainRegions(:,2),' (',brainRegions(:,1),')');
+                            
+                            if strcmp(src.String,'Edit')
+                                value1 = find(strcmp(brainRegions(:,2),session.animal.(src.Tag){entry}.(animalMetaType.field_names{i})));
+                                if isempty(value1)
+                                    value1 = 1;
+                                end
+                            else
                                 value1 = 1;
                             end
-                        else
-                            value1 = 1;
-                        end
-                        
-                        fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'popupmenu','Tag',animalMetaType.field_names{i}, 'String', brainRegions_list, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left','value',value1);
-                        
-                    elseif ~strcmp(animalMetaType.field_relationship{i},'text')
-                        if ~exist('db_metadata_model','var')
-                            load('db_metadata_model.mat','db_metadata_model');
-                        end
-                        display = animalMetaType.(animalMetaType.field_relationship{i}).display;
-                        list1 = cellfun(@(X) X.(display{1}), db_metadata_model.(animalMetaType.field_relationship{i}),'UniformOutput', false);
-                        for j = 2:numel(display)
-                            list1 = strcat(list1," - ",cellfun(@(X) X.(display{j}), db_metadata_model.(animalMetaType.field_relationship{i}),'UniformOutput', false));
-                        end
-                        
-                        [list1,list_sorting] = sort(list1);
-                        list_sorting1.(animalMetaType.field_names{i}) = list_sorting;
-                        if strcmp(src.String,'Edit')
-                            list2 = cellfun(@(X) X.(animalMetaType.field_names{i}), db_metadata_model.(animalMetaType.field_relationship{i}),'UniformOutput', false);
-                            value1 = find(strcmp(list2(list_sorting),session.animal.(src.Tag){entry}.(animalMetaType.field_names{i})));
-                            if isempty(value1)
+                            
+                            fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'popupmenu','Tag',animalMetaType.field_names{i}, 'String', brainRegions_list, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left','value',value1);
+                            
+                        elseif ~strcmp(animalMetaType.field_relationship{i},'text')
+                            if ~exist('db_metadata_model','var')
+                                load('db_metadata_model.mat','db_metadata_model');
+                            end
+                            display = animalMetaType.(animalMetaType.field_relationship{i}).display;
+                            list1 = cellfun(@(X) X.(display{1}), db_metadata_model.(animalMetaType.field_relationship{i}),'UniformOutput', false);
+                            for j = 2:numel(display)
+                                list1 = strcat(list1," - ",cellfun(@(X) X.(display{j}), db_metadata_model.(animalMetaType.field_relationship{i}),'UniformOutput', false));
+                            end
+                            
+                            [list1,list_sorting] = sort(list1);
+                            list_sorting1.(animalMetaType.field_names{i}) = list_sorting;
+                            if strcmp(src.String,'Edit')
+                                list2 = cellfun(@(X) X.(animalMetaType.field_names{i}), db_metadata_model.(animalMetaType.field_relationship{i}),'UniformOutput', false);
+                                value1 = find(strcmp(list2(list_sorting),session.animal.(src.Tag){entry}.(animalMetaType.field_names{i})));
+                                if isempty(value1)
+                                    value1 = 1;
+                                end
+                            else
                                 value1 = 1;
                             end
+                            fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'popupmenu','Tag',animalMetaType.field_names{i}, 'String', list1, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left','value',value1);
+                            
+                            
                         else
-                            value1 = 1;
-                        end
-                        fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'popupmenu','Tag',animalMetaType.field_names{i}, 'String', list1, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left','value',value1);
-                        
-                        
-                    else
-                        if strcmp(src.String,'Edit')
-                            value1 = find(strcmp(animalMetaType.field_type{i},session.animal.(src.Tag){entry}.(animalMetaType.field_names{i})));
-                            if isempty(value1)
+                            if strcmp(src.String,'Edit')
+                                value1 = find(strcmp(animalMetaType.field_type{i},session.animal.(src.Tag){entry}.(animalMetaType.field_names{i})));
+                                if isempty(value1)
+                                    value1 = 1;
+                                end
+                            else
                                 value1 = 1;
                             end
-                        else
-                            value1 = 1;
+                            fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'popupmenu','Tag',animalMetaType.field_names{i}, 'String', animalMetaType.field_type{i}, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left','value',value1);
+                            
                         end
-                        fields1.(animalMetaType.field_names{i}) = uicontrol('Parent',UI.dialog.animal,'Style', 'popupmenu','Tag',animalMetaType.field_names{i}, 'String', animalMetaType.field_type{i}, 'Position', [10, numel(animalMetaType.field_names)*50+50-i*50, 300, 25],'HorizontalAlignment','left','value',value1);
                         
-                    end
-                    
                     end
                 end
                 uicontrol('Parent',UI.dialog.animal,'Style','pushbutton','Position',[10, 10, 150, 30],'String','Save','Callback',@(src,evnt)close_dialog);
@@ -992,9 +992,9 @@ uiwait(UI.fig)
             delete(UI.dialog.animal)
         end
     end
-    
+
     function updateAnimalMeta(datatype)
-       % Updates table data
+        % Updates table data
         if isfield(session.animal,datatype) && ~isempty(session.animal.(datatype))
             animalMetaType = layout.(datatype);
             tableData = {};
@@ -1023,7 +1023,7 @@ uiwait(UI.fig)
             UI.table.(datatype).Data = {};
         end
     end
-    
+
     function changeTab(src,~)
         UI.tabs.(tabsList{UI.activeTab}).Visible = 'off';
         UI.buttons.(tabsList{UI.activeTab}).Value = 0;
@@ -1038,7 +1038,7 @@ uiwait(UI.fig)
         UI.buttons.(tabsList{UI.activeTab}).ForegroundColor = [0. 0.3 0.7];
         UI.panel.title.String = tabsList2{UI.activeTab};
     end
-    
+
     function importEpochsIntervalsFromMergePoints(~,~)
         % Epochs derived from MergePoints
         if exist(fullfile(UI.edit.basepath.String,[UI.edit.session.String,'.MergePoints.events.mat']),'file')
@@ -1110,13 +1110,13 @@ uiwait(UI.fig)
                 web(['https://buzsakilab.com/wp/repositories/?frm_search=', session.general.repositories{1}],'-new','-browser')
         end
     end
-    
+
     function importMetaFromIntan(~,~)
         session = loadIntanMetadata(session);
         updateTimeSeriesList
         MsgLog('Updated from intan',2)
     end
-    
+
     function importSessionStruct
         if exist('parameters','var') && ~isempty(parameters)
             for iParams = 1:length(UI.list.params)
@@ -1126,7 +1126,7 @@ uiwait(UI.fig)
         end
         
         UI.edit.basepath.String = session.general.basePath;
-%         UI.edit.clusteringpath.String = session.general.clusteringPath;
+        %         UI.edit.clusteringpath.String = session.general.clusteringPath;
         UI.edit.session.String = session.general.name;
         UIsetString(session.general,'date');
         UIsetString(session.general,'time');
@@ -1142,7 +1142,7 @@ uiwait(UI.fig)
             UI.edit.location.String = session.general.location;
         end
         if isfield(session.general,'notes') && ~isempty(session.general.notes)
-%             session.general.notes = regexprep(session.general.notes, '<.*?>', '');
+            %             session.general.notes = regexprep(session.general.notes, '<.*?>', '');
             UI.edit.notes.String = session.general.notes;
         end
         
@@ -1189,7 +1189,7 @@ uiwait(UI.fig)
         UIsetString(session.extracellular,'sr');
         UIsetString(session.extracellular,'nSamples');
         UIsetValue(UI.edit.precision,session.extracellular.precision)
-%         UIsetString(session.extracellular,'precision');
+        %         UIsetString(session.extracellular,'precision');
         UIsetString(session.extracellular,'leastSignificantBit');
         UIsetString(session.extracellular,'fileName');
         UIsetString(session.extracellular,'equipment');
@@ -1228,7 +1228,7 @@ uiwait(UI.fig)
             end
         end
     end
-    
+
     function readBackChanCoords
         session.extracellular.chanCoords.x = eval(['[',UI.edit.chanCoords_x.String,']']);
         session.extracellular.chanCoords.y = eval(['[',UI.edit.chanCoords_y.String,']']);
@@ -1236,7 +1236,7 @@ uiwait(UI.fig)
         session.extracellular.chanCoords.y = session.extracellular.chanCoords.y(:);
         session.extracellular.chanCoords.source = UI.edit.chanCoords_source.String;
         session.extracellular.chanCoords.layout = UI.edit.chanCoords_layout.String;
-        if ~isempty(UI.edit.chanCoords_shankSpacing.String) 
+        if ~isempty(UI.edit.chanCoords_shankSpacing.String)
             session.extracellular.chanCoords.shankSpacing = str2double(UI.edit.chanCoords_shankSpacing.String);
         else
             session.extracellular.chanCoords.shankSpacing = [];
@@ -1247,12 +1247,12 @@ uiwait(UI.fig)
             session.extracellular.chanCoords.verticalSpacing = [];
         end
     end
-    
+
     function updateStrain
-       UI.edit.strain.String = UI.list.strain(strcmp(UI.list.strain_species,UI.edit.species.String{UI.edit.species.Value})); 
-       UIsetValue(UI.edit.strain,session.animal.strain);
+        UI.edit.strain.String = UI.list.strain(strcmp(UI.list.strain_species,UI.edit.species.String{UI.edit.species.Value}));
+        UIsetValue(UI.edit.strain,session.animal.strain);
     end
-    
+
     function getAnimalMetadata
         db_animal_metadata = db_load_animal_metadata(session.animal.name);
         db_animal_metadata_fields = fieldnames(db_animal_metadata);
@@ -1262,7 +1262,7 @@ uiwait(UI.fig)
             MsgLog('Animal metadata updated from database',2)
         end
     end
-    
+
     function buttonUpdateFromDB
         answer = questdlg('Are you sure you want to update the session struct from the database?', 'Update session from DB', 'Yes','Cancel','Cancel');
         % Handle response
@@ -1276,7 +1276,7 @@ uiwait(UI.fig)
             end
         end
     end
-    
+
     function editDBcredentials(~,~)
         edit db_credentials.m
     end
@@ -1284,8 +1284,8 @@ uiwait(UI.fig)
     function editDBrepositories(~,~)
         edit db_local_repositories.m
     end
-    
-    
+
+
     function openWebsite(src,~)
         % Opens the CellExplorer website in your browser
         if isprop(src,'Text')
@@ -1311,12 +1311,12 @@ uiwait(UI.fig)
         end
     end
 
-    
+
     function performStructValidation(~,~)
         readBackFields;
         validateSessionStruct(session);
     end
-    
+
     function edit_preferences_ProcessCellMetrics(~,~)
         edit preferences_ProcessCellMetrics
         MsgLog('Prerences are located in preferences_ProcessCellMetrics.m. Please rerun ProcessCellMetrics when making changes.',2)
@@ -1340,31 +1340,31 @@ uiwait(UI.fig)
             
         end
     end
-    
+
     function success = updateFromDB
         success = 0;
-        if enableDatabase 
+        if enableDatabase
             try
-            if isfield(session.general,'entryID') && isnumeric(session.general.entryID)
-                session = db_set_session('sessionId',session.general.entryID,'changeDir',false,'saveMat',true);
-            else
-                session = db_set_session('sessionName',session.general.name,'changeDir',false,'saveMat',true);
-            end
-            if ~isempty(session)
-                if uiLoaded
-                    importSessionStruct
+                if isfield(session.general,'entryID') && isnumeric(session.general.entryID)
+                    session = db_set_session('sessionId',session.general.entryID,'changeDir',false,'saveMat',true);
+                else
+                    session = db_set_session('sessionName',session.general.name,'changeDir',false,'saveMat',true);
                 end
-                success = 1;
-            end
-            catch 
+                if ~isempty(session)
+                    if uiLoaded
+                        importSessionStruct
+                    end
+                    success = 1;
+                end
+            catch
                 warning('Database tools not working');
-
+                
             end
         else
             warning('Database tools not available');
         end
     end
-    
+
     function UIsetValue(fieldNameIn,valueIn)
         if any(strcmp(valueIn,fieldNameIn.String))
             fieldNameIn.Value = find(strcmp(valueIn,fieldNameIn.String));
@@ -1382,7 +1382,7 @@ uiwait(UI.fig)
         switch answer
             case 'basepath'
                 filepath1 = UI.edit.basepath.String;
-                filename1 = [UI.edit.session.String,'.session.mat'];            
+                filename1 = [UI.edit.session.String,'.session.mat'];
             case 'Select location'
                 [filename1,filepath1] = uiputfile([UI.edit.session.String,'.session.mat']);
             otherwise
@@ -1406,7 +1406,7 @@ uiwait(UI.fig)
             UI.edit.(StringName).String = StructName.(StringName);
         end
     end
-    
+
     function X = compareStringArray(A,B)
         if ischar(B)
             B = {B};
@@ -1424,7 +1424,7 @@ uiwait(UI.fig)
         statusExit = 1;
         trackGoogleAnalytics('gui_session',1,'session',session); % Anonymous tracking of usage
     end
-    
+
     function readBackFields
         % Saving parameters
         if exist('parameters','var') && ~isempty(parameters)
@@ -1490,7 +1490,7 @@ uiwait(UI.fig)
         
         readBackChanCoords
     end
-    
+
     function cancelMetricsWindow
         session = sessionIn;
         delete(UI.fig)
@@ -1560,7 +1560,7 @@ uiwait(UI.fig)
                 session.extracellular.(group).channels = num2cell(session.extracellular.(group).channels,2)';
             end
             
-           if ~isempty(session.extracellular.(group).channels) && ~isempty(session.extracellular.(group).channels{1})
+            if ~isempty(session.extracellular.(group).channels) && ~isempty(session.extracellular.(group).channels{1})
                 nTotal = numel(session.extracellular.(group).channels);
             else
                 nTotal = 0;
@@ -1580,7 +1580,7 @@ uiwait(UI.fig)
             UI.table.(group).Data = {false,'','',''};
         end
     end
-    
+
     function updatePreferencesTable
         k = 1;
         tableData = {};
@@ -1588,7 +1588,7 @@ uiwait(UI.fig)
         for i = 1:numel(fields_preferences)
             fields_preferences2 = fieldnames(parameters.preferences.(fields_preferences{i}));
             for j = 1:numel(fields_preferences2)
-%                 tableData{k,1} = false;
+                %                 tableData{k,1} = false;
                 tableData{k,1} = fields_preferences{i};
                 tableData{k,2} = fields_preferences2{j};
                 fieldvalue = parameters.preferences.(fields_preferences{i}).(fields_preferences2{j});
@@ -1606,7 +1606,7 @@ uiwait(UI.fig)
             UI.table.preferences.Data = tableData;
         end
     end
-    
+
     function updateEpochsList
         % Updates the plot table from the spikesPlots structure
         if isfield(session,'epochs') && ~isempty(session.epochs)
@@ -1634,7 +1634,7 @@ uiwait(UI.fig)
                 if isfield(session.epochs{fn},'stimuli') && ~isempty(session.epochs{fn}.stimuli)
                     tableData{fn,9} = session.epochs{fn}.stimuli;
                 end
-
+                
                 if isfield(session.epochs{fn},'notes') && ~isempty(session.epochs{fn}.notes)
                     tableData{fn,10} = session.epochs{fn}.notes;
                 end
@@ -1644,7 +1644,7 @@ uiwait(UI.fig)
             UI.table.epochs.Data = {};
         end
     end
-    
+
     function updateInputsList
         % Updates the plot table from the spikesPlots structure
         tableData = {};
@@ -1679,7 +1679,7 @@ uiwait(UI.fig)
             UI.table.inputs.Data = {};
         end
     end
-    
+
     function updateBehaviorsList
         % Updates the plot table from the spikesPlots structure
         if isfield(session,'behavioralTracking') && ~isempty(session.behavioralTracking)
@@ -1709,7 +1709,7 @@ uiwait(UI.fig)
             UI.table.behaviors.Data = {};
         end
     end
-    
+
     function updateSpikeSortingList
         % Updates the plot table from the spikesPlots structure
         % '','Method','Format','relative path','channels','spike sorter','Notes','cell metrics','Manual currated'
@@ -1774,9 +1774,9 @@ uiwait(UI.fig)
             UI.table.analysis.Data = tableData;
         else
             UI.table.analysis.Data = {};
-        end 
+        end
     end
-    
+
     function updateTimeSeriesList
         if isfield(session,'timeSeries') && ~isempty(session.timeSeries) && isstruct(session.timeSeries)
             Fieldnames = fieldnames(session.timeSeries);
@@ -1917,7 +1917,7 @@ uiwait(UI.fig)
         end
     end
 
-    function editRegion 
+    function editRegion
         % Selected region is parsed to the spikePlotsDlg, for edits, saved the output to the spikesPlots structure and updates the table
         if ~isempty(UI.table.brainRegion.Data) && ~isempty(find([UI.table.brainRegion.Data{:,1}])) && sum([UI.table.brainRegion.Data{:,1}]) == 1
             spikesPlotFieldnames = fieldnames(session.brainRegions);
@@ -1990,7 +1990,7 @@ uiwait(UI.fig)
                     try
                         session.channelTags.(SelectedTag).channels = eval(['[',tagsChannels.String,']']);
                     catch
-                       helpdlg('Channels not formatted correctly','Error')
+                        helpdlg('Channels not formatted correctly','Error')
                         uicontrol(tagsChannels);
                         return
                     end
@@ -2145,7 +2145,7 @@ uiwait(UI.fig)
     end
 
 %% % Epochs
-    
+
     function moveDownEpoch
         if ~isempty(UI.table.epochs.Data) && ~isempty(find([UI.table.epochs.Data{:,1}], 1))
             cell2move = [UI.table.epochs.Data{:,1}];
@@ -2160,7 +2160,7 @@ uiwait(UI.fig)
             helpdlg('Please select the epoch(s) to move','Error')
         end
     end
-    
+
     function moveUpEpoch
         if ~isempty(UI.table.epochs.Data) && ~isempty(find([UI.table.epochs.Data{:,1}], 1))
             cell2move = [UI.table.epochs.Data{:,1}];
@@ -2175,7 +2175,7 @@ uiwait(UI.fig)
             helpdlg('Please select the epoch(s) to move','Error')
         end
     end
-    
+
     function H = cumsumWithReset(G)
         H = zeros(size(G));
         count = 0;
@@ -2313,7 +2313,7 @@ uiwait(UI.fig)
                 end
                 if ~isempty(epochsParadigm.String)
                     session.epochs{SelectedEpoch}.behavioralParadigm = epochsParadigm.String;
-                end                
+                end
                 if ~isempty(epochsEnvironment.String)
                     session.epochs{SelectedEpoch}.environment = epochsEnvironment.String;
                 end
@@ -2361,7 +2361,7 @@ uiwait(UI.fig)
             helpdlg('Please select the epoch to duplicate','Error')
         end
     end
-    
+
     function visualizeEpoch
         figure
         epochVisualization(session.epochs,gca,0,1,0.95), xlabel('Time (s)'), title('Epochs')
@@ -2470,7 +2470,7 @@ uiwait(UI.fig)
                 end
                 if ~isempty(behaviorsEquipment.String)
                     session.behavioralTracking{SelectedBehavior}.equipment = behaviorsEquipment.String;
-                end                
+                end
                 if ~isempty(behaviorsEpoch.String)
                     session.behavioralTracking{SelectedBehavior}.epoch = behaviorsEpoch.Value;
                 end
@@ -2528,7 +2528,7 @@ uiwait(UI.fig)
         end
     end
 
-    
+
     function moveDownSpikeSorting
         if ~isempty(UI.table.spikeSorting.Data) && ~isempty(find([UI.table.spikeSorting.Data{:,1}], 1))
             cell2move = [UI.table.spikeSorting.Data{:,1}];
@@ -2543,7 +2543,7 @@ uiwait(UI.fig)
             helpdlg('Please select the spike sorting(s) to move','Error')
         end
     end
-    
+
     function moveUpSpikeSorting
         if ~isempty(UI.table.spikeSorting.Data) && ~isempty(find([UI.table.spikeSorting.Data{:,1}], 1))
             cell2move = [UI.table.spikeSorting.Data{:,1}];
@@ -2637,24 +2637,24 @@ uiwait(UI.fig)
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Sorting format', 'Position', [250 348, 240, 20],'HorizontalAlignment','left');
         spikeSortinFormat = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'popup', 'String', UI.list.sortingFormat, 'Position', [250, 325, 240, 25],'HorizontalAlignment','left');
-        UIsetValue(spikeSortinFormat,initFormat) 
+        UIsetValue(spikeSortinFormat,initFormat)
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Relative path', 'Position', [10, 298, 480, 20],'HorizontalAlignment','left');
         spikeSortingRelativePath = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initRelativePath, 'Position', [10, 275, 480, 25],'HorizontalAlignment','left');
-
+        
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Channels', 'Position', [10, 248, 240, 20],'HorizontalAlignment','left');
         spikeSortingChannels = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initChannels, 'Position', [10, 125, 480, 125],'HorizontalAlignment','left','Min',1,'Max',10);
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Spike sorter', 'Position', [10, 98, 230, 20],'HorizontalAlignment','left');
         spikeSortingSpikeSorter = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initSpikeSorter, 'Position', [10, 75, 230, 25],'HorizontalAlignment','left');
-                
+        
         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Notes', 'Position', [250, 98, 240, 20],'HorizontalAlignment','left');
         spikeSortingNotes = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'Edit', 'String', initNotes, 'Position', [250, 75, 240, 25],'HorizontalAlignment','left');
         
-%         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Manually curated', 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
+        %         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Manually curated', 'Position', [10, 75, 230, 20],'HorizontalAlignment','left');
         spikeSortingManuallyCurated = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'checkbox','String','Manually curated', 'value', initManuallyCurated, 'Position', [10, 50, 230, 25],'HorizontalAlignment','left');
         
-%         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Cell metrics', 'Position', [250, 75, 240, 20],'HorizontalAlignment','left');
+        %         uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'text', 'String', 'Cell metrics', 'Position', [250, 75, 240, 20],'HorizontalAlignment','left');
         spikeSortingCellMetrics = uicontrol('Parent',UI.dialog.spikeSorting,'Style', 'checkbox','String','Cell metrics', 'value', initCellMetrics, 'Position', [250, 50, 240, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.spikeSorting,'Style','pushbutton','Position',[10, 10, 230, 30],'String','Save sorting','Callback',@(src,evnt)CloseSorting_dialog);
@@ -2667,8 +2667,8 @@ uiwait(UI.fig)
             if strcmp(spikeSortingRelativePath.String,'') || isempty(regexp(spikeSortingRelativePath.String, '[/\*:?"<>|]', 'once'))
                 % isvarname(spikeSortingRelativePath.String)
                 SelectedBehavior = behaviorIn;
-                session.spikeSorting{SelectedBehavior}.method = spikeSortingMethod.String{spikeSortingMethod.Value};               
-                session.spikeSorting{SelectedBehavior}.format = spikeSortinFormat.String{spikeSortinFormat.Value};               
+                session.spikeSorting{SelectedBehavior}.method = spikeSortingMethod.String{spikeSortingMethod.Value};
+                session.spikeSorting{SelectedBehavior}.format = spikeSortinFormat.String{spikeSortinFormat.Value};
                 session.spikeSorting{SelectedBehavior}.relativePath = spikeSortingRelativePath.String;
                 
                 if ~isempty(spikeSortingChannels.String)
@@ -2758,7 +2758,7 @@ uiwait(UI.fig)
                             session.analysisTags.(SelectedTag) = eval(['[',analysisValue.String,']']);
                         end
                     catch
-                       helpdlg('Values not formatted correctly','Error')
+                        helpdlg('Values not formatted correctly','Error')
                         uicontrol(analysisValue);
                         return
                     end
@@ -2783,7 +2783,7 @@ uiwait(UI.fig)
             helpdlg('Please select the analysis tag to edit','Error')
         end
     end
-    
+
 %% % Time series
 
     function deleteTimeSeries
@@ -2847,7 +2847,7 @@ uiwait(UI.fig)
             else
                 initEquipment = '';
             end
-        else 
+        else
             InitFileName = '';
             initType = 'adc';
             initPrecision_value = 1;
@@ -2866,19 +2866,19 @@ uiwait(UI.fig)
         
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Type (tag name)', 'Position', [250, 225, 240, 20],'HorizontalAlignment','left');
         timeSeriesType = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'popup', 'String', UI.list.inputsType, 'Position', [250, 200, 240, 25],'HorizontalAlignment','left');
-        UIsetValue(timeSeriesType,initType) 
+        UIsetValue(timeSeriesType,initType)
         if exist('behaviorIn','var')
             timeSeriesType.Enable = 'off';
         end
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Precision', 'Position', [10, 173, 230, 20],'HorizontalAlignment','left');
         timeSeriesPrecision = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'popup', 'String', UI.list.precision,'Value',initPrecision_value, 'Position', [10, 150, 230, 25],'HorizontalAlignment','left');
-
+        
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'nChannels', 'Position', [250, 173, 240, 20],'HorizontalAlignment','left');
         timeSeriesnChannels = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initnChannels, 'Position', [250, 150, 240, 25],'HorizontalAlignment','left');
         
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'Sample rate', 'Position', [10, 123, 230, 20],'HorizontalAlignment','left');
         timeSeriesSr = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initSr, 'Position', [10, 100, 230, 25],'HorizontalAlignment','left');
-                
+        
         uicontrol('Parent',UI.dialog.timeSeries,'Style', 'text', 'String', 'nSamples', 'Position', [250, 123, 240, 20],'HorizontalAlignment','left');
         timeSeriesnSamples = uicontrol('Parent',UI.dialog.timeSeries,'Style', 'Edit', 'String', initnSamples, 'Position', [250, 100, 240, 25],'HorizontalAlignment','left');
         
@@ -2897,7 +2897,7 @@ uiwait(UI.fig)
         function CloseTimeSeries_dialog
             if isvarname(timeSeriesType.String{timeSeriesType.Value})
                 SelectedBehavior = timeSeriesType.String{timeSeriesType.Value};
-                session.timeSeries.(SelectedBehavior).fileName = timeSeriesFileName.String;             
+                session.timeSeries.(SelectedBehavior).fileName = timeSeriesFileName.String;
                 session.timeSeries.(SelectedBehavior).precision = timeSeriesPrecision.String{timeSeriesPrecision.Value};
                 if ~isempty(timeSeriesnChannels.String)
                     session.timeSeries.(SelectedBehavior).nChannels = str2double(timeSeriesnChannels.String);
@@ -2926,7 +2926,7 @@ uiwait(UI.fig)
                 helpdlg('Please provide a filename','Error')
             end
         end
-
+        
         function CancelTimeSeries_dialog
             delete(UI.dialog.timeSeries);
         end
@@ -2934,7 +2934,7 @@ uiwait(UI.fig)
 
     function editTimeSeries
         % Selected behavior is parsed to the addBehavior dialog for edits,
-                % Selected tag is parsed to the addTag dialog for edits,
+        % Selected tag is parsed to the addTag dialog for edits,
         if ~isempty(UI.table.timeSeries.Data) && ~isempty(find([UI.table.timeSeries.Data{:,1}], 1)) && sum([UI.table.timeSeries.Data{:,1}]) == 1
             spikesPlotFieldnames = fieldnames(session.timeSeries);
             fieldtoedit = spikesPlotFieldnames{find([UI.table.timeSeries.Data{:,1}])};
@@ -2945,7 +2945,7 @@ uiwait(UI.fig)
     end
 
 %% Extracellular spike groups
-    
+
     function deleteElectrodeGroup(src,~)
         group = src.Tag;
         % Deletes group(s)
@@ -2965,7 +2965,7 @@ uiwait(UI.fig)
     function addElectrodeGroup(src,~)
         group = src.Tag;
         button = src.String;
-         % Select electrode group for edit
+        % Select electrode group for edit
         if strcmp(button,'Edit') && ~isempty(UI.table.(group).Data) && ~isempty(find([UI.table.(group).Data{:,1}], 1)) && sum([UI.table.(group).Data{:,1}]) == 1
             fieldtoedit = find([UI.table.(group).Data{:,1}]);
             regionIn = fieldtoedit;
@@ -2988,7 +2988,7 @@ uiwait(UI.fig)
                 initLabel = '';
             end
         else
-            if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.(group),'channels') 
+            if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracellular.(group),'channels')
                 initElectrodeGroups = num2str(size(session.extracellular.(group).channels,2)+1);
             else
                 initElectrodeGroups = 1;
@@ -3061,7 +3061,7 @@ uiwait(UI.fig)
             helpdlg('Please select the group(s) to move','Error')
         end
     end
-    
+
     function editEpochsTableData(src,evnt)
         % {'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'}
         edit_group = evnt.Indices(1,1);
@@ -3099,7 +3099,7 @@ uiwait(UI.fig)
             session.epochs{edit_group}.notes = evnt.NewData;
         end
     end
-        
+
     function editElectrodeTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
         if evnt.Indices(1,2)==3
@@ -3112,8 +3112,8 @@ uiwait(UI.fig)
         elseif evnt.Indices(1,2)==4
             session.extracellular.(src.Tag).label{edit_group} = evnt.NewData;
         end
-    end    
-    
+    end
+
     function editSpikeSortingTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
         if evnt.Indices(1,2)==2
@@ -3131,15 +3131,15 @@ uiwait(UI.fig)
             updateSpikeSortingList
         elseif evnt.Indices(1,2)==6
             session.spikeSorting{edit_group}.spikeSorter = evnt.NewData;
-        elseif evnt.Indices(1,2)==7   
+        elseif evnt.Indices(1,2)==7
             session.spikeSorting{edit_group}.notes = evnt.NewData;
-        elseif evnt.Indices(1,2)==8  
+        elseif evnt.Indices(1,2)==8
             session.spikeSorting{edit_group}.cellMetrics = evnt.NewData;
         elseif evnt.Indices(1,2)==9
-            session.spikeSorting{edit_group}.manuallyCurated = evnt.NewData;    
+            session.spikeSorting{edit_group}.manuallyCurated = evnt.NewData;
         end
     end
-    
+
     function editBrainregionTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
         region = src.Data{edit_group,2};
@@ -3161,7 +3161,7 @@ uiwait(UI.fig)
             session.brainRegions.(region).notes = evnt.NewData;
         end
     end
-    
+
     function editTagsTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
         tag = src.Data{edit_group,2};
@@ -3181,7 +3181,7 @@ uiwait(UI.fig)
             updateTagList
         end
     end
-    
+
     function editAnalysisTagsTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
         tag = src.Data{edit_group,2};
@@ -3198,7 +3198,7 @@ uiwait(UI.fig)
             updateAnalysisList
         end
     end
-    
+
     function editInputsTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
         input = src.Data{edit_group,2};
@@ -3217,7 +3217,7 @@ uiwait(UI.fig)
             session.inputs.(input).description = evnt.EditData;
         end
     end
-    
+
     function editTimeSeriesTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
         timeSeries = src.Data{edit_group,2};
@@ -3257,7 +3257,7 @@ uiwait(UI.fig)
             session.timeSeries.(timeSeries).equipment = evnt.EditData;
         end
     end
-    
+
     function editBehaviorTableData(src,evnt)
         edit_group = evnt.Indices(1,1);
         if evnt.Indices(1,2)==2
@@ -3289,7 +3289,7 @@ uiwait(UI.fig)
             session.behavioralTracking{edit_group}.notes = evnt.EditData;
         end
     end
-    
+
     function validateElectrodeGroup(~,~)
         if isfield(session.extracellular,'electrodeGroups')
             if isnumeric(session.extracellular.electrodeGroups.channels)
@@ -3327,7 +3327,7 @@ uiwait(UI.fig)
             MsgLog('XML imported',2)
         end
     end
-    
+
     function importKiloSort
         if isfield(session,'spikeSorting') && isfield(session.spikeSorting{1},'relativePath')
             relativePath = session.spikeSorting{1}.relativePath;
@@ -3350,7 +3350,7 @@ uiwait(UI.fig)
             MsgLog('rez file does not exist',4)
         end
     end
-    
+
     function importPhy
         clusteringpath_full = uigetdir(session.general.basePath,'Phy folder');
         if ~isempty(clusteringpath_full) && ~isequal(clusteringpath_full,0)
@@ -3364,7 +3364,7 @@ uiwait(UI.fig)
             MsgLog('Phy metadata imported via phy folder',2)
         end
     end
-    
+
     function importKlustaviewa
         [file2,basepath2] = uigetfile('*.kwik','Please select the *.kwik file');
         kwik_file = fullfile(basepath2,file2);
@@ -3375,11 +3375,11 @@ uiwait(UI.fig)
             updateChannelGroupsList('spikeGroups')
             updateChanCoords
             UIsetString(session.extracellular,'nChannels'); % Number of channels
-            UIsetString(session.extracellular,'sr'); % Sampling rate of dat file            
+            UIsetString(session.extracellular,'sr'); % Sampling rate of dat file
             MsgLog('klustaviewa imported from kwik file',2)
         end
     end
-    
+
     function importMetadataTemplate
         MsgLog('Importing metadata using template script',0)
         session = sessionTemplate(session);
@@ -3390,7 +3390,7 @@ uiwait(UI.fig)
         UIsetString(session.extracellular,'nChannels'); % Number of channels
         MsgLog('Metadata imported using template',2)
     end
-    
+
     function syncChannelGroups
         answer = questdlg('How do you want to sync the channel groups?','Sync channel groups','electrode groups -> spike groups', 'spike groups -> electrode groups','Cancel','electrode groups -> spike groups');
         if strcmp(answer,'electrode groups -> spike groups') && isfield(session.extracellular,'electrodeGroups')
@@ -3403,11 +3403,11 @@ uiwait(UI.fig)
         updateChannelGroupsList('electrodeGroups')
         updateChannelGroupsList('spikeGroups')
     end
-    
+
     function generateCommonCoordinates1
         generateCommonCoordinates(session)
     end
-    
+
     function importChannelMap1(~,~)
         answer = questdlg('What format do you want to import?','Import channel coordinates','Channel coordinates (chancoords)', 'Channelmap (KiloSort)','Cancel','Channel coordinates (chancoords)');
         if ~isempty(answer)
@@ -3445,7 +3445,7 @@ uiwait(UI.fig)
             end
         end
     end
-    
+
     function generateChannelMap1(~,~)
         readBackChanCoords
         [CellExplorer_path,~,~] = fileparts(which('CellExplorer.m'));
@@ -3461,7 +3461,7 @@ uiwait(UI.fig)
         updateChanCoords;
         plotChannelMap1
     end
-    
+
     function exportChannelMap1(~,~)
         readBackChanCoords
         % Saving chanCoords to basename.chanCoords.channelInfo.mat file
@@ -3473,7 +3473,7 @@ uiwait(UI.fig)
             MsgLog('No channel coords data available',4)
         end
     end
-    
+
     function plotChannelMap1(~,~)
         readBackChanCoords
         if isfield(session,'extracellular') && isfield(session.extracellular,'chanCoords')
