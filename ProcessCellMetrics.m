@@ -442,8 +442,8 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         field2copyNewNames = {'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time'};
         if parameters.getWaveformsFromDat && (any(~isfield(spikes{spkExclu},field2copy)) || parameters.forceReload == true) && (spkExclu==2  || ~isempty(parameters.restrictToIntervals))
             spikes{spkExclu} = getWaveformsFromDat(spikes{spkExclu},session,'showWaveforms',parameters.showWaveforms);
+            cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
         end
-        cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
         if isfield(spikes{spkExclu},'peakVoltage_expFitLengthConstant')
             cell_metrics.peakVoltage_expFitLengthConstant = spikes{spkExclu}.peakVoltage_expFitLengthConstant(:)';
         end
@@ -544,7 +544,7 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         end
         
         for j = 1:cell_metrics.general.cellCount
-            if ~isnan(cell_metrics.peakVoltage(j)) && isfield(cell_metrics.waveforms,'filt_all')
+            if isfield(cell_metrics,'peakVoltage') && ~isnan(cell_metrics.peakVoltage(j)) && isfield(cell_metrics.waveforms,'filt_all')
                 % Trilateration
                 peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
                 peakVoltage(bad_channels) = NaN;
@@ -1594,9 +1594,8 @@ end
 % Summary figures
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
-
 if parameters.summaryFigures
+    CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
     cell_metrics.general.basepath = basepath;
     CellExplorer('metrics',cell_metrics,'summaryFigures',true);
     
