@@ -156,7 +156,6 @@ customPlotOptions = {}; timerInterface = tic; timerHover = tic; highlightCurrent
 spikes = []; events = []; states = [];
 referenceData=[]; reference_cell_metrics = []; groundTruth_cell_metrics = []; groundTruthData=[]; 
 
-createStruct.Interpreter = 'tex'; createStruct.WindowStyle = 'modal';
 createStruct1.Interpreter = 'none'; createStruct1.WindowStyle = 'modal';
 polygon1.handle = gobjects(0); fig = 1;
 set(groot, 'DefaultFigureVisible', 'on','DefaultAxesLooseInset',[.01,.01,.01,.01],'DefaultTextInterpreter', 'none'), 
@@ -936,7 +935,6 @@ function updateUI
             if contains(UI.plot.xTitle,'_num')
                 xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),
                 xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5001]),
-%                 UI.axes(1).XLabel.String = UI.plot.xTitle(1:end-4);
                 UI.axes(1).XLabel.Interpreter = 'none';
             else
                 UI.axes(1).XLabel.Interpreter = 'tex';
@@ -944,7 +942,6 @@ function updateUI
             if contains(UI.plot.yTitle,'_num')
                 yticks([1:length(groups_ids.(UI.plot.yTitle))]), yticklabels(groups_ids.(UI.plot.yTitle)),ytickangle(65),
                 ylim([0.5,length(groups_ids.(UI.plot.yTitle))+0.5001]),
-%                 UI.axes(1).YLabel.String = UI.plot.yTitle(1:end-4); 
                 UI.axes(1).YLabel.Interpreter = 'none';
             else
                 UI.axes(1).YLabel.Interpreter = 'tex';
@@ -1238,7 +1235,6 @@ function updateUI
         UI.axes(1).ZLabel.String = UI.labels.(UI.plot.zTitle); UI.axes(1).ZLabel.Interpreter = 'tex';
         if contains(UI.plot.zTitle,'_num')
             zticks([1:length(groups_ids.(UI.plot.zTitle))]), zticklabels(groups_ids.(UI.plot.zTitle)),ztickangle(65),zlim([0.5,length(groups_ids.(UI.plot.zTitle))+0.5]),
-%             UI.axes(1).ZLabel.String = UI.plot.zTitle(1:end-4);
             UI.axes(1).ZLabel.Interpreter = 'none';
         end
         
@@ -1264,12 +1260,10 @@ function updateUI
 
         if contains(UI.plot.xTitle,'_num')
             xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5]),
-%             UI.axes(1).XLabel.String(1:end-4) = UI.plot.xTitle;
             UI.axes(1).XLabel.Interpreter = 'none';
         end
         if contains(UI.plot.yTitle,'_num')
             yticks([1:length(groups_ids.(UI.plot.yTitle))]), yticklabels(groups_ids.(UI.plot.yTitle)),ytickangle(65),ylim([0.5,length(groups_ids.(UI.plot.yTitle))+0.5]),
-%             UI.axes(1).YLabel.String(1:end-4) = UI.plot.yTitle; 
             UI.axes(1).YLabel.Interpreter = 'none';
         end
         [az,el] = view;
@@ -1384,8 +1378,7 @@ function updateUI
             end            
             
             if contains(UI.plot.xTitle,'_num')
-                xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5]),
-%                 UI.axes(1).XLabel.String = UI.plot.xTitle(1:end-4); 
+                xticks([1:length(groups_ids.(UI.plot.xTitle))]), xticklabels(groups_ids.(UI.plot.xTitle)),xtickangle(20),xlim([0.5,length(groups_ids.(UI.plot.xTitle))+0.5])
                 UI.axes(1).XLabel.Interpreter = 'none';
             end
         end
@@ -1394,7 +1387,6 @@ function updateUI
     UI.zoom.global{1}(2,:) = ylim;
     UI.zoom.global{1}(3,:) = zlim;
     UI.zoom.globalLog{1} = [UI.checkbox.logx.Value,UI.checkbox.logy.Value,UI.checkbox.logz.Value];
-%     UI.axes(1).Title.String = 'Custom group plot';
     
     %% % % % % % % % % % % % % % % % % % % % % %
     % Subfig 2
@@ -9497,19 +9489,12 @@ end
                                     set(ha(k),'XTickLabel',[]);
                                 end
                                 axis tight, set(ha(k), 'YGrid', 'off', 'XGrid', 'on');
-                                if any(cell_metrics.putativeConnections.excitatory(:,1)==plot_cells(j) & cell_metrics.putativeConnections.excitatory(:,2) ==plot_cells(jj))
+                                if ~isempty(cell_metrics.putativeConnections.excitatory) && any(cell_metrics.putativeConnections.excitatory(:,1)==plot_cells(j) & cell_metrics.putativeConnections.excitatory(:,2) ==plot_cells(jj))
                                     text(0,1,[' Exc: ', num2str(plot_cells(j)) ' \rightarrow ', num2str(plot_cells(jj))],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top')
                                 end
-%                                 if any(cell_metrics.putativeConnections.excitatory(:,2)==plot_cells(j) & cell_metrics.putativeConnections.excitatory(:,1) ==plot_cells(jj))
-%                                     text(0,1,[' Exc: ', num2str(plot_cells(j)) ' \leftarrow ', num2str(plot_cells(jj))],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top')
-%                                 end
-                                
-                                if any(cell_metrics.putativeConnections.inhibitory(:,1)==plot_cells(j) & cell_metrics.putativeConnections.inhibitory(:,2) ==plot_cells(jj))
+                                if ~isempty(cell_metrics.putativeConnections.inhibitory) && any(cell_metrics.putativeConnections.inhibitory(:,1)==plot_cells(j) & cell_metrics.putativeConnections.inhibitory(:,2) ==plot_cells(jj))
                                     text(1,1,[' Inh: ', num2str(plot_cells(j)) ' \rightarrow ', num2str(plot_cells(jj)),' '],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top','HorizontalAlignment','right')
                                 end
-%                                 if any(cell_metrics.putativeConnections.inhibitory(:,2)==plot_cells(j) & cell_metrics.putativeConnections.inhibitory(:,1) ==plot_cells(jj))
-%                                     text(0,1,[' Inh: ', num2str(plot_cells(j)) ' \leftarrow ', num2str(plot_cells(jj)),' '],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top','HorizontalAlignment','right')
-%                                 end
                                 set(ha(k), 'Layer', 'top')
                                 k = k+1;
                             end
@@ -9565,16 +9550,16 @@ end
                                 set(ha(k),'XTickLabel',[]);
                             end
                             axis tight, set(ha(k), 'YGrid', 'off', 'XGrid', 'on');
-                            if any(cell_metrics.putativeConnections.excitatory(:,1)==plot_cells(1) & cell_metrics.putativeConnections.excitatory(:,2) ==plot_cells(j))
+                            if ~isempty(cell_metrics.putativeConnections.excitatory) && any(cell_metrics.putativeConnections.excitatory(:,1)==plot_cells(1) & cell_metrics.putativeConnections.excitatory(:,2) ==plot_cells(j))
                                 text(0,1,[' Exc: ', num2str(plot_cells(1)) ' \rightarrow ', num2str(plot_cells(j))],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top')
                             end
-                            if any(cell_metrics.putativeConnections.excitatory(:,2)==plot_cells(1) & cell_metrics.putativeConnections.excitatory(:,1) ==plot_cells(j))
+                            if ~isempty(cell_metrics.putativeConnections.excitatory) && any(cell_metrics.putativeConnections.excitatory(:,2)==plot_cells(1) & cell_metrics.putativeConnections.excitatory(:,1) ==plot_cells(j))
                                 text(0,1,[' Exc: ', num2str(plot_cells(1)) ' \leftarrow ', num2str(plot_cells(j))],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top')
                             end
-                            if any(cell_metrics.putativeConnections.inhibitory(:,1)==plot_cells(1) & cell_metrics.putativeConnections.inhibitory(:,2) ==plot_cells(j))
+                            if ~isempty(cell_metrics.putativeConnections.inhibitory) && any(cell_metrics.putativeConnections.inhibitory(:,1)==plot_cells(1) & cell_metrics.putativeConnections.inhibitory(:,2) ==plot_cells(j))
                                 text(1,1,[' Inh: ', num2str(plot_cells(1)) ' \rightarrow ', num2str(plot_cells(j)),' '],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top','HorizontalAlignment','right')
                             end
-                            if any(cell_metrics.putativeConnections.inhibitory(:,2)==plot_cells(1) & cell_metrics.putativeConnections.inhibitory(:,1) ==plot_cells(j))
+                            if ~isempty(cell_metrics.putativeConnections.inhibitory) && any(cell_metrics.putativeConnections.inhibitory(:,2)==plot_cells(1) & cell_metrics.putativeConnections.inhibitory(:,1) ==plot_cells(j))
                                 text(1,1,[' Inh: ', num2str(plot_cells(1)) ' \leftarrow ', num2str(plot_cells(j)),' '],'Units','normalized','Interpreter','tex','VerticalAlignment', 'top','HorizontalAlignment','right')
                             end
                             set(ha(k), 'Layer', 'top')
