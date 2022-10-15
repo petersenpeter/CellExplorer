@@ -43,11 +43,15 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   submitToDatabase       - logical. Submit cell metrics to database
 %   saveMat                - logical. Save metrics to cell_metrics.mat
 %   saveAs                 - name of .mat file
-%   saveBackup             - logical. Whether a backup file should be created
-%   summaryFigures         - logical. Plot summary figures
+%   saveBackup             - logical. Whether a backup of existing metrics should be created
+%
+%   summaryFigures         - logical. Plot a summary figure for each cell
+%   sessionSummaryFigure   - logical. Plot summary figure for the whole session
+%   showFigures            - logical. if false, turns off plots from different stages of the processing 
+%   showWaveforms          - logical. Shows waveform extraction (turn off to speed up the processing)
+%
 %   debugMode              - logical. Activate a debug mode avoiding try/catch 
 %   transferFilesFromClusterpath - logical. Moves previosly generated files from clusteringpath to basepath (new file structure)
-%   showFigures            - logical. if false, turns off the default plotting of different stages of processing 
 %
 % - Example calls:
 %   cell_metrics = ProcessCellMetrics                             % Load from current path, assumed to be a basepath
@@ -109,6 +113,7 @@ addParameter(p,'transferFilesFromClusterpath',true,@islogical);
 addParameter(p,'showFigures',false,@islogical);
 addParameter(p,'showWaveforms',true,@islogical);
 addParameter(p,'summaryFigures',false,@islogical);
+addParameter(p,'sessionSummaryFigure',true,@islogical);
 addParameter(p,'debugMode',false,@islogical);     
  
 parse(p,varargin{:})
@@ -1587,7 +1592,9 @@ end
 % Summary figures
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
+if parameters.sessionSummaryFigure
+    CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
+end
 
 if parameters.summaryFigures
     cell_metrics.general.basepath = basepath;

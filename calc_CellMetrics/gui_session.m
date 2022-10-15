@@ -3480,19 +3480,32 @@ uiwait(UI.fig)
             chanCoords = session.extracellular.chanCoords;
             x_range = range(chanCoords.x);
             y_range = range(chanCoords.y);
-            if x_range > y_range
+            if x_range > y_range                
                 fig_width = 1600;
-                fig_height = ceil(fig_width*y_range/x_range)+200;
+                fig_height = 2*(ceil(fig_width*y_range/x_range)+200);
             else
                 fig_height = 1000;
-                fig_width = ceil(fig_height*x_range/y_range)+200;
+                fig_width = 2*(ceil(fig_height*x_range/y_range)+200);
             end
             fig1 = figure('Name','Channel coordinates','position',[5,5,fig_width,fig_height],'visible','off'); movegui(fig1,'center')
-            ax1 = axes(fig1);
+            
+            if x_range > y_range
+                ax1 = subplot(2,1,1, 'Parent', fig1);
+            else
+                ax1 = subplot(1,2,1, 'Parent', fig1);
+            end
+            plot(ax1,chanCoords.x,chanCoords.y,'.k','markersize',12), hold on
+            title(ax1,{' ','Channel coordinates',' '}), xlabel(ax1,'X (um)'), ylabel(ax1,'Y (um)'), axis padded
+            
+            if x_range > y_range
+                ax1 = subplot(2,1,2, 'Parent', fig1);
+            else
+                ax1 = subplot(1,2,2, 'Parent', fig1);
+            end
             plot(ax1,chanCoords.x,chanCoords.y,'.k'), hold on
             text(ax1,chanCoords.x,chanCoords.y,num2str([1:numel(chanCoords.x)]'),'VerticalAlignment', 'bottom','HorizontalAlignment','center');
-            title(ax1,{' ','Channel coordinates',' '}), xlabel(ax1,'X (um)'), ylabel(ax1,'Y (um)')
-            set(fig1,'visible','on')
+            title(ax1,{' ','Channel coordinates',' '}), xlabel(ax1,'X (um)'), ylabel(ax1,'Y (um)'), axis padded
+            set(fig1,'visible','on');
         else
             MsgLog('No channel coords data available',4)
         end

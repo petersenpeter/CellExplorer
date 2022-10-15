@@ -3351,12 +3351,11 @@ end
             end
             
         elseif contains(customPlotSelection,{'ACGs ('})
-            
-            
+                        
             plotAxes.YLabel.String = ['Rate (Hz)'];
             plotAxes.Title.String = customPlotSelection;
             field2plot = customPlotSelection(7:end-1);
-            if isfield(cell_metrics.general.acgs,field2plot)
+            if isfield(cell_metrics.general,'acgs') && isfield(cell_metrics.general.acgs,field2plot)
                 plotXdata = cell_metrics.general.acgs.(field2plot);
                 plotAxes.XLabel.String = 'Time (ms)';
             else
@@ -13089,8 +13088,11 @@ end
                 % Adjusts the number of subplots in the GUI
                 AdjustGUIkey;
             case 'r'
-                % Hide/show menubar
-                resetZoom
+                if strcmp(event.Modifier,'shift')
+                    shuffleLayout
+                else
+                    resetZoom
+                end
             case 'z'
                 % undoClassification;
             case 'j'
@@ -13151,11 +13153,6 @@ end
     
     function resetZoom
         axis tight
-%         axnum = getAxisBelowCursor;
-%         if ~isempty(axnum)
-%             set(UI.axes(axnum),'XLim',[0,UI.settings.windowDuration],'YLim',[0,1]);
-%             axis tight
-%         end
     end
     
     function nextSession
@@ -13203,6 +13200,46 @@ end
                 UI.menu.(fieldmenus{i}).topMenu.Visible = 'on';
             end
         end
+    end
+    
+    function shuffleLayout(~,~)
+        % Shuffling preferences 
+        % Custom plot (incomplete list): 'Waveforms (single)','Waveforms (all)','Waveforms (image)','Raw waveforms (single)','Raw waveforms (all)','ACGs (single)', 'ACGs (all)','ACGs (image)','CCGs (image)','sharpWaveRipple'
+        if UI.preferences.shuffleLayout == 1
+            UI.preferences.customPlot{1} = 'Waveforms (single)';
+            UI.preferences.customPlot{2} = 'ACGs (single)';
+            UI.preferences.customPlot{3} = 'RCs_firingRateAcrossTime';
+            UI.preferences.shuffleLayout = 2;
+        elseif UI.preferences.shuffleLayout == 2
+            UI.preferences.customPlot{1} = 'Waveforms (all)';
+            UI.preferences.customPlot{2} = 'ACGs (all)';
+            UI.preferences.customPlot{3} = 'RCs_firingRateAcrossTime (all)';
+            UI.preferences.shuffleLayout = 3;
+        elseif UI.preferences.shuffleLayout == 3
+            UI.preferences.customPlot{1} = 'Waveforms (image)';
+            UI.preferences.customPlot{2} = 'ACGs (image)';
+            UI.preferences.customPlot{3} = 'RCs_firingRateAcrossTime (image)';
+            UI.preferences.shuffleLayout = 4;
+        elseif UI.preferences.shuffleLayout == 4
+            UI.preferences.customPlot{1} = 'Waveforms (across channels)';
+            UI.preferences.customPlot{2} = 'Trilaterated position';
+            UI.preferences.customPlot{3} = 'Waveforms (peakVoltage_all)';
+            UI.preferences.shuffleLayout = 5;
+        elseif UI.preferences.shuffleLayout == 5
+            UI.preferences.customPlot{1} = 'firingRateMaps_firingRateMap';
+            UI.preferences.customPlot{2} = 'events_ripples';
+            UI.preferences.customPlot{3} = 'sharpWaveRipple';
+            UI.preferences.shuffleLayout = 6;
+        elseif UI.preferences.shuffleLayout == 6
+            UI.preferences.customPlot{1} = 'Spike raster (single)';
+            UI.preferences.customPlot{2} = 'Spike raster (session)';
+            UI.preferences.customPlot{3} = 'Connectivity graph';
+            UI.preferences.shuffleLayout = 1;
+        end
+        
+        % Setting values in the UI element
+        setUiPreferences
+        uiresume(UI.fig);
     end
     
     function resetLayout(~,~)
