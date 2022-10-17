@@ -872,9 +872,9 @@ if parameters.forceReload
             template_names = {info.Groups(1).Datasets.Name};
             nCells = numel(template_names);
             for i = 1:nCells
-                spikes.times{i} = double(h5read(nwb_file,['/spiketimes/',template_names{i}])')/session.extracellular.sr;
+                spikes.times{i} = double(h5read(nwb_file,['/spiketimes/',template_names{i}]))/session.extracellular.sr;
                 amplitudes = h5read(nwb_file,['/amplitudes/',template_names{i}]);
-                spikes.amplitudes{i} = double(amplitudes(1,:));
+                spikes.amplitudes{i} = double(amplitudes(1,:)');
                 spikes.cluID(i) = i;
                 spikes.total(i) = length(spikes.times{i});
             end
