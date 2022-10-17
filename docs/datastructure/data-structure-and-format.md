@@ -179,8 +179,8 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
 
 ### Spikes
 A MATLAB struct `spikes` stored in a .mat file: `basename.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The processing module `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `basename.spikes.cellinfo.mat` is saved to the basepath. The struct has the following fields:
-* `ts`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in samples.
-* `times`: a 1xN cell-struct for N units each containing a 1xM vector with M spike events in seconds.
+* `ts`: a 1xN cell-struct for N units each containing a Mx1 vector with M spike events in samples.
+* `times`: a 1xN cell-struct for N units each containing a Mx1 vector with M spike events in seconds.
 * `cluID`: a 1xN vector with inherited IDs from the applied clustering algorithm.
 * `UID`: a 1xN vector with values 1:N.
 * `shankID`: a 1xN vector containing the corresponding shank/electrode-group each unit (1-indexed).

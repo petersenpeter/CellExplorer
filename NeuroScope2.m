@@ -177,6 +177,11 @@ trackGoogleAnalytics('NeuroScope2',1);
 if UI.settings.saveMetadata
     session = data.session;
     session.neuroScope2.t0 = UI.t0;
+    session.neuroScope2.colors = UI.colors;
+    for i_setting = 1:length(UI.settings.to_save)
+        session.neuroScope2.(UI.settings.to_save{i_setting}) =  UI.settings.(UI.settings.to_save{i_setting});
+    end
+
     try
         saveStruct(session,'session','commandDisp',false);
     catch
@@ -335,14 +340,16 @@ end
         UI.menu.display.channelOrder.option(UI.settings.channelOrder).Checked = 'on';
         
         UI.menu.display.colormap = uimenu(UI.menu.display.topMenu,menuLabel,'Color maps');
-        UI.menu.display.colorByChannels = uimenu(UI.menu.display.colormap,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);        
+        UI.menu.display.colorByChannels = uimenu(UI.menu.display.colormap,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);
+        UI.menu.display.colorByChannels2 = uimenu(UI.menu.display.colormap,menuLabel,'Color ephys traces in channel groups',menuSelectedFcn,@colorByChannels2);
         UI.menu.display.changeColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
         UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);        
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.colormap,menuLabel,'Change background color & primary color',menuSelectedFcn,@changeBackgroundColor);
         
         UI.menu.display.detectedSpikes = uimenu(UI.menu.display.topMenu,menuLabel,'Detected spikes','Separator','on');
         UI.menu.display.detectedSpikesBelowTrace = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show below traces',menuSelectedFcn,@detectedSpikesBelowTrace);
-        UI.menu.display.showDetectedSpikesPopulationRate = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show population rate ',menuSelectedFcn,@showDetectedSpikesPopulationRate);
+        UI.menu.display.spikesDetectionPolarity = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Detect both polarities',menuSelectedFcn,@detectedSpikesPolarity);
+        UI.menu.display.showDetectedSpikesPopulationRate = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show population rate',menuSelectedFcn,@showDetectedSpikesPopulationRate);
         UI.menu.display.showDetectedSpikeWaveforms = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show waveforms',menuSelectedFcn,@showDetectedSpikeWaveforms);
         UI.menu.display.colorDetectedSpikesByWidth = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Color by waveform width',menuSelectedFcn,@toggleColorDetectedSpikesByWidth);
         UI.menu.display.showDetectedSpikesPCAspace = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show PCA space (beta feature)',menuSelectedFcn,@showDetectedSpikesPCAspace);
@@ -934,9 +941,28 @@ end
             else
                 [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/sr*2, 'bandpass');
             end
-            ephys.traces(:,UI.channelOrder) = filtfilt(b1, a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
+            ephys.traces(:,UI.channelOrder) = feval(UI.settings.filterMethod,b1, a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         elseif UI.settings.filterTraces
-            ephys.traces(:,UI.channelOrder) = filtfilt(UI.settings.filter.b1, UI.settings.filter.a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
+%             if UI.settings.filter.higherBand < 50
+%                 % Downsampling to improve filter response at low filter ranges
+%                 disp('Downsampling')
+%                 n_downsampled = 20;%ceil(sr/500);
+%                 sr_downsampled = sr/n_downsampled;
+%                 data_downsampled = downsample(ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000,n_downsampled);
+%                 
+%                 if int_gt_0(UI.settings.filter.lowerBand,sr) && ~int_gt_0(UI.settings.filter.higherBand,sr)
+%                     [b1, a1] = butter(3, UI.settings.filter.higherBand/sr_downsampled*2, 'low');
+%                 elseif int_gt_0(UI.settings.filter.higherBand,sr) && ~int_gt_0(UI.settings.filter.lowerBand,sr)
+%                     [b1, a1] = butter(3, UI.settings.filter.lowerBand/sr_downsampled*2, 'high');
+%                 else
+%                     [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/sr_downsampled*2, 'bandpass');
+%                 end
+%                 data_downsampled = feval(UI.settings.filterMethod,b1, a1, data_downsampled);
+%                 ephys.traces(:,UI.channelOrder) = upsample(data_downsampled,n_downsampled);
+%             else
+%                 
+%             end
+            ephys.traces(:,UI.channelOrder) = feval(UI.settings.filterMethod,UI.settings.filter.b1, UI.settings.filter.a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         else
             ephys.traces(:,UI.channelOrder) = ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000;
         end
@@ -961,6 +987,23 @@ end
             end
             colors = eval([UI.settings.colormap,'(',num2str(numel(channelsList)),')']);
             electrodeGroupsToPlot = 1:max(temp);
+            
+            if UI.settings.greyScaleTraces < 5
+                colors = colors/UI.settings.greyScaleTraces;
+            elseif UI.settings.greyScaleTraces >=5
+                colors = ones(size(colors))/(UI.settings.greyScaleTraces-4);
+                colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
+            end
+            colorsList = colors;
+        elseif UI.settings.colorByChannels2
+            channelsList2 = UI.channelOrder;
+            channelsList = {};
+            nElectrodes = ceil(numel(channelsList2)/UI.settings.nColorGroups);
+            electrodeGroupsToPlot = 1:nElectrodes;
+            for i = 1:nElectrodes
+                channelsList{i} = channelsList2((i-1)*UI.settings.nColorGroups+1:min(i*UI.settings.nColorGroups,numel(channelsList2)));
+            end
+            colors = eval([UI.settings.colormap,'(',num2str(nElectrodes),')']);
             
             if UI.settings.greyScaleTraces < 5
                 colors = colors/UI.settings.greyScaleTraces;
@@ -1074,7 +1117,7 @@ end
             else
                 ephys.filt = ephys.raw;
             end
-            ephys.filt(:,UI.channelOrder) = filtfilt(UI.settings.filter.b2, UI.settings.filter.a2, ephys.filt(:,UI.channelOrder));
+            ephys.filt(:,UI.channelOrder) = feval(UI.settings.filterMethod,UI.settings.filter.b2, UI.settings.filter.a2, ephys.filt(:,UI.channelOrder));
             
             raster = [];
             raster.idx = [];
@@ -1084,7 +1127,13 @@ end
             raster.channel = [];
             
             for i = 1:numel(UI.channelOrder)
-                idx = find(diff(ephys.filt(:,UI.channelOrder(i)) < UI.settings.spikesDetectionThreshold)==1)+1;
+                if UI.settings.spikesDetectionPolarity
+                    idx = find(diff(ephys.filt(:,UI.channelOrder(i)) < -abs(UI.settings.spikesDetectionThreshold))==1 | diff(ephys.filt(:,UI.channelOrder(i)) > abs(UI.settings.spikesDetectionThreshold))==1)+1;
+                elseif UI.settings.spikesDetectionThreshold>0
+                    idx = find(diff(ephys.filt(:,UI.channelOrder(i)) > UI.settings.spikesDetectionThreshold)==1)+1;
+                else                    
+                    idx = find(diff(ephys.filt(:,UI.channelOrder(i)) < UI.settings.spikesDetectionThreshold)==1)+1;
+                end
                 
                 if ~isempty(idx)
                     raster.times = [raster.times;idx/ephys.sr];
@@ -1562,7 +1611,8 @@ end
 
     function raster = plotSpikeWaveforms(raster,lineColor,plotStyle)
         
-        wfWin_sec = 0.0008; % Default: 2*0.8ms window size
+%         wfWin_sec =  0.0008; % Default: 2*0.8ms window size
+        wfWin_sec = UI.settings.spikeWaveformWidth;
         wfWin = round(wfWin_sec * ephys.sr); % Windows size in sample
         
         % Removing spikes around the borders
@@ -1610,7 +1660,7 @@ end
                 wf2 = reshape(permute(wf,[2,1,3]),(wfWin*2),[]);
                 
                 if UI.settings.showWaveformsBelowTrace
-                    x_offset = (0.035+0.93*chanCoords_x(Locb(j)))*UI.settings.windowDuration;
+                    x_offset = (0.01+UI.settings.waveformsRelativeWidth/2+(0.98-UI.settings.waveformsRelativeWidth)*chanCoords_x(Locb(j)))*UI.settings.windowDuration;
                     y_offset = 0.029+UI.dataRange.spikeWaveforms(1)+(diff(UI.dataRange.spikeWaveforms)-0.05)*chanCoords_y(Locb(j));
                 else
                     x_offset = 0.005*UI.settings.windowDuration;
@@ -1938,7 +1988,7 @@ end
             linewidth = 0.8;
         end
         
-        % Detmermining events within 
+        % Detmermining events within
         idx = find(data.events.(eventName).time >= t1 & data.events.(eventName).time <= t2);
         
         % Plotting flagged events in a different color
@@ -1951,12 +2001,12 @@ end
             idx(idx2) = [];
         end
         
-        % Plotting events 
+        % Plotting events
         if any(idx)
             plotEventLines(data.events.(eventName).time(idx)-t1,colorIn1,linewidth)
         end
         
-        % Plotting added events 
+        % Plotting added events
         if isfield(data.events.(eventName),'added') && ~isempty(isfield(data.events.(eventName),'added'))
             idx3 = find(data.events.(eventName).added >= t1 & data.events.(eventName).added <= t2);
             if any(idx3)
@@ -2096,7 +2146,7 @@ end
         else
             [UI.settings.instantaneousMetrics.b1, UI.settings.instantaneousMetrics.a1] = butter(3, [UI.settings.instantaneousMetrics.lowerBand,UI.settings.instantaneousMetrics.higherBand]/(ephys.sr/2), 'bandpass');
         end
-        filtered = filtfilt(UI.settings.instantaneousMetrics.b1, UI.settings.instantaneousMetrics.a1, ephys.raw(:,UI.settings.instantaneousMetrics.channel))';
+        filtered = feval(UI.settings.filterMethod,UI.settings.instantaneousMetrics.b1, UI.settings.instantaneousMetrics.a1, ephys.raw(:,UI.settings.instantaneousMetrics.channel))';
 
         timestamps = [1:length(filtered)]/ephys.sr;
         
@@ -2165,7 +2215,7 @@ end
             else
                 [UI.settings.RMSnoise_filter.b1, UI.settings.RMSnoise_filter.a1] = butter(3, [UI.settings.plotRMSnoise_lowerBand,UI.settings.plotRMSnoise_higherBand]/(ephys.sr/2), 'bandpass');
             end
-            rms1(UI.channelOrder) = rms(filtfilt(UI.settings.RMSnoise_filter.b1, UI.settings.RMSnoise_filter.a1, ephys.raw(:,UI.channelOrder)));
+            rms1(UI.channelOrder) = rms(feval(UI.settings.filterMethod,UI.settings.RMSnoise_filter.b1, UI.settings.RMSnoise_filter.a1, ephys.raw(:,UI.channelOrder)));
         end
         k_channels = 0;
         xlim1 = [0,numel([UI.channelOrder])+1];
@@ -2559,6 +2609,17 @@ end
             UI.menu.display.detectedSpikesBelowTrace.Checked = 'on';
         else
             UI.menu.display.detectedSpikesBelowTrace.Checked = 'off';
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
+    
+    function detectedSpikesPolarity(~,~)
+        UI.settings.spikesDetectionPolarity = ~UI.settings.spikesDetectionPolarity;
+        if UI.settings.spikesDetectionPolarity
+            UI.menu.display.spikesDetectionPolarity.Checked = 'on';
+        else
+            UI.menu.display.spikesDetectionPolarity.Checked = 'off';
         end
         initTraces
         uiresume(UI.fig);
@@ -3260,7 +3321,7 @@ end
         
         % % % % % % % % % % % % %
         % Events
-        if ~isempty(UI.data.detectecFiles.events)
+        if isfield(UI.data.detectecFiles,'events') && ~isempty(UI.data.detectecFiles.events)
             for j = 1:length(UI.data.detectecFiles.events)
                 UI.settings.eventData = UI.data.detectecFiles.events{j};
                 UI.settings.showEvents(j) = true;
@@ -3698,6 +3759,7 @@ end
     function setWindowsSize(~,~)
         % Set the window size
         string1 = str2num(UI.elements.lower.windowsSize.String);
+        string1 = string1(1);
         if isnumeric(string1) 
             if string1 < 0.001
                 string1 = 1;
@@ -4582,6 +4644,7 @@ end
             data.session = sessionTemplate(UI.data.basepath,'showGUI',true,'basename',basename);
         end
         
+        % Loading preferences from session struct
         try
             UI.t0 = data.session.neuroScope2.t0;
             if UI.t0<0
@@ -4592,7 +4655,32 @@ end
         UI.t0_track = UI.t0;
         
         % UI.settings.colormap
-        UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+        try
+            if data.session.extracellular.nElectrodeGroups == size(data.session.neuroScope2.colors,1)
+                UI.colors = data.session.neuroScope2.colors;
+            end
+        catch
+            UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+        end
+        try
+            for i_setting = 1:length(UI.settings.to_save)
+                if strcmp(UI.settings.to_save{i_setting},'windowDuration')
+                    if data.session.neuroScope2.windowDuration >= 0.001 || data.session.neuroScope2.windowDuration <= 100
+                        UI.settings.windowDuration = data.session.neuroScope2.windowDuration;
+                        UI.elements.lower.windowsSize.String = num2str(data.session.neuroScope2.windowDuration);
+                        resetZoom
+                    end
+                else
+                    UI.settings.(UI.settings.to_save{i_setting}) =  data.session.neuroScope2.(UI.settings.to_save{i_setting});
+                end
+            end
+            UI.panel.general.plotStyle.Value = UI.settings.plotStyle;
+            UI.panel.general.colorScale.Value = UI.settings.greyScaleTraces;
+            UI.settings.scalingFactor = data.session.neuroScope2.scalingFactor;
+            setScalingText            
+            UI.plot_axis1.Color = UI.settings.background;
+            UI.plot_axis1.XColor = UI.settings.primaryColor;
+        end
         
         UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
         UI.fig.UserData.leastSignificantBit = UI.settings.leastSignificantBit;
@@ -6470,12 +6558,41 @@ end
                     UI.settings.nColorGroups = numeric_answer;
                 end
                 UI.menu.display.colorByChannels.Checked = 'on';
+                UI.menu.display.colorByChannels2.Checked = 'off';
+                UI.settings.colorByChannels2 = false;
             else
                 UI.settings.colorByChannels = false;
                 UI.menu.display.colorByChannels.Checked = 'off';
             end
         else
             UI.menu.display.colorByChannels.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+    
+    function colorByChannels2(~,~)
+        UI.settings.colorByChannels2 = ~UI.settings.colorByChannels2;
+        if UI.settings.colorByChannels2
+            prompt = {'Number of channels per group (1-50)'};
+            dlgtitle = 'Color groups';
+            definput = {num2str(UI.settings.nColorGroups)};
+            dims = [1 40];
+            opts.Interpreter = 'tex';
+            answer = inputdlg(prompt,dlgtitle,dims,definput,opts);
+            if ~isempty(answer)
+                numeric_answer = str2num(answer{1});
+                if ~isempty(answer{1}) && rem(numeric_answer,1)==0 && numeric_answer > 0 && numeric_answer <= 50
+                    UI.settings.nColorGroups = numeric_answer;
+                end
+                UI.menu.display.colorByChannels2.Checked = 'on';
+                UI.settings.colorByChannels = false;
+                UI.menu.display.colorByChannels.Checked = 'off';
+            else
+                UI.settings.colorByChannels2 = false;
+                UI.menu.display.colorByChannels2.Checked = 'off';
+            end
+        else
+            UI.menu.display.colorByChannels2.Checked = 'off';
         end
         uiresume(UI.fig);
     end

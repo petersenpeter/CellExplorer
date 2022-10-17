@@ -15,6 +15,7 @@ if ~exist('rezFile','var')
 end
 
 if exist(rezFile,'file')
+    warning('off','parallel:gpu:array:LoadInMemory')
     disp('Loading KiloSort metadata from rez structure')
     load(rezFile,'rez');
     session.extracellular.sr = rez.ops.fs;

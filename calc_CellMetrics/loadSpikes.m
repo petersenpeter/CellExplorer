@@ -1,16 +1,17 @@
 function spikes = loadSpikes(varargin)
-% Load clustered data from multiple pipelines/formats. Currently supported formats:
-%      Phy (default)
-%      Klustakwik/Neurosuite
-%      MClust
-%      NWB
-%      KlustaViewa/Klustasuite
+% Load clustered data from multiple pipelines/formats. Currently supported formats: 
 %      ALF
 %      AllenSDK (via NWB files and their API data files)
+%      Custom (Spike timestamps as input)
+%      Klustakwik/Neurosuite
+%      KlustaViewa/Klustasuite
+%      MClust
+%      NWB
+%      Phy (default)
+%      Sebastien Royer's lab standard
+%      SpyKING Circus
 %      UltraMegaSort2000
 %      Wave_clus
-%      Sebastien Royer's lab standard
-%      custom (Spike timestamps as input)
 %
 % Please see the CellExplorer website: https://cellexplorer.org/datastructure/data-structure-and-format/#spikes
 %
@@ -53,7 +54,7 @@ function spikes = loadSpikes(varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited: 05-10-2021
+% Last edited: 17-10-2022
 
 % Version history
 % 3.2 waveforms for phy data extracted from the raw dat
@@ -64,12 +65,13 @@ function spikes = loadSpikes(varargin)
 % 3.7 Switched from xml to session struct for metadata
 % 3.8 Waveforn extraction separated into its own function
 % 4.1 Adding filter options (e.g. UID, shankID, cluID, region)
+% 4.3 Support for SpyKING Circus
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
 addParameter(p,'clusteringpath','',@ischar); % relativ clustering path to spike data (optional)
-addParameter(p,'format','Phy',@ischar); % clustering format: phy, klustakwik/neurosuite, KlustaViewa, NWB, Wave_clus, MClust, UltraMegaSort2000, ALF, AllenSDK
-% TODO: 'SpyKING CIRCUS', 'MountainSort', 'IronClust'
+addParameter(p,'format','',@ischar); % clustering format: phy, klustakwik/neurosuite, KlustaViewa, NWB, Wave_clus, MClust, UltraMegaSort2000, ALF, AllenSDK
+                                                     % TODO: 'SpyKING CIRCUS', 'MountainSort', 'IronClust'
 addParameter(p,'basename','',@ischar); % The basename file naming convention
 addParameter(p,'electrodeGroups',nan,@isnumeric); % electrodeGroups: Loading only a subset of electrodeGroups from the spike format (only applicable to Klustakwik/neurosuite and KlustaViewa)
 addParameter(p,'raw_clusters',false,@islogical); % raw_clusters: Load only a subset of clusters (might not work anymore as it has not been tested for a long time)
@@ -129,8 +131,8 @@ if exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file') && ~parame
     end
 elseif ~isempty(spikes)
     disp('loadSpikes: Using existing spikes file')
-elseif exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
-    load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
+% elseif exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file') 
+%     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
 else
     parameters.forceReload = true;
     spikes = [];
@@ -145,11 +147,22 @@ if parameters.forceReload
             LSB = session.extracellular.leastSignificantBit;
         end
     end
-
-    try
-        format = session.spikeSorting{1}.format;
-        clusteringpath = session.spikeSorting{1}.relativePath;
+    if ~ischar(format)
+        try
+            format = session.spikeSorting{1}.format;
+        catch
+            format = 'Phy';
+        end
     end
+    
+    if ~ischar(clusteringpath)
+        try
+            clusteringpath = session.spikeSorting{1}.relativePath;
+        catch
+            clusteringpath = '';
+        end
+    end
+
     clusteringpath_full = fullfile(basepath,clusteringpath);
 
     % If the least significant bit is not defined, a default value will be used
@@ -168,13 +181,14 @@ if parameters.forceReload
         end
         % TODO: A gui will be shown allowing for manual edits of extracellular parameters
     end
-
+    
+    spikes = [];
+    
     switch lower(format)
         case 'custom'
             nCells = numel(spikes_times);
             spikes.times = spikes_times;
             for i = 1:nCells
-                spikes.UID(i) = i;
                 spikes.cluID(i) = i;
                 spikes.total(i) = length(spikes.times{i});
             end
@@ -392,7 +406,6 @@ if parameters.forceReload
             spikes_times = readNPY('spikes.times.npy');
 
             clusters = unique(spikes_clusters);
-            spikes = [];
             for iCluster = 1:numel(clusters)
                 idx = spikes_clusters == clusters(iCluster);
                 spikes.times{iCluster} = spikes_times(idx);
@@ -450,8 +463,7 @@ if parameters.forceReload
             fieldsToExtract = {'PT_ratio','amplitude','amplitude_cutoff','cluster_id','cumulative_drift','d_prime','firing_rate','id','isi_violations','isolation_distance','l_ratio','local_index','max_drift','nn_hit_rate','nn_miss_rate', ...
                 'peak_channel_id','presence_ratio','quality','recovery_slope','repolarization_slope','silhouette_score','snr','spike_amplitudes','spike_amplitudes_index','spike_times','spike_times_index','spread','velocity_above',...
                 'velocity_below','waveform_duration','waveform_halfwidth','waveform_mean','waveform_mean_index'};
-            spikes = [];
-
+            
             for i = 1:numel(fieldsToExtract)
                 disp(['Loading ' fieldsToExtract{i},' (',num2str(i),'/',num2str(numel(fieldsToExtract)),')'])
                 if strcmp(fieldsToExtract{i},'spike_times')
@@ -522,8 +534,7 @@ if parameters.forceReload
             fieldsToExtract = {'PT_ratio','amplitude','amplitude_cutoff','cluster_id','cumulative_drift','d_prime','firing_rate','id','isi_violations','isolation_distance','l_ratio','local_index','max_drift','nn_hit_rate','nn_miss_rate', ...
                 'peak_channel_id','presence_ratio','quality','recovery_slope','repolarization_slope','silhouette_score','snr','spike_amplitudes','spike_amplitudes_index','spike_times','spike_times_index','spread','velocity_above',...
                 'velocity_below','waveform_duration','waveform_halfwidth','waveform_mean','waveform_mean_index'};
-            spikes = [];
-
+            
             for i = 1:numel(fieldsToExtract)
                 disp(['Loading ' fieldsToExtract{i},' (',num2str(i),'/',num2str(numel(fieldsToExtract)),')'])
                 if strcmp(fieldsToExtract{i},'spike_times')
@@ -892,7 +903,20 @@ if parameters.forceReload
             end
 
         case {'spyking circus'}
-            error('spyking circus output format not implemented yet')
+            disp('loadSpikes: Loading SpyKING CIRCUS data')
+            % Required file: basename.result.hdf5
+            % Extracts spike times and amplitudes
+            nwb_file = fullfile(clusteringpath_full,[basename '.result.hdf5']);
+            info = h5info(nwb_file);
+            template_names = {info.Groups(1).Datasets.Name};
+            nCells = numel(template_names);
+            for i = 1:nCells
+                spikes.times{i} = double(h5read(nwb_file,['/spiketimes/',template_names{i}]))/session.extracellular.sr;
+                amplitudes = h5read(nwb_file,['/amplitudes/',template_names{i}]);
+                spikes.amplitudes{i} = double(amplitudes(1,:)');
+                spikes.cluID(i) = i;
+                spikes.total(i) = length(spikes.times{i});
+            end
         case {'mountainsort'}
             error('mountainsort output format not implemented yet')
         case {'ironclust'}
@@ -913,7 +937,7 @@ if parameters.forceReload
 
     % Attaching info about how the spikes structure was generated
     spikes.processinginfo.function = 'loadSpikes';
-    spikes.processinginfo.version = 4.2;
+    spikes.processinginfo.version = 4.3;
     spikes.processinginfo.date = now;
     spikes.processinginfo.params.forceReload = parameters.forceReload;
     spikes.processinginfo.params.electrodeGroups = electrodeGroups;
