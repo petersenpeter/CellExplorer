@@ -147,7 +147,7 @@ if parameters.forceReload
             LSB = session.extracellular.leastSignificantBit;
         end
     end
-    if ~ischar(format)
+    if ~ischar(format)||isempty(format)
         try
             format = session.spikeSorting{1}.format;
         catch
