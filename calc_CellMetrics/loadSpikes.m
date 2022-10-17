@@ -865,9 +865,9 @@ if parameters.forceReload
             
         case {'spyking circus'}
             disp('loadSpikes: Loading SpyKING CIRCUS data')
-            % Required file: continuous.result.hdf5
+            % Required file: basename.result.hdf5
             % Extracts spike times and amplitudes
-            nwb_file = fullfile(clusteringpath_full,'continuous.result.hdf5');
+            nwb_file = fullfile(clusteringpath_full,[basename '.result.hdf5']);
             info = h5info(nwb_file);
             template_names = {info.Groups(1).Datasets.Name};
             nCells = numel(template_names);
