@@ -69,8 +69,8 @@ function spikes = loadSpikes(varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
-addParameter(p,'clusteringpath','',@ischar); % relativ clustering path to spike data (optional)
-addParameter(p,'format','',@ischar); % clustering format: phy, klustakwik/neurosuite, KlustaViewa, NWB, Wave_clus, MClust, UltraMegaSort2000, ALF, AllenSDK
+addParameter(p,'clusteringpath',[],@ischar); % relativ clustering path to spike data (optional)
+addParameter(p,'format',[],@ischar); % clustering format: phy, klustakwik/neurosuite, KlustaViewa, NWB, Wave_clus, MClust, UltraMegaSort2000, ALF, AllenSDK
                                                      % TODO: 'SpyKING CIRCUS', 'MountainSort', 'IronClust'
 addParameter(p,'basename','',@ischar); % The basename file naming convention
 addParameter(p,'electrodeGroups',nan,@isnumeric); % electrodeGroups: Loading only a subset of electrodeGroups from the spike format (only applicable to Klustakwik/neurosuite and KlustaViewa)
@@ -867,7 +867,14 @@ if parameters.forceReload
             disp('loadSpikes: Loading SpyKING CIRCUS data')
             % Required file: basename.result.hdf5
             % Extracts spike times and amplitudes
-            nwb_file = fullfile(clusteringpath_full,[basename '.result.hdf5']);
+            
+            nwb_file1 = fullfile(clusteringpath_full,[basename '.result-merged.hdf5']);
+            nwb_file2 = fullfile(clusteringpath_full,[basename '.result.hdf5']);
+            if exist(nwb_file1,'file')
+                nwb_file = nwb_file1;
+            else
+                nwb_file = nwb_file2;
+            end
             info = h5info(nwb_file);
             template_names = {info.Groups(1).Datasets.Name};
             nCells = numel(template_names);
