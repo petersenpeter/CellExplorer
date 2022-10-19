@@ -372,10 +372,10 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 saveAsFullfile = fullfile(basepath,[basename,'.',parameters.saveAs,'.cellinfo.',parameters.fileFormat]);
-if exist(saveAsFullfile,'file')
+if exist(saveAsFullfile,'file') && ~parameters.forceReload
     dispLog(['Loading existing metrics: ' saveAsFullfile],basename)
     load(saveAsFullfile)
-elseif exist(fullfile(basepath,[parameters.saveAs,'.',parameters.fileFormat]),'file')
+elseif exist(fullfile(basepath,[parameters.saveAs,'.',parameters.fileFormat]),'file') && ~parameters.forceReload
     % For legacy naming convention
     warning(['Loading existing legacy metrics: ' parameters.saveAs])
     load(fullfile(basepath,[parameters.saveAs,'.mat']))

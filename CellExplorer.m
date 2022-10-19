@@ -8926,8 +8926,9 @@ end
             
             % Saving figure
             if ishandle(fig)
-                movegui(fig,'center'), set(fig,'visible','on')
                 try
+                    movegui(fig,'center')
+                    set(fig,'visible','on')
                     if highlight == 0
                         ce_savefigure2(fig,savePath1,[cell_metrics.sessionName{cellIDs(j)}, '.CellExplorer_SessionSummary_', saveAs],0)
                     else
