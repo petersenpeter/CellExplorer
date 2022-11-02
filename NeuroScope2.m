@@ -139,6 +139,8 @@ while UI.t0 >= 0
         
         % Update UI text and slider
         UI.elements.lower.time.String = num2str(UI.t0);
+        setTimeText(UI.t0)
+        
         sliderMovedManually = false;
         UI.elements.lower.slider.Value = min([UI.t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
         if UI.settings.debug
@@ -662,7 +664,7 @@ end
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
-        uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Time (s)', 'Units','normalized', 'Position', [0.1 0 0.05 0.8],'HorizontalAlignment','center');
+        UI.elements.lower.timeText = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Time (s)', 'Units','normalized', 'Position', [0.1 0 0.1 0.8],'HorizontalAlignment','center');
         UI.elements.lower.time = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.15 0 0.05 1],'HorizontalAlignment','right','tooltip','Current timestamp (seconds)','Callback',@setTime);
         uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Window duration (s)', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','center');
         UI.elements.lower.windowsSize = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', UI.settings.windowDuration, 'Units','normalized', 'Position', [0.3 0 0.05 1],'HorizontalAlignment','right','tooltip','Window size (seconds)','Callback',@setWindowsSize);
@@ -672,7 +674,7 @@ end
         UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider,'Tag','slider');
         addlistener(UI.elements.lower.slider, 'Value', 'PostSet',@movingSlider);
         sliderMovedManually = true;
-        set(UI.panel.info, 'Widths', [70 80 120 60 120 60 280 -1],'MinimumWidths',[70 80 120 60 60 60 250  1]); % set grid panel size
+        set(UI.panel.info, 'Widths', [130 80 120 60 120 60 280 -1],'MinimumWidths',[130 80 120 60 60 60 250  1]); % set grid panel size
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
@@ -2900,6 +2902,7 @@ end
                 
                 % Updating UI text and slider
                 UI.elements.lower.time.String = num2str(UI.t0);
+                setTimeText(UI.t0)
                 UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Streaming','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor,'HitTest','off');
                 streamToc = toc(streamTic);
                 pauseBins = ones(1,10) * 0.05*UI.settings.windowDuration;
@@ -4860,6 +4863,7 @@ end
         if sliderMovedManually
             UI.t0 = valid_t0((UI.t_total-UI.settings.windowDuration)*evnt.AffectedObject.Value/100);
             UI.elements.lower.time.String = num2str(UI.t0);
+            setTimeText(UI.t0)
             
             if ~UI.settings.stickySelection
                 UI.selectedChannels = [];
@@ -6402,7 +6406,8 @@ end
         if ~isempty(answer) && ~isempty(answer{1})
            text_string1 = [text_string1,'.   Notes: ', answer{1}]; 
         end
-        text_string2 = ['Start time: ', num2str(UI.t0), ' sec, Duration: ', num2str(UI.settings.windowDuration), ' sec '];
+        timestring = [num2str(floor(UI.t0/3600),'%02.0f'),':',num2str(floor(UI.t0/60-floor(UI.t0/3600)*60),'%02.0f'),':',num2str(UI.t0-floor(UI.t0/60)*60,'%02.3f')];
+        text_string2 = ['Start time: ', timestring, ' (', num2str(UI.t0), ' sec), Window duration: ', num2str(UI.settings.windowDuration), ' sec '];
         text(UI.plot_axis1,0,1,text_string1,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left', 'color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
         text(UI.plot_axis1,1,1,text_string2,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','right','color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
         
@@ -6630,6 +6635,11 @@ end
         else
             colorpick_out = uicolorpicker(colorpick1,title1);
         end
+    end
+    
+    function setTimeText(t0)
+        timestring = [num2str(floor(t0/3600),'%02.0f'),':',num2str(floor(t0/60-floor(t0/3600)*60),'%02.0f'),':',num2str(t0-floor(t0/60)*60,'%02.3f')];
+        UI.elements.lower.timeText.String = ['Time (s) ', timestring];
     end
     
     function toggleDebug(~,~)
