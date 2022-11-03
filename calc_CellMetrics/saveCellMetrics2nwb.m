@@ -74,6 +74,7 @@ if isfield(cell_metrics.general,'chanCoords')
 end
 
 % FiringRateMaps
+% fields missing: x_label
 if isfield(cell_metrics.general,'firingRateMaps')
     disp('Adding general.firingRateMaps')
     firingratemaps = types.ndx_cell_explorer.firingRateMaps();
@@ -82,7 +83,9 @@ if isfield(cell_metrics.general,'firingRateMaps')
         data = types.ndx_cell_explorer.firingRateMap('name', list1(i));
         variables = fields(cell_metrics.general.firingRateMaps.(list1{i}));
         for j = 1:numel(variables)
-            data.(variables{j}) = cell_metrics.general.firingRateMaps.(list1{i}).(variables{j});
+            if isfield(data,variables{j})
+                data.(variables{j}) = cell_metrics.general.firingRateMaps.(list1{i}).(variables{j});
+            end
         end
         firingratemaps.firingratemap.set(list1{i},data);
     end
@@ -90,6 +93,7 @@ if isfield(cell_metrics.general,'firingRateMaps')
 end
 
 % ResponseCurves
+% fields missing: boundaries
 if isfield(cell_metrics.general,'responseCurves')
     disp('Adding general.responseCurves')
     responseCurves = types.ndx_cell_explorer.responseCurves();
@@ -98,7 +102,9 @@ if isfield(cell_metrics.general,'responseCurves')
         data = types.ndx_cell_explorer.responseCurve('name', list1(i));
         variables = fields(cell_metrics.general.responseCurves.(list1{i}));
         for j = 1:numel(variables)
-            data.(variables{j}) = cell_metrics.general.responseCurves.(list1{i}).(variables{j});
+            if isfield(data,variables{j})
+                data.(variables{j}) = cell_metrics.general.responseCurves.(list1{i}).(variables{j});
+            end
         end
         responseCurves.responsecurve.set(list1{i},data);
     end
@@ -170,9 +176,17 @@ for iElectrode = 1:nElectrodeGroups
         channel_shank_order(channels(iChannels)) = iChannels;
     end
 end
-for i = 1:numel(channel_shank)
-    tbl = [tbl; {cell_metrics.general.ccf.x(i), cell_metrics.general.ccf.y(i), cell_metrics.general.ccf.z(i), NaN, 'unknown', 'unknown', ...
+
+if isfield(cell_metrics.general,'ccf')
+    for i = 1:numel(channel_shank)
+        tbl = [tbl; {cell_metrics.general.ccf.x(i), cell_metrics.general.ccf.y(i), cell_metrics.general.ccf.z(i), NaN, 'unknown', 'unknown', ...
             group_object_view, ['shank_', num2str(channel_shank(i)) , '__elec_' num2str(channel_shank_order(i))]}];
+    end
+else
+    for i = 1:numel(channel_shank)
+        tbl = [tbl; {NaN, NaN, NaN, NaN, 'unknown', 'unknown', ...
+            group_object_view, ['shank_', num2str(channel_shank(i)) , '__elec_' num2str(channel_shank_order(i))]}];
+    end
 end
 tbl.rel_x = cell_metrics.general.chanCoords.x;
 tbl.rel_y = cell_metrics.general.chanCoords.y;
@@ -309,10 +323,10 @@ if isfield(cell_metrics.general,'epochs')
     behavioralParadigm_data = {};
     
     for i = 1:nepochs
-        start_time_data(i) = epochs(i).startTime;
-        stop_time_data(i) = epochs(i).stopTime;
-        name_data{end+1} = epochs(i).name;
-        behavioralParadigm_data{end+1} = epochs(i).behavioralParadigm;
+        start_time_data(i) = epochs{i}.startTime;
+        stop_time_data(i) = epochs{i}.stopTime;
+        name_data{end+1} = epochs{i}.name;
+        behavioralParadigm_data{end+1} = epochs{i}.behavioralParadigm;
     end
     
     % set epochs table
@@ -347,7 +361,7 @@ if isfield(cell_metrics.general,'epochs')
         );
 end
 
-%% Sleep state data
+%% States data
 if isfield(cell_metrics.general,'states')
     
     states = cell_metrics.general.states;

@@ -22,8 +22,7 @@ function ccf = bregma_to_CCF(chanCoords,implantCoordinate,varargin)
 % .z : Left->Right
 % implantVector : implant vector from brain surface to implanted position
 
-% By Peter Petersen
-% petersen.peter@gmail.com
+% By Peter Petersen & Sara
 
 p = inputParser;
 addParameter(p,'plots',true,@islogical)
@@ -87,7 +86,6 @@ ccf.implantVector = implantVector;
 
 if plots
     % Plot
-%     figure
     plot3(ccf.x,ccf.z,ccf.y,'.b'), hold on
     plot3(ccf1.x,ccf1.z,ccf1.y,'or')
     plot3(surface_coordinates(1),surface_coordinates(3),surface_coordinates(2),'xr')

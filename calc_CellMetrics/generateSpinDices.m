@@ -1,8 +1,8 @@
 function spindices = generateSpinDices(spike_times)
-% Generates spindices matrics
+% Generates spike indices matrix
 % By Peter Petersen
 % petersen.peter@gmail.com
-% 18-06-2020
+% 13-02-2021
 
 numcells = numel(spike_times);
 for cc = 1:numcells

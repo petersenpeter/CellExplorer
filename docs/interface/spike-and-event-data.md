@@ -1,13 +1,14 @@
 ---
 layout: default
 title: Spike and event data
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 5
 ---
 # Spike and event data
-![Rasters](https://buzsakilab.com/wp/wp-content/uploads/2020/03/rasters_placefield-04.png){: .mt-4}
+![Rasters](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/rasters_placefield-04.png){: .mt-4}
 CellExplorer is capable of loading the raw spike and event data which allows for creating custom raster plots and histograms from the raw spike and events. Please see the [tutorial on spike data]({{"/tutorials/plotting-spike-data/"|absolute_url}}) to learn more.
-![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-spike-dialog.png)
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Cell-Explorer-spike-dialog.png)
 You can define spike raster plots directly in CellExplorer using above dialog, or you can save custom plots that are loaded automatically in CellExplorer. Custom spike raster plots are located in `+customSpikesPlots/`. There is a spikes_template available to get you started:
 
 ```m
@@ -43,4 +44,4 @@ end
 ```
 
 Below figure shows a PSTH for an opto-stimulated interneuron with 1200 events and a stimulation window of 0.5 seconds.
-<p align="center"><img src="https://buzsakilab.com/wp/wp-content/uploads/2020/03/PSTH-raster-03.png" width="=70%"></p> {: .mt-4}
+<p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/PSTH-raster-03.png" width="=70%"></p> {: .mt-4}

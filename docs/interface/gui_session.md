@@ -1,14 +1,14 @@
 ---
 layout: default
 title: Session metadata
-parent: Graphical interface
-nav_order: 9
+parent: Graphical interfaces
+nav_order: 3
 ---
 {: .no_toc}
 # GUI for session metadata
 The session GUI allows you to view and manually enter session level metadata through a user-friendly GUI. The interface follows the structure of the session metadata struct, [described here](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata), with a tab for each of the main fields of the session metadata struct. Use the left side panel to navigate the tabs.
 
-<a href="https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_general.png">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_general.png)</a>
+<a href="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_general.png">![CellExplorer](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_general.png)</a>
 
 {: .no_toc}
 ## Table of contents

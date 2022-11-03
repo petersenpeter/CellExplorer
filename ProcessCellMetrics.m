@@ -43,8 +43,13 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   submitToDatabase       - logical. Submit cell metrics to database
 %   saveMat                - logical. Save metrics to cell_metrics.mat
 %   saveAs                 - name of .mat file
-%   saveBackup             - logical. Whether a backup file should be created
-%   summaryFigures         - logical. Plot summary figures
+%   saveBackup             - logical. Whether a backup of existing metrics should be created
+%
+%   summaryFigures         - logical. Plot a summary figure for each cell
+%   sessionSummaryFigure   - logical. Plot summary figure for the whole session
+%   showFigures            - logical. if false, turns off plots from different stages of the processing 
+%   showWaveforms          - logical. Shows waveform extraction (turn off to speed up the processing)
+%
 %   debugMode              - logical. Activate a debug mode avoiding try/catch 
 %   transferFilesFromClusterpath - logical. Moves previosly generated files from clusteringpath to basepath (new file structure)
 %
@@ -88,7 +93,7 @@ addParameter(p,'ignoreEventTypes',{'MergePoints'},@iscell);
 addParameter(p,'ignoreManipulationTypes',{'cooling'},@iscell);
 addParameter(p,'ignoreStateTypes',{'StateToIgnore'},@iscell);
 addParameter(p,'excludeManipulationIntervals',true,@islogical);
-addParameter(p,'metricsToExcludeManipulationIntervals',{'waveform_metrics','PCA_features','acg_metrics','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','psth_metrics'},@iscell); % 'other_metrics'
+addParameter(p,'metricsToExcludeManipulationIntervals',{'waveform_metrics','PCA_features','acg_metrics','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','psth_metrics'},@iscell);
 
 addParameter(p,'keepCellClassification',true,@islogical);
 addParameter(p,'manualAdjustMonoSyn',true,@islogical);
@@ -102,9 +107,14 @@ addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'saveAs','cell_metrics',@isstr);
 addParameter(p,'saveBackup',true,@islogical);
 addParameter(p,'fileFormat','mat',@isstr);
-addParameter(p,'summaryFigures',false,@islogical);
-addParameter(p,'debugMode',false,@islogical);
 addParameter(p,'transferFilesFromClusterpath',true,@islogical);
+
+% Plot related parameters
+addParameter(p,'showFigures',false,@islogical);
+addParameter(p,'showWaveforms',true,@islogical);
+addParameter(p,'summaryFigures',false,@islogical);
+addParameter(p,'sessionSummaryFigure',true,@islogical);
+addParameter(p,'debugMode',false,@islogical);     
 
 parse(p,varargin{:})
 
@@ -118,11 +128,12 @@ timerCalcMetrics = tic;
 % Verifying required toolboxes are installed
 installedToolboxes = ver;
 installedToolboxes = {installedToolboxes.Name};
-requiredToolboxes = {'Curve Fitting Toolbox', 'Parallel Computing Toolbox'};
+requiredToolboxes = {'Curve Fitting Toolbox','Signal Processing Toolbox','Statistics and Machine Learning Toolbox'};
+
 missingToolboxes = requiredToolboxes(~ismember(requiredToolboxes,installedToolboxes));
 if ~isempty(missingToolboxes)
     for i = 1:numel(missingToolboxes)
-    warning(['A toolbox required by CellExplorer must be installed: ' missingToolboxes{i}]);
+        warning(['A toolbox required by CellExplorer must be installed: ' missingToolboxes{i}]);
     end
 end
 
@@ -135,12 +146,10 @@ if ~isempty(sessionID)
 elseif ~isempty(sessionin)
     [session, basename, basepath] = db_set_session('sessionName',sessionin);
 elseif ~isempty(sessionStruct)
-    if isfield(sessionStruct.general,'basePath') 
+    if isfield(sessionStruct.general,'basePath')
         session = sessionStruct;
         basename = session.general.name;
-        if exist(sessionStruct.general.basePath,'dir')
-            basepath = session.general.basePath;
-        end
+        basepath = session.general.basePath;
     else
         [session, basename, basepath] = db_set_session('session',sessionStruct);
         if isempty(session.general.entryID)
@@ -154,7 +163,7 @@ end
 
 % If no session struct is provided it will look for a basename.session.mat file in the basepath and otherwise load the sessionTemplate and show the GUI gui_session
 if ~exist('session','var')
-    [~,basename,~] = fileparts(basepath);
+    basename = basenameFromBasepath(basepath);
     if exist(fullfile(basepath,[basename,'.session.mat']),'file')
         dispLog(['Loading ',basename,'.session.mat from basepath'],basename);
         load(fullfile(basepath,[basename,'.session.mat']),'session');
@@ -186,17 +195,14 @@ if isfield(session.extracellular,'electrodeGroups') && isfield(session.extracell
     session.extracellular.electrodeGroups.channels = num2cell(session.extracellular.electrodeGroups.channels,2)';
 end
 
-% Non-standard parameters: probeSpacing and probeLayout
-if (~isfield(session,'analysisTags') || (~isfield(session.analysisTags,'probesVerticalSpacing')) && ~isfield(session.analysisTags,'probesLayout')) && isfield(session.extracellular,'electrodes') && isfield(session.extracellular.electrodes,'siliconProbes')
-    session = determineProbeSpacing(session);
-    if ~isfield(session.analysisTags,'probesVerticalSpacing')
-        session.analysisTags.probesVerticalSpacing = preferences.general.probesVerticalSpacing;
-        disp('  Using probesVerticalSpacing from preferences')
-    end
-    if ~isfield(session.analysisTags,'probesLayout')
-        session.analysisTags.probesLayout = preferences.general.probesLayout;
-        disp('  Using probesLayout from preferences')
-    end
+% Non-standard parameters: vertical spacing and layout
+if (~isfield(session,'extracellular') || ~isfield(session.extracellular,'chanCoords') || ~isfield(session.extracellular.chanCoords,'verticalSpacing'))
+    session.extracellular.chanCoords.verticalSpacing = preferences.general.probesVerticalSpacing;
+    disp('  Using vertical spacing from preferences')
+end
+if (~isfield(session,'extracellular') || ~isfield(session.extracellular,'chanCoords') || ~isfield(session.extracellular.chanCoords,'layout'))
+    session.extracellular.chanCoords.layout = preferences.general.probesLayout;
+    disp('  Using layout from preferences')
 end
 
 if ~isfield(session,'extracellular') || ~isfield(session.extracellular,'electrodeGroups')  || ~isfield(session.extracellular.electrodeGroups,'channels') || isempty([session.extracellular.electrodeGroups.channels{:}])
@@ -219,7 +225,6 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 if parameters.showGUI
-    dispLog('Showing GUI for adjusting parameters and session metadata',basename)
     session.general.basePath = basepath;
     parameters.preferences = preferences;
     [session,parameters,status] = gui_session(session,parameters);
@@ -237,7 +242,7 @@ end
 % Moving files generated by CellExplorer (basename.*.mat) from relative spike sorting path (clusteringpath) to the basepath
 % Previous version of CellExplorer would save cell_metrics and cellinfo derived files in the clusteringpath
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-if parameters.transferFilesFromClusterpath && ~isempty(session.spikeSorting{1}.relativePath)
+if parameters.transferFilesFromClusterpath && isfield(session,'spikeSorting') && ~isempty(session.spikeSorting{1}.relativePath)
     fileList = dir(fullfile(basepath,session.spikeSorting{1}.relativePath,[basename, '.*.mat']));
     fileListClusterpath = {fileList.name};
     fileList = dir(fullfile(basepath,[basename, '.*.mat']));
@@ -258,7 +263,7 @@ if parameters.transferFilesFromClusterpath && ~isempty(session.spikeSorting{1}.r
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Getting spikes  -  excluding user specified- and manipulation intervals
+% Getting spikes  -  excluding user specified- and manipulation intervals  
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 sr = session.extracellular.sr;
@@ -268,14 +273,18 @@ if ~isempty(parameters.spikes)
     parameters.spikes = [];
 else
     dispLog('Getting spikes',basename)
-    spikes{1} = loadSpikes('session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'getWaveformsFromDat',parameters.getWaveformsFromDat);
+    spikes{1} = loadSpikes('session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'getWaveformsFromDat',parameters.getWaveformsFromDat,'showWaveforms',parameters.showWaveforms);
 end
 if parameters.getWaveformsFromDat && (~isfield(spikes{1},'processinginfo') || ~isfield(spikes{1}.processinginfo.params,'WaveformsSource') || ~strcmp(spikes{1}.processinginfo.params.WaveformsSource,'dat file') || spikes{1}.processinginfo.version<3.5 || parameters.forceReloadSpikes == true)
-    spikes{1} = loadSpikes('forceReload',true,'spikes',spikes{1},'session',session,'labelsToRead',preferences.loadSpikes.labelsToRead);
+    spikes{1} = loadSpikes('forceReload',true,'spikes',spikes{1},'session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'showWaveforms',parameters.showWaveforms);
 end
 if ~isfield(spikes{1},'total')
     spikes{1}.total = cellfun(@(X) length(X),spikes{1}.times);
 end
+if ~isfield(spikes{1},'spindices')
+    spikes{1}.spindices = generateSpinDices(spikes{1}.times);
+end
+
 if ~isempty(parameters.restrictToIntervals)
     if size(parameters.restrictToIntervals,2) ~= 2
         error('restrictToIntervals has to be a Nx2 matrix')
@@ -310,12 +319,13 @@ if ~isempty(parameters.restrictToIntervals)
     end
 end
 
-if parameters.excludeManipulationIntervals
-    dispLog('Excluding manipulation events',basename)
+
+if parameters.excludeManipulationIntervals    
     manipulationFiles = dir(fullfile(basepath,[basename,'.*.manipulation.mat']));
     manipulationFiles = {manipulationFiles.name};
     manipulationFiles(find(contains(manipulationFiles,parameters.ignoreManipulationTypes)))=[];
     if ~isempty(manipulationFiles)
+        dispLog('Excluding manipulation events',basename)
         for iEvents = 1:length(manipulationFiles)
             eventName = strsplit(manipulationFiles{iEvents},'.'); 
             eventName = eventName{end-2};
@@ -327,8 +337,6 @@ if parameters.excludeManipulationIntervals
                 warning('manipulation timestamps has to be a Nx2 matrix')
             end
         end
-    else
-         disp('  No manipulation events excluded')
     end
 end
 
@@ -356,9 +364,7 @@ if ~isempty(parameters.excludeIntervals)
         spikes{2}.spindices = generateSpinDices(spikes{2}.times);
     end
 else
-    disp('  No intervals excluded')
     parameters.metricsToExcludeManipulationIntervals = {'none'};
-    
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -366,10 +372,10 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 saveAsFullfile = fullfile(basepath,[basename,'.',parameters.saveAs,'.cellinfo.',parameters.fileFormat]);
-if exist(saveAsFullfile,'file')
+if exist(saveAsFullfile,'file') && ~parameters.forceReload
     dispLog(['Loading existing metrics: ' saveAsFullfile],basename)
     load(saveAsFullfile)
-elseif exist(fullfile(basepath,[parameters.saveAs,'.',parameters.fileFormat]),'file')
+elseif exist(fullfile(basepath,[parameters.saveAs,'.',parameters.fileFormat]),'file') && ~parameters.forceReload
     % For legacy naming convention
     warning(['Loading existing legacy metrics: ' parameters.saveAs])
     load(fullfile(basepath,[parameters.saveAs,'.mat']))
@@ -392,7 +398,7 @@ end
 if parameters.saveBackup && ~isempty(cell_metrics)
     % Creating backup of existing user adjustable metrics
     backupDirectory = 'revisions_cell_metrics';
-    dispLog(['Creating backup of existing user adjustable metrics in subfolder ''',backupDirectory,''''],basename);
+    % dispLog(['Creating backup of existing user adjustable metrics in subfolder ''',backupDirectory,''''],basename);
     
     backupFields = {'labels','tags','deepSuperficial','deepSuperficialDistance','brainRegion','putativeCellType','groundTruthClassification','groups'};
     temp = {};
@@ -416,6 +422,7 @@ end
 cell_metrics.general.basepath = basepath;
 cell_metrics.general.basename = basename;
 cell_metrics.general.cellCount = numel(spikes{1}.times);
+cell_metrics.general.saveAs = parameters.saveAs;
 
 % Saving spike times to metrics
 cell_metrics.spikes.times = spikes{1}.times;
@@ -426,41 +433,58 @@ cell_metrics.spikes.times = spikes{1}.times;
 
 if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'waveform_metrics'}))
     spkExclu = setSpkExclu('waveform_metrics',parameters);
+
+    bad_channels = get_bad_channels(session);
+    if isempty(bad_channels)
+        good_channels = 1:session.extracellular.nChannels;
+    else
+        good_channels = setdiff(1:session.extracellular.nChannels,bad_channels);
+    end
+    
     if ~all(isfield(cell_metrics,{'waveforms','peakVoltage','troughToPeak','troughtoPeakDerivative','ab_ratio'})) || ~all(isfield(cell_metrics.waveforms,{'filt','filt_all'})) || parameters.forceReload == true
         dispLog('Getting waveforms',basename);
         field2copy = {'filtWaveform_std','rawWaveform','rawWaveform_std','rawWaveform_all','filtWaveform_all','timeWaveform_all','channels_all','filtWaveform','timeWaveform'};
         field2copyNewNames = {'filt_std','raw','raw_std','raw_all','filt_all','time_all','channels_all','filt','time'};
         if parameters.getWaveformsFromDat && (any(~isfield(spikes{spkExclu},field2copy)) || parameters.forceReload == true) && (spkExclu==2  || ~isempty(parameters.restrictToIntervals))
-            spikes{spkExclu} = getWaveformsFromDat(spikes{spkExclu},session);
+            spikes{spkExclu} = getWaveformsFromDat(spikes{spkExclu},session,'showWaveforms',parameters.showWaveforms);
+            cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
         end
-        cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
         if isfield(spikes{spkExclu},'peakVoltage_expFitLengthConstant')
             cell_metrics.peakVoltage_expFitLengthConstant = spikes{spkExclu}.peakVoltage_expFitLengthConstant(:)';
         end
         for j = 1:numel(field2copy)
             if isfield(spikes{spkExclu},field2copy{j})
-                try
-                    cell_metrics.waveforms.(field2copyNewNames{j}) = spikes{spkExclu}.(field2copy{j});
-                catch
-                    cell_metrics.waveforms = [];
-                    cell_metrics.waveforms.(field2copyNewNames{j}) = spikes{spkExclu}.(field2copy{j});
-                end
+                cell_metrics.waveforms.(field2copyNewNames{j}) =  spikes{spkExclu}.(field2copy{j});
             end
         end
         
         if isfield(spikes{spkExclu},'maxWaveform_all')
             for j = 1:cell_metrics.general.cellCount
                 if numel(spikes{spkExclu}.maxWaveform_all)>=j && ~isempty(spikes{spkExclu}.maxWaveform_all{j})
-                    nChannelFit = min([16,length(spikes{spkExclu}.maxWaveform_all{j}),length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
+                    nChannelFit = min([preferences.waveform.trilat_nChannels,length(spikes{spkExclu}.maxWaveform_all{j}),length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
                     cell_metrics.waveforms.bestChannels{j} = spikes{spkExclu}.maxWaveform_all{j}(1:nChannelFit);
                 else
                     cell_metrics.waveforms.bestChannels{j} = [];
                 end
             end
         end
-        
+        try
+            if isfield(spikes{spkExclu},'filtWaveform_all')
+                for j = 1:cell_metrics.general.cellCount
+                    cell_metrics.waveforms.peakVoltage_all{j} = nan(1,session.extracellular.nChannels);
+                    cell_metrics.waveforms.peakVoltage_all{j}(good_channels) = range(spikes{spkExclu}.filtWaveform_all{j}(good_channels,:),2);
+                end
+            end
+        catch % for older data, you might not have waveforms on every channel
+            if isfield(spikes{spkExclu},'filtWaveform_all')
+                for j = 1:cell_metrics.general.cellCount
+                    cell_metrics.waveforms.peakVoltage_all{j} = nan(1,session.extracellular.nChannels);
+                    cell_metrics.waveforms.peakVoltage_all{j} = range(spikes{spkExclu}.filtWaveform_all{j},2);
+                end
+            end
+        end
         dispLog('Calculating waveform metrics',basename);
-        waveform_metrics = calc_waveform_metrics(spikes{spkExclu},sr);
+        waveform_metrics = calc_waveform_metrics(spikes{spkExclu},sr,'showFigures',parameters.showFigures);
         cell_metrics.troughToPeak = waveform_metrics.troughtoPeak;
         cell_metrics.troughtoPeakDerivative = waveform_metrics.derivative_TroughtoPeak;
         cell_metrics.ab_ratio = waveform_metrics.ab_ratio;
@@ -475,64 +499,72 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
     % Channel coordinates map, trilateration and length constant determined from waveforms across channels
     if ~all(isfield(cell_metrics,{'trilat_x','trilat_y','peakVoltage_expFit'})) || parameters.forceReload == true
         chanCoordsFile = fullfile(basepath,[basename,'.chanCoords.channelInfo.mat']);
-        if exist(chanCoordsFile,'file')
+        if isfield(session.extracellular,'chanCoords') && isfield(session.extracellular.chanCoords,'x') && isfield(session.extracellular.chanCoords,'y') && ~isempty(session.extracellular.chanCoords.x) && ~isempty(session.extracellular.chanCoords.y)
+            disp('   Using existing channel coordinates')
+            chanCoords = session.extracellular.chanCoords;
+            chanCoords.x = chanCoords.x(:);
+            chanCoords.y = chanCoords.y(:);
+        elseif exist(chanCoordsFile,'file')
+            disp(['   Loading channel coordinates from file: ' chanCoordsFile])            
             load(chanCoordsFile,'chanCoords');
+            chanCoords.x = chanCoords.x(:);
+            chanCoords.y = chanCoords.y(:);
+            session.extracellular.chanCoords = chanCoords;
         else
             chanCoords = {};
             if exist(fullfile(basepath,'chanMap.mat'),'file') % Will look for a chanMap file with default name (compatible with KiloSort)
+                disp('   Importing chanCoords from chanMap.mat file (e.g. from KiloSort)')
                 chanMap = load(fullfile(basepath,'chanMap.mat'));
+                chanCoords.x = chanMap.xcoords(:);
+                chanCoords.y = chanMap.ycoords(:);
             elseif isfield(session,'analysisTags') && isfield(session.analysisTags,'chanMapFile')
                 % You can use a different filename that must be specified in: session.analysisTags.chanMapFile
                 chanMap = load(fullfile(basepath,session.analysisTags.chanMapFile));
+                disp(['   Loading channel coordinates from chanCoords file: ' chanMap])     
+                chanCoords.x = chanMap.xcoords(:);
+                chanCoords.y = chanMap.ycoords(:);
             else
-                if ~isfield(session,'analysisTags') || ~isfield(session.analysisTags,'probesLayout')
-                    disp('  Using default probesLayout: poly2')
-                    session.analysisTags.probesLayout = 'poly2';
-                end
-                disp('  Generating channelmap')
-                chanMap = generateChannelMap(session);
-            end
-            chanCoords.x = chanMap.xcoords(:);
-            chanCoords.y = chanMap.ycoords(:);
-            saveStruct(chanCoords,'channelInfo','session',session);
-        end
-        chanCoords.x = chanCoords.x(:);
-        chanCoords.y = chanCoords.y(:);
+                disp('  Generating chanCoords')
+                chanCoords = generateChanCoords(session);
+            end            
+            session.extracellular.chanCoords = chanCoords;
+        end        
         cell_metrics.general.chanCoords = chanCoords;
+        
         % Fit exponential
         fit_eqn = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
-        expential_x = {};
-        expential_y = {};
+        xdata = {};
+        ydata = {};
         
         if parameters.debugMode
             fig100 = figure;
             handle_subfig1 = subplot(2,1,1); hold on
-            title(handle_subfig1,'Spike amplitude (all)'), xlabel(handle_subfig1,'Distance (µm)'), ylabel(handle_subfig1,'µV')
+            title(handle_subfig1,'Spike amplitude (all)'), xlabel(handle_subfig1,'Distance (ï¿½m)'), ylabel(handle_subfig1,'ï¿½V')
             handle_subfig2 = subplot(2,2,3); hold on
-            ylabel(handle_subfig2,'Length constant (µm)'), xlabel(handle_subfig2,'Peak voltage (µV)')
+            ylabel(handle_subfig2,'Length constant (ï¿½m)'), xlabel(handle_subfig2,'Peak voltage (ï¿½V)')
             handle_subfig3 = subplot(2,2,4); hold off
             plot(handle_subfig3,cell_metrics.general.chanCoords.x,cell_metrics.general.chanCoords.y,'.k'), hold on
-            xlabel(handle_subfig3,'x position (µm)'), ylabel(handle_subfig3,'y position (µm)')
+            xlabel(handle_subfig3,'x position (ï¿½m)'), ylabel(handle_subfig3,'y position (ï¿½m)')
             drawnow
         end
+        
         for j = 1:cell_metrics.general.cellCount
-            if ~isnan(cell_metrics.peakVoltage(j)) && isfield(cell_metrics.waveforms,'filt_all')
+            if isfield(cell_metrics,'peakVoltage') && ~isnan(cell_metrics.peakVoltage(j)) && isfield(cell_metrics.waveforms,'filt_all')
                 % Trilateration
                 peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
-                [~,idx] = sort(range(cell_metrics.waveforms.filt_all{j}'),'descend');
+                peakVoltage(bad_channels) = NaN;
+                filt_all = cell_metrics.waveforms.filt_all{j}';
+                filt_all(:,bad_channels) = 0;
+                [~,idx] = sort(range(filt_all),'descend');
+                clear filt_all
                 
-                try
-                    trilat_nChannels = min([16,numel(peakVoltage)]);
-                    bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
-                    beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position. If you get an error here, it's likely that your chanCoords file has too few channels
+                trilat_nChannels = min([preferences.waveform.trilat_nChannels,numel(peakVoltage)]);
+                bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
+                beta0 = [cell_metrics.general.chanCoords.x(bestChannels(1)),cell_metrics.general.chanCoords.y(bestChannels(1))]; % initial position
+                trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels),peakVoltage(idx(1:trilat_nChannels)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
+                cell_metrics.trilat_x(j) = trilat_pos(1);
+                cell_metrics.trilat_y(j) = trilat_pos(2);
                 
-                    trilat_pos = trilat(cell_metrics.general.chanCoords.x(bestChannels),cell_metrics.general.chanCoords.y(bestChannels),peakVoltage(idx(1:trilat_nChannels)),beta0,0); % ,1,cell_metrics.waveforms.filt_all{j}(bestChannels,:)
-                    cell_metrics.trilat_x(j) = trilat_pos(1);
-                    cell_metrics.trilat_y(j) = trilat_pos(2);
-                catch
-                    cell_metrics.trilat_x(j) = beta0(1);
-                    cell_metrics.trilat_y(j) = beta0(2);
-                end
                 % Length constant
                 x1 = cell_metrics.general.chanCoords.x;
                 y1 = cell_metrics.general.chanCoords.y;
@@ -540,19 +572,19 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 v = cell_metrics.trilat_y(j);
                 [channel_distance,idx2] = sort(hypot((x1(:)-u),(y1(:)-v)));
                 
-                nChannelFit = min([16,length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
+                nChannelFit = min([trilat_nChannels,length(session.extracellular.electrodeGroups.channels{spikes{spkExclu}.shankID(j)})]);
                 x = 1:nChannelFit;
                 y = peakVoltage(idx(x));
                 x2 = channel_distance(1:nChannelFit)';
-                expential_x{j} = x2;
-                expential_y{j} = y;
+                xdata{j} = x2;
+                ydata{j} = y;
                 f0 = fit(x2',y',fit_eqn,'StartPoint',[cell_metrics.peakVoltage(j), 30, 5],'Lower',[1, 0.001, 0],'Upper',[5000, 200, 1000]);
                 fitCoeffValues = coeffvalues(f0);
                 cell_metrics.peakVoltage_expFit(j) = fitCoeffValues(2);
                 if parameters.debugMode && ishandle(handle_subfig1)
                     fig100.Name = ['Cell ',num2str(j),'/',num2str(cell_metrics.general.cellCount)];
                     delete(handle_subfig1.Children)
-                    plot(handle_subfig1,expential_x{j},expential_y{j},'.-b'), hold on
+                    plot(handle_subfig1,xdata{j},ydata{j},'.-b'), hold on
                     plot(handle_subfig1,x2,fitCoeffValues(1)*exp(-x2/fitCoeffValues(2))+fitCoeffValues(3),'r'),
                     plot(handle_subfig2,cell_metrics.peakVoltage(j),cell_metrics.peakVoltage_expFit(j),'ok')
                     plot(handle_subfig3,cell_metrics.trilat_x(j),cell_metrics.trilat_y(j),'ob'), 
@@ -562,24 +594,29 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                 cell_metrics.trilat_x(j) = nan;
                 cell_metrics.trilat_y(j) = nan;
                 cell_metrics.peakVoltage_expFit(j) = nan;
-                expential_x{j} = [];
-                expential_y{j} = [];
+                xdata{j} = [];
+                ydata{j} = [];
             end
         end
-        fig1 = figure('Name', 'Length constant and Trilateration','NumberTitle', 'off','position',[100,100,1000,800]);
-        subplot(2,2,1), hold on
-        for j = 1:cell_metrics.general.cellCount
-            plot(expential_x{j},expential_y{j})
+        
+        if parameters.showFigures
+            fig1 = figure('Name', 'Length constant and Trilateration','position',[100,100,900,700],'visible','off');
+            movegui(fig1,'center')
+            subplot(2,2,1), hold on
+            for j = 1:cell_metrics.general.cellCount
+                plot(xdata{j},ydata{j})
+            end
+            title('Spike amplitude (all)'), xlabel('Distance (ï¿½m)'), ylabel('ï¿½V')
+            subplot(2,2,2), hold off,
+            histogram(cell_metrics.peakVoltage_expFit,20), xlabel('Length constant (ï¿½m)')
+            subplot(2,2,3), hold on
+            plot(cell_metrics.peakVoltage,cell_metrics.peakVoltage_expFit,'ok')
+            ylabel('Length constant (ï¿½m)'), xlabel('Peak voltage (ï¿½V)')
+            subplot(2,2,4), hold on
+            plot(cell_metrics.general.chanCoords.x,cell_metrics.general.chanCoords.y,'.k'), hold on
+            plot(cell_metrics.trilat_x,cell_metrics.trilat_y,'ob'), xlabel('x position (ï¿½m)'), ylabel('y position (ï¿½m)')
+            set(fig1,'visible','on')
         end
-        title('Spike amplitude (all)'), xlabel('Distance (µm)'), ylabel('µV')
-        subplot(2,2,2), hold off,
-        histogram(cell_metrics.peakVoltage_expFit,20), xlabel('Length constant (µm)')
-        subplot(2,2,3), hold on
-        plot(cell_metrics.peakVoltage,cell_metrics.peakVoltage_expFit,'ok')
-        ylabel('Length constant (µm)'), xlabel('Peak voltage (µV)')
-        subplot(2,2,4), hold on
-        plot(cell_metrics.general.chanCoords.x,cell_metrics.general.chanCoords.y,'.k'), hold on
-        plot(cell_metrics.trilat_x,cell_metrics.trilat_y,'ob'), xlabel('x position (µm)'), ylabel('y position (µm)')
     end
     
     % Common coordinate framework
@@ -595,15 +632,16 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
             for j = 1:cell_metrics.general.cellCount
                 if ~isnan(cell_metrics.peakVoltage(j))
                     peakVoltage = range(cell_metrics.waveforms.filt_all{j}');
+                    trilat_nChannels = min([preferences.waveform.trilat_nChannels,numel(peakVoltage)]);
                     [~,idx] = sort(peakVoltage,'descend');
-                    bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:16));
+                    bestChannels = cell_metrics.waveforms.channels_all{j}(idx(1:trilat_nChannels));
                     beta0 = [cell_metrics.general.ccf.x(bestChannels(1)),cell_metrics.general.ccf.y(bestChannels(1)),cell_metrics.general.ccf.z(bestChannels(1))]; % initial position
                     if isnan(beta0)
                         cell_metrics.ccf_x(j) = nan;
                         cell_metrics.ccf_y(j) = nan;
                         cell_metrics.ccf_z(j) = nan;
                     else
-                        trilat_pos = trilat3([cell_metrics.general.ccf.x(bestChannels),cell_metrics.general.ccf.y(bestChannels),cell_metrics.general.ccf.z(bestChannels)],peakVoltage(idx(1:16)),beta0,0);
+                        trilat_pos = trilat3([cell_metrics.general.ccf.x(bestChannels),cell_metrics.general.ccf.y(bestChannels),cell_metrics.general.ccf.z(bestChannels)],peakVoltage(idx(1:trilat_nChannels)),beta0,0);
                         cell_metrics.ccf_x(j) = trilat_pos(1);
                         cell_metrics.ccf_y(j) = trilat_pos(2);
                         cell_metrics.ccf_z(j) = trilat_pos(3);
@@ -614,13 +652,16 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
                     cell_metrics.ccf_z(j) = nan;
                 end
             end
-            figure
-            plot3(cell_metrics.general.ccf.x,cell_metrics.general.ccf.z,cell_metrics.general.ccf.y,'.k'), hold on
-            plot3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,'ob'),
-            xlabel('x ( Anterior-Posterior; µm)'), zlabel('y (Superior-Inferior; µm)'), ylabel('z (Left-Right; µm)'), axis equal, set(gca, 'ZDir','reverse')
-            if exist('plotBrainGrid.m','file')
-                plotAllenBrainGrid, hold on
+            if parameters.showFigures
+                figure
+                plot3(cell_metrics.general.ccf.x,cell_metrics.general.ccf.z,cell_metrics.general.ccf.y,'.k'), hold on
+                plot3(cell_metrics.ccf_x,cell_metrics.ccf_z,cell_metrics.ccf_y,'ob'),
+                xlabel('x ( Anterior-Posterior; ï¿½m)'), zlabel('y (Superior-Inferior; ï¿½m)'), ylabel('z (Left-Right; ï¿½m)'), axis equal, set(gca, 'ZDir','reverse')
+                if exist('plotBrainGrid.m','file')
+                    plotAllenBrainGrid, hold on
+                end
             end
+            
         end
     end
 end
@@ -679,7 +720,7 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
     end
     if ~all(isfield(cell_metrics,{'acg','thetaModulationIndex','burstIndex_Royer2012','burstIndex_Doublets','acg_tau_decay','acg_tau_rise'})) || parameters.forceReload == true
         dispLog('ACG classifications: ThetaModulationIndex, BurstIndex_Royer2012, BurstIndex_Doublets',basename)
-        acg_metrics = calc_ACG_metrics(spikes{spkExclu},sr);
+        acg_metrics = calc_ACG_metrics(spikes{spkExclu},sr,'showFigures',parameters.debugMode);
         
         cell_metrics.acg.wide = acg_metrics.acg_wide; % Wide: 1000ms wide CCG with 1ms bins
         cell_metrics.acg.narrow = acg_metrics.acg_narrow; % Narrow: 100ms wide CCG with 0.5ms bins
@@ -701,19 +742,19 @@ if any(contains(parameters.metrics,{'acg_metrics','all'})) && ~any(contains(para
     end
     if ~isfield(cell_metrics,'acg')  || ~isfield(cell_metrics.acg,{'log10'})  || parameters.forceReload == true
         dispLog('Calculating log10 ACGs',basename)
-         acg = calc_logACGs(spikes{spkExclu}.times);
+         acg = calc_logACGs(spikes{spkExclu}.times,'showFigures',parameters.showFigures);
          cell_metrics.acg.log10 = acg.log10;
          cell_metrics.general.acgs.log10 = acg.log10_bins;
     end
     if ~isfield(cell_metrics,'isi')  || ~isfield(cell_metrics.isi,{'log10'})  || parameters.forceReload == true
         dispLog('Calculating log10 ISIs',basename)
-        isi = calc_logISIs(spikes{spkExclu}.times);
+        isi = calc_logISIs(spikes{spkExclu}.times,'showFigures',parameters.showFigures);
         cell_metrics.isi.log10 = isi.log10;
         cell_metrics.general.isis.log10 = isi.log10_bins;
     end
     if ~(isfield(preferences,'acg_metrics') && isfield(preferences.acg_metrics,'population_modIndex') && ~preferences.acg_metrics.population_modIndex) && (~isfield(cell_metrics,{'population_modIndex'}) || ~isfield(cell_metrics.general,'responseCurves') || ~isfield(cell_metrics.general.responseCurves,'meanCCG') || numel(cell_metrics.general.responseCurves.meanCCG.x_bins) ~= 51   || parameters.forceReload == true)
         dispLog('Calculating population modulation index',basename)
-        [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes{spkExclu},sr);
+        [meanCCG,tR,population_modIndex] = detectDownStateCells(spikes{spkExclu},sr,'showFigures',parameters.showFigures);
         cell_metrics.responseCurves.meanCCG = num2cell(meanCCG,1);
         cell_metrics.general.responseCurves.meanCCG.x_bins = tR;
         cell_metrics.population_modIndex = population_modIndex;
@@ -727,30 +768,30 @@ end
 if any(contains(parameters.metrics,{'monoSynaptic_connections','all'})) && ~any(contains(parameters.excludeMetrics,{'monoSynaptic_connections'}))
     spkExclu = setSpkExclu('monoSynaptic_connections',parameters);
     dispLog('MonoSynaptic connections',basename)
-    if ~exist(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'file')
-        mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections);
+    if ~exist(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'file') 
+        mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections,'sr',sr);
         if parameters.manualAdjustMonoSyn
             dispLog('Loading MonoSynaptic GUI for manual adjustment',basename)
             mono_res = gui_MonoSyn(mono_res);
         end
-        save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+        save(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
     else
         disp('  Loading previous detected MonoSynaptic connections')
-        load(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res');
+        load(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'mono_res');
         if parameters.includeInhibitoryConnections && (~isfield(mono_res,'sig_con_inhibitory') || (isfield(mono_res,'sig_con_inhibitory') && isempty(mono_res.sig_con_inhibitory_all)))
             disp('  Detecting MonoSynaptic inhibitory connections')
             mono_res_old = mono_res;
-            mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections);
+            mono_res = ce_MonoSynConvClick(spikes{spkExclu},'includeInhibitoryConnections',parameters.includeInhibitoryConnections,'sr',sr);
             mono_res.sig_con_excitatory = mono_res_old.sig_con;
             mono_res.sig_con = mono_res_old.sig_con;
             if parameters.manualAdjustMonoSyn
                 dispLog('Loading MonoSynaptic GUI for manual adjustment',basename)
                 mono_res = gui_MonoSyn(mono_res);
             end
-            save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+            save(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
         elseif parameters.forceReload == true && parameters.manualAdjustMonoSyn
             mono_res = gui_MonoSyn(mono_res);
-            save(fullfile(basepath,[basename,'.mono_res.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
+            save(fullfile(basepath,[basename,'.mono_res',erase(parameters.saveAs,'cell_metrics'),'.cellinfo.mat']),'mono_res','-v7.3','-nocompression');
         end
     end
     
@@ -813,7 +854,7 @@ end
 
 if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(parameters.excludeMetrics,{'deepSuperficial'}))
     spkExclu = setSpkExclu('deepSuperficial',parameters);
-    dispLog('Deep-Superficial metrics',basename);
+    
     if (~exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')) && isfield(session,'channelTags') && isfield(session.channelTags,'Ripple') && isnumeric(session.channelTags.Ripple.channels)
         dispLog('Finding ripples',basename)
         if ~exist(fullfile(session.general.basePath,[session.general.name, '.lfp']),'file')
@@ -833,8 +874,8 @@ if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(
     if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file') && (~all(isfield(cell_metrics,{'deepSuperficial','deepSuperficialDistance'})) || parameters.forceReload == true)
         dispLog('Deep-Superficial by ripple polarity reversal',basename)
         if ~exist(deepSuperficial_file,'file')
-            if ~isfield(session.analysisTags,'probesVerticalSpacing') && ~isfield(session.analysisTags,'probesLayout')
-                session = determineProbeSpacing(session);
+            if ~isfield(session.extracellular,'chanCoords')
+                session.extracellular.chanCoords = generateChanCoords(session);
             end
             classification_DeepSuperficial(session);
         end
@@ -844,13 +885,8 @@ if any(contains(parameters.metrics,{'deepSuperficial','all'})) && ~any(contains(
         deepSuperficial_ChClass = deepSuperficialfromRipple.channelClass;% cell_deep_superficial
         cell_metrics.general.deepSuperficial_file = deepSuperficial_file;
         for j = 1:cell_metrics.general.cellCount
-            try
-                cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial OK
-                cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial_distance
-            catch
-                cell_metrics.deepSuperficial(j) = {'Unknown'};
-                cell_metrics.deepSuperficialDistance(j) = NaN;    
-            end
+            cell_metrics.deepSuperficial(j) = deepSuperficial_ChClass(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial OK
+            cell_metrics.deepSuperficialDistance(j) = deepSuperficial_ChDistance(spikes{spkExclu}.maxWaveformCh1(j)); % cell_deep_superficial_distance
         end
     end
 end
@@ -862,8 +898,9 @@ end
 if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'theta_metrics'})) && exist(fullfile(basepath,[basename,'.animal.behavior.mat']),'file') && isfield(session.channelTags,'Theta') %&& (~isfield(cell_metrics,'thetaEntrainment') || parameters.forceReload == true)
     spkExclu = setSpkExclu('theta_metrics',parameters);
     dispLog('Theta metrics',basename);
+    
     InstantaneousTheta = calcInstantaneousTheta2(session);
-    load(fullfile(basepath,[basename,'.animal.behavior.mat']),'animal');
+    load(fullfile(basepath,[basename,'.animal.behavior.mat']),'behavior');
     theta_bins = preferences.theta.bins;
     cell_metrics.thetaPhasePeak = nan(1,cell_metrics.general.cellCount);
     cell_metrics.thetaPhaseTrough = nan(1,cell_metrics.general.cellCount);
@@ -881,7 +918,7 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
         spikes2.times{j} = spikes2.times{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{Theta_channel})/session.extracellular.srLfp);
         spikes2.ts_eeg{j} = ceil(spikes2.ts{j}/16);
         spikes2.theta_phase{j} = InstantaneousTheta.signal_phase{Theta_channel}(spikes2.ts_eeg{j});
-        spikes2.speed{j} = interp1(animal.time,animal.speed,spikes2.times{j});
+        spikes2.speed{j} = interp1(behavior.timestamps,behavior.speed,spikes2.times{j});
         if sum(spikes2.speed{j} > 10)> preferences.theta.min_spikes % only calculated if the unit has above min_spikes (default: 500)
             
             [counts,centers] = histcounts(spikes2.theta_phase{j}(spikes2.speed{j} > preferences.theta.speed_threshold),theta_bins, 'Normalization', 'probability');
@@ -897,16 +934,17 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
         end
     end
     cell_metrics.general.responseCurves.thetaPhase.x_bins = theta_bins(1:end-1)+diff(theta_bins([1,2]))/2;
-    
-    figure, subplot(2,2,1)
-    plot(cell_metrics.general.responseCurves.thetaPhase.x_bins,horzcat(cell_metrics.responseCurves.thetaPhase{:})),title('Theta entrainment during locomotion'), xlim([-1,1]*pi)
-    subplot(2,2,2)
-    plot(cell_metrics.thetaPhaseTrough,cell_metrics.thetaPhasePeak,'o'),xlabel('Trough'),ylabel('Peak')
-    subplot(2,2,3)
-    histogram(cell_metrics.thetaEntrainment,30),title('Theta entrainment')
-    subplot(2,2,4)
-    histogram(cell_metrics.thetaPhaseTrough,[-1:0.2:1]*pi),title('Theta trough and peak'), hold on
-    histogram(cell_metrics.thetaPhasePeak,[-1:0.2:1]*pi), legend({'Trough','Peak'})
+    if parameters.showFigures
+        figure, subplot(2,2,1)
+        plot(cell_metrics.general.responseCurves.thetaPhase.x_bins,horzcat(cell_metrics.responseCurves.thetaPhase{:})),title('Theta entrainment during locomotion'), xlim([-1,1]*pi)
+        subplot(2,2,2)
+        plot(cell_metrics.thetaPhaseTrough,cell_metrics.thetaPhasePeak,'o'),xlabel('Trough'),ylabel('Peak')
+        subplot(2,2,3)
+        histogram(cell_metrics.thetaEntrainment,30),title('Theta entrainment')
+        subplot(2,2,4)
+        histogram(cell_metrics.thetaPhaseTrough,[-1:0.2:1]*pi),title('Theta trough and peak'), hold on
+        histogram(cell_metrics.thetaPhasePeak,[-1:0.2:1]*pi), legend({'Trough','Peak'})
+    end
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -915,7 +953,9 @@ end
 
 if any(contains(parameters.metrics,{'spatial_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'spatial_metrics'}))
     spkExclu = setSpkExclu('spatial_metrics',parameters);
-    dispLog('Spatial metrics',basename);
+    if ~isempty(dir(fullfile(basepath,[basename,'.*.firingRateMap.mat'])))
+        dispLog('Spatial metrics',basename);
+    end
     
     % Cleaning legacy fields
     field2remove = {'firingRateMap_CoolingStates','firingRateMap_LeftRight','firingRateMaps','firingRateMap','firing_rate_map_states','firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate','FiringRateMap','FiringRateMap_CoolingStates','FiringRateMap_StimStates','FiringRateMap_LeftRight'};
@@ -939,7 +979,7 @@ if any(contains(parameters.metrics,{'spatial_metrics','all'})) && ~any(contains(
                 end
                 
                 for j = 1:cell_metrics.general.cellCount
-                    cell_metrics.spatialPeakRate(j) = max(firingRateMap.map{j}(:));
+                    cell_metrics.spatialPeakRate(j) = max(firingRateMap.map{j});
                     
                     % Finding place cells/fields
                     temp = place_cell_condition(firingRateMap.map{j});
@@ -1011,6 +1051,10 @@ end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Event metrics
+%
+% From detected events files: basepath/basename.*.events.mat
+%
+% The data structure of events should at least contain:
 % 
 % eventName.timestamps
 % eventName.data
@@ -1024,12 +1068,13 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
     field2remove = {'rippleCorrelogram','events','rippleModulationIndex','ripplePeakDelay'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
-    dispLog('Event metrics',basename)
+    
     eventFiles = dir(fullfile(basepath,[basename,'.*.events.mat']));
     eventFiles = {eventFiles.name};
     eventFiles(find(contains(eventFiles,parameters.ignoreEventTypes)))=[];
     
     if ~isempty(eventFiles)
+        dispLog('Event metrics',basename)
         for i = 1:length(eventFiles)
             eventName = strsplit(eventFiles{i},'.');
             eventName = eventName{end-2};
@@ -1038,7 +1083,7 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
             if strcmp(fieldnames(eventOut),eventName)
                 if strcmp(eventName,'ripples') && isfield(eventOut.(eventName),'timestamps') && isnumeric(eventOut.(eventName).peaks) && length(eventOut.(eventName).peaks)>0
                     % Ripples specific histogram
-                    PSTH = calc_PSTH(eventOut.ripples,spikes{spkExclu},'alignment','peaks','duration',0.150,'binCount',150,'smoothing',5,'eventName',eventName);
+                    PSTH = calc_PSTH(eventOut.ripples,spikes{spkExclu},'alignment','peaks','duration',0.150,'binCount',150,'smoothing',5,'eventName',eventName,'plots',parameters.showFigures);
                     if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
                         cell_metrics.events.ripples = num2cell(PSTH.responsecurve,1);
                         cell_metrics.general.events.(eventName).event_file = eventFiles{i};
@@ -1051,7 +1096,7 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
                         cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
                     end
                 elseif isfield(eventOut.(eventName),'timestamps') && isnumeric(eventOut.(eventName).timestamps) && length(eventOut.(eventName).timestamps)>0
-                    PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile);
+                    PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile,'plots',parameters.showFigures);
                     if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
                         cell_metrics.events.(eventName) = num2cell(PSTH.responsecurve,1);
                         cell_metrics.general.events.(eventName).event_file = eventFiles{i};
@@ -1066,14 +1111,37 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
                 end
             end
         end
-    else
-
     end
+    
+    if exist([basepath '\Barrage_Files\' basename '.HSE.mat'])
+        load([basepath '\Barrage_Files\' basename '.HSE.mat'])
+        barrage.timestamps = []; barrage.peaks = [];
+        barrage.timestamps = HSE.timestamps(HSE.keep(HSE.NREM),:);
+        barrage.peaks = HSE.peaks(HSE.keep(HSE.NREM));
+        if ~isempty(barrage.peaks)
+            % Barrage specific histogram
+            PSTH = calc_PSTH(barrage,spikes{spkExclu},'alignment','onset','duration',0.5,'binCount',150,'smoothing',5,'eventName','barrage','plots',parameters.showFigures);
+            if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
+                cell_metrics.events.barrage = num2cell(PSTH.responsecurve,1);
+                cell_metrics.general.events.barrage.event_file = ['\Barrage_Files\' basename '.HSE.mat'];
+                cell_metrics.general.events.barrage.x_bins = PSTH.time*1000;
+                cell_metrics.general.events.barrage.x_label = 'Time (ms)';
+                cell_metrics.general.events.barrage.alignment = PSTH.alignment;
+                
+                cell_metrics.(['barrage','_modulationIndex']) = PSTH.modulationIndex;
+                cell_metrics.(['barrage','_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
+                cell_metrics.(['barrage','_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
+            end
+        end
+    end
+    
 end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Manipulation metrics
 % 
+% From detected manipulation files: basepath/basename.*.manipulation.mat
+%
 % manipulationName.timestamps
 % manipulationName.data
 % manipulationName.processingInfo
@@ -1083,19 +1151,21 @@ end
 
 if any(contains(parameters.metrics,{'manipulation_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'manipulation_metrics'}))
     spkExclu = setSpkExclu('manipulation_metrics',parameters);
-    dispLog('Manipulation metrics',basename);
+    
     field2remove = {'manipulations'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
     manipulationFiles = dir(fullfile(basepath,[basename,'.*.manipulation.mat']));
     manipulationFiles = {manipulationFiles.name};
     manipulationFiles(find(contains(manipulationFiles,parameters.ignoreManipulationTypes)))=[];
+    
     if ~isempty(manipulationFiles)
+        dispLog('Manipulation metrics',basename);
         for iEvents = 1:length(manipulationFiles)
             eventName = strsplit(manipulationFiles{iEvents},'.'); eventName = eventName{end-2};
             eventOut = load(fullfile(basepath,manipulationFiles{iEvents}));
             disp(['  Importing ' eventName]);
-            PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile);
+            PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile,'plots',parameters.showFigures);
             cell_metrics.manipulations.(eventName) = num2cell(PSTH.responsecurve,1);
             cell_metrics.general.manipulations.(eventName).event_file = manipulationFiles{iEvents};
             cell_metrics.general.manipulations.(eventName).x_bins = PSTH.time*1000;
@@ -1118,6 +1188,8 @@ end
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % States metrics
+%
+% From detected states files: basepath/basename.*.states.mat
 % 
 % stateName.timestamps
 % stateName.data
@@ -1126,12 +1198,12 @@ end
 
 if any(contains(parameters.metrics,{'state_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'state_metrics'}))
     spkExclu = setSpkExclu('state_metrics',parameters);
-    dispLog('State metrics',basename);
     statesFiles = dir(fullfile(basepath,[basename,'.*.states.mat']));
     statesFiles = {statesFiles.name};
     statesFiles(find(contains(statesFiles,parameters.ignoreStateTypes)))=[];
     
     if ~isempty(statesFiles)
+        dispLog('State metrics',basename);
     %Calculate ISI and CV2 for allspikes
     allspikes.ISIs = cellfun(@diff,spikes{spkExclu}.times,'UniformOutput',false);
     allspikes.meanISI = cellfun(@(X) (X(1:end-1)+X(2:end))./2,allspikes.ISIs,'UniformOutput',false);
@@ -1186,10 +1258,14 @@ cell_metrics = rmfield(cell_metrics,metricsNames(contains(metricsNames,{'firingR
 
 if any(contains(parameters.metrics,{'psth_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'psth_metrics'}))
     spkExclu = setSpkExclu('psth_metrics',parameters);
-    dispLog('Perturbation metrics',basename);
+    
     % PSTH response
     psth_filelist = dir(fullfile(basepath,[basename,'.*.psth.mat']));
     psth_filelist = {psth_filelist.name};
+    
+    if ~isempty(psth_filelist)
+        dispLog('Perturbation metrics',basename);
+    end
     
     for i = 1:length(psth_filelist)
         temp2 = load(fullfile(basepath,psth_filelist{i}));
@@ -1417,12 +1493,13 @@ end
 % Order fields alphabetically
 cell_metrics = orderfields(cell_metrics);
 
-dispLog('Cleaning metrics',basename)
 if any(contains(parameters.removeMetrics,{'deepSuperficial'}))
     dispLog('Removing deepSuperficial metrics',basename)
     field2remove = {'deepSuperficial','deepSuperficialDistance'};
     test = isfield(cell_metrics,field2remove);
     cell_metrics = rmfield(cell_metrics,field2remove(test));
+    cell_metrics.deepSuperficial = repmat({'Unknown'},1,cell_metrics.general.cellCount);
+    cell_metrics.deepSuperficialDistance = nan(1,cell_metrics.general.cellCount);
 end
 
 if ~isfield(cell_metrics,'deepSuperficial')
@@ -1430,7 +1507,6 @@ if ~isfield(cell_metrics,'deepSuperficial')
     cell_metrics.deepSuperficialDistance = nan(1,cell_metrics.general.cellCount);
 end
 
-dispLog('Cleaning legacy fields',basename)
 field2remove = {'firingRateMap_StimStates','rawWaveform_zscored','firingRateMap_StimStates','acg2_zscored','acg_zscored','filtWaveform_zscored',...
     'firingRateAcrossTime','thetaPhaseResponse','firingRateMap_CoolingStates','firingRateMap_LeftRight','firingRateMap','firing_rate_map_states',...
     'firing_rate_map','placecell_stability','SpatialCoherence','place_cell','placefield_count','placefield_peak_rate','FiringRateMap',...
@@ -1523,7 +1599,6 @@ end
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Validating metrics struct
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-dispLog('Validating metrics struct',basename);
 validateCellMetricsStruct(cell_metrics);
 
 
@@ -1535,8 +1610,6 @@ if parameters.saveMat
     dispLog(['Saving cells to: ',saveAsFullfile],basename);
     saveCellMetrics(cell_metrics,saveAsFullfile)
     try
-        
-        dispLog(['Saving session struct: ' fullfile(basepath,[basename,'.session.mat'])],basename);
         save(fullfile(basepath,[basename,'.session.mat']),'session')
     catch
         warning('Failed to save data from the CellExplorer pipeline')
@@ -1548,9 +1621,12 @@ end
 % Summary figures
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
+if parameters.sessionSummaryFigure
+    CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
+end
 
 if parameters.summaryFigures
+    CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
     cell_metrics.general.basepath = basepath;
     CellExplorer('metrics',cell_metrics,'summaryFigures',true);
     
@@ -1568,7 +1644,7 @@ if parameters.summaryFigures
             plot((deepSuperficialfromRipple.ripple_amplitude{jj}*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50,-[0:size(deepSuperficialfromRipple.ripple_amplitude{jj},2)-1]*ripple_scaling,'m','linewidth',1)
             
             for jjj = 1:size(deepSuperficialfromRipple.ripple_average{jj},2)
-                % Plotting depth (µm)
+                % Plotting depth (ï¿½m)
                 text(deepSuperficialfromRipple.ripple_time_axis(end)+5,deepSuperficialfromRipple.ripple_average{jj}(1,jjj)-(jjj-1)*ripple_scaling,[num2str(round(deepSuperficialfromRipple.channelDistance(deepSuperficialfromRipple.ripple_channels{jj}(jjj))))])
                 % Plotting channel number (0 indexes)
                 text((deepSuperficialfromRipple.SWR_diff{jj}(jjj)*50)+deepSuperficialfromRipple.ripple_time_axis(1)-50-10,-(jjj-1)*ripple_scaling,num2str(deepSuperficialfromRipple.ripple_channels{jj}(jjj)-1),'HorizontalAlignment','Right')
@@ -1596,7 +1672,7 @@ if parameters.summaryFigures
             ht1 = text(0.02,0.03,'Superficial','Units','normalized','FontWeight','Bold','Color','r');
             ht2 = text(0.02,0.97,'Deep','Units','normalized','FontWeight','Bold','Color','b');
             if ceil(session.extracellular.nSpikeGroups/2) == jj || session.extracellular.nSpikeGroups == jj
-                ht3 = text(1.05,0.4,'Depth (µm)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
+                ht3 = text(1.05,0.4,'Depth (ï¿½m)','Units','normalized','Color','k'); set(ht3,'Rotation',90)
             end
         end
         saveas(fig,fullfile(basepath,[basename,'.deepSuperficialfromRipple.png']))

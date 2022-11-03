@@ -70,8 +70,10 @@ heading_anchors: true
 aux_links:
   "Code on GitHub":
     - "//github.com/petersenpeter/CellExplorer"
-  "Manuscript on bioRxiv":
-    - "https://doi.org/10.1101/2020.05.07.083436"
+  "Paper in Neuron":
+    - "https://www.sciencedirect.com/science/article/pii/S0896627321006565"
+  "PDF":
+    - "https://raw.githubusercontent.com/petersenpeter/common_resources/main/pdfs/Petersen_Neuron_2021.pdf"
 
 
 # Makes Aux links open in a new tab. Default is false
@@ -88,7 +90,7 @@ nav_sort: case_sensitive # Capital letters sorted before lowercase
 back_to_top: false
 back_to_top_text: "Back to top"
 
-footer_content: "Copyright &copy; 2019-2020 Peter Petersen. Theme: <a href=\"https://github.com/pmarsceill/just-the-docs\" target=\"_blank\">Just the Docs</a>. Support: <a href=\"https://github.com/petersenpeter/CellExplorer/issues\" target=\"_blank\">GitHub issues</a>, <a href=\"https://groups.google.com/g/cellexplorer/\" target=\"_blank\">Google group</a>, or <a href=\"mailto:petersen.peter@gmail.com\" target=\"_blank\">email</a>."
+footer_content: "Copyright &copy; 2019-2022 Peter Petersen. Theme: <a href=\"https://github.com/pmarsceill/just-the-docs\" target=\"_blank\">Just the Docs</a>. Support: <a href=\"https://github.com/petersenpeter/CellExplorer/issues\" target=\"_blank\">GitHub issues</a>, and <a href=\"https://github.com/petersenpeter/CellExplorer/discussions\" target=\"_blank\">GitHub Discussions</a>."
 
 # Footer last edited timestamp
 last_edit_timestamp: true # show or hide edit time - page must have `last_modified_date` defined in the frontmatter
@@ -109,7 +111,7 @@ color_scheme: nil
 
 # Google Analytics Tracking (optional)
 # e.g, UA-1234567-89
-ga_tracking: UA-166238697-1
+ga_tracking: G-Q39NRG1S7Y
 ga_tracking_anonymize_ip: true # Use GDPR compliant Google Analytics settings (true/nil by default)
 
 plugins:

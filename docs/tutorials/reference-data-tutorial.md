@@ -10,7 +10,7 @@ The Buzsaki lab is sharing a large set of datasets and a large set of these sess
 
 1. Launch CellExplorer
 2. Select `Reference data`-> `Define reference data` from the top menu. Below dialog will be shown in CellExplorer.
-![CellExplorer database dialog](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-database-dialog-1.png){: .mt-4}
+![CellExplorer database dialog](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Cell-Explorer-database-dialog-1.png){: .mt-4}
 3. Select the sessions you want to load. You can apply filters, change the sorting for easier selection. All data located at the repository `NYUshare_Datasets` are publicly available and will be downloaded to your computer upon request. For sessions located on private data repositories, you have to specify the local path the the repository in the file `db_local_repositories`
 4. Press OK and the sessions will be loaded from the repository paths to the local CellExplorer directory `referenceData/`. Session on **NYUshare_Datasets** will be downloaded automatically to the same directory. 
 5. The reference data can be displayed in CellExplorer in three ways (all color coded by cell types):
@@ -22,8 +22,8 @@ The Buzsaki lab is sharing a large set of datasets and a large set of these sess
 Once a selection has been made, you can skip step 2 and 3. The reference data is not displayed in the t-SNE plot. The video below shows the steps in CellExplorer:
 
 <video width="100%" height="auto" controls="controls">
-  <source src="https://buzsakilab.com/wp/wp-content/uploads/2020/01/ReferenceDataTutorial.mp4" type="video/mp4">
+  <source src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/videos/ReferenceDataTutorial.mp4" type="video/mp4">
 </video>
 
 Below figure shows the various ways to plot reference data in CellExplorer:
-![Reference data](https://buzsakilab.com/wp/wp-content/uploads/2020/01/referenceData_noRef.png){: .mt-4}
+![Reference data](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/referenceData_noRef.png){: .mt-4}

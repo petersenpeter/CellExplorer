@@ -49,7 +49,7 @@ function [EMGFromLFP] = ce_EMGFromLFP(session,varargin)
 
 %% Buzcode name of the EMGCorr.LFP.mat file
 basepath = session.general.basePath;
-[~,basename] = fileparts(basepath);
+basename = basenameFromBasepath(basepath);
 matfilename = fullfile(basepath,[basename,'.EMGFromLFP.LFP.mat']);
 
 %% xmlPameters

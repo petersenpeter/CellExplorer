@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Menu bar
-parent: Graphical interface
+parent: CellExplorer
+grand_parent: Graphical interfaces
 nav_order: 4
 ---
 # CellExplorer Menu Bar
@@ -38,9 +39,9 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Generate summary figure            | Generates a summary figure, which is also generate by the processing module | 
 
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2021/01/supplementaryFigureDialog.png){: .mt-4}
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/supplementaryFigureDialog.png){: .mt-4}
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/05/UnitsSummaryLowRess.png){: .mt-4}
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/UnitsSummaryLowRess.png){: .mt-4}
 
 
 
@@ -154,7 +155,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | Save tagging to groundTruthData folder | Please see the [Opto-tagging tutorial](https://cellexplorer.org/tutorials/optotagging-tutorial/#saving-opto-taggedground-truth-cells-to-groundtruth-folder) to learn more |
 | Explore groundTruth data | Replaces current cell metrics data with the loaded ground truth data, allowing you to explore these cells natively in CellExplorer | 
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2020/10/GroundTruthCellsDialog_v2.png)
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/GroundTruthCellsDialog_v2.png)
 
 ### Group data
 
@@ -177,7 +178,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 |:-------------|:------------------|
 | Open spike data dialog | Open the [spike data dialog](https://cellexplorer.org/interface/spike-and-event-data/), also described in the [tutorial on plotting spike raster data in CellExplorer](https://cellexplorer.org/tutorials/plotting-spike-data/) | 
 
-![](https://buzsakilab.com/wp/wp-content/uploads/2019/11/Cell-Explorer-spike-dialog.png)
+![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/Cell-Explorer-spike-dialog.png)
 
 ### Session
 
@@ -186,7 +187,7 @@ Here is a detailed description of each of the menu elements of CellExplorer.
 | View metadata for current session | Opens the session metadata window using `gui_session.m` (shown below). [Learn more about the session metadata](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) | 
 | Open directory of current session | Show the data directory of the current session in your file browser | 
 
-![Metadata interface](https://buzsakilab.com/wp/wp-content/uploads/2021/03/gui_session_general.png)
+![Metadata interface](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_general.png)
 
 ### BuzLabDB
 
@@ -206,4 +207,4 @@ This menu is for lab members that has credentials to the Buzsaki lab databank at
 |:-------------|:------------------|
 | Keyboard shortcuts   | Shows a window with the list of keyboard shortcuts | 
 | CellExplorer website | Open the [CellExplorer website](https://cellexplorer.org/) in your browser | 
-| Tutorials            | Open the [tutorials page](https://cellexplorer.org/tutorials/tutorials/) from the CellExplorer website in your browser | 
+| Tutorials            | Open the [tutorials page](https://cellexplorer.org/tutorials/) from the CellExplorer website in your browser | 

@@ -1,15 +1,21 @@
-function chanMap = createChannelMap(session)
-% Creates a channelmap compatible with KiloSort. 
+function chanMap = createChannelMap(session,varargin)
+% Creates a channelmap compatible with KiloSort.
 % Original custom function by Brendon Watson and Sam McKenzie
 
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited: 27-05-2020
 
+p = inputParser;
+addParameter(p,'reorder',true) % reorder coords for when channels are not 1:n
+parse(p,varargin{:})
+reorder = p.Results.reorder;
+
 basepath = session.general.basePath;
 basename = session.general.name;
 electrode_type = session.analysisTags.probesLayout;
 inter_shanks_distance = 200;
+verticalSpacing = session.analysisTags.probesVerticalSpacing;
 
 electrodeTypes = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
 if ~any(strcmpi(electrode_type,electrodeTypes))
@@ -26,6 +32,19 @@ ngroups = session.extracellular.nElectrodeGroups;
 groups = session.extracellular.electrodeGroups.channels;
 
 switch(electrode_type)
+    case {'linear','edge'}
+        for a= 1:ngroups
+            x = [];
+            y = [];
+            tchannels  = groups{a};
+            for i =1:length(tchannels)
+                x(i) = 0;
+                y(i) = -(i-1)*verticalSpacing;
+            end
+            x = x+(a-1)*inter_shanks_distance;
+            xcoords = cat(1,xcoords,x(:));
+            ycoords = cat(1,ycoords,y(:));
+        end
     case 'staggered'
         horz_offset = flip([0,8.5,17:4:520]);
         horz_offset(1:2:end) = -horz_offset(1:2:end);
@@ -99,7 +118,7 @@ switch(electrode_type)
             ycoords = cat(1,ycoords,y(:));
         end
     case 'twohundred'
-        for a= 1:ngroups 
+        for a= 1:ngroups
             x = [];
             y = [];
             tchannels  = groups{a};
@@ -116,6 +135,14 @@ switch(electrode_type)
             ycoords = cat(1,ycoords,y(:));
         end
 end
-[~,I] =  sort(horzcat(groups{:}));
-chanMap.xcoords = xcoords(I)';
-chanMap.ycoords = ycoords(I)';
+
+if reorder
+    [~,I] =  sort(horzcat(groups{:}));
+    chanMap.xcoords = xcoords(I)';
+    chanMap.ycoords = ycoords(I)';
+else
+    chanMap.xcoords = xcoords';
+    chanMap.ycoords = ycoords';
+end
+
+end

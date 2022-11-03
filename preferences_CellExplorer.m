@@ -16,9 +16,8 @@ function UI = preferences_CellExplorer(UI)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %   
 
 UI.preferences.metricsTable = 1;                   % 1: Metrics, 2: Cells, 3: None
-UI.preferences.layout = 3;                         % 1:'GUI 1+3',2:'GUI 2+3',3:'GUI 3+3',4:'GUI 3+4',5:'GUI 3+5',6:'GUI 3+6'
-UI.preferences.customPlotHistograms = 1; 
-
+UI.preferences.layout = 3;                         % 1:'GUI 1+3',2:'GUI 2+3',3:'GUI 3+3',4:'GUI 3+4',5:'GUI 3+5',6:'GUI 3+6',7:'GUI 1+6'
+UI.preferences.customPlotHistograms = 1;           % 1: 2D scatter plot, 2: 2D+histograms, 3: 3D plot, 4: raincloud plot
 
 % Custom plot (incomplete list): 'Waveforms (single)','Waveforms (all)','Waveforms (image)','Raw waveforms (single)','Raw waveforms (all)','ACGs (single)', 'ACGs (all)','ACGs (image)','CCGs (image)','sharpWaveRipple'
 UI.preferences.customPlot{1} = 'Waveforms (single)';
@@ -81,20 +80,27 @@ UI.preferences.plotZLog = 0;
 UI.preferences.plot3axis = 0;
 UI.preferences.raster = 'cv2';
 UI.preferences.displayMenu = 0; 
+UI.preferences.shuffleLayout = 1;
 
 UI.preferences.referenceData = 'None'; 
 UI.preferences.groundTruthData = 'None'; 
 UI.preferences.channelMapColoring = false;         % Color groups in channel map inset with waveforms
 
-% Autosave preferences
+if verLessThan('matlab','9.9')
+    UI.preferences.rasterMarker = '.';
+else
+    UI.preferences.rasterMarker = '|';
+end
+
+% Autosave
 UI.preferences.autoSaveFrequency = 5;              % How often you want to autosave (classifications steps). Put to 0 to turn autosave off
 UI.preferences.autoSaveVarName = 'cell_metrics';   % Variable name used in autosave
 
 % Cell type classification definitions
 UI.preferences.cellTypes = {'Unknown','Pyramidal Cell','Narrow Interneuron','Wide Interneuron'};
 UI.preferences.deepSuperficial = {'Unknown','Cortical','Deep','Superficial'};
-UI.preferences.tags = {'Good','Bad','Noise','InverseSpike'};
-UI.preferences.groundTruth = {'PV','NOS1','GAT1','SST','Axoaxonic','CellType_A'};
+UI.preferences.tags = {'Good','Bad','Noise','InverseSpike','bad_waveform'};
+UI.preferences.groundTruth = {'PV','NOS1','GAT1','SST','Axoaxonic'};
 UI.preferences.groupDataMarkers = ce_append(["o","d","s","*","+"],["m","k","g"]'); 
 
 UI.preferences.putativeConnectingMarkers = {'k','m','c','b'}; % 1) Excitatory, 2) Inhibitory, 3) Receiving Excitation, 4) receiving Inhibition, 
@@ -102,7 +108,8 @@ UI.preferences.groundTruthMarker = 'o'; % Supports any Matlab marker symbols: ht
 UI.preferences.groundTruthColors = [[.9,.2,.2];[.2,.2,.9];[0.2,0.9,0.9];[0.9,0.2,0.9];[.2,.9,.2];[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8]];
 UI.preferences.cellTypeColors = [[.5,.5,.5];[.8,.2,.2];[.2,.2,.8];[0.2,0.8,0.8];[0.8,0.2,0.8];[.2,.8,.2]];
 
-% tSNE representation
+% Dimensionality reduction plot
+% tSNE
 UI.preferences.tSNE.algorithm = 'tSNE'; % Options: {'tSNE','UMAP','PCA'}
 UI.preferences.tSNE.metrics = {'troughToPeak','ab_ratio','burstIndex_Royer2012','acg_tau_rise','firingRate'};
 UI.preferences.tSNE.dDistanceMetric = 'chebychev';
@@ -113,11 +120,11 @@ UI.preferences.tSNE.LearnRate = 1000;
 UI.preferences.tSNE.Perplexity = 30;
 UI.preferences.tSNE.InitialY = 'Random';
 
-% UMAP preferences
+% UMAP
 UI.preferences.tSNE.n_neighbors = 30;
 UI.preferences.tSNE.min_dist = 0.3;
 
-% Firing rate map setting
+% Firing rate map
 UI.preferences.firingRateMap.showHeatmap = false;          % boolean
 UI.preferences.firingRateMap.showLegend = false;           % boolean
 UI.preferences.firingRateMap.showHeatmapColorbar = false;  % boolean

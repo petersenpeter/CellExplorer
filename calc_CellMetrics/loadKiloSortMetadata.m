@@ -15,6 +15,7 @@ if ~exist('rezFile','var')
 end
 
 if exist(rezFile,'file')
+    warning('off','parallel:gpu:array:LoadInMemory')
     disp('Loading KiloSort metadata from rez structure')
     load(rezFile,'rez');
     session.extracellular.sr = rez.ops.fs;
@@ -27,15 +28,26 @@ if exist(rezFile,'file')
             session.extracellular.electrodeGroups.channels{i} = session.extracellular.electrodeGroups.channels{i}';
         end
     end
+    if numel([session.extracellular.electrodeGroups.channels{:}]) < session.extracellular.nChannels
+        session.extracellular.electrodeGroups.channels{session.extracellular.nElectrodeGroups+1} = setdiff(1:session.extracellular.nChannels,[session.extracellular.electrodeGroups.channels{:}]);
+        session.extracellular.nElectrodeGroups = numel(session.extracellular.electrodeGroups.channels);
+        session.channelTags.KiloSort_setdiff.channels = session.extracellular.electrodeGroups.channels{end};
+        if isfield(session.channelTags,'Bad') && isfield(session.channelTags.Bad,'channels')
+            try
+                session.channelTags.Bad.channels = [session.channelTags.Bad.channels,session.extracellular.electrodeGroups.channels{end}];
+            end
+        else
+            session.channelTags.Bad.channels = session.extracellular.electrodeGroups.channels{end};
+        end
+    end
     session.extracellular.nSpikeGroups = session.extracellular.nElectrodeGroups; % Number of spike groups
     session.extracellular.spikeGroups.channels = session.extracellular.electrodeGroups.channels; % Spike groups
-    chanCoords.x = rez.xcoords;
-    chanCoords.y = rez.ycoords;
-    chanCoordsFile = fullfile(session.general.basePath,[session.general.name,'.chanCoords.channelInfo.mat']);
-    if ~exist(chanCoordsFile,'file')
-        disp(['Generating chanCoords file from KiloSort rez structure : ' chanCoordsFile])
-        save(chanCoordsFile,'chanCoords');
-    end
+    chanCoords.x = zeros(session.extracellular.nChannels,1);
+    chanCoords.y = zeros(session.extracellular.nChannels,1);
+    chanCoords.x(rez.ops.chanMap) = rez.xcoords;
+    chanCoords.y(rez.ops.chanMap) = rez.ycoords;
+    chanCoords.source = 'KiloSort';
+    session.extracellular.chanCoords = chanCoords;
 else
     disp('rez*.mat file does not exist')
 end

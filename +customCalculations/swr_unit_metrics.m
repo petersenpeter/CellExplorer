@@ -108,7 +108,7 @@ try
         'events',ripples.timestamps,...
         'saveMat',false);
 catch
-    ripSpk = getRipSpikes(spikes,ripples,'saveMat',false);
+    ripSpk = getRipSpikes(spikes,ripples,'saveMat',false,'basepath',basepath);
 end
 
 try

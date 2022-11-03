@@ -43,7 +43,9 @@ b = mdl.Coefficients{1:2,{'Estimate'}};
 if plots
     figure
     subplot(1,2,1)
-    viscircles(X, d,'color',[0,0,0,0.1]), hold on
+    if isToolboxInstalled('Image Processing Toolbox')
+        viscircles(X, d,'color',[0,0,0,0.1]), hold on
+    end
     scatter(b(1),b(2), 70, [0 0 1], 'filled')
     scatter(X,Y, 70, [0 0 0], 'filled')
     hold off

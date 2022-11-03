@@ -47,9 +47,9 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     %      .TruePositive = TruePositive rate from English et al., 2017;
     
     %  EXAMPLE:
-    %  mono_res = ce_MonoSynConvClick (spikes)
+    %  mono_res = ce_MonoSynConvClick (spikes,'sr',sr)
     %  mono_res = ce_MonoSynConvClick (spikes,'binsize',.0005,'duration',.2, ...
-    %  'alpha',.05,'conv_w',20,'cells',[1 2;1 3;4 5;8 8],'epoch',[10 3000; 4000 5000]);
+    %  'alpha',.05,'conv_w',20,'cells',[1 2;1 3;4 5;8 8],'epoch',[10 3000; 4000 5000],'sr',sr);
     %
     
     % Script by Peter Petersen
@@ -84,8 +84,8 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
         disp('ce_MonoSynConvClick: You do not have the ce_ProbSynMat.m matrix describing the likelihood of experimentally validated connectivty given excess syncrony')
     end
     
-    validationDuration = @(x) assert(isnumeric(x) && length(X) == 1 && X>0, 'Duration must be numeric and positive');
-    validationBinsize = @(x) assert(isnumeric(x) && length(X) == 1 && X>0, 'Binsize must be numeric and positive');
+    validationDuration = @(x) assert(isnumeric(x) && length(x) == 1 && x>0, 'Duration must be numeric and positive');
+    validationBinsize = @(x) assert(isnumeric(x) && length(x) == 1 && x>0, 'Binsize must be numeric and positive');
     validationEpoch = @(x) assert(isnumeric(x) && (size(x,2) == 2), 'Epoch must be numeric and of size nx2');
     validationIncludeInhibitoryConnections = @(x) assert(isnumeric(x) || islogical(x), 'Epoch must be numeric and of size nx2');
     
@@ -99,6 +99,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     addParameter(p,'sorted',false,@isnumeric);
     addParameter(p,'includeInhibitoryConnections',false,validationIncludeInhibitoryConnections); 
     addParameter(p,'sigWindow',0.004,@isnumeric); % monosynaptic connection will be +/- 4 ms
+    addParameter(p,'sr',[],@isnumeric); % Sampling rate (Hz)
     
     parse(p,varargin{:})
     binSize = p.Results.binSize;
@@ -111,6 +112,14 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     sorted = p.Results.sorted;
     includeInhibitoryConnections = p.Results.includeInhibitoryConnections;
     sigWindow = p.Results.sigWindow;
+    
+    if ~isempty(p.Results.sr)
+        sr = p.Results.sr;
+    elseif isfield(spikes,'sr')
+        sr = spikes.sr;
+    else
+        sr = 20000;
+    end
     
     nCel = size(cells,1);
     if length(varargin) ==1 && iscell(varargin{1})
@@ -139,7 +148,7 @@ function mono_res = ce_MonoSynConvClick(spikes,varargin)
     % Create CCGs (including autoCG) for all cells
     disp('Generating CCGs')
     tic
-    [ccgR1,tR] = CCG(spiketimes,double(spikeIDs(:,3)),'binSize',binSize,'duration',duration);
+    [ccgR1,tR] = CCG(spiketimes,double(spikeIDs(:,3)),'binSize',binSize,'duration',duration,'Fs',1/sr);
     toc
     ccgR = nan(size(ccgR1,1),nCel,nCel);
     ccgR(:,1:size(ccgR1,2),1:size(ccgR1,2)) = ccgR1;

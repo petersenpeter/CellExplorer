@@ -1,4 +1,4 @@
-function [basenames,basepaths,exitMode] = gui_db_sessions(basenames_in,textfilter)
+function [basenames,basepaths,exitMode,db] = gui_db_sessions(basenames_in,textfilter,generatePath)
     % Shows a list of sessions from the Buzsaki lab databank
     % This function is part of CellExplorer
     %
@@ -13,6 +13,10 @@ function [basenames,basepaths,exitMode] = gui_db_sessions(basenames_in,textfilte
     if exist('db_load_settings','file')
         db_settings = db_load_settings;
     end
+    if ~exist('generatePath','var')
+        generatePath = true;
+    end
+    
     % Load sessions from the database.
     % Dialog is shown with sessions from the database with calculated cell metrics.
     % Then selected sessions are loaded from the database
@@ -131,34 +135,35 @@ function [basenames,basepaths,exitMode] = gui_db_sessions(basenames_in,textfilte
         if ~isempty(indx)
             exitMode = 1;
             % Setting paths from db struct
-            db_basename = {};
             db_basepath = {};
             db_basename = sort(cellfun(@(x) x.name,db.sessions,'UniformOutput',false));
             basenames = db_basename(indx);
-            i_db_subset_all = db.index(indx);
-            
-            if isempty(db_settings.repositories)
-                disp(['Local respositories have not been defined on this computer. Edit db_local_repositories']);
-                return
-            end
-            for i_db = 1:length(i_db_subset_all)
-                i_db_subset = i_db_subset_all(i_db);
-                if ~any(strcmp(db.sessions{i_db_subset}.repositories{1},fieldnames(db_settings.repositories)))
-                    disp(['The respository ', db.sessions{i_db_subset}.repositories{1} ,' has not been defined on this computer. Please edit db_local_repositories and provide the path'])
-                    edit db_local_repositories.m
+            if generatePath
+                i_db_subset_all = db.index(indx);
+                
+                if isempty(db_settings.repositories)
+                    disp('Local respositories have not been defined on this computer. Edit db_local_repositories');
                     return
                 end
-                if strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
-                    Investigator_name = strsplit(db.sessions{i_db_subset}.investigator,' ');
-                    path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
-                    db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), path_Investigator,db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
-                elseif strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_AllenInstitute')
-                    db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.name);
-                else
-                    db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
+                for i_db = 1:length(i_db_subset_all)
+                    i_db_subset = i_db_subset_all(i_db);
+                    if ~any(strcmp(db.sessions{i_db_subset}.repositories{1},fieldnames(db_settings.repositories)))
+                        disp(['The respository ', db.sessions{i_db_subset}.repositories{1} ,' has not been defined on this computer. Please edit db_local_repositories.m and provide the path'])
+                        edit db_local_repositories.m
+                        return
+                    end
+                    if strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_Datasets')
+                        Investigator_name = strsplit(db.sessions{i_db_subset}.investigator,' ');
+                        path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
+                        db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), path_Investigator,db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
+                    elseif strcmp(db.sessions{i_db_subset}.repositories{1},'NYUshare_AllenInstitute')
+                        db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.name);
+                    else
+                        db_basepath{i_db} = fullfile(db_settings.repositories.(db.sessions{i_db_subset}.repositories{1}), db.sessions{i_db_subset}.animal, db.sessions{i_db_subset}.name);
+                    end
                 end
+                basepaths = db_basepath;
             end
-            basepaths = db_basepath;
         else
             disp('No datasets selected');
             exitMode = 0;

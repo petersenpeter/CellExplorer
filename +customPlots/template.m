@@ -13,10 +13,6 @@ function subsetPlots = template(cell_metrics,UI,ii,col)
     %   .yaxis          y axis data (NxM), where M is the number of cells
     %   .subset         list of cellIDs (Mx1)
     
-    % By Peter Petersen
-    % petersen.peter@gmail.com
-    % Last updated 15-12-2019
-    
     subsetPlots = [];
     plot(cell_metrics.waveforms.time{ii},cell_metrics.waveforms.filt_zscored(:,ii),'-','Color',col)
 end

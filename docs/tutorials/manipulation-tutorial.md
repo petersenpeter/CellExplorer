@@ -17,7 +17,7 @@ If you are doing optogenetic stimulation, applying pharmacology or performing ot
 * psth_metrics
 * other_metrics
 
- Please use [`basename.*.manipulation.mat`]((https://cellexplorer.org/datastructure/data-structure-and-format/#manipulations)) files with timestamps, or provided intervals, are excluded in certain metrics. Manipulation files will automatically be detected and their intervals excluded.
+ Please use [`basename.*.manipulation.mat`](https://cellexplorer.org/datastructure/data-structure-and-format/#manipulations) files with timestamps, or provided intervals, are excluded in certain metrics. Manipulation files will automatically be detected and their intervals excluded.
 
  You can change the [default list of excluded metrics](https://github.com/petersenpeter/CellExplorer/blob/master/ProcessCellMetrics.m#L86) in `ProcessCellMetrics` using the input parameter `metricsToExcludeManipulationIntervals`:
 
