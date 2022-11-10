@@ -1081,33 +1081,23 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
             eventOut = load(fullfile(basepath,eventFiles{i}));
             disp(['  Importing ' eventName]);
             if strcmp(fieldnames(eventOut),eventName)
-                if strcmp(eventName,'ripples') && isfield(eventOut.(eventName),'timestamps') && isnumeric(eventOut.(eventName).peaks) && length(eventOut.(eventName).peaks)>0
-                    % Ripples specific histogram
-                    PSTH = calc_PSTH(eventOut.ripples,spikes{spkExclu},'alignment','peaks','duration',0.150,'binCount',150,'smoothing',5,'eventName',eventName,'plots',parameters.showFigures);
-                    if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
-                        cell_metrics.events.ripples = num2cell(PSTH.responsecurve,1);
-                        cell_metrics.general.events.(eventName).event_file = eventFiles{i};
-                        cell_metrics.general.events.(eventName).x_bins = PSTH.time*1000;
-                        cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
-                        cell_metrics.general.events.(eventName).alignment = PSTH.alignment;
-                        
-                        cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
-                        cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
-                        cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
-                    end
-                elseif isfield(eventOut.(eventName),'timestamps') && isnumeric(eventOut.(eventName).timestamps) && length(eventOut.(eventName).timestamps)>0
-                    PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile,'plots',parameters.showFigures);
-                    if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
-                        cell_metrics.events.(eventName) = num2cell(PSTH.responsecurve,1);
-                        cell_metrics.general.events.(eventName).event_file = eventFiles{i};
-                        cell_metrics.general.events.(eventName).x_bins = PSTH.time*1000;
-                        cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
-                        cell_metrics.general.events.(eventName).alignment = PSTH.alignment;
-                        
-                        cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
-                        cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
-                        cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
-                    end
+                if isfield(preferences.psth,eventName) && isstruct(preferences.psth.(eventName))
+                    psth_parameters = preferences.psth.(eventName);
+                else
+                    psth_parameters = preferences.psth;                    
+                end
+                PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'binCount',psth_parameters.binCount,'alignment',psth_parameters.alignment,'binDistribution',psth_parameters.binDistribution,'duration',psth_parameters.duration,'smoothing',psth_parameters.smoothing,'percentile',psth_parameters.percentile,'eventName',eventName,'plots',parameters.showFigures);
+                if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
+                    cell_metrics.events.(eventName) = num2cell(PSTH.responsecurve,1);
+                    cell_metrics.general.events.(eventName).event_file = eventFiles{i};
+                    cell_metrics.general.events.(eventName).x_bins = PSTH.time*1000;
+                    cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
+                    cell_metrics.general.events.(eventName).alignment = PSTH.alignment;
+
+                    cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
+                    cell_metrics.([eventName,'_modulationRatio']) = PSTH.modulationRatio;
+                    cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
+                    cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
                 end
             end
         end
@@ -1173,6 +1163,7 @@ if any(contains(parameters.metrics,{'manipulation_metrics','all'})) && ~any(cont
             cell_metrics.general.manipulations.(eventName).alignment = PSTH.alignment;
             
             cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
+            cell_metrics.([eventName,'_modulationRatio']) = PSTH.modulationRatio;
             cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
             cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
 
