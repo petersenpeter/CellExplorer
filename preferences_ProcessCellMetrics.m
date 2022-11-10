@@ -4,7 +4,7 @@ function preferences = preferences_ProcessCellMetrics(session)
 % Check the website of CellExplorer for more details: https://cellexplorer.org/
 
 % By Peter Petersen
-% Last edited: 29-06-2021
+% Last edited: 10-11-2022
 
 % General
 preferences.general.probesVerticalSpacing = 10; % 10um spacing between channels
@@ -20,13 +20,21 @@ preferences.waveform.wfWinKeep = 0.0008;        % half width of the waveform. In
 preferences.waveform.trilat_nChannels = 16;     % Maximum number of channels used for trilateration 
 preferences.waveform.showWaveforms = true;
 
-% PSTHs / Events / Manipulations
+% PSTHs / Events / Manipulations (the standard preferences for PSTHs)
 preferences.psth.binCount = 100;                % how many bins (for half the window)
 preferences.psth.alignment = 'onset';           % alignment of time ['onset','center','peaks','offset']
 preferences.psth.binDistribution = [0.25,0.5,0.25];  % How the bins should be distributed around the events, pre, during, post. Must sum to 1
 preferences.psth.duration = 0;                  % duration of PSTH (for half the window - used in CCG) [in seconds]
 preferences.psth.smoothing = 5;                 % any gaussian smoothing to apply? units of bins.
 preferences.psth.percentile = 99;               % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
+
+% PSTH for ripples (your custom preferences for your own events)
+preferences.psth.ripples.binCount = 150;                % how many bins (for half the window)
+preferences.psth.ripples.alignment = 'peaks';           % alignment of time ['onset','center','peaks','offset']
+preferences.psth.ripples.binDistribution = [0.25,0.5,0.25];  % How the bins should be distributed around the events, pre, during, post. Must sum to 1
+preferences.psth.ripples.duration = 0.150;                  % duration of PSTH (for half the window - used in CCG) [in seconds]
+preferences.psth.ripples.smoothing = 5;                 % any gaussian smoothing to apply? units of bins.
+preferences.psth.ripples.percentile = 99;               % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
 
 % ACG metrics
 preferences.acg_metrics.population_modIndex = true;

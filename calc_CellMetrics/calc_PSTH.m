@@ -12,7 +12,7 @@ function PSTH = calc_PSTH(event,spikes,varargin)
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited 08-11-2019
+% Last edited 09-11-2022
 
 p = inputParser;
 
@@ -98,7 +98,8 @@ time = time(binsToKeep+1);
 % PSTH_out = flip(ccg(:,2:end,1),1);
 % PSTH_out = PSTH_out(binsToKeep+1,:)./length(event_times)/binSize;
 
-modulationIndex = mean(PSTH_out(binsEvents,:))./mean(PSTH_out(binsPre,:));
+modulationRatio = mean(PSTH_out(binsEvents,:))./mean(PSTH_out(binsPre,:));
+modulationIndex = (mean(PSTH_out(binsEvents,:))-mean(PSTH_out(binsPre,:)))./(mean(PSTH_out(binsEvents,:))+mean(PSTH_out(binsPre,:)));
 modulationSignificanceLevel = [];
 for i = 1:size(PSTH_out,2)
     [~,p_kstest2] = kstest2(PSTH_out(binsEvents,i),PSTH_out(binsPre,i));
@@ -116,6 +117,7 @@ PSTH.responsecurve = PSTH_out;
 PSTH.time = time;
 PSTH.alignment = alignment;
 
+PSTH.modulationRatio = modulationRatio;
 PSTH.modulationIndex = modulationIndex;
 PSTH.modulationPeakResponseTime = modulationPeakResponseTime';
 PSTH.modulationSignificanceLevel = modulationSignificanceLevel;
