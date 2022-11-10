@@ -7,12 +7,16 @@ function PSTH = calc_PSTH(event,spikes,varargin)
 % 
 % OUTPUT
 % PSTH : struct
+% .modulationIndex : the difference between the averages of the stimulation interval and the pre-stimulation interval (the baseline) divided by their sum. Scaled from -1 to 1.
+% .modulationRatio : The ratio between the averages of the stimulation interval and the pre-stimulation interval (the baseline). 
+% .modulationPeakResponseTime : The delay between the alignment and the peak response of the average response, post-smoothing.
+% .modulationSignificanceLevel : KS-test (kstest2) between the stimulation values and the pre-stimulation values, pre-smoothing
 % 
 % Dependencies: CCG
 
 % By Peter Petersen
 % petersen.peter@gmail.com
-% Last edited 09-11-2022
+% Last edited 10-11-2022
 
 p = inputParser;
 
