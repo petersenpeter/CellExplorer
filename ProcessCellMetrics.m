@@ -43,11 +43,15 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   submitToDatabase       - logical. Submit cell metrics to database
 %   saveMat                - logical. Save metrics to cell_metrics.mat
 %   saveAs                 - name of .mat file
-%   saveBackup             - logical. Whether a backup file should be created
-%   summaryFigures         - logical. Plot summary figures
+%   saveBackup             - logical. Whether a backup of existing metrics should be created
+%
+%   summaryFigures         - logical. Plot a summary figure for each cell
+%   sessionSummaryFigure   - logical. Plot summary figure for the whole session
+%   showFigures            - logical. if false, turns off plots from different stages of the processing 
+%   showWaveforms          - logical. Shows waveform extraction (turn off to speed up the processing)
+%
 %   debugMode              - logical. Activate a debug mode avoiding try/catch 
 %   transferFilesFromClusterpath - logical. Moves previosly generated files from clusteringpath to basepath (new file structure)
-%   showFigures            - logical. if false, turns off the default plotting of different stages of processing 
 %
 % - Example calls:
 %   cell_metrics = ProcessCellMetrics                             % Load from current path, assumed to be a basepath
@@ -109,6 +113,7 @@ addParameter(p,'transferFilesFromClusterpath',true,@islogical);
 addParameter(p,'showFigures',false,@islogical);
 addParameter(p,'showWaveforms',true,@islogical);
 addParameter(p,'summaryFigures',false,@islogical);
+addParameter(p,'sessionSummaryFigure',true,@islogical);
 addParameter(p,'debugMode',false,@islogical);     
  
 parse(p,varargin{:})
@@ -367,10 +372,10 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 saveAsFullfile = fullfile(basepath,[basename,'.',parameters.saveAs,'.cellinfo.',parameters.fileFormat]);
-if exist(saveAsFullfile,'file')
+if exist(saveAsFullfile,'file') && ~parameters.forceReload
     dispLog(['Loading existing metrics: ' saveAsFullfile],basename)
     load(saveAsFullfile)
-elseif exist(fullfile(basepath,[parameters.saveAs,'.',parameters.fileFormat]),'file')
+elseif exist(fullfile(basepath,[parameters.saveAs,'.',parameters.fileFormat]),'file') && ~parameters.forceReload
     % For legacy naming convention
     warning(['Loading existing legacy metrics: ' parameters.saveAs])
     load(fullfile(basepath,[parameters.saveAs,'.mat']))
@@ -1069,37 +1074,26 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
             eventOut = load(fullfile(basepath,eventFiles{i}));
             disp(['  Importing ' eventName]);
             if strcmp(fieldnames(eventOut),eventName)
-                if strcmp(eventName,'ripples') && isfield(eventOut.(eventName),'timestamps') && isnumeric(eventOut.(eventName).peaks) && length(eventOut.(eventName).peaks)>0
-                    % Ripples specific histogram
-                    PSTH = calc_PSTH(eventOut.ripples,spikes{spkExclu},'alignment','peaks','duration',0.150,'binCount',150,'smoothing',5,'eventName',eventName,'plots',parameters.showFigures);
-                    if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
-                        cell_metrics.events.ripples = num2cell(PSTH.responsecurve,1);
-                        cell_metrics.general.events.(eventName).event_file = eventFiles{i};
-                        cell_metrics.general.events.(eventName).x_bins = PSTH.time*1000;
-                        cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
-                        cell_metrics.general.events.(eventName).alignment = PSTH.alignment;
-                        
-                        cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
-                        cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
-                        cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
-                    end
-                elseif isfield(eventOut.(eventName),'timestamps') && isnumeric(eventOut.(eventName).timestamps) && length(eventOut.(eventName).timestamps)>0
-                    PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'alignment',preferences.psth.alignment,'smoothing',preferences.psth.smoothing,'eventName',eventName,'binCount',preferences.psth.binCount,'binDistribution',preferences.psth.binDistribution,'duration',preferences.psth.duration,'percentile',preferences.psth.percentile,'plots',parameters.showFigures);
-                    if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
-                        cell_metrics.events.(eventName) = num2cell(PSTH.responsecurve,1);
-                        cell_metrics.general.events.(eventName).event_file = eventFiles{i};
-                        cell_metrics.general.events.(eventName).x_bins = PSTH.time*1000;
-                        cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
-                        cell_metrics.general.events.(eventName).alignment = PSTH.alignment;
-                        
-                        cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
-                        cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
-                        cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
-                    end
+                if isfield(preferences.psth,eventName) && isstruct(preferences.psth.(eventName))
+                    psth_parameters = preferences.psth.(eventName);
+                else
+                    psth_parameters = preferences.psth;                    
+                end
+                PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'binCount',psth_parameters.binCount,'alignment',psth_parameters.alignment,'binDistribution',psth_parameters.binDistribution,'duration',psth_parameters.duration,'smoothing',psth_parameters.smoothing,'percentile',psth_parameters.percentile,'eventName',eventName,'plots',parameters.showFigures);
+                if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
+                    cell_metrics.events.(eventName) = num2cell(PSTH.responsecurve,1);
+                    cell_metrics.general.events.(eventName).event_file = eventFiles{i};
+                    cell_metrics.general.events.(eventName).x_bins = PSTH.time*1000;
+                    cell_metrics.general.events.(eventName).x_label = 'Time (ms)';
+                    cell_metrics.general.events.(eventName).alignment = PSTH.alignment;
+
+                    cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
+                    cell_metrics.([eventName,'_modulationRatio']) = PSTH.modulationRatio;
+                    cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
+                    cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
                 end
             end
         end
-
     end
 end
 
@@ -1139,6 +1133,7 @@ if any(contains(parameters.metrics,{'manipulation_metrics','all'})) && ~any(cont
             cell_metrics.general.manipulations.(eventName).alignment = PSTH.alignment;
             
             cell_metrics.([eventName,'_modulationIndex']) = PSTH.modulationIndex;
+            cell_metrics.([eventName,'_modulationRatio']) = PSTH.modulationRatio;
             cell_metrics.([eventName,'_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
             cell_metrics.([eventName,'_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
 
@@ -1587,7 +1582,9 @@ end
 % Summary figures
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
-CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
+if parameters.sessionSummaryFigure
+    CellExplorer('metrics',cell_metrics,'summaryFigures',true,'plotCellIDs',-1); % Group plot
+end
 
 if parameters.summaryFigures
     cell_metrics.general.basepath = basepath;

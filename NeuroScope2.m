@@ -139,6 +139,8 @@ while UI.t0 >= 0
         
         % Update UI text and slider
         UI.elements.lower.time.String = num2str(UI.t0);
+        setTimeText(UI.t0)
+        
         sliderMovedManually = false;
         UI.elements.lower.slider.Value = min([UI.t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
         if UI.settings.debug
@@ -177,6 +179,11 @@ trackGoogleAnalytics('NeuroScope2',1);
 if UI.settings.saveMetadata
     session = data.session;
     session.neuroScope2.t0 = UI.t0;
+    session.neuroScope2.colors = UI.colors;
+    for i_setting = 1:length(UI.settings.to_save)
+        session.neuroScope2.(UI.settings.to_save{i_setting}) =  UI.settings.(UI.settings.to_save{i_setting});
+    end
+
     try
         saveStruct(session,'session','commandDisp',false);
     catch
@@ -335,14 +342,16 @@ end
         UI.menu.display.channelOrder.option(UI.settings.channelOrder).Checked = 'on';
         
         UI.menu.display.colormap = uimenu(UI.menu.display.topMenu,menuLabel,'Color maps');
-        UI.menu.display.colorByChannels = uimenu(UI.menu.display.colormap,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);        
+        UI.menu.display.colorByChannels = uimenu(UI.menu.display.colormap,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);
+        UI.menu.display.colorByChannels2 = uimenu(UI.menu.display.colormap,menuLabel,'Color ephys traces in channel groups',menuSelectedFcn,@colorByChannels2);
         UI.menu.display.changeColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
         UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);        
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.colormap,menuLabel,'Change background color & primary color',menuSelectedFcn,@changeBackgroundColor);
         
         UI.menu.display.detectedSpikes = uimenu(UI.menu.display.topMenu,menuLabel,'Detected spikes','Separator','on');
         UI.menu.display.detectedSpikesBelowTrace = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show below traces',menuSelectedFcn,@detectedSpikesBelowTrace);
-        UI.menu.display.showDetectedSpikesPopulationRate = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show population rate ',menuSelectedFcn,@showDetectedSpikesPopulationRate);
+        UI.menu.display.spikesDetectionPolarity = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Detect both polarities',menuSelectedFcn,@detectedSpikesPolarity);
+        UI.menu.display.showDetectedSpikesPopulationRate = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show population rate',menuSelectedFcn,@showDetectedSpikesPopulationRate);
         UI.menu.display.showDetectedSpikeWaveforms = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show waveforms',menuSelectedFcn,@showDetectedSpikeWaveforms);
         UI.menu.display.colorDetectedSpikesByWidth = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Color by waveform width',menuSelectedFcn,@toggleColorDetectedSpikesByWidth);
         UI.menu.display.showDetectedSpikesPCAspace = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show PCA space (beta feature)',menuSelectedFcn,@showDetectedSpikesPCAspace);
@@ -655,7 +664,7 @@ end
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
-        uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Time (s)', 'Units','normalized', 'Position', [0.1 0 0.05 0.8],'HorizontalAlignment','center');
+        UI.elements.lower.timeText = uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', 'Time (s)', 'Units','normalized', 'Position', [0.1 0 0.1 0.8],'HorizontalAlignment','center');
         UI.elements.lower.time = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.15 0 0.05 1],'HorizontalAlignment','right','tooltip','Current timestamp (seconds)','Callback',@setTime);
         uicontrol('Parent',UI.panel.info,'Style', 'text', 'String', '   Window duration (s)', 'Units','normalized', 'Position', [0.25 0 0.05 0.8],'HorizontalAlignment','center');
         UI.elements.lower.windowsSize = uicontrol('Parent',UI.panel.info,'Style', 'Edit', 'String', UI.settings.windowDuration, 'Units','normalized', 'Position', [0.3 0 0.05 1],'HorizontalAlignment','right','tooltip','Window size (seconds)','Callback',@setWindowsSize);
@@ -665,7 +674,7 @@ end
         UI.elements.lower.slider = uicontrol(UI.panel.info,'Style','slider','Units','normalized','Position',[0.5 0 0.5 1],'Value',0, 'SliderStep', [0.0001, 0.1], 'Min', 0, 'Max', 100,'Callback',@moveSlider,'Tag','slider');
         addlistener(UI.elements.lower.slider, 'Value', 'PostSet',@movingSlider);
         sliderMovedManually = true;
-        set(UI.panel.info, 'Widths', [70 80 120 60 120 60 280 -1],'MinimumWidths',[70 80 120 60 60 60 250  1]); % set grid panel size
+        set(UI.panel.info, 'Widths', [130 80 120 60 120 60 280 -1],'MinimumWidths',[130 80 120 60 60 60 250  1]); % set grid panel size
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating plot axes
@@ -936,6 +945,27 @@ end
             end
             ephys.traces(:,UI.channelOrder) = feval(UI.settings.filterMethod,b1, a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         elseif UI.settings.filterTraces
+
+%             if UI.settings.filter.higherBand < 50
+%                 % Downsampling to improve filter response at low filter ranges
+%                 disp('Downsampling')
+%                 n_downsampled = 20;%ceil(sr/500);
+%                 sr_downsampled = sr/n_downsampled;
+%                 data_downsampled = downsample(ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000,n_downsampled);
+%                 
+%                 if int_gt_0(UI.settings.filter.lowerBand,sr) && ~int_gt_0(UI.settings.filter.higherBand,sr)
+%                     [b1, a1] = butter(3, UI.settings.filter.higherBand/sr_downsampled*2, 'low');
+%                 elseif int_gt_0(UI.settings.filter.higherBand,sr) && ~int_gt_0(UI.settings.filter.lowerBand,sr)
+%                     [b1, a1] = butter(3, UI.settings.filter.lowerBand/sr_downsampled*2, 'high');
+%                 else
+%                     [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/sr_downsampled*2, 'bandpass');
+%                 end
+%                 data_downsampled = feval(UI.settings.filterMethod,b1, a1, data_downsampled);
+%                 ephys.traces(:,UI.channelOrder) = upsample(data_downsampled,n_downsampled);
+%             else
+%                 
+%             end
+
             ephys.traces(:,UI.channelOrder) = feval(UI.settings.filterMethod,UI.settings.filter.b1, UI.settings.filter.a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         else
             ephys.traces(:,UI.channelOrder) = ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000;
@@ -961,6 +991,23 @@ end
             end
             colors = eval([UI.settings.colormap,'(',num2str(numel(channelsList)),')']);
             electrodeGroupsToPlot = 1:max(temp);
+            
+            if UI.settings.greyScaleTraces < 5
+                colors = colors/UI.settings.greyScaleTraces;
+            elseif UI.settings.greyScaleTraces >=5
+                colors = ones(size(colors))/(UI.settings.greyScaleTraces-4);
+                colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
+            end
+            colorsList = colors;
+        elseif UI.settings.colorByChannels2
+            channelsList2 = UI.channelOrder;
+            channelsList = {};
+            nElectrodes = ceil(numel(channelsList2)/UI.settings.nColorGroups);
+            electrodeGroupsToPlot = 1:nElectrodes;
+            for i = 1:nElectrodes
+                channelsList{i} = channelsList2((i-1)*UI.settings.nColorGroups+1:min(i*UI.settings.nColorGroups,numel(channelsList2)));
+            end
+            colors = eval([UI.settings.colormap,'(',num2str(nElectrodes),')']);
             
             if UI.settings.greyScaleTraces < 5
                 colors = colors/UI.settings.greyScaleTraces;
@@ -1084,7 +1131,13 @@ end
             raster.channel = [];
             
             for i = 1:numel(UI.channelOrder)
-                idx = find(diff(ephys.filt(:,UI.channelOrder(i)) < UI.settings.spikesDetectionThreshold)==1)+1;
+                if UI.settings.spikesDetectionPolarity
+                    idx = find(diff(ephys.filt(:,UI.channelOrder(i)) < -abs(UI.settings.spikesDetectionThreshold))==1 | diff(ephys.filt(:,UI.channelOrder(i)) > abs(UI.settings.spikesDetectionThreshold))==1)+1;
+                elseif UI.settings.spikesDetectionThreshold>0
+                    idx = find(diff(ephys.filt(:,UI.channelOrder(i)) > UI.settings.spikesDetectionThreshold)==1)+1;
+                else                    
+                    idx = find(diff(ephys.filt(:,UI.channelOrder(i)) < UI.settings.spikesDetectionThreshold)==1)+1;
+                end
                 
                 if ~isempty(idx)
                     raster.times = [raster.times;idx/ephys.sr];
@@ -1562,7 +1615,8 @@ end
 
     function raster = plotSpikeWaveforms(raster,lineColor,plotStyle)
         
-        wfWin_sec = 0.0008; % Default: 2*0.8ms window size
+%         wfWin_sec =  0.0008; % Default: 2*0.8ms window size
+        wfWin_sec = UI.settings.spikeWaveformWidth;
         wfWin = round(wfWin_sec * ephys.sr); % Windows size in sample
         
         % Removing spikes around the borders
@@ -1610,7 +1664,7 @@ end
                 wf2 = reshape(permute(wf,[2,1,3]),(wfWin*2),[]);
                 
                 if UI.settings.showWaveformsBelowTrace
-                    x_offset = (0.035+0.93*chanCoords_x(Locb(j)))*UI.settings.windowDuration;
+                    x_offset = (0.01+UI.settings.waveformsRelativeWidth/2+(0.98-UI.settings.waveformsRelativeWidth)*chanCoords_x(Locb(j)))*UI.settings.windowDuration;
                     y_offset = 0.029+UI.dataRange.spikeWaveforms(1)+(diff(UI.dataRange.spikeWaveforms)-0.05)*chanCoords_y(Locb(j));
                 else
                     x_offset = 0.005*UI.settings.windowDuration;
@@ -1938,7 +1992,7 @@ end
             linewidth = 0.8;
         end
         
-        % Detmermining events within 
+        % Detmermining events within
         idx = find(data.events.(eventName).time >= t1 & data.events.(eventName).time <= t2);
         
         % Plotting flagged events in a different color
@@ -1951,12 +2005,12 @@ end
             idx(idx2) = [];
         end
         
-        % Plotting events 
+        % Plotting events
         if any(idx)
             plotEventLines(data.events.(eventName).time(idx)-t1,colorIn1,linewidth)
         end
         
-        % Plotting added events 
+        % Plotting added events
         if isfield(data.events.(eventName),'added') && ~isempty(isfield(data.events.(eventName),'added'))
             idx3 = find(data.events.(eventName).added >= t1 & data.events.(eventName).added <= t2);
             if any(idx3)
@@ -2564,6 +2618,17 @@ end
         uiresume(UI.fig);
     end
     
+    function detectedSpikesPolarity(~,~)
+        UI.settings.spikesDetectionPolarity = ~UI.settings.spikesDetectionPolarity;
+        if UI.settings.spikesDetectionPolarity
+            UI.menu.display.spikesDetectionPolarity.Checked = 'on';
+        else
+            UI.menu.display.spikesDetectionPolarity.Checked = 'off';
+        end
+        initTraces
+        uiresume(UI.fig);
+    end
+    
     function showDetectedSpikeWaveforms(~,~)
         UI.settings.showDetectedSpikeWaveforms = ~UI.settings.showDetectedSpikeWaveforms;
         if UI.settings.showDetectedSpikeWaveforms && isfield(data.session.extracellular,'chanCoords')
@@ -2839,6 +2904,7 @@ end
                 
                 % Updating UI text and slider
                 UI.elements.lower.time.String = num2str(UI.t0);
+                setTimeText(UI.t0)
                 UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Streaming','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor,'HitTest','off');
                 streamToc = toc(streamTic);
                 pauseBins = ones(1,10) * 0.05*UI.settings.windowDuration;
@@ -3260,7 +3326,7 @@ end
         
         % % % % % % % % % % % % %
         % Events
-        if ~isempty(UI.data.detectecFiles.events)
+        if isfield(UI.data.detectecFiles,'events') && ~isempty(UI.data.detectecFiles.events)
             for j = 1:length(UI.data.detectecFiles.events)
                 UI.settings.eventData = UI.data.detectecFiles.events{j};
                 UI.settings.showEvents(j) = true;
@@ -3698,6 +3764,7 @@ end
     function setWindowsSize(~,~)
         % Set the window size
         string1 = str2num(UI.elements.lower.windowsSize.String);
+        string1 = string1(1);
         if isnumeric(string1) 
             if string1 < 0.001
                 string1 = 1;
@@ -4579,6 +4646,7 @@ end
             data.session = sessionTemplate(UI.data.basepath,'showGUI',true,'basename',basename);
         end
         
+        % Loading preferences from session struct
         try
             UI.t0 = data.session.neuroScope2.t0;
             if UI.t0<0
@@ -4589,7 +4657,32 @@ end
         UI.t0_track = UI.t0;
         
         % UI.settings.colormap
-        UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+        try
+            if data.session.extracellular.nElectrodeGroups == size(data.session.neuroScope2.colors,1)
+                UI.colors = data.session.neuroScope2.colors;
+            end
+        catch
+            UI.colors = eval([UI.settings.colormap,'(',num2str(data.session.extracellular.nElectrodeGroups),')']);
+        end
+        try
+            for i_setting = 1:length(UI.settings.to_save)
+                if strcmp(UI.settings.to_save{i_setting},'windowDuration')
+                    if data.session.neuroScope2.windowDuration >= 0.001 || data.session.neuroScope2.windowDuration <= 100
+                        UI.settings.windowDuration = data.session.neuroScope2.windowDuration;
+                        UI.elements.lower.windowsSize.String = num2str(data.session.neuroScope2.windowDuration);
+                        resetZoom
+                    end
+                else
+                    UI.settings.(UI.settings.to_save{i_setting}) =  data.session.neuroScope2.(UI.settings.to_save{i_setting});
+                end
+            end
+            UI.panel.general.plotStyle.Value = UI.settings.plotStyle;
+            UI.panel.general.colorScale.Value = UI.settings.greyScaleTraces;
+            UI.settings.scalingFactor = data.session.neuroScope2.scalingFactor;
+            setScalingText            
+            UI.plot_axis1.Color = UI.settings.background;
+            UI.plot_axis1.XColor = UI.settings.primaryColor;
+        end
         
         UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
         UI.fig.UserData.leastSignificantBit = UI.settings.leastSignificantBit;
@@ -4769,6 +4862,7 @@ end
         if sliderMovedManually
             UI.t0 = valid_t0((UI.t_total-UI.settings.windowDuration)*evnt.AffectedObject.Value/100);
             UI.elements.lower.time.String = num2str(UI.t0);
+            setTimeText(UI.t0)
             
             if ~UI.settings.stickySelection
                 UI.selectedChannels = [];
@@ -6311,7 +6405,8 @@ end
         if ~isempty(answer) && ~isempty(answer{1})
            text_string1 = [text_string1,'.   Notes: ', answer{1}]; 
         end
-        text_string2 = ['Start time: ', num2str(UI.t0), ' sec, Duration: ', num2str(UI.settings.windowDuration), ' sec '];
+        timestring = [num2str(floor(UI.t0/3600),'%02.0f'),':',num2str(floor(UI.t0/60-floor(UI.t0/3600)*60),'%02.0f'),':',num2str(UI.t0-floor(UI.t0/60)*60,'%02.3f')];
+        text_string2 = ['Start time: ', timestring, ' (', num2str(UI.t0), ' sec), Window duration: ', num2str(UI.settings.windowDuration), ' sec '];
         text(UI.plot_axis1,0,1,text_string1,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left', 'color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
         text(UI.plot_axis1,1,1,text_string2,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','right','color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
         
@@ -6467,12 +6562,41 @@ end
                     UI.settings.nColorGroups = numeric_answer;
                 end
                 UI.menu.display.colorByChannels.Checked = 'on';
+                UI.menu.display.colorByChannels2.Checked = 'off';
+                UI.settings.colorByChannels2 = false;
             else
                 UI.settings.colorByChannels = false;
                 UI.menu.display.colorByChannels.Checked = 'off';
             end
         else
             UI.menu.display.colorByChannels.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+    
+    function colorByChannels2(~,~)
+        UI.settings.colorByChannels2 = ~UI.settings.colorByChannels2;
+        if UI.settings.colorByChannels2
+            prompt = {'Number of channels per group (1-50)'};
+            dlgtitle = 'Color groups';
+            definput = {num2str(UI.settings.nColorGroups)};
+            dims = [1 40];
+            opts.Interpreter = 'tex';
+            answer = inputdlg(prompt,dlgtitle,dims,definput,opts);
+            if ~isempty(answer)
+                numeric_answer = str2num(answer{1});
+                if ~isempty(answer{1}) && rem(numeric_answer,1)==0 && numeric_answer > 0 && numeric_answer <= 50
+                    UI.settings.nColorGroups = numeric_answer;
+                end
+                UI.menu.display.colorByChannels2.Checked = 'on';
+                UI.settings.colorByChannels = false;
+                UI.menu.display.colorByChannels.Checked = 'off';
+            else
+                UI.settings.colorByChannels2 = false;
+                UI.menu.display.colorByChannels2.Checked = 'off';
+            end
+        else
+            UI.menu.display.colorByChannels2.Checked = 'off';
         end
         uiresume(UI.fig);
     end
@@ -6510,6 +6634,11 @@ end
         else
             colorpick_out = uicolorpicker(colorpick1,title1);
         end
+    end
+    
+    function setTimeText(t0)
+        timestring = [num2str(floor(t0/3600),'%02.0f'),':',num2str(floor(t0/60-floor(t0/3600)*60),'%02.0f'),':',num2str(t0-floor(t0/60)*60,'%02.3f')];
+        UI.elements.lower.timeText.String = ['Time (s) ', timestring];
     end
     
     function toggleDebug(~,~)

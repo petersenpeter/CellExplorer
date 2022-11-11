@@ -112,8 +112,6 @@ Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscie
 * `refractoryPeriodViolation`: Refractory period violation (‰): Fraction of ISIs less than 2 ms.
 
 ## Sharp wave ripple metrics
-* `ripples_modulationIndex`: strength of ripple modulation of the firing rate)
-* `ripples_modulationPeakResponseTime`: Ripple peak delay. Calculated from a ripple triggered average. The delay between the ripple peak and the peak response of the ripple triggered average response.
 * `deepSuperficial`: Deep-Superficial region assignment [Unknown, Cortical, Superficial, Deep].
 * `deepSuperficialDistance`: Deep Superficial depth relative to the reversal of the sharp wave. (in um).
 
@@ -121,7 +119,7 @@ Isolation distance and L-ratio as defined by [Schmitzer-Torbert et al. Neuroscie
 * `thetaPhasePeak`: Theta phase peak
 * `thetaPhaseTrough`: Theta phase trough
 * `thetaEntrainment`: Theta entrainment
-* `thetaModulationIndex`: Theta modulation index. Originally defined in [Cacucci et al., JNeuro 2004](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2683733/). Computed as the difference between the theta modulation trough (defined as mean of autocorrelogram bins, 50-70 msec) and the theta modulation peak (mean of autocorrelogram bins, 100-140 msec) over their sum.
+* `thetaModulationIndex`: Theta modulation index. Originally defined in [Cacucci et al., JNeuro 2004](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2683733/). Computed as the difference between the theta modulation trough (defined as mean of autocorrelogram bins, 50-70 msec) and the theta modulation peak (mean of autocorrelogram bins, 100-140 msec) over their sum, scaled from -1 to 1.
 
 ## Firing rate maps
 * `firingRateMaps`: (spatial) firing rate maps.
@@ -142,9 +140,17 @@ The spatial metrics are all based on average firing rate map.
 
 ## Event metrics
 * `events`: event time series.
+* `eventName_modulationIndex`: strength of modulation. The difference between the averages of the stimulation interval and the pre-stimulation interval (the baseline) divided by their sum. Scaled from -1 to 1.
+* `eventName_modulationRatio`: strength of modulation. The ratio between the averages of the stimulation interval and the pre-stimulation interval (the baseline). 
+* `eventName_modulationPeakResponseTime`: temporal response. The delay between the ripple peak and the peak response of the ripple triggered average response.
+* `eventName_modulationSignificanceLevel`: KS-test (`kstest2`) between the stimulation values and the pre-stimulation values, pre-smoothing.
 
 ## Manipulation metrics
 * `manipulations`: manipulations time series.
+* `manipulationName_modulationIndex`: strength of modulation. The difference between the averages of the stimulation interval and the pre-stimulation interval (the baseline) divided by their sum. Scaled from -1 to 1.
+* `manipulationName_modulationRatio`: strength of modulation. The ratio between the averages of the stimulation interval and the pre-stimulation interval (the baseline). 
+* `manipulationName_modulationPeakResponseTime`: temporal response. The delay between the ripple peak and the peak response of the ripple triggered average response.
+* `manipulationName_modulationSignificanceLevel`: KS-test (`kstest2`) between the stimulation values and the pre-stimulation values, pre-smoothing.
 
 ## Response curve metrics
 * `responseCurves`: response curves.
