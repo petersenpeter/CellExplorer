@@ -63,7 +63,9 @@ Peter C. Petersen, Joshua H. Siegle, Nicholas A. Steinmetz, Sara Mahallati, Gyö
   <source src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/videos/CellExplorerMovie_WhiteIntro.mp4" type="video/mp4">
 </video>
 
-The video can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY) and is [__available for download (60MB)__](https://raw.githubusercontent.com/petersenpeter/common_resources/main/videos/CellExplorerMovie.mp4). For best viewing experience on YouTube, select highest resolution and maximize the video.
+The video can be streamed on [__YouTube in 4K__](https://www.youtube.com/watch?v=GR1glNhcGIY) and is [__available for download (60MB)__](https://raw.githubusercontent.com/petersenpeter/common_resources/main/videos/CellExplorerMovie.mp4). For best viewing experience on YouTube, select highest resolution and maximize the video. 
+
+Please also check out the recorded [presentation of CellExplorer at the Neuropixels course in 2022 (11 minutes)](https://www.youtube.com/watch?v=ejI5VIz9Yw8). It includes an introduction with slides and a demo in Matlab showing how to use the processing pipeline, CellExplorer, and NeuroScope2.
 
 ## Funding
 CellExplorer is funded through the [Oxytocin U19 BRAIN Initiative Grant](https://med.nyu.edu/departments-institutes/neuroscience/research/shared-research-resources/oxytocin-u19-brain-initiative-grant), [the Lundbeck Foundation](https://www.lundbeckfonden.com/en/), and the [Independent Research Fund Denmark](https://ufm.dk/en/research-and-innovation/councils-and-commissions/independent-research-fund-Denmark).
