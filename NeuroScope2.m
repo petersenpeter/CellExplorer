@@ -945,6 +945,7 @@ end
             end
             ephys.traces(:,UI.channelOrder) = feval(UI.settings.filterMethod,b1, a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         elseif UI.settings.filterTraces
+
 %             if UI.settings.filter.higherBand < 50
 %                 % Downsampling to improve filter response at low filter ranges
 %                 disp('Downsampling')
@@ -964,6 +965,7 @@ end
 %             else
 %                 
 %             end
+
             ephys.traces(:,UI.channelOrder) = feval(UI.settings.filterMethod,UI.settings.filter.b1, UI.settings.filter.a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         else
             ephys.traces(:,UI.channelOrder) = ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000;
