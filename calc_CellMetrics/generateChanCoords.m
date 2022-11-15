@@ -26,7 +26,7 @@ if isfield(session.animal,'probeImplants') && ~isempty(session.animal.probeImpla
     source = 'probeImplants';
     layout = session.animal.probeImplants{1}.layout;
     if isfield(session.animal.probeImplants{1},'shankSpacing')
-        shankSpacing = session.animal.probeImplants{1}.shankSspacing;
+        shankSpacing = session.animal.probeImplants{1}.shankSpacing;
     end
     if isfield(session.animal.probeImplants{1},'verticalSpacing')
         verticalSpacing = session.animal.probeImplants{1}.verticalSpacing;
