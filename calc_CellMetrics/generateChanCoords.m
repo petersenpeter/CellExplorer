@@ -28,7 +28,9 @@ if isfield(session.animal,'probeImplants')
     if isfield(session.animal.probeImplants{1},'shankSpacing')
         shankSpacing = session.animal.probeImplants{1}.shankSpacing;
     end
-    verticalSpacing = session.animal.probeImplants{1}.verticalSpacing;
+    if isfield(session.animal.probeImplants{1},'verticalSpacing')
+        verticalSpacing = session.animal.probeImplants{1}.verticalSpacing;
+    end
     if ~isnumeric(verticalSpacing)
         verticalSpacing = str2num(verticalSpacing);
     end
