@@ -22,11 +22,11 @@ verticalSpacing = 20; % in µm
 ngroups = session.extracellular.nElectrodeGroups;
 groups = session.extracellular.electrodeGroups.channels;
 
-if isfield(session.animal,'probeImplants')
+if isfield(session.animal,'probeImplants') && ~isempty(session.animal.probeImplants)
     source = 'probeImplants';
     layout = session.animal.probeImplants{1}.layout;
     if isfield(session.animal.probeImplants{1},'shankSpacing')
-        shankSpacing = session.animal.probeImplants{1}.shankSpacing;
+        shankSpacing = session.animal.probeImplants{1}.shankSspacing;
     end
     if isfield(session.animal.probeImplants{1},'verticalSpacing')
         verticalSpacing = session.animal.probeImplants{1}.verticalSpacing;
