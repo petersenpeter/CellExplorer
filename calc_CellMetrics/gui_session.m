@@ -1010,11 +1010,14 @@ uiwait(UI.fig)
                         end
                     else
                         display = animalMetaType.(animalMetaType.field_relationship{i}).display;
-                        text1 = session.animal.(datatype){fn}.(display{1});
-                        for j = 2:numel(display)
-                            text1 = [text1,' - ',session.animal.(datatype){fn}.(display{j})];
+                        if isfield(session.animal.(datatype){fn},display{1})
+                            text1 = session.animal.(datatype){fn}.(display{1});
+                            for j = 2:numel(display)
+                                text1 = [text1,' - ',session.animal.(datatype){fn}.(display{j})];
+                            end
+                            tableData{fn,i+1} = text1;
                         end
-                        tableData{fn,i+1} = text1;
+                        
                     end
                 end
             end
