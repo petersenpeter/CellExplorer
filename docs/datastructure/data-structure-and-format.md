@@ -64,6 +64,8 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
   * `geneticLine` : genetic line of animal
   * `probeImplants` : struct-array with probe implants information
     * `probe` : Name of probe implanted
+    * `supplier` : Name of probe supplier
+    * `descriptiveName` : Descriptive name of probe
     * `brainRegion` : brain region
     * `ap` : Anterior-Posterior coordinate (mm)
     * `ml` : Medial-Lateral coordinate (mm)
@@ -73,12 +75,13 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
     * `rotation` : rotation of probe (degrees)
   * `opticFiberImplants` : struct-array with optic fiber implants information
     * `opticFiber` : Name of optic fiber implanted
+    * `supplier` : Name of optic fiber supplier
     * `brainRegion` : brain region
     * `ap` : Anterior-Posterior coordinate (mm)
     * `ml` : Medial-Lateral coordinate (mm)
     * `depth` : Implantation depth (mm)
-    * `ap_angle` : ap-angle of probe implantation (degrees)
-    * `ml_angle` : ml angle of probe implantation (degrees)
+    * `ap_angle` : ap-angle of optic fiber implantation (degrees)
+    * `ml_angle` : ml angle of optic fiber implantation (degrees)
     * `notes` : notes
   * `surgeries` : struct-array with surgery information
     * `date` : date of surgery
@@ -102,8 +105,8 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
     * `ap` : Anterior-Posterior coordinate (mm)
     * `ml` : Medial-Lateral coordinate (mm)
     * `depth` : Implantation depth (mm)
-    * `ap_angle` : ap-angle of probe implantation (degrees)
-    * `ml_angle` : ml angle of probe implantation (degrees)
+    * `ap_angle` : ap-angle of virus injection (degrees)
+    * `ml_angle` : ml angle of virus injection (degrees)
     * `notes` : notes
 * `epochs`
   * `name`
@@ -219,6 +222,12 @@ This is a data container for event data. A MATLAB struct `eventName` stored in a
 * `center`: center time-point of event (in seconds; calculated from timestamps; Px1).
 * `duration`: duration of event (in seconds; calculated from timestamps; Px1).
 * `detectorinfo`: info about how the events were detected.
+  * `detectorname`: Name of detector scriptdetectiondate.
+  * `detectiondate`: Detection date.
+  * `detectionintervals`: Detection intervals.
+  * `detectionparms`: Detection parameters.
+  * `detectionchannel`: Detection cahnnel (0-indexed).
+  * `detectionchannel1`: Detection cahnnel (1-indexed).
 
 The `*.events.mat` files should be stored in the basepath. Any `events` files located in the basepath will be detected in the pipeline `ProcessCellMetrics.m` and an average PSTHs will be generated.
 
