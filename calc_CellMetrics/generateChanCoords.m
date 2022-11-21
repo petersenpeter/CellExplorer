@@ -25,24 +25,15 @@ verticalSpacing = 20; % in µm
 ngroups = session.extracellular.nElectrodeGroups;
 groups = session.extracellular.electrodeGroups.channels;
 
-electrodeLayouts = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
-% sometimes, probImplants is empty, adjust for that here
-if isfield(session.animal,'probeImplants')
-    if ~isempty(session.animal.probeImplants)
-        use_probImplant = true;
-    else
-        use_probImplant = false;
-    end
-else
-    use_probImplant = false;
-end
-if use_probImplant
+if isfield(session.animal,'probeImplants') && ~isempty(session.animal.probeImplants)
     source = 'probeImplants';
     layout = session.animal.probeImplants{1}.layout;
     if isfield(session.animal.probeImplants{1},'shankSpacing')
         shankSpacing = session.animal.probeImplants{1}.shankSpacing;
     end
-    verticalSpacing = session.animal.probeImplants{1}.verticalSpacing;
+    if isfield(session.animal.probeImplants{1},'verticalSpacing')
+        verticalSpacing = session.animal.probeImplants{1}.verticalSpacing;
+    end
     if ~isnumeric(verticalSpacing)
         verticalSpacing = str2num(verticalSpacing);
     end
@@ -93,7 +84,7 @@ switch(layout)
             ycoords = cat(1,ycoords,y(:));
         end
         
-     case {'poly3', 'poly 3'}
+    case {'poly3', 'poly 3'}
         for a= 1:ngroups
             tchannels  = groups{a};
             x = nan(1,length(tchannels));

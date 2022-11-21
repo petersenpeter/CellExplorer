@@ -105,7 +105,7 @@ else
 end
 
 % Perform test suite by input parameter
-if parameters.performTestSuite
+if exist('parameters','var') && parameters.performTestSuite
     UI.settings.allow_dialogs = false;
     performTestSuite
     UI.t0 = -1;
