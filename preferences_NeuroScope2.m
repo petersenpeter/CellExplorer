@@ -145,3 +145,11 @@ preferences.instantaneousMetrics.showPhase = false;
 preferences.instantaneousMetrics.channel = 1;
 preferences.instantaneousMetrics.lowerBand = 100;
 preferences.instantaneousMetrics.higherBand = 220;
+
+% Audio
+% only works together with the DSP System Toolbox or the Audio Toolbox
+preferences.audioPlay = false; % Can be true or false
+preferences.playAudioFirst = false; % Must be false
+preferences.deviceWriterActive = false; % Must be false
+preferences.audioChannels = [1,2]; % Up to two channels can be selected
+preferences.audioGain = 3; % Gain factor, recommended: 1:5 = 1,2,5,10,20
