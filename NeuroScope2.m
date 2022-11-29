@@ -946,6 +946,9 @@ end
             end
             ephys.traces(:,UI.channelOrder) = filtfilt(b1, a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         elseif UI.settings.filterTraces
+            if isempty(UI.settings.filter.higherBand)
+                UI.settings.filter.higherBand = sr;
+            end
             if UI.settings.filter.higherBand < 50 && sr>UI.settings.filter.higherBand*100
                 % Downsampling to improve filter response at low filter ranges
                 n_downsampled = 20;
