@@ -25,6 +25,8 @@ verticalSpacing = 20; % in µm
 ngroups = session.extracellular.nElectrodeGroups;
 groups = session.extracellular.electrodeGroups.channels;
 
+electrodeLayouts = {'linear','poly2','poly3','poly4','poly5','twohundred','staggered','neurogrid'};
+% sometimes, probImplants is empty, adjust for that here
 if isfield(session.animal,'probeImplants') && ~isempty(session.animal.probeImplants)
     source = 'probeImplants';
     layout = session.animal.probeImplants{1}.layout;
