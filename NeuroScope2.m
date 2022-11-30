@@ -663,7 +663,7 @@ end
         UI.panel.instantaneousMetrics.higherBand = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'Edit', 'String', num2str(UI.settings.instantaneousMetrics.higherBand), 'Units','normalized', 'Position', [0.67 0.01 0.32 0.36],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
         
         % Play audio-trace when streaming ephys
-        UI.panel.audio.main = uipanel('Parent',UI.panel.other.main,'title','Audio during streaming');
+        UI.panel.audio.main = uipanel('Parent',UI.panel.other.main,'title','Audio playback during streaming');
         UI.panel.audio.playAudio = uicontrol('Parent',UI.panel.audio.main,'Style', 'checkbox','String','Play audio', 'value', 0, 'Units','normalized', 'Position',   [0.01 0.64 0.48 0.34],'Callback',@togglePlayAudio,'HorizontalAlignment','left');
         UI.panel.audio.gain = uicontrol('Parent',UI.panel.audio.main,'Style', 'popup','String',{'Gain: 1','Gain: 2','Gain: 5','Gain: 10','Gain: 20'}, 'value', UI.settings.audioGain, 'Units','normalized', 'Position', [0.5 0.64 0.49 0.34],'Callback',@togglePlayAudio,'HorizontalAlignment','left');
         
@@ -675,7 +675,7 @@ end
         % Defining flexible panel heights
         set(UI.panel.other.main, 'Heights', [240 110 95 140 95 50 90 90 90],'MinimumHeights',[260 120 100 150 150 50 90 90 90]);
         UI.panel.other.main1.MinimumWidths = 218;
-        UI.panel.other.main1.MinimumHeights = 1100;
+        UI.panel.other.main1.MinimumHeights = 1103;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -2766,12 +2766,11 @@ end
         UI.settings.audioGain = gain_values(UI.panel.audio.gain.Value);
         
         [channel_out_left,channel_valid_left] = validate_channel(UI.panel.audio.leftChannel.String);
-        [channel_out_right,channel_valid_right] = validate_channel(UI.panel.audio.rightChannel.String);
-        
         if ~channel_valid_left
             UI.panel.audio.leftChannel.String = num2str(channel_out_left);
         end
         
+        [channel_out_right,channel_valid_right] = validate_channel(UI.panel.audio.rightChannel.String);
         if ~channel_valid_right
             UI.panel.audio.leftChannel.String = num2str(channel_out_right);
         end
@@ -3048,7 +3047,9 @@ end
             setup(deviceWriter,zeros(SamplesPerFrame,NumChannels))
             UI.settings.deviceWriterActive = true;            
         else
-            MsgLog('Audio streaming only works together with the DSP System Toolbox or the Audio Toolbox',2);
+            MsgLog('Audio streaming requires the DSP System Toolbox or the Audio Toolbox. Please install one of the toolboxes.',2);
+            UI.settings.audioPlay = false;
+            UI.panel.audio.playAudio.Value = 0;
             return
         end
     end
@@ -5137,9 +5138,9 @@ end
         end
     end
     
-    function [channel_out,channel_valid] = validate_channel(channelnumber)
+    function [channel_out,channel_valid] = validate_channel(channel_field)
         channel_valid = true;
-        channelnumber = str2num(channelnumber);
+        channelnumber = str2num(channel_field);
         if isempty(channelnumber)
             channel_out = [];
         elseif isnumeric(channelnumber) && channelnumber > 0 && channelnumber <= data.session.extracellular.nChannels
