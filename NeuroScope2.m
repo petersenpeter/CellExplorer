@@ -40,6 +40,7 @@ epoch_plotElements.events = [];
 score = [];
 raster = [];
 sliderMovedManually = false;
+deviceWriter = [];
 
 if isdeployed % Check for if NeuroScope2 is running as a deployed app (compiled .exe or .app for windows and mac respectively)
     if ~isempty(varargin) % If a file name is provided it will load it.
@@ -94,6 +95,10 @@ initUI
 initData(basepath,basename);
 initInputs
 initTraces
+
+if UI.settings.audioPlay
+    initAudioDeviceWriter
+end
 
 % Maximazing figure to full screen
 if ~verLessThan('matlab', '9.4')
@@ -657,10 +662,20 @@ end
         UI.panel.instantaneousMetrics.lowerBand  = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'Edit', 'String', num2str(UI.settings.instantaneousMetrics.lowerBand), 'Units','normalized', 'Position', [0.34 0.01 0.32 0.36],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
         UI.panel.instantaneousMetrics.higherBand = uicontrol('Parent',UI.panel.instantaneousMetrics.main,'Style', 'Edit', 'String', num2str(UI.settings.instantaneousMetrics.higherBand), 'Units','normalized', 'Position', [0.67 0.01 0.32 0.36],'Callback',@toggleInstantaneousMetrics,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
         
+        % Play audio-trace when streaming ephys
+        UI.panel.audio.main = uipanel('Parent',UI.panel.other.main,'title','Audio playback during streaming');
+        UI.panel.audio.playAudio = uicontrol('Parent',UI.panel.audio.main,'Style', 'checkbox','String','Play audio', 'value', 0, 'Units','normalized', 'Position',   [0.01 0.64 0.48 0.34],'Callback',@togglePlayAudio,'HorizontalAlignment','left');
+        UI.panel.audio.gain = uicontrol('Parent',UI.panel.audio.main,'Style', 'popup','String',{'Gain: 1','Gain: 2','Gain: 5','Gain: 10','Gain: 20'}, 'value', UI.settings.audioGain, 'Units','normalized', 'Position', [0.5 0.64 0.49 0.34],'Callback',@togglePlayAudio,'HorizontalAlignment','left');
+        
+        uicontrol('Parent',UI.panel.audio.main,'Style', 'text', 'String', 'Left channel', 'Units','normalized', 'Position', [0.0 0.38 0.5 0.24],'HorizontalAlignment','center');
+        uicontrol('Parent',UI.panel.audio.main,'Style', 'text', 'String', 'Right channel', 'Units','normalized', 'Position', [0.5 0.38 0.5 0.24],'HorizontalAlignment','center');
+        UI.panel.audio.leftChannel  = uicontrol('Parent',UI.panel.audio.main,'Style', 'Edit', 'String', num2str(UI.settings.audioChannels(1)), 'Units','normalized', 'Position', [0.01 0 0.485 0.36],'HorizontalAlignment','center','tooltip','Left channel','Callback',@togglePlayAudio);
+        UI.panel.audio.rightChannel = uicontrol('Parent',UI.panel.audio.main,'Style', 'Edit', 'String', num2str(UI.settings.audioChannels(2)), 'Units','normalized', 'Position', [0.505 0 0.485 0.36],'HorizontalAlignment','center','tooltip','Right channel','Callback',@togglePlayAudio);
+                
         % Defining flexible panel heights
-        set(UI.panel.other.main, 'Heights', [240 110 95 140 95 50 90 90],'MinimumHeights',[260 120 100 150 150 50 90 90]);
+        set(UI.panel.other.main, 'Heights', [240 110 95 140 95 50 90 90 90],'MinimumHeights',[260 120 100 150 150 50 90 90 90]);
         UI.panel.other.main1.MinimumWidths = 218;
-        UI.panel.other.main1.MinimumHeights = 1010;
+        UI.panel.other.main1.MinimumHeights = 1103;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -706,6 +721,9 @@ end
         UI.legend = {};
         
         % Ephys traces
+        if ~UI.settings.playAudioFirst
+            load_ephys_data
+        end
         plot_ephys
         
         % KiloSort data
@@ -832,23 +850,7 @@ end
         UI.legend = [UI.legend;text_string];
     end
     
-    function plot_ephys
-        % Loading and plotting ephys data
-        % There are five plot styles, for optimized plotting performance
-        % 1. Downsampled: Shows every 16th sample of the raw data (no filter or averaging)
-        % 2. Range: Shows a sample count optimized for the screen resolution. For each sample the max and the min is plotted of data in the corresponding temporal range
-        % 3. Raw: Raw data at full sampling rate
-        % 4. LFP: .LFP file, typically the raw data has been downpass filtered and downsampled to 1250Hz before this. All samples are shown.
-        % 5. Image: Raw data displayed with the imagesc function
-        % Only data thas is not currently displayed will be loaded.
-        
-        if UI.settings.greyScaleTraces < 5
-            colors = UI.colors/UI.settings.greyScaleTraces;
-        elseif UI.settings.greyScaleTraces >=5
-            colors = ones(size(UI.colors))/(UI.settings.greyScaleTraces-4);
-            colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
-        end
-        
+    function load_ephys_data
         % Setting booleans for validating ephys loading and plotting        
         ephys.loaded = false;
         ephys.plotted = false;
@@ -859,8 +861,7 @@ end
                 text_center('Failed to load LFP data')
                 return
             end
-            sr = data.session.extracellular.srLfp;
-            ephys.sr = sr;
+            ephys.sr = data.session.extracellular.srLfp;
             fileID = UI.fid.lfp;
             
         else % dat file
@@ -870,8 +871,7 @@ end
                 text_center('Failed to load raw data')
                 return
             end
-            sr = data.session.extracellular.sr;
-            ephys.sr = sr;
+            ephys.sr = data.session.extracellular.sr;
             fileID = UI.fid.ephys;
         end
         
@@ -884,7 +884,7 @@ end
                 % Keeping existing samples
                 ephys.raw(1:existingSamples,:) = ephys.raw(newSamples+1:UI.samplesToDisplay,:);
                 % Loading new samples
-                fseek(fileID,round((UI.t0+UI.settings.windowDuration-t_offset)*sr)*data.session.extracellular.nChannels*2,'bof'); % bof: beginning of file
+                fseek(fileID,round((UI.t0+UI.settings.windowDuration-t_offset)*ephys.sr)*data.session.extracellular.nChannels*2,'bof'); % bof: beginning of file
                 try
                     ephys.raw(existingSamples+1:UI.samplesToDisplay,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],UI.settings.precision))'*UI.settings.leastSignificantBit;
                     ephys.loaded = true;
@@ -899,19 +899,19 @@ end
                 existingSamples = UI.samplesToDisplay-newSamples;
                 ephys.raw(newSamples+1:UI.samplesToDisplay,:) = ephys.raw(1:existingSamples,:);
                 % Loading new data
-                fseek(fileID,round(UI.t0*sr)*data.session.extracellular.nChannels*2,'bof');
+                fseek(fileID,round(UI.t0*ephys.sr)*data.session.extracellular.nChannels*2,'bof');
                 ephys.raw(1:newSamples,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],UI.settings.precision))'*UI.settings.leastSignificantBit;
                 ephys.loaded = true;
             elseif UI.t0==UI.t1 && ~UI.forceNewData
                 ephys.loaded = true;
             else
-                fseek(fileID,round(UI.t0*sr)*data.session.extracellular.nChannels*2,'bof');
+                fseek(fileID,round(UI.t0*ephys.sr)*data.session.extracellular.nChannels*2,'bof');
                 ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],UI.settings.precision))'*UI.settings.leastSignificantBit;
                 ephys.loaded = true;
             end
             UI.forceNewData = false;
         else
-            fseek(fileID,ceil(-UI.settings.windowDuration*sr)*data.session.extracellular.nChannels*2,'eof'); % eof: end of file
+            fseek(fileID,ceil(-UI.settings.windowDuration*ephys.sr)*data.session.extracellular.nChannels*2,'eof'); % eof: end of file
             ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],UI.settings.precision))'*UI.settings.leastSignificantBit;
             UI.forceNewData = true;
             ephys.loaded = true;
@@ -937,27 +937,24 @@ end
         end
         
         if UI.settings.filterTraces && UI.settings.plotStyle == 4
-            if int_gt_0(UI.settings.filter.lowerBand,sr) && ~int_gt_0(UI.settings.filter.higherBand,sr)
-                [b1, a1] = butter(3, UI.settings.filter.higherBand/sr*2, 'low');
-            elseif int_gt_0(UI.settings.filter.higherBand,sr) && ~int_gt_0(UI.settings.filter.lowerBand,sr)
-                [b1, a1] = butter(3, UI.settings.filter.lowerBand/sr*2, 'high');
+            if int_gt_0(UI.settings.filter.lowerBand,ephys.sr) && ~int_gt_0(UI.settings.filter.higherBand,ephys.sr)
+                [b1, a1] = butter(3, UI.settings.filter.higherBand/ephys.sr*2, 'low');
+            elseif int_gt_0(UI.settings.filter.higherBand,ephys.sr) && ~int_gt_0(UI.settings.filter.lowerBand,ephys.sr)
+                [b1, a1] = butter(3, UI.settings.filter.lowerBand/ephys.sr*2, 'high');
             else
-                [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/sr*2, 'bandpass');
+                [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/ephys.sr*2, 'bandpass');
             end
             ephys.traces(:,UI.channelOrder) = filtfilt(b1, a1, ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000);
         elseif UI.settings.filterTraces
-            if isempty(UI.settings.filter.higherBand)
-                UI.settings.filter.higherBand = sr;
-            end
-            if UI.settings.filter.higherBand < 50 && sr>UI.settings.filter.higherBand*100
+            if ~isempty(UI.settings.filter.higherBand) && UI.settings.filter.higherBand < 50 && ephys.sr>UI.settings.filter.higherBand*100
                 % Downsampling to improve filter response at low filter ranges
                 n_downsampled = 20;
-                sr_downsampled = sr/n_downsampled;
+                sr_downsampled = ephys.sr/n_downsampled;
                 data_downsampled = downsample(ephys.traces(:,UI.channelOrder) * (UI.settings.scalingFactor)/1000000,n_downsampled);
                 
-                if int_gt_0(UI.settings.filter.lowerBand,sr) && ~int_gt_0(UI.settings.filter.higherBand,sr)
+                if int_gt_0(UI.settings.filter.lowerBand,ephys.sr) && ~int_gt_0(UI.settings.filter.higherBand,ephys.sr)
                     [b1, a1] = butter(3, UI.settings.filter.higherBand/sr_downsampled*2, 'low');
-                elseif int_gt_0(UI.settings.filter.higherBand,sr) && ~int_gt_0(UI.settings.filter.lowerBand,sr)
+                elseif int_gt_0(UI.settings.filter.higherBand,ephys.sr) && ~int_gt_0(UI.settings.filter.lowerBand,ephys.sr)
                     [b1, a1] = butter(3, UI.settings.filter.lowerBand/sr_downsampled*2, 'high');
                 else
                     [b1, a1] = butter(3, [UI.settings.filter.lowerBand,UI.settings.filter.higherBand]/sr_downsampled*2, 'bandpass');
@@ -973,8 +970,27 @@ end
         
         if UI.settings.plotEnergy
             for i = UI.channelOrder
-                ephys.traces(:,i) = 2*smooth(abs(ephys.traces(:,i)),round(UI.settings.energyWindow*sr),'moving');
+                ephys.traces(:,i) = 2*smooth(abs(ephys.traces(:,i)),round(UI.settings.energyWindow*ephys.sr),'moving');
             end
+        end
+
+    end
+    
+    function plot_ephys
+        % Loading and plotting ephys data
+        % There are five plot styles, for optimized plotting performance
+        % 1. Downsampled: Shows every 16th sample of the raw data (no filter or averaging)
+        % 2. Range: Shows a sample count optimized for the screen resolution. For each sample the max and the min is plotted of data in the corresponding temporal range
+        % 3. Raw: Raw data at full sampling rate
+        % 4. LFP: .LFP file, typically the raw data has been downpass filtered and downsampled to 1250Hz before this. All samples are shown.
+        % 5. Image: Raw data displayed with the imagesc function
+        % Only data thas is not currently displayed will be loaded.
+        
+        if UI.settings.greyScaleTraces < 5
+            colors = UI.colors/UI.settings.greyScaleTraces;
+        elseif UI.settings.greyScaleTraces >=5
+            colors = ones(size(UI.colors))/(UI.settings.greyScaleTraces-4);
+            colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
         end
         
         % CSD Background plot
@@ -2117,13 +2133,12 @@ end
     
     function plotSpectrogram
         if ismember(UI.settings.spectrogram.channel,UI.channelOrder)
-            sr = ephys.sr;
             spectrogram_range = UI.dataRange.spectrogram;
             window = UI.settings.spectrogram.window;
             freq_range = UI.settings.spectrogram.freq_range;
             y_ticks = UI.settings.spectrogram.y_ticks;
             
-            [s, ~, t] = spectrogram(ephys.traces(:,UI.settings.spectrogram.channel)*5, round(sr*UI.settings.spectrogram.window) ,round(sr*UI.settings.spectrogram.window*0.95), UI.settings.spectrogram.freq_range, sr);
+            [s, ~, t] = spectrogram(ephys.traces(:,UI.settings.spectrogram.channel)*5, round(ephys.sr*UI.settings.spectrogram.window) ,round(ephys.sr*UI.settings.spectrogram.window*0.95), UI.settings.spectrogram.freq_range, ephys.sr);
             multiplier = [0:size(s,1)-1]/(size(s,1)-1)*diff(spectrogram_range)+spectrogram_range(1);
             
             scaling = 200;
@@ -2136,9 +2151,7 @@ end
         end
     end
     
-    function plotInstantaneousMetrics
-        % sr = ephys.sr;
-        
+    function plotInstantaneousMetrics        
         if int_gt_0(UI.settings.instantaneousMetrics.lowerBand,ephys.sr) && int_gt_0(UI.settings.instantaneousMetrics.higherBand,ephys.sr)
             return
         elseif int_gt_0(UI.settings.instantaneousMetrics.lowerBand,ephys.sr) && ~int_gt_0(UI.settings.instantaneousMetrics.higherBand,ephys.sr)
@@ -2686,8 +2699,6 @@ end
         uiresume(UI.fig);
     end
     
-    
-    
     function toggleRMSnoiseInset(~,~)
         if UI.panel.RMSnoiseInset.showRMSnoiseInset.Value == 1
             UI.settings.plotRMSnoiseInset = true;
@@ -2747,6 +2758,37 @@ end
         
         initTraces
         uiresume(UI.fig);
+    end
+    
+    function togglePlayAudio(~,~)
+        UI.settings.stream = false;
+        gain_values = [1,2,5,10,20];
+        UI.settings.audioGain = gain_values(UI.panel.audio.gain.Value);
+        
+        [channel_out_left,channel_valid_left] = validate_channel(UI.panel.audio.leftChannel.String);
+        if ~channel_valid_left
+            UI.panel.audio.leftChannel.String = num2str(channel_out_left);
+        end
+        
+        [channel_out_right,channel_valid_right] = validate_channel(UI.panel.audio.rightChannel.String);
+        if ~channel_valid_right
+            UI.panel.audio.leftChannel.String = num2str(channel_out_right);
+        end
+        
+        UI.settings.audioChannels = [channel_out_left,channel_out_right];
+        
+        if UI.panel.audio.playAudio.Value == 1
+            if ~isempty(UI.settings.audioChannels)
+                initAudioDeviceWriter
+                UI.settings.audioPlay = true;
+            else
+                UI.panel.audio.playAudio.Value = 0;
+                UI.settings.audioPlay = false;
+                MsgLog('Please set audio channels first',4);
+            end
+        else
+            UI.settings.audioPlay = false;
+        end
     end
     
     function show_CSD(~,~)
@@ -2884,12 +2926,17 @@ end
     end
     
     function streamData
-        % Streams  data from t0, updating traces twice per window duration
+        % Streams  data from t0, updating traces twice per window duration (UI.settings.replayRefreshInterval)
         if ~UI.settings.stream
             UI.settings.stream = true;
             UI.settings.fileRead = 'bof';
             UI.buttons.play1.String = [char(9646) char(9646)];
-            UI.elements.lower.performance.String = ['  Streaming...'];
+            UI.elements.lower.performance.String = '  Streaming...';
+            if UI.settings.audioPlay
+            	UI.settings.playAudioFirst = true;
+            else
+                UI.settings.playAudioFirst = false;
+            end
             
             while UI.settings.stream
                 streamTic = tic;
@@ -2898,22 +2945,48 @@ end
                 if ~ishandle(UI.fig)
                     return
                 end
+                if UI.settings.playAudioFirst
+                    load_ephys_data
+                end
+                
+                % playAudioWithTrace
+                if UI.settings.audioPlay
+                    streamTicAudio = tic;
+                    if UI.settings.deviceWriterActive
+                        samples = round(UI.settings.replayRefreshInterval*ephys.nSamples)+1:ephys.nSamples;
+                    else
+                        samples = 1:round(UI.settings.replayRefreshInterval*ephys.nSamples);
+                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,107));
+                        samples = round(UI.settings.replayRefreshInterval*ephys.nSamples)+1:ephys.nSamples;
+                    end
+                    deviceWriter(UI.settings.audioGain*ephys.traces(samples,107));
+                    UI.settings.deviceWriterActive = true;
+                end
+                
                 plotData
                 
+                if UI.settings.audioPlay
+                    highlightTraces(UI.settings.audioChannels,UI.settings.primaryColor);
+                end
+
                 % Updating UI text and slider
                 UI.elements.lower.time.String = num2str(UI.t0);
                 setTimeText(UI.t0)
                 UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Streaming','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor,'HitTest','off');
-                streamToc = toc(streamTic);
-                pauseBins = ones(1,10) * 0.05*UI.settings.windowDuration;
+                if UI.settings.audioPlay
+                    streamToc = toc(streamTicAudio);
+                else
+                    streamToc = toc(streamTic);
+                end
+                pauseBins = ones(1,10) * (UI.settings.replayRefreshInterval*0.1*(UI.settings.windowDuration-streamToc));
                 pauseBins(cumsum(pauseBins)-streamToc<0) = [];
                 if ~isempty(pauseBins)
-                pauseBins(end) = pauseBins(1)-rem(streamToc,pauseBins(end));
-                for i = 1:numel(pauseBins)
-                    if UI.settings.stream
-                        pause(pauseBins(i))
+                    pauseBins(end) = pauseBins(1)-pauseBins(end);
+                    for i = 1:numel(pauseBins)
+                        if UI.settings.stream
+                            pause(pauseBins(i))
+                        end
                     end
-                end
                 end
             end
             UI.elements.lower.performance.String = '';
@@ -2924,6 +2997,11 @@ end
         end
         UI.buttons.play1.String = char(9654);
         UI.buttons.play2.String = [char(9655) char(9654)];
+        if UI.settings.audioPlay
+            release(deviceWriter)
+            UI.settings.deviceWriterActive = false;
+            UI.settings.playAudioFirst = false;
+        end        
     end
     
     function streamData2
@@ -2961,6 +3039,21 @@ end
         benchmarkDuration(true)
     end
     
+    function initAudioDeviceWriter(~,~)
+        if isToolboxInstalled('DSP System Toolbox') || isToolboxInstalled('Audio Toolbox')
+            deviceWriter = audioDeviceWriter('SampleRate',data.session.extracellular.sr);
+            SamplesPerFrame = round(UI.settings.replayRefreshInterval*data.session.extracellular.sr);
+            NumChannels = numel(UI.settings.audioChannels);
+            setup(deviceWriter,zeros(SamplesPerFrame,NumChannels))
+            UI.settings.deviceWriterActive = true;            
+        else
+            MsgLog('Audio streaming requires the DSP System Toolbox or the Audio Toolbox. Please install one of the toolboxes.',2);
+            UI.settings.audioPlay = false;
+            UI.panel.audio.playAudio.Value = 0;
+            return
+        end
+    end
+
     function performTestSuite(~,~)
         disp('Performing test suite...')
         TestSuite_tic = tic;
@@ -3909,6 +4002,9 @@ end
                     if ~isempty(indx)
                         data.session.channelTags = rmfield(data.session.channelTags,list(indx));
                         updateChannelTags
+                        UI.settings.channelTags.hide = [];
+                        UI.settings.channelTags.filter = [];
+                        UI.settings.channelTags.highlight = [];
                         initTraces
                         uiresume(UI.fig);
                     end
@@ -5013,7 +5109,6 @@ end
     end
                 
     function updateChanCoordsPlot(~,~)
-
         UI.settings.stream = false;
         pos = UI.plotpoints.roi_ChanCoords.Position;
         x1 = [pos(1),pos(1)+pos(3),pos(1)+pos(3),pos(1)];
@@ -5043,6 +5138,20 @@ end
         t0 = min([max([0,floor(t0*data.session.extracellular.sr)/data.session.extracellular.sr]),UI.t_total-UI.settings.windowDuration]);
         if isnan(t0)
             t0 = 0;
+        end
+    end
+    
+    function [channel_out,channel_valid] = validate_channel(channel_field)
+        channel_valid = true;
+        channelnumber = str2num(channel_field);
+        if isempty(channelnumber)
+            channel_out = [];
+        elseif isnumeric(channelnumber) && channelnumber > 0 && channelnumber <= data.session.extracellular.nChannels
+            channel_out = ceil(channelnumber);
+        else
+            channel_out = 1;
+            MsgLog('The channel is not valid',4);
+            channel_valid = false;
         end
     end
 
