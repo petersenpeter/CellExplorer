@@ -2956,10 +2956,10 @@ end
                         samples = round(UI.settings.replayRefreshInterval*ephys.nSamples)+1:ephys.nSamples;
                     else
                         samples = 1:round(UI.settings.replayRefreshInterval*ephys.nSamples);
-                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,107));
+                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,UI.settings.audioChannels));
                         samples = round(UI.settings.replayRefreshInterval*ephys.nSamples)+1:ephys.nSamples;
                     end
-                    deviceWriter(UI.settings.audioGain*ephys.traces(samples,107));
+                    deviceWriter(UI.settings.audioGain*ephys.traces(samples,UI.settings.audioChannels));
                     UI.settings.deviceWriterActive = true;
                 end
                 
