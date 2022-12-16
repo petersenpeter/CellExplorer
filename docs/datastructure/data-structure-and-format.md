@@ -117,8 +117,9 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
   * `startTime`
   * `stopTime`
 * `extracellular`
-  * `equipment` : hardware used to acquire the data
-  * `fileFormat` : format of the raw data
+  * `equipment` : hardware used to acquire the data  
+  * `fileFormat` : file format of the raw data file (e.g. dat or bin)
+  * `fileName` : name of the raw data file (can also be a relative path to the raw data file)
   * `sr` : sampling rate
   * `nChannels` : number of channels
   * `nSamples` : number of samples
