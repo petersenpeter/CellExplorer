@@ -124,6 +124,6 @@ NeuroScope2
 ```
 
 {: .note-title }
-> NeuroScope2 example dataset
+> NeuroScope2 example dataset available to download
 > 
-> The [example dataset is also availabe for download](https://cellexplorer.org/datastructure/data-structure-and-format/#example-dataset), and contains spikes, brain states, behavior, events data, and digital and analog traces.
+> The [example dataset is available to download](https://cellexplorer.org/datastructure/data-structure-and-format/#example-dataset), and contains spikes, brain states, behavior, events data, and digital and analog traces.

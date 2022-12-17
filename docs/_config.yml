@@ -83,6 +83,8 @@ callouts:
   note:
     title: Note
     color: blue
+  note-title:
+    color: blue
   highlight:
     color: yellow
   important:
