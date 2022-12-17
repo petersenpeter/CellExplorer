@@ -4,12 +4,9 @@ title: Neuropixels
 parent: Tutorials
 nav_order: 3
 ---
-
-{% include youtube.html id="ejI5VIz9Yw8" %}
-
 # Neuropixels tutorial
 {: .no_toc}
-This tutorial shows how to process a Neuropixels dataset. It is based on the online presentation of [CellExplorer at the Neuropixels course in 2022](https://www.youtube.com/watch?v=ejI5VIz9Yw8). The presentation includes an introduction with slides and a demo in Matlab (11 minutes long). 
+This tutorial shows how to process a Neuropixels dataset. It is based on the online presentation of [CellExplorer at the Neuropixels course in 2022](https://www.youtube.com/watch?v=ejI5VIz9Yw8). The presentation includes an introduction with slides and a demo in Matlab (11 minutes long; the video is embedded below). 
 
 This tutorial includes:
 1. Preparation of the session metadata
@@ -20,7 +17,7 @@ This tutorial includes:
 {: .note }
 The tutorial is also available as a separate Matlab script (`tutorials/CellExplorer_NeuropixelsTutorial.m`).
 
-
+{% include youtube.html id="ejI5VIz9Yw8" %}
 
 ### 1. Generate session metadata struct using the template script and display the metadata in the session gui
 For this tutorial, I used a Neuropixels dataset from a pilot study performed on a rat (384 channels, 200GB, ~2.5 hours). 
@@ -106,7 +103,8 @@ load('/Volumes/Peter_SSD_4/cell_metrics/cell_metrics_peter_viktor.mat');
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 
-### 3.3 To work in batch-mode, you can define the list basepaths and basenames of your sessions, and combine them with a dedicated batch script `loadCellMetricsBatch`, before running CellExplorer
+To work in batch-mode you can define the list basepaths and basenames of your sessions, and combine them with a dedicated batch script `loadCellMetricsBatch`, before running CellExplorer
+
 ```m
 basepaths = {'/your/data/path/basename1/','/your/data/path/basename2/'};
 basenames = {'basename1','basename2'};
@@ -118,6 +116,7 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 
 ### 4. NeuroScope2
 Here I am using NeuroScope2 to view a dataset recorded with two 6-shank silicon probes implanted bilaterally in CA1 (128 channels; 150 cells)
+
 ```m
 cd('/Volumes/Peter_SSD_4/CellExplorerTutorial/MS22/Peter_MS22_180629_110319_concat');
 NeuroScope2
