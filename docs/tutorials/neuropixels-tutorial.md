@@ -6,7 +6,7 @@ nav_order: 3
 ---
 # Neuropixels tutorial
 {: .no_toc}
-This tutorial shows how to process a Neuropixels dataset. It is based on the online presentation of [CellExplorer at the Neuropixels course in 2022](https://www.youtube.com/watch?v=ejI5VIz9Yw8). The presentation includes an introduction with slides and a demo in Matlab (11 minutes long; the video is embedded below). 
+This tutorial shows how to process a Neuropixels dataset. It is based on the online presentation of [CellExplorer at the Neuropixels course in 2022](https://www.youtube.com/watch?v=ejI5VIz9Yw8). The presentation included an introduction with slides and a demo in Matlab (11 minutes long - the video is embedded below). 
 
 This tutorial includes:
 1. Preparation of the session metadata
@@ -31,13 +31,11 @@ cd(basepath)
 The dataset should ideally consist of the raw data `basename.dat`, and spike sorted data. For this session we have a number of files from various sources (check the video above for further details):
 
 - PP02_2020-07-10.dat       : raw data ([format define here](https://cellexplorer.org/datastructure/data-structure-and-format/#raw-data-file-format))
-- rez.mat                   : metadata from KiloSort ([format defined here](https://github.com/MouseLand/Kilosort/wiki/7.-Output-variables))
+- rez.mat                   : metadata from KiloSort ([format defined on the KiloSort wiki](https://github.com/MouseLand/Kilosort/wiki/7.-Output-variables))
 - PP02_2020-07-10.xml       : metadata from NeuroSuite 
-- /*.npy and /*.tsv files : Spike data from Phy ([files described here](https://phy.readthedocs.io/en/latest/terminology/))
+- \*.npy and \*.tsv files : Spike data from Phy ([files described on the Phy website](https://phy.readthedocs.io/en/latest/terminology/))
 
-{: .note-title }
-> Note about Neuropixels recordings
-> 
+{: .note }
 > SpikeGLX and OpenEphys stores the raw data as a bin file and a low-pass filtered LFP file in another folder. The .dat file and the .bin file are the same underlying format but different extensions. You can either rename the .bin file to .dat, or specify the relative path and name of the file in the session metadata: `session.extracellular.fileName = 'rawdata.bin';`. 
 > 
 > This is also true for the LFP file, but here you need to create a copy or rename the lfp file to basename.lfp. Also makre sure to specify the correct sampling rate for the lfp file: `session.extracellular. srLfp= 2500;`
@@ -51,9 +49,11 @@ Next, we will use the session-GUI to inspect the generated session struct. You c
 ```m
 session = gui_session(session);
 ```
-![ProcessCellMetrics_gui](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_general.png)
 
-Make sure that the extracellular tab is filled out correctly for your data (see screenshot below). The template script can extracted existing metadata from a Neuroscope compatible `basename.xml`, from Intan's `info.rhd` file, from KiloSort's `rez.mat` file, and from a `basename.sessionInfo.mat` (Buzcode) file.
+Make sure that the extracellular tab is filled out correctly for your data (see example screenshot below). The template script can extracted existing metadata from a Neuroscope compatible `basename.xml`, from Intan's `info.rhd` file, from KiloSort's `rez.mat` file, and from a `basename.sessionInfo.mat` (Buzcode) file.
+
+{: .note}
+Neuropixels recordings typically will have 384 channels, sampled at 30 kHz. The channels are ordered staggered along the probe, starting from the tip of the probe. Least significant bit is 0.195 µV. 
 
 ![ProcessCellMetrics_gui](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_session_extracellular.png)
 
@@ -123,6 +123,6 @@ NeuroScope2
 ```
 
 {: .note-title }
-> NeuroScope2 example dataset available to download
+> Example dataset shown in NeuroScope2 is available to download
 > 
-> The [example dataset is available to download](https://cellexplorer.org/datastructure/data-structure-and-format/#example-dataset), and contains spikes, brain states, behavior, events data, and digital and analog traces.
+> Please see the [download instructions](https://cellexplorer.org/datastructure/data-structure-and-format/#example-dataset). The dataset contains a raw dat file, an lfp file, session metadata, spikes, brain states, behavior, events data, and digital and analog traces.
