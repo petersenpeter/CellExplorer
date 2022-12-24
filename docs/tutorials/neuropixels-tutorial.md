@@ -110,7 +110,6 @@ basepaths = {'/your/data/path/basename1/','/your/data/path/basename2/'};
 basenames = {'basename1','basename2'};
 
 cell_metrics = loadCellMetricsBatch('basepaths',basepaths,'basenames',basenames);
-
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
 
@@ -122,7 +121,14 @@ cd('/Volumes/Peter_SSD_4/CellExplorerTutorial/MS22/Peter_MS22_180629_110319_conc
 NeuroScope2
 ```
 
-{: .note-title }
+{: .note-title}
 > Example dataset shown in NeuroScope2 is available to download
 > 
 > Please see the [download instructions](https://cellexplorer.org/datastructure/data-structure-and-format/#example-dataset). The dataset contains a raw dat file, an lfp file, session metadata, spikes, brain states, behavior, events data, and digital and analog traces.
+
+{: .note-title}
+> Viewing a Neuropixels recording in NeuroScope2
+> 
+> Matlab's plot performance scales non-linearly with the number of raw data points, but linearly with the number of channels plotted. For optimized performance, the windows duration should be kept below 0.6 sec when viewing the raw data for a Neuropixels recording with 384 channels sampled at 30kHz.
+> Neuropixels recordings has a DC offset that is recommended to remove when viewing the traces by selecting "Remove DC from ephys traces" from the settings menu in NeuroScope2.
+
