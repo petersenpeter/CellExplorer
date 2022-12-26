@@ -87,4 +87,5 @@ sessionNames = {'sessionName1','sessionName2','sessionName3'};
 cell_metrics = loadCellMetricsBatch('sessions',sessionNames);
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
+
 As you perform classifications in CellExplorer in batch mode, you can save your progress to the original sessions. You can work in batch mode from a list of paths as well.

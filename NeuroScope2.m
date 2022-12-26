@@ -22,7 +22,7 @@ function NeuroScope2(varargin)
 % Shortcuts
 % initUI, initData, initInputs, initTraces, 
 % ClickPlot, performTestSuite
-% plotData, plot_ephys, plotSpikeData, plotSpectrogram, plotTemporalStates, plotEventData, plotTimeSeriesData, 
+% plotData, plot_ephys, plotSpikeData, plotSpectrogram, plotTemporalStates, plotEventData, plotTimeSeriesData, streamData
 % plotAnalog, plotDigital, plotBehavior, plotTrials, plotRMSnoiseInset, plotSpikesPCAspace
 % showEvents, showBehavior
 
@@ -41,6 +41,7 @@ score = [];
 raster = [];
 sliderMovedManually = false;
 deviceWriter = [];
+polygon1.handle = gobjects(0);
 
 if isdeployed % Check for if NeuroScope2 is running as a deployed app (compiled .exe or .app for windows and mac respectively)
     if ~isempty(varargin) % If a file name is provided it will load it.
@@ -223,7 +224,7 @@ end
         UI.settings.channelTags.filter = [];
         UI.settings.channelTags.highlight = [];
         UI.settings.normalClick = true;
-        UI.settings.addEventonClick = false;
+        UI.settings.addEventonClick = 0;
         UI.settings.columns = 1;
         UI.settings.allow_dialogs = true;
         
@@ -271,12 +272,15 @@ end
         UI.params.sortingMetric = 'putativeCellType';
         UI.params.groupMetric = 'putativeCellType';
         
+        % Audio
+        UI.settings.playAudioFirst = false; % Must be false
+        UI.settings.deviceWriterActive = false; % Must be false
+        
         % % % % % % % % % % % % % % % % % % % % % %
         % User preferences/settings
         % % % % % % % % % % % % % % % % % % % % % %
         
-        UI.settings = preferences_NeuroScope2(UI.settings);
-        
+        UI.settings = preferences_NeuroScope2(UI.settings);        
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Creating figure
@@ -575,8 +579,9 @@ end
         UI.panel.events.navigation = uipanel('Parent',UI.panel.other.main,'title','Events (*.events.mat)');
         UI.table.eventsdata = uitable(UI.panel.events.navigation,'Data', {'','',false,false,false},'Units','normalized','Position',[0 0.54 1 0.46],'ColumnWidth',{20 65 42 50 45},'columnname',{'','Name','Show','Active','Below'},'RowName',[],'ColumnEditable',[false false true true true],'CellEditCallback',@setEventData,'CellSelectionCallback',@ClicktoSelectFromTable3);
 
-        UI.panel.events.showEventsIntervals = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.01 0.45 0.458 0.08], 'value', 0,'String','Intervals','Callback',@showEventsIntervals,'KeyPressFcn', @keyPress,'tooltip','Show events intervals');
-        UI.panel.events.processing_steps = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.505 0.45 0.458 0.08], 'value', 0,'String','Processing','Callback',@processing_steps,'KeyPressFcn', @keyPress,'tooltip','Show processing steps');
+        UI.panel.events.showEventsIntervals = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.01 0.45 0.32 0.08], 'value', 0,'String','Intervals','Callback',@showEventsIntervals,'KeyPressFcn', @keyPress,'tooltip','Show events intervals');
+        UI.panel.events.processing_steps = uicontrol('Parent',UI.panel.events.navigation,'Style','checkbox','Units','normalized','Position',[0.34 0.45 0.32 0.08], 'value', 0,'String','Processing','Callback',@processing_steps,'KeyPressFcn', @keyPress,'tooltip','Show processing steps');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.665 0.44 0.32 0.10],'String','Save events','Callback',@saveEvent,'KeyPressFcn', @keyPress,'tooltip','Save');
         UI.panel.events.eventNumber = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.34 0.485 0.09],'HorizontalAlignment','center','tooltip','Event number','Callback',@gotoEvents);
         UI.panel.events.eventCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nEvents', 'Units','normalized', 'Position', [0.505 0.34 0.485 0.09],'HorizontalAlignment','center','Enable','off');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.23 0.32 0.10],'String',char(8592),'Callback',@previousEvent,'KeyPressFcn', @keyPress,'tooltip','Previous event');
@@ -584,8 +589,9 @@ end
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0.23 0.32 0.10],'String',char(8594),'Callback',@nextEvent,'KeyPressFcn', @keyPress,'tooltip','Next event');
         uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.12 0.485 0.10],'String','Flag event','Callback',@flagEvent,'KeyPressFcn', @keyPress,'tooltip','Flag selected event');
         UI.panel.events.flagCount = uicontrol('Parent',UI.panel.events.navigation,'Style', 'Edit', 'String', 'nFlags', 'Units','normalized', 'Position', [0.505 0.12 0.485 0.10],'HorizontalAlignment','center','Enable','off');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.485 0.10],'String','Add event','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event');
-        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.505 0.01 0.485 0.10],'String','Save events','Callback',@saveEvent,'KeyPressFcn', @keyPress,'tooltip','Save events');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.32 0.10],'String','+ event','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event. Define single timestamps with cursor. Also allows for removing added timestamps. Saved to .added');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.34 0.01 0.32 0.10],'String','+ interval','Callback',@addInterval,'KeyPressFcn', @keyPress,'tooltip','Add intervals. Define boundaries with mouse cursor. Saved to .added_intervals');
+        uicontrol('Parent',UI.panel.events.navigation,'Style','pushbutton','Units','normalized','Position',[0.67 0.01 0.32 0.10],'String','- interval','Callback',@removeInterval,'KeyPressFcn', @keyPress,'tooltip','Remove intervals. Define boundaries with mouse cursor. Affects only manually added intervals. Saved to .added_intervals');
         
         % Time series
         UI.panel.timeseries.main = uipanel('Parent',UI.panel.other.main,'title','Time series (*.timeseries.mat)');
@@ -673,9 +679,9 @@ end
         UI.panel.audio.rightChannel = uicontrol('Parent',UI.panel.audio.main,'Style', 'Edit', 'String', num2str(UI.settings.audioChannels(2)), 'Units','normalized', 'Position', [0.505 0 0.485 0.36],'HorizontalAlignment','center','tooltip','Right channel','Callback',@togglePlayAudio);
                 
         % Defining flexible panel heights
-        set(UI.panel.other.main, 'Heights', [240 110 95 140 95 50 90 90 90],'MinimumHeights',[260 120 100 150 150 50 90 90 90]);
+        set(UI.panel.other.main, 'Heights', [280 110 95 140 95 50 90 90 90],'MinimumHeights',[300 120 100 150 150 50 90 90 90]);
         UI.panel.other.main1.MinimumWidths = 218;
-        UI.panel.other.main1.MinimumHeights = 1103;
+        UI.panel.other.main1.MinimumHeights = 1143;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -2032,6 +2038,18 @@ end
                 addLegend('Added events',[0, 1, 1]);
             end
         end
+        
+        % Plotting manually created event intervals
+        if UI.settings.showEventsIntervals && isfield(data.events.(eventName),'added_intervals')
+            idx3 = find(data.events.(eventName).added_intervals(:,2) >= t1 & data.events.(eventName).added_intervals(:,1) <= t2);
+            if any(idx3)
+                statesData = data.events.(eventName).added_intervals(idx3,:)-t1;
+                p1 = patch(double([statesData,flip(statesData,2)])',[ydata2(1);ydata2(1);ydata2(2);ydata2(2)]*ones(1,size(statesData,1)),'b','EdgeColor','b','HitTest','off');
+                alpha(p1,0.2);
+                addLegend('Added event intervals',[0, 0, 1]);
+            end
+        end
+        
         spec_text = {};
         if strcmp(UI.settings.eventData,eventName)
             % Plotting processing steps
@@ -2934,6 +2952,7 @@ end
             UI.elements.lower.performance.String = '  Streaming...';
             if UI.settings.audioPlay
             	UI.settings.playAudioFirst = true;
+                n_streaming = 0;
             else
                 UI.settings.playAudioFirst = false;
             end
@@ -2952,15 +2971,16 @@ end
                 % playAudioWithTrace
                 if UI.settings.audioPlay
                     streamTicAudio = tic;
-                    if UI.settings.deviceWriterActive
-                        samples = round(UI.settings.replayRefreshInterval*ephys.nSamples)+1:ephys.nSamples;
-                    else
+                    
+                    if n_streaming == 0
+                        streamTicAudio_t0 = tic;
                         samples = 1:round(UI.settings.replayRefreshInterval*ephys.nSamples);
-                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,107));
-                        samples = round(UI.settings.replayRefreshInterval*ephys.nSamples)+1:ephys.nSamples;
+                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,107)); 
                     end
+                    samples = round(UI.settings.replayRefreshInterval*ephys.nSamples)+1:ephys.nSamples;    
                     deviceWriter(UI.settings.audioGain*ephys.traces(samples,107));
                     UI.settings.deviceWriterActive = true;
+                    n_streaming = n_streaming+1;
                 end
                 
                 plotData
@@ -2973,13 +2993,21 @@ end
                 UI.elements.lower.time.String = num2str(UI.t0);
                 setTimeText(UI.t0)
                 UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Streaming','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor,'HitTest','off');
-                if UI.settings.audioPlay
-                    streamToc = toc(streamTicAudio);
+                
+                if UI.settings.audioPlay                    
+                    streamToc = toc(streamTicAudio_t0);
+                    streamToc2 = UI.settings.replayRefreshInterval*UI.settings.windowDuration-toc(streamTicAudio);
+                    streaming_delay = UI.settings.windowDuration*UI.settings.replayRefreshInterval*n_streaming-streamToc;
+                    % disp(['streamToc=',num2str(streamToc),'   streamToc2=',num2str(streamToc2),'   streaming_delay=',num2str(streaming_delay)]);
+                    streaming_delay = min(max(streaming_delay,streamToc2),UI.settings.windowDuration);
+                    
+                    pauseBins = ones(1,10) * streaming_delay*0.1;
                 else
                     streamToc = toc(streamTic);
-                end
-                pauseBins = ones(1,10) * (UI.settings.replayRefreshInterval*0.1*(UI.settings.windowDuration-streamToc));
-                pauseBins(cumsum(pauseBins)-streamToc<0) = [];
+                    pauseBins = ones(1,10) * (UI.settings.replayRefreshInterval*0.1*(UI.settings.windowDuration-streamToc));
+                    pauseBins(cumsum(pauseBins)-streamToc<0) = [];
+                end   
+                
                 if ~isempty(pauseBins)
                     pauseBins(end) = pauseBins(1)-pauseBins(end);
                     for i = 1:numel(pauseBins)
@@ -3041,11 +3069,17 @@ end
     
     function initAudioDeviceWriter(~,~)
         if isToolboxInstalled('DSP System Toolbox') || isToolboxInstalled('Audio Toolbox')
-            deviceWriter = audioDeviceWriter('SampleRate',data.session.extracellular.sr);
-            SamplesPerFrame = round(UI.settings.replayRefreshInterval*data.session.extracellular.sr);
+            if UI.settings.plotStyle == 4
+                sr = data.session.extracellular.srLfp;
+            else
+                sr = data.session.extracellular.sr;
+            end
+            deviceWriter = audioDeviceWriter('SampleRate',sr);
+            SamplesPerFrame = round(UI.settings.replayRefreshInterval*sr);
             NumChannels = numel(UI.settings.audioChannels);
             setup(deviceWriter,zeros(SamplesPerFrame,NumChannels))
-            UI.settings.deviceWriterActive = true;            
+            UI.settings.audioPlay = true;
+            
         else
             MsgLog('Audio streaming requires the DSP System Toolbox or the Audio Toolbox. Please install one of the toolboxes.',2);
             UI.settings.audioPlay = false;
@@ -4977,7 +5011,40 @@ end
         end
         sliderMovedManually = true;
     end
-
+    
+    function p1 = plotStates(statesData,clr)
+        statesData = statesData - UI.t0;
+        ydata = [0 1];
+        p1 = patch(UI.plot_axis1,double([statesData,flip(statesData,2)])',[ydata(1);ydata(1);ydata(2);ydata(2)]*ones(1,size(statesData,1)),clr,'EdgeColor',clr,'HitTest','off');
+        alpha(p1,0.3);
+    end
+    
+    function finishIntervalSelection(actionType)
+        if polygon1.cleanExit
+            n_points = numel(polygon1.coords);
+            n_even_points = floor(n_points/2)*2;
+            selectedIntervals = reshape(polygon1.coords(1:n_even_points),2,[])';
+            states = sort(selectedIntervals,2);
+            if size(states,1)>1
+                states = ConsolidateIntervals(states);
+            end
+            if ~isfield(data.events.(UI.settings.eventData),'added_intervals')
+                data.events.(UI.settings.eventData).added_intervals = [];
+            end
+            if actionType == 2
+                data.events.(UI.settings.eventData).added_intervals = ConsolidateIntervals([data.events.(UI.settings.eventData).added_intervals;states]);
+                UI.elements.lower.performance.String = 'Intervals added';
+                UI.settings.addEventonClick = 0;
+            elseif actionType == 3
+                data.events.(UI.settings.eventData).added_intervals = SubtractIntervals(data.events.(UI.settings.eventData).added_intervals,states);
+                UI.elements.lower.performance.String = 'Intervals removed';
+                UI.settings.addEventonClick = 0;
+            end
+%             plotStates(states);
+        end
+        uiresume(UI.fig);
+    end
+    
     function ClickPlot(~,~)
         UI.settings.stream = false;
         % handles clicks on the main axes
@@ -4990,12 +5057,35 @@ end
                 
         switch get(UI.fig, 'selectiontype')
             case 'normal' % left mouse button                
-                % Adding new event
-                if UI.settings.addEventonClick
+                
+                if UI.settings.addEventonClick == 1 % Adding new event
                     data.events.(UI.settings.eventData).added = unique([data.events.(UI.settings.eventData).added;t_click]);
                     UI.elements.lower.performance.String = ['Event added: ',num2str(t_click),' sec'];
-                    UI.settings.addEventonClick = false;
+                    UI.settings.addEventonClick = 0;
                     uiresume(UI.fig);
+                elseif UI.settings.addEventonClick > 1 % Adding new interval
+                    polygon1.coords = [polygon1.coords;t_click];
+                    polygon1.counter = polygon1.counter +1;
+                    
+                    n_points = numel(polygon1.coords);
+                    polygon1.handle2(polygon1.counter) = line(UI.plot_axis1,polygon1.coords(end)*[1,1],[0,1],'color',[0.5 0.5 0.5], 'HitTest','off');
+                    if n_points>1
+                        n_even_points = floor(n_points/2)*2;
+                        statesData = polygon1.coords(1:n_even_points);
+                        statesData = reshape(statesData,2,[])';
+                        if UI.settings.addEventonClick == 2
+                            clr = 'b';
+                        else
+                            clr = 'r';
+                        end
+                        polygon1.handle(polygon1.counter) = plotStates(statesData(end,:),clr);
+                    else
+                        % polygon1.handle(polygon1.counter) = [];
+                    end
+                    
+                    if polygon1.counter > 1
+                        set(polygon1.handle2(polygon1.counter-1),'Visible','off');
+                    end
                 else % Otherwise show cursor time
                     UI.elements.lower.performance.String = ['Cursor: ',num2str(t_click),' sec'];
                 end
@@ -5003,7 +5093,7 @@ end
             case 'alt' % right mouse button
                 
                 % Removing/flagging events
-                if UI.settings.addEventonClick && ~isempty(data.events.(UI.settings.eventData).added)
+                if UI.settings.addEventonClick == 1 && ~isempty(data.events.(UI.settings.eventData).added)
                     idx3 = find(data.events.(UI.settings.eventData).added >= UI.t0 & data.events.(UI.settings.eventData).added <= UI.t0+UI.settings.windowDuration);
                     if any(idx3)
                         eventsInWindow = data.events.(UI.settings.eventData).added(idx3);
@@ -5011,16 +5101,36 @@ end
                         t_click = data.events.(UI.settings.eventData).added(idx3(idx));
                         data.events.(UI.settings.eventData).added(idx3(idx)) = [];
                         UI.elements.lower.performance.String = ['Event deleted: ',num2str(t_click),' sec'];
-                        UI.settings.addEventonClick = false;
+                        UI.settings.addEventonClick = 0;
                         uiresume(UI.fig);
                     else
-                        UI.settings.addEventonClick = false;
+                        UI.settings.addEventonClick = 0;
                         uiresume(UI.fig);
                     end
+                elseif UI.settings.addEventonClick > 1 % Adding or delete interval
+                    if polygon1.counter >= 2
+                        polygon1.cleanExit = 1;
+                    end
+                    set(UI.fig,'Pointer','arrow')
+                    finishIntervalSelection(UI.settings.addEventonClick)
+                    UI.settings.addEventonClick = 0;
                 end
                 
             case 'extend' % middle mouse button
-                if UI.settings.normalClick
+                if UI.settings.addEventonClick > 1 % Adding new interval
+                    if polygon1.counter > 1                        
+                        polygon1.coords = polygon1.coords(1:end-1);
+                        set(polygon1.handle(polygon1.counter),'Visible','off');
+                        set(polygon1.handle2(polygon1.counter),'Visible','off');
+                        polygon1.counter = polygon1.counter-1;
+                        polygon1.handle2(polygon1.counter) = line(UI.plot_axis1,polygon1.coords(end)*[1,1],[0,1],'color',[0.5 0.5 0.5], 'HitTest','off');                        
+                    elseif polygon1.counter < 2
+                        UI.settings.addEventonClick = 0;
+                        set(UI.fig,'Pointer','arrow')
+                        uiresume(UI.fig);
+                    end
+                
+                elseif UI.settings.normalClick
                     channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
                     x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration/UI.settings.columns)'+UI.settings.channels_relative_offset(channels);
                     y1 = (ephys.traces(:,channels)-UI.channelOffset(channels));
@@ -5042,8 +5152,7 @@ end
                         UI.selectedUnitsColors = UI.selectedUnitsColors(idxColors,:);
                         UI.elements.lower.performance.String = ['Unit(s) selected: ',num2str(UI.selectedUnits)];
                     end
-                end
-                
+                end                
             case 'open'
                 resetZoom
                 
@@ -5791,8 +5900,50 @@ end
             if ~isfield(data.events.(UI.settings.eventData),'added')
                 data.events.(UI.settings.eventData).added = [];
             end
-            UI.settings.addEventonClick = true;
-            UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Left click axes to add event - right click event to delete/flag','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor);
+            UI.settings.addEventonClick = 1;
+            UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Adding events (single timestamps) to active events: Left click axes to add event - right click event to delete nearest added event','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor);
+        else
+            MsgLog('Before adding events you must open an event file',2);
+        end
+    end
+    
+    function addInterval(~,~)
+        UI.settings.stream = false;
+        if any(UI.settings.showEvents)
+            if ~isfield(data.events.(UI.settings.eventData),'added_intervals')
+                data.events.(UI.settings.eventData).added = [];
+            end
+            UI.settings.addEventonClick = 2;
+            UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Adding event intervals to active events: Left mouse click to define boundaries of intervals -  complete with right mouse click, cancel last point with middle mouse click','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor);
+            
+            hold(UI.plot_axis1, 'on');
+            polygon1.handle = gobjects(0);
+            polygon1.counter = 0;
+            polygon1.cleanExit = 0;
+            polygon1.coords = [];
+            polygon1.handle2 = [];
+            set(UI.fig,'Pointer','left')
+        else
+            MsgLog('Before adding events you must open an event file',2);
+        end
+    end
+    
+    function removeInterval(~,~)
+        UI.settings.stream = false;
+        if any(UI.settings.showEvents)
+            if ~isfield(data.events.(UI.settings.eventData),'added_intervals')
+                data.events.(UI.settings.eventData).added = [];
+            end
+            UI.settings.addEventonClick = 3;
+            UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Removing event intervals from active events: Left click axes to define interval - complete with right click, cancel last point with middle click','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor);
+            
+            hold(UI.plot_axis1, 'on');
+            polygon1.handle = gobjects(0);
+            polygon1.counter = 0;
+            polygon1.cleanExit = 0;
+            polygon1.coords = [];
+            polygon1.handle2 = [];
+            set(UI.fig,'Pointer','left')
         else
             MsgLog('Before adding events you must open an event file',2);
         end
