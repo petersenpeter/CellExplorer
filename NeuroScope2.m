@@ -6662,7 +6662,7 @@ end
         answer = inputdlg({'Note'},'Add note to export',[1 50],{''});
         
         UI.settings.stream = false;
-        timestamp = datetime('now','TimeZone','local','Format','_dd-MM-yyyy_HH.mm.ss');
+        timestamp = char(datetime('now','TimeZone','local','Format','_dd-MM-yyyy_HH.mm.ss'));
         % Adding text elemenets with timestamps and windows size
         text_string1 = [' Session: ', UI.data.basename, ',   Basepath: ', UI.data.basepath];
         if ~isempty(answer) && ~isempty(answer{1})
