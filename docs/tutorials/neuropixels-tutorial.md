@@ -131,4 +131,3 @@ NeuroScope2
 > 
 > Matlab's plot performance scales non-linearly with the number of raw data points, but linearly with the number of channels plotted. For optimized performance, the windows duration should be kept below 0.6 sec when viewing the raw data for a Neuropixels recording with 384 channels sampled at 30kHz.
 > Neuropixels recordings has a DC offset that is recommended to remove when viewing the traces by selecting "Remove DC from ephys traces" from the settings menu in NeuroScope2.
-
