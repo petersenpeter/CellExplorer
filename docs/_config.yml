@@ -75,6 +75,23 @@ aux_links:
   "PDF":
     - "https://raw.githubusercontent.com/petersenpeter/common_resources/main/pdfs/Petersen_Neuron_2021.pdf"
 
+# callouts
+callouts_level: quiet # or loud
+callouts:
+  highlight:
+    color: yellow
+  important:
+    title: Important
+    color: purple
+  new:
+    title: New
+    color: green
+  note:
+    title: Note
+    color: blue
+  warning:
+    title: Warning
+    color: red
 
 # Makes Aux links open in a new tab. Default is false
 aux_links_new_tab: true
@@ -96,8 +113,6 @@ footer_content: "Copyright &copy; 2019-2022 Peter Petersen. Theme: <a href=\"htt
 last_edit_timestamp: true # show or hide edit time - page must have `last_modified_date` defined in the frontmatter
 last_edit_time_format: "%b %e %Y at %I:%M %p" # uses ruby's time format: https://ruby-doc.org/stdlib-2.7.0/libdoc/time/rdoc/Time.html
 
-
-
 # Footer "Edit this page on GitHub" link text
 gh_edit_link: false # show or hide edit this page link
 gh_edit_link_text: "Edit this page on GitHub"
@@ -107,7 +122,7 @@ gh_edit_branch: "master" # the branch that your docs is served from
 gh_edit_view_mode: "tree" # "tree" or "edit" if you want the user to jump into the editor immediately
 
 # Color scheme currently only supports "dark", "light"/nil (default), or a custom scheme that you define
-color_scheme: nil
+color_scheme: blue
 
 # Google Analytics Tracking (optional)
 # e.g, UA-1234567-89

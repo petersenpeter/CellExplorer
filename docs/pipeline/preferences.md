@@ -28,4 +28,6 @@ disp('User preferences loaded successfully')
 
 end
 ```
-The example file is located i the `+user_preferences` folder.
+
+{: .note}
+> The example file is located i the `+user_preferences` folder.

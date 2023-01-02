@@ -42,7 +42,8 @@ p = inputParser;
 addParameter(p,'buzcode',false,@islogical); % Defines whether bz_FindRipples or ce_FindRipples is called
 addParameter(p,'saveMat',true,@islogical); % Defines if a mat file is created
 addParameter(p,'saveFig',true,@islogical); % Defines if the summary figure is saved to basepath
-addParameter(p,'skip_cortical',true,@islogical); % Defines if the summary figure is saved to basepath
+addParameter(p,'skip_cortical',true,@islogical);
+addParameter(p,'notch_filter_60z',false,@islogical); % option to remove 60hz if badly contaminated
 addParameter(p,'basepath',[]);
 
 % Parsing inputs
@@ -51,6 +52,7 @@ buzcode = p.Results.buzcode;
 saveMat = p.Results.saveMat;
 saveFig = p.Results.saveFig;
 skip_cortical = p.Results.skip_cortical;
+notch_filter_60z = p.Results.notch_filter_60z;
 basepath = p.Results.basepath;
 
 % Gets basepath and basename from session struct
@@ -214,7 +216,7 @@ end
 
 SWR_slope = [];
 for jj = 1:session.extracellular.nElectrodeGroups
-
+    
     if any(jj == electrodeGroupsToExclude) && skip_cortical
         fprintf(['Skipping cortical electrode group ', num2str(jj),', ']);
         continue
@@ -246,6 +248,14 @@ for jj = 1:session.extracellular.nElectrodeGroups
     for i = 1:size(ripples.peaks,1)
         ts_idx = round(ripples.peaks(i)*srLfp)-150:round(ripples.peaks(i)*srLfp)+150;
         ripple_ave2(:,:,i) = mmf.Data.data(ripple_channels{jj},ts_idx);
+    end
+    if notch_filter_60z
+        for ch = 1:size(ripple_ave2,1)
+            for rip_i = 1:size(ripple_ave2,3)
+                ripple_ave2(ch,:,rip_i) = notch_filter(ripple_ave2(ch,:,rip_i),...
+                    session.extracellular.srLfp, 60, 10);
+            end
+        end
     end
     ripple_average{jj} = mean(ripple_ave2 * 0.000195,3)';
     ripple_power{jj} = sum(ripple_average{jj}.^2)./max(sum(ripple_average{jj}.^2));

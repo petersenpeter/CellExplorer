@@ -6,7 +6,10 @@ nav_order: 3
 ---
 # Setup database access
 {: .no_toc}
-To have full access to the [Buzsaki lab databank](https://buzsakilab.com/wp/database/) with CellExplorer, there are two necessary steps you have to do in Matlab: add your credentials and define the repository paths. Public reference data can still be used without credentials. This page is therefore mostly dedicated to lab members.
+To have full access to the [Buzsaki lab databank](https://buzsakilab.com/wp/database/) with CellExplorer, there are two necessary steps you have to do in Matlab: add your credentials and define the repository paths. Public reference data can still be used without credentials. 
+
+{: .important}
+This page is mostly dedicated to lab members. There is no need to setup db access if you do not already have an account. 
 
 ### 1. Add your db credentials
 Once CellExplorer has been added to your Matlab Set Path, you should provide your buzsakilab.com credentials in the file [db_credentials.m](https://github.com/petersenpeter/CellExplorer/blob/master/db/db_credentials.m). In the Matlab Command Window type:
@@ -39,4 +42,5 @@ session = sessions{1};
 ```
 If succesfull it will create the session struct in your workspace containing metadata for that session. You can learn more about the data structure and format [here]({{"/datastructure/data-structure-and-format/"|absolute_url}}).
 
-There are a couple of database example calls in the Matlab script [db_example.m](https://github.com/petersenpeter/CellExplorer/blob/master/db/db_example.m) located in the db folder.
+{: .note}
+> There are a couple of database example calls in the Matlab script [db_example.m](https://github.com/petersenpeter/CellExplorer/blob/master/db/db_example.m) located in the db folder.

@@ -37,6 +37,8 @@ The interface consists of a side panel, a main plot axis and a navigation bar be
    - Spectrogram
    - Current Source density visualization
    - RMS noise inset
+   - Instantaneous metrics
+   - Audio playback during streaming
 
 There are [keyboard shortcuts]({{"/interface/neuroscope2-keyboard-shortcuts/"|absolute_url}}) that allow you to quickly navigate your data. Press `H` in NeuroScope2 to see the keyboard shortcuts.
 
@@ -134,11 +136,16 @@ Events files (basename.eventName.events.mat) are automatically detected and list
 + `Below traces`: Show events below the ephys traces.
 + `Intervals`: Show intervals for each event if the data is available.
 + `Processing`: Show extra field data available from subfields in the events struct: `eventName.processing_steps.*`
++ `Save events`: Save any changes to the applied events file.
 + `Event number text field`: Navigate to specific event. Shows the current active event.  
 + `Random`: Navigate to a random event.
 + `Flag event`: Flag selected event. Flagged events are saved to the events struct `eventName.flagged` by their index id. Make sure to save the events before closing CellExplorer. 
-+ `Manual event`: Create an event manually by clicking the traces. Added events are saved to the events struct `eventName.added` by the timestamps. Make sure to save the events before closing CellExplorer. Manually added events are color coded magenta. Events can be deleted again by right clicking the events on the plot
++ `+ event`: Create an event manually by clicking the traces. Added events are saved to the events struct `eventName.added` by the timestamps. Manually added events are color coded magenta. Events can be deleted again by right clicking the events on the plot
++ `+ interval`: Create intervals manually by clicking the traces. Added intervals are saved to the events struct `eventName.added_intervals`. Manually added intervals are color coded blue. The boundaries of the intervals are defined by left mouse clicks, complete with right mouse click, cancel last point with middle mouse click. Intervals to color coded blue.
++ `- interval`: Remove intervals manually by clicking the traces. Removed intervals are only affecting the manually selected intervals, which are saved to `eventName.added_intervals`. The boundaries of the intervals to remove are defined by left mouse clicks, complete with right mouse click, cancel last point with middle mouse click. Intervals to delete er color coded red.
 
+{: .note}
+> Make sure to save events before closing CellExplorer if changes has been made.
 
 ### Time series
 Time series files (basename.timeseriesName.timeseries.mat) are automatically detected and listed in the drop-down field. Select from the list to load it.
@@ -167,3 +174,8 @@ Shows a RMS noise inset for all channel in the upper right corner. The raw trace
 
 The screenshot above shows a 128 channels recording with a spectrogram shown below the traces for the channel highlighted in white. A RMS-noise channel-inset is shown in the upper right corner, showing the signal RMS-amplitude across the color-coded channels, The RMS-amplitude was calculated from the filtered traces (custom filter: 100Hz to 220Hz) . The spike raster is color-coded and sorted by putative cell types.
 
+### Instantaneous metrics
+Shows the instantaneous power, phase, frequency and filtered trace from a single channel with custom filters. The channel and filter boundaries can be adjusted. The instantaneous traces are shown below the ephys traces. The filter is a third-order butter filter applied in both directions (`filtfilt`). The phase and power is calcuated from the hilbert transform. The frequency is calculated from the unwrapped phase: `frequency = diff(unwrap(phase))./diff(timestamps)/(2*pi)`.
+
+### Audio playback during streaming
+The traces of a one or two channels can be played as a continues audio trace as you are streaming a recording. You can select gain and specific channels to listen to (one or two channels). The audio playback is done after the filters are applied.

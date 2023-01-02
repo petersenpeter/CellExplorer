@@ -43,6 +43,11 @@ NeuroScope2 is substantially faster than the original NeuroScope. The below figu
 
 ![Benchmarks of NeuroScope2](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/benchmark_window_duration-01.png)
 
+{: .note-title}
+> Raw data performance
+> 
+> Matlab's plot performance scales non-linearly with the number of raw data points, but linearly with the number of channels plotted. Adjust the window duration to optimize this. For a recording with 128 channels sampled at 20kHz, the window duration should be kept below 1.2 sec for optimized performance. The window duration should be kept below 0.55 sec for a Neuropixels recording with 384 channels sampled at 30kHz.
+
 ## Metadata
 NeuroScope2 uses the [session struct](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) for session-level metadata. Please see [this tutorial](https://cellexplorer.org/tutorials/metadata-tutorial/) on how to generate and fill out the metadata. Metadata can be imported from multiple sources: an existing `basename.xml` file (NeuroSuite), from Intan's `info.rhd` file, from KiloSort's `rez.mat` file and from a `basename.sessionInfo.mat` (Buzcode) file.
 
