@@ -48,13 +48,13 @@ function [status,interval,index] = InIntervals(values,intervals,varargin)
 verbose = false;
 
 % Check number of parameters
-if nargin < 2 | mod(length(varargin),2) ~= 0,
+if nargin < 2 || mod(length(varargin),2) ~= 0,
   error('Incorrect number of parameters (type ''help <a href="matlab:help InIntervals">InIntervals</a>'' for details).');
 end
 
 % Check parameters
 if isempty(intervals)
-    status = logical(zeros(size(values)));
+    status = false(size(values));
     interval = zeros(size(values));
     index = zeros(size(values));
     return
@@ -97,7 +97,11 @@ for i = 1:2:length(varargin),
 	end
 end
 
-[values,order] = sortrows(values(:,1));
+if any(diff(values(:,1))<0)
+    [values,order] = sort(values(:,1));
+else
+    order = (1:size(values,1))'; values = values(:,1);
+end
 
 % Max nb of digits for display
 l = int2str(floor(log10(max(max(intervals*100))))+2);
@@ -117,10 +121,9 @@ end
 % Retrieve values in intervals
 previous = 1;
 n = size(intervals,1);
-status = logical(zeros(size(values)));
+status = false(size(values));
 interval = zeros(size(values));
 index = zeros(size(values));
-times = values;
 for i = 1:n,
 	from = intervals(i,1);
 	to = intervals(i,2);
