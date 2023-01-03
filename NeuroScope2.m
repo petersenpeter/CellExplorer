@@ -5032,11 +5032,17 @@ end
                 data.events.(UI.settings.eventData).added_intervals = [];
             end
             if actionType == 2
-                data.events.(UI.settings.eventData).added_intervals = ConsolidateIntervals([data.events.(UI.settings.eventData).added_intervals;states]);
+                if size([data.events.(UI.settings.eventData).added_intervals;states],1)>1
+                    data.events.(UI.settings.eventData).added_intervals = ConsolidateIntervals([data.events.(UI.settings.eventData).added_intervals;states]);
+                else
+                    data.events.(UI.settings.eventData).added_intervals = [data.events.(UI.settings.eventData).added_intervals;states];
+                end
                 UI.elements.lower.performance.String = 'Intervals added';
                 UI.settings.addEventonClick = 0;
             elseif actionType == 3
-                data.events.(UI.settings.eventData).added_intervals = SubtractIntervals(data.events.(UI.settings.eventData).added_intervals,states);
+                if ~isempty(data.events.(UI.settings.eventData).added_intervals)
+                    data.events.(UI.settings.eventData).added_intervals = SubtractIntervals(data.events.(UI.settings.eventData).added_intervals,states);
+                end
                 UI.elements.lower.performance.String = 'Intervals removed';
                 UI.settings.addEventonClick = 0;
             end
@@ -5068,7 +5074,7 @@ end
                     polygon1.counter = polygon1.counter +1;
                     
                     n_points = numel(polygon1.coords);
-                    polygon1.handle2(polygon1.counter) = line(UI.plot_axis1,polygon1.coords(end)*[1,1],[0,1],'color',[0.5 0.5 0.5], 'HitTest','off');
+                    polygon1.handle2(polygon1.counter) = line(UI.plot_axis1,polygon1.coords(end)*[1,1]- UI.t0,[0,1],'color',[0.5 0.5 0.5], 'HitTest','off');
                     if n_points>1
                         n_even_points = floor(n_points/2)*2;
                         statesData = polygon1.coords(1:n_even_points);
@@ -5128,8 +5134,7 @@ end
                         UI.settings.addEventonClick = 0;
                         set(UI.fig,'Pointer','arrow')
                         uiresume(UI.fig);
-                    end
-                
+                    end                
                 elseif UI.settings.normalClick
                     channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
                     x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration/UI.settings.columns)'+UI.settings.channels_relative_offset(channels);
