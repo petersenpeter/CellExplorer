@@ -4,6 +4,8 @@ function PSTH = calc_PSTH(event,spikes,varargin)
 % INPUTS
 % event  : event times formatted according to the CellExplorer's convention
 % spikes : spikes formatted according to the CellExplorer's convention
+%
+% See description of parameters below
 % 
 % OUTPUT
 % PSTH : struct
@@ -13,7 +15,7 @@ function PSTH = calc_PSTH(event,spikes,varargin)
 % .modulationSignificanceLevel : KS-test (kstest2) between the stimulation values and the pre-stimulation values, pre-smoothing
 % 
 % Dependencies: CCG
-
+%
 % By Peter Petersen
 % petersen.peter@gmail.com
 % Last edited 10-11-2022
@@ -23,18 +25,24 @@ p = inputParser;
 addParameter(p,'binCount',100,@isnumeric);        % how many bins (for half the window)
 addParameter(p,'alignment','onset',@ischar);    % alignment of time ['onset','center','peaks','offset']
 addParameter(p,'binDistribution',[0.25,0.5,0.25],@isnumeric);  % How the bins should be distributed around the events, pre, during, post. Must sum to 1
-addParameter(p,'duration',0,@isnumeric);        % duration of PSTH (for half the window - used in CCG) [in seconds]
-addParameter(p,'smoothing',0,@isnumeric);       % any gaussian smoothing to apply? units of bins.
+addParameter(p,'duration',nan,@isnumeric);        % duration of PSTH (for half the window - used in CCG) [in seconds]
+addParameter(p,'intervals',[nan,nan,nan],@isnumeric);  % Define specific intervals to be applied. Must be a 1x3 vector [in seconds]
+
 addParameter(p,'percentile',99,@isnumeric);     % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
+addParameter(p,'smoothing',nan,@isnumeric);       % any gaussian smoothing to apply? units of bins.
 addParameter(p,'plots',true,@islogical);        % Show plots?
 addParameter(p,'eventName','',@ischar);         % Title used for plots
 addParameter(p,'maxWindow',10,@isnumeric);      % Maximum window size in seconds
+
+% Setting intervals overrules binDistribution, duration, percentile
+% Setting duration overrules percentile
 
 parse(p,varargin{:})
 
 binCount = p.Results.binCount;
 alignment = p.Results.alignment;
 binDistribution = p.Results.binDistribution;
+intervals = p.Results.intervals;
 duration = p.Results.duration;
 smoothing = p.Results.smoothing;
 percentile = p.Results.percentile;
@@ -42,14 +50,20 @@ eventName = p.Results.eventName;
 plots = p.Results.plots;
 maxWindow = p.Results.maxWindow;
 
-% If no duration is given, an optimal duration is determined
-if duration == 0
+% If intervals is given
+if all(~isnan(intervals))
+    duration = sum(intervals)/2;
+    binDistribution = intervals / sum(intervals);
+end
+
+% If no duration is given, an optimal duration is determined from the percentile
+if isnan(duration)
     durations = diff(event.timestamps');
     stim_duration = prctile(sort(durations),percentile);
     duration = min(max(round(stim_duration*1000),50)/1000,maxWindow);
 end
 
-binSize = max(round(duration/binCount*1000),1)/1000; % minimum binsize is 0.5ms.
+binSize = max(duration/binCount*1000,0.5)/1000; % minimum binsize is 0.5ms.
 
 % Determine event alignment
 switch alignment
@@ -78,14 +92,6 @@ binsPre = 1:floor(binDistribution(1)*length(binsToKeep));
 binsEvents = floor(binDistribution(1)*length(binsToKeep))+1:floor((binDistribution(1)+binDistribution(2))*length(binsToKeep));
 binsPost = floor((binDistribution(1)+binDistribution(2))*length(binsToKeep))+1:length(binsToKeep);
 
-% spike_times = spikes.spindices(:,1);
-% spike_cluster_index = spikes.spindices(:,2);
-% [spike_times,index] = sort([spike_times;event_times(:)]);
-% spike_cluster_index = [spike_cluster_index;zeros(length(event_times),1)];
-% spike_cluster_index = spike_cluster_index(index);
-% [~, ~, spike_cluster_index] = unique(spike_cluster_index);
-
-
 % Calculating PSTH
 PSTH_out = [];
 sr = spikes.sr; % Sampling rate
@@ -97,35 +103,38 @@ for j = 1:numel(spikes.times)
 end
 time = time(binsToKeep+1);
 
-% PSTH_out = PSTH_out./length(event_times)/binSize;
-
-% PSTH_out = flip(ccg(:,2:end,1),1);
-% PSTH_out = PSTH_out(binsToKeep+1,:)./length(event_times)/binSize;
-
+% Calculating modulation ratio
 modulationRatio = mean(PSTH_out(binsEvents,:))./mean(PSTH_out(binsPre,:));
+
+% Calculating modulation index
 modulationIndex = (mean(PSTH_out(binsEvents,:))-mean(PSTH_out(binsPre,:)))./(mean(PSTH_out(binsEvents,:))+mean(PSTH_out(binsPre,:)));
+
+% Calculating modulation significance level
 modulationSignificanceLevel = [];
 for i = 1:size(PSTH_out,2)
     [~,p_kstest2] = kstest2(PSTH_out(binsEvents,i),PSTH_out(binsPre,i));
     modulationSignificanceLevel(i) = p_kstest2;
 end
 
-if smoothing>0
+% Applying smoothing
+if ~isnan(smoothing)
     PSTH_out = nanconv(PSTH_out,ce_gausswin(smoothing)/sum(ce_gausswin(smoothing)),'edge');
 end
 
+% Calculating modulation peak response time
 [~,modulationPeakResponseTime] = max(PSTH_out);
 modulationPeakResponseTime = time(modulationPeakResponseTime);
 
+% Generating output structure
 PSTH.responsecurve = PSTH_out;
 PSTH.time = time;
 PSTH.alignment = alignment;
-
 PSTH.modulationRatio = modulationRatio;
 PSTH.modulationIndex = modulationIndex;
 PSTH.modulationPeakResponseTime = modulationPeakResponseTime';
 PSTH.modulationSignificanceLevel = modulationSignificanceLevel;
 
+% Generating plots
 if plots
     figure, plot(time,PSTH_out), title(eventName), xlabel('Time')
     [~,index2] = sort(modulationIndex,'descend');

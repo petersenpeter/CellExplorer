@@ -278,11 +278,19 @@ end
 if parameters.getWaveformsFromDat && (~isfield(spikes{1},'processinginfo') || ~isfield(spikes{1}.processinginfo.params,'WaveformsSource') || ~strcmp(spikes{1}.processinginfo.params.WaveformsSource,'dat file') || spikes{1}.processinginfo.version<3.5 || parameters.forceReloadSpikes == true)
     spikes{1} = loadSpikes('forceReload',true,'spikes',spikes{1},'session',session,'labelsToRead',preferences.loadSpikes.labelsToRead,'showWaveforms',parameters.showWaveforms);
 end
+
+spikes{1}.numcells = length(spikes{1}.times);
+
 if ~isfield(spikes{1},'total')
     spikes{1}.total = cellfun(@(X) length(X),spikes{1}.times);
 end
 if ~isfield(spikes{1},'spindices')
     spikes{1}.spindices = generateSpinDices(spikes{1}.times);
+end
+
+if ~isfield(spikes{1},'cluID')
+    disp('Generating cluIDs from UIDs')
+    spikes{1}.cluID = spikes{1}.UID;
 end
 
 if ~isempty(parameters.restrictToIntervals)
@@ -448,7 +456,11 @@ if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains
         if parameters.getWaveformsFromDat && (any(~isfield(spikes{spkExclu},field2copy)) || parameters.forceReload == true) && (spkExclu==2  || ~isempty(parameters.restrictToIntervals))
             spikes{spkExclu} = getWaveformsFromDat(spikes{spkExclu},session,'showWaveforms',parameters.showWaveforms);
         end
-        cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
+        if isfield(spikes{spkExclu},'peakVoltage')
+            cell_metrics.peakVoltage = spikes{spkExclu}.peakVoltage;
+        else
+            cell_metrics.peakVoltage = nan(size(spikes{spkExclu}.times));
+        end
         if isfield(spikes{spkExclu},'peakVoltage_expFitLengthConstant')
             cell_metrics.peakVoltage_expFitLengthConstant = spikes{spkExclu}.peakVoltage_expFitLengthConstant(:)';
         end
@@ -1079,7 +1091,7 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
                 else
                     psth_parameters = preferences.psth;                    
                 end
-                PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'binCount',psth_parameters.binCount,'alignment',psth_parameters.alignment,'binDistribution',psth_parameters.binDistribution,'duration',psth_parameters.duration,'smoothing',psth_parameters.smoothing,'percentile',psth_parameters.percentile,'eventName',eventName,'plots',parameters.showFigures);
+                PSTH = calc_PSTH(eventOut.(eventName),spikes{spkExclu},'binCount',psth_parameters.binCount,'alignment',psth_parameters.alignment,'binDistribution',psth_parameters.binDistribution,'duration',psth_parameters.duration,'smoothing',psth_parameters.smoothing,'percentile',psth_parameters.percentile,'intervals',psth_parameters.intervals,'eventName',eventName,'plots',parameters.showFigures);
                 if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
                     cell_metrics.events.(eventName) = num2cell(PSTH.responsecurve,1);
                     cell_metrics.general.events.(eventName).event_file = eventFiles{i};

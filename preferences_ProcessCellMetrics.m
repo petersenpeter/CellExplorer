@@ -11,7 +11,7 @@ preferences.general.probesVerticalSpacing = 10; % 10um spacing between channels
 preferences.general.probesLayout = 'poly2';     % Default probe layout
 
 % Loading spike data
-preferences.loadSpikes.labelsToRead = {'good'};     % allows you to load units with various labels, e.g. MUA or a custom label
+preferences.loadSpikes.labelsToRead = {'good'}; % allows you to load units with various labels, e.g. MUA or a custom label
 
 % Waveform
 preferences.waveform.nPull = 600;               % number of spikes to pull out (default: 600)
@@ -21,20 +21,22 @@ preferences.waveform.trilat_nChannels = 16;     % Maximum number of channels use
 preferences.waveform.showWaveforms = true;
 
 % PSTHs / Events / Manipulations (the standard preferences for PSTHs)
-preferences.psth.binCount = 100;                % how many bins (for half the window)
-preferences.psth.alignment = 'onset';           % alignment of time ['onset','center','peaks','offset']
+preferences.psth.binCount = 100;                     % how many bins (for half the window)
+preferences.psth.alignment = 'onset';                % alignment of time ['onset','center','peaks','offset']
 preferences.psth.binDistribution = [0.25,0.5,0.25];  % How the bins should be distributed around the events, pre, during, post. Must sum to 1
-preferences.psth.duration = 0;                  % duration of PSTH (for half the window - used in CCG) [in seconds]
-preferences.psth.smoothing = 5;                 % any gaussian smoothing to apply? units of bins.
-preferences.psth.percentile = 99;               % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
+preferences.psth.intervals = [nan,nan,nan];          % Define specific intervals to be applied. Must be a 1x3 vector [in seconds]
+preferences.psth.duration = nan;                     % duration of PSTH (for half the window - used in CCG) [in seconds]
+preferences.psth.smoothing = 5;                      % any gaussian smoothing to apply? units of bins.
+preferences.psth.percentile = 99;                    % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
 
-% PSTH for ripples (your custom preferences for your own events)
-preferences.psth.ripples.binCount = 150;                % how many bins (for half the window)
-preferences.psth.ripples.alignment = 'peaks';           % alignment of time ['onset','center','peaks','offset']
-preferences.psth.ripples.binDistribution = [0.25,0.5,0.25];  % How the bins should be distributed around the events, pre, during, post. Must sum to 1
+% PSTH for ripples (custom preferences for events. below preferences are applied for the PSTHs calculated for ripples)
+preferences.psth.ripples.binCount = 150;                    % how many bins (for half the window)
+preferences.psth.ripples.alignment = 'peaks';               % alignment of time ['onset','center','peaks','offset']
+preferences.psth.ripples.binDistribution = [0.25,0.5,0.25]; % How the bins should be distributed around the events, pre, during, post. Must sum to 1
+preferences.psth.ripples.intervals = [nan,nan,nan];         % Define specific intervals to be applied. Must be a 1x3 vector [in seconds]
 preferences.psth.ripples.duration = 0.150;                  % duration of PSTH (for half the window - used in CCG) [in seconds]
-preferences.psth.ripples.smoothing = 5;                 % any gaussian smoothing to apply? units of bins.
-preferences.psth.ripples.percentile = 99;               % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
+preferences.psth.ripples.smoothing = 5;                     % any gaussian smoothing to apply? units of bins.
+preferences.psth.ripples.percentile = 99;                   % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
 
 % ACG metrics
 preferences.acg_metrics.population_modIndex = true;

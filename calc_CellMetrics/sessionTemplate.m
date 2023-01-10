@@ -70,21 +70,35 @@ pathPieces = regexp(basepath, filesep, 'split'); % Assumes file structure: anima
 % General metadata
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % From the provided path, the session name, clustering path will be implied
-session.general.basePath =  basepath; % Full path
-session.general.name = basename; % Session name / basename
 session.general.version = 5; % Metadata version
-session.general.sessionType = 'Unknown'; % Type of recording: Chronic, Acute, Unknown
+
+defaults.general.name = basename; % Session name / basename
+defaults.general.basePath =  basepath; % Full path
+defaults.general.sessionType = 'Unknown'; % Type of recording: Chronic, Acute, Unknown
+general_fields = fieldnames(defaults.general);
+
+for i = 1:numel(general_fields)
+    if ~isfield(session,'animal') || ~isfield(session.general,general_fields{i})
+        session.general.(general_fields{i}) = defaults.general.(general_fields{i}); 
+    end
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Limited animal metadata (practical information)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % The animal data is relevant for filtering across datasets in CellExplorer
-if ~isfield(session,'animal')
-    session.animal.name = pathPieces{end-1}; % Animal name is inferred from the data path
-    session.animal.sex = 'Unknown'; % Male, Female, Unknown
-    session.animal.species = 'Unknown'; % Mouse, Rat
-    session.animal.strain = 'Unknown';
-    session.animal.geneticLine = '';
+
+defaults.animal.name = pathPieces{end-1}; % Animal name is inferred from the data path
+defaults.animal.sex = 'Unknown'; % Male, Female, Unknown
+defaults.animal.species = 'Unknown'; % Mouse, Rat
+defaults.animal.strain = 'Unknown';
+defaults.animal.geneticLine = '';
+animal_fields = fieldnames(defaults.animal);
+
+for i = 1:numel(animal_fields)
+    if ~isfield(session,'animal') || ~isfield(session.animal,animal_fields{i})
+        session.animal.(animal_fields{i}) = defaults.animal.(animal_fields{i}); 
+    end
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -92,25 +106,28 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % This section will set some default extracellular parameters. You can comment this out if you are importing these parameters another way. 
 % Extracellular parameters from a Neuroscope basename.xml and buzcode basename.sessionInfo.mat file will be imported as well
-if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'sr')) || isempty(session.extracellular.sr))
-    session.extracellular.sr = 20000;           % Sampling rate of raw data
-    session.extracellular.srLfp = 1250;         % Sampling rate of LFP data
-    session.extracellular.nChannels = 64;       % number of channels
-    session.extracellular.fileName = '';        % (optional) file name of raw data if different from basename.dat
-    session.extracellular.electrodeGroups.channels = {[1:session.extracellular.nChannels]}; %creating a default list of channels. Please change according to your own layout. 
-    session.extracellular.nElectrodeGroups = numel(session.extracellular.electrodeGroups);
+
+defaults.extracellular.sr = 20000;           % Sampling rate of raw data
+defaults.extracellular.srLfp = 1250;         % Sampling rate of LFP data
+defaults.extracellular.nChannels = 64;       % number of channels
+defaults.extracellular.fileName = '';        % (optional) file name of raw data if different from basename.dat
+defaults.extracellular.electrodeGroups.channels = {[1:defaults.extracellular.nChannels]}; %creating a default list of channels. Please change according to your own layout. 
+defaults.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
+defaults.extracellular.probeDepths = 0;
+defaults.extracellular.precision = 'int16';
+
+extracellular_fields = fieldnames(defaults.extracellular);
+for i = 1:numel(extracellular_fields)
+    if ~isfield(session,'extracellular') || ~isfield(session.extracellular,extracellular_fields{i}) || isempty(session.extracellular.(extracellular_fields{i}))
+        session.extracellular.(extracellular_fields{i}) = defaults.extracellular.(extracellular_fields{i}); 
+    end
+end
+session.extracellular.nElectrodeGroups = numel(defaults.extracellular.electrodeGroups);
+
+if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'spikeGroups')) || isempty(session.extracellular.spikeGroups))
     session.extracellular.spikeGroups = session.extracellular.electrodeGroups;
-    session.extracellular.nSpikeGroups = session.extracellular.nElectrodeGroups;
 end
-if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'leastSignificantBit')) || isempty(session.extracellular.leastSignificantBit))
-    session.extracellular.leastSignificantBit = 0.195; % (in µV) Intan = 0.195, Amplipex = 0.3815
-end
-if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'probeDepths')) || isempty(session.extracellular.probeDepths))
-    session.extracellular.probeDepths = 0;
-end
-if ~isfield(session,'extracellular') || (isfield(session,'extracellular') && (~isfield(session.extracellular,'precision')) || isempty(session.extracellular.precision))
-    session.extracellular.precision = 'int16';
-end
+session.extracellular.nSpikeGroups = numel(session.extracellular.spikeGroups);
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Spike sorting
@@ -199,7 +216,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % Channel coordinates
 % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-if ~isfield(session,'extracellular') && ~isfield(session.extracellular,'chanCoords') 
+if ~isfield(session,'extracellular') || ~isfield(session.extracellular,'chanCoords') 
     session.extracellular.chanCoords.layout = 'poly2'; % Probe layout: linear,staggered,poly2,edge,poly3,poly5
     session.extracellular.chanCoords.verticalSpacing = 10; % (µm) Vertical spacing between sites.
 end
