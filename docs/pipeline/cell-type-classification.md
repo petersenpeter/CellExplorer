@@ -17,7 +17,9 @@ Pyramidal cells have a wide waveform, are typically bursty with an average firin
 
 The wide waveform interneurons are harder to distinguish from pyramidal cells. Here we introduce the autocorrelogram as a dimension for capturing this difference. Autocorrelograms are fitted with a triple-exponential equation:
 
-$$ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)$$
+$$
+ACG_{fit} = max(c(\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}}))+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)
+$$
 
 To support this separation we have included ground truth opto-tagged interneurons into CellExplorer (PV, SST and VIP) and further determined excitatory vs inhibitory cells by monosynaptic connections. There is no golden rule that works across brain regions and behavioral states, but the parameters can serve as guidance. The narrow waveform cells are almost entirely inhibitory as verified by opto-tagging and monosynaptic connections, while the wide waveform cells are more difficult to separate. A smaller fraction is know to be interneurons, which are typically less bursty than pyramidal cells.
 
