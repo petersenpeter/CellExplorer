@@ -5466,14 +5466,18 @@ end
     end
     
     function updateBrainRegionList
-        if isfield(data.session,'brainRegions') & ~isempty(data.session.brainRegions)
+        if isfield(data.session,'brainRegions') && ~isempty(data.session.brainRegions)
             brainRegions = fieldnames(data.session.brainRegions);
             tableData = {};
             for fn = 1:numel(brainRegions)
                 tableData{fn,1} = true;
                 tableData{fn,2} = brainRegions{fn};
                 tableData{fn,3} = [num2str(data.session.brainRegions.(brainRegions{fn}).channels)];
-                tableData{fn,4} = [num2str(data.session.brainRegions.(brainRegions{fn}).electrodeGroups)];
+                if isfield(data.session.brainRegions.(brainRegions{fn}),'electrodeGroups')
+                    tableData{fn,4} = [num2str(data.session.brainRegions.(brainRegions{fn}).electrodeGroups)];
+                else
+                    tableData{fn,4} = [''];
+                end
             end
             UI.settings.brainRegionsToHide = [];
         else
