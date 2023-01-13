@@ -34,9 +34,7 @@ Here is a detailed description of each of the menu elements of NeuroScope2.
 | Load session from folder              | Opens a file dialog where you can select a folder to load | 
 | Load session from file                | Opens a file dialog where you can select a file to load | 
 | Recent sessions...                    | Shows a list of recently active sessions. | 
-| Export to .png file (image)           | Exports screenshot to .png file as image graphics | 
-| Export to .pdf file (vector graphics) | Exports screenshot to .pdf file as vector graphics | 
-| Export figure via the export setup dialog | Export figure via the export setup dialog | 
+| Export figure data..          		| Exports figure data to .png (image graphics), a .pdf file (vector graphics), or via the export setup dialog | 
 
 
 ### Session

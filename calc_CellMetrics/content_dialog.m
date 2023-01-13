@@ -103,6 +103,9 @@ function content = content_dialog(content)
             elseif strcmp(content.field_style{i},'popupmenu') && strcmp(content.format{i},'numeric')
                 content.output{i} = str2num(UI.fields.(content.field_names{i}).String{UI.fields.(content.field_names{i}).Value});
                 
+            elseif strcmp(content.field_style{i},'popupmenu') && strcmp(content.format{i},'integer')
+                content.output{i} = UI.fields.(content.field_names{i}).Value;
+                
             elseif strcmp(content.field_style{i},'checkbox')
                 if UI.fields.(content.field_names{i}).Value==1
                     content.output{i} = true;
@@ -114,9 +117,10 @@ function content = content_dialog(content)
                  content.output{i} = UI.fields.(content.field_names{i}).String;
                  
             elseif strcmp(content.field_style{i},'edit') && strcmp(content.format{i},'numeric')
-                    content.output{i} = str2num(UI.fields.(content.field_names{i}).String);
-
+                 content.output{i} = str2num(UI.fields.(content.field_names{i}).String);
+                 
             end
+            content.output2.(content.field_names{i}) = content.output{i};
         end
         content.continue = true;
         delete(UI.dialog);

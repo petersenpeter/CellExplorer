@@ -311,9 +311,7 @@ end
         uimenu(UI.menu.file.topMenu,menuLabel,'Load session from folder',menuSelectedFcn,@loadFromFolder);
         uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
         UI.menu.file.recentSessions.main = uimenu(UI.menu.file.topMenu,menuLabel,'Recent sessions...','Separator','on');
-        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .png file (image)',menuSelectedFcn,@exportPlotData,'Separator','on');
-        uimenu(UI.menu.file.topMenu,menuLabel,'Export to .pdf file (vector graphics)',menuSelectedFcn,@exportPlotData);
-        uimenu(UI.menu.file.topMenu,menuLabel,'Export figure via the export setup dialog',menuSelectedFcn,@exportPlotData,'Separator','on');
+        uimenu(UI.menu.file.topMenu,menuLabel,'Export figure data...',menuSelectedFcn,@exportPlotData,'Separator','on');
         
         % Session
         UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
@@ -6696,49 +6694,82 @@ end
         end
     end
 
-    function exportPlotData(src,~)
-        answer = inputdlg({'Note'},'Add note to export',[1 50],{''});
+    function exportPlotData(~,~)
+        UI.settings.stream = false;        
         
-        UI.settings.stream = false;
-        timestamp = char(datetime('now','TimeZone','local','Format','_dd-MM-yyyy_HH.mm.ss'));
-        % Adding text elemenets with timestamps and windows size
-        text_string1 = [' Session: ', UI.data.basename, ',   Basepath: ', UI.data.basepath];
-        if ~isempty(answer) && ~isempty(answer{1})
-           text_string1 = [text_string1,'.   Notes: ', answer{1}]; 
+        content.title = 'Export plot options'; % dialog title
+        content.columns = 1; % 1 or 2 columns
+        content.field_names = {'export_format','notes','show_basename','show_scalebar','show_timestamps'}; % name of the variables/fields
+        content.field_title = {'Export format','Notes','Print basename and basepath','Show scalebar in figure','Print timestamp and duration'}; % Titles shown above the fields
+        content.field_style = {'popupmenu','edit','checkbox','checkbox','checkbox'}; % popupmenu, edit, checkbox, radiobutton, togglebutton, listbox
+        content.field_default = {'png','',true,true,true}; % default values
+        content.format = {'char','char','logical','logical','logical'}; % char, numeric, logical (boolean), integer (only popupmenu)
+        content.field_options = {{'Export to .png file (image)','Export to .pdf file (vector graphics)','Export figure via the export setup dialog'},'text','text','text','text'}; % options for popupmenus
+        content.field_required = [true false false false false]; % field required?
+        content.field_tooltip = {'Export format','Add notes to export?','Show basename?','Show scalebar?','Show timestamp?'};
+        content = content_dialog(content);
+        
+        if ~content.continue
+            return
         end
-        timestring = [num2str(floor(UI.t0/3600),'%02.0f'),':',num2str(floor(UI.t0/60-floor(UI.t0/3600)*60),'%02.0f'),':',num2str(UI.t0-floor(UI.t0/60)*60,'%02.3f')];
-        text_string2 = ['Start time: ', timestring, ' (', num2str(UI.t0), ' sec), Window duration: ', num2str(UI.settings.windowDuration), ' sec '];
-        text(UI.plot_axis1,0,1,text_string1,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left', 'color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
-        text(UI.plot_axis1,1,1,text_string2,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','right','color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
+        % Adding text elements with timestamps and windows size        
+        if content.output2.show_basename
+            text_string1 = [' Session: ', UI.data.basename, ',   Basepath: ', UI.data.basepath];
+        else
+            text_string1 = '';
+        end
+        
+        % Adding notes
+        if ~isempty(content.output2.notes) && isempty(text_string1)
+           text_string1 = [' Notes: ', content.output2.notes]; 
+        elseif ~isempty(content.output2.notes)
+            text_string1 = [text_string1,'.   Notes: ', content.output2.notes];
+        end
+        
+        if ~isempty(text_string1)
+            text(UI.plot_axis1,0,1,text_string1,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left', 'color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
+        end
+        
+        if content.output2.show_timestamps
+            timestring = [num2str(floor(UI.t0/3600),'%02.0f'),':',num2str(floor(UI.t0/60-floor(UI.t0/3600)*60),'%02.0f'),':',num2str(UI.t0-floor(UI.t0/60)*60,'%02.3f')];
+            text_string2 = ['Start time: ', timestring, ' (', num2str(UI.t0), ' sec), Window duration: ', num2str(UI.settings.windowDuration), ' sec '];
+            text(UI.plot_axis1,1,1,text_string2,'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','right','color',UI.settings.primaryColor,'Units','normalized','BackgroundColor',UI.settings.textBackground)
+        end
         
         % Adding scalebar
-        if ~UI.settings.showScalebar
+        if ~UI.settings.showScalebar && content.output2.show_scalebar
             plot(UI.plot_axis1,[0.005,0.005],[0.93,0.98],'-','linewidth',3,'color',UI.settings.primaryColor)
             text(UI.plot_axis1,0.01,0.955,[num2str(0.05/(UI.settings.scalingFactor)*1000,3),' mV'],'FontWeight', 'Bold','VerticalAlignment', 'middle','HorizontalAlignment','left','color',UI.settings.primaryColor,'BackgroundColor',UI.settings.textBackground)
         end
         drawnow
         
-        if strcmp(src.Text,'Export to .png file (image)')
+        timestamp = char(datetime('now','TimeZone','local','Format','_dd-MM-yyyy_HH.mm.ss'));
+        
+        if strcmp(content.output2.export_format,'Export to .png file (image)')
+            full_file_name = fullfile(basepath,[basename,'_NeuroScope',timestamp, '.png']);
             if ~verLessThan('matlab','9.8') 
-                exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope',timestamp, '.png']))
+                exportgraphics(UI.plot_axis1,full_file_name)
             else
                 set(UI.fig,'Units','Inches');
                 set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
-                saveas(UI.fig,fullfile(basepath,[basename,'_NeuroScope',timestamp, '.png']));
+                saveas(UI.fig,full_file_name);
             end
-            MsgLog(['The .png file was saved to the basepath: ' basename],2);
-        elseif strcmp(src.Text,'Export to .pdf file (vector graphics)')
+            MsgLog(['The .png file was saved to: ' full_file_name],2);
+            
+        elseif strcmp(content.output2.export_format,'Export to .pdf file (vector graphics)')
+            full_file_name = fullfile(basepath,[basename,'_NeuroScope',timestamp, '.pdf']);
             if ~verLessThan('matlab','9.8') 
-                exportgraphics(UI.plot_axis1,fullfile(basepath,[basename,'_NeuroScope',timestamp, '.pdf']),'ContentType','vector')
+                exportgraphics(UI.plot_axis1,full_file_name,'ContentType','vector')
             else
                 % Renderer is set to painter (vector graphics)
                 set(UI.fig,'Units','Inches','Renderer','painters');
                 set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
-                saveas(UI.fig,fullfile(basepath,[basename,'_NeuroScope',timestamp, '.pdf']));
+                saveas(UI.fig,full_file_name);
                 set(UI.fig,'Renderer','opengl');
             end
-            MsgLog(['The .pdf file was saved to the basepath: ' basename],2);
-        else
+            MsgLog(['The .pdf file was saved to: ' full_file_name,],2);
+            
+        else % 'Export figure via the export setup dialog'
             % renderer is set to painter (vector graphics)
             set(UI.fig,'Units','Inches','Renderer','painters');
             set(UI.fig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[UI.fig.Position(3), UI.fig.Position(4)],'PaperPosition',UI.fig.Position)
