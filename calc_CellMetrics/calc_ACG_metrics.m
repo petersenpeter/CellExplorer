@@ -23,15 +23,13 @@ p = inputParser;
 addParameter(p,'showFigures',true,@islogical);
 parse(p,varargin{:})
 
+spikes.numcells = length(spikes.times);
+
 ThetaModulationIndex = nan(1,spikes.numcells);
 BurstIndex_Royer2012 = nan(1,spikes.numcells);
 BurstIndex_Doublets = nan(1,spikes.numcells);
 
-if any(spikes.total==0)
-    cell_indexes = find(spikes.total>0);
-else
-    cell_indexes = 1:spikes.numcells;
-end
+cell_indexes = find(spikes.total>0);
 
 bins_wide = 500;
 acg_wide = zeros(bins_wide*2+1,numel(spikes.times));

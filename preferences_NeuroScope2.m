@@ -32,7 +32,8 @@ preferences.replayRefreshInterval = 0.50; % Fraction of window updated in replay
 preferences.insetRelativeWidth = 1/4;
 preferences.insetRelativeHeight = 1/4;
 preferences.stickySelection = false;
-preferences.to_save = {'windowDuration','plotStyle','greyScaleTraces','colormap','scalingFactor','background','textBackground','primaryColor'};
+preferences.to_save = {'windowDuration','plotStyle','greyScaleTraces','colormap','scalingFactor','background','textBackground','primaryColor',...
+    'extraSpacing','plotTracesInColumns','showChannelNumbers','showScalebar','narrowPadding','stickySelection','resetZoomOnNavigation'};
 
 if ismac
     preferences.fontsize = 11;
@@ -73,7 +74,7 @@ preferences.filterMethod = 'filtfilt'; % filter or filtfilt
 
 % Performance settings
 preferences.plotStyleDynamicRange = true; % If true, in the range plot mode, all samples will be shown below a temporal threshold (default: 1.2 sec)
-preferences.plotStyleDynamicThreshold = 23000; % in samples, threshold for switching between range and raw data presentation (Matlab plots linearly fast up to a certain number of points after which the performance changes and the range plotting style becomes faster)
+preferences.plotStyleDynamicThreshold = 23000; % in samples, threshold for switching between range and raw data presentation (Matlab's plot scales linearly with samples and channels certain number of points after which the performance changes and the range plotting style becomes faster)
 preferences.plotStyleRangeSamples = 4; % average samples per second of data. Default: 4; Higher value will show less data points
 
 % Spikes settings

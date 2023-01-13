@@ -479,7 +479,6 @@ UI.edit.strain = uicontrol('Parent',UI.tabs.animal,'Style', 'popup', 'String', U
 uicontrol('Parent',UI.tabs.animal,'Style', 'text', 'String', 'Genetic line', 'Position', [10, 400, 280, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
 UI.edit.geneticLine = uicontrol('Parent',UI.tabs.animal,'Style', 'Edit', 'String', '', 'Position', [10, 375, 280, 25],'HorizontalAlignment','left','Units','normalized','tooltip',sprintf('Genetic line of animal subject (e.g. Wild type)'));
 
-
 UI.animalMetadata = uitabgroup('units','pixels','Position',[0, 0, 616, 365],'Parent',UI.tabs.animal,'Units','normalized');
 
 % Implanted probes tab
@@ -1016,6 +1015,8 @@ uiwait(UI.fig)
                                 text1 = [text1,' - ',session.animal.(datatype){fn}.(display{j})];
                             end
                             tableData{fn,i+1} = text1;
+                        else
+                            tableData{fn,i+1} = 'Unknown';
                         end
                         
                     end
@@ -1378,14 +1379,17 @@ uiwait(UI.fig)
 
     function saveSessionFile
         if ~contains(pwd,UI.edit.basepath.String)
-            answer = questdlg('Where would you like to save the session struct to?','Location','basepath','Select location','basepath');
+            answer = questdlg(['Where would you like to save the session struct to? basepath=' UI.edit.basepath.String,' pwd=',pwd],'basepath different from pwd','basepath','pwd','Select location','basepath');
         else
             answer = 'basepath';
         end
         switch answer
             case 'basepath'
                 filepath1 = UI.edit.basepath.String;
-                filename1 = [UI.edit.session.String,'.session.mat'];
+                filename1 = [UI.edit.session.String,'.session.mat'];  
+            case 'pwd'
+                filepath1 = pwd;
+                filename1 = [UI.edit.session.String,'.session.mat']; 
             case 'Select location'
                 [filename1,filepath1] = uiputfile([UI.edit.session.String,'.session.mat']);
             otherwise

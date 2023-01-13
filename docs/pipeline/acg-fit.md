@@ -12,7 +12,7 @@ a = tau_decay, b = tau_rise, c = decay_amplitude, d = rise_amplitude, e = asympt
  ```
  
 $$
-ACG_{fit} = max(c\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}})+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)
+ACG_{fit} = max(c(\exp(\frac{-(x-t_{refrac})}{\tau_{decay}})-d\exp(\frac{-(x-t_{refrac})}{\tau_{rise}}))+h\exp(\frac{-(x-t_{refrac})}{\tau_{burst}})+rate_{asymptote},0)
 $$ 
 
 This was done, as the spiking autocorrelogram gives strong indications for the underlying cell type, and a cell's general firing properties and we wanted a parametrized way of capturing this.

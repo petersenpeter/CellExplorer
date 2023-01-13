@@ -30,7 +30,7 @@ You can do direct classification in the GUI. The following types of classificati
 Monosynaptic connections are determined in the pipeline, and you can visualize the connections in the GUI and redo the manual curation directly from the GUI. You can adjust connections from CellExplorer by launching the monosyn interface. [Please see the tutorial on manual curation of monosynaptic connections]({{"/tutorials/monosynaptic-connections-tutorial/"|absolute_url}}).
 ![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/monosyn.png){: .mt-4}
 
-### Interface for deep-superfial classification curation
+### Interface for deep-superficial classification curation
 ![](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/gui_deepSuperficial.png){: .mt-4}
 
 ### Reference data
@@ -41,7 +41,7 @@ To help you characterize your own data, you can load reference data provided by 
 ### Raincloud plot
 To quantify single dimensional variations in your data you can generate a [raincloud plot](https://github.com/RainCloudPlots/RainCloudPlots). You can generate the plot from the top menu `View` -> `Generate rain cloud metrics plot`.
 
-The comparison line widths signify significance levels, `linewidth=1` signifies p>0.05, `linewidth=2` signifies p<0.05 and `linewidth=3` signifies p<0.001. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a nonparametric hypothesis test). You can generate a raincloud plot from any color grouping, e.g. cell types, deep-superficial or animal.
+The comparison line widths signify significance levels, `linewidth=1` signifies p>0.05, `linewidth=2` signifies p<0.05 and `linewidth=3` signifies p<0.001. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a non-parametric hypothesis test). You can generate a raincloud plot from any color grouping, e.g. cell types, deep-superficial or animal.
 
 Below plot shows a raincloud a comparison across putative cell types:
 ![raincloud cell types](https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/raincloud-cell-types.png)
@@ -50,7 +50,7 @@ Below plot shows a raincloud a comparison across putative cell types:
 The significance matrix can help quantify the modality of your data, e.g. using the deep-superficial labels or the cell types. You can generate the plot from the top menu `View` -> `Generate significance matrix` or by pressing `K`. Please select a group of size 2 beforehand. This will show a dialog for selecting which metrics to process. 
 <p align="center"><img src="https://raw.githubusercontent.com/petersenpeter/common_resources/main/images/SignificanceMatrix.png" width="30%"></p>
 
-The colors in the matrix signify significance level (right color bar in log10), `*` signifies p<0.05 and `**` signifies p<0.001. Selected metrics are shown on the left side of the matrix. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a nonparametric hypothesis test).
+The colors in the matrix signify significance level (right color bar in log10), `*` signifies p<0.05 and `**` signifies p<0.001. Selected metrics are shown on the left side of the matrix. Significance levels is determined using [Two-sample Kolmogorov-Smirnov test](https://www.mathworks.com/help/stats/kstest2.html) (a non-parametric hypothesis test).
 
 ### Share cell metrics in your publications or with your peers
 You can save your combined cell metrics from a study into a single mat file that can be shared together with a publication. This allows peers to verify your classification or use your cell metrics directly. You can save the mat file from CellExplorer from the menu `File` -> `Save`.

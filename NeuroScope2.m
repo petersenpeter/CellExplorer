@@ -336,13 +336,10 @@ end
         UI.menu.display.plotStyleDynamicRange = uimenu(UI.menu.display.topMenu,menuLabel,'Dynamic ephys range plot',menuSelectedFcn,@plotStyleDynamicRange,'Checked','on');
         UI.menu.display.narrowPadding = uimenu(UI.menu.display.topMenu,menuLabel,'Narrow ephys padding',menuSelectedFcn,@narrowPadding);
         UI.menu.display.resetZoomOnNavigation = uimenu(UI.menu.display.topMenu,menuLabel,'Reset zoom on navigation',menuSelectedFcn,@resetZoomOnNavigation);
-        if UI.settings.resetZoomOnNavigation
-            UI.menu.display.resetZoomOnNavigation.Checked = 'on';
-        end
         UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
-        UI.menu.display.ShowChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);     
+        UI.menu.display.showChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);  
         UI.menu.display.stickySelection = uimenu(UI.menu.display.topMenu,menuLabel,'Sticky selection of channels',menuSelectedFcn,@setStickySelection);
-        
+       
         UI.menu.display.channelOrder.topMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Channel order','Separator','on');
         UI.menu.display.channelOrder.option(1) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Electrode groups',menuSelectedFcn,@setChannelOrder);
         UI.menu.display.channelOrder.option(2) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Flipped electrode groups',menuSelectedFcn,@setChannelOrder);
@@ -2565,9 +2562,9 @@ end
     function ShowChannelNumbers(~,~)
         UI.settings.showChannelNumbers = ~UI.settings.showChannelNumbers;
         if UI.settings.showChannelNumbers
-            UI.menu.display.ShowChannelNumbers.Checked = 'on';
+            UI.menu.display.showChannelNumbers.Checked = 'on';
         else
-            UI.menu.display.ShowChannelNumbers.Checked = 'off';
+            UI.menu.display.showChannelNumbers.Checked = 'off';
         end
         initTraces
         resetZoom
@@ -4806,6 +4803,9 @@ end
                     end
                 else
                     UI.settings.(UI.settings.to_save{i_setting}) =  data.session.neuroScope2.(UI.settings.to_save{i_setting});
+                    if islogical(UI.settings.(UI.settings.to_save{i_setting})) && UI.settings.(UI.settings.to_save{i_setting}) && isfield(UI.menu.display,UI.settings.to_save{i_setting})
+                        UI.menu.display.(UI.settings.to_save{i_setting}).Checked = 'on';
+                    end
                 end
             end
             UI.panel.general.plotStyle.Value = UI.settings.plotStyle;
@@ -4814,6 +4814,15 @@ end
             setScalingText            
             UI.plot_axis1.Color = UI.settings.background;
             UI.plot_axis1.XColor = UI.settings.primaryColor;
+            
+            if UI.settings.showChannelNumbers
+                set(UI.plot_axis1,'XLim',[-0.015*UI.settings.windowDuration,UI.settings.windowDuration])
+            end
+            if UI.settings.narrowPadding
+                UI.settings.ephys_padding = 0.015;
+            else
+                UI.settings.ephys_padding = 0.05;
+            end            
         end
         
         UI.settings.leastSignificantBit = data.session.extracellular.leastSignificantBit;
@@ -5035,11 +5044,17 @@ end
                 data.events.(UI.settings.eventData).added_intervals = [];
             end
             if actionType == 2
-                data.events.(UI.settings.eventData).added_intervals = ConsolidateIntervals([data.events.(UI.settings.eventData).added_intervals;states]);
+                if size([data.events.(UI.settings.eventData).added_intervals;states],1)>1
+                    data.events.(UI.settings.eventData).added_intervals = ConsolidateIntervals([data.events.(UI.settings.eventData).added_intervals;states]);
+                else
+                    data.events.(UI.settings.eventData).added_intervals = [data.events.(UI.settings.eventData).added_intervals;states];
+                end
                 UI.elements.lower.performance.String = 'Intervals added';
                 UI.settings.addEventonClick = 0;
             elseif actionType == 3
-                data.events.(UI.settings.eventData).added_intervals = SubtractIntervals(data.events.(UI.settings.eventData).added_intervals,states);
+                if ~isempty(data.events.(UI.settings.eventData).added_intervals)
+                    data.events.(UI.settings.eventData).added_intervals = SubtractIntervals(data.events.(UI.settings.eventData).added_intervals,states);
+                end
                 UI.elements.lower.performance.String = 'Intervals removed';
                 UI.settings.addEventonClick = 0;
             end
@@ -5071,7 +5086,7 @@ end
                     polygon1.counter = polygon1.counter +1;
                     
                     n_points = numel(polygon1.coords);
-                    polygon1.handle2(polygon1.counter) = line(UI.plot_axis1,polygon1.coords(end)*[1,1],[0,1],'color',[0.5 0.5 0.5], 'HitTest','off');
+                    polygon1.handle2(polygon1.counter) = line(UI.plot_axis1,polygon1.coords(end)*[1,1]- UI.t0,[0,1],'color',[0.5 0.5 0.5], 'HitTest','off');
                     if n_points>1
                         n_even_points = floor(n_points/2)*2;
                         statesData = polygon1.coords(1:n_even_points);
@@ -5131,8 +5146,7 @@ end
                         UI.settings.addEventonClick = 0;
                         set(UI.fig,'Pointer','arrow')
                         uiresume(UI.fig);
-                    end
-                
+                    end                
                 elseif UI.settings.normalClick
                     channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
                     x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration/UI.settings.columns)'+UI.settings.channels_relative_offset(channels);
@@ -5140,11 +5154,31 @@ end
                     [~,In] = min(hypot((x1(:)-um_axes(1,1)),(y1(:)-um_axes(1,2))));
                     In = unique(floor(In/size(x1,1)))+1;
                     In = channels(In);
-                    highlightTraces(In,[])
-                    [UI.selectedChannels,idxColors] = unique([In,UI.selectedChannels],'stable');
-                    UI.selectedChannelsColors = [UI.colorLine(UI.iLine,:); UI.selectedChannelsColors];
-                    UI.selectedChannelsColors = UI.selectedChannelsColors(idxColors,:);
-                    UI.elements.lower.performance.String = ['Channel(s): ',num2str(UI.selectedChannels)];
+                    if ismember(In,UI.selectedChannels)
+                        idxColors = In==UI.selectedChannels;
+                        UI.selectedChannels(idxColors) = [];
+                        UI.selectedChannelsColors(idxColors,:) = [];
+                        trace_color = [0.5 0.5 0.5];
+                        highlightTraces(In,trace_color)
+                        if isempty(UI.selectedChannels)
+                            UI.elements.lower.performance.String = ['Removed channel ',num2str(In)];
+                        elseif length(UI.selectedChannels) == 1
+                            UI.elements.lower.performance.String = ['Removed channel ',num2str(In),'. Remaining selected channel: ',num2str(UI.selectedChannels)];
+                        else
+                            UI.elements.lower.performance.String = ['Removed channel ',num2str(In),'. Remaining selected channels: ',num2str(UI.selectedChannels)];
+                        end
+                    else
+                        highlightTraces(In,[])
+                        [UI.selectedChannels,idxColors] = unique([In,UI.selectedChannels],'stable');
+                        UI.selectedChannelsColors = [UI.colorLine(UI.iLine,:); UI.selectedChannelsColors];
+                        UI.selectedChannelsColors = UI.selectedChannelsColors(idxColors,:);
+                        if length(UI.selectedChannels) == 1
+                            UI.elements.lower.performance.String = ['Selected channel: ',num2str(UI.selectedChannels)];
+                        else
+                            UI.elements.lower.performance.String = ['Selected channels: ',num2str(UI.selectedChannels)];
+                        end
+                    end
+                    
                 elseif UI.settings.showSpikes && ~UI.settings.normalClick
                     [~,In] = min(hypot((spikes_raster.x(:)-um_axes(1,1)),(spikes_raster.y(:)-um_axes(1,2))));
                     UID = spikes_raster.UID(In);
