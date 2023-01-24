@@ -2313,7 +2313,7 @@ uiwait(UI.fig)
         uiwait(UI.dialog.epochs);
         
         function CloseEpochs_dialog
-            if ~strcmp(epochsName.String,'') && isvarname(epochsName.String)
+            if ~strcmp(epochsName.String,'')
                 SelectedEpoch = epochIn;
                 if ~isempty(epochsName.String)
                     session.epochs{SelectedEpoch}.name = epochsName.String;
@@ -2470,7 +2470,7 @@ uiwait(UI.fig)
         uiwait(UI.dialog.behaviors);
         
         function CloseBehaviors_dialog
-            if ~strcmp(behaviorsFileNames.String,'') && isvarname(behaviorsFileNames.String)
+            if ~strcmp(behaviorsFileNames.String,'')
                 SelectedBehavior = behaviorIn;
                 if ~isempty(behaviorsFileNames.String)
                     session.behavioralTracking{SelectedBehavior}.filenames = behaviorsFileNames.String;
@@ -2672,7 +2672,6 @@ uiwait(UI.fig)
         
         function CloseSorting_dialog
             if strcmp(spikeSortingRelativePath.String,'') || isempty(regexp(spikeSortingRelativePath.String, '[/\*:?"<>|]', 'once'))
-                % isvarname(spikeSortingRelativePath.String)
                 SelectedBehavior = behaviorIn;
                 session.spikeSorting{SelectedBehavior}.method = spikeSortingMethod.String{spikeSortingMethod.Value};               
                 session.spikeSorting{SelectedBehavior}.format = spikeSortinFormat.String{spikeSortinFormat.Value};               
