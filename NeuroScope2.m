@@ -33,7 +33,9 @@ data = []; % Contains all external data loaded like data.session, data.spikes, d
 ephys = []; % Struct with ephys data for current shown time interval, e.g. ephys.raw (raw unprocessed data), ephys.traces (processed data)
 ephys.traces = [];
 ephys.sr = [];
-
+UI.selectedUnits = [];            
+UI.selectedUnitsColors = [];
+            
 spikes_raster = []; % Spike raster (used for highlighting, to minimize computations)
 epoch_plotElements.t0 = [];
 epoch_plotElements.events = [];
