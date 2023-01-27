@@ -108,10 +108,6 @@ preferences.showEventsBelowTrace = false;
 preferences.showEventsIntervals = false;
 preferences.processing_steps = false;
 
-% Timeseries settings
-preferences.timeseries.lowerBoundary = 34;
-preferences.timeseries.upperBoundary = 38;
-
 % Behavior settings
 preferences.plotBehaviorLinearized = false;
 preferences.showBehaviorBelowTrace = false;
