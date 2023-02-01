@@ -387,6 +387,9 @@ elseif exist(fullfile(basepath,[parameters.saveAs,'.',parameters.fileFormat]),'f
     % For legacy naming convention
     warning(['Loading existing legacy metrics: ' parameters.saveAs])
     load(fullfile(basepath,[parameters.saveAs,'.mat']))
+% elseif exist([pwd '\' basename '.cell_metrics.cellinfo.mat'])
+%     warning('using current basepath to save');
+%     saveAsFullfile = [pwd '\' basename '.cell_metrics.cellinfo.mat'];
 else
     cell_metrics = [];
 end
@@ -1118,23 +1121,26 @@ if any(contains(parameters.metrics,{'event_metrics','all'})) && ~any(contains(pa
     
     if exist([basepath '\Barrage_Files\' basename '.HSE.mat'])
         load([basepath '\Barrage_Files\' basename '.HSE.mat'])
-        barrage.timestamps = []; barrage.peaks = [];
-        barrage.timestamps = HSE.timestamps(HSE.keep(HSE.NREM),:);
-        barrage.peaks = HSE.peaks(HSE.keep(HSE.NREM));
-        if ~isempty(barrage.peaks)
-            % Barrage specific histogram
-            PSTH = calc_PSTH(barrage,spikes{spkExclu},'alignment','onset','duration',0.5,'binCount',150,'smoothing',5,'eventName','barrage','plots',parameters.showFigures);
-            if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
-                cell_metrics.events.barrage = num2cell(PSTH.responsecurve,1);
-                cell_metrics.general.events.barrage.event_file = ['\Barrage_Files\' basename '.HSE.mat'];
-                cell_metrics.general.events.barrage.x_bins = PSTH.time*1000;
-                cell_metrics.general.events.barrage.x_label = 'Time (ms)';
-                cell_metrics.general.events.barrage.alignment = PSTH.alignment;
-                
-                cell_metrics.(['barrage','_modulationIndex']) = PSTH.modulationIndex;
-                cell_metrics.(['barrage','_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
-                cell_metrics.(['barrage','_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
+        if isfield(HSE,'keep')&&isfield(HSE,'NREM')
+            barrage.timestamps = HSE.timestamps(HSE.keep(HSE.NREM),:);
+            barrage.peaks = HSE.peaks(HSE.keep(HSE.NREM));
+            if ~isempty(barrage.peaks)
+                % Barrage specific histogram
+                PSTH = calc_PSTH(barrage,spikes{spkExclu},'alignment','onset','duration',0.5,'binCount',25,'smoothing',5,'eventName','barrage','plots',parameters.showFigures);
+                if size(PSTH.responsecurve,2) == cell_metrics.general.cellCount
+                    cell_metrics.events.barrage = num2cell(PSTH.responsecurve,1);
+                    cell_metrics.general.events.barrage.event_file = ['\Barrage_Files\' basename '.HSE.mat'];
+                    cell_metrics.general.events.barrage.x_bins = PSTH.time*1000;
+                    cell_metrics.general.events.barrage.x_label = 'Time (ms)';
+                    cell_metrics.general.events.barrage.alignment = PSTH.alignment;
+
+                    cell_metrics.(['barrage','_modulationIndex']) = PSTH.modulationIndex;
+                    cell_metrics.(['barrage','_modulationPeakResponseTime']) = PSTH.modulationPeakResponseTime;
+                    cell_metrics.(['barrage','_modulationSignificanceLevel']) = PSTH.modulationSignificanceLevel;
+                end
             end
+        else
+            warning('No keep or NREM fields for HSE, skipping');
         end
     end
     
