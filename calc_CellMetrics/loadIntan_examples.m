@@ -4,10 +4,10 @@ cd(basepath)
 session = loadSession(basepath); % Loading session info
 
 %% Importing wheel data
-wheel = intan2buzcode('session',session,'dataName','WheelPosition','data_source_type','adc','container_type','behavior','processing','wheel_position','downsample_samples',200); % Loads wheel data
+wheel = loadIntanDigital('session',session,'dataName','WheelPosition','data_source_type','adc','container_type','behavior','processing','wheel_position','downsample_samples',200); % Loads wheel data
 
 %% Importing temperature data
-temperature = intan2buzcode('session',session,'dataName','Temperature','container_type','timeseries','processing','thermocouple');
+temperature = loadIntanAnalog('session',session,'dataName','Temperature','container_type','timeseries','processing','thermocouple');
 
 %% Plotting 
 figure, 

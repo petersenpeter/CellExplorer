@@ -1,5 +1,5 @@
-function intanDig = intanDigital2buzcode(session)
-% function gives out the digital inputs as raw datapoints.
+function intanDig = loadIntanDigital(session)
+% function gives out the digital inputs as raw datapoints. Also saves the imported data
 % Documentation for Intantech data file formats: http://intantech.com/files/Intan_RHD2000_data_file_formats.pdf
 %
 % INPUT
@@ -51,7 +51,7 @@ for k = 1:nChannels
 end
 
 % Attaching info about how the data was processed
-intanDig.processinginfo.function = 'intanDigital2buzcode';
+intanDig.processinginfo.function = 'loadIntanDigital';
 intanDig.processinginfo.version = 1;
 intanDig.processinginfo.date = now;
 intanDig.processinginfo.params.basepath = session.general.basePath;
