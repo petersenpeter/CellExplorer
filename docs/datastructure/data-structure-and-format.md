@@ -182,7 +182,7 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
     * `equipment` : hardware used to acquire the data
 
 ### Spikes
-A MATLAB struct `spikes` stored in a .mat file: `basename.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The processing module `ProcessCellMetrics.m` used the script `loadSpikes.m`, to automatically load spike-data from either KiloSort, Phy or Neurosuite and saves it to a spikes struct. `basename.spikes.cellinfo.mat` is saved to the basepath. The struct has the following fields:
+A MATLAB struct `spikes` stored in a .mat file: `basename.spikes.cellinfo.mat`. It can be generated with [loadSpikes.m](https://github.com/petersenpeter/CellExplorer/blob/master/calc_CellMetrics/loadSpikes.m). The processing module `ProcessCellMetrics.m` used the script `loadSpikes.m`, to load spike-data from various pipelines/data formats, including KiloSort, Phy, and Neurosuite and saves it to a spikes struct: `basename.spikes.cellinfo.mat`, which is saved to the basepath. The struct has the following fields:
 * `ts`: a 1xN cell-struct for N units each containing a [nSpikes x 1] vector with nSpikes spike events in samples.
 * `times`: a 1xN cell-struct for N units each containing a [nSpikes x 1] vector with nSpikes spike events in seconds.
 * `cluID`: a 1xN vector with inherited IDs from the applied clustering algorithm.
@@ -335,7 +335,6 @@ This is a data container for behavioral tracking data. A MATLAB struct `behavior
 
 Any other field can be added to the struct containing behavior data. The `*.behavior.mat` files should be stored in the basepath.
 
-
 ### Trials
 A MATLAB struct `trials` stored in a .mat file: `basename.trials.behavior.mat`. The trials struct is a special behavior struct centered around behavioral trials. `trials` has the following fields:
 * `start`: trial start times in seconds.
@@ -395,15 +394,15 @@ The data is organized into data-type specific containers, a concept introduced i
 
 * `basename.session.mat`: session level metadata.
 * `basename.*.lfp.mat`: derived ephys signals including theta-band filtered lfp.
-* `basename.*.cellinfo.mat`: Spike derived data including`spikes`, `cell_metrics`, `mono_res`
+* `basename.*.cellinfo.mat`: Spike derived data including`spikes`, `cell_metrics`, `mono_res`.
 * `basename.*.firingRateMap.mat`: firing rate maps. Derived from behavior and spikes, e.g. `ratemap`.
-* `basename.*.events.mat`: events data, including `ripples`, `SWR`,
-* `basename.*.manipulation.mat`: manipulation data: 
-* `basename.*.channelinfo.mat`: channel-wise data, including impedance
-* `basename.*.timeseries.mat`: 
-* `basename.*.behavior.mat`: behavior data, including position tracking.
+* `basename.*.events.mat`: events data, including `ripples`, `SWR`.
+* `basename.*.manipulation.mat`: manipulation data.
+* `basename.*.channelinfo.mat`: channel-wise data, including impedance.
+* `basename.*.timeseries.mat`: time series data, could be temperature measures, or other data collected together with the ephys data.
+* `basename.*.behavior.mat`: behavior data, including position tracking and pupil tracking.
 * `basename.*.states.mat`: brain states derived data including SWS/REM/awake and up/down states.
 * `basename.*.intracellular.mat`: intracellular data.
 
 ## Example dataset
-There is an example dataset available to help understanding the data structure. The dataset contains: a .dat file (raw ephys data; 62GB), a .lfp file (lowpass filtered and downsampled data file; 4 GB), session.mat, spikes, events, behavior, trials, timeseries, states, firingRateMap, cell_metrics, mono_res, and spike sorted data processed with KiloSort and curated in Phy. Available from our [Webshare](https://buzsakilab.nyumc.org/datasets/PetersenP/CellExplorerExampleData/MS22/Peter_MS22_180629_110319_concat/) and our [Globus endpoint](https://app.globus.org/file-manager?origin_id=188a6110-96db-11eb-b7a9-f57b2d55370d&origin_path=%2FPetersenP%2FCellExplorerExampleData%2FMS22%2FPeter_MS22_180629_110319_concat%2F). The size of the full dataset  is 75GB, but files can be downloaded individual. 
+There is an example dataset available to help understanding the data structure. The dataset contains: a .dat file (raw ephys data; 62GB), a .lfp file (lowpass filtered and downsampled data file; 4 GB), session.mat, spikes, events, behavior, trials, timeseries, states, firingRateMap, cell_metrics, mono_res, and spike sorted data processed with KiloSort and curated in Phy. Available from our [Webshare](https://buzsakilab.nyumc.org/datasets/PetersenP/CellExplorerExampleData/MS22/Peter_MS22_180629_110319_concat/) and our [Globus endpoint](https://app.globus.org/file-manager?origin_id=188a6110-96db-11eb-b7a9-f57b2d55370d&origin_path=%2FPetersenP%2FCellExplorerExampleData%2FMS22%2FPeter_MS22_180629_110319_concat%2F). The size of the full dataset  is 75GB, but files can be downloaded individual.

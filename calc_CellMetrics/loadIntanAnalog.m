@@ -1,11 +1,11 @@
-function data_out = intan2buzcode(varargin)
+function data_out = loadIntanAnalog(varargin)
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
-% Loads analog intan files into buzcode data containers
+% Loads analog intan files into CellExplorer data containers
 % Part of CellExplorer
 %
 % Example calls:
-% intan2buzcode('session',session,'dataName','temperature','data_source_type','adc','container_type','timeseries','processing','thermistor') % Loads temperature data from a thermistor
-% wheel = intan2buzcode('session',session,'dataName','WheelPosition','data_source_type','adc','container_type','behavior','processing','wheel_position','downsample_samples',200); Loads wheel data
+% loadIntanAnalog('session',session,'dataName','temperature','data_source_type','adc','container_type','timeseries','processing','thermistor') % Loads temperature data from a thermistor
+% wheel = loadIntanAnalog('session',session,'dataName','WheelPosition','data_source_type','adc','container_type','behavior','processing','wheel_position','downsample_samples',200); Loads wheel data
 
 % By Peter Petersen
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
@@ -178,7 +178,7 @@ switch processing
 end
 
 % Attaching info about the data source and how the data was processed
-data_out.processinginfo.function = 'intan2buzcode';
+data_out.processinginfo.function = 'loadIntanAnalog';
 data_out.processinginfo.version = 2;
 data_out.processinginfo.date = now;
 data_out.processinginfo.params.basepath = basepath;

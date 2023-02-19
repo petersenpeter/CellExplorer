@@ -45,7 +45,7 @@ the optitrack output contains timestamps (from optitrack) and position data
 `optitrack.sr`:             samplingrate
 
 ```m
-optitrack = optitrack2buzcode('session',session);
+optitrack = loadOptitrack('session',session);
 
 % After this you can load the generated file:
 % optitrack = loadStruct('optitrack','behavior','session',session);
@@ -60,7 +60,7 @@ The digital timeseries contains timestamps of changes in states:
 `intanDig.off`:     cell array with off state-changes channel-wise
 
 ```m
-intanDig = intanDigital2buzcode(session);
+intanDig = loadIntanDigital(session);
 
 % After this you can load the generated file:
 % intanDig = loadStruct('intanDig','digitalseries','session',session);
