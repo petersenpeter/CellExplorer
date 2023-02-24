@@ -921,7 +921,7 @@ if any(contains(parameters.metrics,{'theta_metrics','all'})) && ~any(contains(pa
         Theta_channel = session.channelTags.Theta.channels(1);
         spikes2.ts{j} = spikes2.ts{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{Theta_channel})/session.extracellular.srLfp);
         spikes2.times{j} = spikes2.times{j}(spikes{spkExclu}.times{j} < length(InstantaneousTheta.signal_phase{Theta_channel})/session.extracellular.srLfp);
-        spikes2.ts_eeg{j} = ceil(spikes2.ts{j}/16);
+        spikes2.ts_eeg{j} = ceil(spikes2.ts{j}*session.extracellular.srLfp/session.extracellular.sr);
         spikes2.theta_phase{j} = InstantaneousTheta.signal_phase{Theta_channel}(spikes2.ts_eeg{j});
         spikes2.speed{j} = interp1(animal.time,animal.speed,spikes2.times{j});
         if sum(spikes2.speed{j} > 10)> preferences.theta.min_spikes % only calculated if the unit has above min_spikes (default: 500)
