@@ -36,9 +36,9 @@ The dataset should ideally consist of the raw data `basename.dat`, and spike sor
 - \*.npy and \*.tsv files : Spike data from Phy ([files described on the Phy website](https://phy.readthedocs.io/en/latest/terminology/))
 
 {: .note }
-> SpikeGLX and OpenEphys stores the raw data as a bin file and a low-pass filtered LFP file in another folder. The .dat file and the .bin file are the same underlying format but different extensions. You can either rename the .bin file to .dat, or specify the relative path and name of the file in the session metadata: `session.extracellular.fileName = 'rawdata.bin';`. 
+> SpikeGLX and OpenEphys stores the raw data as a bin file and a low-pass filtered LFP file in another folder. The .dat file and the .bin file are the same underlying format but different extensions. You can either rename the .bin file to .dat, or specify the relative path and name of the file in the session metadata: `session.extracellular.fileName = 'rawdata.bin';`.
 > 
-> This is also true for the LFP file, but here you need to create a copy or rename the lfp file to basename.lfp. Also makre sure to specify the correct sampling rate for the lfp file: `session.extracellular. srLfp= 2500;`
+> This is also true for the LFP file, but here you need to create a copy or rename the lfp file to basename.lfp. Also makre sure to specify the correct sampling rate for the lfp file: `session.extracellular.srLfp= 2500;`
 
 Using a template script we will generate and import the session-level metadata from these files. It will import metadata from the rez.mat file, from the Neurosuite xml file and the npy files:
 ```m

@@ -1,4 +1,4 @@
-function openephysDig = loadOpenEphysDigital(session,TTL_paths)
+function openephysDig = loadOpenEphysDigital(session,TTL_paths,TTL_offsets)
 % function to load digital inputs from Open Ephys
 %
 % INPUT
@@ -19,26 +19,26 @@ function openephysDig = loadOpenEphysDigital(session,TTL_paths)
 % 4: full_words.npy
 
 % TTL_paths = {'TTL_2','TTL_4'};
-% TTL_offset = double(readNPY(fullfile(TTL_path,'experiment2\recording1\continuous\Neuropix-PXI-100.0\timestamps.npy')))/session.extracellular.sr;
+% TTL_offset = [0,1];
 
 openephysDig = {};
-openephysDig.timestamps = readNPY(fullfile(session.general.basePath, TTL_paths{1},'timestamps.npy'));
+openephysDig.timestamps = TTL_offsets(1) + double(readNPY(fullfile(session.general.basePath, TTL_paths{1},'timestamps.npy')));
 openephysDig.channel_states = readNPY(fullfile(session.general.basePath,TTL_paths{1},'channel_states.npy'));
 openephysDig.channels = readNPY(fullfile(session.general.basePath, TTL_paths{1},'channels.npy'));
 openephysDig.full_words = readNPY(fullfile(session.general.basePath,TTL_paths{1},'full_words.npy'));
-openephysDig.on{1} = double(openephysDig.timestamps(openephysDig.channel_states == 1))/session.extracellular.sr;
-openephysDig.off{1} = double(openephysDig.timestamps(openephysDig.channel_states == -1))/session.extracellular.sr;
+openephysDig.on{1} = TTL_offsets(1) + double(openephysDig.timestamps(openephysDig.channel_states == 1))/session.extracellular.sr;
+openephysDig.off{1} = TTL_offsets(1) + double(openephysDig.timestamps(openephysDig.channel_states == -1))/session.extracellular.sr;
 
 if length(TTL_paths) > 1
     openephysDig.nTimestampsPrFile(1) = numel(openephysDig.timestamps);
     
     for i = 2:length(TTL_paths)
-        openephysDig.timestamps = [openephysDig.timestamps; readNPY(fullfile(session.general.basePath, TTL_paths{i},'timestamps.npy'))];
+        openephysDig.timestamps = [openephysDig.timestamps; TTL_offsets(i) + double(readNPY(fullfile(session.general.basePath, TTL_paths{i},'timestamps.npy')))];
         openephysDig.channel_states = [openephysDig.channel_states; readNPY(fullfile(session.general.basePath,TTL_paths{i},'channel_states.npy'))];
         openephysDig.channels = [openephysDig.channels;readNPY(fullfile(session.general.basePath, TTL_paths{1},'channels.npy'))];
         openephysDig.full_words = [openephysDig.full_words; readNPY(fullfile(session.general.basePath,TTL_paths{1},'full_words.npy'))];
-        openephysDig.on{1} = [openephysDig.on{1}; double(openephysDig.timestamps(openephysDig.channel_states == 1))/session.extracellular.sr];
-        openephysDig.off{1} = [openephysDig.off{1}; double(openephysDig.timestamps(openephysDig.channel_states == -1))/session.extracellular.sr];
+        openephysDig.on{1} = [openephysDig.on{1}; TTL_offsets(i) + double(openephysDig.timestamps(openephysDig.channel_states == 1))/session.extracellular.sr];
+        openephysDig.off{1} = [openephysDig.off{1}; TTL_offsets(i) + double(openephysDig.timestamps(openephysDig.channel_states == -1))/session.extracellular.sr];
         openephysDig.nTimestampsPrFile(i) = numel(openephysDig.timestamps)-openephysDig.nTimestampsPrFile(i-1);
     end
 end

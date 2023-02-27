@@ -5,16 +5,18 @@ function optitrack = loadOptitrack(varargin)
 % Example calls
 % optitrack = loadOptitrack('session',session)
 % optitrack = loadOptitrack('basepath',basepath,'basename',basename,'filenames',filenames)
-% optitrack = loadOptitrack('session',session,'dataName','theta_maze')
-% optitrack = loadOptitrack('session',session,'dataName','linear_track')
+% theta_maze = loadOptitrack('session',session,'dataName','theta_maze')
+% linear_track = loadOptitrack('session',session,'dataName','linear_track')
 
 p = inputParser;
 addParameter(p,'session', [], @isstruct); % A session struct
 addParameter(p,'basepath', pwd, @isstr); % Basepath of the session
 addParameter(p,'basename', [], @isstr); % Name of the session
 addParameter(p,'dataName','',@isstr); % Any renaming of the behavior struct
-addParameter(p,'filenames', {''},@iscellstr); % List of tracking files 
-addParameter(p,'scaling_factor', 1, @isnumeric); % An extra scaling-factor to apply to the x,y,z data.
+addParameter(p,'filenames', '',@iscellstr); % List of tracking files 
+addParameter(p,'scaling_factor', 1, @isnumeric); % An scaling-factor to apply to the x,y,z data.
+addParameter(p,'offset', [0,0,0], @isnumeric); % An offset to apply to the x,y,z data. Applied after the scaling. In cm
+% addParameter(p,'rotation', [], @isnumeric); % A rotation to apply to the x,y,z data. Applied after the offset. 
 addParameter(p,'saveMat', true, @islogical); % Creates behavior mat file
 addParameter(p,'plotFig', true, @islogical); % Creates plot with behavior
 addParameter(p,'saveFig', true, @islogical); % Save figure with behavior to summary folder
@@ -36,23 +38,38 @@ if isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
 
+if isempty(parameters.dataName)
+    dataName = 'optitrack';
+else
+    dataName = parameters.dataName;
+end
+
+
 if ~isempty(parameters.filenames)
     filenames = parameters.filenames;
 end
 
+if ischar(filenames)
+    filenames = {filenames};
+end
 % filename = [datapath recording '/' recordings(id).tracking_file];
 formatSpec = '%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%q%[^\n\r]';
 header_length = 7;
 
 
 % Loading files
-fileID = fopen(fullfile(basepath,filenames{1}),'r');
+file1 = fullfile(basepath,filenames{1});
+if ~exist(file1,'file')
+   error('Behavior file does not exist') 
+end
+fileID = fopen(file1,'r');
 dataArray = textscan(fileID, formatSpec, 'Delimiter', ',',  'ReturnOnError', false);
 fclose(fileID);
 FramesPrFile = size(dataArray{1}(header_length:end),1);
 if length(filenames) > 1
     for i = 2:length(filenames)
-        fileID = fopen(fullfile(basepath,filenames{i}),'r');
+        file0 = fullfile(basepath,filenames{i});
+        fileID = fopen(file0,'r');
         dataArray_temp = textscan(fileID, formatSpec, 'Delimiter', ',',  'ReturnOnError', false);
         fclose(fileID);
         for j = 1:length(dataArray)
@@ -83,7 +100,7 @@ clear dataArray
 clearvars filename formatSpec fileID dataArray header_length;
 
 % getting position out in cm, and flipping Z and Y axis
-position = 100*[-optitrack_temp.X,optitrack_temp.Z,optitrack_temp.Y]/parameters.scaling_factor;
+position = 100*[-optitrack_temp.X,optitrack_temp.Z,optitrack_temp.Y]/parameters.scaling_factor + parameters.offset;
 
 % Estimating the speed of the rat
 % animal_speed = 100*Optitrack.FrameRate*(diff(Optitrack.X).^2+diff(Optitrack.Y).^2+diff(Optitrack.Z).^2).^0.5;
@@ -113,7 +130,7 @@ optitrack.orientation.rotationType = optitrack_temp.RotationType;
 optitrack.nSamples = numel(optitrack.timestamps);
 
 if exist('FramesPrFile')
-    optitrack.framesPrFile = ramesPrFile;
+    optitrack.framesPrFile = FramesPrFile;
 end
 
 % Attaching info about how the data was processed
@@ -123,6 +140,8 @@ optitrack.processinginfo.date = now;
 optitrack.processinginfo.params.basepath = basepath;
 optitrack.processinginfo.params.basename = basename;
 optitrack.processinginfo.params.filenames = filenames;
+optitrack.processinginfo.params.scaling_factor = parameters.scaling_factor;
+optitrack.processinginfo.params.offset = parameters.offset;
 
 try
     optitrack.processinginfo.username = char(java.lang.System.getProperty('user.name'));
@@ -133,7 +152,7 @@ end
 
 % Saving data
 if parameters.saveMat
-    saveStruct(optitrack,'dataName',dataName,'behavior','session',session);
+    saveStruct(optitrack,'behavior','dataName',dataName,'session',session);
 end
 
 % Plotting
@@ -148,7 +167,7 @@ if parameters.plotFig
     % Saving a summary figure for all cells
     if parameters.saveFig
         timestamp = datestr(now, '_dd-mm-yyyy_HH.MM.SS');
-        ce_savefigure(fig1,basepath,[basename, '.optitrack.behavior' timestamp])
+        ce_savefigure(fig1,basepath,[basename, '.',dataName,'.behavior' timestamp])
         disp(['loadOptitrack_csv: Summary figure saved to ', fullfile(basepath, 'SummaryFigures', [basename, '.optitrack.behavior', timestamp]),'.png'])
     end
 end
