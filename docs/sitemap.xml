@@ -9,282 +9,292 @@
 
 <url>
   <loc>https://cellexplorer.org/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>1.00</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/general-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/metadata-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/cell-explorer-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/tutorials/neuropixels-tutorial/</loc>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/nwb-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/channel-maps-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/plotting-spike-data/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/monosynaptic-connections-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/compare-states-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/manipulation-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/optotagging-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/ground-truth-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/individual-functions-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/behavior-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/deep-superficial-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/reference-data-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/database-tutorial/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/database-sessions-dialog/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/tutorials/export-figure/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/data-structure/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/datastructure/data-structure-and-format/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://cellexplorer.org/datastructure/io/</loc>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/datastructure/standard-cell-metrics/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/datastructure/expandability/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/pipeline/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/pipeline/running-pipeline/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/pipeline/preferences/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/pipeline/cell-type-classification/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/pipeline/acg-fit/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/pipeline/custom-calculations/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/pipeline/hippocampal-metrics/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interfaces/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/cellexplorer/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/description/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/capabilities/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/group-plots/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/single-cell-plot-options/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/menubar/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/preferences/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/keyboard-shortcuts/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/spike-and-event-data/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/compiled-version/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/custom-single-cell-plots/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/neuroscope2/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/neuroscope2-description/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/neuroscope2-keyboard-shortcuts/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/neuroscope2-menubar/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/neuroscope2-analysis/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/neuroscope2-compiled-version/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/gui_session/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/stateexplorer/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/interface/monosynaptic-connections-interface/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/publicdata/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/publicdata/reference-data/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/publicdata/ground-truth-data/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://cellexplorer.org/publicdata/preparation/</loc>
-  <lastmod>2022-07-16T20:39:12+00:00</lastmod>
+  <lastmod>2023-02-24T18:35:44+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 

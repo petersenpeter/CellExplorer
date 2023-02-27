@@ -4485,52 +4485,53 @@ end
     
     function setSpikesYData(~,~)
         UI.settings.spikesYData = UI.panel.spikes.setSpikesYData.String{UI.panel.spikes.setSpikesYData.Value};
+        groups = [];
+        [~,sortidx] = sort(cat(1,data.spikes.times{:})); % Sorting spikes
         if UI.panel.spikes.setSpikesYData.Value > 1
-            try
-                UI.settings.useSpikesYData = true;
-                if numel(data.spikes.times)>0
-                    switch UI.settings.spikesYDataType{UI.panel.spikes.setSpikesYData.Value}
-                        case 'double'
-                            groups = [];
+            if numel(data.spikes.times)>0
+                switch UI.settings.spikesYDataType{UI.panel.spikes.setSpikesYData.Value}
+                    case 'double'
+                        if length(data.spikes.(UI.settings.spikesYData)) == data.spikes.numcells
                             [~,order1] = sort(data.spikes.(UI.settings.spikesYData),'descend');
                             [~,order2] = sort(order1);
                             for i = 1:numel(data.spikes.(UI.settings.spikesYData))
                                 groups = [groups,order2(i)*ones(1,data.spikes.total(i))]; % from cell to array
                             end
-                            [~,sortidx] = sort(cat(1,data.spikes.times{:})); % Sorting spikes
                             data.spikes.spindices(:,3) = groups(sortidx); % Combining spikes and sorted group ids
-                        case 'cell'
+                            UI.settings.useSpikesYData = true;
+                        else
+                            UI.settings.useSpikesYData = false;
+                            UI.panel.spikes.setSpikesYData.Value = 1;
+                        end
+                    case 'cell'
+                        try
                             if size(data.spikes.(UI.settings.spikesYData){1},2)==1
-                                groups = [];
                                 for i = 1:numel(data.spikes.(UI.settings.spikesYData))
                                     groups = [groups,data.spikes.(UI.settings.spikesYData){i}']; % from cell to array
                                 end
                             elseif size(data.spikes.(UI.settings.spikesYData){1},1)==1
-                                groups = [];
                                 for i = 1:numel(data.spikes.(UI.settings.spikesYData))
                                     groups = [groups,data.spikes.(UI.settings.spikesYData){i}]; % from cell to array
                                 end
                             end
-                            [~,sortidx] = sort(cat(1,data.spikes.times{:})); % Sorting spikes
-                            data.spikes.spindices(:,3) = groups(sortidx); % Combining spikes and sorted group ids
-                            if contains(UI.settings.spikesYData,'phase')
-                                idx = (data.spikes.spindices(:,3) < 0);
-                                data.spikes.spindices(idx,3) = data.spikes.spindices(idx,3)+2*pi;
-                            end
-                    end
+                        catch
+                            UI.settings.useSpikesYData = false;
+                            UI.panel.spikes.setSpikesYData.Value = 1;
+                            warning('Failed to set sorting')
+                        end
+                        data.spikes.spindices(:,3) = groups(sortidx); % Combining spikes and sorted group ids
+                        if contains(UI.settings.spikesYData,'phase')
+                            idx = (data.spikes.spindices(:,3) < 0);
+                            data.spikes.spindices(idx,3) = data.spikes.spindices(idx,3)+2*pi;
+                        end
                 end
-                
-                % Getting limits
-                UI.settings.spikes_ylim = [min(data.spikes.spindices(:,3)),max(data.spikes.spindices(:,3))];
-            catch
-                UI.settings.useSpikesYData = false;
-                UI.panel.spikes.setSpikesYData.Value = 1;
-                warning('Failed to set sorting')
             end
+            % Getting limits
+            UI.settings.spikes_ylim = [min(data.spikes.spindices(:,3)),max(data.spikes.spindices(:,3))];
         else
             UI.settings.useSpikesYData = false;
         end
-        initTraces
+        % initTraces
         uiresume(UI.fig);
     end
         
@@ -4630,7 +4631,7 @@ end
         if ~isempty(UI.settings.channelTags.filter)
             for j = 1:numel(UI.channels)
                 for i = 1:numel(UI.settings.channelTags.filter)
-                    if isfield(data.session.channelTags.({UI.settings.channelTags.filter(i)}),'channels') && ~isempty(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}).channels)
+                    if isfield(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}),'channels') && ~isempty(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}).channels)
                         [~,idx] = setdiff(UI.channels{j},data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}).channels);
                         UI.channels{j}(idx) = [];
                     end
