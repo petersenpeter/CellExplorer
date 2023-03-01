@@ -1,8 +1,10 @@
-function waveform_metrics = calc_waveform_metrics(waveforms,sr_in,varargin)
+function waveform_metrics = calc_waveform_metrics(spikes,sr_in,varargin)
     % Extracts waveform metrics
     %
     % INPUT:
-    % waveforms structure
+    % spikes structure
+    %   .filtWaveform : Waveforms (in µV; cell-array [1x nCells])
+    % 	.timeWaveform : Time axis (in ms; cell-array [1x nCells])
     %
     % OUTPUT:
     % waveform_metrics
@@ -11,17 +13,18 @@ function waveform_metrics = calc_waveform_metrics(waveforms,sr_in,varargin)
     
     % By Peter Petersen
     % petersen.peter@gmail.com
+    
     p = inputParser;
     addParameter(p,'showFigures',true,@islogical);
     parse(p,varargin{:})
     
-    filtWaveform = waveforms.filtWaveform;
-    timeWaveform = waveforms.timeWaveform{1};
+    filtWaveform = spikes.filtWaveform;
+    timeWaveform = spikes.timeWaveform{1};
     timeWaveform_span = length(timeWaveform) * mean(diff(timeWaveform));
     % sr = 1/mean(diff(timeWaveform))*1000;
     oversampling = ceil(100000/sr_in);
     sr = oversampling * sr_in;
-    timeWaveform = interp1(timeWaveform,timeWaveform,timeWaveform(1):mean(diff(timeWaveform))/oversampling:timeWaveform(end),'spline');
+    timeWaveform = timeWaveform(1):mean(diff(timeWaveform))/oversampling:timeWaveform(end);
     zero_idx = find(timeWaveform>=0,1);
     trough_interval = [find(timeWaveform>=-0.25,1),find(timeWaveform>=0.25,1)]; % -10/40:10/40 =>
     trough_interval_1stDerivative = [find(timeWaveform>=-0.50,1),find(timeWaveform>=0.25,1)]; % -20/40:10/40 =>
@@ -62,7 +65,7 @@ function waveform_metrics = calc_waveform_metrics(waveforms,sr_in,varargin)
     
     for m = 1:length(filtWaveform)
         if ~any(isnan(filtWaveform{m}))
-            wave = interp1(waveforms.timeWaveform{1},zscore(filtWaveform{m}),timeWaveform(1):mean(diff(timeWaveform)):timeWaveform(end),'spline');
+            wave = interp1(spikes.timeWaveform{1},zscore(filtWaveform{m}),timeWaveform,'spline');
             waveform_metrics.polarity(m) = mean(wave(trough_interval(1):trough_interval(2))) - mean(wave([1:trough_interval(1),trough_interval(2):end]));
             if waveform_metrics.polarity(m) > 0
                 wave = -wave;
