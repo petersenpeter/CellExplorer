@@ -24,10 +24,6 @@ session.extracellular.sr = 30000; % Sampling rate
 session.extracellular.nChannels = 384; % Number of channels
 session.extracellular.precision = 'int16'; % Numeric data type.
 session.extracellular.leastSignificantBit = 0.195; % Least significant bit - precision of the digitization (µV/bit)
-session.extracellular.electrodeGroups.channels = 1:384;
-session.extracellular.nElectrodeGroups = 1
-session.extracellular.spikeGroups.channels = 1:384;
-session.extracellular.nSpikeGroups = 1
 ```
 
 Please see the [Data structure and format page](https://cellexplorer.org/datastructure/data-structure-and-format/#session-metadata) for further details on the session struct.
@@ -86,7 +82,7 @@ sessionTemplate
 loadSession
 gui_session
 
-The session struct can be generated using the sessionTemplate.m and inspected with gui_session.m. The basename.session.mat files should be stored in the basepath. It is structured as defined below:
+The session struct can be generated using the script `sessionTemplate.m` and inspected with `gui_session.m`. The `basename.session.mat` files should be stored in the basepath. It is structured as defined below:
 
 ## Spikes
 A MATLAB struct spikes stored in a .mat file: `basename.spikes.cellinfo.mat`. It can be generated with `loadSpikes.m` to automatically load spike-data from many spike sorting formats including KiloSort, Phy, and Neurosuite and saves it to a spikes struct. `basename.spikes.cellinfo.mat` is saved to the basepath. The struct has the following fields:
@@ -100,7 +96,7 @@ Load spikes takes spike sorted formats from various algorithms:
 ```
 
 ## Monosynaptic connections
-
+`basename.mono_res.cellinfo.mat`
 ```m
 mono_res = ce_MonoSynConvClick(spikes,'includeInhibitoryConnections',true/false); % detects the monosynaptic connections
 
@@ -122,7 +118,7 @@ cell_metrics = ProcessCellMetrics('session', session);
 ```
 
 ## Events
-This is a data container for event data. A MATLAB struct eventName stored in a .mat file: basename.eventName.events.mat with the following fields:
+This is a data container for event data. A MATLAB struct eventName stored in a .mat file: `basename.eventName.events.mat` with the following fields:
 
 loadEvents
 

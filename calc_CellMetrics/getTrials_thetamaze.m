@@ -1,4 +1,4 @@
-function [trials,circular_track] = getTrials_thetamaze(circular_track,maze, plots)
+function [trials,circular_track] = getTrials_thetamaze(circular_track, maze, plots)
 if nargin < 3
     plots = 1;
 end
@@ -9,48 +9,81 @@ end
 % Determining polar coordinates
 [circular_track.position.polar_theta,circular_track.position.polar_rho] = cart2pol(circular_track.position.y,circular_track.position.x);
 
-% Changing from polar angle to position along circle by multiplying with the radius
+% Changing from polar angle to position along circle by multiplying with the radius (inner radius)
+% Negative values are along the left arm, positive values along the right arm
 circular_track.position.polar_theta = circular_track.position.polar_theta*maze.radius_in;
 
 disp('Defining trials for the behavior')
-boundary = maze.boundary;
 
-% Determining spatial cross points 
-pos1test = find(diff(circular_track.position.polar_rho < boundary{1}(2))==1 & circular_track.position.x(1:end-1) < boundary{1}(1)+10 & circular_track.position.x(1:end-1) > boundary{1}(1)-10 & circular_track.position.y(1:end-1) < 0);
-pos2test = find(diff(circular_track.position.y > boundary{2}(2))==1 & circular_track.position.x(1:end-1) < boundary{2}(1)+10 & circular_track.position.x(1:end-1) > boundary{2}(1)-10);
-pos3test = find(diff(circular_track.position.x < boundary{3}(1))==1 & circular_track.position.x(1:end-1) < boundary{3}(2)+10 & circular_track.position.y(1:end-1) > boundary{3}(2)-10);
-pos4test = find(diff(circular_track.position.x > boundary{4}(1))==1 & circular_track.position.x(1:end-1) < boundary{4}(2)+10 & circular_track.position.y(1:end-1) > boundary{4}(2)-10);
-pos5test = find(diff(circular_track.position.polar_theta < -boundary{5}(2))==1 & abs(circular_track.position.x(1:end-1)) > 10 & circular_track.position.polar_rho(1:end-1) > boundary{5}(1)-15);
-pos6test = find(diff(circular_track.position.polar_theta > boundary{5}(2))==1 & abs(circular_track.position.x(1:end-1)) > 10 & circular_track.position.polar_rho(1:end-1) > boundary{5}(1)-15);
-pos7home = sort([pos5test,pos6test]);
-pos2test(find(diff(pos2test)<circular_track.sr)+1) = [];
+% Determining spatial limits 
+
+% Onset of central arm
+central_arm_onset = find(diff(circular_track.position.y > maze.pos_y_limits(1))==1 ...
+    & circular_track.position.x(1:end-1) < maze.pos_x_limits(2)-5 ...
+    & circular_track.position.x(1:end-1) > maze.pos_x_limits(1)+5 ...
+    & circular_track.position.y(1:end-1) < 0);
+
+% End of central arm
+central_arm_end = find(diff(circular_track.position.polar_rho > maze.pos_y_limits(2))==1 ...
+    & circular_track.position.x(1:end-1) < maze.pos_x_limits(2)-5 ...
+    & circular_track.position.x(1:end-1) > maze.pos_x_limits(1)+5 ...
+    & circular_track.position.y(1:end-1) > 0);
+
+% Start of left arm
+left_rim_onset = find(diff(circular_track.position.x < maze.pos_x_limits(1)-5)==1 ...
+    & circular_track.position.y(1:end-1) > maze.pos_y_limits(2)-10);
+
+% Start of right arm
+right_rim_onset = find(diff(circular_track.position.x > maze.pos_x_limits(2)+5)==1 ...
+    & circular_track.position.y(1:end-1) > maze.pos_y_limits(2)-10);
+
+% End of left rim
+left_rim_end = find(diff(circular_track.position.polar_theta < -maze.polar_theta_limits(2))==1 ...
+    & abs(circular_track.position.x(1:end-1)) > 10 ...
+    & circular_track.position.polar_rho(1:end-1) > maze.polar_rho_limits(1)-5);
+
+% End of right rim
+right_rim_end = find(diff(circular_track.position.polar_theta > maze.polar_theta_limits(2))==1 ...
+    & abs(circular_track.position.x(1:end-1)) > 10 ...
+    & circular_track.position.polar_rho(1:end-1) > maze.polar_rho_limits(1)-5);
+
+% All 
+pos7home = sort([left_rim_end,right_rim_end]);
+
+central_arm_end(find(diff(central_arm_end)<circular_track.sr)+1) = [];
 
 if plots == 1
     disp('Plotting position')
+    
     figure
+    
     plot(circular_track.position.x,circular_track.position.y,'color',[0.5 0.5 0.5]), hold on
-    plot([-10,10]+boundary{1}(1),-boundary{1}(2)*[1,1],'red')
-    plot([-10,10]+boundary{2}(1),boundary{2}(2)*[1,1],'m')
-    plot([1,1]*boundary{3}(1),boundary{3}(2)+[-10,10],'k')
-    plot([1,1]*boundary{4}(1),boundary{4}(2)+[-10,10],'y')
-    [x1,y1] = pol2cart(boundary{5}(2),boundary{5}(1)-4);
-    [x2,y2] = pol2cart(boundary{5}(2),boundary{5}(1)+10);
-    plot([x1,x2],-[y1,y2],'c')
-    plot(-[x1,x2],-[y1,y2],'g')
-    plot(circular_track.position.x(pos1test),circular_track.position.y(pos1test),'or') % Onset of central arm
-    plot(circular_track.position.x(pos2test),circular_track.position.y(pos2test),'om') % End of central arm
-    plot(circular_track.position.x(pos3test),circular_track.position.y(pos3test),'ok') % Start of Left arm
-    plot(circular_track.position.x(pos4test),circular_track.position.y(pos4test),'og') % Start of right arm
-    plot(circular_track.position.x(pos5test),circular_track.position.y(pos5test),'xc') % Left rim
-    plot(circular_track.position.x(pos6test),circular_track.position.y(pos6test),'xy') % Right rim
-    title('3D position of the animal'), xlabel('X'), ylabel('Y'), zlabel('Z'),axis tight,%view(2)
-    plot_ThetaMaze(maze)
+    plot([-10,10],maze.pos_y_limits(1)*[1,1],'k') % Onset of central arm
+    plot([-10,10],maze.pos_y_limits(2)*[1,1],'k') % End of central arm
+    plot([1,1]*maze.pos_x_limits(1)-5,maze.pos_y_limits(2)+[-10,20],'k') 
+    plot([1,1]*maze.pos_x_limits(2)+5,maze.pos_y_limits(2)+[-10,20],'k')
+    [y1,x1] = pol2cart(maze.polar_theta_limits(2)/maze.radius_in,maze.polar_rho_limits(1)-5);
+    [y2,x2] = pol2cart(maze.polar_theta_limits(2)/maze.radius_in,maze.polar_rho_limits(2));
+    plot([x1,x2],[y1,y2],'-k')
+    plot(-[x1,x2],[y1,y2],'--k')
+    plot(circular_track.position.x(central_arm_onset),circular_track.position.y(central_arm_onset),'or') % Onset of central arm
+    plot(circular_track.position.x(central_arm_end),circular_track.position.y(central_arm_end),'om') % End of central arm
+    plot(circular_track.position.x(left_rim_onset),circular_track.position.y(left_rim_onset),'ok') % Start of Left arm
+    plot(circular_track.position.x(right_rim_onset),circular_track.position.y(right_rim_onset),'og') % Start of right arm
+    plot(circular_track.position.x(left_rim_end),circular_track.position.y(left_rim_end),'xc') % Left rim
+    plot(circular_track.position.x(right_rim_end),circular_track.position.y(right_rim_end),'xy') % Right rim
+    title('Position of the animal'), xlabel('X'), ylabel('Y'), zlabel('Z'),axis tight, % view(2)
+    if exist('plot_ThetaMaze.m')
+        plot_ThetaMaze(maze)
+    end
 end
 
 trials = [];
 trials.states.error = []; % Boolean, if a trial is considered an error
+
 trials.states.left_right = []; % Numeric: 1 or 2
 trials.stateNames.left_right = {'Left','Right'};
+
 trials.start = 0; % Start time of
 trials.end = [];
 
@@ -60,29 +93,29 @@ trials_states = zeros(1,circular_track.nSamples);
 i = 0;
 
 % Behavioral scoring
-for j = 1:length(pos2test)
-    test1 = find(pos1test < pos2test(j));
-    test2 = find(pos7home > pos2test(j));
+for j = 1:length(central_arm_end)
+    test1 = find(central_arm_onset < central_arm_end(j));
+    test2 = find(pos7home > central_arm_end(j));
     if ~isempty(test2) & ~isempty(test1)
-        if (pos7home(test2(1))- pos1test(test1(end)))/circular_track.sr < 50
-            if trials.start(end)-pos1test(test1(end)) ~= 0
+        if (pos7home(test2(1))- central_arm_onset(test1(end)))/circular_track.sr < 50
+            if trials.start(end)-central_arm_onset(test1(end)) ~= 0
                 i = i+1;
-                trials.start(i) = pos1test(test1(end));
+                trials.start(i) = central_arm_onset(test1(end));
                 trials.end(i) = pos7home(test2(1));
                 circular_track.trials(trials.start(i):trials.end(i)) = i;
                 trials_states(trials.start(i):trials.end(i)) = 1;
-                if sum(ismember(pos5test,trials.end(i)))
+                if sum(ismember(left_rim_end,trials.end(i)))
                     % Left trial
                     trials.states.left_right(i) = 1;
-                    if sum(ismember(pos4test,trials.start(i):trials.end(i)))
+                    if sum(ismember(right_rim_onset,trials.start(i):trials.end(i)))
                         trials.states.error(i) = true;
                         else
                         trials.states.error(i) = false;
                     end
-                elseif sum(ismember(pos6test,trials.end(i)))
+                elseif sum(ismember(right_rim_end,trials.end(i)))
                     % Right trial
                     trials.states.left_right(i) = 2;
-                    if sum(ismember(pos3test,trials.start(i):trials.end(i)))
+                    if sum(ismember(left_rim_onset,trials.start(i):trials.end(i)))
                         trials.states.error(i) = true;
                     else
                         trials.states.error(i) = false;
@@ -102,13 +135,36 @@ trials.nTrials = numel(trials.start);
 
 if plots == 1
     figure,
+    
     subplot(1,2,1)
     plot(circular_track.timestamps-circular_track.timestamps(1),circular_track.trials,'.k','linewidth',2), xlabel('Time (sec)'), ylabel('Trials')
+    
     subplot(3,2,2)
     stairs(circular_track.timestamps-circular_track.timestamps(1),trials_states,'.-k','linewidth',1), xlabel('Time (sec)'), ylabel('Trial')
+    
     subplot(3,2,4)
     stairs(trials.states.left_right,'.-b','linewidth',1), xlabel('Trials'), ylabel('Left/Right'), 
     yticks(1:numel(trials.stateNames.left_right)), yticklabels(trials.stateNames.left_right)
+    
     subplot(3,2,6)
     stairs(trials.states.error,'.-k','linewidth',1), xlabel('Trials'), ylabel('Errors')
+    
+    
+    figure
+    
+    subplot(1,2,1)
+    plot(circular_track.position.x,circular_track.position.y,'.k','markersize',2), hold on
+    idx_left = ismember(circular_track.trials, find(trials.states.left_right==1));
+    plot(circular_track.position.x(idx_left),circular_track.position.y(idx_left),'.b','markersize',6)
+    idx_right = ismember(circular_track.trials, find(trials.states.left_right==2));
+    plot(circular_track.position.x(idx_right),circular_track.position.y(idx_right),'.r','markersize',6)
+    title('Trials'), xlabel('X'), ylabel('Y')
+
+    subplot(1,2,2)
+    plot3(circular_track.position.x,circular_track.position.y,circular_track.timestamps,'.k','markersize',2), hold on
+    idx_left = ismember(circular_track.trials, find(trials.states.left_right==1));
+    plot3(circular_track.position.x(idx_left),circular_track.position.y(idx_left),circular_track.timestamps(idx_left),'.b','markersize',6)
+    idx_right = ismember(circular_track.trials, find(trials.states.left_right==2));
+    plot3(circular_track.position.x(idx_right),circular_track.position.y(idx_right),circular_track.timestamps(idx_right),'.r','markersize',6)
+    title('Trials and time'), xlabel('X'), ylabel('Y'), zlabel('Time (sec)')
 end

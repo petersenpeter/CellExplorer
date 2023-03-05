@@ -15,8 +15,8 @@ addParameter(p,'basename', [], @isstr); % Name of the session
 addParameter(p,'dataName','',@isstr); % Any renaming of the behavior struct
 addParameter(p,'filenames', '',@iscellstr); % List of tracking files 
 addParameter(p,'scaling_factor', 1, @isnumeric); % An scaling-factor to apply to the x,y,z data.
-addParameter(p,'offset', [0,0,0], @isnumeric); % An offset to apply to the x,y,z data. Applied after the scaling. In cm
-% addParameter(p,'rotation', [], @isnumeric); % A rotation to apply to the x,y,z data. Applied after the offset. 
+addParameter(p,'offset_origin', [0,0,0], @isnumeric); % An offset to apply to the x,y,z data (shift of origin). Applied after the scaling. In cm
+addParameter(p,'rotation', [], @isnumeric); % A rotation to apply to the x,y data (in degrees). Applied after the offset.
 addParameter(p,'saveMat', true, @islogical); % Creates behavior mat file
 addParameter(p,'plotFig', true, @islogical); % Creates plot with behavior
 addParameter(p,'saveFig', true, @islogical); % Save figure with behavior to summary folder
@@ -100,19 +100,24 @@ clear dataArray
 clearvars filename formatSpec fileID dataArray header_length;
 
 % getting position out in cm, and flipping Z and Y axis
-position = 100*[-optitrack_temp.X,optitrack_temp.Z,optitrack_temp.Y]/parameters.scaling_factor + parameters.offset;
+position3D = 100*[-optitrack_temp.X,optitrack_temp.Z,optitrack_temp.Y]/parameters.scaling_factor + parameters.offset_origin;
+
+% Rotationg X,Y coordinates around origin if a rotation parameter is given
+if ~isempty(parameters.rotation)
+    position3D(:,1) = position3D(:,1) * cosd(parameters.rotation) - position3D(:,2) * sind(parameters.rotation);
+    position3D(:,2) = position3D(:,1) * sind(parameters.rotation) + position3D(:,2) * cosd(parameters.rotation);
+end
 
 % Estimating the speed of the rat
-% animal_speed = 100*Optitrack.FrameRate*(diff(Optitrack.X).^2+diff(Optitrack.Y).^2+diff(Optitrack.Z).^2).^0.5;
-animal_speed = [optitrack_temp.FrameRate*sqrt(sum(diff(position)'.^2)),0];
+animal_speed = [optitrack_temp.FrameRate*sqrt(sum(diff(position3D)'.^2)),0];
 animal_speed = nanconv(animal_speed,ones(1,10)/10,'edge');
 animal_acceleration = [0,diff(animal_speed)];
 
 % Adding  output struct
-optitrack_temp.position3D = position';
+optitrack_temp.position3D = position3D';
 
 % Generating buzcode fields and output struct
-optitrack.timestamps = optitrack_temp.Time;
+optitrack.timestamps = optitrack_temp.Time(:)';
 optitrack.timestamps_reference = 'optitrack';
 optitrack.sr = optitrack_temp.FrameRate;
 optitrack.position.x = optitrack_temp.position3D(1,:);
@@ -140,8 +145,10 @@ optitrack.processinginfo.date = now;
 optitrack.processinginfo.params.basepath = basepath;
 optitrack.processinginfo.params.basename = basename;
 optitrack.processinginfo.params.filenames = filenames;
+optitrack.processinginfo.params.dataName = dataName;
+optitrack.processinginfo.params.rotation = parameters.rotation;
 optitrack.processinginfo.params.scaling_factor = parameters.scaling_factor;
-optitrack.processinginfo.params.offset = parameters.offset;
+optitrack.processinginfo.params.offset_origin = parameters.offset_origin;
 
 try
     optitrack.processinginfo.username = char(java.lang.System.getProperty('user.name'));
@@ -159,15 +166,15 @@ end
 if parameters.plotFig
     fig1 = figure;
     subplot(1,2,1)
-    plot3(position(:,1),position(:,2),position(:,3)), title('Position'), xlabel('X (cm)'), ylabel('Y (cm)'), zlabel('Z (cm)'),axis tight,view(2), hold on
+    plot3(position3D(:,1),position3D(:,2),position3D(:,3)), title('Position'), xlabel('X (cm)'), ylabel('Y (cm)'), zlabel('Z (cm)'),axis tight,view(2), hold on
     subplot(1,2,2)
-    plot3(position(:,1),position(:,2),animal_speed), hold on
+    plot3(position3D(:,1),position3D(:,2),animal_speed), hold on
     xlabel('X (cm)'), ylabel('Y (cm)'),zlabel('Speed (cm/s)'), axis tight
     
     % Saving a summary figure for all cells
     if parameters.saveFig
         timestamp = datestr(now, '_dd-mm-yyyy_HH.MM.SS');
         ce_savefigure(fig1,basepath,[basename, '.',dataName,'.behavior' timestamp])
-        disp(['loadOptitrack_csv: Summary figure saved to ', fullfile(basepath, 'SummaryFigures', [basename, '.optitrack.behavior', timestamp]),'.png'])
+        disp(['loadOptitrack: Summary figure saved to ', fullfile(basepath, 'SummaryFigures', [basename, '.', dataName, '.behavior', timestamp]),'.png'])
     end
 end

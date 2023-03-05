@@ -15,7 +15,7 @@ __The steps are:__
 3. Get TTL pulses/global time
 4. Define behavior struct with limits/boundaries/trials. Two examples
    4. Linear track
-   4. Theta maze
+   4. Theta maze (a circular maze with arm connecting the two rims, going along the center of the circle)
 5. Generate the firing rate maps
 6. Run CellExplorer Processing pipeline
 
@@ -37,15 +37,19 @@ spikes = loadSpikes('session',session);
 
 First we import the raw behavioral tracking into a Matlab struct:
 the optitrack output contains timestamps (from optitrack) and position data 
-`optitrack.timestamps`:      timestamps from optitrack
-`optitrack.position.x`:      x-position
-`optitrack.position.y`:      y-position
-`optitrack.position.z`:      z-position
-`optitrack.speed`:           speed
-`optitrack.sr`:             samplingrate
+
+* `optitrack.timestamps`:      timestamps from optitrack
+* `optitrack.position.x`:      x-position
+* `optitrack.position.y`:      y-position
+* `optitrack.position.z`:      z-position
+* `optitrack.speed`:           speed
+* `optitrack.sr`:              sampling rate
 
 ```m
-optitrack = loadOptitrack('session',session);
+offset_origin = [5,-5,0]; % Any offset of origin [units: cm]
+rotation = []; % Rotation of x,y [units: degrees]
+scaling_factor = 1; % An scaling-factor to apply to the x,y,z data
+optitrack = loadOptitrack('session',session,'offset_origin',offset_origin,'rotation',rotation,'scaling_factor',scaling_factor);
 
 % After this you can load the generated file:
 % optitrack = loadStruct('optitrack','behavior','session',session);
@@ -80,29 +84,7 @@ lineartrack = optitrack;
 ```
 Defining timestamps via the TTL-pulses from Optitrack recorded with intan
 ```m
-lineartrack.timestamps = intanDig.on{OptitrackSync}(1:numel(circular_track.timestamps));
-```
-
-Changing offset-origin if necessary
-```m
-lineartrack.offsets = [110,-8,0]; 
-lineartrack.position.x = lineartrack.position.x+lineartrack.offsets(1);
-lineartrack.position.y = lineartrack.position.y+lineartrack.offsets(2);
-lineartrack.position.z = lineartrack.position.z+lineartrack.offsets(3);
-```
-
-Rotating the positional data if necessary
-```m
-lineartrack.rotation = +0.5; 
-if ~isempty(lineartrack.rotation)
-    x = lineartrack.position.x;
-    y = lineartrack.position.y;
-    X = x*cosd(lineartrack.rotation) - y*sind(lineartrack.rotation);
-    Y = x*sind(lineartrack.rotation) + y*cosd(lineartrack.rotation);
-    lineartrack.position.x = X;
-    lineartrack.position.y = Y;
-end
-lineartrack.position.linearized = lineartrack.position.x;
+lineartrack.timestamps = intanDig.on{OptitrackSync}(1:numel(lineartrack.timestamps));
 ```
 
 Plotting the result
@@ -122,7 +104,7 @@ Now we can save the struct
 saveStruct(lineartrack,'behavior','session',session);
 
 % After this you can load the generated file in Matlab:
-%lineartrack = loadStruct('lineartrack','behavior','session',session);
+% lineartrack = loadStruct('lineartrack','behavior','session',session);
 ```
 
 ### 4.b Circular track
@@ -138,27 +120,10 @@ Extend the original behavioral data
 circular_track = optitrack;
 ```
 
-Define timestamps via the TTL-pulses from Optitrack recorded with intan
+Define timestamps via the TTL-pulses from Optitrack recorded with intan:
 ```m
 circular_track.timestamps = intanDig.on{OptitrackSync}(1:numel(circular_track.timestamps));
 circular_track.timestamps = circular_track.timestamps(:)';
-
-% changing offset-origin if necessary
-circular_track.offsets = [5,-5,0]; % units of cm
-circular_track.position.x = circular_track.position.x+circular_track.offsets(1);
-circular_track.position.y = circular_track.position.y+circular_track.offsets(2);
-circular_track.position.z = circular_track.position.z+circular_track.offsets(3);
-```
-
-Rotate the positional data if necessary
-```m
-circular_track.rotation = []; % degrees
-if ~isempty(circular_track.rotation)
-    x = circular_track.position.x;
-    y = circular_track.position.y;
-    circular_track.position.x = x*cosd(circular_track.rotation) - y*sind(circular_track.rotation);
-    circular_track.position.y = x*sind(circular_track.rotation) + y*cosd(circular_track.rotation);
-end
 ```
 
 Next we define maze parameters. These parameters are used for the linearization and to define states on the maze (e.g. left/right arm)
@@ -193,7 +158,7 @@ circular_track.stateNames.arm_rim = {'arm','rim'};
 
 Linearize and defining boundaries
 ```m
-circular_track.position.linearized = linearize_pos_v2(circular_track,maze);
+circular_track.position.linearized = linearize_theta_maze(circular_track,maze);
 circular_track.limits.linearized = [0,diff(maze.pos_y_limits) + diff(maze.polar_theta_limits)-5];
 circular_track.boundaries.linearized = [0,diff(maze.pos_y_limits), diff(maze.pos_y_limits)+ abs(maze.polar_theta_limits(1))-5];
 circular_track.boundaryNames.linearized = {'Central arm','Left side','Right side'};

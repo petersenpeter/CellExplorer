@@ -47,6 +47,7 @@ function session = preprocessOpenEphysData(varargin)
     
     % 3. Channel coordinates (NOT IMPLEMENTED YET)
     
+    
     % 4. Epoch durations
     inputFiles = {};
     startTime = 0;
@@ -56,8 +57,10 @@ function session = preprocessOpenEphysData(varargin)
         session.epochs{i}.startTime = startTime;
         if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin'),'file')
             inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin');
-        else
+        elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat'),'file')
             inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat');
+        else
+            error(['Epoch duration could not be estimated as raw data file does not exist: ', inputFiles{i}]);
         end
         temp = dir(inputFiles{i});
         duration = temp.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
