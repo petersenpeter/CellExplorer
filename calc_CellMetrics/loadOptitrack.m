@@ -100,7 +100,7 @@ clear dataArray
 clearvars filename formatSpec fileID dataArray header_length;
 
 % getting position out in cm, and flipping Z and Y axis
-position3D = 100*[-optitrack_temp.X,optitrack_temp.Z,optitrack_temp.Y]/parameters.scaling_factor + parameters.offset_origin;
+position3D = 100*[-optitrack_temp.X,optitrack_temp.Z,optitrack_temp.Y]*parameters.scaling_factor + parameters.offset_origin;
 
 % Rotationg X,Y coordinates around origin if a rotation parameter is given
 if ~isempty(parameters.rotation)
