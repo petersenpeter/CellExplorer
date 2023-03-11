@@ -41,6 +41,7 @@ The dataset should ideally consist of the raw data `basename.dat`, and spike sor
 > This is also true for the LFP file, but here you need to create a copy or rename the lfp file to basename.lfp. Also makre sure to specify the correct sampling rate for the lfp file: `session.extracellular.srLfp= 2500;`
 
 Using a template script we will generate and import the session-level metadata from these files. It will import metadata from the rez.mat file, from the Neurosuite xml file and the npy files:
+
 ```m
 session = sessionTemplate(basepath);
 ```
@@ -91,6 +92,7 @@ spikes = loadSpikes;             # Loads the spikes.
 
 ### 3.1 Visualize the cell metrics in CellExplorer
 Once the metrics has been computed, we can use CellExplorer to visualize them:
+
 ```m
 cell_metrics = CellExplorer('metrics',cell_metrics);
 ```
