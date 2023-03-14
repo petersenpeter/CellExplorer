@@ -3,7 +3,7 @@ basepath = '/Volumes/DataDrive4/NeuropixelsData/PP01/PP01_2020-07-09_13-22-13';
 % basepath = '/Volumes/Peter_SSD_4/NeuropixelsData/PP01/PP01_2020-07-01_13-07-16';
 basepath = '/Volumes/Peter_SSD_4/NeuropixelsData/PP01/PP01_2020-06-30_12-27-33';
 basepath = '/Volumes/Peter_SSD_4/NeuropixelsData/PP01/PP01_2020-07-01_13-07-16';
-basepath = 'Z:\SUN-IN-Petersen-lab\EphysData\PeterPetersen\PP01\PP01_2020-07-01_13-07-16';
+% basepath = 'Z:\SUN-IN-Petersen-lab\EphysData\PeterPetersen\PP01\PP01_2020-07-01_13-07-16';
 
 basename = basenameFromBasepath(basepath);
 cd(basepath)
@@ -19,6 +19,7 @@ session = loadOpenEphysSettingsFile(session);
 saveStruct(session);
 
 %% Load digital pulses
+
 TTL_paths = {'TTL_2','TTL_4'};
 TTL_offsets = [0,0];
 openephysDig = loadOpenEphysDigital(session,TTL_paths,TTL_offsets);
@@ -31,7 +32,9 @@ offset_origin = [5,-5,0];
 offset_rigid_body = [5,-5,0]; % Not implemented yet
 circular_track = loadOptitrack('session',session,'dataName','circular_track','offset_origin',offset_origin,'scaling_factor',scaling_factor);
 
+
 % linear_track = loadOptitrack('session',session,'dataName','linear_track','offset',offset,'scaling_factor',scaling_factor);
+% loadStruct(circular_track,'behavior','session',session);
 
 %% maze parameters
 maze = {};
@@ -53,6 +56,15 @@ plot_ThetaMaze(maze)
 
 % Loading pulses
 openephysDig = loadStruct('openephysDig','digitalseries','session',session);
+
+if session.behavioralTracking{1}.epoch==1
+    TTL_offset = 0;
+else
+    TTL_offset = sum(openephysDig.nOnPrFile(1:session.behavioralTracking{1}.epoch-1));    
+end
+circular_track.timestamps = openephysDig.on{1}([1:circular_track.nSamples]+TTL_offset);
+circular_track.timestamps_reference = 'ephys';
+saveStruct(circular_track,'behavior','session',session);
 
 %% Get trials from behavior
 
@@ -80,5 +92,49 @@ saveStruct(trials,'behavior','session',session);
 % circular_track = loadStruct('circular_track','behavior','session',session);
 % trials = loadStruct('trials','behavior','session',session);
 
+%% Plot spikes
+spikes = loadSpikes('session',session);
+
+% A figure for each unit showing the X,Y position of the spikes
+for unit1 = 1:spikes.numcells
+    spikes.position_x{unit1} = interp1(circular_track.timestamps,circular_track.position.x,spikes.times{unit1},'linear');
+    spikes.position_y{unit1} = interp1(circular_track.timestamps,circular_track.position.y,spikes.times{unit1},'linear');
+    
+    figure
+    plot(circular_track.position.x,circular_track.position.y,'-k'), hold on
+    plot(spikes.position_x{unit1},spikes.position_y{unit1},'.r'), hold on
+    plot_ThetaMaze(maze), title(['Unit ' num2str(unit1)]), xlabel('X'), ylabel('Y')
+end
+
+for unit1 = 1:spikes.numcells
+    spikes.position_linearized{unit1} = interp1(circular_track.timestamps,circular_track.position.linearized,spikes.times{unit1},'linear');
+    spikes.position_trials{unit1} = interp1(circular_track.timestamps,circular_track.trials,spikes.times{unit1},'linear');
+    
+    figure
+    plot(circular_track.position.linearized,circular_track.trials,'.k'), hold on
+    plot(spikes.position_linearized{unit1},spikes.position_trials{unit1},'.r'), hold on
+    title(['Unit ' num2str(unit1)]), xlabel('Linearized postion'), ylabel('Trials')
+end
+
+spikes.spindices = generateSpinDices(spikes.times);
+figure, plot(spikes.spindices(:,1),spikes.spindices(:,2),'.')
+
+for i = 1:trials.nTrials
+    trial1 = i;
+    figure
+    idx = circular_track.trials == trial1;
+    plot(circular_track.position.x(idx),circular_track.position.y(idx),'-k'), hold on
+    for unit1 = 1:spikes.numcells
+        idx2 = spikes.position_trials{unit1} == trial1;
+        plot(spikes.position_x{unit1}(idx2),spikes.position_y{unit1}(idx2),'.'), hold on
+    end
+    title(['Trial ' num2str(trial1)]), xlabel('Linearized postion'), ylabel('Trials')
+end
+
+%% 
+
+
+
 %% Kilosort ? 
+
 

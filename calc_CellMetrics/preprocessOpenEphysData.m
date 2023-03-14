@@ -9,7 +9,7 @@ function session = preprocessOpenEphysData(varargin)
     % 5. Saving session struct
     % 6. Merge dat/bin files to single binary .dat file in basepath
     % 7. Merge lfp files
-    % 8. Merge digital timeseries
+    % 8. Merge and import digital timeseries
     
     p = inputParser;
     addParameter(p,'session', [], @isstruct); % A session struct
@@ -81,7 +81,7 @@ function session = preprocessOpenEphysData(varargin)
     saveStruct(session);
     
     
-    % 6. Merge dat files to single binary .dat file in basepath
+    % 6. Merge dat/bin files to a single binary .dat file in basepath
     outputFile = fullfile(basepath,[session.general.name,'.dat']);
     if ~exist(outputFile,'file')
         disp('Concatenating binary raw files')
@@ -109,16 +109,8 @@ function session = preprocessOpenEphysData(varargin)
         disp(['LFP file already exist: ',outputFile_lfp])
     end    
     
-    
-    % 8. Merge digital timeseries
-    TTL_paths = {};
-    TTL_offsets = [];
-    for i = 1:numel(session.epochs)
-        TTL_paths{i} = fullfile(session.epochs{i}.name,'events','Neuropix-PXI-100.0','TTL_1');
-        TTL_offsets(i) = session.epochs{i}.startTime;
-    end
-    openephysDig = loadOpenEphysDigital(session,TTL_paths,TTL_offsets);
-    
+    % 8. Merge and import digital timeseries
+    openephysDig = loadOpenEphysDigital(session);
 
     function subFolderNames = checkfolder(dir1, folderstring)
         files = dir(dir1);
