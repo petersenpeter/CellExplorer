@@ -4956,17 +4956,23 @@ end
         updateTimeSeriesDataList
         
         % Defining flexible panel heights for lists of electrode groups, channel tags and analog and digital timeseries
-        tableHeights_ElectrodeGroups = max([data.session.extracellular.nElectrodeGroups*18+50,150]);
-        tableHeights_ChannelTags = numel(UI.channelTags)*18+50;
+        tableHeights_ElectrodeGroups = max([data.session.extracellular.nElectrodeGroups*18+50,200]);
+        if isfield(UI,'channelTags') && ~isempty(UI.channelTags)
+            nTags = numel(UI.channelTags);
+        else
+            nTags = 1;
+        end
+        tableHeights_ChannelTags = nTags*18+50;
+        
         if isfield(data.session,'timeSeries') && ~isempty(data.session.timeSeries)
             nfiles = numel(fieldnames(data.session.timeSeries));
         else
             nfiles = 0;
         end
-        tableHeights_Timeseries3 = nfiles*18+50;
+        tableHeights_Timeseries3 = nfiles*18+30;
         
         set(UI.panel.general.main, 'MinimumHeights',[65 210 tableHeights_ElectrodeGroups 35 tableHeights_ChannelTags 35 50 30 tableHeights_Timeseries3]);
-        UI.panel.general.main1.MinimumHeights = 505 + tableHeights_ElectrodeGroups + tableHeights_ChannelTags + tableHeights_Timeseries3;
+        UI.panel.general.main1.MinimumHeights = 605 + tableHeights_ElectrodeGroups + tableHeights_ChannelTags + tableHeights_Timeseries3;
         
         % Defining flexible panel heights for events and timeseries files
         if isfield(UI.data.detectecFiles,'events') && ~isempty(data.session.timeSeries)
