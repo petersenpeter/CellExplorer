@@ -4978,7 +4978,7 @@ end
         UI.panel.general.main1.MinimumHeights = 605 + tableHeights_ElectrodeGroups + tableHeights_ChannelTags + tableHeights_Timeseries3;
         
         % Defining flexible panel heights for events and timeseries files
-        if isfield(UI.data.detectecFiles,'events') && ~isempty(data.session.timeSeries)
+        if isfield(UI.data.detectecFiles,'events') && ~isfield(data.session,'timeSeries')
             nfiles = numel(UI.data.detectecFiles.events);
         else
             nfiles = 0;
