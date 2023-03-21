@@ -71,7 +71,7 @@ switch(layout)
             ycoords = cat(1,ycoords,y(:));
         end
     case 'staggered'
-        horz_offset = flip([0,8.5,17:4:520]);
+        horz_offset = flip([0,8.5,17:4:2080]);
         horz_offset(1:2:end) = -horz_offset(1:2:end);
         for a= 1:ngroups % being super lazy and making this map with loops
             x = [];

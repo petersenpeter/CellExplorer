@@ -500,7 +500,7 @@ end
         uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Edit','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
             
         % Defining flexible panel heights
-        set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 40 150],'MinimumHeights',[65 210 200 35 140 35 50 30 150]);
+        set(UI.panel.general.main, 'Heights', [65 210 -210 35 -90 35 100 40 150],'MinimumHeights',[65 210 200 35 140 35 50 30 150]);
         UI.panel.general.main1.MinimumWidths = 218;
         UI.panel.general.main1.MinimumHeights = 975;
         
@@ -4965,7 +4965,7 @@ end
         else
             nTags = 1;
         end
-        tableHeights_ChannelTags = nTags*18+50;
+        tableHeights_ChannelTags = nTags*18+30;
         
         if isfield(data.session,'timeSeries') && ~isempty(data.session.timeSeries)
             nfiles = numel(fieldnames(data.session.timeSeries));
