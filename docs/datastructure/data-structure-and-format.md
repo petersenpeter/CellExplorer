@@ -140,6 +140,7 @@ A MATLAB struct `session` stored in a .mat file: `basename.session.mat`. The ses
     * `source` : Source of channel coordinates
     * `layout` : Probe layout (e.g. linear,staggered,poly2,poly3,poly4,poly5)
     * `shankSpacing` : Shank spacing (in µm)
+    * `verticalSpacing` : Vertical spacing between channels (in µm)
 * `brainRegions`
   * `regionAcronym` : e.g. CA1 or HIP, Allen institute Atlas
     * `brainRegion` 
@@ -265,6 +266,7 @@ __Channels coordinates__
   * `layout` : y position of each channel (in µm; [nChannels x 1]; optional).
   * `shankSpacing` : y position of each channel (in µm; [nChannels x 1]; optional).
   * `channel` : Channel list ([nChannels x 1]; optional).
+  * `verticalSpacing` : Vertical spacing between channels (in µm)
 This works as a simple 2D representation of recordings and will help you determine the location of your neurons. It is also used to determine the spike amplitude length constant of the spike waveforms across channels.
 
 __Allen Institute's Common Coordinate Framework__
