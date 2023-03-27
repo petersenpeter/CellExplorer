@@ -9,7 +9,7 @@ function session = preprocessOpenEphysData(varargin)
     % 5. Saving session struct
     % 6. Merge dat/bin files to single binary .dat file in basepath
     % 7. Merge lfp files
-    % 8. Merge and import digital timeseries
+    % 8. Merge digital timeseries
     
     p = inputParser;
     addParameter(p,'session', [], @isstruct); % A session struct
@@ -47,7 +47,6 @@ function session = preprocessOpenEphysData(varargin)
     
     % 3. Channel coordinates (NOT IMPLEMENTED YET)
     
-    
     % 4. Epoch durations
     inputFiles = {};
     startTime = 0;
@@ -57,10 +56,8 @@ function session = preprocessOpenEphysData(varargin)
         session.epochs{i}.startTime = startTime;
         if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin'),'file')
             inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin');
-        elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat'),'file')
-            inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat');
         else
-            error(['Epoch duration could not be estimated as raw data file does not exist: ', inputFiles{i}]);
+            inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat');
         end
         temp = dir(inputFiles{i});
         duration = temp.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
@@ -81,14 +78,10 @@ function session = preprocessOpenEphysData(varargin)
     saveStruct(session);
     
     
-    % 6. Merge dat/bin files to a single binary .dat file in basepath
+    % 6. Merge dat files to single binary .dat file in basepath
+    disp('Attempting to concatenate binary files with spiking data.')
     outputFile = fullfile(basepath,[session.general.name,'.dat']);
-    if ~exist(outputFile,'file')
-        disp('Concatenating binary raw files')
-        concatenate_binary_files(inputFiles,outputFile)
-    else
-        disp(['Binary file already exist: ',outputFile])
-    end
+    binaryMergeWrapper(inputFiles, outputFile)
     
     
     % 7. Merge lfp files
@@ -102,15 +95,20 @@ function session = preprocessOpenEphysData(varargin)
     end    
     outputFile_lfp = fullfile(basepath,[session.general.name,'.lfp']);
     
-    if ~exist(outputFile_lfp,'file')
-        disp('Concatenating lfp files')
-        concatenate_binary_files(inputFiles_lfp,outputFile_lfp)
-    else
-        disp(['LFP file already exist: ',outputFile_lfp])
-    end    
+
+    disp('Attempting to concatenate binary LFP files.')
+    binaryMergeWrapper(inputFiles_lfp, outputFile_lfp) 
     
-    % 8. Merge and import digital timeseries
-    openephysDig = loadOpenEphysDigital(session);
+    
+    % 8. Merge digital timeseries
+    TTL_paths = {};
+    TTL_offsets = [];
+    for i = 1:numel(session.epochs)
+        TTL_paths{i} = fullfile(session.epochs{i}.name,'events','Neuropix-PXI-100.0','TTL_1');
+        TTL_offsets(i) = session.epochs{i}.startTime;
+    end
+    openephysDig = loadOpenEphysDigital(session,TTL_paths,TTL_offsets);
+    
 
     function subFolderNames = checkfolder(dir1, folderstring)
         files = dir(dir1);
@@ -119,4 +117,100 @@ function session = preprocessOpenEphysData(varargin)
         subFolderNames = {subFolders(3:end).name}; % Get only the folder names into a cell array.  Start at 3 to skip . and ..
         subFolderNames = subFolderNames(contains(subFolderNames,folderstring));
     end    
+end
+
+
+
+
+%% Local functions
+function binaryMergeWrapper(inputFiles, outputFile)
+% binaryMergeWrapper(inputFiles, outputFile)
+%
+% Function merges multiple binary files into a single binary file.
+%
+% Args:
+%   inputFiles (cell): a shape-(M, 1) or -(1, M) array of filename strings
+%     for concatenation (required).
+%   outputFile (char): a shape-(1, N) full path output filename string
+%     (required).
+% Returns:
+%   None.
+
+arguments
+  inputFiles cell
+  outputFile (1,:) char
+end
+
+concatenatedFiles = false;
+if ~exist(outputFile,'file')
+  % Concatenate files
+  disp('Concatenating binary raw files')
+  concatenate_binary_files(inputFiles, outputFile)
+  concatenatedFiles = true;
+else
+  % Check if the input files are of the same size as the file that already exists
+  inputFileSize = getFileSize(inputFiles);
+  outputFileSize = getFileSize(outputFile);
+  if inputFileSize == outputFileSize
+    disp(['Concatenated binary file already exists: ', outputFile])
+    disp('Skipping concatenation.')
+  else
+    % Concatenate files if an existing concatenated file is of different size than expected.
+    if inputFileSize < outputFileSize
+      warning(['Concatenated binary file already exists but is larger than all input files taken together. Overwriting file ', outputFile]);
+    elseif inputFileSize > outputFileSize
+      warning(['Concatenated binary file already exists but is smaller than all input files taken together. Overwriting file ', outputFile]);
+    end
+    concatenate_binary_files(inputFiles, outputFile)
+    concatenatedFiles = true;
+  end
+end
+
+% Check if the new file has the expected size
+inputFileSize = getFileSize(inputFiles);
+outputFileSize = getFileSize(outputFile);
+if inputFileSize < outputFileSize
+  error('Concatenated binary file is larger than all input files taken together.');
+elseif inputFileSize > outputFileSize
+  error('Concatenated binary file is smaller than all input files taken together.');
+elseif concatenatedFiles
+  fprintf('\nConcatenated files successfully!\n');
+end
+end
+
+
+function [totalSize, individualSizes] = getFileSize(inputFiles)
+% [totalSize, individualSizes] = getFileSize(inputFiles)
+%
+% Function calculates the total size and individual sizes of input files.
+%
+% Args:
+%   inputFiles (cell): a shape-(M, 1) or -(1, M) array of filename strings
+%     for file size inference (required).
+%
+% Returns:
+%   totalSize (numeric): a shape-(1,1) scalar showing the total size of all
+%     input files in bytes.
+%   individualSizes (numeric): a shape-(M, 1) numeric array with individual
+%     file sizes in bytes.
+
+arguments
+  inputFiles {mustBeA(inputFiles, ["char","cell"])}
+end
+
+% Parse input
+if ~iscell(inputFiles)
+  inputFiles = {inputFiles};
+end
+
+% Get file sizes
+individualSizes = zeros(numel(inputFiles),1);
+for f = 1:numel(inputFiles)
+  d = dir(inputFiles{f});
+  if isempty(d)
+    error([inputFiles{f} ' file not found.']);
+  end
+  individualSizes(f) = d.bytes;
+end
+totalSize = sum(individualSizes);
 end
