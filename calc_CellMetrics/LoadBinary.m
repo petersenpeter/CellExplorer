@@ -162,19 +162,19 @@ end
 
 % Size of one data point (in bytes)
 sampleSize = 0;
-switch precision,
-    case {'uchar','unsigned char','schar','signed char','int8','integer*1','uint8','integer*1'},
+switch precision
+    case {'uchar','unsigned char','schar','signed char','int8','integer*1','uint8'},
         sampleSize = 1;
-    case {'int16','integer*2','uint16','integer*2'},
+    case {'int16','integer*2','uint16'}
         sampleSize = 2;
-    case {'int32','integer*4','uint32','integer*4','single','real*4','float32','real*4'},
+    case {'int32','integer*4','uint32','single','real*4','float32'}
         sampleSize = 4;
-    case {'int64','integer*8','uint64','integer*8','double','real*8','float64','real*8'},
+    case {'int64','integer*8','uint64','double','real*8','float64'}
         sampleSize = 8;
 end
 
 % Position and number of samples (per channel) of the data subset
-if time,
+if time
     dataOffset = floor(start*frequency)*nChannels*sampleSize;
     nSamplesPerChannel = floor((duration*frequency));
 else
