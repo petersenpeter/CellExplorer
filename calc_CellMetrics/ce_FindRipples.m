@@ -104,12 +104,12 @@ if isstruct(varargin{1})  % if first arg is a session struct
     elseif exist(fullfile(basepath,[basename, '.eeg']),'file')
         lfp_file = fullfile(basepath,[basename, '.eeg']);
     end
-    lfp = double(LoadBinary(lfp_file,'nChannels',session.extracellular.nChannels,...
+    lfp = LoadBinary(lfp_file,'nChannels',session.extracellular.nChannels,...
         'channels',session.channelTags.Ripple.channels(1),...
-        'precision','int16','frequency',session.extracellular.srLfp));
+        'precision','int16','frequency',session.extracellular.srLfp);
     % Filtering the lfp trace
     [filt_b filt_a] = cheby2(4,50,passband/(0.5*session.extracellular.srLfp));
-    signal = filtfilt(filt_b,filt_a,lfp);
+    signal = filtfilt(filt_b,filt_a,single(lfp));
     % Assigning timestamps
     timestamps = [1:length(signal)]'/session.extracellular.srLfp;
 
