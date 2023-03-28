@@ -17,6 +17,7 @@ function session = preprocessOpenEphysData(varargin)
     addParameter(p,'format',pwd,@isstr); % binary, nwb, or openEphys
     addParameter(p,'saveMat', true, @islogical); % Saves basename.session.mat file
     addParameter(p,'showGUI',false,@islogical);
+    addParameter(p,'processData',true,@islogical);
     parse(p,varargin{:})    
 
     parameters = p.Results;
@@ -56,8 +57,12 @@ function session = preprocessOpenEphysData(varargin)
         session.epochs{i}.startTime = startTime;
         if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin'),'file')
             inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin');
-        else
+
+        elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat'),'file')
             inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat');
+            
+        else
+            error(['Epoch duration could not be estimated as raw data file does not exist: ', inputFiles{i}]);
         end
         temp = dir(inputFiles{i});
         duration = temp.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
@@ -79,36 +84,39 @@ function session = preprocessOpenEphysData(varargin)
     
     
     % 6. Merge dat files to single binary .dat file in basepath
-    disp('Attempting to concatenate binary files with spiking data.')
-    outputFile = fullfile(basepath,[session.general.name,'.dat']);
-    binaryMergeWrapper(inputFiles, outputFile)
-    
-    
-    % 7. Merge lfp files
-    inputFiles_lfp = {};
-    for i = 1:numel(session.epochs)
-        if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin'),'file')
-            inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin');
-        else
-            inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat');
-        end
-    end    
-    outputFile_lfp = fullfile(basepath,[session.general.name,'.lfp']);
-    
+    if parameters.processData
 
-    disp('Attempting to concatenate binary LFP files.')
-    binaryMergeWrapper(inputFiles_lfp, outputFile_lfp) 
-    
-    
-    % 8. Merge digital timeseries
-    TTL_paths = {};
-    TTL_offsets = [];
-    for i = 1:numel(session.epochs)
-        TTL_paths{i} = fullfile(session.epochs{i}.name,'events','Neuropix-PXI-100.0','TTL_1');
-        TTL_offsets(i) = session.epochs{i}.startTime;
+        disp('Attempting to concatenate binary files with spiking data.')
+        outputFile = fullfile(basepath,[session.general.name,'.dat']);
+        binaryMergeWrapper(inputFiles, outputFile)
+
+
+        % 7. Merge lfp files
+        inputFiles_lfp = {};
+        for i = 1:numel(session.epochs)
+            if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin'),'file')
+                inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin');
+            else
+                inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat');
+            end
+        end
+        outputFile_lfp = fullfile(basepath,[session.general.name,'.lfp']);
+
+
+        disp('Attempting to concatenate binary LFP files.')
+        binaryMergeWrapper(inputFiles_lfp, outputFile_lfp)
+
+
+        % 8. Merge digital timeseries
+        TTL_paths = {};
+        TTL_offsets = [];
+        for i = 1:numel(session.epochs)
+            TTL_paths{i} = fullfile(session.epochs{i}.name,'events','Neuropix-PXI-100.0','TTL_1');
+            TTL_offsets(i) = session.epochs{i}.startTime;
+        end
+        openephysDig = loadOpenEphysDigital(session,TTL_paths,TTL_offsets);
+
     end
-    openephysDig = loadOpenEphysDigital(session,TTL_paths,TTL_offsets);
-    
 
     function subFolderNames = checkfolder(dir1, folderstring)
         files = dir(dir1);
