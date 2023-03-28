@@ -36,4 +36,4 @@ end
 % eventsfilename = fullfile(basepath,[basename,'.MergePoints.events.mat']);
 % save(eventsfilename,'MergePoints');
 
-fprintf('\nConcatenated files successfully!\n');
+% fprintf('\nConcatenated files successfully!\n');
