@@ -95,11 +95,13 @@ binsPost = floor((binDistribution(1)+binDistribution(2))*length(binsToKeep))+1:l
 % Calculating PSTH
 PSTH_out = [];
 sr = spikes.sr; % Sampling rate
-for j = 1:numel(spikes.times)   
-    [spike_times,index] = sort([spikes.times{j};event_times(:)]);
-    spike_cluster_index = [ones(size(spikes.times{j}));2*ones(size(event_times(:)))];
-    [ccg,time] = CCG(spike_times,spike_cluster_index(index),'binSize',binSize,'duration',(duration+padding)*2,'Fs',1/sr);
-    PSTH_out(:,j) = ccg(binsToKeep+1,2,1)./numel(event_times)/binSize;
+if ~isempty(event_times)
+    for j = 1:numel(spikes.times)   
+        [spike_times,index] = sort([spikes.times{j};event_times(:)]);
+        spike_cluster_index = [ones(size(spikes.times{j}));2*ones(size(event_times(:)))];
+        [ccg,time] = CCG(spike_times,spike_cluster_index(index),'binSize',binSize,'duration',(duration+padding)*2,'Fs',1/sr);
+        PSTH_out(:,j) = ccg(binsToKeep+1,2,1)./numel(event_times)/binSize;
+    end
 end
 time = time(binsToKeep+1);
 
