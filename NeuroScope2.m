@@ -401,8 +401,8 @@ end
         
         UI.panel.center = uix.VBox( 'Parent', UI.grid_panels, 'Spacing', 0, 'Padding', 0 ); % Center flex box
         % UI.panel.right = uix.VBoxFlex('Parent',UI.grid_panels,'position',[0 0.66 0.26 0.31]); % Right panel
-        set(UI.grid_panels, 'Widths', [250 -1],'MinimumWidths',[220 1]); % set grid panel size
-        set(UI.grid_panels, 'Widths', [250 -1],'MinimumWidths',[5 1]); % set grid panel size
+        set(UI.grid_panels, 'Widths', [270 -1],'MinimumWidths',[220 1]); % set grid panel size
+        set(UI.grid_panels, 'Widths', [270 -1],'MinimumWidths',[5 1]); % set grid panel size
         % Separation of the center box into three panels: title panel, plot panel and lower info panel
         UI.panel.plots = uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.center,'BackgroundColor','k'); % Main plot panel
         UI.panel.info  = uix.HBox('Parent',UI.panel.center, 'Padding', 1); % Lower info panel
@@ -494,15 +494,15 @@ end
         UI.epochAxes = axes('Parent',UI.panel.epochs.main,'Units','Normalize','Position',[0 0 1 1],'YLim',[0,1],'YTick',[],'ButtonDownFcn',@ClickEpochs,'XTick',[]); axis tight %,'Color',UI.settings.background,'XColor',UI.settings.primaryColor,'TickLength',[0.005, 0.001],'XMinorTick','on',,'Clipping','off');
         
         % Time series data
-        UI.panel.timeseriesdata.main = uipanel('Title','Time series data','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
+        UI.panel.timeseriesdata.main = uipanel('Title','Raw time series data','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
         UI.table.timeseriesdata = uitable(UI.panel.timeseriesdata.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0.20 1 0.80],'ColumnWidth',{20 35 125 45},'columnname',{'','Tag','File name','nChan'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@showIntan);
         UI.panel.timeseriesdata.showTimeseriesBelowTrace = uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','checkbox','Units','normalized','Position',[0 0 0.5 0.20], 'value', 0,'String','Below traces','Callback',@showTimeseriesBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show time series data below traces');
         uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Edit','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
             
         % Defining flexible panel heights
-        set(UI.panel.general.main, 'Heights', [65 210 -200 35 -100 35 100 40 150],'MinimumHeights',[65 210 160 35 140 35 50 30 150]);
+        set(UI.panel.general.main, 'Heights', [65 210 -210 35 -90 35 100 40 150],'MinimumHeights',[65 210 200 35 140 35 50 30 150]);
         UI.panel.general.main1.MinimumWidths = 218;
-        UI.panel.general.main1.MinimumHeights = 935;
+        UI.panel.general.main1.MinimumHeights = 975;
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 2. PANEL: Spikes related metrics
@@ -578,7 +578,7 @@ end
         
         % Events
         UI.panel.events.table = uipanel('Parent',UI.panel.other.main,'title','Events (*.events.mat)');
-        UI.table.events_data = uitable(UI.panel.events.table,'Data', {'','',false,false,false},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 65 42 50 45},'columnname',{'','Name','Show','Active','Below'},'RowName',[],'ColumnEditable',[false false true true true],'CellEditCallback',@setEventData,'CellSelectionCallback',@table_events_click);
+        UI.table.events_data = uitable(UI.panel.events.table,'Data', {'','',false,false,false},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 85 42 50 45},'columnname',{'','Name','Show','Active','Below'},'RowName',[],'ColumnEditable',[false false true true true],'CellEditCallback',@setEventData,'CellSelectionCallback',@table_events_click);
 
         UI.panel.events.main = uipanel('Parent',UI.panel.other.main);
         UI.panel.events.showEventsIntervals = uicontrol('Parent',UI.panel.events.main,'Style','checkbox','Units','normalized','Position',[0.01 0.8 0.32 0.19], 'value', 0,'String','Intervals','Callback',@showEventsIntervals,'KeyPressFcn', @keyPress,'tooltip','Show events intervals');
@@ -4485,52 +4485,53 @@ end
     
     function setSpikesYData(~,~)
         UI.settings.spikesYData = UI.panel.spikes.setSpikesYData.String{UI.panel.spikes.setSpikesYData.Value};
+        groups = [];
+        [~,sortidx] = sort(cat(1,data.spikes.times{:})); % Sorting spikes
         if UI.panel.spikes.setSpikesYData.Value > 1
-            try
-                UI.settings.useSpikesYData = true;
-                if numel(data.spikes.times)>0
-                    switch UI.settings.spikesYDataType{UI.panel.spikes.setSpikesYData.Value}
-                        case 'double'
-                            groups = [];
+            if numel(data.spikes.times)>0
+                switch UI.settings.spikesYDataType{UI.panel.spikes.setSpikesYData.Value}
+                    case 'double'
+                        if length(data.spikes.(UI.settings.spikesYData)) == data.spikes.numcells
                             [~,order1] = sort(data.spikes.(UI.settings.spikesYData),'descend');
                             [~,order2] = sort(order1);
                             for i = 1:numel(data.spikes.(UI.settings.spikesYData))
                                 groups = [groups,order2(i)*ones(1,data.spikes.total(i))]; % from cell to array
                             end
-                            [~,sortidx] = sort(cat(1,data.spikes.times{:})); % Sorting spikes
                             data.spikes.spindices(:,3) = groups(sortidx); % Combining spikes and sorted group ids
-                        case 'cell'
+                            UI.settings.useSpikesYData = true;
+                        else
+                            UI.settings.useSpikesYData = false;
+                            UI.panel.spikes.setSpikesYData.Value = 1;
+                        end
+                    case 'cell'
+                        try
                             if size(data.spikes.(UI.settings.spikesYData){1},2)==1
-                                groups = [];
                                 for i = 1:numel(data.spikes.(UI.settings.spikesYData))
                                     groups = [groups,data.spikes.(UI.settings.spikesYData){i}']; % from cell to array
                                 end
                             elseif size(data.spikes.(UI.settings.spikesYData){1},1)==1
-                                groups = [];
                                 for i = 1:numel(data.spikes.(UI.settings.spikesYData))
                                     groups = [groups,data.spikes.(UI.settings.spikesYData){i}]; % from cell to array
                                 end
                             end
-                            [~,sortidx] = sort(cat(1,data.spikes.times{:})); % Sorting spikes
-                            data.spikes.spindices(:,3) = groups(sortidx); % Combining spikes and sorted group ids
-                            if contains(UI.settings.spikesYData,'phase')
-                                idx = (data.spikes.spindices(:,3) < 0);
-                                data.spikes.spindices(idx,3) = data.spikes.spindices(idx,3)+2*pi;
-                            end
-                    end
+                        catch
+                            UI.settings.useSpikesYData = false;
+                            UI.panel.spikes.setSpikesYData.Value = 1;
+                            warning('Failed to set sorting')
+                        end
+                        data.spikes.spindices(:,3) = groups(sortidx); % Combining spikes and sorted group ids
+                        if contains(UI.settings.spikesYData,'phase')
+                            idx = (data.spikes.spindices(:,3) < 0);
+                            data.spikes.spindices(idx,3) = data.spikes.spindices(idx,3)+2*pi;
+                        end
                 end
-                
-                % Getting limits
-                UI.settings.spikes_ylim = [min(data.spikes.spindices(:,3)),max(data.spikes.spindices(:,3))];
-            catch
-                UI.settings.useSpikesYData = false;
-                UI.panel.spikes.setSpikesYData.Value = 1;
-                warning('Failed to set sorting')
             end
+            % Getting limits
+            UI.settings.spikes_ylim = [min(data.spikes.spindices(:,3)),max(data.spikes.spindices(:,3))];
         else
             UI.settings.useSpikesYData = false;
         end
-        initTraces
+        % initTraces
         uiresume(UI.fig);
     end
         
@@ -4630,7 +4631,7 @@ end
         if ~isempty(UI.settings.channelTags.filter)
             for j = 1:numel(UI.channels)
                 for i = 1:numel(UI.settings.channelTags.filter)
-                    if isfield(data.session.channelTags.({UI.settings.channelTags.filter(i)}),'channels') && ~isempty(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}).channels)
+                    if isfield(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}),'channels') && ~isempty(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}).channels)
                         [~,idx] = setdiff(UI.channels{j},data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}).channels);
                         UI.channels{j}(idx) = [];
                     end
@@ -4956,6 +4957,44 @@ end
         
         % Timeseries files
         updateTimeSeriesDataList
+        
+        % Defining flexible panel heights for lists of electrode groups, channel tags and analog and digital timeseries
+        tableHeights_ElectrodeGroups = max([data.session.extracellular.nElectrodeGroups*18+50,200]);
+        if isfield(UI,'channelTags') && ~isempty(UI.channelTags)
+            nTags = numel(UI.channelTags);
+        else
+            nTags = 1;
+        end
+        tableHeights_ChannelTags = nTags*18+30;
+        
+        if isfield(data.session,'timeSeries') && ~isempty(data.session.timeSeries)
+            nfiles = numel(fieldnames(data.session.timeSeries));
+        else
+            nfiles = 0;
+        end
+        tableHeights_Timeseries3 = nfiles*18+30;
+        
+        set(UI.panel.general.main, 'MinimumHeights',[65 210 tableHeights_ElectrodeGroups 35 tableHeights_ChannelTags 35 50 30 tableHeights_Timeseries3]);
+        UI.panel.general.main1.MinimumHeights = 605 + tableHeights_ElectrodeGroups + tableHeights_ChannelTags + tableHeights_Timeseries3;
+        
+        % Defining flexible panel heights for events and timeseries files
+        if isfield(UI.data.detectecFiles,'events') && ~isfield(data.session,'timeSeries')
+            nfiles = numel(UI.data.detectecFiles.events);
+        else
+            nfiles = 0;
+        end
+        tableHeights_Events = nfiles*18+50;
+        
+        if isfield(UI.data.detectecFiles,'timeseries')
+            nfiles = numel(UI.data.detectecFiles.timeseries);
+        else
+            nfiles = 0;
+        end
+        tableHeights_TimeSeries = nfiles*18+30;
+        
+        set(UI.panel.other.main, 'MinimumHeights',[tableHeights_Events 150 100 150 tableHeights_TimeSeries 40]);
+        UI.panel.other.main1.MinimumHeights = 520 + tableHeights_Events + tableHeights_TimeSeries;
+        
         
         % Generating epoch interval-visualization
         delete(UI.epochAxes.Children)
