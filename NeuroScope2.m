@@ -2120,8 +2120,12 @@ end
             % Highlighting detection channel
             if isfield(data.events.(eventName),'detectorParams')
                 detector_channel = data.events.(eventName).detectorParams.channel+1;
-            elseif isfield(data.events.(eventName),'detectorinfo') & isfield(data.events.(eventName).detectorinfo,'detectionchannel')
-                detector_channel = data.events.(eventName).detectorinfo.detectionchannel+1;
+            elseif isfield(data.events.(eventName),'detectorinfo') && isfield(data.events.(eventName).detectorinfo,'detectionchannel')
+                try
+                    detector_channel = data.events.(eventName).detectorinfo.detectionchannel+1;
+                catch
+                    detector_channel = data.events.(eventName).detectorinfo(1).detectionchannel+1;
+                end
             else
                 detector_channel = [];
             end
@@ -5587,7 +5591,11 @@ end
             
             classNumbers = cellstr(num2str([1:length(UI.settings.channelList)]'));
             classNumbers = regexprep(classNumbers, ' ', '&nbsp;&nbsp;');
-            colored_string = strcat('<html><BODY bgcolor="',channelColorsHex,'">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="white">Channel&nbsp;&nbsp;', classNumbers, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></BODY>',classNumbers, '.&nbsp;</html>');
+            colored_string = strcat('<html><BODY bgcolor="',...
+                channelColorsHex,...
+                '">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="white">Channel&nbsp;&nbsp;',...
+                classNumbers, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font></BODY>',...
+                classNumbers, '.&nbsp;</html>');
         end
     end
     
