@@ -97,17 +97,31 @@ circular_track = optitrack;
 
 % Next we define maze parameters:
 % These are used for linearization and defining states on the maze (e.g. left/right)
+
+% The circular maze with an arm along the center of the circle
+% The animal has to run along the middle arm and return along one of the two side arms 
+%     ___________
+%    / ___   ___ \   
+%   / /   | |   \ \  
+%  / /    | |    \ \ 
+% ( (     | |     ) )
+%  \ \    | |    / / 
+%   \ \___| |___/ /  
+%    \_____*_____/   
+%                    
+% * start location   
+
 maze = {};
-maze.type = 'theta';
-maze.radius_in = 96.5/2;
-maze.radius_out =  116.5/2;
-maze.arm_half_width = 4;
-maze.cross_radii = 47.9;
-maze.rim_buffer = 10;
-maze.polar_rho_limits = [44,75]; % 40,?
-maze.polar_theta_limits = [15,2.8*maze.radius_in]; % In units of cm
-maze.pos_x_limits = [-10,10]; % 
-maze.pos_y_limits = [-40,44]; 
+maze.type = 'theta';            
+maze.radius_in = 48.25;          % Inner radius of the ring (cm)
+maze.radius_out =  58.25;        % Outer radius of the ring (cm)
+maze.arm_half_width = 4;         % Half width of the arm going along the center of the circle (cm)
+maze.cross_radii = 47.9;         % Radius along the vertical midline (cm)
+maze.rim_buffer = 10;            % Extra buffer applied when assigning position along the maze (cm)
+maze.polar_rho_limits = [44,75]; % Polar coordinate limits when assigning the animal subject to the ring (cm)
+maze.polar_theta_limits = [15,2.8*maze.radius_in]; %  (cm)
+maze.pos_x_limits = [-10,10];    % x-limits when assigning animal the the middle arm (cm)
+maze.pos_y_limits = [-40,44];    % The y-limits when assigning animal the the middle arm (cm)
 
 % Defining trials:
 circular_track = getTrials_thetamaze(circular_track,maze);
