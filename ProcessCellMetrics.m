@@ -1,3 +1,5 @@
+
+
 function cell_metrics = ProcessCellMetrics(varargin)
 %   This function calculates cell metrics for a given recording/session
 %   Most metrics are single value per cell, either numeric or string type, but
@@ -1007,9 +1009,7 @@ if any(contains(parameters.metrics,{'spatial_metrics','all'})) && ~any(contains(
                     temp3 = cumsum(sort(firingRateMap.map{j},'descend'));
                     if ~all(temp3==0 | isnan(temp3))
                         cell_metrics.spatialCoverageIndex(j) = find(temp3>0.75*temp3(end),1)/(length(temp3)*0.75); % Spatial coverage index (Royer, NN 2012)
-                        cum_firing1 = cumsum(sort(firingRateMap.map{j}));
-                        cum_firing1 = cum_firing1/max(cum_firing1);
-                        cell_metrics.spatialGiniCoeff(j) = 1-2*sum(cum_firing1)./length(cum_firing1);
+                        cell_metrics.spatialGiniCoeff(j) = calc_gini(firingRateMap.map{j});
                     else
                         cell_metrics.spatialCoverageIndex(j) = nan;
                         cell_metrics.spatialGiniCoeff(j) = nan;
@@ -1443,10 +1443,7 @@ for j = 1:cell_metrics.general.cellCount
     % Firing rate across time
     temp = histcounts(spikes{spkExclu}.times{j},cell_metrics.general.responseCurves.firingRateAcrossTime.x_edges)/firingRateAcrossTime_binsize;
     cell_metrics.responseCurves.firingRateAcrossTime{j} = temp(:);
-    
-    cum_firing1 = cumsum(sort(temp(:)));
-    cum_firing1 = cum_firing1/max(cum_firing1);
-    cell_metrics.firingRateGiniCoeff(j) = 1-2*sum(cum_firing1)./length(cum_firing1);
+    cell_metrics.firingRateGiniCoeff(j) = calc_gini(temp);
     cell_metrics.firingRateCV(j) = std(temp(:))./mean(temp(:));
     cell_metrics.firingRateInstability(j) = median(abs(diff(temp(:))))./mean(temp(:));
     

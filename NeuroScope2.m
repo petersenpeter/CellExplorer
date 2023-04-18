@@ -1014,6 +1014,10 @@ end
         % 5. Image: Raw data displayed with the imagesc function
         % Only data thas is not currently displayed will be loaded.
         
+        if UI.fid.ephys == -1
+            return 
+        end
+        
         if UI.settings.greyScaleTraces < 5
             colors = UI.colors/UI.settings.greyScaleTraces;
         elseif UI.settings.greyScaleTraces >=5
@@ -2273,6 +2277,10 @@ end
     end
     
     function plotRMSnoiseInset
+        if UI.fid.ephys == -1
+            return 
+        end
+        
         % Shows RMS noise in a small inset plot in the upper right corner
         if UI.settings.plotRMSnoise_apply_filter == 1
             rms1 = rms(ephys.raw/(UI.settings.scalingFactor/1000000));
@@ -3004,7 +3012,7 @@ end
                 streamTic = tic;
                 UI.t0 = UI.t0+UI.settings.replayRefreshInterval*UI.settings.windowDuration;
                 UI.t0 = max([0,min([UI.t0,UI.t_total-UI.settings.windowDuration])]);
-                if ~ishandle(UI.fig)
+                if ~ishandle(UI.fig) ||  UI.fid.ephys == -1
                     return
                 end
                 if UI.settings.playAudioFirst
@@ -4623,7 +4631,7 @@ end
         if isfield(data.session,'channelTags')
             UI.channelTags = fieldnames(data.session.channelTags);
         end
-        if ~isempty(UI.settings.channelTags.hide)
+        if ~isempty(UI.settings.channelTags.hide) && isfield(data.session,'channelTags')
             for j = 1:numel(UI.channels)
                 for i = 1:numel(UI.settings.channelTags.hide)
                     if isfield(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.hide(i)}),'channels') && ~isempty(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.hide(i)}).channels)
@@ -4632,7 +4640,7 @@ end
                 end
             end
         end
-        if ~isempty(UI.settings.channelTags.filter)
+        if ~isempty(UI.settings.channelTags.filter) && isfield(data.session,'channelTags')
             for j = 1:numel(UI.channels)
                 for i = 1:numel(UI.settings.channelTags.filter)
                     if isfield(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}),'channels') && ~isempty(data.session.channelTags.(UI.channelTags{UI.settings.channelTags.filter(i)}).channels)
@@ -4982,7 +4990,7 @@ end
         UI.panel.general.main1.MinimumHeights = 605 + tableHeights_ElectrodeGroups + tableHeights_ChannelTags + tableHeights_Timeseries3;
         
         % Defining flexible panel heights for events and timeseries files
-        if isfield(UI.data.detectecFiles,'events') && ~isfield(data.session,'timeSeries')
+        if isfield(UI.data.detectecFiles,'timeSeries') && ~isempty(data.session.timeSeries)
             nfiles = numel(UI.data.detectecFiles.events);
         else
             nfiles = 0;
@@ -5433,7 +5441,7 @@ end
     end
 
     function ClicktoSelectFromTable2(~,evnt)
-        if ~isempty(evnt.Indices) && size(evnt.Indices,1) == 1 && evnt.Indices(2) == 1
+        if ~isempty(evnt.Indices) && size(evnt.Indices,1) == 1 && evnt.Indices(2) == 1 && isfield(UI,'colors_tags')
             colorpick = UI.colors_tags(evnt.Indices(1),:);
             colorpick = userSetColor(colorpick,'Channel tag color');
             UI.colors_tags(evnt.Indices(1),:) = colorpick;
@@ -5446,7 +5454,7 @@ end
     end
     
     function table_events_click(~,evnt)
-        if ~isempty(evnt.Indices) && size(evnt.Indices,1) == 1 && evnt.Indices(2) == 1
+        if ~isempty(evnt.Indices) && size(evnt.Indices,1) == 1 && evnt.Indices(2) == 1 && isfield(UI,'colors_events')
             colorpick = UI.colors_events(evnt.Indices(1),:);
             colorpick = userSetColor(colorpick,'Channel tag color');
             UI.colors_events(evnt.Indices(1),:) = colorpick;
