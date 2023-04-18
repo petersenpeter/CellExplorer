@@ -327,7 +327,13 @@ This is a data container for behavioral tracking data. A MATLAB struct `behavior
 * `orientation`: .x, .y, .z, and .w (default units: radians)
 * `pupil`: pupil-tracking data: .x, .y, .diameter.
 * `epochs`: behaviorally derived epochs.
-* `trials`: behavioral trials defined as intervals or continuous vector with numeric trial numbers.
+* `trials`: struct with trials information.
+  * `*`: the name of the trial analysis. e.g. `alternation`
+    * `start`: trial start times in seconds.
+    * `stop`: trial end times in seconds.
+    * `trials`: continuous vector with numeric trial numbers.
+    * `nTrials`: number of trials.
+    * `stateName`: Name describing the what the trials fields describe (e.g. `Alternative running on track`).
 * `states`: e.g. spatially defined regions like central arm or waiting area in a maze. Can be binary or numeric.
 * `stateNames`: names of the states.
 * `timeSeries`: can contain any derived time traces projected into the behavioral timestamps e.g. temperature, oscillation frequency, power etc.
@@ -336,18 +342,6 @@ This is a data container for behavioral tracking data. A MATLAB struct `behavior
 * `processinginfo`: a struct with information about how the .mat file was generated including:   `function` name of the function, `version`, `date`, `parameters`.
 
 Any other field can be added to the struct containing behavior data. The `*.behavior.mat` files should be stored in the basepath.
-
-### Trials
-A MATLAB struct `trials` stored in a .mat file: `basename.trials.behavior.mat`. The trials struct is a special behavior struct centered around behavioral trials. `trials` has the following fields:
-* `start`: trial start times in seconds.
-* `end`: trial end times in seconds.
-* `nTrials`: number of trials.
-* `states`: e.g. spatially defined regions like central arm or waiting area in a maze, stimulation trials, error trials. Must be binary or numeric.
-* `stateNames`: names of the states.
-* `timeSeries`: can contain any derived time traces averaged onto trial e.g. temperature. Use nan values for undefined trials.
-* `processinginfo`: a struct with information about how the .mat file was generated including the name of the function, version, date and parameters.
-
-Any other field can be added to the struct containing trial-specified data. The `trials.behavior.mat` files should be stored in the basepath. Trial-wise data should live in this container, while trial-intervals can be stored in other behavior structs.
 
 ### Firing rate maps
 This is a data container for firing rate map data. A MATLAB struct `ratemap` containing 1D or linearized firing rat maps, stored in a .mat file: `basename.ratemap.firingRateMap.mat`. The firing rate maps have the following fields:

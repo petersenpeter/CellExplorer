@@ -1,4 +1,4 @@
-function [trials,circular_track] = getTrials_thetamaze(circular_track, maze, plots)
+function circular_track = getTrials_thetamaze(circular_track, maze, plots)
 if nargin < 3
     plots = 1;
 end
@@ -78,17 +78,22 @@ if plots == 1
     end
 end
 
-trials = [];
-trials.states.error = []; % Boolean, if a trial is considered an error
+% Resetting trials field if not formatted correctly
+if isfield(circular_track,'trials') && isnumeric(circular_track.trials)
+    circular_track.trials = {};
+end
 
-trials.states.left_right = []; % Numeric: 1 or 2
-trials.stateNames.left_right = {'Left','Right'};
+trials = [];
+circular_track.states.error = []; % Boolean, if a trial is considered an error
+
+circular_track.states.left_right = []; % Numeric: 1 or 2
+circular_track.stateNames.left_right = {'Left','Right'};
 
 trials.start = 0; % Start time of
 trials.end = [];
 
 % Preparing trials matric
-circular_track.trials = nan(1,circular_track.nSamples);
+trials.trials = nan(1,circular_track.nSamples);
 trials_states = zeros(1,circular_track.nSamples);
 i = 0;
 
@@ -102,26 +107,26 @@ for j = 1:length(central_arm_end)
                 i = i+1;
                 trials.start(i) = central_arm_onset(test1(end));
                 trials.end(i) = pos7home(test2(1));
-                circular_track.trials(trials.start(i):trials.end(i)) = i;
+                trials.trials(trials.start(i):trials.end(i)) = i;
                 trials_states(trials.start(i):trials.end(i)) = 1;
                 if sum(ismember(left_rim_end,trials.end(i)))
                     % Left trial
-                    trials.states.left_right(i) = 1;
+                    circular_track.states.left_right(i) = 1;
                     if sum(ismember(right_rim_onset,trials.start(i):trials.end(i)))
-                        trials.states.error(i) = true;
+                        circular_track.states.error(i) = true;
                         else
-                        trials.states.error(i) = false;
+                        circular_track.states.error(i) = false;
                     end
                 elseif sum(ismember(right_rim_end,trials.end(i)))
                     % Right trial
-                    trials.states.left_right(i) = 2;
+                    circular_track.states.left_right(i) = 2;
                     if sum(ismember(left_rim_onset,trials.start(i):trials.end(i)))
-                        trials.states.error(i) = true;
+                        circular_track.states.error(i) = true;
                     else
-                        trials.states.error(i) = false;
+                        circular_track.states.error(i) = false;
                     end
                 else
-                    trials.states.left_right(i) = 0;
+                    circular_track.states.left_right(i) = 0;
                 end
             end
         end
@@ -133,38 +138,42 @@ trials.start = circular_track.timestamps(trials.start);
 trials.end = circular_track.timestamps(trials.end);
 trials.nTrials = numel(trials.start);
 
+trials.stateName = 'Alternative running on track';
+
+% Adding trials struct to circular_track struct
+circular_track.trials.alternation = trials;
+
 if plots == 1
     figure,
     
     subplot(1,2,1)
-    plot(circular_track.timestamps-circular_track.timestamps(1),circular_track.trials,'.k','linewidth',2), xlabel('Time (sec)'), ylabel('Trials')
+    plot(circular_track.timestamps-circular_track.timestamps(1),trials.trials,'.k','linewidth',2), xlabel('Time (sec)'), ylabel('Trials')
     
     subplot(3,2,2)
     stairs(circular_track.timestamps-circular_track.timestamps(1),trials_states,'.-k','linewidth',1), xlabel('Time (sec)'), ylabel('Trial')
     
     subplot(3,2,4)
-    stairs(trials.states.left_right,'.-b','linewidth',1), xlabel('Trials'), ylabel('Left/Right'), 
-    yticks(1:numel(trials.stateNames.left_right)), yticklabels(trials.stateNames.left_right)
+    stairs(circular_track.states.left_right,'.-b','linewidth',1), xlabel('Trials'), ylabel('Left/Right'), 
+    yticks(1:numel(circular_track.stateNames.left_right)), yticklabels(circular_track.stateNames.left_right)
     
     subplot(3,2,6)
-    stairs(trials.states.error,'.-k','linewidth',1), xlabel('Trials'), ylabel('Errors')
-    
+    stairs(circular_track.states.error,'.-k','linewidth',1), xlabel('Trials'), ylabel('Errors')
     
     figure
     
     subplot(1,2,1)
     plot(circular_track.position.x,circular_track.position.y,'.k','markersize',2), hold on
-    idx_left = ismember(circular_track.trials, find(trials.states.left_right==1));
+    idx_left = ismember(trials.trials, find(circular_track.states.left_right==1));
     plot(circular_track.position.x(idx_left),circular_track.position.y(idx_left),'.b','markersize',6)
-    idx_right = ismember(circular_track.trials, find(trials.states.left_right==2));
+    idx_right = ismember(trials.trials, find(circular_track.states.left_right==2));
     plot(circular_track.position.x(idx_right),circular_track.position.y(idx_right),'.r','markersize',6)
     title('Trials'), xlabel('X'), ylabel('Y')
 
     subplot(1,2,2)
     plot3(circular_track.position.x,circular_track.position.y,circular_track.timestamps,'.k','markersize',2), hold on
-    idx_left = ismember(circular_track.trials, find(trials.states.left_right==1));
+    idx_left = ismember(trials.trials, find(circular_track.states.left_right==1));
     plot3(circular_track.position.x(idx_left),circular_track.position.y(idx_left),circular_track.timestamps(idx_left),'.b','markersize',6)
-    idx_right = ismember(circular_track.trials, find(trials.states.left_right==2));
+    idx_right = ismember(trials.trials, find(circular_track.states.left_right==2));
     plot3(circular_track.position.x(idx_right),circular_track.position.y(idx_right),circular_track.timestamps(idx_right),'.r','markersize',6)
     title('Trials and time'), xlabel('X'), ylabel('Y'), zlabel('Time (sec)')
 end

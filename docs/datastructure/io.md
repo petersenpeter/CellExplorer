@@ -144,10 +144,6 @@ offset = [0,0,0];
 linear_track = loadOptitrack('session',session,'dataName','linear_track','offset',offset,'scaling_factor',scaling_factor);
 ```
 
-## Trials
-A MATLAB struct trials stored in a .mat file: `basename.trials.behavior.mat`. The trials struct is a special behavior struct centered around behavioral trials. trials has the following fields:
-
-
 ## Firing rate maps
 This is a data container for firing rate map data. A MATLAB struct ratemap containing 1D or linearized firing rat maps, stored in a .mat file: `basename.ratemap.firingRateMap.mat`. The firing rate maps have the following fields:
 

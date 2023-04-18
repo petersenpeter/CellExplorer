@@ -13,9 +13,9 @@ __The steps are:__
 1. Get session info and spikes 
 2. Import behavior data into CellExplorer/Buzcode data container/format
 3. Get TTL pulses/global time
-4. Define behavior struct with limits/boundaries/trials. Two examples
-   4. Linear track
-   4. Theta maze (a circular maze with arm connecting the two rims, going along the center of the circle)
+4. Define behavior struct with limits/boundaries/trials. Two examples:
+   4. Linear track: Animal runs from one end to the other, and back on a straight line.
+   4. Theta maze: a circular maze with arm connecting the two rims, going along the center of the circle. Animal runs along the arm and then back along one of the two side arm (on the rim).
 5. Generate the firing rate maps
 6. Run CellExplorer Processing pipeline
 
@@ -93,10 +93,11 @@ figure,
 plot(lineartrack.position.x,lineartrack.position.y)
 ```
 
-Getting trials via definition of limits. As this is a linear track, we simply use the rotated x-position
+Getting trials via definition of limits. Here we use the x-position as the linearized representation
 ```m
-lineartrack.limits.linearized = [10,190];
-lineartrack.trials = getTrials_lineartrack(lineartrack.position.linearized,lineartrack.limits.start,lineartrack.limits.end);
+lineartrack.position.linearized = lineartrack.position.x;
+maze.pos_linearized_limits = [10,190];
+lineartrack = getTrials_lineartrack(lineartrack,maze.pos_linearized_limits);
 ```
 
 Now we can save the struct
@@ -145,9 +146,9 @@ maze.boundary{4} = [15,40];
 maze.boundary{5} = [maze.radius_in-3.25,maze.polar_theta_limits(2)];
 ```
 
-Define the trials struct:
+Getting trials:
 ```m
-[trials,circular_track] = getTrials_thetamaze(circular_track,maze);
+circular_track = getTrials_thetamaze(circular_track,maze);
 
 % Circular position
 circular_track.states.arm_rim = nan(1,circular_track.nSamples);
@@ -158,7 +159,7 @@ circular_track.stateNames.arm_rim = {'arm','rim'};
 
 Linearize and defining boundaries
 ```m
-circular_track.position.linearized = linearize_theta_maze(circular_track,maze);
+circular_track = linearize_theta_maze(circular_track,maze);
 circular_track.limits.linearized = [0,diff(maze.pos_y_limits) + diff(maze.polar_theta_limits)-5];
 circular_track.boundaries.linearized = [0,diff(maze.pos_y_limits), diff(maze.pos_y_limits)+ abs(maze.polar_theta_limits(1))-5];
 circular_track.boundaryNames.linearized = {'Central arm','Left side','Right side'};
@@ -167,9 +168,9 @@ circular_track.boundaryNames.linearized = {'Central arm','Left side','Right side
 circular_track.speed_th = 10;
 
 % Generating left_right states data
-circular_track.states.left_right = nan(size(circular_track.trials));
-for i = 1:trials.nTrials
-    circular_track.states.left_right(circular_track.trials==i) = trials.states.left_right(i);
+circular_track.states.left_right = nan(size(circular_track.timestamps));
+for i = 1:circular_track.trials.alternation.nTrials
+    circular_track.states.left_right(circular_track.trials.alternation.trials==i) = circular_track.states.left_right(i);
 end
 circular_track.stateNames.left_right = {'Left','Right'};
 ```
@@ -177,14 +178,32 @@ circular_track.stateNames.left_right = {'Left','Right'};
 Save the behavioral data
 ```m
 saveStruct(circular_track,'behavior','session',session);
-saveStruct(trials,'behavior','session',session);
 
 % After this you can load the generated files:
 % circular_track = loadStruct('circular_track','behavior','session',session);
-% trials = loadStruct('trials','behavior','session',session);
 ```
 
 ## 5. Generate firingratemaps
+
+### 5.a Linear track
+
+Generating the linearized firing rate map
+```m
+ratemap = generate_FiringRateMap_1D('spikes',spikes,'behavior',lineartrack,'session',session,'x_label','Linear track position (cm)');
+```
+
+Generating trial-wise firing rate map
+```m
+ratemap_Trials_ab = generate_FiringRateMap_1D('spikes',spikes,'behavior',lineartrack,'states',lineartrack.trials.ab.trials,'dataName','ratemap_Trials_ab','session',session,'x_label','Linear track position (cm)');
+ratemap_Trials_ba = generate_FiringRateMap_1D('spikes',spikes,'behavior',lineartrack,'states',lineartrack.trials.ba.trials,'dataName','ratemap_Trials_ba','session',session,'x_label','Linear track position (cm)');
+```
+
+Generating left-right firing rate map
+```m
+ratemap_ab_ba = generate_FiringRateMap_1D('spikes',spikes,'behavior',lineartrack,'states',lineartrack.states.ab_ba,'stateNames',lineartrack.stateNames.ab_ba,'dataName','ratemap_ab_ba','session',session,'x_label','Linear track position (cm)');
+```
+
+### 5.b Circular track
 
 Generate the linearized firing rate map
 ```m
