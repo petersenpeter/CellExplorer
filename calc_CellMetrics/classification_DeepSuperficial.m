@@ -44,7 +44,9 @@ addParameter(p,'saveMat',true,@islogical); % Defines if a mat file is created
 addParameter(p,'saveFig',true,@islogical); % Defines if the summary figure is saved to basepath
 addParameter(p,'skip_cortical',true,@islogical);
 addParameter(p,'notch_filter_60z',false,@islogical); % option to remove 60hz if badly contaminated
-addParameter(p,'remove_opto_stim',true,@islogical);
+addParameter(p,'remove_opto_stim',true,@islogical); % option to remove ripples overlapping with opto
+addParameter(p,'sample_ripples',false,@islogical); % option to sample ripples
+addParameter(p,'n_samples',2000,@isnumeric); % if sample_ripples, number of samples
 addParameter(p,'basepath',[]);
 
 % Parsing inputs
@@ -55,6 +57,8 @@ saveFig = p.Results.saveFig;
 skip_cortical = p.Results.skip_cortical;
 notch_filter_60z = p.Results.notch_filter_60z;
 remove_opto_stim = p.Results.remove_opto_stim;
+sample_ripples = p.Results.sample_ripples;
+n_samples = p.Results.n_samples;
 basepath = p.Results.basepath;
 
 % Gets basepath and basename from session struct
@@ -147,6 +151,13 @@ if remove_opto_stim && exist(fullfile(basepath,[basename,'.optoStim.manipulation
     [~,indices] = ExcludeIntervals(ripples.timestamps,optoStim.timestamps);
     ripples.timestamps = ripples.timestamps(indices,:);
     ripples.peaks = ripples.peaks(indices,:);
+end
+
+% take a sample of ripples 
+if sample_ripples
+    idx = sort(randperm(length(ripples.peaks),min(length(ripples.peaks),n_samples)));
+    ripples.timestamps = ripples.timestamps(idx,:);
+    ripples.peaks = ripples.peaks(idx,:);
 end
 
 % Determines which electrode groups that should be excluded from the analysis
