@@ -37,7 +37,9 @@ if exist(rezFile,'file')
                 session.channelTags.Bad.channels = [session.channelTags.Bad.channels,session.extracellular.electrodeGroups.channels{end}];
             end
         else
-            session.channelTags.Bad.channels = session.extracellular.electrodeGroups.channels{end};
+            session.channelTags.Bad.channels = [];
+            warning('if last electrode group is supposed to be skipped, manually adjust in neuroscope');
+%             session.channelTags.Bad.channels = session.extracellular.electrodeGroups.channels{end};
         end
     end
     session.extracellular.nSpikeGroups = session.extracellular.nElectrodeGroups; % Number of spike groups
