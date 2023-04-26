@@ -93,7 +93,7 @@ addParameter(p,'restrictToIntervals',[],@isnumeric);
 addParameter(p,'excludeIntervals',[],@isnumeric);
 addParameter(p,'ignoreEventTypes',{'MergePoints'},@iscell);
 addParameter(p,'ignoreManipulationTypes',{'cooling'},@iscell);
-addParameter(p,'ignoreStateTypes',{'StateToIgnore'},@iscell);
+addParameter(p,'ignoreStateTypes',{'StateToIgnore','SleepStateEpisodes'},@iscell);
 addParameter(p,'excludeManipulationIntervals',true,@islogical);
 addParameter(p,'metricsToExcludeManipulationIntervals',{'waveform_metrics','PCA_features','acg_metrics','monoSynaptic_connections','theta_metrics','spatial_metrics','event_metrics','psth_metrics'},@iscell);
 
