@@ -30,8 +30,13 @@ basename = basenameFromBasepath(basepath);
 
 if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
     
-    load(fullfile(basepath,[basename,'.ripples.events.mat']))
+    load(fullfile(basepath,[basename,'.ripples.events.mat']),'ripples')
     
+    if isfield(ripples,'flagged')
+        ripples.timestamps(ripples.flagged,:) = [];
+    end
+    ripples = IntervalArray(ripples.timestamps);
+
     SWRunitMetrics = main(spikes{1},ripples);
     
     % single cell metrics to cell_metrics
@@ -63,10 +68,12 @@ if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
                     if ~size(states.(statenames{iStates}),1) > 0
                         continue
                     end
-                    current_ripples = eventIntervals(ripples,states.(statenames{iStates}),true);
-                    if isempty(current_ripples)
+                    current_ripples = ripples & IntervalArray(states.(statenames{iStates}));
+
+                    if current_ripples.isempty
                         continue
                     end
+
                     SWRunitMetrics = main(spikes{spkExclu},...
                         current_ripples);
                     
@@ -92,11 +99,10 @@ else
 end
 end
 
-function SWRunitMetrics = main(spikes,ripples)
+function SWRunitMetrics = main(spikes,ripple_epochs)
 
-% add spikes and ripples to objects
+% add spikes to objects
 st = SpikeArray(spikes.times);
-ripple_epochs = IntervalArray(ripples.timestamps);
 
 % baseline firing rate
 firingRate = st.n_spikes / st.duration;

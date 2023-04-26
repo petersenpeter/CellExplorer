@@ -23,9 +23,15 @@ basename = basenameFromBasepath(basepath);
 
 if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
     
-    load(fullfile(basepath,[basename,'.ripples.events.mat']))
-    
-    rankStats = main(basepath,spikes{1},ripples);
+    load(fullfile(basepath,[basename,'.ripples.events.mat']),'ripples')
+
+    % Excluding ripples that have been flagged
+    if isfield(ripples,'flagged')
+        ripples.timestamps(ripples.flagged,:) = [];
+    end
+    ripples = IntervalArray(ripples.timestamps);
+
+    rankStats = main(basepath,spikes{1},ripples.intervals);
     
     cell_metrics.rankorder = median(rankStats.rankUnits,2,'omitnan')';
     
@@ -49,15 +55,15 @@ if exist(fullfile(basepath,[basename,'.ripples.events.mat']),'file')
                     if ~size(states.(statenames{iStates}),1) > 0
                         continue
                     end
-                    current_ripples = eventIntervals(ripples,...
-                        states.(statenames{iStates}),...
-                        true);
-                    if isempty(current_ripples)
+
+                    current_ripples = ripples & IntervalArray(states.(statenames{iStates}));
+
+                    if current_ripples.isempty
                         continue
                     end
                     rankStats = main(basepath,...
                         spikes{spkExclu},...
-                        current_ripples);
+                        current_ripples.intervals);
                     
                     % single cell metrics to cell_metrics
                     cell_metrics.(['rankorder_',statenames{iStates}]) =...
