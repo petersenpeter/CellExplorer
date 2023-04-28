@@ -4943,6 +4943,12 @@ end
         else
             warning('NeuroScope2: Binary data does not exist')
         end
+        
+        % if no dat file, but lfp file, set fid ephys to fid lfp
+        if isempty(s1) && UI.fid.ephys == -1 && ~isempty(s2) && UI.fid.lfp ~= -1
+            UI.fid.ephys = UI.fid.lfp;
+        end
+
         UI.forceNewData = true;
         
         % Detecting CellExplorer/Buzcode files
