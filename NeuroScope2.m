@@ -1,6 +1,6 @@
 function NeuroScope2(varargin)
 % % % % % % % % % % % % % % % % % % % % % % % % %
-% NeuroScope2 (BETA) is a visualizer for electrophysiological recordings. It was inspired by the original Neuroscope (http://neurosuite.sourceforge.net/)
+% NeuroScope2 is a visualizer for electrophysiological recordings. It was inspired by the original Neuroscope (http://neurosuite.sourceforge.net/)
 % and made to mimic its features, but built upon Matlab and the data structure of CellExplorer, making it much easier to hack/customize, 
 % and faster than the original NeuroScope. NeuroScope2 is part of CellExplorer - https://CellExplorer.org/
 % Learn more at: https://cellexplorer.org/interface/neuroscope2/
@@ -19,7 +19,7 @@ function NeuroScope2(varargin)
 % By Peter Petersen
 % % % % % % % % % % % % % % % % % % % % % % % % %
 
-% Shortcuts
+% Shortcuts to built-in functions
 % initUI, initData, initInputs, initTraces, 
 % ClickPlot, performTestSuite
 % plotData, plot_ephys, plotSpikeData, plotSpectrogram, plotTemporalStates, plotEventData, plotTimeseriesData, streamData
@@ -39,7 +39,6 @@ UI.selectedUnitsColors = [];
 spikes_raster = []; % Spike raster (used for highlighting, to minimize computations)
 epoch_plotElements.t0 = [];
 epoch_plotElements.events = [];
-score = [];
 raster = [];
 sliderMovedManually = false;
 deviceWriter = [];
@@ -891,6 +890,11 @@ end
             end
             ephys.sr = data.session.extracellular.srLfp;
             fileID = UI.fid.lfp;
+        elseif UI.fid.ephys == -1 && UI.settings.plotStyle == 6
+            UI.settings.stream = false;
+            ephys.loaded = false;
+            return
+        elseif UI.settings.plotStyle == 6
             
         else % dat file
             if UI.fid.ephys == -1
@@ -1014,7 +1018,7 @@ end
         % 5. Image: Raw data displayed with the imagesc function
         % Only data thas is not currently displayed will be loaded.
         
-        if UI.fid.ephys == -1
+        if UI.fid.ephys == -1 && UI.settings.plotStyle ~= 4
             return 
         end
         
@@ -3012,7 +3016,7 @@ end
                 streamTic = tic;
                 UI.t0 = UI.t0+UI.settings.replayRefreshInterval*UI.settings.windowDuration;
                 UI.t0 = max([0,min([UI.t0,UI.t_total-UI.settings.windowDuration])]);
-                if ~ishandle(UI.fig) ||  UI.fid.ephys == -1
+                if ~ishandle(UI.fig) ||  (UI.fid.ephys == -1 && UI.settings.plotStyle ~= 4)
                     return
                 end
                 if UI.settings.playAudioFirst
