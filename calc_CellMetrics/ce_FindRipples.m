@@ -372,9 +372,9 @@ if EMGThresh
         load(EMGfilename)   %should use a bz_load script here
     else
         if isstruct(varargin{1}) % CellExplorer
-            [EMGFromLFP] = ce_EMGFromLFP(session,'samplingFrequency',10,'savemat',false,'noPrompts',true);
+            [EMGFromLFP] = ce_EMGFromLFP(session,'samplingFrequency',10,'savemat',true,'noPrompts',true);
         else
-            [EMGFromLFP] = bz_EMGFromLFP(basepath,'samplingFrequency',10,'savemat',false,'noPrompts',true);
+            [EMGFromLFP] = bz_EMGFromLFP(basepath,'samplingFrequency',10,'savemat',true,'noPrompts',true);
         end
     end
     
