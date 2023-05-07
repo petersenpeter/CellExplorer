@@ -808,7 +808,7 @@ end
                             addLegend(timeserieName,UI.colors_timeseries(i,:));
                         end
                     end
-                    plotTimeseriesData(timeserieName,UI.t0,UI.t0+UI.settings.windowDuration,UI.colors_timeseries(i,:));                    
+                    plotTimeseriesData(timeserieName,UI.t0,UI.t0+UI.settings.windowDuration,UI.colors_timeseries(i,:),2);                    
                 end
             end
         end
@@ -895,7 +895,8 @@ end
             ephys.loaded = false;
             return
         elseif UI.settings.plotStyle == 6
-            
+            ephys.sr = data.session.extracellular.sr;
+            fileID = UI.fid.ephys;
         else % dat file
             if UI.fid.ephys == -1
                 UI.settings.stream = false;
@@ -2157,7 +2158,7 @@ end
         end
     end
 
-    function plotTimeseriesData(timeserieName,t1,t2,colorIn)
+    function plotTimeseriesData(timeserieName,t1,t2,colorIn,linewidth)
         % Plot time series
         idx = data.timeseries.(timeserieName).timestamps>t1 & data.timeseries.(timeserieName).timestamps<t2;
         if any(idx)
@@ -2175,9 +2176,9 @@ end
             if length(lowerBoundary)>1
                 lowerBoundary = lowerBoundary(UI.settings.timeseries.(timeserieName).channels);
                 upperBoundary = upperBoundary(UI.settings.timeseries.(timeserieName).channels);
-                line(data.timeseries.(timeserieName).timestamps(idx)-t1,(data.timeseries.(timeserieName).data(idx,UI.settings.timeseries.(timeserieName).channels) - lowerBoundary)./(upperBoundary-lowerBoundary), 'HitTest','off');
+                line(data.timeseries.(timeserieName).timestamps(idx)-t1,(data.timeseries.(timeserieName).data(idx,UI.settings.timeseries.(timeserieName).channels) - lowerBoundary)./(upperBoundary-lowerBoundary), 'HitTest','off','linewidth',linewidth);
             else
-                line(data.timeseries.(timeserieName).timestamps(idx)-t1,(data.timeseries.(timeserieName).data(idx,UI.settings.timeseries.(timeserieName).channels) - lowerBoundary)./(upperBoundary-lowerBoundary),'color',colorIn, 'HitTest','off');
+                line(data.timeseries.(timeserieName).timestamps(idx)-t1,(data.timeseries.(timeserieName).data(idx,UI.settings.timeseries.(timeserieName).channels) - lowerBoundary)./(upperBoundary-lowerBoundary),'color',colorIn, 'HitTest','off','linewidth',linewidth);
             end
         end
     end
@@ -6399,7 +6400,7 @@ end
             for i = 1:length(UI.data.detectecFiles.timeseries)
                 timeserieName = UI.data.detectecFiles.timeseries{i};
                 if UI.settings.timeseries.(timeserieName).show
-                    plotTimeseriesData(timeserieName,UI.t0,UI.t0+UI.settings.windowDuration,UI.colors_timeseries(i,:));                    
+                    plotTimeseriesData(timeserieName,UI.t0,UI.t0+UI.settings.windowDuration,UI.colors_timeseries(i,:),2);                    
                 end
             end
         end

@@ -4,7 +4,7 @@ function data_out = loadIntanAnalog(varargin)
 % Part of CellExplorer
 %
 % Example calls:
-% loadIntanAnalog('session',session,'dataName','temperature','data_source_type','adc','container_type','timeseries','processing','thermistor') % Loads temperature data from a thermistor
+% temperature = loadIntanAnalog('session',session,'dataName','temperature','data_source_type','adc','container_type','timeseries','processing','thermistor') % Loads temperature data from a thermistor
 % wheel = loadIntanAnalog('session',session,'dataName','WheelPosition','data_source_type','adc','container_type','behavior','processing','wheel_position','downsample_samples',200); Loads wheel data
 
 % By Peter Petersen
@@ -79,8 +79,13 @@ fclose(fid);
 
 % Downsampling
 if down_sample
-    trace = medfilt1(trace(channels,:),downsample_samples*2);
-    trace = mean(reshape(trace(1:end-rem(length(trace),downsample_samples)),downsample_samples,[]));
+    trace2 = [];
+    for i = 1:length(channels)
+        trace(channels(i),:) = medfilt1(trace(channels(i),:),downsample_samples*2);
+        trace2(i,:) = mean(reshape(trace(channels(i),1:end-rem(size(trace,2),downsample_samples)),downsample_samples,[]));
+    end
+    trace = trace2;
+    clear trace2
 end
 
 % Cleaning, translating, and smoothing signal
@@ -91,17 +96,22 @@ switch processing
         trace = (trace-1.25)/0.00495;
         trace(find(abs(diff(trace)) > 0.3)) = nan;
         trace(trace > 50 | trace < 0) = nan;
-        trace = nanconv(trace,ce_gausswin(200)','edge');
+        
+        % Smoothing the trace with a gaussian window
+        trace = nanconv(trace,ce_gausswin(500)','edge');
         trace = fillmissing(trace,'linear');
         data_out.data = trace;
         data_out.sr = sr/downsample_samples;
         data_out.timestamps = [1:length(data_out.data)]/data_out.sr;
-        figure,
+        
+        % Plotting the trace
+        figure
         plot(data_out.timestamps,data_out.data,'-k')
         ylabel('Temperature'), xlabel('Time (s)'), axis tight
         
     case 'thermistor_10000'
-        disp('Processing thermistor')
+        % Potentiometer resistance is 10000 Ohm
+        disp('Processing thermistor (Potentiometer resistance of 10,000 Ohm)')
         thermistorT = trace * 0.000050354; % convert to volts
         thermistorT = 10000./(3.3./thermistorT-1); % potentiometer resistance is 10000 Ohm
         thermistorT = 1./(1/310.15 + 1/3454 * log(thermistorT/14015));
@@ -117,13 +127,16 @@ switch processing
         data_out.sr = sr/downsample_samples;
         data_out.timestamps = [1:length(data_out.data)]/data_out.sr;
         
-        figure,
+        % Plotting the trace
+        figure
         plot(data_out.timestamps,data_out.data,'-k')
         ylabel('Temperature'), xlabel('Time (s)'), axis tight
+        
     case 'thermistor_20210'
-        disp('Processing thermistor')
+        % potentiometer resistance is 20210 Ohm
+        disp('Processing thermistor (Potentiometer resistance of 20,210 Ohm)')
         thermistorT = trace * 0.000050354; % convert to volts
-%         thermistorT = 18010./(3.3./thermistorT-1); % potentiometer resistance is 20210 Ohm
+%         thermistorT = 18010./(3.3./thermistorT-1); % potentiometer resistance is 18010 Ohm
         thermistorT = 20210./(3.3./thermistorT-1); % potentiometer resistance is 20210 Ohm
         thermistorT = 1./(1/310.15 + 1/3454 * log(thermistorT/14015));
         trace = thermistorT - 273.15; % Translating from Kelvin to Celcius
@@ -138,7 +151,8 @@ switch processing
         data_out.sr = sr/downsample_samples;
         data_out.timestamps = [1:length(data_out.data)]/data_out.sr;
         
-        figure,
+        % Plotting the trace
+        figure
         plot(data_out.timestamps,data_out.data,'-k')
         ylabel('Temperature'), xlabel('Time (s)'), axis tight
         
@@ -174,12 +188,18 @@ switch processing
     otherwise
         data_out.data = trace * leastSignificantBit; % convert to volts
         data_out.sr = sr/downsample_samples;
-        data_out.timestamps = [1:length(data_out.data)]/data_out.sr;
+        data_out.timestamps = [1:size(data_out.data,2)]/data_out.sr;
+        
+        % Plotting the trace
+        figure
+        plot(data_out.timestamps,data_out.data)
+        ylabel('Voltage'), xlabel('Time (s)'), axis tight
+        
 end
 
 % Attaching info about the data source and how the data was processed
 data_out.processinginfo.function = 'loadIntanAnalog';
-data_out.processinginfo.version = 2;
+data_out.processinginfo.version = 3;
 data_out.processinginfo.date = now;
 data_out.processinginfo.params.basepath = basepath;
 data_out.processinginfo.params.basename = basename;
