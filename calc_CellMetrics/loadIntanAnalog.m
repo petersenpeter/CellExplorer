@@ -112,7 +112,7 @@ switch processing
     case 'thermistor_10000'
         % Potentiometer resistance is 10000 Ohm
         disp('Processing thermistor (Potentiometer resistance of 10,000 Ohm)')
-        thermistorT = trace * 0.000050354; % convert to volts
+        thermistorT = trace * leastSignificantBit; % convert to volts
         thermistorT = 10000./(3.3./thermistorT-1); % potentiometer resistance is 10000 Ohm
         thermistorT = 1./(1/310.15 + 1/3454 * log(thermistorT/14015));
         trace = thermistorT - 273.15; % Translating from Kelvin to Celcius

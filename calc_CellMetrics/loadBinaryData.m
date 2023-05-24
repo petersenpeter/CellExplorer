@@ -17,9 +17,6 @@ function data_out = loadBinaryData(varargin)
 %  USAGE
 %
 %     data_out = loadBinaryData(varargin)
-%
-%    filename       file to read
-%    <varargin>      optional list of property-value pairs (see definition below)
 
 p = inputParser;
 
@@ -31,7 +28,7 @@ addParameter(p,'memmap',false,@islogical); % Boolean: make the data output a Mat
 addParameter(p,'filename','',@isstr); % Full path and filename of the binary data
 addParameter(p,'sr',[],@isnumeric); % Sampling rate
 addParameter(p,'nChannels',[],@isnumeric); % Number of channels
-addParameter(p,'precision',[],@isnumeric); % Numeric data type.
+addParameter(p,'precision',[],@isstr); % Numeric data type.
 
 % Extra parameters related to filter and preprocessing
 addParameter(p,'start',0,@isnumeric); % position to start reading (in s, default = 0)
