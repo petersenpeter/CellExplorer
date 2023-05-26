@@ -22,6 +22,7 @@ addParameter(p,'plot_on',[],@isnumeric);
 addParameter(p,'down_sample',true,@islogical);
 addParameter(p,'downsample_samples',16,@isnumeric);
 addParameter(p,'processing','',@isstr); % Process signal, e.g.: thermistor, thermocouple, wheel_position
+addParameter(p,'saveMat',true,@islogical);
 
 parse(p,varargin{:})
 parameters = p.Results;
@@ -50,6 +51,7 @@ end
 nChannels = session.timeSeries.(data_source_type).nChannels;
 sr = session.timeSeries.(data_source_type).sr;
 leastSignificantBit = session.timeSeries.(data_source_type).leastSignificantBit/1000000;
+precision = session.timeSeries.(data_source_type).precision;
 
 % Determining filename
 switch data_source_type
@@ -71,38 +73,78 @@ switch data_source_type
 end
 
 % Reading file
-fileinfo = dir(filename_full);
-num_samples = fileinfo.bytes/(nChannels * 2); % uint16 = 2 bytes
-fid = fopen(filename_full, 'r');
-trace = fread(fid, [nChannels, num_samples], 'uint16');
-fclose(fid);
-
-% Downsampling
-if down_sample
-    trace2 = [];
-    for i = 1:length(channels)
-        trace(channels(i),:) = medfilt1(trace(channels(i),:),downsample_samples*2);
-        trace2(i,:) = mean(reshape(trace(channels(i),1:end-rem(size(trace,2),downsample_samples)),downsample_samples,[]));
-    end
-    trace = trace2;
-    clear trace2
-end
+% Loading trace (in units of voltage)
+trace = leastSignificantBit * double(loadBinaryData(...
+    'session',session,'channels',channels,'start',0,'duration',inf,...
+    'filename',filename_full,'nChannels',nChannels,'sr',sr,'precision',precision));
 
 % Cleaning, translating, and smoothing signal
 switch processing
-    case 'thermocouple'
-        disp('Processing thermocouple')
-        trace = trace * leastSignificantBit; % convert to volts
-        trace = (trace-1.25)/0.00495;
-        trace(find(abs(diff(trace)) > 0.3)) = nan;
-        trace(trace > 50 | trace < 0) = nan;
+    case 'accelerometer'
         
-        % Smoothing the trace with a gaussian window
-        trace = nanconv(trace,ce_gausswin(500)','edge');
-        trace = fillmissing(trace,'linear');
+        disp('Processing accelerometer')
+        
+        % Downsampling
+        if down_sample
+            trace2 = [];
+            for i = 1:length(channels)
+                trace2(:,i) = mean(reshape(trace(1:end-rem(size(trace,1),downsample_samples),i),downsample_samples,[]));
+            end
+            trace = trace2;
+            clear trace2
+        end
+        sr_downsample = sr/downsample_samples;
+        
+        % High-passs filtering
+        cut_off = 1;
+        [b1, a1] = butter(3, cut_off/(sr_downsample/2), 'high');
+        for i = 1:length(channels)
+            trace(:,i) = filtfilt(b1, a1, trace(:,i));
+        end
+
         data_out.data = trace;
-        data_out.sr = sr/downsample_samples;
-        data_out.timestamps = [1:length(data_out.data)]/data_out.sr;
+        data_out.sr = sr_downsample;
+        data_out.timestamps = [1:length(data_out.data)]'/data_out.sr;
+        
+        % Plotting the trace
+        figure
+        plot(data_out.timestamps,data_out.data,'-k')
+        ylabel('Accelerometer'), xlabel('Time (s)'), axis tight
+        
+    case 'thermocouple'
+        
+        disp('Processing thermocouple')
+        
+        % Translating voltage trace into temperature (degrees C)
+        trace = (trace-1.25)/0.00495;
+        
+        % Removing outliers
+        idx = find(abs(diff(trace)) > 0.2);
+        trace([idx;idx+1]) = nan;
+        trace(trace > 50 | trace < 0) = nan;
+        if any(isnan(trace))
+            trace = fillmissing(trace,'linear');
+        end
+        
+        % Downsampling
+        if down_sample
+            trace2 = [];
+            for i = 1:length(channels)
+                trace2(:,i) = mean(reshape(trace(1:end-rem(size(trace,1),downsample_samples),i),downsample_samples,[]));
+            end
+            trace = trace2;
+            clear trace2
+        end
+        sr_downsample = sr/downsample_samples;
+        
+        % Low-pass filtering 
+        cut_off = 0.5;
+        [b1, a1] = butter(3, cut_off/(sr_downsample/2), 'low');
+        trace = filtfilt(b1, a1, trace);
+
+        data_out.data = trace;
+        data_out.sr = sr_downsample;
+        data_out.timestamps = [1:length(data_out.data)]'/data_out.sr;
         
         % Plotting the trace
         figure
@@ -110,22 +152,42 @@ switch processing
         ylabel('Temperature'), xlabel('Time (s)'), axis tight
         
     case 'thermistor_10000'
-        % Potentiometer resistance is 10000 Ohm
+        
         disp('Processing thermistor (Potentiometer resistance of 10,000 Ohm)')
-        thermistorT = trace * leastSignificantBit; % convert to volts
-        thermistorT = 10000./(3.3./thermistorT-1); % potentiometer resistance is 10000 Ohm
-        thermistorT = 1./(1/310.15 + 1/3454 * log(thermistorT/14015));
-        trace = thermistorT - 273.15; % Translating from Kelvin to Celcius
-        idx1 = find(diff(trace)<-5);
-        idx2 = find(diff(trace)>5);
-        idx1 = unique([idx1,idx1+1,idx1-1,idx1-2,idx1+2,idx2,idx2+1,idx2+2,idx2-1,idx2-2]); 
-        trace(idx1) = nan;
+        resistor = 10000;
+        % Converting to temperature
+        trace = resistor./(3.3./trace-1); % potentiometer resistance is 10000 Ohm
+        trace = trace/14015;
+        trace = log(trace);
+        trace = 1./(1/3454 * trace + 1/310.15);
+        trace = trace - 273.15; % Translating from Kelvin to Celcius
+        
+        % Removing outliers
+        trace(find(abs(diff(trace)) > 0.2)) = nan;
         trace(trace > 50 | trace < 0) = nan;
-        trace = nanconv(trace,ce_gausswin(200)','edge');
-        trace = fillmissing(trace,'linear');
+        if any(isnan(trace))
+            trace = fillmissing(trace,'linear');
+        end
+        
+        % Downsampling
+        if down_sample
+            trace2 = [];
+            for i = 1:length(channels)
+                trace2(:,i) = mean(reshape(trace(1:end-rem(size(trace,1),downsample_samples),i),downsample_samples,[]));
+            end
+            trace = trace2;
+            clear trace2
+        end
+        sr_downsample = sr/downsample_samples;
+        
+        % Low-pass filtering
+        cut_off = 0.5;
+        [b1, a1] = butter(3, cut_off/(sr_downsample/2), 'low');
+        trace = filtfilt(b1, a1, trace); 
+        
         data_out.data = trace;
-        data_out.sr = sr/downsample_samples;
-        data_out.timestamps = [1:length(data_out.data)]/data_out.sr;
+        data_out.sr = sr_downsample;
+        data_out.timestamps = [1:length(data_out.data)]'/data_out.sr;
         
         % Plotting the trace
         figure
@@ -133,50 +195,81 @@ switch processing
         ylabel('Temperature'), xlabel('Time (s)'), axis tight
         
     case 'thermistor_20210'
-        % potentiometer resistance is 20210 Ohm
+        
         disp('Processing thermistor (Potentiometer resistance of 20,210 Ohm)')
-        thermistorT = trace * 0.000050354; % convert to volts
-%         thermistorT = 18010./(3.3./thermistorT-1); % potentiometer resistance is 18010 Ohm
-        thermistorT = 20210./(3.3./thermistorT-1); % potentiometer resistance is 20210 Ohm
-        thermistorT = 1./(1/310.15 + 1/3454 * log(thermistorT/14015));
-        trace = thermistorT - 273.15; % Translating from Kelvin to Celcius
-        idx1 = find(diff(trace)<-5);
-        idx2 = find(diff(trace)>5);
-        idx1 = unique([idx1,idx1+1,idx1-1,idx1-2,idx1+2,idx2,idx2+1,idx2+2,idx2-1,idx2-2]); 
-        trace(idx1) = nan;
+        resistor = 20210;
+        % Converting to temperature
+        trace = resistor./(3.3./trace-1); % potentiometer resistance is 10000 Ohm
+        trace = trace/14015;
+        trace = log(trace);
+        trace = 1./(1/3454 * trace + 1/310.15);
+        trace = trace - 273.15; % Translating from Kelvin to Celcius
+        
+        % Removing outliers
+        trace(find(abs(diff(trace)) > 0.2)) = nan;
         trace(trace > 50 | trace < 0) = nan;
-        trace = nanconv(trace,ce_gausswin(200)','edge');
-        trace = fillmissing(trace,'linear');
+        if any(isnan(trace))
+            trace = fillmissing(trace,'linear');
+        end
+        
+        % Downsampling
+        if down_sample
+            trace2 = [];
+            for i = 1:length(channels)
+                trace2(:,i) = mean(reshape(trace(1:end-rem(size(trace,1),downsample_samples),i),downsample_samples,[]));
+            end
+            trace = trace2;
+            clear trace2
+        end
+        sr_downsample = sr/downsample_samples;
+        
+        % Low-pass filtering
+        cut_off = 0.5;
+        [b1, a1] = butter(3, cut_off/(sr_downsample/2), 'low');
+        trace = filtfilt(b1, a1, trace); 
+        
         data_out.data = trace;
-        data_out.sr = sr/downsample_samples;
-        data_out.timestamps = [1:length(data_out.data)]/data_out.sr;
+        data_out.sr = sr_downsample;
+        data_out.timestamps = [1:length(data_out.data)]'/data_out.sr;
         
         % Plotting the trace
         figure
         plot(data_out.timestamps,data_out.data,'-k')
         ylabel('Temperature'), xlabel('Time (s)'), axis tight
-        
+
     case 'wheel_position'
+        
         disp('Processing wheel position')
-        % Translating into volts
-        wheel_pos = trace * 0.000050354;
+       
+        % Downsampling
+        if down_sample
+            trace2 = [];
+            for i = 1:length(channels)
+                trace2(:,i) = mean(reshape(trace(1:end-rem(size(trace,1),downsample_samples),i),downsample_samples,[]));
+            end
+            trace = trace2;
+            clear trace2
+            sr = sr/downsample_samples;
+        end
         
         % Extracting the polar position of the wheel
         data_out.position = 2*pi*(wheel_pos-min(wheel_pos))/(max(wheel_pos)-min(wheel_pos));
         data_out.units.position = 'radians';
         clear wheel_pos trace
         
-        data_out.sr = sr/downsample_samples;
-        data_out.timestamps = [1:length(data_out.position)]/data_out.sr;
+        data_out.sr = sr;
+        data_out.timestamps = [1:length(data_out.position)]'/data_out.sr;
         
         % Determing the volocity of the wheel 
         wheel_radius = 14.86; % Radius of the wheel in cm
         data_out.units.wheel_radius = 'cm';
         data_out.wheel_radius = wheel_radius;
         data_out.velocity = data_out.sr*wheel_radius*diff(unwrap(data_out.position));
+        
         % Smoothing the velocity and adding a sample
         data_out.velocity = [nanconv(data_out.velocity,ce_gausswin(250)'/sum(ce_gausswin(250)),'edge'),0];
         data_out.units.velocity = 'cm/s';
+        
         % Plotting wheel position and speed.
         figure,
         subplot(2,1,1)
@@ -185,16 +278,29 @@ switch processing
         subplot(2,1,2); 
         plot(data_out.timestamps,data_out.velocity)
         ylabel('Velocity (cm/s)'), xlabel('Time (s)'), axis tight
+        
     otherwise
-        data_out.data = trace * leastSignificantBit; % convert to volts
-        data_out.sr = sr/downsample_samples;
-        data_out.timestamps = [1:size(data_out.data,2)]/data_out.sr;
+        
+        disp('No processing performed')
+        
+        % Downsampling
+        if down_sample
+            trace2 = [];
+            for i = 1:length(channels)
+                trace2(:,i) = mean(reshape(trace(1:end-rem(size(trace,1),downsample_samples),i),downsample_samples,[]));
+            end
+            trace = trace2;
+            clear trace2
+            sr = sr/downsample_samples;
+        end
+        
+        data_out.sr = sr;
+        data_out.timestamps = [1:size(data_out.data,2)]'/data_out.sr;
         
         % Plotting the trace
         figure
         plot(data_out.timestamps,data_out.data)
         ylabel('Voltage'), xlabel('Time (s)'), axis tight
-        
 end
 
 % Attaching info about the data source and how the data was processed
@@ -216,7 +322,9 @@ try
 end
 
 % Saving data
-saveStruct(data_out,container_type,'session',session,'dataName',dataName);
+if parameters.saveMat
+    saveStruct(data_out,container_type,'session',session,'dataName',dataName);
+end
 
 % Plotting
 if plot_on

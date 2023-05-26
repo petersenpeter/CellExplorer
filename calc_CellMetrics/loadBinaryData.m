@@ -4,19 +4,13 @@ function data_out = loadBinaryData(varargin)
 % https://cellexplorer.org/datastructure/data-structure-and-format/#raw-data-file-format
 %
 % Example calls
-% optitrack = loadOptitrack('session',session)
-% optitrack = loadOptitrack('basepath',basepath,'basename',basename,'filenames',filenames)
-% theta_maze = loadOptitrack('session',session,'dataName','theta_maze')
-% linear_track = loadOptitrack('session',session,'dataName','linear_track')
+% data_out = loadBinaryData('session',session,'channels',1,'start',100,'duration',200);
+% data_out = loadBinaryData('session',session,'memmap',true);
 %
 %  Reading a subset of the data can be done in two different manners: either
 %  by specifying start time and duration (more intuitive), or by indicating
 %  the position and size of the subset in terms of number of samples per
 %  channel (more accurate).
-%
-%  USAGE
-%
-%     data_out = loadBinaryData(varargin)
 
 p = inputParser;
 
