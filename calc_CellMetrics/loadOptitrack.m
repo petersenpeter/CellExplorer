@@ -14,7 +14,7 @@ addParameter(p,'basepath', pwd, @isstr); % Basepath of the session
 addParameter(p,'basename', [], @isstr); % Name of the session
 addParameter(p,'dataName','',@isstr); % Any renaming of the behavior struct
 addParameter(p,'filenames', '',@iscellstr); % List of tracking files 
-addParameter(p,'scaling_factor', 1, @isnumeric); % An scaling-factor to apply to the x,y,z data.
+addParameter(p,'scaling_factor', 1, @isnumeric); % A scaling-factor to apply to the x,y,z data.
 addParameter(p,'offset_origin', [0,0,0], @isnumeric); % An offset to apply to the x,y,z data (shift of origin). Applied after the scaling. In cm
 addParameter(p,'rotation', [], @isnumeric); % A rotation to apply to the x,y data (in degrees). Applied after the offset.
 addParameter(p,'saveMat', true, @islogical); % Creates behavior mat file

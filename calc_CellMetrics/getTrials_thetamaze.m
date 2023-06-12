@@ -1,4 +1,28 @@
 function circular_track = getTrials_thetamaze(circular_track, maze, plots)
+% Determines trials for position data along a circular_track (2-dimensional path)
+%
+% circular_track :
+%    Required fields in struct:
+%    .timestamps : timestamps in seconds
+%    .position.x : x position
+%    .position.y : y position
+%
+% maze : maza parameters
+%
+% plots : show summary plot? 
+%
+% circular_track - Added fields:
+%    .trials.alternation.start
+%    .trials.alternation.stop
+%    .trials.alternation.trials
+%    .trials.alternation.nTrials
+%    .trials.alternation.stateName
+%
+%    .states.left_right
+%    .states.error 
+%    .stateNames.left_right
+%    .stateNames.error
+
 if nargin < 3
     plots = 1;
 end
@@ -73,7 +97,7 @@ if plots == 1
     plot(circular_track.position.x(left_rim_end),circular_track.position.y(left_rim_end),'xc') % Left rim
     plot(circular_track.position.x(right_rim_end),circular_track.position.y(right_rim_end),'xy') % Right rim
     title('Position of the animal'), xlabel('X'), ylabel('Y'), zlabel('Z'),axis tight, % view(2)
-    if exist('plot_ThetaMaze.m','file')
+    if exist('plot_ThetaMaze.m')
         plot_ThetaMaze(maze)
     end
 end
