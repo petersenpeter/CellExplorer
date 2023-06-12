@@ -73,7 +73,7 @@ if plots == 1
     plot(circular_track.position.x(left_rim_end),circular_track.position.y(left_rim_end),'xc') % Left rim
     plot(circular_track.position.x(right_rim_end),circular_track.position.y(right_rim_end),'xy') % Right rim
     title('Position of the animal'), xlabel('X'), ylabel('Y'), zlabel('Z'),axis tight, % view(2)
-    if exist('plot_ThetaMaze.m')
+    if exist('plot_ThetaMaze.m','file')
         plot_ThetaMaze(maze)
     end
 end
