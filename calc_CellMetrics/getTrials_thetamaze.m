@@ -1,4 +1,28 @@
 function circular_track = getTrials_thetamaze(circular_track, maze, plots)
+% Determines trials for position data along a circular_track (2-dimensional path)
+%
+% circular_track :
+%    Required fields in struct:
+%    .timestamps : timestamps in seconds
+%    .position.x : x position
+%    .position.y : y position
+%
+% maze : maza parameters
+%
+% plots : show summary plot? 
+%
+% circular_track - Added fields:
+%    .trials.alternation.start
+%    .trials.alternation.stop
+%    .trials.alternation.trials
+%    .trials.alternation.nTrials
+%    .trials.alternation.stateName
+%
+%    .states.left_right
+%    .states.error 
+%    .stateNames.left_right
+%    .stateNames.error
+
 if nargin < 3
     plots = 1;
 end

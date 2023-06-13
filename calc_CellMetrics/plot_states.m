@@ -7,7 +7,7 @@ function plot_states(states1,t1,t2,ylim1,ax1)
     end
     % Plot states   
     stateNames = fieldnames(states1);
-    clr_states = eval(['hot','(',num2str(numel(stateNames)),')']);
+    clr_states = eval(['jet','(',num2str(numel(stateNames)),')']);
     for jj = 1:numel(stateNames)
         if size(states1.(stateNames{jj}),2) == 2 && size(states1.(stateNames{jj}),1) > 0
             idx = (states1.(stateNames{jj})(:,1)<t2 & states1.(stateNames{jj})(:,2)>t1);

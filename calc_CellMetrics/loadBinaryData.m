@@ -4,22 +4,13 @@ function data_out = loadBinaryData(varargin)
 % https://cellexplorer.org/datastructure/data-structure-and-format/#raw-data-file-format
 %
 % Example calls
-% optitrack = loadOptitrack('session',session)
-% optitrack = loadOptitrack('basepath',basepath,'basename',basename,'filenames',filenames)
-% theta_maze = loadOptitrack('session',session,'dataName','theta_maze')
-% linear_track = loadOptitrack('session',session,'dataName','linear_track')
+% data_out = loadBinaryData('session',session,'channels',1,'start',100,'duration',200);
+% data_out = loadBinaryData('session',session,'memmap',true);
 %
 %  Reading a subset of the data can be done in two different manners: either
 %  by specifying start time and duration (more intuitive), or by indicating
 %  the position and size of the subset in terms of number of samples per
 %  channel (more accurate).
-%
-%  USAGE
-%
-%     data_out = loadBinaryData(varargin)
-%
-%    filename       file to read
-%    <varargin>      optional list of property-value pairs (see definition below)
 
 p = inputParser;
 
@@ -31,7 +22,7 @@ addParameter(p,'memmap',false,@islogical); % Boolean: make the data output a Mat
 addParameter(p,'filename','',@isstr); % Full path and filename of the binary data
 addParameter(p,'sr',[],@isnumeric); % Sampling rate
 addParameter(p,'nChannels',[],@isnumeric); % Number of channels
-addParameter(p,'precision',[],@isnumeric); % Numeric data type.
+addParameter(p,'precision',[],@isstr); % Numeric data type.
 
 % Extra parameters related to filter and preprocessing
 addParameter(p,'start',0,@isnumeric); % position to start reading (in s, default = 0)
