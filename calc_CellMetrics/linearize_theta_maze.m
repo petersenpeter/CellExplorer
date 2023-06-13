@@ -12,11 +12,16 @@ function behavior = linearize_theta_maze(behavior,maze)
 behavior.states.arm_rim = nan(1,length(behavior.timestamps)); % Numeric: 1, 2 or nan (outside)
 behavior.stateNames.arm_rim = {'Arm','Rim'};
 
-idx_arm = behavior.position.polar_rho < maze.polar_rho_limits(1) & behavior.position.y > maze.pos_y_limits(1) & behavior.position.y < maze.pos_y_limits(2);
+%idx_arm = behavior.position.polar_rho < maze.polar_rho_limits(1) & behavior.position.y > maze.pos_y_limits(1) & behavior.position.y < maze.pos_y_limits(2);
+idx_arm = behavior.position.polar_rho < maze.polar_rho_limits(1) & behavior.position.y > maze.pos_y_limits(1) & behavior.position.y < maze.pos_y_limits(2) ...
+  & behavior.position.x > -maze.radius_in/2 & behavior.position.x < maze.radius_in/2;
 behavior.states.arm_rim(idx_arm) = 1;
 
-idx_rim = behavior.position.polar_rho > maze.polar_rho_limits(1) & behavior.position.polar_rho < maze.polar_rho_limits(2)+10 & abs(behavior.position.polar_theta) < maze.polar_theta_limits(2);
+%idx_rim = behavior.position.polar_rho > maze.polar_rho_limits(1) & behavior.position.polar_rho < maze.polar_rho_limits(2)+10 & abs(behavior.position.polar_theta) < maze.polar_theta_limits(2);
+idx_rim = behavior.position.polar_rho > maze.radius_in/2 & behavior.position.polar_rho < maze.polar_rho_limits(2)+10 & abs(behavior.position.polar_theta) < maze.polar_theta_limits(2) & ~idx_arm;
 behavior.states.arm_rim(idx_rim) = 2;
+
+%behavior.position.polar_rho > maze.arm_half_width+((maze.radius_in-maze.arm_half_width)/2) ...
 
 % First the central arm is linearized
 pos_linearized = nan(size(behavior.timestamps));

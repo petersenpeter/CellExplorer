@@ -30,7 +30,8 @@ if ~isfield(circular_track,'nSamples')
 	circular_track.nSamples = numel(circular_track.timestamps);
 end
 
-% Determining polar coordinates
+% Determining polar coordinates (angle in radians, distance from the
+% reference)
 [circular_track.position.polar_theta,circular_track.position.polar_rho] = cart2pol(circular_track.position.y,circular_track.position.x);
 
 % Changing from polar angle to position along circle by multiplying with the radius (inner radius)
@@ -39,42 +40,42 @@ circular_track.position.polar_theta = circular_track.position.polar_theta*maze.r
 
 disp('Defining trials for the behavior')
 
-% Determining spatial limits 
+% Determining spatial limits
 
 % Onset of central arm
-central_arm_onset = find(diff(circular_track.position.y > maze.pos_y_limits(1))==1 ...
+central_arm_onset = find(diff(circular_track.position.y > maze.pos_y_limits(1))==1 ... % Delimited by x-delimiter (+/-5), lower y-delimiter, and negative y-coord
     & circular_track.position.x(1:end-1) < maze.pos_x_limits(2)-5 ...
     & circular_track.position.x(1:end-1) > maze.pos_x_limits(1)+5 ...
     & circular_track.position.y(1:end-1) < 0);
 
 % End of central arm
-central_arm_end = find(diff(circular_track.position.polar_rho > maze.pos_y_limits(2))==1 ...
+central_arm_end = find(diff(circular_track.position.polar_rho > maze.pos_y_limits(2))==1 ... % Delimited by x-delimiterm (+/-5), upper y-delimiter, and positive y-coord
     & circular_track.position.x(1:end-1) < maze.pos_x_limits(2)-5 ...
     & circular_track.position.x(1:end-1) > maze.pos_x_limits(1)+5 ...
     & circular_track.position.y(1:end-1) > 0);
 
 % Start of left arm
-left_rim_onset = find(diff(circular_track.position.x < maze.pos_x_limits(1)-5)==1 ...
+left_rim_onset = find(diff(circular_track.position.x < maze.pos_x_limits(1)-5)==1 ... % Delimited by upper left delimiter (-5/-10)
     & circular_track.position.y(1:end-1) > maze.pos_y_limits(2)-10);
 
 % Start of right arm
-right_rim_onset = find(diff(circular_track.position.x > maze.pos_x_limits(2)+5)==1 ...
+right_rim_onset = find(diff(circular_track.position.x > maze.pos_x_limits(2)+5)==1 ... % Delimited by upper right delimiter (+5/-10)
     & circular_track.position.y(1:end-1) > maze.pos_y_limits(2)-10);
 
 % End of left rim
-left_rim_end = find(diff(circular_track.position.polar_theta < -maze.polar_theta_limits(2))==1 ...
+left_rim_end = find(diff(circular_track.position.polar_theta < -maze.polar_theta_limits(2))==1 ... % Delimited by linearised track left delimiter, abs(x-coord) = 10, and distance delimiter -5
     & abs(circular_track.position.x(1:end-1)) > 10 ...
     & circular_track.position.polar_rho(1:end-1) > maze.polar_rho_limits(1)-5);
 
 % End of right rim
-right_rim_end = find(diff(circular_track.position.polar_theta > maze.polar_theta_limits(2))==1 ...
+right_rim_end = find(diff(circular_track.position.polar_theta > maze.polar_theta_limits(2))==1 ... % Delimited by linearised track right delimiter, abs(x-coord) = 10, and distance delimiter -5
     & abs(circular_track.position.x(1:end-1)) > 10 ...
     & circular_track.position.polar_rho(1:end-1) > maze.polar_rho_limits(1)-5);
 
 % All 
 pos7home = sort([left_rim_end,right_rim_end]);
 
-central_arm_end(find(diff(central_arm_end)<circular_track.sr)+1) = [];
+central_arm_end(find(diff(central_arm_end)<circular_track.sr)+1) = []; % Exclude trials shorter than a second (a precaution?)
 
 if plots == 1
     disp('Plotting position')
@@ -97,7 +98,7 @@ if plots == 1
     plot(circular_track.position.x(left_rim_end),circular_track.position.y(left_rim_end),'xc') % Left rim
     plot(circular_track.position.x(right_rim_end),circular_track.position.y(right_rim_end),'xy') % Right rim
     title('Position of the animal'), xlabel('X'), ylabel('Y'), zlabel('Z'),axis tight, % view(2)
-    if exist('plot_ThetaMaze.m')
+    if exist('plot_ThetaMaze.m','file')
         plot_ThetaMaze(maze)
     end
 end
@@ -116,23 +117,23 @@ circular_track.stateNames.left_right = {'Left','Right'};
 trials.start = 0; % Start time of
 trials.end = [];
 
-% Preparing trials matric
+% Preparing trials matrix
 trials.trials = nan(1,circular_track.nSamples);
-trials_states = zeros(1,circular_track.nSamples);
+trials.states = zeros(1,circular_track.nSamples);
 i = 0;
 
 % Behavioral scoring
 for j = 1:length(central_arm_end)
     test1 = find(central_arm_onset < central_arm_end(j));
     test2 = find(pos7home > central_arm_end(j));
-    if ~isempty(test2) & ~isempty(test1)
-        if (pos7home(test2(1))- central_arm_onset(test1(end)))/circular_track.sr < 50
+    if ~isempty(test2) && ~isempty(test1)
+        if (pos7home(test2(1))- central_arm_onset(test1(end)))/circular_track.sr < 50 % Does the whole track in less than 50 secs (corresponds to a single trial)
             if trials.start(end)-central_arm_onset(test1(end)) ~= 0
                 i = i+1;
                 trials.start(i) = central_arm_onset(test1(end));
                 trials.end(i) = pos7home(test2(1));
                 trials.trials(trials.start(i):trials.end(i)) = i;
-                trials_states(trials.start(i):trials.end(i)) = 1;
+                trials.states(trials.start(i):trials.end(i)) = 1;
                 if sum(ismember(left_rim_end,trials.end(i)))
                     % Left trial
                     circular_track.states.left_right(i) = 1;
@@ -174,7 +175,7 @@ if plots == 1
     plot(circular_track.timestamps-circular_track.timestamps(1),trials.trials,'.k','linewidth',2), xlabel('Time (sec)'), ylabel('Trials')
     
     subplot(3,2,2)
-    stairs(circular_track.timestamps-circular_track.timestamps(1),trials_states,'.-k','linewidth',1), xlabel('Time (sec)'), ylabel('Trial')
+    stairs(circular_track.timestamps-circular_track.timestamps(1),trials.states,'.-k','linewidth',1), xlabel('Time (sec)'), ylabel('Trial')
     
     subplot(3,2,4)
     stairs(circular_track.states.left_right,'.-b','linewidth',1), xlabel('Trials'), ylabel('Left/Right'), 

@@ -7,7 +7,7 @@ function spikes = loadSpikes(varargin)
 %      KlustaViewa/Klustasuite
 %      MClust
 %      NWB
-%      Phy (default)
+%      Phy (default): Not true
 %      Sebastien Royer's lab standard
 %      SpyKING Circus
 %      UltraMegaSort2000
