@@ -57,10 +57,8 @@ function session = preprocessOpenEphysData(varargin)
         session.epochs{i}.startTime = startTime;
         if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin'),'file')
             inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin');
-
         elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat'),'file')
             inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat');
-            
         else
             error(['Epoch duration could not be estimated as raw data file does not exist: ', inputFiles{i}]);
         end
@@ -108,13 +106,15 @@ function session = preprocessOpenEphysData(varargin)
 
 
         % 8. Merge digital timeseries
-        TTL_paths = {};
-        TTL_offsets = [];
-        for i = 1:numel(session.epochs)
-            TTL_paths{i} = fullfile(session.epochs{i}.name,'events','Neuropix-PXI-100.0','TTL_1');
-            TTL_offsets(i) = session.epochs{i}.startTime;
+        disp('Attempting to merge digital time series.')
+        digSeriesFilename = fullfile(basepath,'openephysDig.digitalseries.mat');
+        if exist(digSeriesFilename, 'file')
+            disp(['A merged digital time series file ' digSeriesFilename ...
+              'already exists. Skipping digital time series merger. Double check if the existing file is correct.'])
+        else
+            loadOpenEphysDigital(session);
+            disp('Successfully merged digital time series.')
         end
-        openephysDig = loadOpenEphysDigital(session,TTL_paths,TTL_offsets);
 
     end
 
