@@ -1,9 +1,4 @@
-basepath = '/Volumes/DataDrive4/NeuropixelsData/PP01/PP01_2020-06-30_12-27-33';
-basepath = '/Volumes/DataDrive4/NeuropixelsData/PP01/PP01_2020-07-09_13-22-13';
-% basepath = '/Volumes/Peter_SSD_4/NeuropixelsData/PP01/PP01_2020-07-01_13-07-16';
-basepath = '/Volumes/Peter_SSD_4/NeuropixelsData/PP01/PP01_2020-06-30_12-27-33';
-basepath = '/Volumes/Peter_SSD_4/NeuropixelsData/PP01/PP01_2020-07-01_13-07-16';
-% basepath = 'Z:\SUN-IN-Petersen-lab\EphysData\PeterPetersen\PP01\PP01_2020-07-01_13-07-16';
+basepath = '/Path/To/Your/Data/basename';
 
 basename = basenameFromBasepath(basepath);
 cd(basepath)
@@ -20,9 +15,7 @@ saveStruct(session);
 
 %% Load digital pulses
 
-TTL_paths = {'TTL_2','TTL_4'};
-TTL_offsets = [0,0];
-openephysDig = loadOpenEphysDigital(session,TTL_paths,TTL_offsets);
+openephysDig = loadOpenEphysDigital(session);
 
 %% Behavior processing
 scaling_factor = 0.5;
@@ -32,9 +25,8 @@ offset_origin = [5,-5,0];
 offset_rigid_body = [5,-5,0]; % Not implemented yet
 circular_track = loadOptitrack('session',session,'dataName','circular_track','offset_origin',offset_origin,'scaling_factor',scaling_factor);
 
-
 % linear_track = loadOptitrack('session',session,'dataName','linear_track','offset',offset,'scaling_factor',scaling_factor);
-% loadStruct(circular_track,'behavior','session',session);
+% circular_track = loadStruct('circular_track','behavior','session',session);
 
 %% maze parameters
 maze = {};
@@ -50,7 +42,9 @@ maze.pos_x_limits = [-10,10]; %
 maze.pos_y_limits = [-40,44]; 
 
 subplot(1,2,1)
-plot_ThetaMaze(maze)
+if exist('plot_ThetaMaze.m','file')
+	plot_ThetaMaze(maze)
+end
 
 %% Align optitrack behavior data with TTL pulses
 
@@ -69,7 +63,7 @@ saveStruct(circular_track,'behavior','session',session);
 %% Get trials from behavior
 
 % Define the trials struct:
-[trials,circular_track] = getTrials_thetamaze(circular_track,maze, 1);
+circular_track = getTrials_thetamaze(circular_track,maze, 1);
 
 %% Linearizing and defining boundaries
 
@@ -79,18 +73,17 @@ circular_track = linearize_theta_maze(circular_track,maze);
 circular_track.speed_th = 10;
 
 % Generating left_right states data
-circular_track.states.left_right = nan(size(circular_track.trials));
-for i = 1:trials.nTrials
-    circular_track.states.left_right(circular_track.trials==i) = trials.states.left_right(i);
+circular_track.states.left_right = nan(size(circular_track.timestamps));
+for i = 1:circular_track.trials.alternation.nTrials
+    circular_track.states.left_right(circular_track.trials.alternation.trials==i) = circular_track.states.left_right(i);
 end
 circular_track.stateNames.left_right = {'Left','Right'};
 
+% Saving behavioral data
 saveStruct(circular_track,'behavior','session',session);
-saveStruct(trials,'behavior','session',session);
 
 % After this you can load the generated files:
 % circular_track = loadStruct('circular_track','behavior','session',session);
-% trials = loadStruct('trials','behavior','session',session);
 
 %% Plot spikes
 spikes = loadSpikes('session',session);
@@ -108,21 +101,21 @@ end
 
 for unit1 = 1:spikes.numcells
     spikes.position_linearized{unit1} = interp1(circular_track.timestamps,circular_track.position.linearized,spikes.times{unit1},'linear');
-    spikes.position_trials{unit1} = interp1(circular_track.timestamps,circular_track.trials,spikes.times{unit1},'linear');
+    spikes.position_trials{unit1} = interp1(circular_track.timestamps,circular_track.trials.alternation.trials,spikes.times{unit1},'linear');
     
     figure
-    plot(circular_track.position.linearized,circular_track.trials,'.k'), hold on
-    plot(spikes.position_linearized{unit1},spikes.position_trials{unit1},'.r'), hold on
+    plot(circular_track.position.linearized,circular_track.trials.alternation.trials,'.b'), hold on
+    plot(spikes.position_linearized{unit1},spikes.position_trials{unit1},'.r','markersize',15), hold on
     title(['Unit ' num2str(unit1)]), xlabel('Linearized postion'), ylabel('Trials')
 end
 
 spikes.spindices = generateSpinDices(spikes.times);
 figure, plot(spikes.spindices(:,1),spikes.spindices(:,2),'.')
 
-for i = 1:trials.nTrials
+for i = 1:circular_track.trials.alternation.nTrials
     trial1 = i;
     figure
-    idx = circular_track.trials == trial1;
+    idx = circular_track.trials.alternation.trials == trial1;
     plot(circular_track.position.x(idx),circular_track.position.y(idx),'-k'), hold on
     for unit1 = 1:spikes.numcells
         idx2 = spikes.position_trials{unit1} == trial1;
@@ -131,10 +124,13 @@ for i = 1:trials.nTrials
     title(['Trial ' num2str(trial1)]), xlabel('Linearized postion'), ylabel('Trials')
 end
 
-%% 
+%% 4. Generate firingratemaps
 
+% Generating the linearized firing rate map
+ratemap = generate_FiringRateMap_1D('spikes',spikes,'behavior',circular_track,'session',session,'x_label','Theta maze position (cm)','showPlots',true);
 
+% Generating trial-wise firing rate map
+ratemap_Trials = generate_FiringRateMap_1D('spikes',spikes,'behavior',circular_track,'states',circular_track.trials.alternation.trials,'dataName','ratemap_Trials','session',session,'x_label','Theta maze position (cm)','showPlots',true);
 
-%% Kilosort ? 
-
-
+% Generating left-right firing rate map
+ratemap_LeftRight = generate_FiringRateMap_1D('spikes',spikes,'behavior',circular_track,'states',circular_track.states.left_right,'stateNames',circular_track.stateNames.left_right,'dataName','ratemap_LeftRight','session',session,'x_label','Theta maze position (cm)','showPlots',true);

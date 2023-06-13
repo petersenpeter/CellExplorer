@@ -61,15 +61,14 @@ switch data_source_type
         else
             filename_full = fullfile(basepath,'auxiliary.dat');
         end
-%         leastSignificantBit = 0.0000374;
         sr = sr*4; % four identical samples is saved per sampling by intan in the aux traces
+        
     case {'analog','adc'}
         if exist(fullfile(basepath,[basename,'_analogin.dat']))
             filename_full = fullfile(basepath,[basename,'_analogin.dat']);
         else
             filename_full = fullfile(basepath,'analogin.dat');
         end
-%         leastSignificantBit = 0.000050354;
 end
 
 % Reading file
@@ -121,7 +120,7 @@ switch processing
         % Removing outliers
         idx = find(abs(diff(trace)) > 0.2);
         trace([idx;idx+1]) = nan;
-        trace(trace > 50 | trace < 0) = nan;
+        trace(trace > 60 | trace < 0) = nan;
         if any(isnan(trace))
             trace = fillmissing(trace,'linear');
         end
@@ -156,7 +155,7 @@ switch processing
         disp('Processing thermistor (Potentiometer resistance of 10,000 Ohm)')
         resistor = 10000;
         % Converting to temperature
-        trace = resistor./(3.3./trace-1); % potentiometer resistance is 10000 Ohm
+        trace = resistor./(3.3./trace-1);
         trace = trace/14015;
         trace = log(trace);
         trace = 1./(1/3454 * trace + 1/310.15);
@@ -164,7 +163,7 @@ switch processing
         
         % Removing outliers
         trace(find(abs(diff(trace)) > 0.2)) = nan;
-        trace(trace > 50 | trace < 0) = nan;
+        trace(trace > 60 | trace < 0) = nan;
         if any(isnan(trace))
             trace = fillmissing(trace,'linear');
         end
@@ -194,12 +193,12 @@ switch processing
         plot(data_out.timestamps,data_out.data,'-k')
         ylabel('Temperature'), xlabel('Time (s)'), axis tight
         
-    case 'thermistor_20210'
+    case 'thermistor_18010'
         
-        disp('Processing thermistor (Potentiometer resistance of 20,210 Ohm)')
-        resistor = 20210;
+        disp('Processing thermistor (Potentiometer resistance of 18,010 Ohm)')
+        resistor = 18010;
         % Converting to temperature
-        trace = resistor./(3.3./trace-1); % potentiometer resistance is 10000 Ohm
+        trace = resistor./(3.3./trace-1);
         trace = trace/14015;
         trace = log(trace);
         trace = 1./(1/3454 * trace + 1/310.15);
@@ -207,7 +206,50 @@ switch processing
         
         % Removing outliers
         trace(find(abs(diff(trace)) > 0.2)) = nan;
-        trace(trace > 50 | trace < 0) = nan;
+        trace(trace > 60 | trace < 0) = nan;
+        if any(isnan(trace))
+            trace = fillmissing(trace,'linear');
+        end
+        
+        % Downsampling
+        if down_sample
+            trace2 = [];
+            for i = 1:length(channels)
+                trace2(:,i) = mean(reshape(trace(1:end-rem(size(trace,1),downsample_samples),i),downsample_samples,[]));
+            end
+            trace = trace2;
+            clear trace2
+        end
+        sr_downsample = sr/downsample_samples;
+        
+        % Low-pass filtering
+        cut_off = 0.5;
+        [b1, a1] = butter(3, cut_off/(sr_downsample/2), 'low');
+        trace = filtfilt(b1, a1, trace); 
+        
+        data_out.data = trace;
+        data_out.sr = sr_downsample;
+        data_out.timestamps = [1:length(data_out.data)]'/data_out.sr;
+        
+        % Plotting the trace
+        figure
+        plot(data_out.timestamps,data_out.data,'-k')
+        ylabel('Temperature'), xlabel('Time (s)'), axis tight
+
+    case 'thermistor_20210'
+        
+        disp('Processing thermistor (Potentiometer resistance of 20,210 Ohm)')
+        resistor = 20210;
+        % Converting to temperature
+        trace = resistor./(3.3./trace-1); 
+        trace = trace/14015;
+        trace = log(trace);
+        trace = 1./(1/3454 * trace + 1/310.15);
+        trace = trace - 273.15; % Translating from Kelvin to Celcius
+        
+        % Removing outliers
+        trace(find(abs(diff(trace)) > 0.2)) = nan;
+        trace(trace > 60 | trace < 0) = nan;
         if any(isnan(trace))
             trace = fillmissing(trace,'linear');
         end
@@ -289,7 +331,7 @@ switch processing
             for i = 1:length(channels)
                 trace2(:,i) = mean(reshape(trace(1:end-rem(size(trace,1),downsample_samples),i),downsample_samples,[]));
             end
-            trace = trace2;
+            data_out.data = trace2;
             clear trace2
             sr = sr/downsample_samples;
         end
