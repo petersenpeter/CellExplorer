@@ -1,4 +1,4 @@
-function session = loadOpenEphysSettingsFile(session,epoch)
+function session = loadOpenEphysSettingsFile(session)
 
 % https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html
 
@@ -18,9 +18,11 @@ if exist(file1,'file')
     session.extracellular.precision = 'int16';
     session.extracellular.fileName = '';
     session.extracellular.srLfp = openEphys_metadata.continuous(2).sample_rate;
-    session.extracellular.electrodeGroups.channels = 1:384;
+    session.extracellular.electrodeGroups.channels = {};
+    session.extracellular.electrodeGroups.channels{1} = 1:384;
     session.extracellular.nElectrodeGroups = 1;
-    session.extracellular.spikeGroups.channels = 1:384;
+    session.extracellular.spikeGroups.channels = {};
+    session.extracellular.spikeGroups.channels{1} = 1:384;
     session.extracellular.nSpikeGroups = 1;
 
     session.timeSeries.dig.fileName = [openEphys_metadata.events(1).folder_name,'timestamps.npy'];
