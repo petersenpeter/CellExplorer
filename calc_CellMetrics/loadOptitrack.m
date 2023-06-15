@@ -93,8 +93,19 @@ optitrack_temp.TotalFrames = str2double(dataArray{12}(1));
 optitrack_temp.TotalExportedFrames = str2double(dataArray{14}(1));
 optitrack_temp.RotationType = dataArray{16}(1);
 optitrack_temp.LenghtUnit = dataArray{18}(1);
-optitrack_temp.CoorinateSpace = dataArray{20}(1);
+optitrack_temp.CoordinateSpace = dataArray{20}(1);
 optitrack_temp.FrameRate = str2double(dataArray{6}{1});
+
+% Interpolate
+if sum(isnan(optitrack_temp.Xr))
+    optitrack_temp.Xr = interp1(optitrack_temp.Time(~isnan(optitrack_temp.Xr)),optitrack_temp.Xr(~isnan(optitrack_temp.Xr)),optitrack_temp.Time);
+    optitrack_temp.Yr = interp1(optitrack_temp.Time(~isnan(optitrack_temp.Yr)),optitrack_temp.Yr(~isnan(optitrack_temp.Yr)),optitrack_temp.Time);
+    optitrack_temp.Zr = interp1(optitrack_temp.Time(~isnan(optitrack_temp.Zr)),optitrack_temp.Zr(~isnan(optitrack_temp.Zr)),optitrack_temp.Time);
+    optitrack_temp.Wr = interp1(optitrack_temp.Time(~isnan(optitrack_temp.Wr)),optitrack_temp.Wr(~isnan(optitrack_temp.Wr)),optitrack_temp.Time);
+    optitrack_temp.X = interp1(optitrack_temp.Time(~isnan(optitrack_temp.X)),optitrack_temp.X(~isnan(optitrack_temp.X)),optitrack_temp.Time);
+    optitrack_temp.Y = interp1(optitrack_temp.Time(~isnan(optitrack_temp.Y)),optitrack_temp.Y(~isnan(optitrack_temp.Y)),optitrack_temp.Time);
+    optitrack_temp.Z = interp1(optitrack_temp.Time(~isnan(optitrack_temp.Z)),optitrack_temp.Z(~isnan(optitrack_temp.Z)),optitrack_temp.Time);
+end
 
 clear dataArray
 clearvars filename formatSpec fileID dataArray header_length;

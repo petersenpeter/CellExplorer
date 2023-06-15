@@ -7,7 +7,8 @@ function spikes = loadSpikes(varargin)
 %      KlustaViewa/Klustasuite
 %      MClust
 %      NWB
-%      Phy (default): Not true
+%      CellExplorer (default)
+%      Phy (second default)
 %      Sebastien Royer's lab standard
 %      SpyKING Circus
 %      UltraMegaSort2000
@@ -70,7 +71,7 @@ function spikes = loadSpikes(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar); % basepath with dat file, used to extract the waveforms from the dat file
 addParameter(p,'clusteringpath',[],@ischar); % relativ clustering path to spike data (optional)
-addParameter(p,'format',[],@ischar); % clustering format: phy, klustakwik/neurosuite, KlustaViewa, NWB, Wave_clus, MClust, UltraMegaSort2000, ALF, AllenSDK
+addParameter(p,'format','CellExplorer',@ischar); % clustering format: phy, klustakwik/neurosuite, KlustaViewa, NWB, Wave_clus, MClust, UltraMegaSort2000, ALF, AllenSDK
                                                      % TODO: 'SpyKING CIRCUS', 'MountainSort', 'IronClust'
 addParameter(p,'basename','',@ischar); % The basename file naming convention
 addParameter(p,'electrodeGroups',nan,@isnumeric); % electrodeGroups: Loading only a subset of electrodeGroups from the spike format (only applicable to Klustakwik/neurosuite and KlustaViewa)
@@ -119,7 +120,7 @@ elseif isempty(basename)
     basename = basenameFromBasepath(basepath);
 end
 
-if exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file') && ~parameters.forceReload
+if strcmpi(format,'CellExplorer') && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file') && ~parameters.forceReload
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
     if ~isfield(spikes,'processinginfo') || (isfield(spikes,'processinginfo') && spikes.processinginfo.version < 3 && strcmp(spikes.processinginfo.function,'loadSpikes') )
         parameters.forceReload = true;
@@ -129,6 +130,11 @@ elseif ~isempty(spikes)
     disp('loadSpikes: Using existing spikes file')
 % elseif exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file') 
 %     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
+elseif strcmpi(format,'CellExplorer')
+    format = 'Phy';
+    parameters.forceReload = true;
+    spikes = [];
+    showGUI = true;
 else
     parameters.forceReload = true;
     spikes = [];
@@ -246,7 +252,7 @@ if parameters.forceReload
                 dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
                 fclose(fileID);
                 if isempty(dataArray{1})
-                    disp(['Noc clusters found in ', filename1,'. Will use the labels from KiloSort'])
+                    disp(['No clusters found in ', filename1,'. Will use the labels from KiloSort'])
                     filename = filename3;
                 else
                     filename = filename1;
