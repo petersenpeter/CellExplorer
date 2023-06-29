@@ -345,6 +345,9 @@ if exist('parameters','var') && ~isempty(parameters)
         classification_schema_value = 1;
     else
         classification_schema_list = what('celltype_classification');
+        if length(classification_schema_list)>1
+            classification_schema_list = classification_schema_list(1);
+        end
         classification_schema_list = cellfun(@(X) X(1:end-2),classification_schema_list.m,'UniformOutput', false);
         
         classification_schema_value = find(strcmp(parameters.preferences.putativeCellType.classification_schema,classification_schema_list));

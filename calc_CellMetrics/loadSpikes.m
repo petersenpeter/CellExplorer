@@ -1,5 +1,9 @@
 function spikes = loadSpikes(varargin)
-% Load clustered data from multiple pipelines/formats. Currently supported formats: 
+% This function imports various spike sorting pipelines/formats into the CellExplorer spikes format 
+% Once spikes are imported and saved to a .mat file, the script will load this spikes struct instead of importing again. 
+% The forceReload parameter can overrule this.
+% 
+% Currently supported formats: 
 %      ALF
 %      AllenSDK (via NWB files and their API data files)
 %      Custom (Spike timestamps as input)
@@ -7,7 +11,7 @@ function spikes = loadSpikes(varargin)
 %      KlustaViewa/Klustasuite
 %      MClust
 %      NWB
-%      Phy (default)
+%      Phy (default import format)
 %      Sebastien Royer's lab standard
 %      SpyKING Circus
 %      UltraMegaSort2000
@@ -40,14 +44,14 @@ function spikes = loadSpikes(varargin)
 %     .processingInfo   - Processing info
 %
 % DEPENDENCIES:
-% - LoadXml.m (optional and included with CellExplorer: https://github.com/petersenpeter/CellExplorer/tree/master/calc_CellMetrics/private)
 % - npy-matlab toolbox (required for reading phy, AllenSDK & ALF data: https://github.com/kwikteam/npy-matlab)
-% - getWaveformsFromDat (optional and included with CellExplorer)
+% - LoadXml.m: included with CellExplorer: https://github.com/petersenpeter/CellExplorer/tree/master/calc_CellMetrics/private
+% - getWaveformsFromDat: included with CellExplorer
 %
 %
 % EXAMPLE CALLS
-% spikes = loadSpikes('session',session); % clustering format should be specified in the struct
-% spikes = loadSpikes('basepath',pwd,'clusteringpath',Kilosort_RelativeOutputPath); % Run from basepath, assumes Phy format.
+% spikes = loadSpikes('session',session); % clustering format should be specified in the session struct
+% spikes = loadSpikes('basepath',pwd,'clusteringpath','relativeOutputFolder'); % Run from basepath (pwd), assumes Phy format.
 % spikes = loadSpikes('basepath',pwd,'format','mclust'); % Run from basepath, loads MClust format.
 % spikes = loadSpikes('session',session,'UID',1:30,'shankID',1:3); % Loads spikes and filters output - only UID 1:30 and the first 3 electrodeGroups.
 % spikes = loadSpikes('basepath',pwd,'format','custom','spikes_times',spikes_times); % Run from basepath, custom spike format, requires the spike times as input. 
