@@ -328,6 +328,23 @@ if parameters.forceReload
                     UID = UID+1;
                 end
             end
+
+            if parameters.getWaveformsFromSource
+                disp('Getting waveforms from the phy template')
+                filename_templates = fullfile(clusteringpath_full,'templates.npy');
+                if exist(filename_templates,'file')
+                    templates = readNPY(fullfile(clusteringpath_full, 'templates.npy'));
+                    spike_templates = readNPY(fullfile(clusteringpath_full, 'spike_templates.npy'));
+
+                    for UID = 1:numel(spikes.times)
+                        template_id = double(mode(spike_templates(spikes.ids{UID})));
+                        spikes.filtWaveform_all{UID} = permute(double(templates(template_id,:,:)),[3 2 1]);
+                        [~,idx] = max(range(spikes.filtWaveform_all{UID}'));
+                        spikes.filtWaveform{UID} = double(templates(template_id,:,idx));
+                    end
+                end
+            end
+
             disp(['Importing ' num2str(numel(spikes.times)),'/', num2str(length(dataArray{1})),' clusters from phy'])
             
         case {'ultramegasort2000','ums2k'} % ultramegasort2000 (https://github.com/danamics/UMS2K)

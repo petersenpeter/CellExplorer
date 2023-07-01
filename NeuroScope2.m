@@ -278,6 +278,7 @@ end
         UI.params.groupMetric = 'putativeCellType';
         
         % Audio
+        preferences.audioPlay = false; % Can be true or false
         UI.settings.playAudioFirst = false; % Must be false
         UI.settings.deviceWriterActive = false; % Must be false
         
@@ -506,7 +507,7 @@ end
         UI.panel.timeseriesdata.main = uipanel('Title','Raw time series data','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
         UI.table.timeseriesdata = uitable(UI.panel.timeseriesdata.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0.20 1 0.80],'ColumnWidth',{20 35 125 45},'columnname',{'','Tag','File name','nChan'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@showIntan);
         UI.panel.timeseriesdata.showTimeseriesBelowTrace = uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','checkbox','Units','normalized','Position',[0 0 0.5 0.20], 'value', 0,'String','Below traces','Callback',@showTimeseriesBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show time series data below traces');
-        uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Edit','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
+        uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
             
         % Defining flexible panel heights
         set(UI.panel.general.main, 'Heights', [65 210 -210 35 -90 35 100 40 150],'MinimumHeights',[65 210 200 35 140 35 50 30 150]);
@@ -2518,7 +2519,9 @@ end
     function keyPress(~, event)
         % Handles keyboard shortcuts
         UI.settings.stream = false;
+
         if isempty(event.Modifier)
+
             switch event.Key
                 case 'rightarrow'
                     advance(0.25)
@@ -2573,11 +2576,12 @@ end
                     addEvent
                 case 'slash'
                     randomEvent
-                case 'shift'
+                case 'control'
                     UI.settings.normalClick = false;
             end
+
         elseif strcmp(event.Modifier,'shift')
-            UI.settings.normalClick = false;
+            
             switch event.Key
                 case 'space'
                     streamData
@@ -2596,23 +2600,29 @@ end
                 case 'f'
                     flagEvent
             end
+
         elseif strcmp(event.Modifier,'control')
+
+            UI.settings.normalClick = false;
             switch event.Key
                 case 'space'
                     streamData2
             end
+
         elseif strcmp(event.Modifier,'alt')
+
             switch event.Key
                 case 'rightarrow'
                     advance(0.1)
                 case 'leftarrow'
                     back(0.1)
             end
+
         end
     end
     
     function keyRelease(~, event)
-        if strcmp(event.Key,'shift')
+        if strcmp(event.Key,'control')
             UI.settings.normalClick = true;
         end
     end
@@ -3013,9 +3023,9 @@ end
             UI.settings.fileRead = 'bof';
             UI.buttons.play1.String = [char(9646) char(9646)];
             UI.elements.lower.performance.String = '  Streaming...';
+            n_streaming = 0;
             if UI.settings.audioPlay
             	UI.settings.playAudioFirst = true;
-                n_streaming = 0;
             else
                 UI.settings.playAudioFirst = false;
             end
@@ -3024,7 +3034,7 @@ end
             
             while UI.settings.stream
                 streamTic = tic;
-                if streamToc > UI.settings.windowDuration*UI.settings.replayRefreshInterval
+                if streamToc > UI.settings.windowDuration*UI.settings.replayRefreshInterval || streamToc == 0
                     replayRefreshInterval = 1;
                 else
                     replayRefreshInterval = UI.settings.replayRefreshInterval;
@@ -3038,7 +3048,7 @@ end
                 
                 % playAudioWithTrace
                 if UI.settings.audioPlay && n_streaming == 0
-                    samples = 1:round(replayRefreshInterval*ephys.nSamples);
+                    samples = 1:round(UI.settings.replayRefreshInterval*ephys.nSamples);
                     deviceWriter(UI.settings.audioGain*ephys.traces(samples,UI.settings.audioChannels)); 
                 end
                 
@@ -4811,6 +4821,7 @@ end
         UI.track = true;
         UI.t_total = 0; % Length of the recording in seconds
         
+        % Restting UI and imported data
         UI.settings.showKilosort = false;
         UI.settings.showKlusta = false;
         UI.settings.showSpykingcircus = false;
@@ -4819,24 +4830,50 @@ end
         UI.settings.channelTags.filter = [];
         UI.settings.channelTags.highlight = [];
         UI.settings.showSpikes = false;
-        UI.settings.useMetrics = false;
-        UI.settings.showEvents = false;
-        UI.settings.showTimeseries = false;
-        UI.settings.showStates = false;
-        UI.settings.showBehavior = false;
-        UI.settings.intan_showAnalog = false;
-        UI.settings.intan_showAux = false;
-        UI.settings.intan_showDigital = false;
-        UI.settings.spectrogram.show = false;
         UI.panel.spikes.showSpikes.Value = 0;
-        UI.panel.cell_metrics.useMetrics.Value = 0;
         UI.panel.spikes.populationRate.Value = 0;
         UI.panel.spikesorting.showKilosort.Value = 0;
         UI.panel.spikesorting.showKlusta.Value = 0;
         UI.panel.spikesorting.showSpykingcircus.Value = 0;
+
+        UI.settings.useMetrics = false;
+        UI.panel.cell_metrics.useMetrics.Value = 0;
+        UI.settings.showEvents = false;
+        UI.settings.showTimeseries = false;
         UI.panel.timeseries.show.Value = 0;
+
+        UI.settings.showStates = false;
         UI.panel.states.showStates.Value = 0;
+        UI.settings.showBehavior = false;
         UI.panel.behavior.showBehavior.Value = 0;
+
+        UI.settings.intan_showAnalog = false;
+        UI.settings.intan_showAux = false;
+        UI.settings.intan_showDigital = false;
+        UI.settings.spectrogram.show = false;
+        
+        % Resetting Ephys data analysis
+        UI.settings.audioPlay = false;
+        UI.panel.audio.playAudio.Value = 0;
+        
+        UI.settings.instantaneousMetrics.show = false;
+        UI.settings.instantaneousMetrics.showPower = false;
+        UI.settings.instantaneousMetrics.showSignal = false;
+        UI.settings.instantaneousMetrics.showPhase = false;
+
+        UI.panel.instantaneousMetrics.showPower.Value = 0;
+        UI.panel.instantaneousMetrics.showSignal.Value = 0;
+        UI.panel.instantaneousMetrics.showPhase.Value = 0;
+
+        UI.settings.plotRMSnoiseInset = false;
+        UI.panel.RMSnoiseInset.showRMSnoiseInset.Value = 0;
+        
+        UI.settings.spectrogram.show = false;
+        UI.panel.spectrogram.showSpectrogram.Value = 0;
+        
+        UI.settings.CSD.show = false;
+        UI.panel.csd.showCSD.Value = 0;
+        
         UI.table.cells.Data = {};
         UI.listbox.cellTypes.String = {''};
         
@@ -5186,8 +5223,10 @@ end
             t_click = (t_click-max(UI.settings.channels_relative_offset(UI.channelOrder((t_click-UI.settings.channels_relative_offset(UI.channelOrder))>0))))*UI.settings.columns;
         end
         t_click = t_click+UI.t0;
-                
-        switch get(UI.fig, 'selectiontype')
+        selectiontype = get(UI.fig, 'selectiontype');
+
+        switch selectiontype
+
             case 'normal' % left mouse button                
                 
                 if UI.settings.addEventonClick == 1 % Adding new event
@@ -5195,6 +5234,7 @@ end
                     UI.elements.lower.performance.String = ['Event added: ',num2str(t_click),' sec'];
                     UI.settings.addEventonClick = 0;
                     uiresume(UI.fig);
+
                 elseif UI.settings.addEventonClick > 1 % Adding new interval
                     polygon1.coords = [polygon1.coords;t_click];
                     polygon1.counter = polygon1.counter +1;
@@ -5223,7 +5263,7 @@ end
                 end
                 
             case 'alt' % right mouse button
-                
+
                 % Removing/flagging events
                 if UI.settings.addEventonClick == 1 && ~isempty(data.events.(UI.settings.eventData).added)
                     idx3 = find(data.events.(UI.settings.eventData).added >= UI.t0 & data.events.(UI.settings.eventData).added <= UI.t0+UI.settings.windowDuration);
@@ -5239,6 +5279,7 @@ end
                         UI.settings.addEventonClick = 0;
                         uiresume(UI.fig);
                     end
+
                 elseif UI.settings.addEventonClick > 1 % Adding or delete interval
                     if polygon1.counter >= 2
                         polygon1.cleanExit = 1;
@@ -5249,7 +5290,9 @@ end
                 end
                 
             case 'extend' % middle mouse button
+
                 if UI.settings.addEventonClick > 1 % Adding new interval
+                    
                     if polygon1.counter > 1                        
                         polygon1.coords = polygon1.coords(1:end-1);
                         set(polygon1.handle(polygon1.counter),'Visible','off');
@@ -5260,14 +5303,29 @@ end
                         UI.settings.addEventonClick = 0;
                         set(UI.fig,'Pointer','arrow')
                         uiresume(UI.fig);
-                    end                
-                elseif UI.settings.normalClick
+                    end
+
+                elseif UI.settings.showSpikes && ~UI.settings.normalClick
+                    
+                    [~,In] = min(hypot((spikes_raster.x(:)-um_axes(1,1)),(spikes_raster.y(:)-um_axes(1,2))));
+                    UID = spikes_raster.UID(In);
+                    if ~isempty(UID)
+                        highlightUnits(UID,[]);
+                        [UI.selectedUnits,idxColors] = unique([UID,UI.selectedUnits],'stable');
+                        UI.selectedUnitsColors = [UI.colorLine(UI.iLine,:); UI.selectedUnitsColors];
+                        UI.selectedUnitsColors = UI.selectedUnitsColors(idxColors,:);
+                        UI.elements.lower.performance.String = ['Unit(s) selected: ',num2str(UI.selectedUnits)];
+                    end
+
+                else
+                    
                     channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
                     x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration/UI.settings.columns)'+UI.settings.channels_relative_offset(channels);
                     y1 = (ephys.traces(:,channels)-UI.channelOffset(channels));
                     [~,In] = min(hypot((x1(:)-um_axes(1,1)),(y1(:)-um_axes(1,2))));
                     In = unique(floor(In/size(x1,1)))+1;
                     In = channels(In);
+
                     if ismember(In,UI.selectedChannels)
                         idxColors = In==UI.selectedChannels;
                         UI.selectedChannels(idxColors) = [];
@@ -5281,6 +5339,7 @@ end
                         else
                             UI.elements.lower.performance.String = ['Removed channel ',num2str(In),'. Remaining selected channels: ',num2str(UI.selectedChannels)];
                         end
+
                     else
                         highlightTraces(In,[])
                         [UI.selectedChannels,idxColors] = unique([In,UI.selectedChannels],'stable');
@@ -5291,17 +5350,6 @@ end
                         else
                             UI.elements.lower.performance.String = ['Selected channels: ',num2str(UI.selectedChannels)];
                         end
-                    end
-                    
-                elseif UI.settings.showSpikes && ~UI.settings.normalClick
-                    [~,In] = min(hypot((spikes_raster.x(:)-um_axes(1,1)),(spikes_raster.y(:)-um_axes(1,2))));
-                    UID = spikes_raster.UID(In);
-                    if ~isempty(UID)
-                        highlightUnits(UID,[]);
-                        [UI.selectedUnits,idxColors] = unique([UID,UI.selectedUnits],'stable');
-                        UI.selectedUnitsColors = [UI.colorLine(UI.iLine,:); UI.selectedUnitsColors];
-                        UI.selectedUnitsColors = UI.selectedUnitsColors(idxColors,:);
-                        UI.elements.lower.performance.String = ['Unit(s) selected: ',num2str(UI.selectedUnits)];
                     end
                 end                
             case 'open'
