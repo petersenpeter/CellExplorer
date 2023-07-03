@@ -15,8 +15,7 @@ preferences.plotStyle = 2; % Plot style
 preferences.greyScaleTraces = 1; % Plot colors
 preferences.channelOrder = 1; % Channel order
 preferences.plotTracesInColumns = false; % Plot traces in columns
-preferences.colorByChannels = false; % Color by channel order
-preferences.colorByChannels2 = false; % Color by channel order
+preferences.colorByChannels = 1; % Color by channel order
 preferences.nColorGroups = 10; % Number of color groups when coloring by channel order
 preferences.displayMenu = 0; % Show the regular Matlab menu
 preferences.background = [0 0 0]; % Background color
@@ -145,6 +144,5 @@ preferences.instantaneousMetrics.higherBand = 220;
 
 % Audio
 % only works together with the DSP System Toolbox or the Audio Toolbox
-preferences.audioPlay = false; % Can be true or false
 preferences.audioChannels = [1,2]; % Up to two channels can be selected
 preferences.audioGain = 3; % Gain factor, recommended: 1:5 = 1,2,5,10,20

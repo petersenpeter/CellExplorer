@@ -11287,6 +11287,9 @@ end
             customPlotOptions = {};
         else
             customPlotOptions = what('customPlots');
+            if size(customPlotOptions,1)>1
+                customPlotOptions = customPlotOptions(1);
+            end
             customPlotOptions = cellfun(@(X) X(1:end-2),customPlotOptions.m,'UniformOutput', false);
             customPlotOptions(strcmpi(customPlotOptions,'template')) = [];
         end
@@ -11383,6 +11386,9 @@ end
             spikesPlots = {};
         else
             customSpikePlotOptions = what('customSpikesPlots');
+            if size(customSpikePlotOptions,1)>1
+                customSpikePlotOptions = customSpikePlotOptions(1);
+            end
             customSpikePlotOptions = cellfun(@(X) X(1:end-2),customSpikePlotOptions.m,'UniformOutput', false);
             customSpikePlotOptions(strcmpi(customSpikePlotOptions,'spikes_template')) = [];
             spikesPlots = {};

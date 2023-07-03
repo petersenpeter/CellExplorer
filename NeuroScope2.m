@@ -138,6 +138,10 @@ while UI.t0 >= 0
         % Plotting data
         plotData;
         
+        if UI.t0 == UI.t_total-UI.settings.windowDuration
+            UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'End of file','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor,'HitTest','off');
+        end        
+        
         % Updating epoch axes
         if ishandle(epoch_plotElements.t0)
             delete(epoch_plotElements.t0)
@@ -274,6 +278,7 @@ end
         UI.params.groupMetric = 'putativeCellType';
         
         % Audio
+        preferences.audioPlay = false; % Can be true or false
         UI.settings.playAudioFirst = false; % Must be false
         UI.settings.deviceWriterActive = false; % Must be false
         
@@ -346,9 +351,13 @@ end
         UI.menu.display.channelOrder.option(4) = uimenu(UI.menu.display.channelOrder.topMenu,menuLabel,'Descending channel order',menuSelectedFcn,@setChannelOrder);
         UI.menu.display.channelOrder.option(UI.settings.channelOrder).Checked = 'on';
         
+        UI.menu.display.colorgroups.topMenu = uimenu(UI.menu.display.topMenu,menuLabel,'Color groups');
+        UI.menu.display.colorgroups.option(1) = uimenu(UI.menu.display.colorgroups.topMenu,menuLabel,'By electrode groups',menuSelectedFcn,@setColorGroups);
+        UI.menu.display.colorgroups.option(2) = uimenu(UI.menu.display.colorgroups.topMenu,menuLabel,'By channel order',menuSelectedFcn,@setColorGroups);
+        UI.menu.display.colorgroups.option(3) = uimenu(UI.menu.display.colorgroups.topMenu,menuLabel,'By custom-sized channel groups',menuSelectedFcn,@setColorGroups);
+        UI.menu.display.colorgroups.option(UI.settings.colorByChannels).Checked = 'on';
+        
         UI.menu.display.colormap = uimenu(UI.menu.display.topMenu,menuLabel,'Color maps');
-        UI.menu.display.colorByChannels = uimenu(UI.menu.display.colormap,menuLabel,'Color ephys traces by channel order',menuSelectedFcn,@colorByChannels);
-        UI.menu.display.colorByChannels2 = uimenu(UI.menu.display.colormap,menuLabel,'Color ephys traces in channel groups',menuSelectedFcn,@colorByChannels2);
         UI.menu.display.changeColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
         UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);        
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.colormap,menuLabel,'Change background color & primary color',menuSelectedFcn,@changeBackgroundColor);
@@ -368,7 +377,9 @@ end
         
         % Analysis
         UI.menu.analysis.topMenu = uimenu(UI.fig,menuLabel,'Analysis');
-        initAnalysisToolsMenu
+        try
+            initAnalysisToolsMenu
+        end
         UI.menu.analysis.summaryFigure = uimenu(UI.menu.analysis.topMenu,menuLabel,'Summary figure',menuSelectedFcn,@summaryFigure,'Separator','on');
         
         % BuzLabDB
@@ -496,7 +507,7 @@ end
         UI.panel.timeseriesdata.main = uipanel('Title','Raw time series data','Position',[0 0.2 1 0.1],'Units','normalized','Parent',UI.panel.general.main);
         UI.table.timeseriesdata = uitable(UI.panel.timeseriesdata.main,'Data',{false,'','',''},'Units','normalized','Position',[0 0.20 1 0.80],'ColumnWidth',{20 35 125 45},'columnname',{'','Tag','File name','nChan'},'RowName',[],'ColumnEditable',[true false false false],'CellEditCallback',@showIntan);
         UI.panel.timeseriesdata.showTimeseriesBelowTrace = uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','checkbox','Units','normalized','Position',[0 0 0.5 0.20], 'value', 0,'String','Below traces','Callback',@showTimeseriesBelowTrace,'KeyPressFcn', @keyPress,'tooltip','Show time series data below traces');
-        uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Edit','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
+        uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
             
         % Defining flexible panel heights
         set(UI.panel.general.main, 'Heights', [65 210 -210 35 -90 35 100 40 150],'MinimumHeights',[65 210 200 35 140 35 50 30 150]);
@@ -846,7 +857,7 @@ end
         % Showing detected spikes in a spike-waveform-PCA plot inset
         if UI.settings.detectSpikes && ~isempty(UI.channelOrder) && UI.settings.showDetectedSpikesPCAspace
             plotSpikesPCAspace(raster,UI.settings.primaryColor,true)
-        end
+        end       
         
         if ~isempty(UI.legend)
         	text(1/400,0.005,UI.legend,'FontWeight', 'Bold','BackgroundColor',UI.settings.textBackground,'VerticalAlignment', 'bottom','Units','normalized','HorizontalAlignment','left','HitTest','off','Interpreter','tex')
@@ -1035,7 +1046,12 @@ end
             plotCSD
         end
         
-        if UI.settings.colorByChannels
+        if UI.settings.colorByChannels == 1
+            electrodeGroupsToPlot = UI.settings.electrodeGroupsToPlot;
+            channelsList = UI.channels;
+            colorsList = colors;
+            
+        elseif UI.settings.colorByChannels == 2
             channelsList2 = UI.channelOrder;
             channelsList = {};
             temp = rem(0:numel(channelsList2)-1,UI.settings.nColorGroups)+1;
@@ -1052,7 +1068,7 @@ end
                 colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
             end
             colorsList = colors;
-        elseif UI.settings.colorByChannels2
+        elseif UI.settings.colorByChannels == 3
             channelsList2 = UI.channelOrder;
             channelsList = {};
             nElectrodes = ceil(numel(channelsList2)/UI.settings.nColorGroups);
@@ -1068,10 +1084,6 @@ end
                 colors = ones(size(colors))/(UI.settings.greyScaleTraces-4);
                 colors(1:2:end,:) = colors(1:2:end,:)-0.08*(9-UI.settings.greyScaleTraces);
             end
-            colorsList = colors;
-        else
-            electrodeGroupsToPlot = UI.settings.electrodeGroupsToPlot;
-            channelsList = UI.channels;
             colorsList = colors;
         end
         
@@ -2511,7 +2523,9 @@ end
     function keyPress(~, event)
         % Handles keyboard shortcuts
         UI.settings.stream = false;
+
         if isempty(event.Modifier)
+
             switch event.Key
                 case 'rightarrow'
                     advance(0.25)
@@ -2566,11 +2580,12 @@ end
                     addEvent
                 case 'slash'
                     randomEvent
-                case 'shift'
+                case 'control'
                     UI.settings.normalClick = false;
             end
+
         elseif strcmp(event.Modifier,'shift')
-            UI.settings.normalClick = false;
+            
             switch event.Key
                 case 'space'
                     streamData
@@ -2589,23 +2604,29 @@ end
                 case 'f'
                     flagEvent
             end
+
         elseif strcmp(event.Modifier,'control')
+
+            UI.settings.normalClick = false;
             switch event.Key
                 case 'space'
                     streamData2
             end
+
         elseif strcmp(event.Modifier,'alt')
+
             switch event.Key
                 case 'rightarrow'
                     advance(0.1)
                 case 'leftarrow'
                     back(0.1)
             end
+
         end
     end
     
     function keyRelease(~, event)
-        if strcmp(event.Key,'shift')
+        if strcmp(event.Key,'control')
             UI.settings.normalClick = true;
         end
     end
@@ -3006,35 +3027,43 @@ end
             UI.settings.fileRead = 'bof';
             UI.buttons.play1.String = [char(9646) char(9646)];
             UI.elements.lower.performance.String = '  Streaming...';
+            n_streaming = 0;
             if UI.settings.audioPlay
             	UI.settings.playAudioFirst = true;
-                n_streaming = 0;
             else
                 UI.settings.playAudioFirst = false;
             end
+            streamToc = 0;
+            streamToc_extra = 0;            
             
             while UI.settings.stream
                 streamTic = tic;
-                UI.t0 = UI.t0+UI.settings.replayRefreshInterval*UI.settings.windowDuration;
+                if streamToc > UI.settings.windowDuration*UI.settings.replayRefreshInterval || streamToc == 0
+                    replayRefreshInterval = 1;
+                else
+                    replayRefreshInterval = UI.settings.replayRefreshInterval;
+                end
+                
+                UI.t0 = UI.t0+replayRefreshInterval*UI.settings.windowDuration;
                 UI.t0 = max([0,min([UI.t0,UI.t_total-UI.settings.windowDuration])]);
                 if ~ishandle(UI.fig) ||  (UI.fid.ephys == -1 && UI.settings.plotStyle ~= 4)
                     return
                 end
+                
+                % playAudioWithTrace
+                if UI.settings.audioPlay && n_streaming == 0
+                    samples = 1:round(UI.settings.replayRefreshInterval*ephys.nSamples);
+                    deviceWriter(UI.settings.audioGain*ephys.traces(samples,UI.settings.audioChannels)); 
+                end
+                
                 if UI.settings.playAudioFirst
                     load_ephys_data
                 end
                 
                 % playAudioWithTrace
                 if UI.settings.audioPlay
-                    streamTicAudio = tic;
-                    
-                    if n_streaming == 0
-                        streamTicAudio_t0 = tic;
-                        samples = 1:round(UI.settings.replayRefreshInterval*ephys.nSamples);
-                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,107)); 
-                    end
-                    samples = round(UI.settings.replayRefreshInterval*ephys.nSamples)+1:ephys.nSamples;    
-                    deviceWriter(UI.settings.audioGain*ephys.traces(samples,107));
+                    samples = 1:round(replayRefreshInterval*ephys.nSamples);
+                    deviceWriter(UI.settings.audioGain*ephys.traces(samples,UI.settings.audioChannels));
                     UI.settings.deviceWriterActive = true;
                     n_streaming = n_streaming+1;
                 end
@@ -3048,30 +3077,31 @@ end
                 % Updating UI text and slider
                 UI.elements.lower.time.String = num2str(UI.t0);
                 setTimeText(UI.t0)
-                UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Streaming','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor,'HitTest','off');
+                UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,['Streaming: ', num2str(UI.settings.windowDuration*replayRefreshInterval),' sec intervals'],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor,'HitTest','off');
                 
-                if UI.settings.audioPlay                    
-                    streamToc = toc(streamTicAudio_t0);
-                    streamToc2 = UI.settings.replayRefreshInterval*UI.settings.windowDuration-toc(streamTicAudio);
-                    streaming_delay = UI.settings.windowDuration*UI.settings.replayRefreshInterval*n_streaming-streamToc;
-                    % disp(['streamToc=',num2str(streamToc),'   streamToc2=',num2str(streamToc2),'   streaming_delay=',num2str(streaming_delay)]);
-                    streaming_delay = min(max(streaming_delay,streamToc2),UI.settings.windowDuration);
-                    
-                    pauseBins = ones(1,10) * streaming_delay*0.1;
+
+                drawnow
+                streamToc = toc(streamTic)-min([0,streamToc_extra]);
+
+                if UI.settings.windowDuration*replayRefreshInterval-streamToc > 0
+                    pauseBins = ones(1,10) * 0.1 * (UI.settings.windowDuration*replayRefreshInterval-streamToc);
                 else
-                    streamToc = toc(streamTic);
-                    pauseBins = ones(1,10) * (UI.settings.replayRefreshInterval*0.1*(UI.settings.windowDuration-streamToc));
-                    pauseBins(cumsum(pauseBins)-streamToc<0) = [];
-                end   
+                    pauseBins = [];
+                end
                 
                 if ~isempty(pauseBins)
-                    pauseBins(end) = pauseBins(1)-pauseBins(end);
                     for i = 1:numel(pauseBins)
                         if UI.settings.stream
                             pause(pauseBins(i))
                         end
                     end
                 end
+                
+                if UI.t0 == UI.t_total-UI.settings.windowDuration
+                    UI.settings.stream = false;
+                end
+
+                streamToc_extra = UI.settings.windowDuration*replayRefreshInterval-toc(streamTic);
             end
             UI.elements.lower.performance.String = '';
         end
@@ -3079,6 +3109,11 @@ end
         if ishandle(UI.streamingText)
             delete(UI.streamingText)
         end
+        
+        if UI.t0 == UI.t_total-UI.settings.windowDuration
+            UI.streamingText = text(UI.plot_axis1,UI.settings.windowDuration/2,1,'Streaming stopped: End of file','FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','center','color',UI.settings.primaryColor,'HitTest','off');
+        end
+        
         UI.buttons.play1.String = char(9654);
         UI.buttons.play2.String = [char(9655) char(9654)];
         if UI.settings.audioPlay
@@ -3130,7 +3165,7 @@ end
             else
                 sr = data.session.extracellular.sr;
             end
-            deviceWriter = audioDeviceWriter('SampleRate',sr);
+            deviceWriter = audioDeviceWriter('SampleRate',sr,'SupportVariableSizeInput',true);
             SamplesPerFrame = round(UI.settings.replayRefreshInterval*sr);
             NumChannels = numel(UI.settings.audioChannels);
             setup(deviceWriter,zeros(SamplesPerFrame,NumChannels))
@@ -4793,6 +4828,7 @@ end
         UI.track = true;
         UI.t_total = 0; % Length of the recording in seconds
         
+        % Restting UI and imported data
         UI.settings.showKilosort = false;
         UI.settings.showKlusta = false;
         UI.settings.showSpykingcircus = false;
@@ -4801,24 +4837,50 @@ end
         UI.settings.channelTags.filter = [];
         UI.settings.channelTags.highlight = [];
         UI.settings.showSpikes = false;
-        UI.settings.useMetrics = false;
-        UI.settings.showEvents = false;
-        UI.settings.showTimeseries = false;
-        UI.settings.showStates = false;
-        UI.settings.showBehavior = false;
-        UI.settings.intan_showAnalog = false;
-        UI.settings.intan_showAux = false;
-        UI.settings.intan_showDigital = false;
-        UI.settings.spectrogram.show = false;
         UI.panel.spikes.showSpikes.Value = 0;
-        UI.panel.cell_metrics.useMetrics.Value = 0;
         UI.panel.spikes.populationRate.Value = 0;
         UI.panel.spikesorting.showKilosort.Value = 0;
         UI.panel.spikesorting.showKlusta.Value = 0;
         UI.panel.spikesorting.showSpykingcircus.Value = 0;
+
+        UI.settings.useMetrics = false;
+        UI.panel.cell_metrics.useMetrics.Value = 0;
+        UI.settings.showEvents = false;
+        UI.settings.showTimeseries = false;
         UI.panel.timeseries.show.Value = 0;
+
+        UI.settings.showStates = false;
         UI.panel.states.showStates.Value = 0;
+        UI.settings.showBehavior = false;
         UI.panel.behavior.showBehavior.Value = 0;
+
+        UI.settings.intan_showAnalog = false;
+        UI.settings.intan_showAux = false;
+        UI.settings.intan_showDigital = false;
+        UI.settings.spectrogram.show = false;
+        
+        % Resetting Ephys data analysis
+        UI.settings.audioPlay = false;
+        UI.panel.audio.playAudio.Value = 0;
+        
+        UI.settings.instantaneousMetrics.show = false;
+        UI.settings.instantaneousMetrics.showPower = false;
+        UI.settings.instantaneousMetrics.showSignal = false;
+        UI.settings.instantaneousMetrics.showPhase = false;
+
+        UI.panel.instantaneousMetrics.showPower.Value = 0;
+        UI.panel.instantaneousMetrics.showSignal.Value = 0;
+        UI.panel.instantaneousMetrics.showPhase.Value = 0;
+
+        UI.settings.plotRMSnoiseInset = false;
+        UI.panel.RMSnoiseInset.showRMSnoiseInset.Value = 0;
+        
+        UI.settings.spectrogram.show = false;
+        UI.panel.spectrogram.showSpectrogram.Value = 0;
+        
+        UI.settings.CSD.show = false;
+        UI.panel.csd.showCSD.Value = 0;
+        
         UI.table.cells.Data = {};
         UI.listbox.cellTypes.String = {''};
         
@@ -5174,8 +5236,10 @@ end
             t_click = (t_click-max(UI.settings.channels_relative_offset(UI.channelOrder((t_click-UI.settings.channels_relative_offset(UI.channelOrder))>0))))*UI.settings.columns;
         end
         t_click = t_click+UI.t0;
-                
-        switch get(UI.fig, 'selectiontype')
+        selectiontype = get(UI.fig, 'selectiontype');
+
+        switch selectiontype
+
             case 'normal' % left mouse button                
                 
                 if UI.settings.addEventonClick == 1 % Adding new event
@@ -5183,6 +5247,7 @@ end
                     UI.elements.lower.performance.String = ['Event added: ',num2str(t_click),' sec'];
                     UI.settings.addEventonClick = 0;
                     uiresume(UI.fig);
+
                 elseif UI.settings.addEventonClick > 1 % Adding new interval
                     polygon1.coords = [polygon1.coords;t_click];
                     polygon1.counter = polygon1.counter +1;
@@ -5211,7 +5276,7 @@ end
                 end
                 
             case 'alt' % right mouse button
-                
+
                 % Removing/flagging events
                 if UI.settings.addEventonClick == 1 && ~isempty(data.events.(UI.settings.eventData).added)
                     idx3 = find(data.events.(UI.settings.eventData).added >= UI.t0 & data.events.(UI.settings.eventData).added <= UI.t0+UI.settings.windowDuration);
@@ -5227,6 +5292,7 @@ end
                         UI.settings.addEventonClick = 0;
                         uiresume(UI.fig);
                     end
+
                 elseif UI.settings.addEventonClick > 1 % Adding or delete interval
                     if polygon1.counter >= 2
                         polygon1.cleanExit = 1;
@@ -5237,7 +5303,9 @@ end
                 end
                 
             case 'extend' % middle mouse button
+
                 if UI.settings.addEventonClick > 1 % Adding new interval
+                    
                     if polygon1.counter > 1                        
                         polygon1.coords = polygon1.coords(1:end-1);
                         set(polygon1.handle(polygon1.counter),'Visible','off');
@@ -5248,14 +5316,29 @@ end
                         UI.settings.addEventonClick = 0;
                         set(UI.fig,'Pointer','arrow')
                         uiresume(UI.fig);
-                    end                
-                elseif UI.settings.normalClick
+                    end
+
+                elseif UI.settings.showSpikes && ~UI.settings.normalClick
+                    
+                    [~,In] = min(hypot((spikes_raster.x(:)-um_axes(1,1)),(spikes_raster.y(:)-um_axes(1,2))));
+                    UID = spikes_raster.UID(In);
+                    if ~isempty(UID)
+                        highlightUnits(UID,[]);
+                        [UI.selectedUnits,idxColors] = unique([UID,UI.selectedUnits],'stable');
+                        UI.selectedUnitsColors = [UI.colorLine(UI.iLine,:); UI.selectedUnitsColors];
+                        UI.selectedUnitsColors = UI.selectedUnitsColors(idxColors,:);
+                        UI.elements.lower.performance.String = ['Unit(s) selected: ',num2str(UI.selectedUnits)];
+                    end
+
+                else
+                    
                     channels = sort([UI.channels{UI.settings.electrodeGroupsToPlot}]);
                     x1 = (ones(size(ephys.traces(:,channels),2),1)*[1:size(ephys.traces(:,channels),1)]/size(ephys.traces(:,channels),1)*UI.settings.windowDuration/UI.settings.columns)'+UI.settings.channels_relative_offset(channels);
                     y1 = (ephys.traces(:,channels)-UI.channelOffset(channels));
                     [~,In] = min(hypot((x1(:)-um_axes(1,1)),(y1(:)-um_axes(1,2))));
                     In = unique(floor(In/size(x1,1)))+1;
                     In = channels(In);
+
                     if ismember(In,UI.selectedChannels)
                         idxColors = In==UI.selectedChannels;
                         UI.selectedChannels(idxColors) = [];
@@ -5269,6 +5352,7 @@ end
                         else
                             UI.elements.lower.performance.String = ['Removed channel ',num2str(In),'. Remaining selected channels: ',num2str(UI.selectedChannels)];
                         end
+
                     else
                         highlightTraces(In,[])
                         [UI.selectedChannels,idxColors] = unique([In,UI.selectedChannels],'stable');
@@ -5279,17 +5363,6 @@ end
                         else
                             UI.elements.lower.performance.String = ['Selected channels: ',num2str(UI.selectedChannels)];
                         end
-                    end
-                    
-                elseif UI.settings.showSpikes && ~UI.settings.normalClick
-                    [~,In] = min(hypot((spikes_raster.x(:)-um_axes(1,1)),(spikes_raster.y(:)-um_axes(1,2))));
-                    UID = spikes_raster.UID(In);
-                    if ~isempty(UID)
-                        highlightUnits(UID,[]);
-                        [UI.selectedUnits,idxColors] = unique([UID,UI.selectedUnits],'stable');
-                        UI.selectedUnitsColors = [UI.colorLine(UI.iLine,:); UI.selectedUnitsColors];
-                        UI.selectedUnitsColors = UI.selectedUnitsColors(idxColors,:);
-                        UI.elements.lower.performance.String = ['Unit(s) selected: ',num2str(UI.selectedUnits)];
                     end
                 end                
             case 'open'
@@ -7038,9 +7111,16 @@ end
         end
     end
     
-    function colorByChannels(~,~)
-        UI.settings.colorByChannels = ~UI.settings.colorByChannels;
-        if UI.settings.colorByChannels
+    function setColorGroups(src,~)
+        UI.menu.display.colorgroups.option(1).Checked = 'off';
+        UI.menu.display.colorgroups.option(2).Checked = 'off';
+        UI.menu.display.colorgroups.option(3).Checked = 'off';
+
+        if src.Position == 1
+            UI.menu.display.colorgroups.option(1).Checked = 'on';
+            UI.settings.colorByChannels = 1;
+            
+        elseif src.Position == 2
             prompt = {'Number of color groups (1-50)'};
             dlgtitle = 'Color groups';
             definput = {num2str(UI.settings.nColorGroups)};
@@ -7052,22 +7132,11 @@ end
                 if ~isempty(answer{1}) && rem(numeric_answer,1)==0 && numeric_answer > 0 && numeric_answer <= 50
                     UI.settings.nColorGroups = numeric_answer;
                 end
-                UI.menu.display.colorByChannels.Checked = 'on';
-                UI.menu.display.colorByChannels2.Checked = 'off';
-                UI.settings.colorByChannels2 = false;
-            else
-                UI.settings.colorByChannels = false;
-                UI.menu.display.colorByChannels.Checked = 'off';
+                UI.menu.display.colorgroups.option(src.Position).Checked = 'on';
+                UI.settings.colorByChannels = 2;
             end
-        else
-            UI.menu.display.colorByChannels.Checked = 'off';
-        end
-        uiresume(UI.fig);
-    end
-    
-    function colorByChannels2(~,~)
-        UI.settings.colorByChannels2 = ~UI.settings.colorByChannels2;
-        if UI.settings.colorByChannels2
+        
+        elseif src.Position == 3
             prompt = {'Number of channels per group (1-50)'};
             dlgtitle = 'Color groups';
             definput = {num2str(UI.settings.nColorGroups)};
@@ -7079,16 +7148,11 @@ end
                 if ~isempty(answer{1}) && rem(numeric_answer,1)==0 && numeric_answer > 0 && numeric_answer <= 50
                     UI.settings.nColorGroups = numeric_answer;
                 end
-                UI.menu.display.colorByChannels2.Checked = 'on';
-                UI.settings.colorByChannels = false;
-                UI.menu.display.colorByChannels.Checked = 'off';
-            else
-                UI.settings.colorByChannels2 = false;
-                UI.menu.display.colorByChannels2.Checked = 'off';
+                UI.menu.display.colorgroups.option(src.Position).Checked = 'on';
+                UI.settings.colorByChannels = 3;
             end
-        else
-            UI.menu.display.colorByChannels2.Checked = 'off';
         end
+        UI.menu.display.colorgroups.option(UI.settings.colorByChannels).Checked = 'on';
         uiresume(UI.fig);
     end
     
@@ -7228,30 +7292,32 @@ end
         %             UI.popupmenu.log.String = [UI.popupmenu.log.String;message2];
         %             UI.popupmenu.log.Value = length(UI.popupmenu.log.String);
         %         end
-        if exist('priority','var')
-            dialog1.Interpreter = 'none';
-            dialog1.WindowStyle = 'modal';
-            if any(priority < 0)
-                disp(message2)
-            end
-            if any(priority == 1)
-                disp(message)
-            end
-            if any(priority == 2) 
-                if UI.settings.allow_dialogs
-                    msgbox(message,'NeuroScope2',dialog1);
-                else
+        try
+            if exist('priority','var')
+                dialog1.Interpreter = 'none';
+                dialog1.WindowStyle = 'modal';
+                if any(priority < 0)
+                    disp(message2)
+                end
+                if any(priority == 1)
                     disp(message)
                 end
-            end
-            if any(priority == 3)
-                warning(message)
-            end
-            if any(priority == 4) 
-                if UI.settings.allow_dialogs
-                    warndlg(message,'NeuroScope2')
-                else
+                if any(priority == 2)
+                    if UI.settings.allow_dialogs
+                        msgbox(message,'NeuroScope2',dialog1);
+                    else
+                        disp(message)
+                    end
+                end
+                if any(priority == 3)
                     warning(message)
+                end
+                if any(priority == 4)
+                    if UI.settings.allow_dialogs
+                        warndlg(message,'NeuroScope2')
+                    else
+                        warning(message)
+                    end
                 end
             end
         end
