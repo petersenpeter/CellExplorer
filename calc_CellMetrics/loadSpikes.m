@@ -224,9 +224,9 @@ if parameters.forceReload
                 spike_amplitudes = readNPY(fullfile(clusteringpath_full, 'amplitudes.npy'));
             end
             spike_clusters = unique(spike_cluster_index);
-            filename1 = fullfile(clusteringpath_full,'cluster_group.tsv');
-            filename2 = fullfile(clusteringpath_full,'cluster_groups.csv');
-            filename3 = fullfile(clusteringpath_full,'cluster_KSLabel.tsv');
+            file_cluster_group_tsv = fullfile(clusteringpath_full,'cluster_group.tsv');
+            file_cluster_groups_csv = fullfile(clusteringpath_full,'cluster_groups.csv');
+            file_cluster_KSLabel_tsv = fullfile(clusteringpath_full,'cluster_KSLabel.tsv');
             if exist(fullfile(clusteringpath_full, 'cluster_ids.npy'),'file') && exist(fullfile(clusteringpath_full, 'shanks.npy'),'file') && exist(fullfile(clusteringpath_full, 'peak_channel.npy'),'file')
                 cluster_ids = readNPY(fullfile(clusteringpath_full, 'cluster_ids.npy'));
                 unit_shanks = readNPY(fullfile(clusteringpath_full, 'shanks.npy'));
@@ -244,21 +244,22 @@ if parameters.forceReload
             delimiter = '\t';
             startRow = 2;
             formatSpec = '%f%s%[^\n\r]';
-            if exist(filename1,'file')
+            if exist(file_cluster_group_tsv,'file')
                 % Verifying the file is not empty
-                fileID = fopen(filename1,'r');
+                fileID = fopen(file_cluster_group_tsv,'r');
                 dataArray = textscan(fileID, formatSpec, 'Delimiter', delimiter, 'HeaderLines' ,startRow-1, 'ReturnOnError', false);
                 fclose(fileID);
                 if isempty(dataArray{1})
-                    disp(['Noc clusters found in ', filename1,'. Will use the labels from KiloSort'])
-                    filename = filename3;
+                    disp(['Noc clusters found in ', file_cluster_group_tsv,'. Will use the labels from KiloSort'])
+                    filename = file_cluster_KSLabel_tsv;
                 else
-                    filename = filename1;
+                    filename = file_cluster_group_tsv;
                 end                    
-            elseif exist(filename2,'file')
-                filename = filename2;
-            elseif exist(filename3,'file')
-                filename = filename3;
+            elseif exist(file_cluster_groups_csv,'file')
+                filename = file_cluster_groups_csv;
+                delimiter = ',';
+            elseif exist(file_cluster_KSLabel_tsv,'file')
+                filename = file_cluster_KSLabel_tsv;
             else
                 error('Phy: No cluster group file found (cluster_group.tsv, cluster_groups.csv or cluster_KSLabel.tsv)')
             end
