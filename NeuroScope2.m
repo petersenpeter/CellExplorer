@@ -1968,7 +1968,7 @@ end
 
     function plotKilosortData(t1,t2,colorIn)
         % Plots spikes
-        idx = data.spikes_kilosort.spindices(:,1) > t1 & data.spikes_kilosort.spindices(:,1) < t2;
+        idx = data.spikes_kilosort.spindices(:,1) > t1 & data.spikes_kilosort.spindices(:,1) < t2 &  ismember(data.spikes_kilosort.spindices(:,3),UI.channelOrder);
         if any(idx)
             raster = [];
             raster.x = data.spikes_kilosort.spindices(idx,1)-t1;
@@ -1978,7 +1978,7 @@ end
                 raster.y = (diff(UI.dataRange.kilosort))*(sortIdx(data.spikes_kilosort.spindices(idx,2))/(data.spikes_kilosort.numcells))+UI.dataRange.kilosort(1);
                 text(1/400,UI.dataRange.kilosort(2),'Kilosort','color',colorIn,'FontWeight', 'Bold','BackgroundColor',UI.settings.textBackground, 'HitTest','off','VerticalAlignment', 'top')
             else
-                idx3 = sub2ind(size(ephys.traces),idx2,data.spikes_kilosort.maxWaveformCh1(data.spikes_kilosort.spindices(idx,2))');
+                idx3 = sub2ind(size(ephys.traces),idx2,data.spikes_kilosort.spindices(idx,3));
                 raster.y = ephys.traces(idx3)-UI.channelScaling(idx3);
             end
             line(raster.x, raster.y,'Marker','o','LineStyle','none','color',colorIn, 'HitTest','off','linewidth',UI.settings.spikeRasterLinewidth);
@@ -3053,7 +3053,12 @@ end
                 % playAudioWithTrace
                 if UI.settings.audioPlay && n_streaming == 0
                     samples = 1:round(UI.settings.replayRefreshInterval*ephys.nSamples);
-                    deviceWriter(UI.settings.audioGain*ephys.traces(samples,UI.settings.audioChannels)); 
+                    if all(ismember(UI.settings.audioChannels,UI.channelOrder))
+                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,UI.settings.audioChannels)); 
+                    elseif sum(ismember(UI.settings.audioChannels,UI.channelOrder))>0 && length(UI.settings.audioChannels)==2
+                        audioChannels = UI.settings.audioChannels(ismember(UI.settings.audioChannels,UI.channelOrder));
+                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,[audioChannels,audioChannels])); 
+                    end
                 end
                 
                 if UI.settings.playAudioFirst
@@ -3063,7 +3068,12 @@ end
                 % playAudioWithTrace
                 if UI.settings.audioPlay
                     samples = 1:round(replayRefreshInterval*ephys.nSamples);
-                    deviceWriter(UI.settings.audioGain*ephys.traces(samples,UI.settings.audioChannels));
+                    if all(ismember(UI.settings.audioChannels,UI.channelOrder))
+                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,UI.settings.audioChannels)); 
+                    elseif sum(ismember(UI.settings.audioChannels,UI.channelOrder))>0 && length(UI.settings.audioChannels)==2
+                        audioChannels = UI.settings.audioChannels(ismember(UI.settings.audioChannels,UI.channelOrder));
+                        deviceWriter(UI.settings.audioGain*ephys.traces(samples,[audioChannels,audioChannels])); 
+                    end
                     UI.settings.deviceWriterActive = true;
                     n_streaming = n_streaming+1;
                 end
@@ -3071,7 +3081,8 @@ end
                 plotData
                 
                 if UI.settings.audioPlay
-                    highlightTraces(UI.settings.audioChannels,UI.settings.primaryColor);
+                    audioChannels = UI.settings.audioChannels(ismember(UI.settings.audioChannels,UI.channelOrder));
+                    highlightTraces(audioChannels,UI.settings.primaryColor);
                 end
 
                 % Updating UI text and slider
@@ -6712,6 +6723,8 @@ end
                 end
                 spikes.numcells = numel(spikes.times);
                 spikes.spindices = generateSpinDices(spikes.times);
+                spikes.spindices(:,3) = spikes.maxWaveformCh1(spikes.spindices(:,2));
+                
                 data.spikes_kilosort = spikes;
                 UI.settings.showKilosort = true;
                 uiresume(UI.fig);
