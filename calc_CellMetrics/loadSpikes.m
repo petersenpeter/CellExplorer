@@ -922,7 +922,7 @@ if parameters.forceReload
     
     % Getting waveforms from dat (raw data)
     if parameters.getWaveformsFromDat && ~strcmpi(format,'allensdk')
-        spikes = getWaveformsFromDat(spikes,session,'showWaveforms',parameters.showWaveforms);
+        spikes = getWaveformsFromDat(spikes,session,'showWaveforms',parameters.showWaveforms,'saveMat', parameters.saveMat);
     end
     
     % Attaching info about how the spikes structure was generated
