@@ -12,7 +12,6 @@ function [session,noiseLevel] = getBadChannelsFromDat(session,varargin)
 p = inputParser;
 addParameter(p,'nPull',1000, @isnumeric); % number of sample windows to pull out (default: 1000)
 addParameter(p,'wfWin_sec', 0.005, @isnumeric); % Larger size of waveform windows for filterning. total width in seconds (default: 0.004)
-addParameter(p,'showWaveforms', true, @islogical);
 addParameter(p,'filtFreq',[500,8000], @isnumeric); % Band pass filter (default: 500Hz - 8000Hz)
 addParameter(p,'showFig', false, @islogical); % Show figure
 addParameter(p,'saveFig', false, @islogical); % Save figure with data
@@ -22,16 +21,7 @@ addParameter(p,'noiseRangeThreshold', 10, @isnumeric); % Noise threshold in uV. 
 addParameter(p,'saveMat',true,@islogical);
 parse(p,varargin{:})
 
-nPull = p.Results.nPull;
-wfWin_sec = p.Results.wfWin_sec;
-showWaveforms = p.Results.showWaveforms;
-filtFreq = p.Results.filtFreq;
-saveFig = p.Results.saveFig;
-extraLabel  = p.Results.extraLabel;
-noiseStdThreshold  = p.Results.noiseStdThreshold;
-noiseRangeThreshold  = p.Results.noiseRangeThreshold;
-showFig = p.Results.showFig;
-saveMat = p.Results.saveMat;
+params = p.Results;
 
 % Loading session struct into separate parameters
 basepath = session.general.basePath;
@@ -67,9 +57,9 @@ if ~isempty(session) && isfield(session,'channelTags') && isfield(session.channe
     badChannels = unique(badChannels);
 end
 
-[b1, a1] = butter(3, filtFreq/sr*2, 'bandpass');
+[b1, a1] = butter(3, params.filtFreq/sr*2, 'bandpass');
 
-wfWin = round((wfWin_sec * sr)/2);
+wfWin = round((params.wfWin_sec * sr)/2);
 if ~exist(fullfile(basepath,fileNameRaw),'file')
     error(['Binary file missing: ', fullfile(basepath,fileNameRaw)])
 end
@@ -81,7 +71,7 @@ rawData = memmapfile(fullfile(basepath,fileNameRaw),'Format',precision,'writable
 % Fit exponential
 g = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c'});
 
-spkTmp = wfWin_sec/1.8 + rand(nPull,1)*(duration-2*wfWin_sec/1.8);
+spkTmp = params.wfWin_sec/1.8 + rand(params.nPull,1)*(duration-2*params.wfWin_sec/1.8);
 
 spkTmp = round(sr * spkTmp(:));
 % Pulls the waveforms from all channels from the dat
@@ -100,22 +90,24 @@ wf2 = mean(wf,3);
 wfF_mean = mean(wfF,3)';
 wfF_std = std(wfF,0,3)';
 
-time = ([-ceil(wfWin_sec/2*sr)*(1/sr):1/sr:(ceil(wfWin_sec/2*sr)-1)*(1/sr)])*1000;
+time = ([-ceil(params.wfWin_sec/2*sr)*(1/sr):1/sr:(ceil(params.wfWin_sec/2*sr)-1)*(1/sr)])*1000;
 
 wfF_std2 = mean(wfF_std);
 wfF_range = range(wfF_mean);
-newBadChannels = find(wfF_std2 > noiseStdThreshold);
-newBadChannels2 = find(wfF_range > noiseRangeThreshold);
+newBadChannels = find(wfF_std2 > params.noiseStdThreshold);
+newBadChannels2 = find(wfF_range > params.noiseRangeThreshold);
 newBadChannels = unique([newBadChannels,newBadChannels2]);
 session.channelTags.Bad.channels = unique([badChannels,newBadChannels]);
 
+
+noiseLevel.std = wfF_std2';
+noiseLevel.range = wfF_range';
+noiseLevel.units = 'uV';
+noiseLevel.metric = 'std';
+noiseLevel.channel = [1:numel(wfF_std2)]';
+
 % Saving noiselevel to mat file
-if saveMat
-    noiseLevel.std = wfF_std2';
-    noiseLevel.range = wfF_range';
-    noiseLevel.units = 'uV';
-    noiseLevel.metric = 'std';
-    noiseLevel.channel = [1:numel(wfF_std2)]';
+if params.saveMat
     noiseLevel.processinginfo.function = 'getBadChannelsFromDat';
     noiseLevel.processinginfo.date = now;
     noiseLevel.processinginfo.version = 1;
@@ -127,8 +119,8 @@ if saveMat
 end
 
 % Plots
-if showFig
-    fig1 = figure('name',[basename,' ',extraLabel]);
+if params.showFig
+    fig1 = figure('name',[basename,' ',params.extraLabel]);
     subplot(3,2,1)
     plot(time,wfF_mean), ylabel('Mean (uV)')
     if ~isempty(badChannels); title(['Existing bad channels: ' num2str(badChannels)]); else; title('No existing bad channels'); end
@@ -143,7 +135,7 @@ if showFig
     plot(noiseLevel.range,noiseLevel.std,'.b'), xlabel('range of mean'), ylabel('mean of std'), hold on
     plot(noiseLevel.range(badChannels),noiseLevel.std(badChannels),'or')
     plot(noiseLevel.range(newBadChannels),noiseLevel.std(newBadChannels),'xr')
-    if saveFig && ishandle(fig1)
+    if params.saveFig && ishandle(fig1)
         % Saving figure
         saveFig1.path = 1; saveFig1.fileFormat = 1; saveFig1.save = 1;
         ce_savefigure(fig1,basepath,[basename, '.getBadChannelsFromDat'],0,saveFig1)
