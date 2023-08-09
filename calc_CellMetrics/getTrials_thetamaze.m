@@ -9,7 +9,7 @@ function circular_track = getTrials_thetamaze(circular_track, maze, plots)
 %
 % maze : maza parameters
 %
-% plots : show summary plot? 
+% plots : show summary plot?
 %
 % circular_track - Added fields:
 %    .trials.alternation.start
@@ -19,7 +19,7 @@ function circular_track = getTrials_thetamaze(circular_track, maze, plots)
 %    .trials.alternation.stateName
 %
 %    .states.left_right
-%    .states.error 
+%    .states.error
 %    .stateNames.left_right
 %    .stateNames.error
 
@@ -27,7 +27,7 @@ if nargin < 3
     plots = 1;
 end
 if ~isfield(circular_track,'nSamples')
-	circular_track.nSamples = numel(circular_track.timestamps);
+    circular_track.nSamples = numel(circular_track.timestamps);
 end
 
 % Determining polar coordinates (angle in radians, distance from the
@@ -43,24 +43,24 @@ disp('Defining trials for the behavior')
 % Determining spatial limits
 
 % Onset of central arm
-central_arm_onset = find(diff(circular_track.position.y > maze.pos_y_limits(1))==1 ... % Delimited by x-delimiter (+/-5), lower y-delimiter, and negative y-coord
-    & circular_track.position.x(1:end-1) < maze.pos_x_limits(2)-5 ...
-    & circular_track.position.x(1:end-1) > maze.pos_x_limits(1)+5 ...
+central_arm_onset = find(diff(circular_track.position.y > maze.pos_y_limits(1))==1 ... % Delimited by x-delimiter (+/-0), lower y-delimiter, and negative y-coord
+    & circular_track.position.x(1:end-1) < maze.pos_x_limits(2) ...
+    & circular_track.position.x(1:end-1) > maze.pos_x_limits(1) ...
     & circular_track.position.y(1:end-1) < 0);
 
 % End of central arm
-central_arm_end = find(diff(circular_track.position.polar_rho > maze.pos_y_limits(2))==1 ... % Delimited by x-delimiterm (+/-5), upper y-delimiter, and positive y-coord
-    & circular_track.position.x(1:end-1) < maze.pos_x_limits(2)-5 ...
-    & circular_track.position.x(1:end-1) > maze.pos_x_limits(1)+5 ...
+central_arm_end = find(diff(circular_track.position.polar_rho > maze.pos_y_limits(2))==1 ... % Delimited by x-delimiterm (+/-0), upper y-delimiter, and positive y-coord
+    & circular_track.position.x(1:end-1) < maze.pos_x_limits(2) ...
+    & circular_track.position.x(1:end-1) > maze.pos_x_limits(1) ...
     & circular_track.position.y(1:end-1) > 0);
 
 % Start of left arm
-left_rim_onset = find(diff(circular_track.position.x < maze.pos_x_limits(1)-5)==1 ... % Delimited by upper left delimiter (-5/-10)
-    & circular_track.position.y(1:end-1) > maze.pos_y_limits(2)-10);
+left_rim_onset = find(diff(circular_track.position.x < maze.pos_x_limits(1)-5)==1 ... % Delimited by upper left delimiter (-5/0)
+    & circular_track.position.y(1:end-1) > maze.pos_y_limits(2));
 
 % Start of right arm
-right_rim_onset = find(diff(circular_track.position.x > maze.pos_x_limits(2)+5)==1 ... % Delimited by upper right delimiter (+5/-10)
-    & circular_track.position.y(1:end-1) > maze.pos_y_limits(2)-10);
+right_rim_onset = find(diff(circular_track.position.x > maze.pos_x_limits(2)+5)==1 ... % Delimited by upper right delimiter (+5/0)
+    & circular_track.position.y(1:end-1) > maze.pos_y_limits(2));
 
 % End of left rim
 left_rim_end = find(diff(circular_track.position.polar_theta < -maze.polar_theta_limits(2))==1 ... % Delimited by linearised track left delimiter, abs(x-coord) = 10, and distance delimiter -5
@@ -72,21 +72,21 @@ right_rim_end = find(diff(circular_track.position.polar_theta > maze.polar_theta
     & abs(circular_track.position.x(1:end-1)) > 10 ...
     & circular_track.position.polar_rho(1:end-1) > maze.polar_rho_limits(1)-5);
 
-% All 
+% All
 pos7home = sort([left_rim_end,right_rim_end]);
 
 central_arm_end(find(diff(central_arm_end)<circular_track.sr)+1) = []; % Exclude trials shorter than a second (a precaution?)
 
 if plots == 1
     disp('Plotting position')
-    
+
     figure
-    
+
     plot(circular_track.position.x,circular_track.position.y,'color',[0.5 0.5 0.5]), hold on
     plot([-10,10],maze.pos_y_limits(1)*[1,1],'k') % Onset of central arm
     plot([-10,10],maze.pos_y_limits(2)*[1,1],'k') % End of central arm
-    plot([1,1]*maze.pos_x_limits(1)-5,maze.pos_y_limits(2)+[-10,20],'k') 
-    plot([1,1]*maze.pos_x_limits(2)+5,maze.pos_y_limits(2)+[-10,20],'k')
+    plot([1,1]*maze.pos_x_limits(1)-5,maze.pos_y_limits(2)+[0,30],'k')
+    plot([1,1]*maze.pos_x_limits(2)+5,maze.pos_y_limits(2)+[0,30],'k')
     [y1,x1] = pol2cart(maze.polar_theta_limits(2)/maze.radius_in,maze.polar_rho_limits(1)-5);
     [y2,x2] = pol2cart(maze.polar_theta_limits(2)/maze.radius_in,maze.polar_rho_limits(2));
     plot([x1,x2],[y1,y2],'-k')
@@ -139,7 +139,7 @@ for j = 1:length(central_arm_end)
                     circular_track.states.left_right(i) = 1;
                     if sum(ismember(right_rim_onset,trials.start(i):trials.end(i)))
                         circular_track.states.error(i) = true;
-                        else
+                    else
                         circular_track.states.error(i) = false;
                     end
                 elseif sum(ismember(right_rim_end,trials.end(i)))
@@ -159,9 +159,16 @@ for j = 1:length(central_arm_end)
 end
 
 % Changning from units of samples to units of time
-trials.start = circular_track.timestamps(trials.start);
-trials.end = circular_track.timestamps(trials.end);
-trials.nTrials = numel(trials.start);
+if isempty(trials.end)
+    trials.start = [];
+    trials.end = [];
+    trials.nTrials = 0;
+    plots = 0;
+else
+    trials.start = circular_track.timestamps(trials.start);
+    trials.end = circular_track.timestamps(trials.end);
+    trials.nTrials = numel(trials.start);
+end
 
 trials.stateName = 'Alternative running on track';
 
@@ -170,22 +177,22 @@ circular_track.trials.alternation = trials;
 
 if plots == 1
     figure,
-    
+
     subplot(1,2,1)
     plot(circular_track.timestamps-circular_track.timestamps(1),trials.trials,'.k','linewidth',2), xlabel('Time (sec)'), ylabel('Trials')
-    
+
     subplot(3,2,2)
     stairs(circular_track.timestamps-circular_track.timestamps(1),trials.states,'.-k','linewidth',1), xlabel('Time (sec)'), ylabel('Trial')
-    
+
     subplot(3,2,4)
-    stairs(circular_track.states.left_right,'.-b','linewidth',1), xlabel('Trials'), ylabel('Left/Right'), 
+    stairs(circular_track.states.left_right,'.-b','linewidth',1), xlabel('Trials'), ylabel('Left/Right'),
     yticks(1:numel(circular_track.stateNames.left_right)), yticklabels(circular_track.stateNames.left_right)
-    
+
     subplot(3,2,6)
     stairs(circular_track.states.error,'.-k','linewidth',1), xlabel('Trials'), ylabel('Errors')
-    
+
     figure
-    
+
     subplot(1,2,1)
     plot(circular_track.position.x,circular_track.position.y,'.k','markersize',2), hold on
     idx_left = ismember(trials.trials, find(circular_track.states.left_right==1));
