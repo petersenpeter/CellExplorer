@@ -167,7 +167,11 @@ if parameters.forceReload
         end
     end
 
-    clusteringpath_full = fullfile(basepath,clusteringpath);
+    if isempty(fileparts(clusteringpath)) % check if "clusteringpath" is already a full directory
+        clusteringpath_full = fullfile(basepath,clusteringpath);
+    else
+        clusteringpath_full = clusteringpath;
+    end
 
     % If the least significant bit is not defined, a default value will be used
     if ~isfield(session,'extracellular') || ~isfield(session.extracellular,'leastSignificantBit') || session.extracellular.leastSignificantBit == 0
