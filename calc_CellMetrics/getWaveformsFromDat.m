@@ -46,6 +46,11 @@ if isfield(session.extracellular,'fileName') && ~isempty(session.extracellular.f
 else
     fileNameRaw = [basename '.dat'];
 end
+if isempty(fileparts(fileNameRaw)) % this is not the full directory
+    datFile = fullfile(basepath,fileNameRaw);
+else
+    datFile = fileNameRaw;
+end
 try
     precision = session.extracellular.precision;
 catch
@@ -107,13 +112,13 @@ wfWin = round((wfWin_sec * sr)/2);
 window_interval = wfWin-ceil(wfWinKeep*sr):wfWin-1+ceil(wfWinKeep*sr); % +- 0.8 ms of waveform
 window_interval2 = wfWin-ceil(1.5*wfWinKeep*sr):wfWin-1+ceil(1.5*wfWinKeep*sr); % +- 1.20 ms of waveform
 t1 = toc(timerVal);
-if ~exist(fullfile(basepath,fileNameRaw),'file')
-    error(['Binary file missing: ', fullfile(basepath,fileNameRaw)])
+if ~exist(datFile,'file')
+    error(['Binary file missing: ', datFile])
 end
-s = dir(fullfile(basepath,fileNameRaw));
+s = dir(datFile);
 
 duration = s.bytes/(2*nChannels*sr);
-rawData = memmapfile(fullfile(basepath,fileNameRaw),'Format',precision,'writable',false);
+rawData = memmapfile(datFile,'Format',precision,'writable',false);
 % DATA = rawData.Data;
 
 % Fit exponential
