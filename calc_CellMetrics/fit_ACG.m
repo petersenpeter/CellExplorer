@@ -10,7 +10,6 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
         plots = true;
     end
     
-    
     % acg_narrow = cell_metrics.acg.narrow;
     acg_narrow(100:102) = 0; % Sets the time-zero bin to zero (-0.5ms -> 0.5ms)
     offset = 101;
@@ -60,7 +59,6 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
                 fit_params(:,j) = coeffvalues(f0);
                 rsquare(j) = gof.rsquare;
                 
-                
                 a = fit_params(1);
                 b = fit_params(2);
                 c = fit_params(3);
@@ -72,7 +70,7 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
                 x_fit = ([1:0.1:100]/2)';
                 fiteqn = max(c*(exp(-(x_fit-f)/a)-d*exp(-(x_fit-f)/b))+h*exp(-(x_fit-f)/g)+e,0);
                 figure(3), clf
-                plot(x,ydata), hold on
+                plot(x,acg_narrow(x*2+offset,j)), hold on
                 plot(x_fit,fiteqn),
                 text(0.5,0.5,num2str(fit_params),'Units','normalized')
             end
