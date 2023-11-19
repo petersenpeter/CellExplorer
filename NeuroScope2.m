@@ -2123,13 +2123,15 @@ end
             % Plotting event intervals
             if UI.settings.showEventsIntervals
                 statesData = data.events.(eventName).timestamps(idx,:)-t1;
-                p1 = patch(double([statesData,flip(statesData,2)])',[ydata2(1);ydata2(1);ydata2(2);ydata2(2)]*ones(1,size(statesData,1)),'g','EdgeColor','g','HitTest','off');
-                alpha(p1,0.1);
-                % Duration text
-                idx_center = find(data.events.(eventName).time == t1+UI.settings.windowDuration/2);
-                if ~isempty(idx_center)
-                    if isfield(data.events.(eventName),'timestamps')
-                        spec_text = [spec_text;['Duration: ', num2str(diff(data.events.(eventName).timestamps(idx_center,:))),' sec']];
+                if ~isempty(statesData)
+                    p1 = patch(double([statesData,flip(statesData,2)])',[ydata2(1);ydata2(1);ydata2(2);ydata2(2)]*ones(1,size(statesData,1)),'g','EdgeColor','g','HitTest','off');
+                    alpha(p1,0.1);
+                    % Duration text
+                    idx_center = find(data.events.(eventName).time == t1+UI.settings.windowDuration/2);
+                    if ~isempty(idx_center)
+                        if isfield(data.events.(eventName),'timestamps')
+                            spec_text = [spec_text;['Duration: ', num2str(diff(data.events.(eventName).timestamps(idx_center,:))),' sec']];
+                        end
                     end
                 end
             end
@@ -6554,6 +6556,24 @@ end
                 out = analysis_tools.timeseries.(function1)('ephys',ephys,'UI',UI,'data',data);
             case 'traces'
                 out = analysis_tools.traces.(function1)('ephys',ephys,'UI',UI,'data',data);
+        end
+        if ~isempty(out) && isfield(out,'refresh') && isfield(out.refresh, 'events') && out.refresh.events
+            % Detecting CellExplorer/Buzcode files
+            UI.data.detectecFiles = detectCellExplorerFiles(UI.data.basepath,UI.data.basename);
+
+            % Events: basename.*.events.mat
+            updateEventsDataList
+
+            out.refresh.events = false;
+
+        elseif ~isempty(out) && isfield(out,'refresh') && isfield(out.refresh, 'timeseries') && out.refresh.timeseries
+            % Detecting CellExplorer/Buzcode files
+            UI.data.detectecFiles = detectCellExplorerFiles(UI.data.basepath,UI.data.basename);
+
+            % Timeseries: basename.*.timeseries.mat
+            updateTimeSeriesDataList2
+
+            out.refresh.timeseries = false;
         end
     end
     
