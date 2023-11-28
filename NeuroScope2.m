@@ -6557,11 +6557,13 @@ end
             case 'traces'
                 out = analysis_tools.traces.(function1)('ephys',ephys,'UI',UI,'data',data);
         end
+
+        % Checking if any actions should be performed after the analysis is complete
         if ~isempty(out) && isfield(out,'refresh') && isfield(out.refresh, 'events') && out.refresh.events
             % Detecting CellExplorer/Buzcode files
             UI.data.detectecFiles = detectCellExplorerFiles(UI.data.basepath,UI.data.basename);
 
-            % Events: basename.*.events.mat
+            % Refreshing events: basename.*.events.mat
             updateEventsDataList
 
             out.refresh.events = false;
@@ -6570,10 +6572,17 @@ end
             % Detecting CellExplorer/Buzcode files
             UI.data.detectecFiles = detectCellExplorerFiles(UI.data.basepath,UI.data.basename);
 
-            % Timeseries: basename.*.timeseries.mat
+            % Refreshing timeseries: basename.*.timeseries.mat
             updateTimeSeriesDataList2
 
             out.refresh.timeseries = false;
+
+        elseif ~isempty(out) && isfield(out,'refresh') && isfield(out.refresh, 'spikes') && out.refresh.spikes
+            % Detecting CellExplorer/Buzcode files
+            data = rmfield(data,'spikes');
+            toggleSpikes
+
+            out.refresh.spikes = false;
         end
     end
     
