@@ -239,6 +239,7 @@ end
         UI.settings.showKilosort = false;
         UI.settings.showKlusta = false;
         UI.settings.showSpykingcircus = false;
+        UI.settings.reverseSpikeSorting = 'ascend'; % 'ascend' or 'descend'
         
         % Cell metrics
         UI.settings.useMetrics = false;
@@ -535,6 +536,7 @@ end
         
         UI.panel.spikes.showSpikeMatrix = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Show matrix', 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.45 0.15],'Callback',@showSpikeMatrix,'HorizontalAlignment','left');
         %UI.panel.spikes.setSpikesGroupColors = uicontrol('Parent',UI.panel.spikes.main,'Style', 'popup', 'String', {'UID','Single color','Electrode groups'}, 'Units','normalized', 'Position', [0.35 0.60 0.64 0.16],'HorizontalAlignment','left','Enable','off','Callback',@setSpikesGroupColors);
+        UI.panel.spikes.reverseSpikeSorting = uicontrol('Parent',UI.panel.spikes.main,'Style', 'checkbox','String','Reverse spike sorting', 'value', 0, 'Units','normalized', 'Position', [0.51 0.01 0.50 0.14],'Callback',@reverseSpikeSorting,'HorizontalAlignment','left','tooltip','Reverse sorting of spike rasters below ephys traces');
         
         % Cell metrics
         UI.panel.cell_metrics.main = uipanel('Parent',UI.panel.spikedata.main,'title','Cell metrics (*.cell_metrics.cellinfo.mat)');
@@ -1531,10 +1533,18 @@ end
                     spikes_raster.y = (diff(UI.dataRange.spikes))*((data.spikes.spindices(spin_idx,3)-UI.settings.spikes_ylim(1))/diff(UI.settings.spikes_ylim))+UI.dataRange.spikes(1)+0.004;
                 else
                     if UI.settings.useMetrics
-                        [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric));
-                        [~,sortIdx] = sort(sortIdx);
+                        if iscell(data.cell_metrics.(UI.params.sortingMetric))
+                            [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric));
+                            if strcmp(UI.settings.reverseSpikeSorting,'descend')
+                                sortIdx = flipud(fliplr(sortIdx));
+                            end
+                            [~,sortIdx] = sort(sortIdx);
+                        else
+                            [~,sortIdx] = sort(data.cell_metrics.(UI.params.sortingMetric),UI.settings.reverseSpikeSorting);
+                            [~,sortIdx] = sort(sortIdx);
+                        end
                     else
-                        sortIdx = 1:data.spikes.numcells;
+                        sortIdx = sort(1:data.spikes.numcells,UI.settings.reverseSpikeSorting);
                     end
                     spikes_raster.y = (diff(UI.dataRange.spikes))*(sortIdx(data.spikes.spindices(spin_idx,2))/(data.spikes.numcells))+UI.dataRange.spikes(1)+0.004;
                 end
@@ -2123,13 +2133,15 @@ end
             % Plotting event intervals
             if UI.settings.showEventsIntervals
                 statesData = data.events.(eventName).timestamps(idx,:)-t1;
-                p1 = patch(double([statesData,flip(statesData,2)])',[ydata2(1);ydata2(1);ydata2(2);ydata2(2)]*ones(1,size(statesData,1)),'g','EdgeColor','g','HitTest','off');
-                alpha(p1,0.1);
-                % Duration text
-                idx_center = find(data.events.(eventName).time == t1+UI.settings.windowDuration/2);
-                if ~isempty(idx_center)
-                    if isfield(data.events.(eventName),'timestamps')
-                        spec_text = [spec_text;['Duration: ', num2str(diff(data.events.(eventName).timestamps(idx_center,:))),' sec']];
+                if ~isempty(statesData)
+                    p1 = patch(double([statesData,flip(statesData,2)])',[ydata2(1);ydata2(1);ydata2(2);ydata2(2)]*ones(1,size(statesData,1)),'g','EdgeColor','g','HitTest','off');
+                    alpha(p1,0.1);
+                    % Duration text
+                    idx_center = find(data.events.(eventName).time == t1+UI.settings.windowDuration/2);
+                    if ~isempty(idx_center)
+                        if isfield(data.events.(eventName),'timestamps')
+                            spec_text = [spec_text;['Duration: ', num2str(diff(data.events.(eventName).timestamps(idx_center,:))),' sec']];
+                        end
                     end
                 end
             end
@@ -4523,6 +4535,16 @@ end
         uiresume(UI.fig);
     end
 
+    function reverseSpikeSorting(~,~)
+        if UI.panel.spikes.reverseSpikeSorting.Value == 1
+            UI.settings.reverseSpikeSorting = 'descend';
+        else
+            UI.settings.reverseSpikeSorting = 'ascend';
+        end
+        setSpikesYData
+        uiresume(UI.fig);
+    end
+
     function showSpikesBelowTrace(~,~)
         if UI.panel.spikes.showSpikesBelowTrace.Value == 1
             UI.settings.spikesBelowTrace = true;
@@ -4539,7 +4561,7 @@ end
         end
         initTraces
         uiresume(UI.fig);
-    end
+    end    
     
     function setSpikesGroupColors(~,~)
         UI.settings.spikesGroupColors = UI.panel.spikes.setSpikesGroupColors.Value;
@@ -4555,7 +4577,7 @@ end
                 switch UI.settings.spikesYDataType{UI.panel.spikes.setSpikesYData.Value}
                     case 'double'
                         if length(data.spikes.(UI.settings.spikesYData)) == data.spikes.numcells
-                            [~,order1] = sort(data.spikes.(UI.settings.spikesYData),'descend');
+                            [~,order1] = sort(data.spikes.(UI.settings.spikesYData),UI.settings.reverseSpikeSorting);
                             [~,order2] = sort(order1);
                             for i = 1:numel(data.spikes.(UI.settings.spikesYData))
                                 groups = [groups,order2(i)*ones(1,data.spikes.total(i))]; % from cell to array
@@ -6575,6 +6597,33 @@ end
                 out = analysis_tools.timeseries.(function1)('ephys',ephys,'UI',UI,'data',data);
             case 'traces'
                 out = analysis_tools.traces.(function1)('ephys',ephys,'UI',UI,'data',data);
+        end
+
+        % Checking if any actions should be performed after the analysis is complete
+        if ~isempty(out) && isfield(out,'refresh') && isfield(out.refresh, 'events') && out.refresh.events
+            % Detecting CellExplorer/Buzcode files
+            UI.data.detectecFiles = detectCellExplorerFiles(UI.data.basepath,UI.data.basename);
+
+            % Refreshing events: basename.*.events.mat
+            updateEventsDataList
+
+            out.refresh.events = false;
+
+        elseif ~isempty(out) && isfield(out,'refresh') && isfield(out.refresh, 'timeseries') && out.refresh.timeseries
+            % Detecting CellExplorer/Buzcode files
+            UI.data.detectecFiles = detectCellExplorerFiles(UI.data.basepath,UI.data.basename);
+
+            % Refreshing timeseries: basename.*.timeseries.mat
+            updateTimeSeriesDataList2
+
+            out.refresh.timeseries = false;
+
+        elseif ~isempty(out) && isfield(out,'refresh') && isfield(out.refresh, 'spikes') && out.refresh.spikes
+            % Detecting CellExplorer/Buzcode files
+            data = rmfield(data,'spikes');
+            toggleSpikes
+
+            out.refresh.spikes = false;
         end
     end
     
