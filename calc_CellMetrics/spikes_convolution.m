@@ -22,12 +22,12 @@ end
 
 % Generating continues representation of the raster actvity
 time_bins = 0:stepsize:ceil(max(spikes.spindices(:,1)));
-spikes_presentation = zeros(spikes.numcells,numel(time_bins));
+spikes_presentation = zeros(numel(time_bins),spikes.numcells);
 
 for i = 1:spikes.numcells
     idx = round(spikes.times{i}/stepsize);
-    spikes_presentation(i,idx) = 1;
+    spikes_presentation(idx,i) = 1;
     
     % Convoluting the spike times with a n points gaussian convolution
-    spikes_presentation(i,:) = nanconv(spikes_presentation(i,:),gausswin(convolution_points)'/sum(gausswin(convolution_points)),'edge');
+    spikes_presentation(:,i) = nanconv(spikes_presentation(:,i),gausswin(convolution_points)/sum(gausswin(convolution_points)),'edge');
 end

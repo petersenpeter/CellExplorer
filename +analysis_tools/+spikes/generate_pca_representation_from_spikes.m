@@ -28,6 +28,7 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
     save_n_coefficients = 3; % Number of PCA coefficients to save
     variable_name = 'pca_coeffs'; % Variable name
     calculate_spikes_PCA_phases = false;
+    unit_normalization = 'none'; % none, zscore, by max values
 
     content.title = 'Generate PCA representation from spikes'; % dialog title
     content.columns = 1; % 1 or 2 columns
@@ -71,9 +72,11 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
         disp('Convoluting spikes')
         [spikes_presentation,time_bins] = spikes_convolution(data.spikes,convolution_stepsize, convolution_points);
 
+        % Normalization
+
         % PCA reduction
         disp('Calculating PCA coefficients')
-        [coeff,score,~,~,explained,~] = pca(spikes_presentation);
+        [~,score,~,~,explained,~] = pca(spikes_presentation);
         % coeff : principal component coefficients, also known as loadings
         % score : principal component scores
         % latent : the principal component variances
@@ -90,12 +93,11 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
         % Saving time series file (basename.variable_name.timeseries.mat)
         disp('Saving PCA coefficients')
         pca_coeffs = {};
-        pca_coeffs.data = coeff(:,1:save_n_coefficients);
+        pca_coeffs.data = score(:,1:save_n_coefficients);
         pca_coeffs.timestamps = time_bins;
         pca_coeffs.sr = convolution_stepsize;
 
         saveStruct(pca_coeffs,'timeseries','session',data.session,'dataName',variable_name);
-
 
         %% Creating units by phase
         % Determining sorting by comparing the smoothed unit rates with the first/second PCA
@@ -104,17 +106,17 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
             disp('Calculating  spikes PCA phases')
             offset = [];
             for j = 1:spikes.numcells
-                [r,lags] = xcorr(spikes_presentation(j,:)',coeff(:,1),500);
+                [r,lags] = xcorr(spikes_presentation(:,j),score(:,1),500);
                 [~,offset(j)] = max(r);
             end
             [~,sorting] = sort(offset);
             [~,sorting2] = sort(sorting);
             spikes.phase_of_PCA_1 = sorting2;
 
-            if size(coeff,2)>1
+            if size(score,2)>1
                 offset = [];
                 for j = 1:spikes.numcells
-                    [r,lags] = xcorr(spikes_presentation(j,:)',coeff(:,2),500);
+                    [r,lags] = xcorr(spikes_presentation(:,j),score(:,2),500);
                     [~,offset(j)] = max(r);
                 end
                 [~,sorting] = sort(offset);
@@ -122,10 +124,10 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
                 spikes.phase_of_PCA_2 = sorting2;
             end
 
-            if size(coeff,2)>2
+            if size(score,2)>2
                 offset = [];
                 for j = 1:spikes.numcells
-                    [r,lags] = xcorr(spikes_presentation(j,:)',coeff(:,3),500);
+                    [r,lags] = xcorr(spikes_presentation(:,j),score(:,3),500);
                     [~,offset(j)] = max(r);
                 end
                 [~,sorting] = sort(offset);
