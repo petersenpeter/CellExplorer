@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>  // Necessary for the Apple M1 (mexmaca64)
 
 #define CHECK
 #define STRLEN 10000
