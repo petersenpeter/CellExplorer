@@ -28,17 +28,18 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
     save_n_coefficients = 3; % Number of PCA coefficients to save
     variable_name = 'pca_coeffs'; % Variable name
     calculate_spikes_PCA_phases = false;
+    unit_normalization = 'zscore'; % none, zscore, max-min, LogNormalize,... ?
 
     content.title = 'Generate PCA representation from spikes'; % dialog title
-    content.columns = 1; % 1 or 2 columns
-    content.field_names = {'convolution_points','convolution_stepsize','save_n_coefficients','variable_name','calculate_spikes_PCA_phases'}; % name of the variables/fields
-    content.field_title = {'Convolution points','Convolution stepsize (in seconds),','Number of coefficients to save?','Variable name','Calculate spikes PCA phases'}; % Titles shown above the fields
-    content.field_style = {'edit','edit','edit','edit','checkbox'}; % popupmenu, edit, checkbox, radiobutton, togglebutton, listbox
-    content.field_default = {convolution_points,convolution_stepsize,save_n_coefficients,variable_name,calculate_spikes_PCA_phases}; % default values
-    content.format = {'numeric','numeric','numeric','char','logical'}; % char, numeric, logical (boolean)
-    content.field_options = {'text','text','text','text','text'}; % options for popupmenus
-    content.field_required = [true true true true false]; % field required?
-    content.field_tooltip = {'Gaussian convolution point width','Convolution stepsize (seconds),','Number of coefficients to save?','Variable name','Calculate spikes PCA phases'};
+    content.columns = 2; % 1 or 2 columns
+    content.field_names = {'convolution_points','convolution_stepsize','save_n_coefficients','variable_name','calculate_spikes_PCA_phases','unit_normalization'}; % name of the variables/fields
+    content.field_title = {'Convolution points','Convolution stepsize (in seconds),','Number of coefficients to save?','Variable name','Calculate spikes PCA phases','Normalization'}; % Titles shown above the fields
+    content.field_style = {'edit','edit','edit','edit','checkbox','popupmenu'}; % popupmenu, edit, checkbox, radiobutton, togglebutton, listbox
+    content.field_default = {convolution_points,convolution_stepsize,save_n_coefficients,variable_name,calculate_spikes_PCA_phases,unit_normalization}; % default values
+    content.format = {'numeric','numeric','numeric','char','logical','char'}; % char, numeric, logical (boolean)
+    content.field_options = {'text','text','text','text','text',{'none', 'zscore', 'max-min','LogNormalize'}}; % options for popupmenus
+    content.field_required = [true true true true false,false]; % field required?
+    content.field_tooltip = {'Gaussian convolution point width','Convolution stepsize (seconds),','Number of coefficients to save?','Variable name','Calculate spikes PCA phases','Unit Normalization'};
     content = content_dialog(content);
 
     % Getting variables from content_dialog
@@ -47,6 +48,7 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
     save_n_coefficients = content.output{3};
     variable_name = content.output{4};
     calculate_spikes_PCA_phases = content.output{5};
+    unit_normalization = content.output{6};
 
     % Checking if file already exist
     if exist(fullfile(data.session.general.basePath,[data.session.general.name,'.',variable_name,'.timeseries.mat']))
@@ -69,11 +71,28 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
         end
 
         disp('Convoluting spikes')
-        [spikes_presentation,time_bins] = spikes_convolution(data.spikes,convolution_stepsize, convolution_points);
+        [spikes_presentation,time_bins] = convolute_spikes(data.spikes,convolution_stepsize, convolution_points);
 
+        % Normalization
+        switch unit_normalization
+            case 'zscore'
+                disp('Normalizing by z-score')
+                spikes_presentation = zscore(spikes_presentation);
+            case 'max-min'
+                disp('Normalizing by max-min (range)')
+                spikes_presentation = spikes_presentation./range(spikes_presentation)-mean(spikes_presentation);
+            case 'LogNormalize'
+                disp('Normalizing by Log10')
+                spikes_presentation = log10(spikes_presentation);
+                spikes_presentation = spikes_presentation-mean(spikes_presentation);
+            otherwise
+                disp('Normalizing: Substracting the mean')
+                spikes_presentation = spikes_presentation-mean(spikes_presentation);
+        end
+        
         % PCA reduction
         disp('Calculating PCA coefficients')
-        [coeff,score,~,~,explained,~] = pca(spikes_presentation);
+        [~,score,~,~,explained,~] = pca(spikes_presentation);
         % coeff : principal component coefficients, also known as loadings
         % score : principal component scores
         % latent : the principal component variances
@@ -85,17 +104,14 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
         plot(1:numel(explained), cumsum(explained), 'o-', 'MarkerFaceColor', 'r')
         title('Explained variance'),ylabel('Percentage'), xlabel('Coefficients')
 
-        % coeff2 = spikes_presentation'*score;
-
         % Saving time series file (basename.variable_name.timeseries.mat)
         disp('Saving PCA coefficients')
         pca_coeffs = {};
-        pca_coeffs.data = coeff(:,1:save_n_coefficients);
+        pca_coeffs.data = score(:,1:save_n_coefficients);
         pca_coeffs.timestamps = time_bins;
         pca_coeffs.sr = convolution_stepsize;
 
         saveStruct(pca_coeffs,'timeseries','session',data.session,'dataName',variable_name);
-
 
         %% Creating units by phase
         % Determining sorting by comparing the smoothed unit rates with the first/second PCA
@@ -104,17 +120,17 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
             disp('Calculating  spikes PCA phases')
             offset = [];
             for j = 1:spikes.numcells
-                [r,lags] = xcorr(spikes_presentation(j,:)',coeff(:,1),500);
+                [r,lags] = xcorr(spikes_presentation(:,j),score(:,1),500);
                 [~,offset(j)] = max(r);
             end
             [~,sorting] = sort(offset);
             [~,sorting2] = sort(sorting);
             spikes.phase_of_PCA_1 = sorting2;
 
-            if size(coeff,2)>1
+            if size(score,2)>1
                 offset = [];
                 for j = 1:spikes.numcells
-                    [r,lags] = xcorr(spikes_presentation(j,:)',coeff(:,2),500);
+                    [r,~] = xcorr(spikes_presentation(:,j),score(:,2),500);
                     [~,offset(j)] = max(r);
                 end
                 [~,sorting] = sort(offset);
@@ -122,10 +138,10 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
                 spikes.phase_of_PCA_2 = sorting2;
             end
 
-            if size(coeff,2)>2
+            if size(score,2)>2
                 offset = [];
                 for j = 1:spikes.numcells
-                    [r,lags] = xcorr(spikes_presentation(j,:)',coeff(:,3),500);
+                    [r,~] = xcorr(spikes_presentation(:,j),score(:,3),500);
                     [~,offset(j)] = max(r);
                 end
                 [~,sorting] = sort(offset);
@@ -142,8 +158,8 @@ if isfield(data,'spikes') && isfield(data.spikes,'spindices')
         out.refresh.spikes = true;
 
         disp('Successfully generated PCA representation from spikes')
-
         msgbox('Successfully generated PCA representation from spikes','NeuroScope2','help')
+
     end
 else
     msgbox('Load spikes data before plotting the raster.','NeuroScope2','help')
