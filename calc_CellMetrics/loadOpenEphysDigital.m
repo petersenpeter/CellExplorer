@@ -13,7 +13,7 @@ function openephysDig = loadOpenEphysDigital(session)
 
 % Load TTL data
 % Each path must contain:
-% 1. timestamps.npy and 
+% 1. timestamps.npy
 % 2: channel_states.npy
 % 3: channels.npy
 % 4: full_words.npy
@@ -28,8 +28,8 @@ ephys_t0 = [];
 for i = 1:numel(session.epochs)
     TTL_paths{i} = fullfile(session.epochs{i}.name,'events','Neuropix-PXI-100.0','TTL_1');
     epochs_startTime(i) = session.epochs{i}.startTime;
-    temp = fullfile(session.general.basePath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','timestamps.npy');
-    ephys_t0(i) = temp(1)/session.extracellular.sr;
+    temp = readNPY(fullfile(session.general.basePath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','timestamps.npy'));
+    ephys_t0(i) = double(temp(1))/session.extracellular.sr;
 end
 
 openephysDig = {};
@@ -64,7 +64,7 @@ end
 % Attaching info about how the data was processed
 openephysDig.processinginfo.function = 'loadOpenEphysDigital';
 openephysDig.processinginfo.version = 1;
-openephysDig.processinginfo.date = now;
+openephysDig.processinginfo.date = datetime('now');
 openephysDig.processinginfo.params.basepath = session.general.basePath;
 openephysDig.processinginfo.params.basename = session.general.name;
 openephysDig.processinginfo.params.TTL_paths = TTL_paths;
