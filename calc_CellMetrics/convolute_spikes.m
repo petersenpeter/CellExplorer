@@ -25,9 +25,10 @@ time_bins = 0:stepsize:ceil(max(spikes.spindices(:,1)));
 spikes_convolved = zeros(numel(time_bins),spikes.numcells);
 
 for i = 1:spikes.numcells
-    idx = round(spikes.times{i}/stepsize);
-    spikes_convolved(idx,i) = 1;
+    spikes_convolved(1:end-1,i) = histcounts(spikes.times{i},time_bins);
     
     % Convoluting the spike times with a n points gaussian convolution
-    spikes_convolved(:,i) = nanconv(spikes_convolved(:,i),gausswin(convolution_points)/sum(gausswin(convolution_points)),'edge');
+    if convolution_points > 1
+        spikes_convolved(:,i) = nanconv(spikes_convolved(:,i),gausswin(convolution_points)/sum(gausswin(convolution_points)),'edge');
+    end
 end
