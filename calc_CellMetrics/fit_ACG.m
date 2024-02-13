@@ -38,14 +38,14 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
     % Curve Fitting Toolbox
     % % % % % % % % % % % % % % % % % % % % %
     
-    g = fittype('max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c','d','e','f','g','h'});
+    fit_equation = fittype('max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c','d','e','f','g','h'});
     
     if parallel_toolbox_installed
         % Fitting ACGs in parfor
         gcp;
         parfor j = 1:size(acg_narrow,2)
             if ~any(isnan(acg_narrow(:,j)))
-                [f0,gof] = fit(x,acg_narrow(x*2+offset,j),g,'StartPoint',a0,'Lower',lb,'Upper',ub);
+                [f0,gof] = fit(x,acg_narrow(x*2+offset,j),fit_equation,'StartPoint',a0,'Lower',lb,'Upper',ub);
                 plotf0(:,j) = f0(x);
                 fit_params(:,j) = coeffvalues(f0);
                 rsquare(j) = gof.rsquare;
@@ -54,7 +54,7 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
     else
         for j = 1:size(acg_narrow,2)
             if ~any(isnan(acg_narrow(:,j)))
-                [f0,gof] = fit(x,acg_narrow(x*2+offset,j),g,'StartPoint',a0,'Lower',lb,'Upper',ub);
+                [f0,gof] = fit(x,acg_narrow(x*2+offset,j),fit_equation,'StartPoint',a0,'Lower',lb,'Upper',ub);
                 plotf0(:,j) = f0(x);
                 fit_params(:,j) = coeffvalues(f0);
                 rsquare(j) = gof.rsquare;
