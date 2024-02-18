@@ -117,7 +117,7 @@ for i = 1:n,
 	timeString = sprintf(['%' l '.2f %' l '.2f (%' l '.2f)'],from,to,to-from);
 	% Get values
 	more = FindInInterval(values,[from to],previous);
-	if ~isempty(more),
+	if ~isempty(more) 
 		previous = more(k); % See note above about algorithm
 		nMore = more(2)-more(1)+1;
 		interval(more(1):more(2)) = i;

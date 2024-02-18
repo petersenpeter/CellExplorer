@@ -2901,7 +2901,7 @@ end
                 plt1 = line(x_bins,firingRateAcrossTime,'color', 'k','linewidth',2, 'HitTest','off');
                 subsetPlots = plotConnectionsCurves(x_bins,cell_metrics.responseCurves.(responseCurvesName));
 
-                axis tight, ax6 = axis; 
+                axis tight, ax6 = axis;  
                 if strcmpi(customPlotSelection,'RCs_firingRateAcrossTime')
                     if isfield(general,'epochs')
                         epochVisualization(general.epochs,plotAxes,-0.1*ax6(4),-0.005*ax6(4),ax6(4));
@@ -2909,6 +2909,8 @@ end
                     end
                     plotTemporalStates
                     plotTemporalRestriction
+                else
+                    
                 end
                 
                 if isfield(general,'responseCurves') && isfield(general.responseCurves,responseCurvesName)
@@ -3071,7 +3073,7 @@ end
                 
                 subsetPlots = plotConnectionsCurvesPhase(x_bins,cell_metrics.responseCurves.(responseCurvesName));
 %                 subsetPlots = plotConnectionsCurves(x_bins+2*pi,cell_metrics.responseCurves.(responseCurvesName));
-                axis tight, ax6 = axis; grid on,
+                axis tight, ax6 = axis; ylim([0,ax6(4)]); grid on,
             else
                 text(0.5,0.5,'No data','FontWeight','bold','HorizontalAlignment','center')
             end
@@ -4894,12 +4896,11 @@ end
                 
                 % Saving the ground truth to the subfolder groundTruthData
                 if UI.BatchMode
-                    file = fullfile(referenceData_path,[cell_metrics.general.basenames{sessionID}, '.cell_metrics.cellinfo.mat']);
+                    saveStruct(cell_metrics_groundTruthSubset,'cellinfo','basename',cell_metrics.general.basenames{sessionID},'basepath',referenceData_path,'dataName','cell_metrics');
                 else
-                    file = fullfile(referenceData_path,[cell_metrics.general.basename, '.cell_metrics.cellinfo.mat']);
+                    saveStruct(cell_metrics_groundTruthSubset,'cellinfo','basename',cell_metrics.general.basename,'basepath',referenceData_path,'dataName','cell_metrics');
                 end
-                S.cell_metrics = cell_metrics_groundTruthSubset;
-                save(file,'-struct', 'S');
+                
             end
             if ishandle(ce_waitbar)
                 close(ce_waitbar)
@@ -9926,18 +9927,6 @@ end
         % Called with the save button.
         assignin('base','cell_metrics',cell_metrics)
         saveMetrics(cell_metrics);
-%         
-%         
-%         answer = questdlg('How would you like to save the classification?', 'Save classification','Update existing metrics','Create new file','Update existing metrics'); % 'Update workspace metrics',
-%         % Handle response
-%         switch answer
-%             case 'Update existing metrics'
-%                 assignin('base','cell_metrics',cell_metrics)
-%                 saveMetrics(cell_metrics);
-%             case 'Create new file'
-%                 
-%             case 'Cancel'
-%         end
     end
     
     function saveAsDialog(~,~)
@@ -10078,8 +10067,8 @@ end
             end
             
             try
-                file = fullfile(cell_metrics.general.basepath,file);
-                save(file,'cell_metrics');
+                saveStruct(cell_metrics,'cellinfo','basename',cell_metrics.general.basename,'basepath',cell_metrics.general.basepath,'dataName',saveAs);
+                
                 classificationTrackChanges = [];
                 UI.menu.file.save.ForegroundColor = 'k';
                 MsgLog(['Classification saved to ', file],[1,2]);
@@ -12453,8 +12442,7 @@ end
                     [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,2),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,2)));
                     cell_session.cell_metrics.synapticConnectionsIn(b) = a; cell_session.cell_metrics.synapticConnectionsIn = cell_session.cell_metrics.synapticConnectionsIn(1:cell_session.cell_metrics.general.cellCount);
                     
-                    save(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), '-struct', 'cell_session')
-                    % MsgLog(['Synaptic connections adjusted for: ', basename1,'. Reload session to see the changes'],2);
+                    saveStruct(cell_session,'cellinfo','basename',basename1,'basepath',path1,'dataName',saveAs);
                     
                     if ishandle(ce_waitbar)
                         waitbar(0.9,ce_waitbar,'Updating session');

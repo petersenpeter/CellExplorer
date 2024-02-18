@@ -21,8 +21,10 @@ preferences.displayMenu = 0; % Show the regular Matlab menu
 preferences.background = [0 0 0]; % Background color
 preferences.textBackground = [0 0 0 0.7]; % Text backgroups, semi-transparent
 preferences.primaryColor = [1 1 1]; % Primary color of trace highlights and text
+preferences.linewidth = 1.2; % Linewidth of ephys traces
 preferences.showChannelNumbers = false; % Show channel numbers next to traces
 preferences.showScalebar = false; % A vertical scalebar shown in upper left corner
+preferences.showTimeScalebar = false; % A horizontal time scalebar shown in lower right corner
 preferences.narrowPadding = false; % Padding above and below traces
 preferences.ephys_padding = 0.05; % Initial padding above and below ephys traces
 preferences.text_spacing = 0.016; % Vertical spacing between legends
@@ -32,7 +34,7 @@ preferences.insetRelativeWidth = 1/4;
 preferences.insetRelativeHeight = 1/4;
 preferences.stickySelection = false;
 preferences.to_save = {'windowDuration','plotStyle','greyScaleTraces','colormap','scalingFactor','background','textBackground','primaryColor',...
-    'extraSpacing','plotTracesInColumns','showChannelNumbers','showScalebar','narrowPadding','stickySelection','resetZoomOnNavigation'};
+    'extraSpacing','plotTracesInColumns','showChannelNumbers','showScalebar','showTimeScalebar','narrowPadding','stickySelection','resetZoomOnNavigation'};
 
 if ismac
     preferences.fontsize = 11;

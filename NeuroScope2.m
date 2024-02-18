@@ -319,6 +319,7 @@ end
         uimenu(UI.menu.file.topMenu,menuLabel,'Load session from file',menuSelectedFcn,@loadFromFile,'Accelerator','O');
         UI.menu.file.recentSessions.main = uimenu(UI.menu.file.topMenu,menuLabel,'Recent sessions...','Separator','on');
         uimenu(UI.menu.file.topMenu,menuLabel,'Export figure data...',menuSelectedFcn,@exportPlotData,'Separator','on');
+        uimenu(UI.menu.file.topMenu,menuLabel,'Create video...',menuSelectedFcn,@createVideo,'Separator','on');
         
         % Session
         UI.menu.session.topMenu = uimenu(UI.fig,menuLabel,'Session');
@@ -341,7 +342,8 @@ end
         UI.menu.display.plotStyleDynamicRange = uimenu(UI.menu.display.topMenu,menuLabel,'Dynamic ephys range plot',menuSelectedFcn,@plotStyleDynamicRange,'Checked','on');
         UI.menu.display.narrowPadding = uimenu(UI.menu.display.topMenu,menuLabel,'Narrow ephys padding',menuSelectedFcn,@narrowPadding);
         UI.menu.display.resetZoomOnNavigation = uimenu(UI.menu.display.topMenu,menuLabel,'Reset zoom on navigation',menuSelectedFcn,@resetZoomOnNavigation);
-        UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show scale bar',menuSelectedFcn,@showScalebar);
+        UI.menu.display.showScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show vertical scale bar',menuSelectedFcn,@showScalebar);
+        UI.menu.display.showTimeScalebar = uimenu(UI.menu.display.topMenu,menuLabel,'Show time scale bar',menuSelectedFcn,@showTimeScalebar);
         UI.menu.display.showChannelNumbers = uimenu(UI.menu.display.topMenu,menuLabel,'Show channel numbers',menuSelectedFcn,@ShowChannelNumbers);  
         UI.menu.display.stickySelection = uimenu(UI.menu.display.topMenu,menuLabel,'Sticky selection of channels',menuSelectedFcn,@setStickySelection);
        
@@ -358,10 +360,14 @@ end
         UI.menu.display.colorgroups.option(3) = uimenu(UI.menu.display.colorgroups.topMenu,menuLabel,'By custom-sized channel groups',menuSelectedFcn,@setColorGroups);
         UI.menu.display.colorgroups.option(UI.settings.colorByChannels).Checked = 'on';
         
+        
         UI.menu.display.colormap = uimenu(UI.menu.display.topMenu,menuLabel,'Color maps');
         UI.menu.display.changeColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of ephys traces',menuSelectedFcn,@changeColormap);
         UI.menu.display.changeSpikesColormap = uimenu(UI.menu.display.colormap,menuLabel,'Change colormap of spikes',menuSelectedFcn,@changeSpikesColormap);        
         UI.menu.display.changeBackgroundColor = uimenu(UI.menu.display.colormap,menuLabel,'Change background color & primary color',menuSelectedFcn,@changeBackgroundColor);
+
+        UI.menu.display.colormap = uimenu(UI.menu.display.topMenu,menuLabel,'Trace parameters');
+        UI.menu.display.changeLinewidth = uimenu(UI.menu.display.colormap,menuLabel,'Change linewidth of ephys traces',menuSelectedFcn,@changeLinewidth);
         
         UI.menu.display.detectedSpikes = uimenu(UI.menu.display.topMenu,menuLabel,'Detected spikes','Separator','on');
         UI.menu.display.detectedSpikesBelowTrace = uimenu(UI.menu.display.detectedSpikes,menuLabel,'Show below traces',menuSelectedFcn,@detectedSpikesBelowTrace);
@@ -1095,7 +1101,7 @@ end
                 channels = channelsList{iShanks};
                 if ~isempty(channels)
                     timeLine = ([1:UI.nDispSamples]'/UI.nDispSamples*UI.settings.windowDuration/UI.settings.columns)*ones(1,length(channels))+UI.settings.channels_relative_offset(channels);
-                    line(UI.plot_axis1,timeLine,ephys.traces(UI.dispSamples,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:), 'HitTest','off');
+                    line(UI.plot_axis1,timeLine,ephys.traces(UI.dispSamples,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:), 'HitTest','off','LineWidth',UI.settings.linewidth);
                 end
             end
         elseif UI.settings.plotStyle == 2 && (size(ephys.traces,1) > UI.settings.plotStyleDynamicThreshold || ~UI.settings.plotStyleDynamicRange) % Range values per sample (ala Neuroscope1)
@@ -1118,7 +1124,7 @@ end
                 timeLine(1,:,:) = timeLine1;
                 timeLine(2,:,:) = timeLine1;
                 timeLine(:,end+1,:) = timeLine(:,end,:);
-                line(UI.plot_axis1,timeLine(:),tist(:),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off');
+                line(UI.plot_axis1,timeLine(:),tist(:),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off','LineWidth',UI.settings.linewidth);
             end
             
         elseif UI.settings.plotStyle == 5
@@ -1154,7 +1160,7 @@ end
                     for i = 1:n_pieces
                         max_pieces = min(i*UI.settings.plotStyleDynamicThreshold,size(ephys.traces,1));
                         piece = [(i-1)*UI.settings.plotStyleDynamicThreshold+1:max_pieces];
-                        line(UI.plot_axis1,timeLine1(piece),ephys.traces(piece,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off');
+                        line(UI.plot_axis1,timeLine1(piece),ephys.traces(piece,channels)-UI.channelOffset(channels),'color',colorsList(iShanks,:),'LineStyle','-', 'HitTest','off','LineWidth',UI.settings.linewidth)
                     end
                 end
             end
@@ -1308,11 +1314,6 @@ end
                     end
                 end
             end
-%             [~,ia] = sort(UI.channelOrder);
-%             ia = -0.9*((ia-1)/(numel(UI.channelOrder)-1))-0.05+1;
-%             ia2 = 1:data.session.extracellular.nChannels;
-%             isx = find(ismember(ia2,[UI.channels{UI.settings.electrodeGroupsToPlot}]));
-%             ia2(isx) = ia;
             
             line(UI.plot_axis1,raster.x, raster.y,'Marker',UI.settings.rasterMarker,'LineStyle','none','color','m', 'HitTest','off');
         end
@@ -1320,17 +1321,22 @@ end
         % Plotting channel numbers
         if UI.settings.showChannelNumbers
             text(UI.plot_axis1,zeros(1,numel(UI.channelOrder))+UI.settings.channels_relative_offset(UI.channelOrder),-UI.channelOffset(UI.channelOrder),strcat(cellstr(num2str(UI.channelOrder')),{' '}),'color',UI.settings.primaryColor,'VerticalAlignment', 'middle','HorizontalAlignment','right','HitTest','off')
-%             if UI.settings.plotStyle < 5
-%                 
-%             else
-%                 text(UI.plot_axis1,zeros(1,numel(UI.channelOrder)),-UI.channelOffset(UI.channelOrder),strcat(cellstr(num2str(UI.channelOrder')),{' '}),'color',UI.settings.primaryColor,'VerticalAlignment', 'middle','HorizontalAlignment','right','HitTest','off')
-%             end
         end
         
         % Plotting scale bar
         if UI.settings.showScalebar
             plot(UI.plot_axis1,[0.005,0.005],[0.93,0.98],'-','linewidth',3,'color',UI.settings.primaryColor)
             text(UI.plot_axis1,0.005,0.955,['  ',num2str(0.05/(UI.settings.scalingFactor)*1000,3),' mV'],'FontWeight', 'Bold','VerticalAlignment', 'middle','HorizontalAlignment','left','color',UI.settings.primaryColor)
+        end
+
+        % Plotting timescale bar
+        if UI.settings.showTimeScalebar
+            plot(UI.plot_axis1,[0.94,0.99]*UI.settings.windowDuration,[0.01,0.01],'-','linewidth',3,'color',UI.settings.primaryColor)
+            if UI.settings.windowDuration < 20
+                text(UI.plot_axis1,0.965*UI.settings.windowDuration,0.011,['  ',num2str(0.05*(UI.settings.windowDuration)*1000,3),' msec'],'FontWeight', 'Bold','VerticalAlignment', 'bottom','HorizontalAlignment','center','color',UI.settings.primaryColor)
+            else
+                text(UI.plot_axis1,0.965*UI.settings.windowDuration,0.011,['  ',num2str(0.05*(UI.settings.windowDuration),3),' sec'],'FontWeight', 'Bold','VerticalAlignment', 'bottom','HorizontalAlignment','center','color',UI.settings.primaryColor)
+            end
         end
         ephys.plotted = true;
     end
@@ -2622,7 +2628,7 @@ end
             UI.settings.normalClick = false;
             switch event.Key
                 case 'space'
-                    streamData2
+                    streamData_end_of_file
             end
 
         elseif strcmp(event.Modifier,'alt')
@@ -2687,6 +2693,16 @@ end
             UI.menu.display.showScalebar.Checked = 'on';
         else
             UI.menu.display.showScalebar.Checked = 'off';
+        end
+        uiresume(UI.fig);
+    end
+
+    function showTimeScalebar(~,~)
+        UI.settings.showTimeScalebar = ~UI.settings.showTimeScalebar;
+        if UI.settings.showTimeScalebar
+            UI.menu.display.showTimeScalebar.Checked = 'on';
+        else
+            UI.menu.display.showTimeScalebar.Checked = 'off';
         end
         uiresume(UI.fig);
     end
@@ -3026,7 +3042,7 @@ end
     
     function streamDataButtons2
         if ~UI.settings.stream
-            streamData2
+            streamData_end_of_file
         else
             UI.settings.stream = false;
         end
@@ -3146,7 +3162,7 @@ end
         end        
     end
     
-    function streamData2
+    function streamData_end_of_file
         % Stream from the end of the file, updating twice per window duration
         if ~UI.settings.stream
             UI.settings.stream = true;
@@ -3174,6 +3190,63 @@ end
         end
         UI.buttons.play1.String = char(9654);
         UI.buttons.play2.String = [char(9655) char(9654)];
+    end
+
+    function streamData_to_video(parameters)
+        % parameters
+        %  .profile
+        %  .framerate
+        %  .duration
+        %  .playback_speed
+        %  .full_file_name
+
+        n_frames = parameters.duration*parameters.framerate;
+
+        writerObj = VideoWriter(parameters.full_file_name, parameters.profile);
+        %writerObj.Quality = 100;
+        switch parameters.playback_speed
+            case 'x/10'
+                playback_speed = 0.1;
+            case 'x/5'
+                playback_speed = 0.2;
+            case 'x/4'
+                playback_speed = 0.25;
+            case 'x/2'
+                playback_speed = 0.5;
+            case '1x'
+                playback_speed = 1;
+            case '2x'
+                playback_speed = 2;
+            case '4x'
+                playback_speed = 4;
+        end
+
+        writerObj.FrameRate = round(parameters.framerate*playback_speed);
+
+        open(writerObj);
+
+        % Stream to video
+        if ~UI.settings.stream
+            UI.plot_axis1.XColor = UI.settings.background;
+            UI.settings.stream = true;
+            UI.settings.fileRead = 'bof';
+            for i = 1:n_frames
+                UI.t0 = UI.t0+UI.settings.windowDuration/parameters.framerate;
+                UI.t0 = max([0,min([UI.t0,UI.t_total-UI.settings.windowDuration])]);
+                if ~ishandle(UI.fig) ||  (UI.fid.ephys == -1 && UI.settings.plotStyle ~= 4) || ~UI.settings.stream
+                    UI.settings.stream = false;
+                    return
+                end
+
+                plotData
+                UI.elements.lower.performance.String = ['Generating videoframes: ', num2str(i), '/', num2str(n_frames)];
+                drawnow
+                frame = getframe(UI.plot_axis1);
+                writeVideo(writerObj,frame);
+            end
+        end        
+        close(writerObj);
+        UI.plot_axis1.XColor = UI.settings.primaryColor;
     end
     
     function benchmarkStream(~,~)
@@ -6598,7 +6671,6 @@ end
             case 'traces'
                 out = analysis_tools.traces.(function1)('ephys',ephys,'UI',UI,'data',data);
         end
-
         % Checking if any actions should be performed after the analysis is complete
         if ~isempty(out) && isfield(out,'refresh') && isfield(out.refresh, 'events') && out.refresh.events
             % Detecting CellExplorer/Buzcode files
@@ -6617,7 +6689,6 @@ end
             updateTimeSeriesDataList2
 
             out.refresh.timeseries = false;
-
         elseif ~isempty(out) && isfield(out,'refresh') && isfield(out.refresh, 'spikes') && out.refresh.spikes
             % Detecting CellExplorer/Buzcode files
             data = rmfield(data,'spikes');
@@ -6993,7 +7064,7 @@ end
         
         content.title = 'Export plot options'; % dialog title
         content.columns = 1; % 1 or 2 columns
-        content.field_names = {'export_format','notes','show_basename','show_scalebar','show_timestamps'}; % name of the variables/fields
+        content.field_names = {'format','notes','show_basename','show_scalebar','show_timestamps'}; % name of the variables/fields
         content.field_title = {'Export format','Notes','Print basename and basepath','Show scalebar in figure','Print timestamp and duration'}; % Titles shown above the fields
         content.field_style = {'popupmenu','edit','checkbox','checkbox','checkbox'}; % popupmenu, edit, checkbox, radiobutton, togglebutton, listbox
         content.field_default = {'png','',true,true,true}; % default values
@@ -7070,6 +7141,36 @@ end
             exportsetupdlg(UI.fig)
         end
     end
+
+    function createVideo(~,~)
+        UI.settings.stream = false;
+        
+        content.title = 'Create video/animation'; % dialog title
+        content.columns = 1; % 1 or 2 columns
+        content.field_names = {'profile','framerate','duration','playback_speed'}; % name of the variables/fields
+        content.field_title = {'Video profile','Framerate (Hz)','Duration (sec)','Playback speed'}; % Titles shown above the fields
+        content.field_style = {'popupmenu','edit','edit','popupmenu'}; % popupmenu, edit, checkbox, radiobutton, togglebutton, listbox
+        content.field_default = {'Uncompressed AVI',10,10,'1x'}; % default values
+        content.format = {'char','numeric','numeric','char'}; % 'char', 'numeric', 'logical' (boolean), 'integer' (only popupmenu)
+        content.field_options = {{'Archival','Motion JPEG AVI', 'MPEG-4','Uncompressed AVI','Save as .gif file (animation)'},'text','text',{'x/10','x/5','x/4','x/2','1x','2x','4x'}}; % options for popupmenus
+        content.field_required = [true,true,true,true]; % field required?
+        content.field_tooltip = {'File profile','Framerate of video (Hz)','Duration of video (sec)','Playback speed'};
+        content = content_dialog(content);
+
+        if ~content.continue
+            return
+        end
+
+        parameters_video = content.output2;
+
+        timestamp = char(datetime('now','TimeZone','local','Format','_dd-MM-yyyy_HH.mm.ss'));
+
+        parameters_video.full_file_name = fullfile(basepath,[basename,'_NeuroScope',timestamp]);
+
+        streamData_to_video(parameters_video)
+
+        MsgLog(['The video was saved to: ' parameters_video.full_file_name],2);
+    end
     
     function setTimeSeriesBoundary(~,~)
         UI.settings.timeseries.lowerBoundary = str2num(UI.panel.timeseries.lowerBoundary.String);
@@ -7135,6 +7236,22 @@ end
                 plotData;
             end
         end
+    end
+
+    function changeLinewidth(~,~)
+        prompt = {'Linewidth (range: 0.5-5)'};
+        dlgtitle = 'Linewidth';
+        definput = {num2str(UI.settings.linewidth)};
+        dims = [1 40];
+        opts.Interpreter = 'tex';
+        answer = inputdlg(prompt,dlgtitle,dims,definput,opts);
+        if ~isempty(answer)
+            numeric_answer = str2num(answer{1});
+            if ~isempty(answer{1}) && numeric_answer >= 0.5 && numeric_answer <= 5
+                UI.settings.linewidth = numeric_answer;
+            end
+        end        
+        uiresume(UI.fig);
     end
     
     function changeSpikesColormap(~,~)
