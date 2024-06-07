@@ -12442,7 +12442,8 @@ end
                     [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,2),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,2)));
                     cell_session.cell_metrics.synapticConnectionsIn(b) = a; cell_session.cell_metrics.synapticConnectionsIn = cell_session.cell_metrics.synapticConnectionsIn(1:cell_session.cell_metrics.general.cellCount);
                     
-                    saveStruct(cell_session,'cellinfo','basename',basename1,'basepath',path1,'dataName',saveAs);
+                    cell_metrics = cell_session.cell_metrics;
+                    saveStruct(cell_metrics,'cellinfo','basename',basename1,'basepath',path1,'dataName',saveAs);
                     
                     if ishandle(ce_waitbar)
                         waitbar(0.9,ce_waitbar,'Updating session');
