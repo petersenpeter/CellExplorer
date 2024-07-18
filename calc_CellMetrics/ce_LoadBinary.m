@@ -1,4 +1,4 @@
-function data = LoadBinary(filename,varargin)
+function data = ce_LoadBinary(filename,varargin)
 
 %LoadBinary - Load data from a multiplexed binary file.
 %
