@@ -3,13 +3,12 @@ function session = preprocessOpenEphysData(varargin)
     
     % Processing steps:
     % 1. Detects epochs (name and duration from experiments and recording folders)
-    % 2. Imports extracellular metadata from the first structure.oebin file
-    % 3. Channel coordinates (NOT IMPLEMENTED YET)
-    % 4. Epoch durations
-    % 5. Saving session struct
-    % 6. Merge dat/bin files to single binary .dat file in basepath
-    % 7. Merge lfp files
-    % 8. Merge digital timeseries
+    % 2. Imports extracellular metadata and Channel coordinates from the first structure.oebin file
+    % 3. Epoch durations
+    % 4. Saving session struct
+    % 5. Merge dat/bin files to single binary .dat file in basepath
+    % 6. Merge lfp files
+    % 7. Merge digital timeseries
     
     p = inputParser;
     addParameter(p,'session', [], @isstruct); % A session struct
@@ -18,7 +17,7 @@ function session = preprocessOpenEphysData(varargin)
     addParameter(p,'saveMat', true, @islogical); % Saves basename.session.mat file
     addParameter(p,'showGUI',false,@islogical);
     addParameter(p,'processData',true,@islogical);
-    parse(p,varargin{:})    
+    parse(p,varargin{:})
 
     parameters = p.Results;
     session = parameters.session;
@@ -43,12 +42,13 @@ function session = preprocessOpenEphysData(varargin)
         end
     end
     
-    % 2. Imports extracellular metadata from the first structure.oebin file 
-    session = loadOpenEphysSettingsFile(session);
+    % 2. Imports extracellular metadata and Channel coordinates from the first structure.oebin file 
+    file1 = fullfile(session.general.basePath,session.epochs{1}.name,'structure.oebin');
+    session = loadOpenEphysSettingsFile(file1,session);
     
-    % 3. Channel coordinates (NOT IMPLEMENTED YET)
     
-    % 4. Epoch durations
+    
+    % 3. Epoch durations
     inputFiles = {};
     startTime = 0;
     stopTime = 0;
@@ -79,11 +79,11 @@ function session = preprocessOpenEphysData(varargin)
         session = gui_session(session);
     end
     
-    % 5. Saving session struct
+    % 4. Saving session struct
     saveStruct(session);
     
     
-    % 6. Merge dat files to single binary .dat file in basepath
+    % 5. Merge dat files to single binary .dat file in basepath
     if parameters.processData
 
         disp('Attempting to concatenate binary files with spiking data.')
@@ -91,7 +91,7 @@ function session = preprocessOpenEphysData(varargin)
         binaryMergeWrapper(inputFiles, outputFile)
 
 
-        % 7. Merge lfp files
+        % 6. Merge lfp files
         inputFiles_lfp = {};
         for i = 1:numel(session.epochs)
             if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin'),'file')
@@ -107,14 +107,8 @@ function session = preprocessOpenEphysData(varargin)
         binaryMergeWrapper(inputFiles_lfp, outputFile_lfp)
 
 
-        % 8. Merge digital timeseries
-        TTL_paths = {};
-        TTL_offsets = [];
-        for i = 1:numel(session.epochs)
-            TTL_paths{i} = fullfile(session.epochs{i}.name,'events','Neuropix-PXI-100.0','TTL_1');
-            TTL_offsets(i) = session.epochs{i}.startTime;
-        end
-        openephysDig = loadOpenEphysDigital(session,TTL_paths,TTL_offsets);
+        % 7. Merge digital timeseries
+        openephysDig = loadOpenEphysDigital(session);
 
     end
 
