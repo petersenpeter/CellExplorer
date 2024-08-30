@@ -23,7 +23,7 @@ if exist(file1,'file')
         channelmapping = [];
         for i = 1:session.extracellular.nChannels
             if isfield(openEphys_metadata.continuous(1).channels{i},'channel_metadata')
-                channelmapping(i) = openEphys_metadata.continuous(1).channels{i}.channel_metadata.value;
+                channelmapping(i) = openEphys_metadata.continuous(1).channels{i}.channel_metadata.value+1;
             end
         end
     

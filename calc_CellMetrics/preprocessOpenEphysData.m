@@ -30,15 +30,18 @@ function session = preprocessOpenEphysData(varargin)
     
     % 1. Detects epochs (name and duration from experiments and recording folders)
     k = 1;
-    subFolder_Experiments = checkfolder(basepath, 'experiment');
-    for i = 1:numel(subFolder_Experiments)
-        subFolder_Recordings = checkfolder(subFolder_Experiments{i}, 'recording');
-        for j = 1:numel(subFolder_Recordings)            
-            session.epochs{k}.name = fullfile(subFolder_Experiments{i},subFolder_Recordings{j});
-            session.epochs{k}.startTime = 0;
-            session.epochs{k}.stopTime = 0;
-            session.epochs{k}.notes = fullfile(subFolder_Experiments{i},subFolder_Recordings{j});
-            k = k + 1;            
+    subFolder_RecordNodes = checkfolder(basepath, 'Record Node');
+    for m = 1:numel(subFolder_RecordNodes)
+        subFolder_Experiments = checkfolder(fullfile(basepath,subFolder_RecordNodes{m}), 'experiment');
+        for i = 1:numel(subFolder_Experiments)
+            subFolder_Recordings = checkfolder(fullfile(basepath,subFolder_RecordNodes{m},subFolder_Experiments{i}), 'recording');
+            for j = 1:numel(subFolder_Recordings)
+                session.epochs{k}.name = fullfile(subFolder_RecordNodes{m},subFolder_Experiments{i},subFolder_Recordings{j});
+                session.epochs{k}.startTime = 0;
+                session.epochs{k}.stopTime = 0;
+                session.epochs{k}.notes = fullfile(subFolder_RecordNodes{m},subFolder_Experiments{i},subFolder_Recordings{j});
+                k = k + 1;
+            end
         end
     end
     
@@ -47,40 +50,21 @@ function session = preprocessOpenEphysData(varargin)
     session = loadOpenEphysSettingsFile(file1,session);
     
     
-    
     % 3. Epoch durations
-    inputFiles = {};
-    startTime = 0;
-    stopTime = 0;
-    nSamples = 0;
-    for i = 1:numel(session.epochs)
-        session.epochs{i}.startTime = startTime;
-        if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin'),'file')
-            inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin');
-
-        elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat'),'file')
-            inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat');
-            
-        else
-            error(['Epoch duration could not be estimated as raw data file does not exist: ', inputFiles{i}]);
-        end
-        temp = dir(inputFiles{i});
-        duration = temp.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
-        stopTime = startTime+duration;
-        session.epochs{i}.stopTime = stopTime;
-        startTime = stopTime;
-        nSamples = nSamples + temp.bytes/session.extracellular.nChannels/2;
-    end
-    session.extracellular.nSamples = nSamples;
-    session.general.duration = nSamples/session.extracellular.sr;
+    [session,inputFiles] = calculateEpochDurations(session,basepath);
        
     % Shows session GUI if requested by user
     if parameters.showGUI
         session = gui_session(session);
+
+        % Calculates epoch durations and inputFiles again in case the number of epochs has changed
+        [session,inputFiles] = calculateEpochDurations(session,basepath);
     end
     
     % 4. Saving session struct
-    saveStruct(session);
+    if parameters.saveMat
+        saveStruct(session);
+    end
     
     
     % 5. Merge dat files to single binary .dat file in basepath
@@ -90,14 +74,15 @@ function session = preprocessOpenEphysData(varargin)
         outputFile = fullfile(basepath,[session.general.name,'.dat']);
         binaryMergeWrapper(inputFiles, outputFile)
 
-
         % 6. Merge lfp files
         inputFiles_lfp = {};
         for i = 1:numel(session.epochs)
             if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin'),'file')
                 inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin');
-            else
+            elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat'),'file')
                 inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat');
+            else
+                inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.ProbeA-LFP','continuous.dat');
             end
         end
         outputFile_lfp = fullfile(basepath,[session.general.name,'.lfp']);
@@ -120,8 +105,6 @@ function session = preprocessOpenEphysData(varargin)
         subFolderNames = subFolderNames(contains(subFolderNames,folderstring));
     end    
 end
-
-
 
 
 %% Local functions
@@ -215,4 +198,37 @@ for f = 1:numel(inputFiles)
   individualSizes(f) = d.bytes;
 end
 totalSize = sum(individualSizes);
+end
+
+function [session,inputFiles] = calculateEpochDurations(session,basepath)
+    inputFiles = {};
+    startTime = 0;
+    stopTime = 0;
+    nSamples = 0;
+    for i = 1:numel(session.epochs)
+        session.epochs{i}.startTime = startTime;
+        if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin'),'file')
+            inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.bin');
+
+        elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat'),'file')
+            inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.0','continuous.dat');
+        
+        elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.ProbeA','continuous.dat'),'file')
+            inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.ProbeA','continuous.dat');
+
+        elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.ProbeA-AP','continuous.dat'),'file')
+            inputFiles{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.ProbeA-AP','continuous.dat');
+            
+        else
+            error(['Epoch duration could not be estimated as raw data file does not exist: ', inputFiles{i}]);
+        end
+        temp = dir(inputFiles{i});
+        duration = temp.bytes/session.extracellular.sr/session.extracellular.nChannels/2;
+        stopTime = startTime+duration;
+        session.epochs{i}.stopTime = stopTime;
+        startTime = stopTime;
+        nSamples = nSamples + temp.bytes/session.extracellular.nChannels/2;
+    end
+    session.extracellular.nSamples = nSamples;
+    session.general.duration = nSamples/session.extracellular.sr;
 end
