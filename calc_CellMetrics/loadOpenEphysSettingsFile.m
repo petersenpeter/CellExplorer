@@ -22,7 +22,11 @@ if exist(file1,'file')
         % Electrode groups and channel mapping
         channelmapping = [];
         for i = 1:session.extracellular.nChannels
-            if isfield(openEphys_metadata.continuous(1).channels{i},'channel_metadata')
+            if isstruct(openEphys_metadata.continuous.channels) 
+                if isfield(openEphys_metadata.continuous.channels(i),'channel_metadata')
+                    channelmapping(i) = openEphys_metadata.continuous(1).channels(i).channel_metadata.value+1;
+                end
+            elseif isfield(openEphys_metadata.continuous(1).channels{i},'channel_metadata')
                 channelmapping(i) = openEphys_metadata.continuous(1).channels{i}.channel_metadata.value+1;
             end
         end
