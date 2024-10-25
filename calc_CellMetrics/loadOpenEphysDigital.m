@@ -100,10 +100,12 @@ if length(TTL_paths) > 1
         
         % Load states and channels based on format
         if exist(fullfile(basePath,'states.npy'), 'file')
-            openephysDig.channel_states = [openephysDig.channel_states; readNPY(fullfile(basePath,'states.npy'))];
+            channel_states = readNPY(fullfile(basePath,'states.npy'));
+            openephysDig.channel_states = [openephysDig.channel_states; channel_states];
             openephysDig.channels = [openephysDig.channels; readNPY(fullfile(basePath,'sample_numbers.npy'))];
         else
-            openephysDig.channel_states = [openephysDig.channel_states; readNPY(fullfile(basePath,'channel_states.npy'))];
+            channel_states = readNPY(fullfile(basePath,'channel_states.npy'));
+            openephysDig.channel_states = [openephysDig.channel_states; channel_states];
             openephysDig.channels = [openephysDig.channels; readNPY(fullfile(basePath,'channels.npy'))];
         end
         openephysDig.full_words = [openephysDig.full_words; readNPY(fullfile(basePath,'full_words.npy'))];
