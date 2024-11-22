@@ -29,7 +29,7 @@ end
 uiLoaded = false;
 
 % Lists
-UI.list.sortingMethod = sort({'KiloSort','KiloSort2','KiloSort3','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','Klustasuite','MountainSort','IronClust','MClust','Wave_clus','custom'}); % Spike sorting methods
+UI.list.sortingMethod = sort({'KiloSort','KiloSort2','KiloSort3','KiloSort4','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','Klustasuite','MountainSort','IronClust','MClust','Wave_clus','custom'}); % Spike sorting methods
 UI.list.sortingFormat = sort({'Phy','KiloSort','SpyKING CIRCUS','Klustakwik','KlustaViewa','Klustasuite','Neurosuite','MountainSort','IronClust','ALF','allensdk','MClust','Wave_clus','custom'}); % Spike sorting formats
 UI.list.inputsType = {'adc','aux','dat','dig'}; % input data types
 UI.list.sessionTypes = {'Acute','Chronic','Unknown'}; % session types
@@ -222,7 +222,10 @@ uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata with template script',men
 uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from KiloSort (rez.mat file)',menuSelectedFcn,@(~,~)importKiloSort);
 uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from Phy (from folder)',menuSelectedFcn,@(~,~)importPhy);
 uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from Klustaviewa (*.kwik file)',menuSelectedFcn,@(~,~)importKlustaviewa);
-uimenu(UI.menu.file.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML,'Separator','on','Accelerator','I');
+uimenu(UI.menu.file.topMenu,menuLabel,'Import metadata from open ephys (structure.oebin file)',menuSelectedFcn,@(~,~)importOpenEphysSettingsFile,'Separator','on');
+uimenu(UI.menu.file.topMenu,menuLabel,'Detect open ephys session (from folder)',menuSelectedFcn,@(~,~)detectOpenEphysSession);
+
+uimenu(UI.menu.file.topMenu,menuLabel,'Import electrode layout from xml file',menuSelectedFcn,@(~,~)importGroupsFromXML,'Separator','on','Accelerator','I','Separator','on');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import bad channels from xml file',menuSelectedFcn,@importBadChannelsFromXML,'Accelerator','S');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import time series from Intan (info.rhd)',menuSelectedFcn,@importMetaFromIntan,'Accelerator','T');
 uimenu(UI.menu.file.topMenu,menuLabel,'Import merge points (*.mergePoints.events.mat)',menuSelectedFcn,@importEpochsIntervalsFromMergePoints,'Separator','on');
@@ -455,7 +458,7 @@ UI.edit.notes = uicontrol('Parent',UI.tabs.general,'Style', 'Edit', 'String', ''
 
 tableData = {false,'','',''};
 % uicontrol('Parent',UI.tabs.epochs,'Style', 'text', 'String', 'Epochs', 'Position', [10, 200, 240, 20],'HorizontalAlignment','left', 'fontweight', 'bold','Units','normalized');
-UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes'},'RowName',[],'ColumnEditable',[true false true true true true true true true true],'ColumnFormat',{'logical','numeric','char','numeric','numeric','char','char','char','char','char'},'Units','normalized','CellEditCallback',@editEpochsTableData);
+UI.table.epochs = uitable(UI.tabs.epochs,'Data',tableData,'Position',[1, 45, 616, 475],'ColumnWidth',{20 20 160 80 80 100 100 100 60 95 100},'columnname',{'','','Name','Start time','Stop time','Paradigm','Environment','Manipulations','Stimuli','Notes','Duration'},'RowName',[],'ColumnEditable',[true false true true true true true true true true false],'ColumnFormat',{'logical','numeric','char','numeric','numeric','char','char','char','char','char','char'},'Units','normalized','CellEditCallback',@editEpochsTableData);
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[5, 5, 90, 32],'String','Add','Callback',@(src,evnt)addEpoch,'Units','normalized','Interruptible','off','tooltip','Add new epoch');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[100, 5, 90, 32],'String','Edit','Callback',@(src,evnt)editEpoch,'Units','normalized','tooltip','Add selected epoch');
 uicontrol('Parent',UI.tabs.epochs,'Style','pushbutton','Position',[195, 5 100, 32],'String','Delete','Callback',@(src,evnt)deleteEpoch,'Units','normalized','tooltip','Delete selected epoch(s)');
@@ -1647,6 +1650,15 @@ uiwait(UI.fig)
                 
                 if isfield(session.epochs{fn},'notes') && ~isempty(session.epochs{fn}.notes)
                     tableData{fn,10} = session.epochs{fn}.notes;
+                end
+                
+                if isfield(session.epochs{fn},'startTime') && ~isempty(session.epochs{fn}.startTime) && isfield(session.epochs{fn},'stopTime') && ~isempty(session.epochs{fn}.stopTime)
+                    t0 = session.epochs{fn}.stopTime-session.epochs{fn}.startTime;
+                    timestring = [num2str(floor(t0/3600),'%02.0f'),':',num2str(floor(t0/60-floor(t0/3600)*60),'%02.0f'),':',num2str(t0-floor(t0/60)*60,'%02.3f')];
+                    tableData{fn,11} = timestring;
+                else
+                    tableData{fn,11} = '';
+                  
                 end
             end
             UI.table.epochs.Data = tableData;
@@ -3389,6 +3401,30 @@ uiwait(UI.fig)
         end
     end
 
+    function importOpenEphysSettingsFile
+        [file2,location2]  = uigetfile('*.*',session.general.basePath,'Select the structure.oebin');
+        session = loadOpenEphysSettingsFile(fullfile(location2,file2),session);
+        
+        % Updating UI
+        updateChannelGroupsList('electrodeGroups')
+        updateChannelGroupsList('spikeGroups')
+        updateChanCoords
+        UIsetString(session.extracellular,'nChannels'); % Number of channels
+        UIsetString(session.extracellular,'sr'); % Sampling rate of dat file  
+        UIsetString(session.extracellular,'equipment'); 
+        UIsetString(session.extracellular,'leastSignificantBit');  
+        UIsetString(session.extracellular,'fileFormat'); 
+        UIsetValue(UI.edit.precision,session.extracellular.precision)
+        UIsetString(session.extracellular,'fileName');
+    end
+
+    function detectOpenEphysSession
+        selpath = uigetdir(session.general.basePath);
+        session = preprocessOpenEphysData('session', session, 'processData',false,'basepath',selpath,'saveMat', false);
+
+        updateEpochsList
+    end
+    
     function importMetadataTemplate
         MsgLog('Importing metadata using template script',0)
         session = sessionTemplate(session);

@@ -1733,9 +1733,9 @@ end
 
         channels_with_spikes = unique(raster.channel);
         chanCoords_x = data.session.extracellular.chanCoords.x(UI.channelOrder(:));
-        chanCoords_x = (chanCoords_x-min(chanCoords_x))/range(chanCoords_x);
+        chanCoords_x = (chanCoords_x-min(chanCoords_x))/(max(chanCoords_x)-min(chanCoords_x));
         chanCoords_y = data.session.extracellular.chanCoords.y(UI.channelOrder(:));
-        chanCoords_y = (chanCoords_y-min(chanCoords_y))/range(chanCoords_y);
+        chanCoords_y = (chanCoords_y-min(chanCoords_y))/(max(chanCoords_y)-min(chanCoords_y));
         [~,Locb] = ismember(channels_with_spikes,UI.channelOrder(:));
         
         waveforms = zeros(wfWin*2,numel(raster.channel));
@@ -2003,15 +2003,15 @@ end
                 wf = reshape(double(ephys_data(X2(1:end-1))),1,(wfWin*2),[]);
                 wf2 = reshape(permute(wf,[2,1,3]),(wfWin*2),[]);
 
-                spike_amplitudes = [spike_amplitudes, range(wf2)];
+                spike_amplitudes = [spike_amplitudes, max(wf2)-min(wf2)];
             end
         end
         
         % Pulling waveforms
         if ~isempty(spike_amplitudes)
 
-            [histcounts_spike_amplitudes,bins__spike_amplitudes] = histcounts(spike_amplitudes,linspace(min(spike_amplitudes),ceil(max(spike_amplitudes)/10)*10,20));
-            bins__spike_amplitudes = bins__spike_amplitudes(1:end-1)-diff(bins__spike_amplitudes(1:2))/2;
+            [histcounts_spike_amplitudes,bins__spike_amplitudes] = histcounts(spike_amplitudes,linspace(0,ceil(max(spike_amplitudes)/10)*10,20));
+            bins__spike_amplitudes = bins__spike_amplitudes(1:end-1)+diff(bins__spike_amplitudes(1:2))/2;
 
             % Drawing background
             if drawBackground
@@ -2022,7 +2022,7 @@ end
             % Drawing histogram of spike amplitudes
             xlim1 = [0,max(bins__spike_amplitudes)];
             ylim1 = [0,max(histcounts_spike_amplitudes)];
-            line(UI.plot_axis1,(bins__spike_amplitudes-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth*UI.settings.windowDuration+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(histcounts_spike_amplitudes-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight), 'HitTest','off','Color', lineColor,'Marker','o','LineStyle','-','linewidth',2,'MarkerFaceColor',lineColor,'MarkerEdgeColor',lineColor)
+            line(UI.plot_axis1,(bins__spike_amplitudes-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth*UI.settings.windowDuration+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(histcounts_spike_amplitudes-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight), 'HitTest','off','Color', lineColor,'Marker','.','LineStyle','-','linewidth',1.5,'MarkerFaceColor',lineColor,'MarkerEdgeColor',lineColor)
             
             text(UI.plot_axis1,(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,0.984,[' ', num2str(xlim1(1),3),char(181),'V'],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left','color',UI.settings.primaryColor,'FontSize',12)
             text(UI.plot_axis1,1-0.005,0.984,[' ', num2str(xlim1(2),3),char(181),'V'],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','right','color',UI.settings.primaryColor,'FontSize',12)
@@ -2047,7 +2047,7 @@ end
         xlim1 = [0,numel([UI.channelOrder])+1];
         ylim1 = [0,max(raster.count_across_channels)];
 
-        % Drawing noise curves
+        % Drawing spike count curves
         for iShanks = UI.settings.electrodeGroupsToPlot
             channels = UI.channels{iShanks};
             [~,ia,~] = intersect(UI.channelOrder,channels,'stable');
@@ -2055,7 +2055,7 @@ end
             markerColor = UI.colors(iShanks,:);
             x_data = (1:numel(channels))+k_channels;
             y_data = raster.count_across_channels(channels);
-            line(UI.plot_axis1,(x_data-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth*UI.settings.windowDuration+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(y_data-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight), 'HitTest','off','Color', markerColor,'Marker','o','LineStyle','-','linewidth',2,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
+            line(UI.plot_axis1,(x_data-xlim1(1))/diff(xlim1)*UI.settings.insetRelativeWidth*UI.settings.windowDuration+(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,(y_data-ylim1(1))/diff(ylim1)*UI.settings.insetRelativeHeight+(0.985-UI.settings.insetRelativeHeight), 'HitTest','off','Color', markerColor,'Marker','.','LineStyle','-','linewidth',1.5,'MarkerFaceColor',markerColor,'MarkerEdgeColor',markerColor)
             k_channels = k_channels + numel(channels);
         end
         text(UI.plot_axis1,(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration-0.005,0.984,[' Max spikes: ', num2str(ylim1(2),3),'. Total: ' num2str(sum(raster.count_across_channels))],'FontWeight', 'Bold','VerticalAlignment', 'top','HorizontalAlignment','left','color',UI.settings.primaryColor,'FontSize',12)
@@ -2452,7 +2452,7 @@ end
         end
         k_channels = 0;
         xlim1 = [0,numel([UI.channelOrder])+1];
-        ylim1 = [min(rms1(UI.channelOrder)),max(rms1(UI.channelOrder))];
+        ylim1 = [0,max(rms1(UI.channelOrder))];
         
         % Drawing background
         p1 = patch(UI.plot_axis1,[(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration,UI.settings.windowDuration,UI.settings.windowDuration,(1-UI.settings.insetRelativeWidth)*UI.settings.windowDuration]-0.005,[(1-UI.settings.insetRelativeHeight) (1-UI.settings.insetRelativeHeight) 1 1]-0.015,'k','HitTest','off','EdgeColor',[0.5 0.5 0.5]);
@@ -7262,7 +7262,7 @@ end
         
         timestamp = char(datetime('now','TimeZone','local','Format','_dd-MM-yyyy_HH.mm.ss'));
         
-        if strcmp(content.output2.export_format,'Export to .png file (image)')
+        if strcmp(content.output2.format,'Export to .png file (image)')
             full_file_name = fullfile(basepath,[basename,'_NeuroScope',timestamp, '.png']);
             if ~verLessThan('matlab','9.8') 
                 exportgraphics(UI.plot_axis1,full_file_name)
@@ -7273,7 +7273,7 @@ end
             end
             MsgLog(['The .png file was saved to: ' full_file_name],2);
             
-        elseif strcmp(content.output2.export_format,'Export to .pdf file (vector graphics)')
+        elseif strcmp(content.output2.format,'Export to .pdf file (vector graphics)')
             full_file_name = fullfile(basepath,[basename,'_NeuroScope',timestamp, '.pdf']);
             if ~verLessThan('matlab','9.8') 
                 exportgraphics(UI.plot_axis1,full_file_name,'ContentType','vector')
