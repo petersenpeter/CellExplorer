@@ -11,13 +11,13 @@ function concatenate_binary_files(inputFiles,outputFile)
 % Creating the command
 
 if ispc
-    command1 = ['copy /b ', strjoin(inputFiles,'+'),' ', outputFile];
+    command1 = ['copy /b "', strjoin(inputFiles,'"+"'),'" ', outputFile];
     status = system(command1);    
 elseif ismac
-    command1 = ['! cat ', strjoin(inputFiles,' '), ' > ', outputFile];
+    command1 = ['! cat "', strjoin(inputFiles,'" "'), '" > ', outputFile];
     status = system(command1);    
 elseif isunix    
-    command1 = ['! cat ', strjoin(inputFiles,' '), ' > ', outputFile];
+    command1 = ['! cat "', strjoin(inputFiles,'" "'), '" > ', outputFile];
     status = system(command1);    
 end
 
