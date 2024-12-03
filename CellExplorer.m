@@ -12363,7 +12363,13 @@ end
             end
         end
         
-        MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
+        if isfield(general,'saveAs')
+            saveAs = general.saveAs;
+            MonoSynFile = fullfile(path1,[basename1,'.mono_res',erase(saveAs,'cell_metrics'),'.cellinfo.mat']);
+        else
+            MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
+        end
+        
         if exist(MonoSynFile,'file')
             ce_waitbar = waitbar(0,'Loading MonoSyn file','name','CellExplorer');
             load(MonoSynFile,'mono_res');
@@ -12419,7 +12425,7 @@ end
                     [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,2),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,2)));
                     cell_session.cell_metrics.synapticConnectionsIn(b) = a; cell_session.cell_metrics.synapticConnectionsIn = cell_session.cell_metrics.synapticConnectionsIn(1:cell_session.cell_metrics.general.cellCount);
                     
-                    saveStruct(cell_session,'cellinfo','basename',basename1,'basepath',path1,'dataName',saveAs);
+                    saveStruct(cell_session.cell_metrics,'cellinfo','basename',basename1,'basepath',path1,'dataName',saveAs);
                     
                     if ishandle(ce_waitbar)
                         waitbar(0.9,ce_waitbar,'Updating session');

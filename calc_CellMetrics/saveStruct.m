@@ -62,7 +62,11 @@ if any(strcmp(datatype,supportedDataTypes))
         case 'mat'
             % MATLABs own mat format
             % Saving to a struct to maintain intented variable name
-            S.(dataName) = data;
+            if contains(dataName,'cell_metrics') % this is to not create cell_metrics.intervalName fir intervals (if the saveAs is cell_metrics.intervalName, e.g.cell_metrics_NREM)
+                S.('cell_metrics') = data; 
+            else
+                S.(dataName) = data;
+            end
             
             % Checks byte size of struct to determine optimal mat format
             structSize = whos('S');
