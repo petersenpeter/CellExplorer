@@ -22,10 +22,8 @@ if exist(file1,'file')
         % Electrode groups and channel mapping
         channelmapping = [];
         for i = 1:session.extracellular.nChannels
-            if isstruct(openEphys_metadata.continuous.channels) 
-                if isfield(openEphys_metadata.continuous.channels(i),'channel_metadata')
-                    channelmapping(i) = openEphys_metadata.continuous(1).channels(i).channel_metadata.value+1;
-                end
+            if isfield(openEphys_metadata.continuous(1).channels(i),'channel_metadata')
+                channelmapping(i) = openEphys_metadata.continuous(1).channels(i).channel_metadata(1).value(1)+1;
             elseif isfield(openEphys_metadata.continuous(1).channels{i},'channel_metadata')
                 channelmapping(i) = openEphys_metadata.continuous(1).channels{i}.channel_metadata.value+1;
             end
@@ -61,7 +59,7 @@ if exist(file1,'file')
             y = session.extracellular.chanCoords.y(session.extracellular.electrodeGroups.channels{j});
             plot(x,y,'s',MarkerFaceColor=site_cmap(j,:))
         end
-        xlabel('X position (µm)'), ylabel('Y position (µm)'), title('Neuropixel site selection', file1)
+        xlabel('X position (µm)'), ylabel('Y position (µm)'), title(['Neuropixel site selection: ' strrep(file1,'\','\\')])
         axis equal
     
         session.extracellular.spikeGroups.channels = session.extracellular.electrodeGroups.channels;
