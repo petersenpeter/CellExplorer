@@ -17,7 +17,7 @@ function session = preprocessOpenEphysData(varargin)
     addParameter(p,'saveMat', true, @islogical); % Saves basename.session.mat file
     addParameter(p,'showGUI',false,@islogical);
     addParameter(p,'processData',true,@islogical);
-    addParameter(p,'probe_letter','A',@(x) ismember(x,{'A','B','C'}));
+    addParameter(p,'probeLetter','A',@(x) ismember(x,{'A','B','C'}));
     parse(p,varargin{:})
 
     parameters = p.Results;
@@ -48,7 +48,7 @@ function session = preprocessOpenEphysData(varargin)
     
     % 2. Imports extracellular metadata and Channel coordinates from the first structure.oebin file 
     file1 = fullfile(session.general.basePath,session.epochs{1}.name,'structure.oebin');
-    session = loadOpenEphysSettingsFile(file1, session, 'probe_letter', parameters.probe_letter);
+    session = loadOpenEphysSettingsFile(file1, session, 'probeLetter', parameters.probeLetter);
 
     % 3. Epoch durations
     [session,inputFiles] = calculateEpochDurations(session,basepath);
@@ -69,7 +69,7 @@ function session = preprocessOpenEphysData(varargin)
     % 5. Merge dat files to single binary .dat file in basepath
     if parameters.processData
         disp('Attempting to concatenate binary files with spiking data.')
-        outputFile = fullfile(basepath,[session.general.name, '_Probe', parameters.probe_letter, '.dat']);
+        outputFile = fullfile(basepath,[session.general.name, '_Probe', parameters.probeLetter, '.dat']);
         binaryMergeWrapper(inputFiles, outputFile)
     end
 
@@ -81,10 +81,10 @@ function session = preprocessOpenEphysData(varargin)
         elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat'),'file')
             inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat');
         else
-            inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous',['Neuropix-PXI-100.Probe', parameters.probe_letter, '-LFP'],'continuous.dat');
+            inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous',['Neuropix-PXI-100.Probe', parameters.probeLetter, '-LFP'],'continuous.dat');
         end
     end
-    outputFile_lfp = fullfile(basepath,[session.general.name, '_Probe', parameters.probe_letter, '.lfp']);
+    outputFile_lfp = fullfile(basepath,[session.general.name, '_Probe', parameters.probeLetter, '.lfp']);
 
 
     disp('Attempting to concatenate binary LFP files.')
