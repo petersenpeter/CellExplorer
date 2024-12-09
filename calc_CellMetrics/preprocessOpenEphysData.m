@@ -17,6 +17,7 @@ function session = preprocessOpenEphysData(varargin)
     addParameter(p,'saveMat', true, @islogical); % Saves basename.session.mat file
     addParameter(p,'showGUI',false,@islogical);
     addParameter(p,'processData',true,@islogical);
+    addParameter(p,'probeID','ProbeA',@isstr);
     parse(p,varargin{:})
 
     parameters = p.Results;
@@ -47,7 +48,7 @@ function session = preprocessOpenEphysData(varargin)
     
     % 2. Imports extracellular metadata and Channel coordinates from the first structure.oebin file 
     file1 = fullfile(session.general.basePath,session.epochs{1}.name,'structure.oebin');
-    session = loadOpenEphysSettingsFile(file1,session);
+    session = loadOpenEphysSettingsFile(file1,session,parameters.probeID);
     
     
     % 3. Epoch durations
