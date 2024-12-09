@@ -1,36 +1,36 @@
-function session = loadOpenEphysSettingsFile(file1, session, probeID)
+function session = loadOpenEphysSettingsFile(file1,session,varargin)
 % Loading structure.oebin -  a json structure created by OpenEphys
 % file1 = '/Users/peterpetersen/Databank/OpenEphys/structure_5.oebin';
-% probeID can be 'ProbeA' or 'ProbeB'
 
 % https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html
 
-if ~exist('probeID', 'var')
-    probeID = 'ProbeA';  % Default to ProbeA if not specified
+p = inputParser;
+addParameter(p,'probe_letter','A',@ischar);
+
+% Parsing inputs
+parse(p,varargin{:})
+parameters = p.Results;
+
+switch parameters.probe_letter
+    case 'A'
+        stream_id = 1;
+    case 'B'
+        stream_id = 2;
+    case 'C'
+        stream_id = 3;
+    otherwise
+        stream_id = 1;
 end
 
 if exist(file1,'file')
-    disp(['Loading Open Ephys settings: ', file1, ' for ', probeID])
+    disp(['Loading Open Ephys settings: ', file1])
     text = fileread(file1);
-    openEphys_metadata = jsondecode(text);
-
-    % Find the correct probe index
-    probeIdx = [];
-    for i = 1:length(openEphys_metadata.continuous)
-        if contains(openEphys_metadata.continuous(i).stream_name, probeID)
-            probeIdx = i;
-            break;
-        end
-    end
-
-    if isempty(probeIdx)
-        error(['Probe ', probeID, ' not found in metadata']);
-    end
+    openEphys_metadata=jsondecode(text);
 
     if strcmp(openEphys_metadata.GUIVersion, '0.6.7')
         % Importing metadata
-        session.extracellular.sr = openEphys_metadata.continuous(probeIdx).sample_rate;
-        session.extracellular.nChannels = openEphys_metadata.continuous(probeIdx).num_channels;
+        session.extracellular.sr = openEphys_metadata.continuous(stream_id).sample_rate;
+        session.extracellular.nChannels = openEphys_metadata.continuous(stream_id).num_channels;
         session.extracellular.equipment = 'OpenEpys Neuropix-PXI';
         session.extracellular.leastSignificantBit = 0.195;
         session.extracellular.fileFormat = 'dat';
@@ -40,10 +40,12 @@ if exist(file1,'file')
         % Electrode groups and channel mapping
         channelmapping = [];
         for i = 1:session.extracellular.nChannels
-            if isfield(openEphys_metadata.continuous(probeIdx).channels(i),'channel_metadata')
-                channelmapping(i) = openEphys_metadata.continuous(probeIdx).channels(i).channel_metadata(1).value(1)+1;
-            elseif isfield(openEphys_metadata.continuous(probeIdx).channels{i},'channel_metadata')
-                channelmapping(i) = openEphys_metadata.continuous(probeIdx).channels{i}.channel_metadata.value+1;
+            if isstruct(openEphys_metadata.continuous(stream_id).channels) 
+                if isfield(openEphys_metadata.continuous(stream_id).channels(i),'channel_metadata')
+                    channelmapping(i) = openEphys_metadata.continuous(stream_id).channels(i).channel_metadata.value+1;
+                end
+            elseif isfield(openEphys_metadata.continuous(stream_id).channels{i},'channel_metadata')
+                channelmapping(i) = openEphys_metadata.continuous(stream_id).channels{i}.channel_metadata.value+1;
             end
         end
     
@@ -77,7 +79,7 @@ if exist(file1,'file')
             y = session.extracellular.chanCoords.y(session.extracellular.electrodeGroups.channels{j});
             plot(x,y,'s',MarkerFaceColor=site_cmap(j,:))
         end
-        xlabel('X position (µm)'), ylabel('Y position (µm)'), title(['Neuropixel site selection: ' strrep(file1,'\','\\') ' - ' probeID])
+        xlabel('X position (µm)'), ylabel('Y position (µm)'), title('Neuropixel site selection', file1)
         axis equal
     
         session.extracellular.spikeGroups.channels = session.extracellular.electrodeGroups.channels;
@@ -85,13 +87,14 @@ if exist(file1,'file')
     
         % LFP data stream
         if length(openEphys_metadata.continuous)>1
-            session.extracellular.srLfp = openEphys_metadata.continuous(probeIdx).sample_rate;
+            session.extracellular.srLfp = openEphys_metadata.continuous(2).sample_rate;
         end
     
         % Loading events from timestamps
         session.timeSeries.dig.fileName = [openEphys_metadata.events{1}.folder_name,'timestamps.npy'];
         session.timeSeries.dig.fileFormat = 'npy';
         session.timeSeries.dig.precision  = openEphys_metadata.events{1}.type;
+        %session.timeSeries.dig.nChannels = openEphys_metadata.events{1}.num_channels;
         session.timeSeries.dig.nChannels = 1;
         session.timeSeries.dig.sr = openEphys_metadata.events{1}.sample_rate;
         session.timeSeries.dig.equipment = 'OpenEpys Neuropix-PXI';

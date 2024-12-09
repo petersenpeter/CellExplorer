@@ -17,7 +17,7 @@ function session = preprocessOpenEphysData(varargin)
     addParameter(p,'saveMat', true, @islogical); % Saves basename.session.mat file
     addParameter(p,'showGUI',false,@islogical);
     addParameter(p,'processData',true,@islogical);
-    addParameter(p,'probeID','ProbeA',@isstr);
+    addParameter(p,'probe_letter','A',@(x) ismember(x,{'A','B','C'}));
     parse(p,varargin{:})
 
     parameters = p.Results;
@@ -48,12 +48,11 @@ function session = preprocessOpenEphysData(varargin)
     
     % 2. Imports extracellular metadata and Channel coordinates from the first structure.oebin file 
     file1 = fullfile(session.general.basePath,session.epochs{1}.name,'structure.oebin');
-    session = loadOpenEphysSettingsFile(file1,session,parameters.probeID);
-    
-    
+    session = loadOpenEphysSettingsFile(file1, session, 'probe_letter', parameters.probe_letter);
+
     % 3. Epoch durations
     [session,inputFiles] = calculateEpochDurations(session,basepath);
-       
+
     % Shows session GUI if requested by user
     if parameters.showGUI
         session = gui_session(session);
@@ -61,50 +60,48 @@ function session = preprocessOpenEphysData(varargin)
         % Calculates epoch durations and inputFiles again in case the number of epochs has changed
         [session,inputFiles] = calculateEpochDurations(session,basepath);
     end
-    
+
     % 4. Saving session struct
     if parameters.saveMat
         saveStruct(session);
     end
-    
-    
+
     % 5. Merge dat files to single binary .dat file in basepath
     if parameters.processData
-
         disp('Attempting to concatenate binary files with spiking data.')
-        outputFile = fullfile(basepath,[session.general.name,'_', parameters.probeID,'.dat']);
+        outputFile = fullfile(basepath,[session.general.name, '_Probe', parameters.probe_letter, '.dat']);
         binaryMergeWrapper(inputFiles, outputFile)
-
-        % 6. Merge lfp files
-        inputFiles_lfp = {};
-        for i = 1:numel(session.epochs)
-            if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin'),'file')
-                inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin');
-            elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat'),'file')
-                inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat');
-            else
-                inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.ProbeA-LFP','continuous.dat');
-            end
-        end
-        outputFile_lfp = fullfile(basepath,[session.general.name,'.lfp']);
-
-
-        disp('Attempting to concatenate binary LFP files.')
-        binaryMergeWrapper(inputFiles_lfp, outputFile_lfp)
-
-
-        % 7. Merge digital timeseries
-        openephysDig = loadOpenEphysDigital(session);
-
     end
 
-    function subFolderNames = checkfolder(dir1, folderstring)
-        files = dir(dir1);
-        dirFlags = [files.isdir]; % Get a logical vector that tells which is a directory.
-        subFolders = files(dirFlags); % Extract only those that are directories.
-        subFolderNames = {subFolders(3:end).name}; % Get only the folder names into a cell array.  Start at 3 to skip . and ..
-        subFolderNames = subFolderNames(contains(subFolderNames,folderstring));
-    end    
+    % 6. Merge lfp files
+    inputFiles_lfp = {};
+    for i = 1:numel(session.epochs)
+        if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin'),'file')
+            inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin');
+        elseif exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat'),'file')
+            inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.dat');
+        else
+            inputFiles_lfp{i} = fullfile(basepath,session.epochs{i}.name,'continuous',['Neuropix-PXI-100.Probe', parameters.probe_letter, '-LFP'],'continuous.dat');
+        end
+    end
+    outputFile_lfp = fullfile(basepath,[session.general.name, '_Probe', parameters.probe_letter, '.lfp']);
+
+
+    disp('Attempting to concatenate binary LFP files.')
+    binaryMergeWrapper(inputFiles_lfp, outputFile_lfp)
+
+
+    % 7. Merge digital timeseries
+    openephysDig = loadOpenEphysDigital(session);
+
+end
+
+function subFolderNames = checkfolder(dir1, folderstring)
+files = dir(dir1);
+dirFlags = [files.isdir]; % Get a logical vector that tells which is a directory.
+subFolders = files(dirFlags); % Extract only those that are directories.
+subFolderNames = {subFolders(3:end).name}; % Get only the folder names into a cell array.  Start at 3 to skip . and ..
+subFolderNames = subFolderNames(contains(subFolderNames,folderstring));
 end
 
 
