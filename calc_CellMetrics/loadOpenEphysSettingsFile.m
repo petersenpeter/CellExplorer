@@ -1,8 +1,26 @@
-function session = loadOpenEphysSettingsFile(file1,session)
+function session = loadOpenEphysSettingsFile(file1,session,varargin)
 % Loading structure.oebin -  a json structure created by OpenEphys
 % file1 = '/Users/peterpetersen/Databank/OpenEphys/structure_5.oebin';
 
 % https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html
+
+p = inputParser;
+addParameter(p,'probe_letter','A',@ischar);
+
+% Parsing inputs
+parse(p,varargin{:})
+parameters = p.Results;
+
+switch parameters.probe_letter
+    case 'A'
+        stream_id = 1;
+    case 'B'
+        stream_id = 2;
+    case 'C'
+        stream_id = 3;
+    otherwise
+        stream_id = 1;
+end
 
 if exist(file1,'file')
     disp(['Loading Open Ephys settings: ', file1])
@@ -11,8 +29,8 @@ if exist(file1,'file')
 
     if strcmp(openEphys_metadata.GUIVersion, '0.6.7')
         % Importing metadata
-        session.extracellular.sr = openEphys_metadata.continuous(1).sample_rate;
-        session.extracellular.nChannels = openEphys_metadata.continuous(1).num_channels;
+        session.extracellular.sr = openEphys_metadata.continuous(stream_id).sample_rate;
+        session.extracellular.nChannels = openEphys_metadata.continuous(stream_id).num_channels;
         session.extracellular.equipment = 'OpenEpys Neuropix-PXI';
         session.extracellular.leastSignificantBit = 0.195;
         session.extracellular.fileFormat = 'dat';
@@ -22,12 +40,12 @@ if exist(file1,'file')
         % Electrode groups and channel mapping
         channelmapping = [];
         for i = 1:session.extracellular.nChannels
-            if isstruct(openEphys_metadata.continuous.channels) 
-                if isfield(openEphys_metadata.continuous.channels(i),'channel_metadata')
-                    channelmapping(i) = openEphys_metadata.continuous(1).channels(i).channel_metadata.value+1;
+            if isstruct(openEphys_metadata.continuous(stream_id).channels) 
+                if isfield(openEphys_metadata.continuous(stream_id).channels(i),'channel_metadata')
+                    channelmapping(i) = openEphys_metadata.continuous(stream_id).channels(i).channel_metadata.value+1;
                 end
-            elseif isfield(openEphys_metadata.continuous(1).channels{i},'channel_metadata')
-                channelmapping(i) = openEphys_metadata.continuous(1).channels{i}.channel_metadata.value+1;
+            elseif isfield(openEphys_metadata.continuous(stream_id).channels{i},'channel_metadata')
+                channelmapping(i) = openEphys_metadata.continuous(stream_id).channels{i}.channel_metadata.value+1;
             end
         end
     
