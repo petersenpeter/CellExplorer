@@ -62,12 +62,12 @@ function [ripples] = ce_FindRipples(varargin)
 %                   .noise             candidate ripples that were
 %                                      identified as noise and removed
 %                   .peakNormedPower   Nx1 matrix of peak power values
-%                   .detectorParams    struct with input parameters given
+%                   .detectorinfo    struct with input parameters given
 %                                      to the detector
 
 % Copyright (C) 2004-2011 by Michaël Zugaro, initial algorithm by Hajime Hirase
 % edited by David Tingley, 2017
-% Edited by Peter Petersen, January 2021, renamed function and added session struct
+% Edited by Peter Petersen, January 2021: renamed function and added session struct
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -90,7 +90,6 @@ addParameter(p,'saveMat',false,@islogical);
 addParameter(p,'minDuration',20,@isnumeric)
 addParameter(p,'plotType',1,@isnumeric)
 
-    
 if isstruct(varargin{1})  % if first arg is a session struct
     addRequired(p,'session',@isstruct)
     parse(p,varargin{:})
@@ -292,7 +291,6 @@ ripples = [timestamps(thirdPass(:,1)) timestamps(peakPosition) ...
 duration = ripples(:,3)-ripples(:,1);
 ripples(duration>maxRippleDuration/1000,:) = NaN;
 disp(['Long ripples removed: ' num2str(sum(duration>maxRippleDuration/1000))])
-ripples = ripples((all((~isnan(ripples)),2)),:);
 
 %disp(['After duration test: ' num2str(size(ripples,1)) ' events.']);
 
@@ -467,14 +465,14 @@ processing_steps.final = ripples(:,2);
 rips = ripples; clear ripples
 
 ripples.timestamps = rips(:,[1 3]);
-ripples.peaks = rips(:,2);            %peaktimes? could also do these as timestamps and then ripples.ints for start/stops?
-ripples.peakNormedPower = rips(:,4);  %amplitudes?
+ripples.peaks = rips(:,2);            % peaktimes? could also do these as timestamps and then ripples.ints for start/stops?
+ripples.peakNormedPower = rips(:,4);  % amplitudes?
 ripples.stdev = sd;
 ripples.processing_steps = processing_steps;
 if ~isempty(bad)
     ripples.noise.times = bad(:,[1 3]);
-    ripples.noise.peaks = bad(:,[2]);
-    ripples.noise.peakNormedPower = bad(:,[4]);
+    ripples.noise.peaks = bad(:,2);
+    ripples.noise.peakNormedPower = bad(:,4);
 else
     ripples.noise.times = [];
     ripples.noise.peaks = [];
@@ -545,4 +543,3 @@ if ~isempty(sd)
 end
 
 U = (A - meanA)/stdA;
-
