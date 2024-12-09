@@ -72,7 +72,7 @@ function session = preprocessOpenEphysData(varargin)
     if parameters.processData
 
         disp('Attempting to concatenate binary files with spiking data.')
-        outputFile = fullfile(basepath,[session.general.name,'.dat']);
+        outputFile = fullfile(basepath,[session.general.name,'_', parameters.probeID,'.dat']);
         binaryMergeWrapper(inputFiles, outputFile)
 
         % 6. Merge lfp files
