@@ -5,13 +5,13 @@ function session = loadOpenEphysSettingsFile(file1,session,varargin)
 % https://open-ephys.github.io/gui-docs/User-Manual/Recording-data/Binary-format.html
 
 p = inputParser;
-addParameter(p,'probe_letter','A',@ischar);
+addParameter(p,'probeLetter','A',@ischar);
 
 % Parsing inputs
 parse(p,varargin{:})
 parameters = p.Results;
 
-switch parameters.probe_letter
+switch parameters.probeLetter
     case 'A'
         stream_id = 1;
     case 'B'
