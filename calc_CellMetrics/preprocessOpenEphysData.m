@@ -92,7 +92,7 @@ function session = preprocessOpenEphysData(varargin)
 
 
     % 7. Merge digital timeseries
-    openephysDig = loadOpenEphysDigital(session);
+    openephysDig = loadOpenEphysDigital(session, 'probeLetter', parameters.probeLetter);
 
 end
 
