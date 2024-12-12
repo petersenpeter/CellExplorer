@@ -24,6 +24,7 @@ addParameter(p,'saveFig', false, @islogical); % Save figure with data
 addParameter(p,'saveMat', true, @islogical); % Save figure with data
 addParameter(p,'extraLabel', '', @ischar); % Extra labels in figures
 addParameter(p,'getBadChannelsFromDat', true, @islogical); % Determining any extra bad channels from noiselevel of .dat file
+addParameter(p,'restrictTime',[],@isnumeric); %[lower upper] bounds for time to restrict spikes.ts to, default ignored
 
 parse(p,varargin{:})
 
@@ -31,6 +32,7 @@ wfWin_sec = p.Results.wfWin_sec;
 wfWinKeep = p.Results.wfWinKeep;
 keepWaveforms_filt = p.Results.keepWaveforms_filt;
 keepWaveforms_raw = p.Results.keepWaveforms_raw;
+restrictTime = p.Results.restrictTime;
 params = p.Results;
 
 % Loading session struct into separate parameters
@@ -65,12 +67,17 @@ end
 % Determining any extra bad channels from noiselevel of .dat file
 if params.getBadChannelsFromDat
     try
-        session = getBadChannelsFromDat(session,'filtFreq',params.filtFreq,'saveMat',params.saveMat);
+%         session = getBadChannelsFromDat(session,'filtFreq',params.filtFreq,'saveMat',params.saveMat);
     end
 end
 
 % Removing channels marked as Bad in session struct
-bad_channels = get_bad_channels(session);
+% bad_channels = get_bad_channels(session);
+try
+    bad_channels = session.channelTags.Bad.channels;
+catch
+    bad_channels=[];
+end
 if ~isempty(bad_channels)
     badChannels_message = ['Bad channels detected: ' num2str(bad_channels)];
 else
@@ -78,9 +85,9 @@ else
 end
 
 % Removing channels that does not exist in SpkGrps
-if isfield(session.extracellular,'spikeGroups')
-    bad_channels = [bad_channels,setdiff([electrodeGroups{:}],[session.extracellular.spikeGroups.channels{:}])];
-end
+% if isfield(session.extracellular,'spikeGroups')
+%     bad_channels = [bad_channels,setdiff([electrodeGroups{:}],[session.extracellular.spikeGroups.channels{:}])];
+% end
 
 if isempty(bad_channels)
     goodChannels = 1:nChannels;
@@ -127,10 +134,21 @@ g = fittype('a*exp(-x/b)+c','dependent',{'y'},'independent',{'x'},'coefficients'
 for i = 1:length(params.unitsToProcess)
     ii = params.unitsToProcess(i);
     t1 = toc(timerVal);
-    if isfield(spikes,'ts')
-        spkTmp = spikes.ts{ii}(find(spikes.ts{ii}./sr > wfWin_sec/1.8 & spikes.ts{ii}./sr < duration-wfWin_sec/1.8));
+    if ~isempty(restrictTime)
+        tempRestrictedIdx = find((spikes.times{ii}>=restrictTime(1))&(spikes.times{ii}<restrictTime(2)));
+        if isfield(spikes,'ts')
+            tempRestricted = spikes.ts{ii}(tempRestrictedIdx);
+            spkTmp = tempRestricted(find(tempRestricted./sr > wfWin_sec/1.8 & tempRestricted./sr < duration-wfWin_sec/1.8));
+        else
+            tempRestricted = spikes.times{ii}(tempRestrictedIdx);
+            spkTmp = round(sr * tempRestricted(find(tempRestricted > wfWin_sec/1.8 & tempRestricted < duration-wfWin_sec/1.8)));
+        end
     else
-        spkTmp = round(sr * spikes.times{ii}(find(spikes.times{ii} > wfWin_sec/1.8 & spikes.times{ii} < duration-wfWin_sec/1.8)));
+        if isfield(spikes,'ts')
+            spkTmp = spikes.ts{ii}(find(spikes.ts{ii}./sr > wfWin_sec/1.8 & spikes.ts{ii}./sr < duration-wfWin_sec/1.8));
+        else
+            spkTmp = round(sr * spikes.times{ii}(find(spikes.times{ii} > wfWin_sec/1.8 & spikes.times{ii} < duration-wfWin_sec/1.8)));
+        end
     end
     
     if length(spkTmp) > params.nPull
