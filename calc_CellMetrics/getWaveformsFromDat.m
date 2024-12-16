@@ -67,7 +67,7 @@ end
 % Determining any extra bad channels from noiselevel of .dat file
 if params.getBadChannelsFromDat
     try
-%         session = getBadChannelsFromDat(session,'filtFreq',params.filtFreq,'saveMat',params.saveMat);
+        session = getBadChannelsFromDat(session,'filtFreq',params.filtFreq,'saveMat',params.saveMat);
     end
 end
 
@@ -85,9 +85,9 @@ else
 end
 
 % Removing channels that does not exist in SpkGrps
-% if isfield(session.extracellular,'spikeGroups')
-%     bad_channels = [bad_channels,setdiff([electrodeGroups{:}],[session.extracellular.spikeGroups.channels{:}])];
-% end
+if isfield(session.extracellular,'spikeGroups')
+    bad_channels = [bad_channels,setdiff([electrodeGroups{:}],[session.extracellular.spikeGroups.channels{:}])];
+end
 
 if isempty(bad_channels)
     goodChannels = 1:nChannels;
