@@ -109,7 +109,10 @@ if isstruct(varargin{1})  % if first arg is a session struct
         'precision','int16','frequency',session.extracellular.srLfp);
     % Filtering the lfp trace
     [filt_b filt_a] = cheby2(4,50,passband/(0.5*session.extracellular.srLfp));
-    signal = filtfilt(filt_b,filt_a,single(lfp));
+%     if ~isa(lfp,'double'), lfp=double(lfp); end
+    if ~isa(filt_b, 'double'), filt_b = double(filt_b); end
+    if ~isa(filt_a,'double'), filt_a = double(filt_a); end
+    signal = filtfilt(filt_b,filt_a,double(lfp));
     % Assigning timestamps
     timestamps = [1:length(signal)]'/session.extracellular.srLfp;
 
