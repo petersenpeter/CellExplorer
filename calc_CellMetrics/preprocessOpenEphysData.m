@@ -73,7 +73,6 @@ function session = preprocessOpenEphysData(varargin)
     end
 
     % 6. Merge lfp files
-    % not implemented yet, awaited for updates.
     inputFiles_lfp = {};
     for i = 1:numel(session.epochs)
         if exist(fullfile(basepath,session.epochs{i}.name,'continuous','Neuropix-PXI-100.1','continuous.bin'),'file')
@@ -92,7 +91,7 @@ function session = preprocessOpenEphysData(varargin)
 
 
     % 7. Merge digital timeseries
-    openephysDig = loadOpenEphysDigital(session, 'probeLetter', parameters.probeLetter);
+    % openephysDig = loadOpenEphysDigital(session);
 
 end
 
