@@ -24,12 +24,14 @@ function openephysDig = loadOpenEphysDigitalNidaq(session, varargin)
 %     .on          - {1x1} Cell containing timestamps of rising edges (0→1)
 %     .off         - {1x1} Cell containing timestamps of falling edges (1→0)
 %     .diagnostics - Structure containing timing analysis and data quality info
+%                   including timestamp duplicates and state conflicts
 %
 % NOTES:
 %   - Rising and falling edges are paired based on channel-specific transitions
 %   - Timestamps are aligned to probe recording start time
 %   - Function warns if rising edges lack corresponding falling edges
 %   - Empty epochs or missing files are handled gracefully with warnings
+%   - Duplicate timestamps are analyzed with their states for conflicts
 %
 % EXAMPLE:
 %   % Load camera trigger signals from channel 1
@@ -102,8 +104,34 @@ for i = 1:length(validEpochs)
     % Align timestamps and get states
     alignedTimestamps = epochsStartTime(i) + double(timestamps) - ephysT0(i);
     channel_states = bitget(fullWords, parameters.channelNum + 1);
+
+    % Find unique timestamps and duplicates
     [uniqueTimestamps, uniqueIdx] = unique(alignedTimestamps);
     uniqueStates = channel_states(uniqueIdx);
+
+    % Analyze duplicates and their states
+    [~, ~, dupGroups] = unique(alignedTimestamps);  % Get grouping for all timestamps
+    duplicateInfo = struct('timestamps', [], 'states', [], 'hasConflict', []);
+    
+    % Find timestamps that appear more than once
+    [dupCounts, dupValues] = hist(alignedTimestamps, unique(alignedTimestamps));
+    duplicateTimestamps = dupValues(dupCounts > 1);
+    
+    if ~isempty(duplicateTimestamps)
+        for j = 1:length(duplicateTimestamps)
+            dupTime = duplicateTimestamps(j);
+            dupIndices = find(alignedTimestamps == dupTime);
+            dupStates = channel_states(dupIndices);
+            
+            % Store duplicate information
+            duplicateInfo.timestamps(j) = dupTime;
+            duplicateInfo.states{j} = dupStates;
+            duplicateInfo.hasConflict(j) = length(unique(dupStates)) > 1;
+        end
+        
+        % Store in diagnostics
+        openephysDig.diagnostics.epoch(i).duplicates = duplicateInfo;
+    end
 
     % Initialize arrays for this epoch
     rising_edges = [];
@@ -148,6 +176,7 @@ for i = 1:length(validEpochs)
     openephysDig.states = [openephysDig.states; uniqueStates];
     openephysDig.epochNum = [openephysDig.epochNum; repmat(currentEpoch, length(uniqueTimestamps), 1)];
 end
+
 % Save
 saveStruct(openephysDig,'digitalseries','session',session);
 end
