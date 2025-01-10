@@ -118,10 +118,14 @@ end
 
 % Estimating the speed of the rat
 animal_speed = [optitrack_temp.FrameRate*sqrt(sum(diff(position3D)'.^2)),0];
-animal_speed = nanconv(animal_speed,ones(1,10)/10,'edge');
+animal_speed = nanconv(animal_speed,ones(1,10)/10,'edge');  % Original smoothing
 animal_acceleration = [0,diff(animal_speed)];
 
-% Adding  output struct
+% Additional smoothing with larger window
+window_size = 80;
+smoothed_speed = nanconv(animal_speed, ones(1,window_size)/window_size, 'edge');
+
+% Adding output struct
 optitrack_temp.position3D = position3D';
 
 % Generating buzcode fields and output struct
@@ -134,7 +138,8 @@ optitrack.position.z = optitrack_temp.position3D(3,:);
 optitrack.position.units = 'centimeters';
 optitrack.position.referenceFrame = 'global';
 optitrack.position.coordinateSystem = 'cartesian';
-optitrack.speed = animal_speed;
+optitrack.speed = animal_speed;  % Original speed
+optitrack.smoothedSpeed = smoothed_speed;  % Added smoothed speed
 optitrack.acceleration = animal_acceleration;
 optitrack.orientation.x = optitrack_temp.Xr;
 optitrack.orientation.y = optitrack_temp.Yr;
