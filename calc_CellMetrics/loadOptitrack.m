@@ -119,11 +119,11 @@ end
 % Estimating the speed of the rat
 animal_speed = [optitrack_temp.FrameRate*sqrt(sum(diff(position3D)'.^2)),0];
 animal_speed = nanconv(animal_speed,ones(1,10)/10,'edge');  % Original smoothing
-animal_acceleration = [0,diff(animal_speed)];
 
 % Additional smoothing with larger window
 window_size = 80;
 smoothed_speed = nanconv(animal_speed, ones(1,window_size)/window_size, 'edge');
+animal_acceleration = [0,optitrack_temp.FrameRate*diff(smoothed_speed)];
 
 % Adding output struct
 optitrack_temp.position3D = position3D';
