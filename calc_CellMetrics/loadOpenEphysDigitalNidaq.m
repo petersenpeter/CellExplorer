@@ -47,6 +47,13 @@ addParameter(p,'probeLetter', 'A', @ischar);
 parse(p,varargin{:});
 parameters = p.Results;
 
+% Check for existing digitalseries file
+existingFile = fullfile(session.general.basePath, [session.general.name '.openephysDig.digitalseries.mat']);
+if exist(existingFile, 'file')
+    load(existingFile, 'openephysDig');
+    return
+end
+
 % Initialize
 ttlPaths = {};
 epochsStartTime = [];
