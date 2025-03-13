@@ -141,9 +141,17 @@ optitrack.position.coordinateSystem = 'cartesian';
 optitrack.speed = animal_speed;  % Original speed
 optitrack.smoothedSpeed = smoothed_speed;  % Added smoothed speed
 optitrack.acceleration = animal_acceleration;
-optitrack.orientation.x = optitrack_temp.Xr;
-optitrack.orientation.y = optitrack_temp.Yr;
-optitrack.orientation.z = optitrack_temp.Zr;
+optitrack.orientation.x = -optitrack_temp.Xr;
+optitrack.orientation.y = optitrack_temp.Zr;
+optitrack.orientation.z = optitrack_temp.Yr;
+optitrack.orientation.w = optitrack_temp.Wr;
+% Calculate raw heading angle
+heading = atan2(2*(optitrack.orientation.w.*optitrack.orientation.x + optitrack.orientation.y.*optitrack.orientation.z), ...
+                           1 - 2*(optitrack.orientation.y.^2 + optitrack.orientation.z.^2));
+
+% Apply the offset correction (1.44 rad)
+heading_offset = 1.44;  % Fixed offset determined empirically
+optitrack.orientation.heading = wrapToPi(heading + heading_offset);
 optitrack.orientation.rotationType = optitrack_temp.RotationType;
 optitrack.nSamples = numel(optitrack.timestamps);
 
