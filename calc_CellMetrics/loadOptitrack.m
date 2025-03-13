@@ -118,10 +118,14 @@ end
 
 % Estimating the speed of the rat
 animal_speed = [optitrack_temp.FrameRate*sqrt(sum(diff(position3D)'.^2)),0];
-animal_speed = nanconv(animal_speed,ones(1,10)/10,'edge');
-animal_acceleration = [0,diff(animal_speed)];
+animal_speed = nanconv(animal_speed,ones(1,10)/10,'edge');  % Original smoothing
 
-% Adding  output struct
+% Additional smoothing with larger window
+window_size = 80;
+smoothed_speed = nanconv(animal_speed, ones(1,window_size)/window_size, 'edge');
+animal_acceleration = [0,optitrack_temp.FrameRate*diff(smoothed_speed)];
+
+% Adding output struct
 optitrack_temp.position3D = position3D';
 
 % Generating buzcode fields and output struct
@@ -134,11 +138,33 @@ optitrack.position.z = optitrack_temp.position3D(3,:);
 optitrack.position.units = 'centimeters';
 optitrack.position.referenceFrame = 'global';
 optitrack.position.coordinateSystem = 'cartesian';
-optitrack.speed = animal_speed;
+optitrack.speed = animal_speed;  % Original speed
+optitrack.smoothedSpeed = smoothed_speed;  % Added smoothed speed
 optitrack.acceleration = animal_acceleration;
-optitrack.orientation.x = optitrack_temp.Xr;
-optitrack.orientation.y = optitrack_temp.Yr;
-optitrack.orientation.z = optitrack_temp.Zr;
+optitrack.orientation.x = -optitrack_temp.Xr;
+optitrack.orientation.y = optitrack_temp.Zr;
+optitrack.orientation.z = optitrack_temp.Yr;
+optitrack.orientation.w = optitrack_temp.Wr;
+% Create rotation matrix from quaternion components
+R11 = 1 - 2*(optitrack.orientation.y.^2 + optitrack.orientation.z.^2);
+R12 = 2*(optitrack.orientation.x.*optitrack.orientation.y - optitrack.orientation.w.*optitrack.orientation.z);
+R21 = 2*(optitrack.orientation.x.*optitrack.orientation.y + optitrack.orientation.w.*optitrack.orientation.z);
+R22 = 1 - 2*(optitrack.orientation.x.^2 + optitrack.orientation.z.^2);
+
+% Calculate forward direction vector (use first column of rotation matrix)
+% This represents where the animal is facing
+forward_x = R11;
+forward_y = R21;
+
+% Calculate heading as angle in the XY plane
+heading = atan2(forward_y, forward_x);
+
+% Rotate heading 90 degrees counterclockwise (add pi/2)
+heading_rotated = heading + (pi/2);
+
+% Wrap to pi range
+optitrack.orientation.heading = wrapToPi(heading_rotated);
+
 optitrack.orientation.rotationType = optitrack_temp.RotationType;
 optitrack.nSamples = numel(optitrack.timestamps);
 
