@@ -22,8 +22,9 @@ if exist(rezFile,'file')
     session.extracellular.nChannels = rez.ops.NchanTOT;
     kcoords_ids = unique(rez.ops.kcoords);
     session.extracellular.nElectrodeGroups = numel(kcoords_ids);
+    goodChanIDs = find(rez.connected);
     for i = 1:numel(kcoords_ids)
-        session.extracellular.electrodeGroups.channels{i} = rez.ops.chanMap(find(rez.ops.kcoords == kcoords_ids(i)));
+        session.extracellular.electrodeGroups.channels{i} = rez.ops.chanMap(goodChanIDs(find(rez.ops.kcoords == kcoords_ids(i))));
         if size(session.extracellular.electrodeGroups.channels{i},1)>1
             session.extracellular.electrodeGroups.channels{i} = session.extracellular.electrodeGroups.channels{i}';
         end
