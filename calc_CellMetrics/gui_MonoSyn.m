@@ -98,11 +98,11 @@ matrix_index2 = find(temp2>0);
 UI.fig = figure('KeyReleaseFcn', {@keyPress},'Name','MonoSynCon inspector','NumberTitle','off','renderer','opengl', 'DefaultLegendInterpreter', 'tex',  'DefaultTextInterpreter', 'tex');
 % p = uipanel(UI.fig,'Position',[0 0 1 .1],'BorderType','none')
 % p2 = uipanel(UI.fig,'Position',[0 0 0.01 0.01],'BorderType','none')
-UI.leftbutton = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[5 410 20 10],'Units','normalized','String','<','Callback',@(src,evnt)goBack,'KeyPressFcn', {@keyPress});
-UI.rightbutton = uicontrol('Parent',UI.fig,'Style','pushbutton','Position',[540 410 20 10],'Units','normalized','String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
-plotTitle = uicontrol('Parent',UI.fig,'Style','text','Position',[130 410 350 10],'Units','normalized','String','','HorizontalAlignment','center','FontSize',13);
-UI.switchConnectionType = uicontrol('Parent',UI.fig,'Style','popupmenu','Position',[30 408 80 10],'Units','normalized','String',{'Excitatory connections','Inhibitory connections'},'Value',connectionsDisplayed,'Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
-displayAllConnections = uicontrol('Parent',UI.fig,'Style','checkbox','Position',[115 410 100 10],'Units','normalized','String','Show all detected connections','HorizontalAlignment','right','Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
+UI.leftbutton = uicontrol('Parent',UI.fig,'Style','pushbutton','Units','normalized','Position',[0.005 0.958 0.025 0.028],'String','<','Callback',@(src,evnt)goBack,'KeyPressFcn', {@keyPress});
+UI.rightbutton = uicontrol('Parent',UI.fig,'Style','pushbutton','Units','normalized','Position',[0.970 0.958 0.025 0.028],'String','>','Callback',@(src,evnt)advance,'KeyPressFcn', {@keyPress});
+plotTitle = uicontrol('Parent',UI.fig,'Style','text','Units','normalized','Position',[0.315 0.955 0.370 0.032],'String','','HorizontalAlignment','center','FontSize',13);
+UI.switchConnectionType = uicontrol('Parent',UI.fig,'Style','popupmenu','Units','normalized','Position',[0.035 0.955 0.120 0.032],'String',{'Excitatory connections','Inhibitory connections'},'Value',connectionsDisplayed,'Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
+displayAllConnections = uicontrol('Parent',UI.fig,'Style','checkbox','Units','normalized','Position',[0.160 0.955 0.150 0.032],'String','Show all detected connections','HorizontalAlignment','right','Callback',@(src,evnt)switchConnectionType,'KeyPressFcn', {@keyPress});
 % align([UI.leftbutton UI.rightbutton UI.switchConnectionType displayAllConnections],'Top','Bottom');
 if ~verLessThan('matlab', '9.4')
     set(UI.fig,'WindowState','maximize','visible','on'), drawnow nocallbacks;
