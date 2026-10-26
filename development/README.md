@@ -41,7 +41,8 @@ baseline, not a new minimum MATLAB version for the entire application.
   UIDs, checks cluster IDs when available, and remaps annotations and group indices
   into the on-disk order. It leaves computed metrics untouched.
 - `ce.curation.saveSessionAnnotations(file, source, indices)` validates, backs up
-  existing annotations in that session, and saves. Failed backups abort the write.
+  the complete previous MAT file in that session, and saves. Failed backups abort
+  the write; sorting-revision mismatches fail before backup creation.
 - `ce.curation.remainingChanges` clears dirty cells only for confirmed saves.
 - `ce.data.validateCellMetricsStruct` owns the existing validator. An empty nested
   plot-data struct now passes without an indexing error; metric formulas are unchanged.
@@ -50,9 +51,10 @@ baseline, not a new minimum MATLAB version for the entire application.
 
 Legacy functions remain in `calc_CellMetrics` and forward to these APIs. Keep the
 repository root on the MATLAB path so package functions resolve. Existing
-`addpath(genpath(...))` installations continue to work. Package callers can use
-the migrated core with just the repository root, except NWB export, which still
-uses the legacy MatNWB adapter and its existing installation requirements.
+`addpath(genpath(...))` installations continue to work. Most migrated data/I/O
+components need only the repository root. Phy import also uses the bundled
+`toolboxes/npy-matlb` reader and MATLAB `tdfread` for optional cluster metadata;
+NWB export keeps its legacy MatNWB installation requirements.
 
 ## Limits of this milestone
 
@@ -64,9 +66,11 @@ format-specific integration tests.
 
 UID/cluster checks detect changed counts, reordered units and changed identifiers.
 They cannot detect a new sorting that reuses both identifiers. Pipeline saving now
-checks metric/session file revisions; this is not a general curation lock. Sorting
-revision IDs remain planned. Disk recovery, cache invalidation for the remaining pipeline
-stages and UI performance changes are subsequent work packages.
+checks metric/session file revisions; this is not a general curation lock. Managed
+imports now add sorting revision checks (see below); unversioned legacy data do
+not acquire them automatically. Recovery journaling now covers annotations and pending connection reviews (see
+below). Multi-file crash recovery, cache invalidation for remaining pipeline
+stages and further UI performance changes are still open.
 
 ## Session validation and headless processing
 
@@ -95,7 +99,7 @@ disp(report.errors)
 ```
 
 Preflight defaults to headless mode. It reads local metadata and cached/supplied
-spikes, checks selected-stage prerequisites and dependencies, validates intervals,
+spikes (or prepares an explicitly requested managed import in memory), checks selected-stage prerequisites and dependencies, validates intervals,
 and rejects mismatched cell identities/order in a reused metric cache. It returns
 resolved options in `report.parameters`; it does not call processing or preference
 callbacks. Missing inputs produce actionable checks rather than dialogs.
@@ -110,8 +114,9 @@ Use a separate working copy when testing a recording.
 
 The initial headless boundary has explicit limits:
 
-- Supply `spikes` or an existing `basename.spikes.cellinfo.mat`. Import or refresh
-  original sorting output separately; `forceReloadSpikes` is rejected.
+- Supply `spikes`, an existing `basename.spikes.cellinfo.mat`, or explicit
+  `spikeImport` options for managed Neurosuite/Klustakwik or Phy import (see below).
+  `forceReloadSpikes` is supported only with managed import in headless mode.
 - MAT is the pipeline cache format; export JSON/NWB separately afterward.
 - Custom calculation/preference callbacks and database submission are rejected
   until their noninteractive behavior has a defined contract.
@@ -149,7 +154,7 @@ CellExplorer installations on the MATLAB path when running interactive checks.
 
 ## Stage execution and cache provenance
 
-`ProcessCellMetrics` now uses `ce.pipeline.runStage` for `waveform_extraction`,
+`ProcessCellMetrics` now uses `ce.pipeline.runStage` for opt-in `spike_import`, `waveform_extraction`,
 `waveform_shape`, `waveform_localization`, `acg_metrics` (wide/narrow and log
 ACGs, fits, log ISIs and optional population modulation), `monosynaptic_detection`
 `monosynaptic_metrics`, `event_metrics`, `manipulation_metrics`, `state_metrics`,
@@ -188,7 +193,7 @@ restore the caller's RNG. Headless ACG fitting/log-ACG calculation use serial
 execution and do not start a parallel pool. Interactive calls keep their existing
 parallel default. The serial fitter now honors its plotting flag.
 
-Other metric stages and sorting import remain legacy steps. Filtering that
+Other metric stages and sorting formats remain legacy steps. Filtering that
 removes cells rejects an incompatible existing metrics cache before importing
 fields; use a separate `saveAs` or a complete recomputation with curation preserved
 separately.
@@ -829,3 +834,595 @@ frozen code exactly on 151 and 1,510 tutorial-derived cells. The ground-truth
 comparison fixture assigns a synthetic class to all cells; it tests preparation
 compatibility, not biological classification accuracy. Original session, spikes
 and metrics file hashes were unchanged.
+
+
+## Neurosuite spike import
+
+`ce.io.importNeurosuiteSpikes(session, ...)` imports Neurosuite/Klustakwik sorting
+without dialogs, database access, cwd/RNG changes or file writes. It reads named
+`.clu`/`.res` files and optionally `.spk` waveforms. Supply existing local metadata;
+the function does not call metadata loaders, infer a session interactively, read a
+spikes cache, or extract waveforms from raw `.dat` data.
+
+```matlab
+spikes = ce.io.importNeurosuiteSpikes(session, ...
+    'clusteringpath', 'sorting', ...
+    'getWaveformsFromSource', true);
+
+% Review the intended pipeline stages using the imported in-memory spikes.
+report = ce.pipeline.preflight('session', session, 'spikes', spikes, ...
+    'metrics', {'waveform_metrics','acg_metrics','other_metrics'}, ...
+    'excludeManipulationIntervals', false);
+```
+
+The default clustering path comes from `session.spikeSorting{1}.relativePath`;
+an explicit empty path uses `session.general.basePath` directly. `basename`
+defaults to `session.general.name`. `electrodeGroups` defaults to scalar NaN for
+numeric discovery/order, or accepts a distinct positive integer vector whose
+order is preserved. `raw_clusters=true` reads and discovers files in OriginalClus.
+Source waveforms with OriginalClus are rejected because their alignment is not
+declared. The previous implementation failed later on an undefined waveform
+variable for that combination.
+
+Sample timestamps become seconds using `session.extracellular.sr`. Cluster IDs
+0 and 1 remain excluded, and UIDs remain sequential in group/cluster order;
+cluster IDs may repeat across groups. The legacy 0.5 ms `uniquetol` operation is
+unchanged. Waveform means/stds still use every source spike assigned to a cluster,
+including spikes whose timestamps are collapsed by `uniquetol`. Peak channels
+retain zero-based `maxWaveformCh` and one-based `maxWaveformCh1`.
+
+Source waveforms require `nChannels`, one-based `electrodeGroups.channels`, and a
+positive `leastSignificantBit` or explicit `LSB` in microvolts/bit. The component
+uses session scaling by default; the public loader passes its resolved LSB to
+preserve legacy behavior. Source waveform import retains the existing fields and
+does not invent waveform time axes. Pipeline stages requiring additional waveform
+fields must prepare them from raw data or receive an appropriate existing cache.
+
+The importer checks required file pairs, integer columns, timestamp/assignment
+lengths, group/channel metadata and complete int16 waveform frames. It reports
+errors rather than returning partial units, and closes binary file handles even
+on failure. Non-numeric backup suffixes are ignored during discovery. A dataset
+containing only excluded noise clusters reports `ce:io:NoSortedUnits`.
+
+`loadSpikes` retains its public options and routes the Neurosuite/Klustakwik and
+Phy branches through components. Its metadata/private-helper lookup and other format
+implementations remain in place. Cache reads load only the named `spikes`
+variable; final cache writes use `ce.io.writeMat`. Save failures now propagate as
+errors instead of warning and appearing successful. Saving still precedes output
+filtering, so an output UID filter does not trim the saved spike cache. These are
+per-file safeguards, not a transaction across all legacy importer/preparation
+side effects.
+
+Regression tests compare every imported field against frozen legacy calculations,
+including group order, duplicate timestamps, source waveforms, single-spike units,
+channel indexing and scaling. They also cover malformed inputs, OriginalClus,
+handle cleanup, cache failure/preservation, filtering, and passing imported spikes
+to a headless core-metrics run. `runTutorialSpikeLoadSmoke(source)` checks every
+cached spike field on a temporary tutorial copy; the tutorial does not include the
+original `.clu/.res/.spk` inputs, so this is not a raw-import validation on that
+recording.
+
+Managed Neurosuite import is available through the explicit `spikeImport` option
+described below. Other sorting formats, source-waveform streaming and independent
+original sorting datasets remain future work.
+
+Validation for this extraction: 199 component tests passed on MATLAB R2024b
+Update 9, with no parse diagnostics in 146 checked files. Every field in the
+151-cell tutorial spike cache was unchanged through legacy loading, and original
+session/spikes/metrics hashes were unchanged. Raw-format comparisons use temporary
+controlled fixtures because the tutorial lacks the original sorting files.
+
+## Managed sorting import and revision identity
+
+Headless processing can import Neurosuite/Klustakwik or Phy sources directly, with
+content-verified reuse. The default remains supplied/cached spikes. Opt in with a
+scalar `spikeImport` struct; do not also supply `spikes`:
+
+```matlab
+options = {'session', session, 'headless', true, ...
+    'spikeImport', struct('format','neurosuite'), ...
+    'metrics', {'waveform_metrics','acg_metrics','other_metrics'}, ...
+    'excludeManipulationIntervals', false};
+report = ce.pipeline.preflight(options{:}); % May compute an import; never writes.
+disp(report.errors)
+cell_metrics = ProcessCellMetrics(options{:});
+```
+
+This example extracts waveforms from the recording's `.dat` file. The import
+options are `format`, `clusteringpath`, `electrodeGroups`, `raw_clusters`,
+`getWaveformsFromSource` and `LSB`. Format defaults to
+`session.spikeSorting{1}.format`; supported formats are Neurosuite/Klustakwik and Phy.
+Other options retain the component defaults above. Timestamp-only imports need
+raw waveform extraction to supply peak channels for processing. Importing `.spk`
+waveforms supplies peak channels but does not create the additional waveform
+fields required by waveform-metric calculation. Unsupported formats and
+conflicting inputs fail preflight without falling back to interactive loading.
+
+`ce.pipeline.prepareSpikeImport(session, options)` returns versioned spikes, a
+stage result, an in-memory cache and a pending persistence description. Import
+provenance lives in `spikes.processinginfo.importProvenance`, and pipeline runs
+also record it under `cell_metrics.general.processinginfo.stages.spike_import`.
+The separate `basename.spikeImport.cache.mat` contains `spikeImportCache`;
+managed import does not replace `basename.spikes.cellinfo.mat`. Only successful
+pipeline persistence writes this cache. `saveMat=false` leaves it untouched;
+`forceReloadSpikes=true` explicitly recomputes the import.
+
+Reuse checks hashes of every consumed `.clu/.res/.spk` file, sample rate, selected
+groups, effective waveform scaling/channel metadata, importer code, environment
+and cached outputs. It retains the original generation provenance. Full file
+hashing adds I/O cost, including on reuse. Source files and group discovery are
+checked again after preparation and before persistence; concurrent cache changes
+also abort saving. This is optimistic revision checking with verified individual
+file replacement, not locking or a transaction across every pipeline output.
+
+Managed spikes carry `processinginfo.sortingRevision` and a binding to their
+original UID/cluID/sample-rate/timestamp arrays and shankID when supplied by the
+source. Processing validates that
+binding before filtering and carries the original revision to
+`cell_metrics.general.sortingRevision`. Source assignment/timestamp contents,
+group selection/order and sample rate determine the revision; waveform bytes,
+scaling and file locations do not. Byte-level edits to assignment/timestamp files
+conservatively change it even when their parsed values are equivalent. This is
+source revision identity, not evidence of biological cell identity.
+
+Metrics from a different revision cannot be reused, even with matching UIDs and
+cluster IDs. An unversioned legacy metric cache cannot silently adopt a managed
+revision: use a new `saveAs` or `forceReload=true` with every required metric stage,
+preserving and reconciling old curation separately. Annotation application/save
+requires matching revisions whenever either side declares one; batch checks use
+the selected session's `general.batch` metadata. Annotation backups retain the
+revision. Two unversioned legacy datasets still use their existing UID/cluster
+checks. Direct legacy import/load paths do not acquire managed revisions, and
+these checks do not cover every viewer whole-file save path.
+
+Tests cover cache reuse, content changes with restored mtimes, waveform-only
+invalidation, modified cached outputs/code provenance, new group discovery,
+concurrent cache edits, rejected metric/annotation reuse, batch revisions and
+file preservation. A fresh synthetic recording runs import, raw waveform
+extraction, waveform/ACG/core metrics and subsequent cache reuse end to end.
+
+Validation: 215 component tests passed on MATLAB R2024b Update 9; no parse
+diagnostics in 155 checked files. The 151-cell tutorial cached-spike check matched
+every field, with the original session/spikes/metrics hashes unchanged. Original
+sorting files are absent from that tutorial, so managed raw import was verified
+on synthetic recordings.
+
+## Phy spike import
+
+`ce.io.importPhySpikes(session, ...)` reads Phy spike assignments/timestamps and
+optional amplitudes/plugin/cluster metadata without UI, file writes, metadata
+callbacks or cwd/RNG changes. The legacy `loadSpikes` Phy branch delegates to it.
+Use the normal CellExplorer path setup, including `toolboxes/npy-matlb`.
+Options are `basename`, `clusteringpath`, `labelsToRead`, `raw_clusters` and
+`getWaveformsFromSource`; the last two currently require false. Managed Phy
+import accepts these options except `basename`, which comes from the session.
+
+```matlab
+spikes = ce.io.importPhySpikes(session, 'labelsToRead', {'good','mua'});
+cell_metrics = ProcessCellMetrics('session', session, 'headless', true, ...
+    'spikeImport', struct('format','phy','labelsToRead',{{'good'}}), ...
+    'metrics', {'waveform_metrics','acg_metrics','other_metrics'}, ...
+    'excludeManipulationIntervals', false);
+```
+
+The managed example extracts waveforms from `.dat` and supports timestamp-only
+Phy sources without inventing peak channels or shanks. Preflight permits missing
+channels/shanks only when managed raw waveform extraction will compute them.
+Standalone output preserves whichever fields the source/legacy importer supplies.
+
+Required files are `spike_clusters.npy`, `spike_times.npy` and a label table.
+Label precedence remains: nonempty `cluster_group.tsv`; otherwise, if that file
+exists but is empty, `cluster_KSLabel.tsv`; otherwise `cluster_groups.csv`, then
+`cluster_KSLabel.tsv`. Table order determines sequential UIDs; `labelsToRead`
+defaults to `{'good'}` and matches case-insensitively. Clusters absent from the
+spike arrays are skipped. The unchanged 0.5 ms `uniquetol` selection determines
+timestamps, original spike-row `ids` and optional per-spike amplitudes.
+
+Optional plugin metadata requires `cluster_ids.npy`, `shanks.npy` and
+`peak_channel.npy` together. Peak channels convert from zero to one based, and
+`rez.connected`, when present, remaps them to recording channels. Only the named
+`rez` variable is loaded. As in the legacy code, electrode-group membership
+determines `shankID`; the plugin's `shanks.npy` values are read but not assigned.
+Optional `cluster_info.tsv` supports `id` or `cluster_id` and overrides peak
+channels without recomputing that plugin shank assignment. It still stores
+`phy_amp = amp + 1`. These legacy conventions are intentionally preserved and
+need a separate scientific review.
+
+Managed reuse hashes all consumed arrays/tables, relevant channel metadata,
+options and reader implementations. Rediscovery catches optional metadata
+appearing/disappearing and changes in label-file precedence. Membership identity
+includes assignment/timestamp/label files and label selection; amplitude-only
+changes invalidate the cache without changing the sorting revision. Source shank
+changes also alter the bound identity when that field is present.
+
+Compatibility tightening: malformed/truncated arrays, duplicate table IDs,
+incomplete plugin sets, missing selected-cluster metadata and out-of-range or
+ambiguous channel mappings fail explicitly. The bundled reader's numeric NPY
+v1.0 format is supported, with shape and complete-payload checks; other NPY
+versions/object arrays are rejected. `raw_clusters=true` is rejected because the
+old Phy path used an undefined tolerance. `getWaveformsFromSource=true` is also
+rejected: the old template path used Python IDs directly as MATLAB indices, and
+template indexing/scaling has not been validated. Use raw waveform extraction;
+this refactor does not silently correct those scientific behaviors.
+
+Frozen legacy comparisons cover label ordering/fallback, timestamp and amplitude
+selection, both cluster-info ID headers, plugin mapping and field precedence.
+Synthetic tests also cover malformed inputs, handle cleanup, cache/revision
+changes, public-loader save/filter behavior and failure preservation. A fresh Phy
+recording completes import, raw waveform extraction, waveform/ACG/core metrics
+and subsequent reuse. Independent real Phy exports and source templates remain
+outside this validation.
+
+Validation: 228 component tests passed in MATLAB R2024b Update 9, including
+one-dimensional/big-endian NPY files and cluster ID zero. No parse diagnostics
+were found in 160 checked files. The tutorial check matched every cached field
+for 151 cells; original session/spikes/metrics hashes remained unchanged.
+
+## Guarded viewer saves and backup restoration
+
+The viewer's ordinary **Save**, **Save As**, batch annotation saves and **Restore
+from backup** now share curation identity checks. `ce.curation.annotationOrder`
+maps session-local UIDs, verifies cluster IDs when both datasets supply them and
+requires matching sorting revisions whenever either dataset declares one. Two
+unversioned legacy datasets retain their UID/cluster checks.
+
+`ce.curation.saveMetricSnapshot(metrics, file)` writes new MAT/JSON/NWB exports
+and guards replacement of existing MAT files. An existing file must contain
+compatible metrics; batch snapshots also require matching session names, paths
+and order before comparing each session's local identity/revision. Every
+replacement first archives an exact, hash-verified copy under
+`revisions_cell_metrics`, including extra MAT variables. This increases backup
+disk usage compared with annotation-only snapshots. Backup failures abort the
+replacement. Existing JSON/NWB exports cannot be checked by this boundary, so
+choose a new filename for those exports.
+
+Destination contents are checked before reading and again after staging,
+immediately before replacement. The viewer supplies its editing-session revision
+and offers the reconciliation flow described below when it changes. Scripted
+calls that omit an expected hash retain only the compatible read-to-write check.
+These are optimistic checks, not filesystem locks. The low-level
+`ce.io.saveCellMetrics` remains an explicit format writer without curation policy.
+
+Single-session Save follows the loaded `general.filename` when present and clears
+dirty state only after success. Saved metadata then contains an empty dirty-cell
+list. Save As remains an independent export and leaves edits marked unsaved for
+their source session. Batch failures/cancellation retain the affected cells as
+dirty while successful sessions are cleared.
+
+`ce.curation.captureAnnotations` and `writeAnnotationBackup` capture one complete
+session with UIDs, optional cluster IDs and sorting revision. `restoreAnnotations`
+prepares a candidate without changing the original metrics. It remaps annotations
+by identity and group members through actual selected batch indices, including
+noncontiguous selections. Scientific fields are not restored. Count-only legacy
+backups without UIDs are rejected; they require explicit reconciliation rather
+than assuming equal cell counts prove identity.
+
+Restore validates the candidate before backing up current annotations, then uses
+the viewer's existing snapshot/rollback boundary to apply it. Rejected restores
+leave edits/history intact. The backup picker honors alternate `saveAs` names.
+Multi-cell undo now records each cell's label, region and deep/superficial value
+instead of repeating the first cell's value across a restored selection.
+
+`runTutorialViewerSaveSmoke(source)` exercises real viewer callbacks on temporary
+151-cell and 302-cell tutorial copies: rejected Save/Save As, new export, backup
+failure, exact successful backup, restore rejection/success/undo and partial batch
+save failure. The original tutorial is never a save destination. Ground-truth
+subset exports and manual monosynaptic saves have their own guarded boundaries
+described below, followed by durable recovery journaling.
+
+Validation: 240 component tests passed in MATLAB R2024b Update 9; no parse
+diagnostics in 169 checked files. The new live save/restore check and existing
+viewer load/reinitialize/comparison rollback check (table mode 1) passed using
+temporary 151-cell and 302-cell datasets. The tutorial's original session,
+spikes and metrics file hashes remained unchanged.
+
+## Ground-truth catalog and manual connection saves
+
+`ce.curation.groundTruthSubset(metrics, indices)` prepares a single-session export
+without changing the source. Overlapping tags export each selected cell once,
+preserving first-selection order. Per-cell arrays and nested curves are subsetted
+without recalculation; group members map to the exported order. Batch exports use
+the selected session's metadata/revision and omit batch IDs. UI-derived numeric
+labels, z-scored plot fields, connections and the source dirty-cell list are not
+exported. Numeric/logical storage types are preserved.
+
+`ce.curation.saveGroundTruth(metrics, indices, file)` permits the selected catalog
+subset to grow or shrink. Before replacing an existing catalog file, it verifies
+that every old cell belongs to the complete source session, checks cluster and
+sorting revisions, and compares source name/path metadata when available. It
+then archives the exact previous MAT file and verifies its destination revision
+after staging. A source mismatch fails without replacing the catalog. The viewer
+reports per-session failures, preserves source edits, and honors cancellation
+without exporting the previously selected tags.
+
+`ce.curation.beginMonoSynReview` reads named metric/detection variables and captures
+both file hashes before opening the review GUI. It validates positional detector
+indices against the session's cluster/shank identities and maps them to viewer
+cells by UID. New pipeline detections include `processinginfo.cellIdentity` with
+UIDs, cluster/shank IDs and sorting revision. Versioned metrics require this
+matching detection identity; rerun detection to upgrade an older file. Legacy
+unversioned pairs retain explicit index/cluster/shank checks, which cannot prove
+that reused identifiers still represent the same sorting. The GUI receives a
+local position, including when UIDs are nonsequential.
+
+`saveMonoSynReview` accepts only selections from unchanged automatic detection
+data. It preserves legacy effect rules (inhibitory assignment takes precedence)
+and excitatory-only in/out counts, including the viewer's histogram truncation.
+Existing transmission probabilities are remapped when their old pairs still
+identify every selected pair; otherwise the corresponding probability field is
+removed for later pipeline recomputation. No transmission formula is changed.
+`applyMonoSynReview` maps this same projection into single/batch viewer data,
+clearing removed inhibitory pairs and preserving unrelated unsaved annotations.
+
+Both replacement MAT files are staged/verified and both originals archived before
+either is replaced. If the second replacement throws, the first is restored from
+its exact backup only while it still matches this operation's staged content.
+A concurrent edit prevents rollback and produces `ce:curation:PartialMonoSynSave`
+with both backup paths. This handles caught failures; it is not a two-file atomic
+transaction, crash journal, lock, or guarantee against process/power loss.
+
+The viewer retains an unsuccessful review in `UI.monoSyn.pendingReview` and
+updates its connection model only after both saves succeed. Retrying against
+unchanged files reuses that draft. Changed inputs or another session require an
+explicit choice to discard the draft before opening a new review; stale choices
+are never silently applied to new inputs. Pending reviews are also checkpointed by the recovery journal described below.
+A post-save view-refresh failure is reported as a committed save requiring reload.
+
+`runTutorialSpecialSaveSmoke(source)` tests real viewer export/save callbacks on a
+temporary 151-cell copy with synthetic connection candidates and deterministic
+review/dialog responses. It covers overlapping tags, cancellation, catalog
+revision conflict, nonsequential UIDs, concurrent metric edits, retained review,
+backup failure/retry, cleared inhibition and untouched annotation edits. The
+manual CCG-review GUI itself and live scientific classification choices are not
+automated by this smoke check.
+
+Validation: 253 component tests passed in MATLAB R2024b Update 9; no parse
+diagnostics in 178 checked files. Specialized viewer callbacks passed, and the
+separate two-unit tutorial monosynaptic pipeline check matched legacy numerics,
+retained manual selections, invalidated changed inputs/options and verified
+archives. The cached-spike check matched every field for 151 cells, and all
+original tutorial session/spikes/metrics hashes remained unchanged.
+
+## Recovery journals for unsaved curation
+
+The viewer captures an annotation baseline when opening each source session and
+writes compact drafts under `<basepath>/.cellexplorer/recovery/`. Each MAT file
+contains a named `recovery` variable with schema version 1, the canonical source
+path/hash, baseline and edited annotations, dirty UIDs, and any pending connection
+selection with its source/detection hashes. Scientific arrays and CCGs are not
+copied into the journal. Each viewer has its own UUID filename for each source.
+
+Checkpoints run after completed callbacks return to the main viewer loop, before
+saving or replacing the selection, immediately after a connection review returns,
+and on normal viewer exit. Unchanged drafts are not rewritten. This supplements
+the existing workspace autosave, whose hook runs before an edit is applied.
+A crash before the next checkpoint can still lose the newest edit. A callback
+that fails before returning to the loop is not guaranteed to have checkpointed.
+Read-only or full disks report checkpoint failures and preserve in-memory edits;
+they cannot provide disk recovery. Journaling requires a resolvable session path.
+
+On opening a session, choose **Recover**, **Later**, or **Discard draft**. The
+**File > Recover unsaved changes...** action offers the same operation later.
+Multiple drafts require selecting one; they are never silently merged. Recovery
+checks the exact current source bytes, UID/cluster identity, sorting revision
+when present, and the loaded baseline annotations before applying a draft. A
+pending review also requires unchanged detection bytes and automatic results.
+Malformed or incompatible drafts remain on disk with an error message. Legacy
+unversioned sessions retain UID/cluster and exact-file checks; this does not
+create biological sorting identity that was absent from the source.
+
+Recovery changes only the viewer's annotation state, with undo and its existing
+rollback boundary, and restores pending reviews for the normal review/save flow.
+It does not overwrite metric/detection files or recalculate scientific results.
+Ordinary successful saves retire the matching owned and accepted drafts; failed
+sessions in a batch retain theirs. Save As leaves source drafts intact. Explicit
+session replacement with **Discard changes** retires the discarded state only
+after the new selection loads successfully. **Later** leaves a draft untouched.
+Deleting/replacing a journal checks its expected hash first, so changed drafts
+are preserved. Discarding a pending review never accepts changed source bytes.
+
+A pending review also survives saving annotations first. Successful source saves
+return the exact replaced and staged-file hashes. `ce.curation.refreshMonoSynReview`
+advances its context only when the save replaced the reviewed revision and the
+detection file/results remain unchanged. A save involving external changes cannot
+silently rebase the review. Once the remaining draft is checkpointed against the
+confirmed save, superseded accepted drafts can be retired; checkpoint failure
+preserves them.
+
+Journal staging and hash checks are optimistic protections, not filesystem locks,
+conflict merging, a multi-file crash transaction, or a power-loss guarantee.
+Exact-file checks deliberately refuse replay after source files change; they do
+not guess how to merge annotations or review choices. Live same-sorting annotation reconciliation is described below; merging a stale
+recovery journal after its source has changed remains separate work.
+
+`runTutorialRecoverySmoke(source)` uses temporary 151-cell tutorial copies and
+synthetic connection candidates. It exercises annotation-only checkpointing,
+immediate review checkpointing, close/reopen, Later, recovery, undo, review retry,
+saving annotations before a pending review, another recovery, draft retirement
+and a clean subsequent reopen. Review/dialog choices are
+stubbed; this is not an interactive assessment of the CCG review GUI or a
+process-kill/power-loss test. The original research session is never written.
+
+Validation: 267 component tests passed in MATLAB R2024b Update 9, with no parse
+diagnostics in 188 package/test/entry-point files. Recovery tests include changed
+sources/baselines/sorting, reordered UIDs, separate owners, malformed/tampered
+journals, blocked checkpoint replacement, partial batches and pending-review
+save order. Live recovery, ordinary save/restore and specialized-save checks
+passed on temporary tutorial copies. Cached spike fields and the original
+session/spikes/metrics hashes were unchanged. No process-kill, power-loss or
+network-filesystem failure injection was performed.
+
+## Concurrent annotation edits and reconciliation
+
+Ordinary single/batch viewer saves now supply the source revision captured when
+opening the editing session. A same-sorting file change, including a change to an
+unrelated scientific field, blocks replacement and preserves dirty state and
+recovery drafts. Save As uses that same guard when its destination is a currently
+loaded source; exports to other destinations retain the existing identity/backup
+checks. Starting a new connection review also checks the viewer's source revision.
+Successful saves advance the baseline using their exact staged-file receipt; a
+subsequent external write cannot become the viewer's expected revision by accident.
+
+Use **File > Reconcile changes from disk...** to prepare a combined in-memory
+result. The viewer compares the original on-disk annotation baseline, current
+local annotations and current disk annotations, matching session-local UIDs and
+checking cluster/sorting identity. Unversioned legacy sources retain structural
+UID/cluster checks only; reused identifiers cannot prove biological identity.
+Independent per-cell/field edits combine;
+identical edits agree. Group membership additions/removals combine per cell.
+Divergent scalar values, incompatible field representation changes and group
+removal versus editing require **Keep mine**, **Use disk**, or **Cancel**. Whole
+field/group conflicts display group members as cell positions within the source.
+Batch group names remain shared; removing one session's members can leave an empty
+shared group name. Missing fields may regain the viewer's normal display defaults.
+
+Reconciliation reloads current scientific data for every selected source before
+applying the combined annotations. This keeps later saves from restoring stale
+scientific values. Preparation, choices and application verify source hashes;
+a further disk change aborts the operation. Cancellation and failed application
+preserve the old viewer model, edit history and baseline. A successful reload
+starts a new history with undo for the reconciled annotation changes. It may reset
+selection/filter state as an ordinary session initialization does. No source is
+written until the user saves; prior drafts remain until that save succeeds.
+Sessions with reconciled edits are conservatively marked dirty in full.
+
+A pending connection review must be saved or explicitly discarded first. The
+**MonoSyn > Discard pending connection review** action retains
+annotation edits and never rebases a source hash. Changed inputs do not silently
+advance a review. Stale disk journals are still preserved and rejected by recovery;
+this reconciliation flow currently operates on live viewer edits, not a stale
+journal whose source has since changed.
+
+The pure APIs are `ce.curation.mergeAnnotations` (three-way comparison/choices),
+`prepareAnnotationReconciliation` (consistent source reads),
+`resolveAnnotationReconciliation` (fresh data plus resolved annotation snapshots),
+and `verifyReconciliation` (revision checks). Baselines are captured at viewer
+initialization; arbitrary supplied structs do not carry a verifiable prior editing
+history. Direct scripted `saveSessionAnnotations` calls can pass an expected hash
+as a fourth argument. Omitting it retains the compatible read-to-write guard, not
+protection for an earlier editing session. Hash checks are optimistic and do not
+eliminate the final check/rename race or provide network-filesystem locks.
+
+`runTutorialConflictSmoke(source)` and `runTutorialConflictSmoke(source,true)`
+exercise the real viewer callbacks on temporary 151-cell/302-cell copies. They
+cover stale Save/Save As, conflict cancellation, disk changes during choices,
+independent and conflicting annotations, current scientific data, undo, final
+save, and journal retirement. Dialog choices are deterministic stubs; physical
+multi-process races and interactive usability are not simulated.
+
+Validation: 277 component tests passed in MATLAB R2024b Update 9; no parse
+errors were found in 194 package/test/entry-point files. Live single/batch conflict
+checks, five-launch recovery, ordinary save/restore/partial-batch checks and
+specialized-save checks passed. All cached tutorial spike fields matched and the
+original session/spikes/metrics file hashes remained unchanged.
+
+## UI review and next priorities
+
+The [UI-focused review](cellexplorer-2.0-plan.md#ui-focused-review-cellexplorer-neuroscope2-and-session-editor-2026-10-26)
+now prioritizes CellExplorer, NeuroScope2 and `gui_session`. It covers reproduced
+correctness/resource issues, cross-UI persistence gaps, performance measurement,
+workflow improvements and scientific plot/illustration design. Current screenshots
+and isolated observations are in
+[`benchmarks/ui-review-2026-10-26`](benchmarks/ui-review-2026-10-26/observations.json).
+This was a review; production UI code was not changed. The first implementation
+slice should address NeuroScope2 typed reads/resource ownership and validated,
+guarded session editing before broader rendering changes.
+
+## UI correctness increment (2026-10-26)
+
+NeuroScope2 now uses precision-aware sample windows and owns its file readers.
+Raw/LFP navigation, EOF handling and short/empty recording behavior have synthetic
+coverage. LFP precision is `extracellular.precisionLfp`, defaulting to `int16`.
+The existing reference, scaling and filtering formulas are preserved.
+
+The session editor validates Apply/Save, parses numeric inputs without evaluation,
+retains edits after failures, and guards disk saves against external revisions.
+Previous files are preserved byte-for-byte in `revisions_session/`. **Apply & Close**
+returns edits to the caller; **Save** writes them; **Cancel** restores the inputs
+without undoing files already saved. See the [implementation status](cellexplorer-2.0-plan.md#ui-implementation-binary-readers-and-validated-metadata-edits-2026-10-26)
+for remaining UI work and validation limits.
+
+Component suite: 289 passing tests, with 204 files passing parse checks. Run the
+opt-in GUI correctness checks in separate MATLAB processes (substitute the tutorial
+path for `source`); they only write temporary recordings and copied metadata:
+
+```matlab
+addpath('tests/integration');
+runUIRobustnessSmoke(source, 1:3); % Invalid/apply/save/conflict/cancel session edits
+runUIRobustnessSmoke(source, 4:6); % int16/int32 raw and independent int16 LFP reads
+runUIRobustnessSmoke(source, 7); % Short recording
+runUIRobustnessSmoke(source, 8); % Empty recording
+```
+
+All eight scenarios passed across isolated runs. Repeated GUI launches showed
+Java code-cache warnings and intermittent stalls; use fresh MATLAB processes for
+the groups above. These smoke checks are not performance benchmarks. NeuroScope2's remaining
+metadata/event/metric save paths and failed-session-reload behavior are the next
+correctness work, ahead of graphics reuse and the planned visual improvements.
+
+## NeuroScope2 layout research (2026-10-26)
+
+The [layout and feature proposal](cellexplorer-2.0-plan.md#neuroscope2-layout-and-feature-research-2026-10-26)
+recommends section/row builders over the existing `uix` containers, with section
+heights and scroll extents derived centrally from content. It compares a future
+`uifigure`/grid migration, records a local MATLAB compatibility probe, and separates
+new plot/workflow opportunities from existing analysis tools. The first proposed
+implementation is the General tab's Extracellular/filter section; this research
+pass does not change production UI behavior.
+
+## Adding NeuroScope2 trace controls (2026-10-26)
+
+The General tab's **Extracellular traces** section is now built in
+[`buildTraceSection`](../+ce/+ui/+neuroscope/buildTraceSection.m). Add fields there;
+the section and General tab scrolling extent follow the rows automatically. The
+existing `UI.panel.general` control names and callbacks are retained.
+
+For example, this adds a contributor's optional field without coordinates or
+changes to the parent panel's dimensions:
+
+```matlab
+controls.example = section.addField('example', 'Example value', 'edit', ...
+    'String', '5', 'Callback', @(source,~) disp(source.String));
+```
+
+Use a unique, stable row ID. `addField` creates a label/value pair; `addRow` accepts
+two standard `uicontrol` property lists for checkbox/value or checkbox/checkbox
+pairs. Controls return as ordinary MATLAB handles. A new scientific setting still
+needs appropriate validation, state handling and a real callback; the example
+only demonstrates layout extension.
+
+```matlab
+section.setRowVisible('example', false); % Retains the control and typed value
+section.setRowVisible('example', true);
+section.removeRow('example');            % Deletes that optional row's controls
+section.setCollapsed(true);              % Also available from the section header
+section.setCollapsed(false);
+section.setFontSize(12);                 % Re-measures rows and title
+```
+
+`ce.ui.layout.RowSection` uses the existing classic controls and `uix` containers.
+Rows switch to label-above-field when they cannot fit side by side; text labels
+wrap at word boundaries. Use concise checkbox labels and tooltips for details.
+`bindSection` tracks preferred height, and `fitScrollingStack` derives the scroll
+minimum from fixed/flexible section sizes, spacing and padding. Parent updates
+are coalesced with a short one-shot timer to avoid re-entering a parent resize
+while it is positioning children. The binding cleans up its timer/listeners when
+the section is destroyed; its `flush()` method settles pending layout before an
+explicit geometry check or capture. Layout changes never invoke analysis callbacks.
+
+Other sidebar sections still use the legacy layout. Collapse state is local to
+the open viewer; saved section preferences and an external panel registry are
+follow-up work. Existing built-in controls must remain available to their legacy
+callbacks; hide rows rather than deleting required controls.
+
+The component suite includes `testRowLayout`. Live synthetic verification is
+available with `runUIRobustnessSmoke(source,9,captureFile)` (the capture path is
+optional). It checks adding/hiding/removing a field, collapse/expand, sidebar
+resizing, parent geometry, unchanged recording/settings during layout changes,
+and the existing filter/LFP callbacks.
+
+Pilot verification: 296 component tests passed; 210 files passed parse checks.
+The live synthetic layout/filter/LFP smoke passed, and the
+[settled layout preview](benchmarks/neuroscope-row-layout-2026-10-26/neuroscope.png)
+was visually inspected on MATLAB R2024b Update 9/macOS. Windows and HiDPI-specific
+review remain pending.

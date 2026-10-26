@@ -60,9 +60,11 @@ end
 
 function testDeferredPersistenceAndReuse(testCase)
 before = dir(testCase.TestData.folder); figures = findall(0,'Type','figure');
+before=before(~strcmp({before.name},'..')); % Unrelated temp files can change the parent directory.
 [first,results,theta,persistence] = run(testCase,struct());
 verifyEqual(testCase,{results.status},{'completed','completed'});
-verifyEqual(testCase,dir(testCase.TestData.folder),before);
+after=dir(testCase.TestData.folder); after=after(~strcmp({after.name},'..'));
+verifyEqual(testCase,after,before);
 verifyEqual(testCase,findall(0,'Type','figure'),figures);
 verifyTrue(testCase,all(isfinite(first.responseCurves.thetaPhase{1})));
 verifyTrue(testCase,all(isnan(first.responseCurves.thetaPhase{2})));

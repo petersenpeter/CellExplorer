@@ -1,0 +1,40 @@
+function subset = groundTruthLegacyReference(cell_metrics, cell_subset)
+% Frozen legacy subset projection; caller supplies a single-session selection.
+UI.BatchMode=isfield(cell_metrics.general,'batch');
+if UI.BatchMode, sessionID=cell_metrics.batchIDs(cell_subset(1)); end
+                cell_metrics_groundTruthSubset = {};
+                if UI.BatchMode
+                    cell_metrics_groundTruthSubset.general = cell_metrics.general.batch{sessionID};
+                else
+                    cell_metrics_groundTruthSubset.general = cell_metrics.general;
+                end
+                metrics_fieldNames = fieldnames(cell_metrics);
+                metrics_fieldNames1 = metrics_fieldNames(find(ismember(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),{'cell','double'})));
+                metrics_fieldNames1(find(contains(metrics_fieldNames1,'_num')))=[];
+                for i = 1:length(metrics_fieldNames1)
+                    cell_metrics_groundTruthSubset.(metrics_fieldNames1{i}) = cell_metrics.(metrics_fieldNames1{i})(cell_subset);
+                end
+                metrics_fieldNames2 = metrics_fieldNames(find(ismember(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),{'struct'})));
+                metrics_fieldNames2(find(contains(metrics_fieldNames2,{'putativeConnections','general','groups','tags','groundTruthClassification'})))=[];
+                for i = 1:length(metrics_fieldNames2)
+                    metrics_fieldNames3 = fieldnames(cell_metrics.(metrics_fieldNames2{i}));
+                    metrics_fieldNames3(find(contains(metrics_fieldNames3,'_zscored')))=[];
+                    for k = 1:length(metrics_fieldNames3)
+                        
+                        if iscell(cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k})) && size(cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k}),2) == size(cell_metrics.firingRate,2)
+                            cell_metrics_groundTruthSubset.(metrics_fieldNames2{i}).(metrics_fieldNames3{k}) = cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k})(cell_subset);
+                        elseif isnumeric(cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k})) && size(cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k}),2) == size(cell_metrics.firingRate,2)
+                            cell_metrics_groundTruthSubset.(metrics_fieldNames2{i}).(metrics_fieldNames3{k}) = cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k})(:,cell_subset);
+                        end
+                    end
+                end
+                cell_metrics_groundTruthSubset.groups = getSubsetCellMetrics(cell_metrics.groups,cell_subset);
+                cell_metrics_groundTruthSubset.tags = getSubsetCellMetrics(cell_metrics.tags,cell_subset);
+                cell_metrics_groundTruthSubset.groundTruthClassification = getSubsetCellMetrics(cell_metrics.groundTruthClassification,cell_subset);
+                cell_metrics_groundTruthSubset.general.cellCount = length(cell_metrics_groundTruthSubset.UID);
+                
+subset=cell_metrics_groundTruthSubset;
+end
+function output=getSubsetCellMetrics(groups,indices)
+output=ce.curation.subsetGroups(groups,indices);
+end

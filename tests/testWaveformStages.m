@@ -116,6 +116,31 @@ ce.io.writeMat(file,struct('waveformCache',newCache));
 verifyEqual(testCase,result.status,'reused');
 end
 
+function testManagedImportBootstrapsRawWaveformsAndMetrics(testCase)
+session = testCase.TestData.session; session.spikeSorting{1}.format = 'Neurosuite';
+folder = session.general.basePath;
+samples = round(testCase.TestData.spikes.times{1}*session.extracellular.sr);
+writematrix([3;2*ones(size(samples))],fullfile(folder,'synthetic.clu.1'),'FileType','text');
+writematrix(samples,fullfile(folder,'synthetic.res.1'),'FileType','text');
+options = {'session',session,'headless',true,'spikeImport',struct('format','neurosuite'), ...
+    'metrics',{'waveform_metrics','acg_metrics','other_metrics'},'saveBackup',false, ...
+    'excludeManipulationIntervals',false};
+figures = findall(0,'Type','figure');
+first = ProcessCellMetrics(options{:});
+verifySize(testCase,first.general.sortingRevision,[1 64]);
+verifyEqual(testCase,first.UID,1); verifyEqual(testCase,first.cluID,2);
+verifyTrue(testCase,isfield(first,'waveforms')); verifyTrue(testCase,isfield(first,'acg_tau_rise'));
+verifyFalse(testCase,isfile(fullfile(folder,'synthetic.spikes.cellinfo.mat')));
+cache = load(fullfile(folder,'synthetic.spikeImport.cache.mat'),'spikeImportCache');
+verifyFalse(testCase,isfield(cache.spikeImportCache.data,'maxWaveformCh1'));
+verifyEqual(testCase,first.general.sortingRevision,ce.pipeline.spikeSortingRevision(cache.spikeImportCache.data));
+again = ProcessCellMetrics(options{:}); results = again.general.processinginfo.latestRun.stages;
+names = {'spike_import','waveform_extraction','waveform_shape','waveform_localization','acg_metrics','other_metrics'};
+[found,indices] = ismember(names,{results.name}); verifyTrue(testCase,all(found));
+verifyEqual(testCase,{results(indices).status},repmat({'reused'},1,numel(names)));
+verifyEqual(testCase,findall(0,'Type','figure'),figures);
+end
+
 function testExtractionFailurePreservesCache(testCase)
 [session,spikes,parameters,preferences] = fixture(testCase);
 [~,result,cache,file] = ce.pipeline.prepareWaveforms(spikes,session,parameters,preferences,1);
@@ -127,6 +152,29 @@ preferences.waveform.wfWinKeep = .1; % Impossible retained window.
 verifyEqual(testCase,result.status,'failed');
 verifyEqual(testCase,unchanged,spikes);
 verifyEqual(testCase,ce.pipeline.fileFingerprint(file),before);
+end
+
+function testPhyTimestampsBootstrapRawWaveformsAndReuse(testCase)
+originalPath=path; pathCleanup=onCleanup(@() path(originalPath));
+root=fileparts(fileparts(mfilename('fullpath'))); addpath(fullfile(root,'toolboxes','npy-matlb'));
+session=testCase.TestData.session; folder=session.general.basePath;
+samples=round(testCase.TestData.spikes.times{1}*session.extracellular.sr);
+writeNPY(uint64(samples),fullfile(folder,'spike_times.npy'));
+writeNPY(int32(7*ones(size(samples))),fullfile(folder,'spike_clusters.npy'));
+fid=fopen(fullfile(folder,'cluster_group.tsv'),'w'); fprintf(fid,'cluster_id\tgroup\n7\tgood\n'); fclose(fid);
+options={'session',session,'headless',true,'spikeImport',struct('format','phy'), ...
+    'metrics',{'waveform_metrics','acg_metrics','other_metrics'},'saveBackup',false, ...
+    'excludeManipulationIntervals',false};
+first=ProcessCellMetrics(options{:});
+verifyEqual(testCase,first.cluID,7); verifySize(testCase,first.general.sortingRevision,[1 64]);
+cache=load(fullfile(folder,'synthetic.spikeImport.cache.mat'),'spikeImportCache');
+verifyFalse(testCase,isfield(cache.spikeImportCache.data,'shankID'));
+verifyEqual(testCase,first.general.sortingRevision,ce.pipeline.spikeSortingRevision(cache.spikeImportCache.data));
+again=ProcessCellMetrics(options{:}); results=again.general.processinginfo.latestRun.stages;
+names={'spike_import','waveform_extraction','waveform_shape','waveform_localization','acg_metrics','other_metrics'};
+[found,indices]=ismember(names,{results.name}); verifyTrue(testCase,all(found));
+verifyEqual(testCase,{results(indices).status},repmat({'reused'},1,numel(names)));
+verifyFalse(testCase,isfile(fullfile(folder,'synthetic.spikes.cellinfo.mat')));
 end
 
 function testCoordinateSourcesRefreshAndValidate(testCase)

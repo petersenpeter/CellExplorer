@@ -140,7 +140,7 @@ calc_CellMetrics/loadOpenEphys_examples.m,examples,public-or-external-use-review
 calc_CellMetrics/loadOptitrack.m,+ce/+io,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/loadPhyMetadata.m,+ce/+io,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/loadSession.m,+ce/+io,public-or-external-use-review,planned,Review callers and compatibility before moving.
-calc_CellMetrics/loadSpikes.m,+ce/+io,public-or-external-use-review,planned,Review callers and compatibility before moving.
+calc_CellMetrics/loadSpikes.m,+ce/+io/importNeurosuiteSpikes.m and +ce/+io/importPhySpikes.m,public-or-external-use-review,partial-format-extraction,Neurosuite/Klustakwik and Phy imports extracted with explicit inputs and no UI or writes; opt-in managed imports add content cache and sorting revision; other formats retained; Phy raw_clusters and source templates explicitly unsupported; named cache reads and verified cache writes.
 calc_CellMetrics/loadStruct.m,+ce/+io/loadStruct.m,public-or-external-use-review,migrated-with-wrapper,Legacy entry point retained; regression coverage in tests/.
 calc_CellMetrics/lpsd.m,vendor-or-adapted-code,vendor-review,planned,Preserve attribution; determine original versus locally adapted implementation.
 calc_CellMetrics/metrics_labels.m,+ce/+data,public-or-external-use-review,planned,Review callers and compatibility before moving.

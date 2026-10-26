@@ -155,6 +155,7 @@ customPlotOptions = {}; timerInterface = tic; timerHover = tic; highlightCurrent
 
 spikes = []; events = []; states = [];
 cell_metrics = []; metricLoadInProgress = false;
+recoveryState=[]; recoveryNeedsOpen=true; recoveryLastError=''; recoveryBusy=false;
 referenceData=[]; reference_cell_metrics = []; groundTruth_cell_metrics = []; groundTruthData=[]; 
 
 createStruct1.Interpreter = 'none'; createStruct1.WindowStyle = 'modal';
@@ -382,7 +383,9 @@ while ii <= cell_metrics.general.cellCount
     if ~ishandle(UI.fig)
         break
     end
+    if recoveryNeedsOpen, openRecoveryJournals; end
     updateUI
+    checkpointRecovery;
     
     % Show popup for first time user
     if UI.preferences.showIntroduction
@@ -402,6 +405,8 @@ if ishandle(UI.fig)
     % Closing CellExplorer figure if still open
     close(UI.fig);
 end
+
+checkpointRecovery; % Flush completed edits even when the figure has already closed.
 
 % Saving layout-preferences
 if ~summaryFigures
@@ -4188,13 +4193,22 @@ end
     end
 
     function result = replaceMetricSelection(reader,action,confirmClean)
+        checkpointRecovery;
+        previousRecovery=recoveryState; discarded=false;
         result = runMetricOperation(reader,@applyMetricSession,action,@confirmMetricReplacement);
+        if strcmp(result.status,'loaded')
+            if discarded
+                retireRecoveryEntries(previousRecovery);
+                if isfield(UI.monoSyn,'pendingReview'), UI.monoSyn=rmfield(UI.monoSyn,'pendingReview'); end
+            end
+            recoveryState=[]; recoveryNeedsOpen=true;
+        end
         function allowed = confirmMetricReplacement
             allowed = true;
-            if ~isempty(classificationTrackChanges)
-                answer = questdlg(sprintf('%d cells have unsaved changes. Discard those changes and continue?', ...
+            if ~isempty(classificationTrackChanges) || ~isempty(pendingRecoveryReview)
+                answer = questdlg(sprintf('%d cells have unsaved changes. Discard annotation changes and any pending connection review, then continue?', ...
                     numel(unique(classificationTrackChanges))),action,'Discard changes','Cancel','Cancel');
-                allowed = strcmp(answer,'Discard changes');
+                allowed = strcmp(answer,'Discard changes'); discarded=allowed;
             elseif confirmClean
                 answer = questdlg('Reload the cell metrics from disk?',action,'Reload','Cancel','Cancel');
                 allowed = strcmp(answer,'Reload');
@@ -4365,11 +4379,16 @@ end
             selpath = uigetdir(matlabroot,'Please select current folder');
             cd(selpath);
         end
+        backupPrefix='cell_metrics';
         if UI.BatchMode
-            backupList = dir(fullfile(cell_metrics.general.basepaths{cell_metrics.batchIDs(ii)},'revisions_cell_metrics','cell_metrics_*'));
+            selectedSession=cell_metrics.batchIDs(ii);
+            backupFolder=fullfile(cell_metrics.general.basepaths{selectedSession},'revisions_cell_metrics');
+            if isfield(cell_metrics.general,'saveAs'), backupPrefix=cell_metrics.general.saveAs{selectedSession}; end
         else
-            backupList = dir(fullfile(cell_metrics.general.basepath,'revisions_cell_metrics','cell_metrics_*'));
+            backupFolder=fullfile(cell_metrics.general.basepath,'revisions_cell_metrics');
+            if isfield(cell_metrics.general,'saveAs'), backupPrefix=cell_metrics.general.saveAs; end
         end
+        backupList=dir(fullfile(backupFolder,[backupPrefix,'_*.mat']));
         if ~isempty(backupList)
             backupList = {backupList.name};
         end
@@ -4384,118 +4403,61 @@ end
             backupToRestore = backupList{restoreBackup.backupList.Value};
             delete(restoreBackup.dialog);
             
-            % Creating backup of existing metrics
             if UI.BatchMode
-                backup_subset = find(cell_metrics.batchIDs == cell_metrics.batchIDs(ii));
+                backup_subset=find(cell_metrics.batchIDs==cell_metrics.batchIDs(ii));
             else
-                backup_subset = 1:cell_metrics.general.cellCount;
+                backup_subset=1:cell_metrics.general.cellCount;
             end
-            createBackup(cell_metrics,backup_subset);
-            
-            % Restoring backup to metrics
-            if UI.BatchMode
-                cell_metrics_backup = load(fullfile(cell_metrics.general.basepaths{cell_metrics.batchIDs(ii)},'revisions_cell_metrics',backupToRestore));
-            else
-                cell_metrics_backup = load(fullfile(cell_metrics.general.basepath,'revisions_cell_metrics',backupToRestore));
-            end
-            cell_metrics_backup.cell_metrics = validateGroupFormat(cell_metrics_backup.cell_metrics,'tags');
-            cell_metrics_backup.cell_metrics = validateGroupFormat(cell_metrics_backup.cell_metrics,'groundTruthClassification');
-            if size(cell_metrics_backup.cell_metrics.putativeCellType,2) == length(backup_subset)
-                saveStateToHistory(backup_subset,'bacup');
-                cell_metrics.labels(backup_subset) = cell_metrics_backup.cell_metrics.labels;
-                if isfield(cell_metrics_backup.cell_metrics,'deepSuperficial')
-                    cell_metrics.deepSuperficial(backup_subset) = cell_metrics_backup.cell_metrics.deepSuperficial;
-                    cell_metrics.deepSuperficialDistance(backup_subset) = cell_metrics_backup.cell_metrics.deepSuperficialDistance;
-                end
-                cell_metrics.brainRegion(backup_subset) = cell_metrics_backup.cell_metrics.brainRegion;
-                cell_metrics.putativeCellType(backup_subset) = cell_metrics_backup.cell_metrics.putativeCellType;
-                
-                % TODO: Implement backup of group data
-                cell_metrics_fieldnames = {'groundTruthClassification','tags','groups'};
-                h = min(backup_subset)-1;
-                for ii = 1:numel(cell_metrics_fieldnames)
-                    if isfield(cell_metrics,cell_metrics_fieldnames{ii})
-                        fields1 = fieldnames(cell_metrics.(cell_metrics_fieldnames{ii}));
-                        for k = 1:numel(fields1)
-                            cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k}) = setdiff(cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k}),backup_subset);
-                        end
-                    end
-                    if isfield(cell_metrics_backup.cell_metrics,cell_metrics_fieldnames{ii})
-                        fields1 = fieldnames(cell_metrics_backup.cell_metrics.(cell_metrics_fieldnames{ii}));
-                        for k = 1:numel(fields1)
-                            if isfield(cell_metrics,cell_metrics_fieldnames{ii}) && isfield(cell_metrics.(cell_metrics_fieldnames{ii}),fields1{k})
-                                cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k}) = unique([cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k}), cell_metrics_backup.cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k})+h]);
-                            else
-                                cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k}) = cell_metrics_backup.cell_metrics.(cell_metrics_fieldnames{ii}).(fields1{k})+h;
-                            end
-                        end
-                    end
-                end
-                UI.preferences.tags = unique([UI.preferences.tags fieldnames(cell_metrics.tags)']);
-                initTags
-                updateTags
-                if isfield(UI.preferences,'groundTruthClassification')
-                    UI.preferences.groundTruthClassification = unique([UI.preferences.groundTruthClassification fieldnames(cell_metrics.groundTruthClassification)']);
-                    delete(UI.togglebutton.groundTruthClassification)
-                    createGroundTruthClassificationToggleMenu('groundTruthClassification',UI.panel.tabgroup1,UI.preferences.groundTruth,'G/T')
-                end
-                % clusClas initialization
-                clusClas = ones(1,length(cell_metrics.putativeCellType));
-                for i = 1:length(UI.preferences.cellTypes)
-                    clusClas(strcmp(cell_metrics.putativeCellType,UI.preferences.cellTypes{i}))=i;
-                end
-                updateCellCount
-                updatePlotClas
-                updatePutativeCellType
-                
-                MsgLog(['Session succesfully restored from backup: ' backupToRestore],2)
-                uiresume(UI.fig);
-            else
-                MsgLog(['Session could not be restored from backup: ' backupToRestore ],4)
-            end
+            file=fullfile(backupFolder,backupToRestore);
+            runMetricOperation(@() prepareBackupRestore(file,backup_subset), ...
+                @(candidate) applyBackupRestore(candidate,backup_subset),'Restore backup',@() true);
         end
-        
+
         function cancelDialog
             % Closes the dialog
             delete(restoreBackup.dialog);
         end
     end
 
-    function createBackup(cell_metrics,backup_subset)
-        % Creating backup of metrics
-        if ~exist('backup_subset','var')
-            backup_subset = 1:length(cell_metrics.UID);
-        end
-        cell_metrics_backup = {};
-        cell_metrics_backup.labels = cell_metrics.labels(backup_subset);
-        
-        if isfield(cell_metrics,'deepSuperficial')
-            cell_metrics_backup.deepSuperficial = cell_metrics.deepSuperficial(backup_subset);
-            cell_metrics_backup.deepSuperficialDistance = cell_metrics.deepSuperficialDistance(backup_subset);
-        end
-        cell_metrics_backup.brainRegion = cell_metrics.brainRegion(backup_subset);
-        cell_metrics_backup.putativeCellType = cell_metrics.putativeCellType(backup_subset);
-        
-        cell_metrics_backup.groups = getSubsetCellMetrics(cell_metrics.groups,backup_subset);
-        cell_metrics_backup.tags = getSubsetCellMetrics(cell_metrics.tags,backup_subset);
-        cell_metrics_backup.groundTruthClassification = getSubsetCellMetrics(cell_metrics.groundTruthClassification,backup_subset);
+    function candidate = prepareBackupRestore(file,subset)
+        stored=load(file,'cell_metrics');
+        if ~isfield(stored,'cell_metrics'), error('ce:curation:MissingMetrics','No cell_metrics in backup.'); end
+        candidate=ce.curation.restoreAnnotations(cell_metrics,stored.cell_metrics,subset);
+        createBackup(cell_metrics,subset);
+    end
 
-        S.cell_metrics = cell_metrics_backup;
-        if UI.BatchMode && isfield(cell_metrics.general,'saveAs')
-            saveAs = cell_metrics.general.saveAs{cell_metrics.batchIDs(ii)};
-            path1 = cell_metrics.general.basepaths{batchIDs};
-        elseif isfield(cell_metrics.general,'saveAs')
-            saveAs = cell_metrics.general.saveAs;
-            path1 = cell_metrics.general.basepath;
+    function applyBackupRestore(candidate,subset)
+        saveStateToHistory(subset,'backup restore');
+        cell_metrics=candidate;
+        UI.preferences.tags=unique([UI.preferences.tags fieldnames(cell_metrics.tags)']);
+        initTags
+        updateTags
+        if isfield(UI.preferences,'groundTruthClassification')
+            UI.preferences.groundTruthClassification=unique([UI.preferences.groundTruthClassification fieldnames(cell_metrics.groundTruthClassification)']);
+            delete(UI.togglebutton.groundTruthClassification)
+            createGroundTruthClassificationToggleMenu('groundTruthClassification',UI.panel.tabgroup1,UI.preferences.groundTruth,'G/T')
+        end
+        clusClas=ones(1,numel(cell_metrics.putativeCellType));
+        for index=1:numel(UI.preferences.cellTypes)
+            clusClas(strcmp(cell_metrics.putativeCellType,UI.preferences.cellTypes{index}))=index;
+        end
+        updateCellCount
+        updatePlotClas
+        updatePutativeCellType
+    end
+
+    function createBackup(metrics,backup_subset)
+        if nargin<2, backup_subset=1:numel(metrics.UID); end
+        saveAs='cell_metrics';
+        if UI.BatchMode
+            selectedSession=metrics.batchIDs(backup_subset(1));
+            folder=metrics.general.basepaths{selectedSession};
+            if isfield(metrics.general,'saveAs'), saveAs=metrics.general.saveAs{selectedSession}; end
         else
-            saveAs = 'cell_metrics';
-            path1 = cell_metrics.general.basepath;
+            folder=metrics.general.basepath;
+            if isfield(metrics.general,'saveAs'), saveAs=metrics.general.saveAs; end
         end
-        
-        if ~(exist(fullfile(path1,'revisions_cell_metrics'),'dir'))
-            mkdir(fullfile(path1,'revisions_cell_metrics'));
-        end
-        save(fullfile(path1, 'revisions_cell_metrics', [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']),'-struct', 'S');
+        ce.curation.writeAnnotationBackup(metrics,backup_subset,folder,saveAs);
     end
 
     function toggleHollowGauss(~,~)
@@ -4936,92 +4898,51 @@ end
         end
     end
 
-    function importGroundTruth(src,evnt)
-        [choice,dialog_canceled] = groundTruthDlg(UI.preferences.groundTruth,groundTruthSelection);
-        if ~isempty(choice) & ~dialog_canceled
-            [~,groundTruthSelection] = ismember(choice',UI.preferences.groundTruth);
-            MsgLog(['Ground truth cell-types selected: ', strjoin(choice,', ')]);
-            uiresume(UI.fig);
-        elseif isempty(choice) & ~dialog_canceled
-            groundTruthSelection = [];
-            MsgLog('No ground truth cell-types selected');
-            uiresume(UI.fig);
-        end
-        
-        if any(groundTruthSelection)
-            [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
-            referenceData_path = fullfile(referenceData_path,'+groundTruthData');
-            cell_list = [];
-            for i = 1:length(groundTruthSelection)
-                cell_list = [cell_list, cell_metrics.groundTruthClassification.(UI.preferences.groundTruth{groundTruthSelection(i)})];
+    function importGroundTruth(~,~)
+        [choice,canceled]=groundTruthDlg(UI.preferences.groundTruth,groundTruthSelection);
+        if canceled, return; end
+        [~,groundTruthSelection]=ismember(choice',UI.preferences.groundTruth);
+        if isempty(groundTruthSelection), MsgLog('No ground truth cell-types selected'); return; end
+        try
+            cells=[];
+            for name=choice(:)'
+                cells=[cells,cell_metrics.groundTruthClassification.(name{1})];
             end
-            if UI.BatchMode
-                sessionWithChanges = unique(cell_metrics.batchIDs(cell_list));
-            else
-                sessionWithChanges = 1;
-            end
-            ce_waitbar = waitbar(0,[num2str(length(sessionWithChanges)),' sessions with changes'],'name','Saving ground truth cell metrics','WindowStyle','modal');
-            for j = 1:length(sessionWithChanges)
-                if ~ishandle(ce_waitbar)
-                    MsgLog(['Saving canceled']);
-                    break
-                end
-                sessionID = sessionWithChanges(j);
+            cells=unique(cells,'stable');
+            validateattributes(cells,{'numeric'},{'vector','integer','positive','finite','<=',numel(cell_metrics.UID),'nonempty'});
+            if UI.BatchMode, sessions=unique(cell_metrics.batchIDs(cells)); else, sessions=1; end
+            folder=fullfile(fileparts(which('CellExplorer.m')),'+groundTruthData');
+            if ~isfolder(folder), mkdir(folder); end
+            progress=waitbar(0,'Saving ground truth cell metrics','WindowStyle','modal');
+            progressCleanup=onCleanup(@() closeSpecialProgress(progress));
+            saved=false(size(sessions));
+            for index=1:numel(sessions)
+                if ~isgraphics(progress), break; end
+                sessionID=sessions(index);
                 if UI.BatchMode
-                    waitbar(j/length(sessionWithChanges),ce_waitbar,['Session ' num2str(j),'/',num2str(length(sessionWithChanges)),': ', cell_metrics.general.basenames{sessionID}])
-                    cell_subset = cell_list(find(cell_metrics.batchIDs(cell_list)==sessionID));
+                    subset=cells(cell_metrics.batchIDs(cells)==sessionID); name=cell_metrics.general.basenames{sessionID};
                 else
-                    cell_subset = cell_list;
+                    subset=cells; name=cell_metrics.general.basename;
                 end
-                
-                cell_metrics_groundTruthSubset = {};
-                if UI.BatchMode
-                    cell_metrics_groundTruthSubset.general = cell_metrics.general.batch{sessionID};
-                else
-                    cell_metrics_groundTruthSubset.general = cell_metrics.general;
+                waitbar((index-1)/numel(sessions),progress,['Saving ',name]);
+                try
+                    ce.curation.saveGroundTruth(cell_metrics,subset,fullfile(folder,[name,'.cell_metrics.cellinfo.mat']));
+                    saved(index)=true;
+                catch exception
+                    MsgLog(['Ground-truth export failed for ',name,': ',exception.message],4);
                 end
-                metrics_fieldNames = fieldnames(cell_metrics);
-                metrics_fieldNames1 = metrics_fieldNames(find(ismember(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),{'cell','double'})));
-                metrics_fieldNames1(find(contains(metrics_fieldNames1,'_num')))=[];
-                for i = 1:length(metrics_fieldNames1)
-                    cell_metrics_groundTruthSubset.(metrics_fieldNames1{i}) = cell_metrics.(metrics_fieldNames1{i})(cell_subset);
-                end
-                metrics_fieldNames2 = metrics_fieldNames(find(ismember(struct2cell(structfun(@class,cell_metrics,'UniformOutput',false)),{'struct'})));
-                metrics_fieldNames2(find(contains(metrics_fieldNames2,{'putativeConnections','general','groups','tags','groundTruthClassification'})))=[];
-                for i = 1:length(metrics_fieldNames2)
-                    metrics_fieldNames3 = fieldnames(cell_metrics.(metrics_fieldNames2{i}));
-                    metrics_fieldNames3(find(contains(metrics_fieldNames3,'_zscored')))=[];
-                    for k = 1:length(metrics_fieldNames3)
-                        
-                        if iscell(cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k})) && size(cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k}),2) == size(cell_metrics.firingRate,2)
-                            cell_metrics_groundTruthSubset.(metrics_fieldNames2{i}).(metrics_fieldNames3{k}) = cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k})(cell_subset);
-                        elseif isnumeric(cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k})) && size(cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k}),2) == size(cell_metrics.firingRate,2)
-                            cell_metrics_groundTruthSubset.(metrics_fieldNames2{i}).(metrics_fieldNames3{k}) = cell_metrics.(metrics_fieldNames2{i}).(metrics_fieldNames3{k})(:,cell_subset);
-                        end
-                    end
-                end
-                cell_metrics_groundTruthSubset.groups = getSubsetCellMetrics(cell_metrics.groups,cell_subset);
-                cell_metrics_groundTruthSubset.tags = getSubsetCellMetrics(cell_metrics.tags,cell_subset);
-                cell_metrics_groundTruthSubset.groundTruthClassification = getSubsetCellMetrics(cell_metrics.groundTruthClassification,cell_subset);
-                cell_metrics_groundTruthSubset.general.cellCount = length(cell_metrics_groundTruthSubset.UID);
-                
-                % Saving the ground truth to the subfolder groundTruthData
-                if UI.BatchMode
-                    saveStruct(cell_metrics_groundTruthSubset,'cellinfo','basename',cell_metrics.general.basenames{sessionID},'basepath',referenceData_path,'dataName','cell_metrics');
-                else
-                    saveStruct(cell_metrics_groundTruthSubset,'cellinfo','basename',cell_metrics.general.basename,'basepath',referenceData_path,'dataName','cell_metrics');
-                end
-                
             end
-            if ishandle(ce_waitbar)
-                close(ce_waitbar)
-                MsgLog(['Ground truth data succesfully saved'],[1,2]);
-            else
-                MsgLog('Ground truth data not succesfully saved for all sessions',4);
-            end
+            if all(saved), MsgLog('Ground-truth exports saved.',[1,2]);
+            else, MsgLog('Some ground-truth exports were not saved. Source annotations remain unchanged.',4); end
+        catch exception
+            MsgLog(['Ground-truth export failed: ',exception.message],4);
         end
     end
-    
+
+    function closeSpecialProgress(handle)
+        if isgraphics(handle), close(handle); end
+    end
+
     function generateFilterbyGroupData(~,~)
         % Generates filter group from group data (tags/groups/groundtruth)
         groups_fields = {'tags','groups','groundTruthClassification'};
@@ -5774,9 +5695,9 @@ end
         hist_idx = size(history_classification,2)+1;
         history_classification(hist_idx).cellIDs = cellIDs;
         history_classification(hist_idx).cellTypes = clusClas(cellIDs);
-        history_classification(hist_idx).deepSuperficial = cell_metrics.deepSuperficial{cellIDs};
-        history_classification(hist_idx).brainRegion = cell_metrics.brainRegion{cellIDs};
-        history_classification(hist_idx).labels = cell_metrics.labels{cellIDs};
+        history_classification(hist_idx).deepSuperficial = cell_metrics.deepSuperficial(cellIDs);
+        history_classification(hist_idx).brainRegion = cell_metrics.brainRegion(cellIDs);
+        history_classification(hist_idx).labels = cell_metrics.labels(cellIDs);
         history_classification(hist_idx).tags = cell_metrics.tags;
         history_classification(hist_idx).groups = cell_metrics.groups;
         history_classification(hist_idx).groundTruthClassification = cell_metrics.groundTruthClassification;
@@ -9890,7 +9811,7 @@ end
 
     function undoClassification(~,~)
         % Undoes the most recent classification within 3 categories: cell-type
-        % deep/superficial and brain region. Labels are left untouched.
+        % deep/superficial and brain region, along with labels and group memberships.
         % Updates GUI to reflect the changes
         if size(history_classification,2) > 1
             clusClas(history_classification(end).cellIDs) = history_classification(end).cellTypes;
@@ -9970,8 +9891,222 @@ end
         end
     end
 
+    function hash = expectedSourceHash(file)
+        canonical=char(java.io.File(file).getCanonicalPath);
+        index=[];
+        if ~isempty(recoveryState), index=find(strcmp({recoveryState.source},canonical)); end
+        if recoveryNeedsOpen || numel(index)~=1
+            error('ce:curation:MissingBaseline','No editing baseline is available. Reload the source or export to a new filename.');
+        end
+        hash=recoveryState(index).sourceHash;
+    end
+
+    function reconcileAnnotations(~,~)
+        checkpointRecovery;
+        if ~isempty(pendingRecoveryReview)
+            MsgLog('Save or explicitly discard the pending connection review before reconciling annotations.',3); return
+        end
+        try
+            snapshot=cell_metrics; snapshot.putativeCellType=UI.preferences.cellTypes(clusClas);
+            plan=ce.curation.prepareAnnotationReconciliation(snapshot,recoveryState);
+            answer=questdlg(['Reload current scientific data and combine independent annotation edits? ', ...
+                'Conflicting values will require a choice. Prior undo history will be replaced; ', ...
+                'the reconciled annotations can be undone. Nothing is saved until you use Save.'], ...
+                'Reconcile changes from disk','Review changes','Cancel','Cancel');
+            if ~strcmp(answer,'Review changes'), return; end
+            choices=cell(size(plan.sessions));
+            for sessionIndex=1:numel(plan.sessions)
+                choices{sessionIndex}=cell(1,numel(plan.conflicts{sessionIndex}));
+                for conflictIndex=1:numel(plan.conflicts{sessionIndex})
+                    conflict=plan.conflicts{sessionIndex}(conflictIndex);
+                    identity=['UID ',mat2str(conflict.UID)];
+                    if isempty(conflict.UID), identity='whole field/group (group members use cell positions)'; end
+                    description=sprintf('%s\n%s, %s\nOriginal: %s\nMine: %s\nDisk: %s', ...
+                        plan.files{sessionIndex},conflict.field,identity, ...
+                        annotationConflictValue(conflict.base),annotationConflictValue(conflict.local),annotationConflictValue(conflict.disk));
+                    answer=questdlg(description,'Annotation conflict','Keep mine','Use disk','Cancel','Cancel');
+                    if strcmp(answer,'Keep mine'), choices{sessionIndex}{conflictIndex}='mine';
+                    elseif strcmp(answer,'Use disk'), choices{sessionIndex}{conflictIndex}='disk';
+                    else, return; end
+                end
+            end
+            [disk,merged]=ce.curation.resolveAnnotationReconciliation(plan,choices);
+            previousRecovery=recoveryState; nextRecovery=[];
+            result=runMetricOperation(@() disk,@applyReconciliation,'Reconcile annotations',@() true);
+            if strcmp(result.status,'loaded')
+                for k=1:numel(nextRecovery)
+                    references=previousRecovery(k).recovered;
+                    if ~isempty(previousRecovery(k).writtenHash)
+                        references(end+1)=struct('file',previousRecovery(k).file,'hash',previousRecovery(k).writtenHash);
+                    end
+                    nextRecovery(k).recovered=references;
+                end
+                recoveryState=nextRecovery; recoveryNeedsOpen=false;
+                checkpointRecovery;
+                MsgLog('Disk changes reconciled in the viewer. Review the result and use Save to persist annotations.');
+            end
+        catch exception
+            MsgLog(['Reconciliation failed: ',exception.message,' Current edits and recovery drafts are retained.'],4);
+        end
+        function applyReconciliation(candidate)
+            ce.curation.verifyReconciliation(plan);
+            applyMetricSession(candidate);
+            nextRecovery=ce.curation.recovery.open(cell_metrics);
+            for k=1:numel(nextRecovery)
+                indices=nextRecovery(k).indices;
+                if UI.BatchMode
+                    candidate=ce.curation.restoreAnnotations(cell_metrics,merged{k},indices);
+                else
+                    candidate=ce.curation.applyAnnotations(cell_metrics,merged{k},1:numel(merged{k}.UID));
+                end
+                if ~isequaln(ce.curation.captureAnnotations(candidate,indices),nextRecovery(k).baseline)
+                    applyBackupRestore(candidate,indices);
+                end
+            end
+            ce.curation.verifyReconciliation(plan);
+        end
+    end
+
+    function text = annotationConflictValue(value)
+        if value.present, text=jsonencode(value.value); else, text='(absent)'; end
+    end
+
+    function pending = pendingRecoveryReview
+        pending=[];
+        if isfield(UI.monoSyn,'pendingReview'), pending=UI.monoSyn.pendingReview; end
+    end
+
+    function discardPendingReview(~,~)
+        if isempty(pendingRecoveryReview), MsgLog('No connection review is pending.'); return; end
+        answer=questdlg('Discard the pending connection review? Annotation edits will be retained.', ...
+            'Discard pending review','Keep review','Discard review','Keep review');
+        if ~strcmp(answer,'Discard review'), return; end
+        UI.monoSyn=rmfield(UI.monoSyn,'pendingReview');
+        refreshRecovery(1:numel(recoveryState),false,false);
+        MsgLog('Pending connection review discarded. Annotation edits retained.');
+    end
+
+    function refreshPendingReview(receipt)
+        if isempty(pendingRecoveryReview), return; end
+        try
+            UI.monoSyn.pendingReview=ce.curation.refreshMonoSynReview(pendingRecoveryReview,receipt,cell_metrics);
+        catch exception
+            MsgLog(['Annotations saved, but the pending connection review still has incompatible inputs: ',exception.message, ...
+                ' The review draft is retained.'],3);
+        end
+    end
+
+    function checkpointRecovery
+        if recoveryBusy || recoveryNeedsOpen || isempty(recoveryState) || isempty(cell_metrics), return; end
+        try
+            snapshot=cell_metrics;
+            snapshot.putativeCellType=UI.preferences.cellTypes(clusClas);
+            [recoveryState,errors]=ce.curation.recovery.checkpoint(snapshot,classificationTrackChanges,pendingRecoveryReview,recoveryState);
+            reportRecoveryErrors(errors);
+        catch exception
+            reportRecoveryErrors({exception.message});
+        end
+    end
+
+    function refreshRecovery(sessions,resetAnnotations,refreshSource,receipts)
+        if nargin<3, refreshSource=true; end
+        if nargin<4, receipts=struct('file',{},'hash',{}); end
+        if isempty(recoveryState), return; end
+        try
+            snapshot=cell_metrics; snapshot.putativeCellType=UI.preferences.cellTypes(clusClas);
+            [recoveryState,errors]=ce.curation.recovery.refresh(snapshot,sessions,resetAnnotations, ...
+                classificationTrackChanges,pendingRecoveryReview,recoveryState,refreshSource,receipts);
+            reportRecoveryErrors(errors);
+        catch exception
+            reportRecoveryErrors({exception.message});
+        end
+    end
+
+    function reportRecoveryErrors(errors)
+        if isempty(errors), recoveryLastError=''; return; end
+        message=['Recovery journal: ',strjoin(errors,' | '),' In-memory edits remain available.'];
+        if strcmp(message,recoveryLastError), return; end
+        recoveryLastError=message;
+        if isgraphics(UI.fig), MsgLog(message,3); else, warning('ce:recovery:CheckpointFailed','%s',message); end
+    end
+
+    function retireRecoveryEntries(entries)
+        errors={};
+        for entry=entries
+            try
+                ce.curation.recovery.retire(entry.file,entry.writtenHash);
+                for reference=entry.recovered, ce.curation.recovery.retire(reference.file,reference.hash); end
+            catch exception
+                errors{end+1}=exception.message;
+            end
+        end
+        reportRecoveryErrors(errors);
+    end
+
+    function openRecoveryJournals
+        recoveryNeedsOpen=false;
+        try
+            recoveryState=ce.curation.recovery.open(cell_metrics);
+        catch exception
+            recoveryState=[]; reportRecoveryErrors({exception.message}); return
+        end
+        try, offerRecoveryJournals;
+        catch exception, reportRecoveryErrors({exception.message}); end
+    end
+
+    function offerRecoveryJournals(~,~)
+        if recoveryBusy || isempty(recoveryState), return; end
+        recoveryBusy=true; recoveryCleanup=onCleanup(@finishRecovery);
+        for sessionIndex=1:numel(recoveryState)
+            candidates=ce.curation.recovery.discover(recoveryState(sessionIndex));
+            if isempty(candidates), continue; end
+            selected=1;
+            if numel(candidates)>1
+                labels=cellfun(@(file) strrep(file,fileparts(file),''),{candidates.file},'UniformOutput',false);
+                [selected,accepted]=listdlg('PromptString','Choose one recovery draft (other drafts remain unchanged):', ...
+                    'ListString',labels,'SelectionMode','single','ListSize',[600 220]);
+                if ~accepted, continue; end
+            end
+            journal=candidates(selected);
+            if ~isempty(journal.error), reportRecoveryErrors({journal.error}); continue; end
+            answer=questdlg(['A recovery draft exists for ',recoveryState(sessionIndex).source, ...
+                '. Recover into the viewer, leave it for later, or discard this draft?'], ...
+                'Recover unsaved changes','Recover','Later','Discard draft','Later');
+            if strcmp(answer,'Discard draft')
+                try, ce.curation.recovery.retire(journal.file,journal.hash);
+                catch exception, reportRecoveryErrors({exception.message}); end
+            elseif strcmp(answer,'Recover')
+                try
+                    [candidate,dirty,pending]=ce.curation.recovery.prepare(cell_metrics,recoveryState(sessionIndex),journal);
+                    if ~isempty(pending) && ~isempty(pendingRecoveryReview)
+                        error('ce:recovery:PendingReview','Another review is already pending; resolve it before recovering this one.');
+                    end
+                    previousDirty=classificationTrackChanges;
+                    result=runMetricOperation(@() candidate,@applyRecoveredAnnotations,'Recover unsaved changes',@() true);
+                    if strcmp(result.status,'loaded')
+                        classificationTrackChanges=unique([previousDirty,dirty],'stable');
+                        if isempty(classificationTrackChanges), UI.menu.file.save.ForegroundColor='k'; end
+                        if ~isempty(pending), UI.monoSyn.pendingReview=pending; end
+                        recoveryState(sessionIndex).recovered(end+1)=struct('file',journal.file,'hash',journal.hash);
+                    end
+                catch exception
+                    reportRecoveryErrors({exception.message});
+                end
+            end
+        end
+        function applyRecoveredAnnotations(candidate)
+            % Reuse the existing undo and transactional annotation-restore UI.
+            applyBackupRestore(candidate,recoveryState(sessionIndex).indices);
+        end
+    end
+
+    function finishRecovery
+        recoveryBusy=false;
+    end
+
     function saveDialog(~,~)
         % Called with the save button.
+        checkpointRecovery;
         assignin('base','cell_metrics',cell_metrics)
         saveMetrics(cell_metrics);
     end
@@ -10012,7 +10147,15 @@ end
         
         if nargin > 1
             try
-                ce.io.saveCellMetrics(cell_metrics,file);
+                canonical=char(java.io.File(file).getCanonicalPath);
+                sourceIndex=[];
+                if ~isempty(recoveryState), sourceIndex=find(strcmp({recoveryState.source},canonical)); end
+                if isempty(sourceIndex)
+                    ce.curation.saveMetricSnapshot(cell_metrics,file);
+                else
+                    receipt=ce.curation.saveMetricSnapshot(cell_metrics,file,expectedSourceHash(file));
+                    refreshPendingReview(receipt); refreshRecovery(sourceIndex,true,true,receipt);
+                end
                 MsgLog(['Cell metrics saved to: ', file],[1,2]);
             catch exception
                 MsgLog(['Error saving metrics: ' file, ' - ', exception.message],4);
@@ -10036,6 +10179,7 @@ end
             ce_waitbar = waitbar(0,[num2str(sessionWithChanges),' sessions with changes'],'name','Saving cell metrics from batch','WindowStyle','modal');
             % Unattempted/canceled sessions remain unsaved until a write succeeds.
             errorSaving = ones(1,length(sessionWithChanges));
+            saveReceipts=struct('file',{},'hash',{});
             for j = 1:length(sessionWithChanges)
                 if ~ishandle(ce_waitbar)
                     MsgLog(['Saving canceled']);
@@ -10051,7 +10195,9 @@ end
                 end
                 try 
                     matpath = fullfile(cell_metricsTemp.general.basepaths{sessionID},[cell_metricsTemp.general.basenames{sessionID}, '.',saveAs,'.cellinfo.mat']);
-                    ce.curation.saveSessionAnnotations(matpath,cell_metricsTemp,cellSubset);
+                    receipt=ce.curation.saveSessionAnnotations(matpath,cell_metricsTemp,cellSubset,expectedSourceHash(matpath));
+                    refreshPendingReview(receipt);
+                    saveReceipts(end+1)=struct('file',receipt.file,'hash',receipt.hash);
                     errorSaving(j) = 0;
                 catch exception
                     MsgLog(['Error saving metrics for session: ' cell_metricsTemp.general.basenames{sessionID}, ' - ', exception.message],4);
@@ -10059,6 +10205,7 @@ end
             end
             savedSessions = sessionWithChanges(errorSaving==0);
             classificationTrackChanges = ce.curation.remainingChanges(classificationTrackChanges,cell_metricsTemp.batchIDs,savedSessions);
+            refreshRecovery(savedSessions,true,true,saveReceipts);
             if ishandle(ce_waitbar)
                 close(ce_waitbar)
             end
@@ -10068,7 +10215,7 @@ end
             if all(errorSaving==0)
                 MsgLog(['Classifications succesfully saved to existing cell metrics files'],[1,2]);
             else
-                MsgLog('Some sessions were not saved. Their changes remain unsaved; retry after resolving the errors.',4);
+                MsgLog('Some sessions were not saved. Their changes remain unsaved; use File > Reconcile changes from disk... for changed sources, then retry.',4);
             end
         else
             if isfield(cell_metrics.general,'saveAs')
@@ -10087,19 +10234,20 @@ end
                 return
             end
             try
-                createBackup(cell_metrics)
-            catch
-                MsgLog(['Failed to save backup: ' cell_metrics.general.basepath],4);
-            end
-            
-            try
-                saveStruct(cell_metrics,'cellinfo','basename',cell_metrics.general.basename,'basepath',cell_metrics.general.basepath,'dataName',saveAs);
-                
+                if isfield(cell_metrics.general,'filename') && ~isempty(cell_metrics.general.filename)
+                    file = cell_metrics.general.filename;
+                end
+                candidate = cell_metrics;
+                candidate.general.classificationTrackChanges = [];
+                destination=fullfile(cell_metrics.general.basepath,file);
+                receipt=ce.curation.saveMetricSnapshot(candidate,destination,expectedSourceHash(destination));
+                refreshPendingReview(receipt);
                 classificationTrackChanges = [];
+                refreshRecovery(1,true,true,receipt);
                 UI.menu.file.save.ForegroundColor = 'k';
                 MsgLog(['Classification saved to ', file],[1,2]);
-            catch
-                MsgLog(['Failed to save the cell metrics. Please choose a different path: ' cell_metrics.general.basepath],4);
+            catch exception
+                MsgLog(['Failed to save cell metrics: ', exception.message, ' Unsaved changes retained. If the source changed, use File > Reconcile changes from disk...'],4);
             end
             
         end
@@ -10364,6 +10512,8 @@ end
         UI.menu.file.save = uimenu(UI.menu.file.topMenu,menuLabel,'Save',menuSelectedFcn,@saveDialog,'Separator','on','Accelerator','S');
         UI.menu.file.saveAs = uimenu(UI.menu.file.topMenu,menuLabel,'Save As...',menuSelectedFcn,@saveAsDialog,'Accelerator','S');
         uimenu(UI.menu.file.topMenu,menuLabel,'Restore from backup',menuSelectedFcn,@restoreBackup);
+        uimenu(UI.menu.file.topMenu,menuLabel,'Recover unsaved changes...',menuSelectedFcn,@offerRecoveryJournals);
+        uimenu(UI.menu.file.topMenu,menuLabel,'Reconcile changes from disk...',menuSelectedFcn,@reconcileAnnotations);
         uimenu(UI.menu.file.topMenu,menuLabel,'Reload cell metrics',menuSelectedFcn,@reloadCellMetrics,'Separator','on');
         uimenu(UI.menu.file.topMenu,menuLabel,'Export figure dialog',menuSelectedFcn,@exportFigure,'Separator','on');
         if ~verLessThan('matlab','9.8')
@@ -10493,6 +10643,7 @@ end
         UI.menu.monoSyn.inhibitoryPostsynapticCells = uimenu(UI.menu.monoSyn.topMenu,menuLabel,'Highlight cells receiving inhibitory input',menuSelectedFcn,@highlightInhibitoryPostsynapticCells);
         UI.menu.monoSyn.toggleHollowGauss = uimenu(UI.menu.monoSyn.topMenu,menuLabel,'Show hollow gaussian in CCG plots',menuSelectedFcn,@toggleHollowGauss,'Separator','on','Accelerator','F','Checked','on');
         uimenu(UI.menu.monoSyn.topMenu,menuLabel,'Adjust monosynaptic connections',menuSelectedFcn,@adjustMonoSyn_UpdateMetrics,'Separator','on');
+        uimenu(UI.menu.monoSyn.topMenu,menuLabel,'Discard pending connection review',menuSelectedFcn,@discardPendingReview);
         
         % Reference data
         UI.menu.referenceData.topMenu = uimenu(UI.fig,menuLabel,'Reference data');
@@ -12175,147 +12326,81 @@ end
     end
 
     function adjustMonoSyn_UpdateMetrics(~,~)
-        % Manually select connections
-        if UI.BatchMode
-            basename1 = cell_metrics.general.basenames{batchIDs};
-            path1 = cell_metrics.general.basepaths{batchIDs};
-        else
-            if isfield( cell_metrics.general,'basepath')
-                basename1 = cell_metrics.general.basename;
-                path1 = cell_metrics.general.basepath;
+        committed=false;
+        try
+            if UI.BatchMode
+                selectedSession=cell_metrics.batchIDs(ii);
+                name=cell_metrics.general.basenames{selectedSession}; folder=cell_metrics.general.basepaths{selectedSession};
+                indices=find(cell_metrics.batchIDs==selectedSession); saveAs='cell_metrics';
+                if isfield(cell_metrics.general,'saveAs'), saveAs=cell_metrics.general.saveAs{selectedSession}; end
             else
-                basename1 = cell_metrics.general.basename;
-                path1 = cell_metrics.general.basepath;
+                name=cell_metrics.general.basename; folder=cell_metrics.general.basepath;
+                indices=1:numel(cell_metrics.UID); saveAs='cell_metrics';
+                if isfield(cell_metrics.general,'saveAs'), saveAs=cell_metrics.general.saveAs; end
             end
-        end
-        
-        if isfield(general,'saveAs')
-            saveAs = general.saveAs;
-            MonoSynFile = fullfile(path1,[basename1,'.mono_res',erase(saveAs,'cell_metrics'),'.cellinfo.mat']);
-        else
-            MonoSynFile = fullfile(path1,[basename1,'.mono_res.cellinfo.mat']);
-        end
-        
-        if exist(MonoSynFile,'file')
-            ce_waitbar = waitbar(0,'Loading MonoSyn file','name','CellExplorer');
-            load(MonoSynFile,'mono_res');
-            if ishandle(ce_waitbar)
-                waitbar(1,ce_waitbar,'Complete');
-                close(ce_waitbar)
+            metricsFile=fullfile(folder,[name,'.',saveAs,'.cellinfo.mat']);
+            monoFile=fullfile(folder,[name,'.mono_res',erase(saveAs,'cell_metrics'),'.cellinfo.mat']);
+            usable=false;
+            if isfield(UI.monoSyn,'pendingReview')
+                pending=UI.monoSyn.pendingReview;
+                if strcmp(pending.context.monoFile,monoFile)
+                    try
+                        context=pending.context;
+                        ce.curation.verifyFileRevision(metricsFile,context.metricsHash);
+                        ce.curation.verifyFileRevision(monoFile,context.monoHash);
+                        context.viewerIndices=ce.curation.annotationOrder(context.metrics,cell_metrics,indices);
+                        review=pending.review; usable=true;
+                    catch
+                        % Never rebase a retained selection onto changed inputs.
+                    end
+                end
+                if ~usable
+                    answer=questdlg('A retained review belongs to different or changed inputs. Discard it and load the current session files?', ...
+                        'Pending monosynaptic review','Keep review','Discard review','Keep review');
+                    if ~strcmp(answer,'Discard review'), return; end
+                    UI.monoSyn=rmfield(UI.monoSyn,'pendingReview');
+                    refreshRecovery(1:numel(recoveryState),false,false);
+                end
             end
-            mono_res = gui_MonoSyn(mono_res,cell_metrics.UID(ii));
-            % Saves output to the cell_metrics from the select session
-            answer = questdlg('Do you want to save the manual monosynaptic curation?', 'Save monosynaptic curation', 'Yes','No','Yes');
-            if strcmp(answer,'Yes')
-                ce_waitbar = waitbar(0,' ','name','CellExplorer: Updating MonoSyn');
-                if isfield(general,'saveAs')
-                    saveAs = general.saveAs;
-                else
-                    saveAs = 'cell_metrics';
-                end
-%                 try
-                    % Saving MonoSynFile fule
-                    if ishandle(ce_waitbar)
-                        waitbar(0.05,ce_waitbar,'Saving MonoSyn file');
-                    end
-                    save(MonoSynFile,'mono_res','-v7.3','-nocompression');
-                    
-                    % Creating backup of existing metrics
-                    if ishandle(ce_waitbar)
-                        waitbar(0.4,ce_waitbar,'Creating backup of existing metrics');
-                    end
-                    dirname = 'revisions_cell_metrics';
-                    if ~(exist(fullfile(path1,dirname),'dir'))
-                        mkdir(fullfile(path1,dirname));
-                    end
-                    if exist(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']),'file')
-                        copyfile(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']), fullfile(path1, dirname, [saveAs, '_',datestr(clock,'yyyy-mm-dd_HHMMSS'), '.mat']));
-                    end
-                    
-                    % Saving new metrics
-                    if ishandle(ce_waitbar)
-                        waitbar(0.7,ce_waitbar,'Saving cells to cell_metrics file');
-                    end
-                    cell_session = load(fullfile(path1,[basename1,'.',saveAs,'.cellinfo.mat']));
-                    cell_session.cell_metrics.putativeConnections.excitatory = mono_res.sig_con_excitatory; % Vectors with cell pairs
-                    cell_session.cell_metrics.putativeConnections.inhibitory = mono_res.sig_con_inhibitory; % Vectors with cell pairs
-                    cell_session.cell_metrics.synapticEffect = repmat({'Unknown'},1,cell_session.cell_metrics.general.cellCount);
-                    cell_session.cell_metrics.synapticEffect(cell_session.cell_metrics.putativeConnections.excitatory(:,1)) = repmat({'Excitatory'},1,size(cell_session.cell_metrics.putativeConnections.excitatory,1)); % cell_synapticeffect ['Inhibitory','Excitatory','Unknown']
-                    if ~isempty(cell_session.cell_metrics.putativeConnections.inhibitory)
-                        cell_session.cell_metrics.synapticEffect(cell_session.cell_metrics.putativeConnections.inhibitory(:,1)) = repmat({'Inhibitory'},1,size(cell_session.cell_metrics.putativeConnections.inhibitory,1));
-                    end
-                    cell_session.cell_metrics.synapticConnectionsOut = zeros(1,cell_session.cell_metrics.general.cellCount);
-                    cell_session.cell_metrics.synapticConnectionsIn = zeros(1,cell_session.cell_metrics.general.cellCount);
-                    [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,1),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,1)));
-                    cell_session.cell_metrics.synapticConnectionsOut(b) = a; cell_session.cell_metrics.synapticConnectionsOut = cell_session.cell_metrics.synapticConnectionsOut(1:cell_session.cell_metrics.general.cellCount);
-                    [a,b]=hist(cell_session.cell_metrics.putativeConnections.excitatory(:,2),unique(cell_session.cell_metrics.putativeConnections.excitatory(:,2)));
-                    cell_session.cell_metrics.synapticConnectionsIn(b) = a; cell_session.cell_metrics.synapticConnectionsIn = cell_session.cell_metrics.synapticConnectionsIn(1:cell_session.cell_metrics.general.cellCount);
-                    
-                    saveStruct(cell_session.cell_metrics,'cellinfo','basename',basename1,'basepath',path1,'dataName',saveAs);
-                    
-                    if ishandle(ce_waitbar)
-                        waitbar(0.9,ce_waitbar,'Updating session');
-                    end
-                    if UI.BatchMode
-                        idx = find(cell_metrics.batchIDs == batchIDs);
-                    else
-                        idx = 1:cell_metrics.general.cellCount;
-                    end
-                    if length(idx) == cell_session.cell_metrics.general.cellCount
-                        ia = ismember(cell_metrics.putativeConnections.excitatory(:,1), idx);
-                        cell_metrics.putativeConnections.excitatory(ia,:) = [];
-                        cell_metrics.putativeConnections.excitatory = [cell_metrics.putativeConnections.excitatory;idx(mono_res.sig_con_excitatory)];
-                        if ~isempty(cell_session.cell_metrics.putativeConnections.inhibitory)
-                            ia = ismember(cell_metrics.putativeConnections.inhibitory(:,1), idx);
-                            cell_metrics.putativeConnections.inhibitory(ia,:) = [];
-                            cell_metrics.putativeConnections.inhibitory = [cell_metrics.putativeConnections.inhibitory;idx(mono_res.sig_con_inhibitory)];
-                            cell_metrics.synapticEffect(idx(cell_session.cell_metrics.putativeConnections.inhibitory(:,1))) = repmat({'Inhibitory'},1,size(cell_session.cell_metrics.putativeConnections.inhibitory,1));
-                        end
-                        cell_metrics.synapticEffect(idx) = repmat({'Unknown'},1,cell_session.cell_metrics.general.cellCount);
-                        cell_metrics.synapticEffect(idx(cell_session.cell_metrics.putativeConnections.excitatory(:,1))) = repmat({'Excitatory'},1,size(cell_session.cell_metrics.putativeConnections.excitatory,1));
-                        cell_metrics.synapticConnectionsOut(idx) = cell_session.cell_metrics.synapticConnectionsOut;
-                        cell_metrics.synapticConnectionsIn(idx) = cell_session.cell_metrics.synapticConnectionsIn;
-                        
-                        if isfield(cell_metrics,'synapticEffect')
-                            UI.cells.excitatory = find(strcmp(cell_metrics.synapticEffect,'Excitatory'));
-                            UI.cells.inhibitory = find(strcmp(cell_metrics.synapticEffect,'Inhibitory'));
-                        end
-                        if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'excitatory') && ~isempty(cell_metrics.putativeConnections.excitatory)
-                            UI.cells.excitatoryPostsynaptic = unique(cell_metrics.putativeConnections.excitatory(:,2));
-                        else
-                            UI.cells.excitatoryPostsynaptic = [];
-                        end
-                        if isfield(cell_metrics,'putativeConnections') && isfield(cell_metrics.putativeConnections,'inhibitory') && ~isempty(cell_metrics.putativeConnections.inhibitory)
-                            UI.cells.inhibitoryPostsynaptic = unique(cell_metrics.putativeConnections.inhibitory(:,2));
-                        else
-                            UI.cells.inhibitoryPostsynaptic = [];
-                        end
-                    else
-                        MsgLog('Error updating current session. Reload session to see the changes',4);
-                    end
-                    
-                    if ishandle(ce_waitbar)
-                        waitbar(1,ce_waitbar,'Complete');
-                    end
-                    MsgLog(['Synaptic connections adjusted for: ', basename1]);
-                    uiresume(UI.fig);
-%                 catch
-%                     MsgLog('Synaptic connections adjustment failed. mono_res struct saved to workspace',4);
-%                     assignin('base','mono_res_failed_to_save',mono_res);
-%                 end
-                
-                if ishandle(ce_waitbar)
-                    close(ce_waitbar)
-                end
+            if ~usable
+                ce.curation.verifyFileRevision(metricsFile,expectedSourceHash(metricsFile));
+                context=ce.curation.beginMonoSynReview(metricsFile,monoFile,cell_metrics,indices);
+                review=context.mono;
+            end
+            localCell=find(context.viewerIndices==ii);
+            review=gui_MonoSyn(review,localCell); % Struct input cannot save a source file.
+            UI.monoSyn.pendingReview=struct('context',context,'review',review);
+            checkpointRecovery;
+            answer=questdlg('Save the manual monosynaptic curation?','Save monosynaptic curation','Yes','No','Yes');
+            if ~strcmp(answer,'Yes'), MsgLog('Monosynaptic review not saved; retained in this viewer.'); return; end
+            selection=ce.curation.validateMonoSynSelection(review,ce.pipeline.monoSynAutomatic(review));
+            projected=ce.curation.projectMonoSynReview(context.metrics,selection);
+            projected.general.processinginfo.monosynapticReview=struct();
+            candidate=ce.curation.applyMonoSynReview(cell_metrics,projected,context.viewerIndices);
+            [saved,~,receipt]=ce.curation.saveMonoSynReview(context,review);
+            committed=true;
+            if UI.BatchMode
+                candidate.general.batch{selectedSession}.processinginfo.monosynapticReview=saved.general.processinginfo.monosynapticReview;
             else
-                MsgLog('Synaptic connections not updated.');
+                candidate.general.processinginfo.monosynapticReview=saved.general.processinginfo.monosynapticReview;
             end
-        elseif ~exist(MonoSynFile,'file')
-            MsgLog(['Mono_syn file does not exist: ' MonoSynFile],4);
-            return
+            cell_metrics=candidate;
+            UI.monoSyn=rmfield(UI.monoSyn,'pendingReview');
+            if UI.BatchMode, refreshRecovery(selectedSession,false,true,receipt); else, refreshRecovery(1,false,true,receipt); end
+            UI.cells.excitatory=find(strcmp(cell_metrics.synapticEffect,'Excitatory'));
+            UI.cells.inhibitory=find(strcmp(cell_metrics.synapticEffect,'Inhibitory'));
+            UI.cells.excitatoryPostsynaptic=unique(cell_metrics.putativeConnections.excitatory(:,2));
+            UI.cells.inhibitoryPostsynaptic=unique(cell_metrics.putativeConnections.inhibitory(:,2));
+            MsgLog(['Synaptic connections saved for: ',name]); uiresume(UI.fig);
+        catch exception
+            if committed
+                MsgLog(['Files were saved, but the view could not be refreshed: ',exception.message,' Reload the session.'],4);
+            else
+                MsgLog(['Monosynaptic save/review failed: ',exception.message,' Any pending review is retained. For changed source files, discard the review explicitly and use File > Reconcile changes from disk...'],4);
+            end
         end
     end
-    
+
     function performGroundTruthClassification(~,~)
         if ~isfield(UI.tabs,'groundTruthClassification')
             % UI.preferences.groundTruth

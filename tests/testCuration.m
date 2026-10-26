@@ -120,6 +120,47 @@ verifyEqual(testCase,ce.curation.remainingChanges(changed,batchIDs,[]),changed);
 verifyEmpty(testCase,ce.curation.remainingChanges(changed,batchIDs,[1 2 3]));
 end
 
+function testSortingRevisionRequiredOnBothSides(testCase)
+target = fixture; target.general.sortingRevision = repmat('a',1,64);
+source = target; source.general.sortingRevision = repmat('b',1,64);
+verifyError(testCase,@() ce.curation.applyAnnotations(target,source,[1 2]),'ce:curation:SortingRevisionMismatch');
+source.general = rmfield(source.general,'sortingRevision');
+verifyError(testCase,@() ce.curation.applyAnnotations(target,source,[1 2]),'ce:curation:SortingRevisionMismatch');
+verifyError(testCase,@() ce.curation.applyAnnotations(source,target,[1 2]),'ce:curation:SortingRevisionMismatch');
+source.general.sortingRevision = 'invalid';
+verifyError(testCase,@() ce.curation.applyAnnotations(target,source,[1 2]),'ce:data:InvalidSortingRevision');
+end
+
+function testBatchUsesSelectedSessionsRevision(testCase)
+target = fixture; target.general.sortingRevision = repmat('a',1,64);
+source.UID = [1 2 1 2]; source.cluID = [11 22 11 22]; source.batchIDs = [1 1 2 2];
+source.labels = {'other','other','selected first','selected second'};
+source.general.batch = {struct('sortingRevision',repmat('b',1,64)),target.general};
+updated = ce.curation.applyAnnotations(target,source,[3 4]);
+verifyEqual(testCase,updated.labels,source.labels(3:4));
+verifyError(testCase,@() ce.curation.applyAnnotations(target,source,[1 2]),'ce:curation:SortingRevisionMismatch');
+verifyError(testCase,@() ce.curation.applyAnnotations(target,source,[1 4]),'ce:data:InvalidSortingRevision');
+end
+
+function testRejectedRevisionPreservesFileAndBackupKeepsRevision(testCase)
+target = fixture; target.general.sortingRevision = repmat('a',1,64);
+file = fullfile(testCase.TestData.folder,'synthetic.cell_metrics.cellinfo.mat');
+ce.io.saveCellMetrics(target,file); before = ce.pipeline.fileFingerprint(file);
+source = target; source.labels = {'new first','new second'};
+source.general.sortingRevision = repmat('b',1,64);
+verifyError(testCase,@() ce.curation.saveSessionAnnotations(file,source,[1 2]),'ce:curation:SortingRevisionMismatch');
+verifyEqual(testCase,ce.pipeline.fileFingerprint(file),before);
+verifyFalse(testCase,isfolder(fullfile(testCase.TestData.folder,'revisions_cell_metrics')));
+source.general.sortingRevision = target.general.sortingRevision;
+ce.curation.saveSessionAnnotations(file,source,[1 2]);
+backups = dir(fullfile(testCase.TestData.folder,'revisions_cell_metrics','*.mat'));
+verifyNumElements(testCase,backups,1);
+backup = load(fullfile(backups(1).folder,backups(1).name),'cell_metrics');
+verifyEqual(testCase,backup.cell_metrics.general.sortingRevision,target.general.sortingRevision);
+verifyEqual(testCase,backup.cell_metrics.labels,target.labels);
+stored = load(file,'cell_metrics'); verifyEqual(testCase,stored.cell_metrics.labels,source.labels);
+end
+
 function metrics = fixture
 metrics.general.cellCount = 2;
 metrics.general.saveAs = 'cell_metrics';

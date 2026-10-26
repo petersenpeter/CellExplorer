@@ -3,6 +3,7 @@ function result = saveOutputs(metrics, session, plan, outputs)
 % Individual files use verified replacement. This is not a multi-file transaction.
 result = struct('saved',false,'backup','');
 if ~plan.enabled, return; end
+if isfield(outputs,'spikeImport'), ce.pipeline.verifySpikeImport(outputs.spikeImport.pending); end
 ce.data.validateCellMetricsStruct(metrics);
 validateattributes(session,{'struct'},{'scalar'});
 for file = {plan.metricsFile,plan.sessionFile}
@@ -41,6 +42,11 @@ end
 if isfield(outputs,'waveforms')
     item = outputs.waveforms;
     ce.io.writeMat(item.file,struct('waveformCache',item.data));
+end
+if isfield(outputs,'spikeImport')
+    item = outputs.spikeImport;
+    ce.pipeline.verifySpikeImport(item.pending);
+    ce.io.writeMat(item.pending.file,struct('spikeImportCache',item.cache));
 end
 verifyRevision(plan.metricsFile,plan.metricsHash);
 ce.io.saveCellMetrics(metrics,plan.metricsFile);

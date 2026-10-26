@@ -42,5 +42,12 @@ settings.conv_w = .010; settings.alpha = .001; settings.sigWindow = .004;
 mono = previous;
 if strcmp(result.status,'failed'), return; end
 [mono,retained] = ce.curation.reconcileMonoSyn(previous,cache.data,result.provenance);
+% Bind positional detector output to the sorting validated at pipeline entry.
+revision='';
+if isfield(spikes,'processinginfo') && isfield(spikes.processinginfo,'sortingRevision')
+    revision=ce.data.validateSortingRevision(spikes.processinginfo.sortingRevision);
+end
+mono.processinginfo.cellIdentity=struct('UID',spikes.UID,'cluID',spikes.cluID, ...
+    'shankID',spikes.shankID,'sortingRevision',revision);
 persistence.reviewRetained = retained;
 end

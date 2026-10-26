@@ -81,13 +81,14 @@ Acceptance: a changed interval cannot reuse an incompatible ACG; repeated runs
 with the same inputs/configuration reproduce results; failures are attributable
 to stages; noninteractive runs never require a dialog.
 
-Current coverage: `waveform_extraction`, `waveform_shape`,
+Current coverage: opt-in `spike_import` for Neurosuite/Klustakwik and Phy,
+`waveform_extraction`, `waveform_shape`,
 `waveform_localization`, `acg_metrics`, `monosynaptic_detection` and
 `monosynaptic_metrics`, plus `event_metrics`, `manipulation_metrics` and
 `state_metrics`, `spatial_metrics`, `psth_metrics`, `theta_signal` and
 `theta_metrics`, the `deepSuperficial` projection, `other_metrics` and
 `cell_class_import` satisfy these stage/cache contracts.
-The unchecked items above also cover the remaining stages and sorting import,
+The unchecked items above also cover the remaining stages and sorting formats,
 and remain open until that migration is complete.
 
 ### 3. Complete the implementation migration
@@ -119,6 +120,12 @@ each moved component has coverage appropriate to its numerical or I/O behavior.
 
 Acceptance: interrupted sessions recover edits, partial saves remain visible,
 and measured navigation improves without losing existing analysis workflows.
+
+Current coverage includes guarded save/restore routes, partial-save dirty tracking,
+annotation and pending-review disk journals, startup recovery and undo after
+recovery. Live same-sorting annotation conflicts now have editing-session guards
+and explicit three-way reconciliation. Broader state separation, reconciliation
+of stale recovery journals, and remaining interface/navigation work are open.
 
 ## Verification and rollout
 
@@ -725,3 +732,716 @@ merely because its directories exist.
   migration, starting with explicit importer inputs and headless failure behavior.
   Recovery journaling, sorting revision identity and broader recording validation
   remain outstanding; work packages 2–4 are still incomplete.
+
+
+### Neurosuite/Klustakwik import boundary (2026-10-26)
+
+- Extracted `.clu/.res` and optional `.spk` reading into
+  `ce.io.importNeurosuiteSpikes`, with explicit session/path/group/scaling inputs
+  and no dialogs, metadata callbacks, database access, cwd/RNG changes or writes.
+  The legacy loader delegates this format branch; its other format routing,
+  private metadata helpers and output filters remain in place. No caller-sensitive,
+  MEX or resource lookup moved with this branch.
+- Preserved timestamp conversion, cluster/UID ordering, noise exclusions,
+  0.5 ms timestamp deduplication, waveform means/stds and channel indexing.
+  Waveforms continue to use all assigned source spikes, as in the legacy code.
+- Added explicit checks for missing/malformed sorting files, mismatched lengths,
+  waveform framing, channel groups and sample/scaling metadata. Binary handles
+  are closed reliably. OriginalClus discovery now inspects its own directory;
+  undeclared OriginalClus/source-waveform alignment is rejected before reading.
+- Spike cache reads now load only the named variable. Final cache saves use
+  verified replacement and propagate errors. Output filtering still follows saving,
+  preserving the established full-cache behavior. A failed import retains an
+  existing cache; this does not make all legacy preparation effects transactional.
+- **199/199 regression tests passed** in MATLAB R2024b Update 9; Code Analyzer
+  found no parse diagnostics in 146 package/test/viewer/pipeline/loader files.
+  Frozen legacy comparisons matched every imported field, including source
+  waveform statistics, singleton units, scaling and group order. Tests also
+  exercised malformed inputs, cache preservation/save failures, filters and a
+  headless core-metrics run using the imported spikes without writes or figures.
+- Tutorial verification loaded a temporary copy of the **151-cell spike cache**;
+  every field matched and the copy remained unchanged. All original tutorial
+  session/spikes/metrics hashes remained unchanged. Original sorting files are
+  absent from that session, so raw import was verified on controlled fixtures,
+  not on the tutorial's original sorting output.
+- Updated the migration inventory to mark loadSpikes as partially extracted rather
+  than fully migrated. The package API can be used explicitly before headless
+  processing; automatic raw import during pipeline preflight remains unsupported.
+- Next: declare import-stage dependencies and sorting revision identity before
+  enabling managed raw import/cache reuse in the pipeline. Migrate the next
+  format (Phy) with the same explicit input and reference-comparison discipline.
+  Broader source datasets, recovery journaling and the remaining UI/migration
+  work packages are still outstanding.
+
+### Managed Neurosuite import and sorting revisions (2026-10-26)
+
+- Added opt-in `spikeImport` options to headless processing. Preflight prepares or
+  reuses imported spikes in memory with no writes or interactive fallback. The
+  shared source plan resolves the same files/options used by the importer;
+  timestamp conversion, deduplication and waveform formulas are unchanged.
+- Declared `spike_import` ownership and dependencies. Reuse checks full source
+  content, effective metadata/options, implementation, environment and cached
+  outputs, retaining generation provenance. The separate
+  `basename.spikeImport.cache.mat` is deferred until pipeline persistence;
+  the conventional spike cache remains untouched. Source rediscovery/hashes and
+  expected cache revision are checked again before writing.
+- Managed imports now carry a sorting revision bound to original cell IDs,
+  groups, sample rate and timestamps. Processing validates it before interval
+  filtering and stores it in metric metadata. Assignment/timestamp source edits
+  change the revision; waveform-only/scaling changes invalidate the import cache
+  without changing sorting membership identity. This is conservative content
+  identity, not proof that biological cells have been matched across sortings.
+- Cached metric reuse and annotation application reject differing or one-sided
+  missing sorting revisions, including when UIDs/cluIDs happen to match. Batch
+  annotation checks use the selected session's revision, and annotation backups
+  retain it. Unversioned legacy pairs keep their previous identity checks.
+- **215/215 regression tests passed** in MATLAB R2024b Update 9. New coverage
+  includes source edits with restored mtimes, waveform/scaling changes, modified
+  cache outputs/implementation provenance, new groups, concurrent cache edits,
+  dry-run and failed-save preservation, revised/legacy metric conflicts and
+  single/batch annotation protection. A fresh synthetic recording successfully
+  bootstraps import, raw waveform extraction, waveform/ACG/core metrics and reuse
+  without an existing spike or metric cache.
+- Code Analyzer found no parse diagnostics in 155 package/test/viewer/pipeline/
+  loader files. The temporary tutorial spike-cache smoke check matched every
+  field for 151 cells; original session/spikes/metrics hashes remained unchanged.
+  The tutorial lacks original sorting files, so managed raw import was tested on
+  synthetic recordings rather than that recording's original sorting output.
+- Limits: managed import supports Neurosuite/Klustakwik only and remains opt-in.
+  Existing unversioned metrics need a separate `saveAs` or explicit full required
+  recomputation, with curation reconciled separately. Legacy import paths do not
+  acquire managed revisions, and not every viewer whole-file save path checks
+  them. Full source hashing has an I/O cost; checks provide neither file locks nor
+  a multi-output transaction. Broader raw sorting datasets remain unverified.
+- Next: migrate Phy with explicit inputs and frozen reference comparisons, then
+  extend managed import support using these contracts. Expand revision checks to
+  remaining curation/save routes and address recovery journaling. Work packages
+  2–4 remain incomplete; this closes the first format's managed import/revision
+  slice, not the full pipeline or persistence modernization.
+
+### Phy import boundary and managed reuse (2026-10-26)
+
+- Extracted the Phy branch from `loadSpikes` into `ce.io.importPhySpikes`, with
+  explicit session/path/label options, shared file discovery and no UI, cwd/RNG
+  changes or writes. The public loader retains cache/save/filter behavior and
+  delegates parsing. No private/MEX/caller-sensitive lookup moved; the existing
+  NPY reader and optional `tdfread` remain dependencies, with vendor code intact.
+- Preserved label-file precedence and table-order UIDs, case-insensitive labels,
+  sample conversion, 0.5 ms deduplication, original spike-row IDs and amplitude
+  selection. Frozen comparisons also preserve plugin channel remapping and
+  cluster-info precedence, including the legacy `phy_amp = amp + 1` convention
+  and plugin shanks surviving a later cluster-info channel override.
+- Added explicit errors for malformed/truncated NPY data, invalid/duplicate
+  labels, incomplete plugin metadata, missing selected-cell mappings and invalid
+  peak channels. Numeric NPY v1.0 is validated before the bundled reader runs;
+  other versions/object arrays are outside this boundary. `rez.mat` loads only
+  the named `rez` variable, and file handles are closed on failure.
+- Extended managed import fingerprints, revision identity and deferred cache
+  persistence to Phy. Optional file discovery is rechecked, and amplitude-only
+  changes invalidate cache reuse without changing sorting membership. Shank ID
+  is bound when supplied; timestamp-only Phy imports retain its absence until
+  managed raw waveform extraction supplies channels/groups. A fresh recording
+  can now run import, waveform/ACG/core metrics and reuse without old caches.
+- Compatibility tightening: Phy `raw_clusters=true` now fails explicitly because
+  the old path referenced an undefined timestamp tolerance. Source template
+  waveforms are also rejected because Python IDs were used directly as MATLAB
+  template indices and scaling/indexing are unvalidated. Use `.dat` waveform
+  extraction. Correcting those scientific conventions requires separate work.
+- Validation uses controlled synthetic files and frozen legacy results, including
+  both cluster-info ID headers, label fallback, channel remapping, malformed
+  inputs, public-loader save/filter/failure behavior, managed cache invalidation
+  and fresh pipeline reuse. No independent real Phy sorting export is available
+  in the supplied tutorial; source-template validation remains outstanding.
+- **228/228 regression tests passed** in MATLAB R2024b Update 9, including
+  Python-style one-dimensional/big-endian NPY input and cluster ID zero. Code
+  Analyzer found no parse diagnostics in 160 files. Every cached tutorial spike
+  field matched for 151 cells; original session/spikes/metrics hashes were
+  unchanged.
+- Next: extend sorting-revision checks to the remaining viewer/curation save
+  routes, then implement recovery journaling. Continue other format migrations
+  as distinct, reference-tested increments. Work packages 2–4 remain incomplete.
+
+### Viewer save and restore identity checks (2026-10-26)
+
+- Routed ordinary single-session Save, Save As and batch annotation persistence
+  through `ce.curation.saveMetricSnapshot`. Existing MAT files require compatible
+  cell identities/sorting revisions; batch snapshots also verify session keys and
+  order. New exports remain available; existing non-MAT exports require a new
+  filename because this boundary cannot verify their identity.
+- Replacements now archive the complete previous MAT file with hash verification.
+  A backup failure aborts the save, replacing the single-session viewer's former
+  best-effort backup behavior. Destination hashes are checked again after staging;
+  annotation saves preserve the expected revision from before their file read.
+  This is not a lock or conflict detection over the entire editing session.
+- Save follows an explicitly loaded filename, clears dirty state only after
+  success and persists an empty dirty-cell list. Save As keeps source edits dirty.
+  Partial batch saves clear only confirmed sessions. Full-file backups require
+  more disk space than the previous annotation-only archives.
+- Extracted annotation identity ordering, complete-session snapshots and pure
+  restore preparation. Restore checks UID/cluster/revision identity before
+  creating a backup or changing viewer state, and maps groups through actual
+  batch indices. Count-only legacy backups are rejected rather than guessed.
+  Alternate saveAs backups are discoverable in the picker.
+- Restore applies through the existing viewer snapshot/rollback boundary. Fixed
+  multi-cell history capture so undo restores each cell's own label/region/
+  deep-superficial value, instead of repeating the first selected cell's value.
+- **240/240 component tests passed** in MATLAB R2024b Update 9; no Code Analyzer
+  parse diagnostics in 169 files. Live viewer checks passed on temporary
+  151-cell/302-cell copies: Save/Save As conflicts, backup failure, exact backup,
+  rejected/successful restore, multi-cell undo, partial batch saves and dirty-color
+  preservation. The existing load/reinitialize/comparison rollback smoke also
+  passed in table mode 1. Tutorial cached-spike fields and all three original
+  session/spikes/metrics file hashes were unchanged.
+- Next: harden the two specialized legacy writers (ground-truth subset export and
+  manual monosynaptic curation), then implement recovery journaling. Same-sorting
+  concurrent editing and the remaining format/UI work are still open; work
+  packages 2–4 are not complete.
+
+### Ground-truth and manual monosynaptic save boundaries (2026-10-26)
+
+- Extracted ground-truth subset preparation/export from the viewer. Overlapping
+  tags deduplicate cells; source arrays/groups and session-local metadata retain
+  identity. Catalog subsets may change only while old cells still belong to the
+  same complete source session and declared sorting revision. Existing exports
+  get exact backups and checked replacement; cancel/partial failure no longer
+  appears to be a successful all-session export.
+- Manual connection review now captures both source-file revisions before the
+  GUI and checks UID/cluster/shank/positional identities. Managed detections carry
+  explicit cell/sorting identity. Versioned metrics reject unversioned detection;
+  legacy pairs retain explicit structural identity checks. Nonsequential UIDs are
+  mapped to the GUI's positional IDs.
+- Separated selection projection, persistence and viewer application. Detection
+  arrays cannot change during review. Preserved inhibitory precedence and legacy
+  excitatory-only count/histogram rules; retained transmission probabilities are
+  subset by pair identity, and unsupported stale probability fields are removed
+  for recalculation. Viewer inhibition now clears when the saved selection clears,
+  and unrelated annotation edits stay in memory.
+- Both MAT replacements are staged and both originals archived before committing.
+  A caught second-write failure rolls back the first file only if its new hash is
+  still ours. Concurrent edits prevent destructive rollback and report backup
+  locations. These checks do not provide crash recovery or a multi-file atomic
+  transaction. Exact backup creation is shared with ordinary viewer saves.
+- Failed reviews remain in the live viewer for retry. Changed inputs require an
+  explicit discard decision before starting a new review; choices are never
+  silently rebased. The connection model changes only after persistence succeeds.
+  Drafts are not yet persisted across closing/crashing the viewer.
+- **253/253 component tests passed** in MATLAB R2024b Update 9; no Code Analyzer
+  parse diagnostics in 178 files. Frozen ground-truth projection comparisons,
+  revision conflicts, exact backups, injected second-write rollback and refusal
+  to overwrite a concurrent edit passed. Live save callbacks passed on a temporary
+  151-cell tutorial copy with synthetic connection candidates and stubbed review
+  choices. The separate two-unit tutorial pipeline check matched legacy numerics,
+  verified invalidation/manual-selection retention and archived previous files.
+  All three original tutorial session/spikes/metrics hashes remained unchanged.
+- Next: recovery journaling for annotations and pending reviews, including startup
+  recovery and identity checks before replay. Same-sorting concurrent annotation
+  conflict handling and remaining importer/UI work remain open; work packages
+  2–4 are still incomplete.
+
+### Durable annotation and pending-review recovery (2026-10-26)
+
+- Added `ce.curation.recovery` with read-only baseline capture, per-viewer/per-source
+  journals, discovery, checked in-memory recovery, retirement and save refresh.
+  Drafts live in `<basepath>/.cellexplorer/recovery/`, outside source metric files.
+  They contain annotations/identity/dirty UIDs and compact connection selections;
+  scientific metrics and CCG arrays are not duplicated.
+- Wired checkpoints after completed main-loop callbacks, before Save/session
+  replacement, immediately after connection review and at normal exit. The old
+  workspace autosave remains, but its pre-edit timing is not used for recovery.
+  Unchanged drafts skip rewriting; partial batch errors retain successful state.
+- Startup and a File-menu action offer Recover/Later/Discard draft. Recovery checks
+  exact source hashes, UID/cluster/sorting identity and loaded baseline annotations
+  before transactional application with undo. Pending reviews additionally check
+  detection bytes and automatic results. Multiple drafts require choosing one;
+  malformed or stale drafts remain on disk for explicit reconciliation.
+- Successful saves retire only corresponding owned/accepted drafts. Save As keeps
+  source drafts, failed batch sessions retain theirs, and selection discard cleans
+  up only after replacement succeeds. Journal replacement/removal checks hashes.
+  Review discard does not rebase source hashes. A failed new checkpoint after a
+  source save preserves accepted older drafts.
+- Added exact previous/staged-file hashes to successful save results. A pending
+  review can follow this viewer's own confirmed annotation save only when that
+  save replaced its reviewed revision and detection remains unchanged. The review
+  can then survive another close/reopen before it is saved. External changes before
+  or after the save still reject this transition.
+- Recovery covers the last completed checkpoint, not edits inside an unfinished
+  callback/review. Read-only/full disks report failures while keeping live edits.
+  These are optimistic checks, not a live-instance lock, conflict merge, multi-file
+  crash transaction or power-loss guarantee. No original research files were used
+  as test write destinations.
+- **267/267 component tests passed** in MATLAB R2024b Update 9; no Code Analyzer
+  parse diagnostics in 188 files. Live recovery passed across five viewer launches,
+  including annotation-only checkpoints, Later, undo, saving annotations before
+  a pending review, another recovery and final journal cleanup. Ordinary save/
+  restore/partial-batch and specialized-save smoke checks passed. Cached spike
+  fields matched for 151 cells; original tutorial session/spikes/metrics hashes
+  remained unchanged. Process-kill, power-loss and network-share failures were
+  not simulated.
+- Next: detect same-sorting annotation conflicts across the whole editing session
+  and provide an explicit reconciliation flow. Continue remaining importer and UI
+  state-separation work as independent increments; work packages 2–4 remain open.
+
+### Editing-session conflict detection and annotation reconciliation (2026-10-26)
+
+- Ordinary viewer Save, partial batch saves and Save As to a loaded source now
+  retain the source revision captured at session opening. A same-sorting change
+  blocks the write instead of silently overwriting another user's annotations.
+  New connection reviews require that same baseline. Direct scripted annotation
+  saves accept an optional expected hash without breaking three-argument callers.
+- Capture original disk annotation snapshots alongside normalized viewer recovery
+  baselines. Confirmed save receipts advance the expected revision; changes after
+  the save are not accidentally adopted. This remains an optimistic check, not a
+  filesystem lock or protection against the final check/rename race.
+- Added pure three-way merging by session-local UID. Independent scalar edits and
+  group memberships combine; differing values and deletion versus editing require
+  explicit decisions. Sorting/cluster changes remain nonmergeable identity errors.
+- Added File > Reconcile changes from disk, with per-conflict Mine/Disk/Cancel
+  choices. It reloads current scientific data, applies combined annotations through
+  the viewer rollback boundary, and leaves persistence to a later Save. Checks
+  before/after reading, decisions and application reject intervening changes.
+  Cancellation preserves old edits/history. Successful reconciliation starts a
+  fresh history with undo for the applied annotations; selection/filter state can
+  reset, and affected sessions are conservatively marked dirty in full.
+- Added explicit pending-review discard so users can reconcile without entering
+  another review. Annotation edits survive discard. Prior recovery drafts remain
+  until the reconciled state is successfully saved. Merging stale recovery files
+  against changed sources is still separate work; this flow handles live edits.
+- Fixed an existing theta test's comparison of the shared temporary parent folder
+  timestamp. It still verifies the fixture's own directory and contents, while
+  ignoring unrelated creation/removal of files in its parent.
+- **277/277 component tests passed** in MATLAB R2024b Update 9; no Code Analyzer
+  parse diagnostics in 194 files. Live 151-cell and 302-cell checks covered stale
+  Save/Save As, conflict cancellation, changes during choices, reconciliation,
+  undo and preservation of updated scientific fields. Existing recovery,
+  save/restore/partial-batch and specialized-save checks passed. All cached spike
+  fields matched; the three original tutorial file hashes remained unchanged.
+  Choices were stubbed and races injected deterministically; no filesystem locks,
+  physical multi-process race tests or network-share guarantees are claimed.
+- Next: extract curation history and edit state from the large viewer into a
+  component with explicit operations. Continue remaining importer migration and
+  broader recording validation; work packages 2–4 remain incomplete.
+
+### UI-focused review: CellExplorer, NeuroScope2 and session editor (2026-10-26)
+
+The current priority is functionality, performance, robustness and scientific plot
+clarity across all three interfaces. This review changes the next-work ordering;
+Phy1/Phy2/raw_clusters compatibility remains open in the importer backlog. No
+production UI implementation was changed during the review.
+
+Evidence: current source inspection, current rendered screenshots, existing paired
+CellExplorer profiles, and isolated MATLAB R2024b checks on temporary copies.
+See [observations](benchmarks/ui-review-2026-10-26/observations.json),
+[CellExplorer](benchmarks/ui-review-2026-10-26/cellexplorer.png),
+[NeuroScope2](benchmarks/ui-review-2026-10-26/neuroscope.png),
+[session General](benchmarks/ui-review-2026-10-26/session-general.png), and
+[session Extracellular](benchmarks/ui-review-2026-10-26/session-extracellular.png).
+The tutorial metadata/metrics supplied the first two views; NeuroScope2 used a
+synthetic 16-channel recording. All original session/spikes/metrics hashes remained
+unchanged. The full 277-test suite was not rerun for this review. Capture-run
+startup observations are not performance benchmarks: they are single trials with
+Java code-cache/rendering warnings. Use the earlier balanced profiles only within
+their documented limits, and establish fresh baselines before optimization.
+
+#### Findings requiring correction before broader redesign
+
+| Priority | Finding and evidence | Required outcome |
+| --- | --- | --- |
+| P0 | NeuroScope2 reads with configurable precision but uses two bytes per sample for seeks and duration (`NeuroScope2.m`, `load_ephys_data`, lines 952–981; precision at 5207; duration at 5258). Reproduced: a six-second int32 recording reports twelve seconds; after moving to 0.25 s, the final ramp sample is 1500 instead of 2500. | A typed reader owns bytes/sample, sample indexing, complete reads, EOF and growing-file behavior. Regression fixtures cover int16/int32/single and reject unsupported encodings explicitly. Preserve all scientific unit conversions. |
+| P0 | `gui_session` Save calls `readBackFields` and direct `save` without validation (1386, 1441). Typing `not-a-number` into sampling rate saved `NaN` in the temporary session file. Validation is a separate menu action. | Parse and validate a candidate draft before replacing the accepted model or disk file; actionable field errors, checked replacement, backup/revision handling, and preserved edits on failure. |
+| P0 | NeuroScope2 closes unrelated file readers with `fclose('all')` (179), reproduced with a sentinel opened before launch. Session switches reset data before successful initialization (7519 onward) and replace file handles without scoped ownership. | Close only owned handles, clean up on errors/switch/exit, and prepare a new session before committing it. A failed load retains the previous data, view, edits and handles. |
+| P0 | CellExplorer's recent curation guards are not applied uniformly across the other UIs. NeuroScope2 saves session metadata on normal exit by default (190, 224), and its metric/event save callbacks use generic `saveStruct` (6413, 6421). Session-editor Save uses direct `save`. Generic verified writes do not supply an editing-session revision or curation reconciliation. | Shared persistence contracts appropriate to each file type. Separate viewer preferences from scientific metadata; explicit dirty state; unchanged browsing should not rewrite session metadata. Protect concurrent session, event and cell-metric edits. |
+| P1 | Both large viewers delete/recreate plot children during normal updates (`CellExplorer.m` 1530; `NeuroScope2.m` 746). CellExplorer also resets stored zoom state (454) and resamples some >2000-cell overlays on redraw (1648 and similar branches). | Update affected graphics/data only; retain zoom and selection deliberately; keep population sampling stable for the same view. Profile individual paths before claiming gains. |
+| P1 | Session-editor numeric arrays use `eval`, including channel coordinates (1243), channel groups (3128) and epochs (3093). Most scalar fields accept `str2double` without finite/range checks. | Explicit parsers supporting documented scalar/list/range syntax, field-level messages, and cross-field validation. Preserve custom metadata fields and legitimate channel-list workflows. |
+
+Additional source-inspection concerns to include in the test matrix:
+
+- `NeuroScope2('session', session)` reads the supplied name/path (84–86), but
+  initialization subsequently loads metadata from disk (5146 onward). Verify and
+  formalize whether the caller's unsaved struct or the disk session is authoritative.
+- The low-frequency display filter downsamples before filtering (1014 onward).
+  Review aliasing and edge handling with numerical fixtures as separate scientific
+  work; do not hide a formula change in a renderer extraction.
+- Slider normalization divides by recording duration minus window duration (155).
+  Cover empty/short recordings, equal-duration windows, truncated final samples and
+  live acquisition growth. Distinguish load failures from valid empty windows.
+- Session-editor OK returns changes without saving, while Save persists and keeps
+  the window open; Cancel returns the input struct but cannot undo earlier explicit
+  saves/import side effects. Window-close behavior lacks an explicit common contract.
+  Button names, dirty state and close decisions should make these distinctions clear.
+
+#### CellExplorer: retain the scientific workflows, simplify review
+
+Functionality:
+
+- Introduce named review layouts for cell classification, recording quality and
+  connection review. Keep existing custom plots and shortcuts available.
+- Pin a reference cell/session for comparison; show which cells are selected versus
+  merely visible, and preview the count/sessions affected by bulk annotation actions.
+- Add action/metric search and saved filter presets; expose active filters as a
+  compact summary with an obvious reset. Provide explicit missing-data explanations.
+- Open NeuroScope2 at the selected cell's session/channel/time interval, with an
+  explicit channel-index and time-unit contract.
+
+Performance:
+
+- Separate scientific data, annotation/history state, selection/filter state and
+  graphics handles. Extract view-data preparation before changing the renderer.
+- Cache population backgrounds by source revision, filters, plotted variables and
+  representation; move only the selected-cell overlay during ordinary navigation.
+- Reuse scatter/line/image objects and update XData/YData/CData where appropriate.
+  Cache invalidation must cover annotation-dependent colors and grouping as well.
+- Use deterministic UID-based population sampling and display the sampled/total
+  count. Keep full-resolution analysis separate from display simplification.
+- Preserve the existing deferred-table improvements. Previous paired measurements
+  reduced initialization work (357 to 281 ms); navigation was polling-limited and
+  did not demonstrate a meaningful improvement. Do not extrapolate a broad speedup.
+
+Plots and illustrations:
+
+- Label embedding axes specifically (PC1/PC2 and explained variance for PCA), show
+  units consistently, and make selected cells identifiable by outline/shape as well
+  as color. Respect saved user cell-type palettes.
+- Replace crowded vertical epoch text and stacked annotations in firing-rate plots
+  with aligned, labeled timeline lanes and hover details. Keep gaps/unknown states
+  visibly distinct; expose the displayed time interval.
+- Offer density/aggregate views for large populations with explicit counts and
+  binning, alongside raw points. Retain spike/waveform detail for the selected cell.
+- Share a probe/channel illustration with the other UIs, highlighting the selected
+  cell's channel/shank and distinguishing physical coordinates from channel index.
+
+#### NeuroScope2: make time navigation accurate, responsive and legible
+
+Functionality and robustness:
+
+- A recording overview should show the visible window, current epoch, bookmarks and
+  edited events. Extend the existing epoch overview rather than adding a competing
+  timeline. Provide exact-time jumps and predictable keyboard pan/zoom commands.
+- Make event edits undoable and recoverable, with dirty state and checked save
+  results. Preserve the active time/channel selection on recoverable failures.
+- Show raw/LFP source, precision, sampling rate, filter/reference settings and
+  display representation. Clarify which transformations affect analysis versus view.
+- Own the binary readers and session replacement boundary independently of figures;
+  release only resources belonging to this viewer.
+
+Performance:
+
+- Preserve the existing overlap-reuse and Range/min-max display modes. These are
+  already present; the opportunity is better cache boundaries and graphics reuse.
+- Cache raw windows, transformed traces and display envelopes separately. Keys
+  include file revision/size, channel selection, time range, sampling rate,
+  reference/filter parameters and plot representation. Live files need growth-aware
+  invalidation. Bound cache memory and cancel superseded work during navigation.
+- Update existing trace and overlay handles. Coalesce repeated drag/scroll requests
+  so stale windows are not rendered after the user has moved on.
+- Extend display reduction according to actual plot pixel width, retaining extrema
+  and time alignment. Rendering reduction must never change event detection inputs.
+- Profile channel count, window duration, overlays, spectral calculations, filtering
+  and file reads separately. Existing built-in benchmark functions are useful
+  starting points but need assertions, reproducible fixtures and resource isolation.
+
+Plots and illustrations:
+
+- Make amplitude/time scales and channel identifiers readily visible. The captured
+  default view has group colors but lacks on-trace channel numbers and an amplitude
+  scale bar; both already exist as options, so improve discoverability/defaults.
+- Link trace selection to the probe layout. Use restrained group colors, a consistent
+  highlight style and accessible ordered color scales for continuous quantities.
+- Give events, spikes, states and behavior separate aligned lanes when needed;
+  provide a compact overlay legend and avoid hiding traces under dense annotations.
+- Make spectrogram color scale/quantity, frequency axis and processing settings
+  explicit. Validate scaling separately before changing existing calculations.
+
+#### Session editor: a validated draft with visual context
+
+Functionality and robustness:
+
+- Edit a draft that preserves unknown/custom fields. Distinguish Apply to caller,
+  Save to file and Discard local changes, while retaining the public return-value
+  contract for pipeline and viewer callers.
+- Reuse `ce.data.validateSession` for required metadata and cross-field checks;
+  augment it with precise field locations and editor-friendly messages. Validation
+  should identify sample/channel counts, finite rates, group membership, coordinate
+  lengths, epoch bounds and missing paths without silently coercing values.
+- Show a summary of changes before imports/templates replace existing metadata,
+  including source and affected fields. No incidental save merely from inspection.
+- Provide a file/path status and explicit target filename, rather than inferring
+  save destination from substring comparisons with the current working directory.
+
+Performance and plots:
+
+- The captured editor eagerly creates 14 tables and 158 controls, including hidden
+  tabs. Measure tab initialization and large channel-group updates before introducing
+  lazy creation; validate the whole model even when controls have not been built.
+- Embed a probe preview beside electrode/spike groups: linked row/site selection,
+  groups, regions, bad channels, channel IDs and coordinate units. Avoid requiring
+  inspection of long coordinate strings or labeling every site at every zoom level.
+- Embed an epoch timeline alongside the table, showing ordering, gaps, overlaps and
+  recording bounds. Changes should update both views from the same draft model.
+- Add compact acquisition summaries (duration, samples, channels, dtype, byte-size
+  consistency) and a prioritized validation list that navigates to the relevant field.
+
+#### Shared implementation and acceptance sequence
+
+1. **Correctness and editing contracts.** Fix NeuroScope2 byte indexing, scoped
+   readers and failed-load preservation; add session-editor candidate validation and
+   guarded saves; close the remaining cross-UI curation save bypasses. Add temporary
+   fixtures covering invalid input, canceled dialogs, read-only destinations,
+   concurrent changes, EOF/short files and cleanup. Keep original recordings read-only.
+2. **Measurable responsiveness.** Establish comparable first-ready, input-to-painted
+   response, p50/p95 navigation, handle counts and peak-memory measurements. Use
+   151/302 tutorial cells, larger independent recordings when available, and synthetic
+   16/128/384-channel traces at multiple rates/durations. Warm runs and startup runs
+   are separate; measure actual painting rather than a coarse timer polling interval.
+   Candidate target: cached selection updates below 100 ms and ordinary cached pan
+   below 150 ms on the documented reference fixture. These are targets, not claims.
+3. **Visible workflow/plot improvements.** Deliver shared scale/legend/selection
+   conventions, session probe/epoch previews, CellExplorer pinned comparisons and
+   clear timeline lanes, and NeuroScope2 visible-window/channel context. Review
+   resized/HiDPI views and light/dark/export variants; check for clipped text and
+   distinguishable categories without relying only on color.
+4. **Reproducible figures and connected workflows.** Extend existing PNG/PDF export
+   with consistent sizing/fonts/backgrounds, axis limits, units and an optional
+   metadata sidecar containing source revision, selected UIDs/channels, time window,
+   filters and display sampling. Export from a view snapshot so export styling does
+   not mutate the live axes. Validate selected-cell/session/time handoff between UIs.
+
+Continue within MATLAB's current interfaces while extracting components under
+`+ce/+ui`, `+ce/+plotting`, `+ce/+io` and `+ce/+curation`. Do not commit to a framework
+rewrite before a representative plotting prototype demonstrates compatibility and
+measured benefit. Keep scientific changes separate from UI changes, preserve custom
+plot/plugin entry points, and retain explicit file/identity/unit contracts.
+
+### UI implementation: binary readers and validated metadata edits (2026-10-26)
+
+First delivery within UI step 1 (correctness and editing contracts):
+
+- NeuroScope2 now routes raw, LFP, analog and packed-digital windows through
+  `ce.io.binaryPrecision`, `binarySampleCount` and `readBinaryWindow`. Offsets are
+  zero-based samples multiplied by the declared scalar width and channel count;
+  incomplete trailing frames are excluded. Raw precision comes from
+  `extracellular.precision`; LFP uses `extracellular.precisionLfp` when supplied,
+  otherwise `int16`, independently of raw precision.
+- The raw-window cache retains overlap in both navigation directions and avoids
+  reads when the window is unchanged. It is bounded to one window and keyed by
+  reader/file, precision, channel count, file size and modification time. Growth
+  invalidates it. This is display caching, not content-hash provenance; a same-size
+  rewrite with an unchanged filesystem timestamp cannot be detected by this key.
+- Reader ownership is scoped to the viewer, including exceptional exit. Reloads
+  close the previous readers; closing NeuroScope2 no longer calls `fclose('all')`.
+  Short recordings bound the window to complete samples, the slider avoids zero
+  division, and read failures clear traces and suppress dependent plots.
+- `gui_session` parses numeric literals/lists/ranges without `eval`. Missing
+  coordinates may use `NaN`; rates, counts and indices may not. Apply and Save
+  validate a candidate and preserve the prior draft/typed controls on failure.
+  The editor profile reuses `ce.data.validateSession`, permits unsorted recordings,
+  and adds precision, optional scalar, coordinate-length and time-series checks.
+  Custom fields survive edits. Digital-stream gain metadata may be zero.
+- The buttons now distinguish **Apply & Close** (validated return to caller),
+  **Save** (disk write), and **Cancel** (restore input values; already saved files
+  remain saved). Title-bar close follows Cancel and also restores input parameters.
+  Upgrading old metadata through the template no longer immediately saves it.
+- Saves retain the explicitly opened filename, use canonical paths, handle picker
+  cancellation, and check the revision captured when editing began. Existing
+  destinations get an exact-byte backup under `revisions_session/`; replacement is
+  staged and its full session value verified before the last revision check.
+  These are optimistic checks, not an interprocess filesystem lock.
+
+Verification:
+
+- MATLAB R2024b Update 9: **289 component tests passed**; **204 files** checked
+  without parse errors. Binary tests cover all ten scalar precisions, overlap in
+  both directions, cache hits/growth, EOF/partial frames and reader ownership.
+  Metadata tests cover parsing, unsorted sessions, invalid values/groups/epochs,
+  unknown fields, literal matrix/column shapes, relative paths, exact backups,
+  revision conflicts and backup failure.
+- Opt-in `tests/integration/runUIRobustnessSmoke.m` exercises live callbacks on
+  copied tutorial metadata and synthetic recordings. A `uiwait` shim invokes
+  callbacks after construction/plotting, avoiding timer/graphics races. All eight
+  scenarios passed across isolated runs, including a relative, nonstandard session
+  filename. Repeated GUI launches showed Java code-cache warnings and intermittent
+  stalls in this installation; run `1:3`, `4:6`, `7` and `8` in separate MATLAB
+  processes. These are correctness checks, not UI timing measurements.
+- Original tutorial session, spikes and cell-metrics hashes remain unchanged.
+
+Still open within UI step 1: transactional NeuroScope2 session replacement after a
+failed reload; explicit dirty/save decisions and revision checks for its metadata,
+metrics and event writers; broader import/template draft handling. Its current
+save-on-exit preference is unchanged. Filtering/scientific calculations are also
+unchanged. Steps 2–4 (response profiling/graphics reuse, probe/epoch previews and
+plot styling/export) remain pending; this delivery does not claim speed targets or
+a completed visual redesign. CellExplorer's rendering changes have not begun.
+
+### NeuroScope2 layout and feature research (2026-10-26)
+
+Requested focus: make sidebar elements easier for contributors to add and resize,
+and identify useful plots/functions beyond the current viewer.
+
+#### Finding: layout sizes have several independent sources
+
+`NeuroScope2.m` uses `uix.GridFlex`, `VBox`, `HBox` and `ScrollingPanel` for its
+outer layout, but most section contents still use normalized `Position` vectors.
+The General tab sets section `Heights`/`MinimumHeights` and separately assigns a
+975-pixel scroll minimum. Data initialization repeats the section-size logic with
+another total (`605 + ...`). The analysis tab separately specifies five section
+heights and a 510-pixel scrolling minimum. Contributors therefore have to keep
+control positions, section dimensions, and tab totals synchronized.
+
+There are also conflicting sidebar minimum widths: the 220-pixel minimum is
+immediately replaced with 5 pixels. The lower status/navigation strip has many
+fixed-width columns. These need explicit narrow-window behavior, not just changes
+to sidebar panel totals.
+
+#### Recommended architecture: sections measured from their rows
+
+Keep the current figure/axes and bundled layout toolbox for the first migration.
+Add a small shared layout layer under `+ce/+ui/+layout`, with NeuroScope2 section
+builders under `+ce/+ui/+neuroscope`. This is a proposed API, not implemented code.
+
+- A section defines an ID, title and ordered rows. Row types cover labeled fields,
+  checkbox/field pairs, button groups, bounded tables, plots and custom content.
+  Each exposes its preferred/minimum size, visibility and resize policy.
+- Centralize control height, font, label width, padding and spacing policies.
+  Measure label text where necessary; account for native widget minimums. Text
+  controls retain usable heights while value columns stretch horizontally.
+- Derive section height from visible rows, spacing, padding and title/border size;
+  derive the scrolling extent from the visible sections. Calculate this in one
+  place when rows are added, hidden, expanded or resized. Callers never maintain a
+  second total. Uix supplies allocation; the new layer supplies measurement.
+- Support collapsible sections and an Advanced group. `uix.BoxPanel` already has
+  collapse hooks; the parent must also reclaim the collapsed section's height.
+  Preserve state by stable section IDs, not child order. Do not assume `Visible`
+  alone removes a layout slot.
+- Give tables a bounded viewport and internal scrolling, rather than expanding
+  every table to the entire recording's channel/event count. Avoid conflicting
+  mouse-wheel behavior between table and sidebar scroll containers.
+- Reflow label/field pairs vertically when narrow; define a usable minimum sidebar
+  width and a separate collapsed-sidebar mode. Reflow the bottom strip or move
+  low-priority status text into a secondary row.
+- Separate layout updates from trace recomputation. Resize/reflow should update
+  existing handles; adding many rows should trigger one layout pass. Guard against
+  resize feedback loops. Lazy construction of optional sections is a later,
+  measured optimization, not a prerequisite for this layout change.
+
+A contributor should be able to add a numeric field with its label, units, default,
+validation and callback in one section builder. No normalized coordinates or tab
+height edits should be required. Start with regular MATLAB functions/structs and a
+small set of row builders; avoid inventing a general UI configuration language.
+
+For optional panels, add a registration contract: stable ID/title/order, a
+`create(parent, context)` function, preferred-size notification, update hooks and
+cleanup. Pass explicit state access/commands to new panels instead of exposing all
+nested variables. Keep existing `+analysis_tools` entry points working through an
+adapter; those already offer user extensions, but their current inputs expose
+`UI`, `ephys` and `data`, and category dispatch is hard-coded.
+
+#### Alternatives and local compatibility checks
+
+MathWorks' [grid layout manager](https://www.mathworks.com/help/matlab/ref/uigridlayout.html)
+supports fixed, proportional and content-fit rows/columns. It is a strong option
+for a future programmatic `uifigure` UI; App Designer files are not required.
+However, the [migration workflow](https://www.mathworks.com/help/matlab/creating_guis/modern-programmatic-app-building.html)
+includes controls, callbacks, containers and dialogs. Its documentation also
+explains current-figure/current-axes differences. NeuroScope2's implicit graphics
+targets, drag/zoom, ROI tools, streaming, keyboard handling, exports and extensions
+need representative validation before selecting that migration.
+
+A temporary isolated probe on MATLAB R2024b Update 9 found:
+
+- `uigridlayout` rejected a classic `figure` parent.
+- A `uifigure` grid with modern labels/fields and fit sizing was created.
+- A legacy `uicontrol` could be parented to that grid, but it had no `Layout`
+  property. Constructor success is not proof of compatible grid behavior.
+- Existing `uix.VBox`/`HBox`/`ScrollingPanel` containers accepted a central row-size
+  calculation: adding four 28-pixel rows changed the derived scroll minimum to
+  40, 72, 104 and 136 pixels, including padding/spacing, without separate totals.
+
+This was a feasibility check, not a full responsive-layout implementation or a
+performance/HiDPI benchmark. No production UI code changed in this research pass.
+
+The repo bundles GUI Layout Toolbox **2.3.5**. The upstream
+[release history](https://www.mathworks.com/matlabcentral/fileexchange/47982-gui-layout-toolbox)
+currently lists **2.4.2**, with intervening web-graphics, theme and panel changes.
+Evaluate an upgrade independently; upgrading alone will not remove hard-coded
+NeuroScope2 geometry, and it affects CellExplorer/gui_session as well.
+
+#### Useful additions, distinguished from existing functions
+
+The viewer already has spectrograms, CSD, RMS inset, instantaneous signal/power/
+phase, population rate, waveforms, probe coordinates, an epoch strip and a summary
+figure. `+analysis_tools` adds linear/log PSD, channel correlation, temporal offsets,
+RMS, CCGs and rasters. These need discoverability and integration improvements;
+they should not be presented as wholly missing analyses.
+
+| Priority | Addition or extension | Concrete benefit and scope |
+| --- | --- | --- |
+| 1 | Recording overview and named bookmarks | Extend the existing epoch strip/summary with a visible-window rectangle, clickable event/state lanes, named bookmarks and a cached multiresolution amplitude/activity overview. Avoid scanning the full raw file on every pan. Navigation history already exists; persistent named bookmarks are the addition. |
+| 1 | Channel-quality map | Extend the existing probe view with RMS, clipping fraction, flatline indicators and line-noise measures for an explicitly selected interval. Link site selection to traces and a channel table; show gaps/unknown coordinates rather than inventing physical placement. RMS already exists; integration and additional quality indicators are new. |
+| 2 | Event-aligned trace browser | Select events and channels, then show a trial-by-time heatmap, individual/mean traces and event context; allow jumping back to the source event. Report included/excluded events and boundary handling. This complements existing event overlays, rasters and CCGs. |
+| 2 | Raw/processed comparison | Linked views of the same samples before/after the selected filter/reference, with units, amplitude scales and processing labels. Explicit channel selection for reference calculations could extend the current median-across-channels option; changing reference math is a separate scientific change. |
+| 2 | Linked spectral inspection | Promote existing PSD and spectrogram tools into discoverable panels with shared channel/time selection and consistent quantity/units. A frequency-by-channel/depth heatmap adds a useful view; label channel index when physical depth is unavailable. Audit existing display-scaling dependencies before reusing calculations. |
+| Later | Coherence and band-power maps | Add only for a defined scientific workflow, with explicit windows, estimator, reference and channel-pair selection. Keep numerical validation separate from layout refactoring. |
+
+Workflow gaps worth pairing with the layout work: searchable controls/actions,
+saved view presets, persistent named bookmarks, undo/redo for event edits, dirty
+state and guarded saves, and visible raw/LFP/reference/filter status. Existing
+notes, event flags and navigation history should remain supported. Heavy analysis
+panels should update on demand or after navigation settles, with cancellation and
+stale-result rejection; layout flexibility should not cause more recomputation.
+
+#### First implementation slice and acceptance
+
+Convert the General tab's Extracellular/filter section to the proposed row-based
+builder while preserving its handles/callback behavior. Make section measurement
+and the scroll extent follow its contents. Add one optional example field through
+registration to demonstrate that no parent dimensions need editing. Then migrate
+Navigation, Events, Spectrogram and the remaining sections incrementally.
+
+Check add/remove/hide/collapse, reorder by ID, saved preferences, empty/large tables,
+long labels, larger fonts, narrow/wide sidebars and repeated resizing. Include
+macOS/Windows and HiDPI review when those environments are available. Verify
+callbacks still address the same settings, resizing does not recompute traces or
+leak handles, and extension failure leaves the core viewer usable. Only then add
+new plots, beginning with overview/bookmarks and the channel-quality view.
+
+### NeuroScope2 row-layout pilot implemented (2026-10-26)
+
+The first layout slice from the research proposal is implemented:
+
+- Extracted the Extracellular/filter controls to
+  `ce.ui.neuroscope.buildTraceSection`, preserving their existing handle names,
+  defaults and callbacks. Its row definitions contain no normalized positions.
+- Added `ce.ui.layout.RowSection` for labeled fields and paired controls with
+  stable IDs, adding/removing/hiding rows, collapse/expand, font sizing and
+  narrow-width reflow. Hiding/collapsing preserves typed values.
+- The General tab derives its scrolling extent from actual section requirements;
+  the separate 975-pixel initial total and `605 + ...` reload total are removed.
+  Metadata-driven table minima remain in place for sections not yet migrated.
+- Restored the intended 220-pixel minimum sidebar width by removing the immediately
+  following assignment that replaced it with 5 pixels.
+- Parent height updates are deferred/coalesced outside the current `uix` redraw.
+  Visual verification caught reentrant resizing that could position siblings using
+  stale dimensions; the binding now settles pending sizes and disposes its timer
+  and listeners on section destruction. Layout changes do not invoke filtering or
+  other analysis callbacks.
+
+Contributor instructions and an optional-field example are in
+[development/README.md](README.md#adding-neuroscope2-trace-controls-2026-10-26).
+No changes to parent dimensions are needed when adding that field. This is a
+reusable row API, not yet a complete external panel/plugin registry.
+
+Verification covers extension, hide/remove, collapse, font changes, narrow/wide
+layouts, repeated resizing without handle growth, parent scrolling requirements,
+callback preservation and timer cleanup. Live smoke scenario 9 uses synthetic
+recordings and copied metadata, including real filter and LFP-switch callbacks.
+The next sections to migrate are Navigation, Events and Spectrogram. Saved
+collapse/layout preferences, the remaining tabs, the lower status strip, and
+Windows/HiDPI review remain open; the plots proposed in the research section are
+also still pending.
+
+Final verification for this pilot: **296 tests passed** in MATLAB R2024b Update 9;
+**210 files** passed parse checks. Scenario 9 passed with original tutorial
+metadata unchanged, and its settled view was visually inspected. The synthetic
+[layout preview](benchmarks/neuroscope-row-layout-2026-10-26/neuroscope.png) records
+the migrated section after exercising filtering and LFP switching. MATLAB emitted
+its previously observed Java code-cache warning during GUI checks; no response-time
+benchmark or cross-platform rendering claim is made here.

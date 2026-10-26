@@ -1,0 +1,47 @@
+{
+  "session": {
+    "firstReadySeconds": 2.845338125,
+    "tables": 14,
+    "controls": 158,
+    "invalidSampleRateSaved": true
+  },
+  "cellExplorer": {
+    "firstReadySeconds": 6.475702208333334,
+    "tables": 1,
+    "controls": 54
+  },
+  "neuroscope3": {
+    "firstReadySeconds": 2.6701557916666667,
+    "precision": "int16",
+    "reportedDuration": 6,
+    "actualDuration": 6,
+    "windowStart": 0.25,
+    "lastSample": 30,
+    "unrelatedFileClosed": true
+  },
+  "neuroscope4": {
+    "firstReadySeconds": 1.1183930833333333,
+    "precision": "int32",
+    "reportedDuration": 12,
+    "actualDuration": 6,
+    "windowStart": 0.25,
+    "lastSample": 1500,
+    "expectedLastSample": 2500,
+    "sampleMismatch": true,
+    "unrelatedFileClosed": true
+  },
+  "method": {
+    "matlab": "R2024b Update 9",
+    "sources": "Temporary copy of the 151-cell tutorial metrics/session; generated 16-channel, 2000 Hz, six-second binary fixtures for NeuroScope2.",
+    "isolation": "Copied application entry points; disabled database, analytics and preference persistence; suppressed notification dialogs; all save destinations temporary.",
+    "repetitions": 1,
+    "timingLimitations": "Capture-oriented single observations, not comparative benchmarks. Java code-cache warning and rendering fallback were observed. Do not infer speedups or representative startup times.",
+    "reviewScope": "Code inspection, current screenshot inspection, targeted defect reproduction. No production UI code changed and no full regression suite rerun for this review."
+  },
+  "sourceSHA256": {
+    "CellExplorer.m": "a0a69cf8f09348ec523ac7dfe710eee0736ffbb453f27d6b81c025d594ccd872",
+    "NeuroScope2.m": "d3430427c16c12e38b0f4bfec5b22a1d11e3f96fe6b7d87e380279b95c6fbc23",
+    "calc_CellMetrics/gui_session.m": "782fcc79e84d7e95e25549e98e06ea0006cc71e08b59fc6299c4ca321f66b5ca"
+  },
+  "originalTutorialHashesUnchanged": true
+}

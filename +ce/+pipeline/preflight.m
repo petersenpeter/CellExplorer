@@ -2,12 +2,14 @@ function [report, context] = preflight(varargin)
 %PREFLIGHT Read-only checks before running ProcessCellMetrics headlessly.
 % [report, context] = ce.pipeline.preflight('basepath', path, ...)
 % Uses the pipeline's name/value options; headless defaults to true here.
-% This first headless boundary accepts supplied or cached spikes. Import raw
-% sorting outputs separately. It does not certify cache freshness or plugins.
+% Supplied/cached spikes or explicit managed Neurosuite/Phy import are supported.
+% Managed import computes read-only candidates and verifies source/cache content.
 parameters = ce.pipeline.parseParameters('headless',true,varargin{:});
 report = ce.data.validationReport;
 checks = report.checks;
 context = struct('session',[],'spikes',[],'parameters',parameters);
+context.spikeImport = [];
+context.sortingRevision = '';
 requiredToolboxes = {};
 if ~isempty(parameters.sessionID) || ~isempty(parameters.sessionName)
     add('LocalSessionRequired','session','error','Preflight requires a local basepath or session struct; resolve database metadata first.');
@@ -75,7 +77,7 @@ end
 if parameters.headless && parameters.submitToDatabase
     add('InteractiveIntegration','submitToDatabase','error','Submit to the database separately after the headless computation.');
 end
-if parameters.forceReloadSpikes
+if parameters.forceReloadSpikes && isempty(parameters.spikeImport)
     add('ImportRequired','forceReloadSpikes','error','Import or refresh source spike sorting separately, then supply the resulting spikes or cache.');
 end
 if ~isstruct(session.analysisTags) || ~isscalar(session.analysisTags)
@@ -105,7 +107,18 @@ for index = 1:numel(unknown)
 end
 
 spikes = parameters.spikes;
-if isempty(spikes)
+if ~isempty(parameters.spikeImport)
+    if ~parameters.headless || ~isempty(parameters.spikes)
+        add('InvalidSpikeImport','spikeImport','error','Managed import requires headless=true and cannot be combined with supplied spikes.');
+    else
+        try
+            [spikes,result,cache,pending] = ce.pipeline.prepareSpikeImport(session,parameters.spikeImport,parameters.forceReloadSpikes);
+            context.spikeImport = struct('result',result,'cache',cache,'pending',pending);
+        catch exception
+            add('SpikeImportFailed','spikeImport','error',exception.message);
+        end
+    end
+elseif isempty(spikes)
     file = fullfile(basepath,[basename,'.spikes.cellinfo.mat']);
     if ~isfile(file)
         add('MissingSpikes','spikes','error', ...
@@ -122,6 +135,11 @@ if isempty(spikes)
 end
 if ~isempty(spikes)
     validateSpikes;
+    try
+        context.sortingRevision = ce.pipeline.spikeSortingRevision(spikes);
+    catch exception
+        add('InvalidSortingRevision','spikes','error',exception.message);
+    end
 end
 context.spikes = spikes;
 
@@ -220,6 +238,15 @@ if ~isstruct(cached) || ~isscalar(cached)
     add('InvalidMetrics','cell_metrics','error','The metrics cache must contain a scalar cell_metrics struct.');
 else
     if ~isempty(fieldnames(cached)) && isstruct(spikes) && isscalar(spikes) && isfield(spikes,'UID')
+        try
+            cachedRevision = ce.data.metricSortingRevision(cached);
+            if ~strcmp(cachedRevision,context.sortingRevision)
+                add('SortingRevisionMismatch','cell_metrics.general.sortingRevision','error', ...
+                    'Sorting revisions differ or one is missing. Use a new saveAs or explicitly recompute all required metrics; matching UIDs do not establish unchanged sorting.');
+            end
+        catch exception
+            add('InvalidSortingRevision','cell_metrics.general.sortingRevision','error',exception.message);
+        end
         if ~isfield(cached,'UID') || ~isequal(cached.UID,spikes.UID) || ...
                 isfield(cached,'cluID') && isfield(spikes,'cluID') && ~isequal(cached.cluID,spikes.cluID)
             add('CacheIdentityMismatch','cell_metrics.UID','error', ...
@@ -302,6 +329,10 @@ finish;
         fields = {'UID','cluID','shankID','maxWaveformCh1'};
         for item = 1:numel(fields)
             name = fields{item};
+            if ismember(name,{'maxWaveformCh1','shankID'}) && ~isfield(spikes,name) && ~isempty(context.spikeImport) && ...
+                    parameters.getWaveformsFromDat && selected('waveform_metrics')
+                continue % Managed raw waveform extraction supplies peak channels/groups.
+            end
             if ~isfield(spikes,name) || ~isnumeric(spikes.(name)) || ~isreal(spikes.(name)) || ...
                     ~isequal(size(spikes.(name)),[1 count]) || any(~isfinite(spikes.(name)))
                 add('InvalidSpikeMetadata',['spikes.',name],'error','Provide one finite numeric value per cell as a row vector.');

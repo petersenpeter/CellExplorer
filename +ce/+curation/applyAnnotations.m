@@ -1,34 +1,9 @@
 function updated = applyAnnotations(target, source, indices)
 %APPLYANNOTATIONS Apply annotations to a complete session by cell identity.
 % UID is session-local. Also check cluID when both structures provide it.
-% These checks cannot detect re-sorting that reuses both sets of identifiers;
-% a future sorting revision contract is required for that case.
-if ~isfield(target, 'UID') || ~isfield(source, 'UID')
-    error('ce:curation:MissingIdentity', 'Both structures must contain UID.');
-end
-validateattributes(indices, {'numeric'}, {'vector','integer','positive','finite','<=',numel(source.UID)});
-indices = reshape(indices, 1, []);
-sourceIDs = source.UID(indices);
-targetIDs = target.UID;
-if numel(indices) ~= numel(targetIDs) || numel(unique(indices)) ~= numel(indices)
-    error('ce:curation:CellCountMismatch', 'The selection must contain every target cell exactly once.');
-end
-if ~isnumeric(sourceIDs) || ~isnumeric(targetIDs) || ...
-        any(~isfinite(sourceIDs(:))) || any(~isfinite(targetIDs(:))) || ...
-        numel(unique(sourceIDs)) ~= numel(sourceIDs) || numel(unique(targetIDs)) ~= numel(targetIDs)
-    error('ce:curation:InvalidIdentity', 'UIDs must be finite and unique within a session.');
-end
-[found, order] = ismember(targetIDs, sourceIDs);
-if ~all(found(:))
-    error('ce:curation:IdentityMismatch', 'The saved session and the edited cells have different UIDs.');
-end
-orderedIndices = indices(order);
-if isfield(target, 'cluID') && isfield(source, 'cluID')
-    if numel(target.cluID) ~= numel(targetIDs) || numel(source.cluID) ~= numel(source.UID) || ...
-            ~isequaln(reshape(target.cluID, 1, []), reshape(source.cluID(orderedIndices), 1, []))
-        error('ce:curation:IdentityMismatch', 'Cluster identities changed; reload the session before saving.');
-    end
-end
+% When either dataset has a sorting revision, both session-local revisions must
+% match. Legacy pairs without revisions retain UID/cluster checks only.
+orderedIndices = ce.curation.annotationOrder(target,source,indices);
 updated = target;
 fields = {'labels','deepSuperficial','deepSuperficialDistance','brainRegion','putativeCellType'};
 for index = 1:numel(fields)

@@ -1,8 +1,19 @@
-function definition = stageDefinition(name)
+function definition = stageDefinition(name, format)
 %STAGEDEFINITION Explicit outputs and implementation dependencies of migrated stages.
 definition.name = name;
 definition.version = 1;
 switch name
+    case 'spike_import'
+        definition.requiredOutputs = {'data'};
+        definition.outputs = definition.requiredOutputs;
+        definition.dependencies = {'ce.io.importNeurosuiteSpikes','ce.io.neurosuiteImportPlan', ...
+            'ce.pipeline.spikeImportInputs','ce.pipeline.prepareSpikeImport','ce.pipeline.verifySpikeImport', ...
+            'ce.pipeline.stages.importSpikes','ce.pipeline.spikeIdentityHash','ce.pipeline.spikeSortingRevision', ...
+            'ce.data.validateSortingRevision','ce.pipeline.fileFingerprint'};
+        if nargin>1 && strcmp(format,'phy')
+            definition.dependencies=[definition.dependencies,{'ce.io.importPhySpikes', ...
+                'ce.io.phyImportPlan','ce.io.readPhyLabels','ce.io.readSortingNpy','readNPY','readNPYheader','tdfread'}];
+        end
     case 'cell_class_import'
         definition.requiredOutputs = {};
         definition.outputs = {'CellClassBuzcode'};
@@ -62,7 +73,7 @@ switch name
         definition.requiredOutputs = {'data'};
         definition.outputs = definition.requiredOutputs;
         definition.dependencies = {'ce.pipeline.stages.detectMonoSyn','ce.pipeline.prepareMonoSyn', ...
-            'ce.pipeline.monoSynAutomatic','ce_MonoSynConvClick','ce_cch_conv', ...
+            'ce.pipeline.monoSynAutomatic','ce.data.validateSortingRevision','ce_MonoSynConvClick','ce_cch_conv', ...
             'generateSpinDices','ce_InIntervals','FindInInterval','CCG','CCGHeart', ...
             'isdscalar','isdvector','isdmatrix'};
     case 'monosynaptic_metrics'

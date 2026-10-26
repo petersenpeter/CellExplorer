@@ -1,0 +1,74 @@
+function [spikes,electrodeGroups] = neurosuiteLegacyReference(session,clusteringpath_full,basename,electrodeGroups,raw_clusters,parameters,LSB)
+% Frozen pre-extraction calculations; cleanup only closes leaked legacy handles.
+openFiles=openedFiles; cleanup=onCleanup(@() closeNewFiles(openFiles));
+spikes=[];
+            UID = 0;
+            electrodeGroups_detected = [];
+            if isnan(electrodeGroups)
+                fileList = dir(fullfile(clusteringpath_full,[basename,'.res.*']));
+                fileList = {fileList.name};
+                for i = 1:length(fileList)
+                    temp = strsplit(fileList{i},'.res.');
+                    electrodeGroups_detected = [electrodeGroups_detected,str2double(temp{2})];
+                end
+                electrodeGroups = sort(electrodeGroups_detected);
+            end
+
+            for k = 1:length(electrodeGroups)
+                electrodeGroup = electrodeGroups(k);
+                disp(['Loading electrode group #' num2str(electrodeGroup) '/' num2str(length(electrodeGroups)) ])
+                if ~raw_clusters
+                    cluster_index = load(fullfile(clusteringpath_full, [basename '.clu.' num2str(electrodeGroup)]));
+                    time_stamps = load(fullfile(clusteringpath_full,[basename '.res.' num2str(electrodeGroup)]));
+                    if parameters.getWaveformsFromSource
+                        fname = fullfile(clusteringpath_full,[basename '.spk.' num2str(electrodeGroup)]);
+                        f = fopen(fname,'r');
+                        waveforms = LSB * double(fread(f,'int16'));
+                        samples = size(waveforms,1)/size(time_stamps,1);
+                        electrodes = numel(session.extracellular.electrodeGroups.channels{electrodeGroup});
+                        waveforms = reshape(waveforms, [electrodes,samples/electrodes,length(waveforms)/samples]);
+                    end
+                else
+                    cluster_index = load(fullfile(clusteringpath_full, 'OriginalClus', [basename '.clu.' num2str(electrodeGroup)]));
+                    time_stamps = load(fullfile(clusteringpath_full, 'OriginalClus', [basename '.res.' num2str(electrodeGroup)]));
+                end
+                cluster_index = cluster_index(2:end);
+                nb_clusters = unique(cluster_index);
+                nb_clusters2 = nb_clusters(nb_clusters > 1);
+                
+                tol_samples = session.extracellular.sr*5e-4; % 0.5 ms tolerance in timestamp units
+                for i = 1:length(nb_clusters2)
+                    UID = UID +1;
+                    spikes.ts{UID} = time_stamps(cluster_index == nb_clusters2(i));
+                    [spikes.ts{UID},~] = uniquetol(spikes.ts{UID},tol_samples,'DataScale',1); % unique values within tol (<= 0.8ms)
+                    spikes.times{UID} = spikes.ts{UID}/session.extracellular.sr;
+                    spikes.shankID(UID) = electrodeGroup;
+                    spikes.cluID(UID) = nb_clusters2(i);
+                    spikes.cluster_index(UID) = nb_clusters2(i);
+                    spikes.total(UID) = length(spikes.ts{UID});
+                    if parameters.getWaveformsFromSource
+                        spikes.filtWaveform_all{UID} = mean(waveforms(:,:,cluster_index == nb_clusters2(i)),3);
+                        spikes.filtWaveform_all_std{UID} = permute(std(permute(waveforms(:,:,cluster_index == nb_clusters2(i)),[3,1,2])),[2,3,1]);
+                        [~,index1] = max(max(spikes.filtWaveform_all{UID}') - min(spikes.filtWaveform_all{UID}'));
+                        spikes.maxWaveformCh(UID) = session.extracellular.electrodeGroups.channels{electrodeGroup}(index1)-1; % index 0;
+                        spikes.maxWaveformCh1(UID) = session.extracellular.electrodeGroups.channels{electrodeGroup}(index1); % index 1;
+                        spikes.filtWaveform{UID} = spikes.filtWaveform_all{UID}(index1,:);
+%                         spikes.filtWaveform_std{unit_nb} = spikes.filtWaveform_all_std{unit_nb}(index1,:);
+                        spikes.peakVoltage(UID) = max(spikes.filtWaveform{UID}) - min(spikes.filtWaveform{UID});
+                    end
+                end
+                if parameters.getWaveformsFromDat
+                    spikes.processinginfo.params.WaveformsSource = 'spk files';
+                end
+            end
+            clear cluster_index time_stamps
+            
+spikes.basename = basename;
+spikes.numcells = numel(spikes.times);
+spikes.UID = 1:spikes.numcells;
+spikes.sr = session.extracellular.sr;
+end
+function closeNewFiles(before)
+files=setdiff(openedFiles,before);
+for file=files(:)', fclose(file); end
+end

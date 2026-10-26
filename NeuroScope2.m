@@ -27,6 +27,9 @@ function NeuroScope2(varargin)
 % showEvents, showBehavior
 
 % Global variables
+readers = ce.io.OwnedFileReaders;
+readerCleanup = onCleanup(@() readers.close()); %#ok<NASGU>
+binaryCache = [];
 UI = []; % Struct with UI elements and settings
 UI.t0 = 0; % Timestamp of the start of the current window (in seconds)
 data = []; % Contains all external data loaded like data.session, data.spikes, data.events, data.states, data.behavior
@@ -153,7 +156,7 @@ while UI.t0 >= 0
         setTimeText(UI.t0)
         
         sliderMovedManually = false;
-        UI.elements.lower.slider.Value = min([UI.t0/(UI.t_total-UI.settings.windowDuration)*100,100]);
+        UI.elements.lower.slider.Value = max(0,min(UI.t0/max(eps,UI.t_total-UI.settings.windowDuration)*100,100));
         if UI.settings.debug
             drawnow
         end
@@ -176,7 +179,7 @@ end
 % % % % % % % % % % % % % % % % % % % % % %
 
 % Closing all file readers
-fclose('all');
+readers.close();
 
 % Closing main figure if open
 if ishandle(UI.fig)
@@ -421,7 +424,6 @@ end
         UI.panel.center = uix.VBox( 'Parent', UI.grid_panels, 'Spacing', 0, 'Padding', 0 ); % Center flex box
         % UI.panel.right = uix.VBoxFlex('Parent',UI.grid_panels,'position',[0 0.66 0.26 0.31]); % Right panel
         set(UI.grid_panels, 'Widths', [270 -1],'MinimumWidths',[220 1]); % set grid panel size
-        set(UI.grid_panels, 'Widths', [270 -1],'MinimumWidths',[5 1]); % set grid panel size
         % Separation of the center box into three panels: title panel, plot panel and lower info panel
         UI.panel.plots = uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.center,'BackgroundColor','k'); % Main plot panel
         UI.panel.info  = uix.HBox('Parent',UI.panel.center, 'Padding', 1); % Lower info panel
@@ -450,28 +452,15 @@ end
         uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.68 0.01 0.15 0.98],'String',char(8594),'Callback',@(src,evnt)advance,'KeyPressFcn', @keyPress,'tooltip','Forward in time');
         UI.buttons.play2 = uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.84 0.01 0.15 0.98],'String',[char(9655) char(9654)],'Callback',@(~,~)streamDataButtons2,'KeyPressFcn', @keyPress,'tooltip','Stream from end of file');
         
-        % Electrophysiology
-        UI.panel.general.filter = uipanel('Parent',UI.panel.general.main,'title','Extracellular traces');
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot style', 'Units','normalized', 'Position', [0.01 0.87 0.3 0.1],'HorizontalAlignment','left','tooltip','Select plot style');
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Plot colors', 'Units','normalized', 'Position', [0.01 0.74 0.3 0.1],'HorizontalAlignment','left','tooltip','Select plot colors/greyscale');
-        UI.panel.general.plotStyle = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Downsampled','Range','Raw','LFP (*.lfp file)','Image','No ephys traces'}, 'value', UI.settings.plotStyle, 'Units','normalized', 'Position', [0.3 0.86 0.69 0.12],'Callback',@changePlotStyle,'HorizontalAlignment','left');
-        UI.panel.general.colorScale = uicontrol('Parent',UI.panel.general.filter,'Style', 'popup','String',{'Colors','Colors 75%','Colors 50%','Colors 25%','Grey-scale','Grey-scale 75%','Grey-scale 50%','Grey-scale 25%'}, 'value', 1, 'Units','normalized', 'Position', [0.3 0.73 0.69 0.12],'Callback',@changeColorScale,'HorizontalAlignment','left');
-        UI.panel.general.filterToggle = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Filter traces', 'value', 0, 'Units','normalized', 'Position', [0. 0.62 0.5 0.11],'Callback',@changeTraceFilter,'HorizontalAlignment','left','tooltip','Filter ephys traces');
-        UI.panel.general.extraSpacing = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Group spacing', 'value', 0, 'Units','normalized', 'Position', [0.5 0.62 0.5 0.11],'Callback',@extraSpacing,'HorizontalAlignment','left','tooltip','Spacing between channels from different electrode groups');
-        if UI.settings.extraSpacing
-            UI.panel.general.extraSpacing.Value = 1;
+        % Trace rows own their geometry; retain existing control handles/callbacks.
+        traceCallbacks = struct('changePlotStyle',@changePlotStyle,'changeColorScale',@changeColorScale, ...
+            'changeTraceFilter',@changeTraceFilter,'extraSpacing',@extraSpacing, ...
+            'plotEnergy',@plotEnergy,'toogleDetectEvents',@toogleDetectEvents,'toogleDetectSpikes',@toogleDetectSpikes);
+        [UI.traceSection,traceControls] = ce.ui.neuroscope.buildTraceSection(UI.panel.general.main,UI.settings,traceCallbacks);
+        for field = fieldnames(traceControls)'
+            UI.panel.general.(field{1}) = traceControls.(field{1});
         end
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Lower filter (Hz)', 'Units','normalized', 'Position', [0.0 0.52 0.5 0.09],'HorizontalAlignment','center');
-        uicontrol('Parent',UI.panel.general.filter,'Style', 'text', 'String', 'Higher filter (Hz)', 'Units','normalized', 'Position', [0.5 0.52 0.5 0.09],'HorizontalAlignment','center');
-        UI.panel.general.lowerBand  = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '400', 'Units','normalized', 'Position', [0.01 0.39 0.48 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Lower frequency boundary (Hz)');
-        UI.panel.general.higherBand = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.5 0.39 0.49 0.12],'Callback',@changeTraceFilter,'HorizontalAlignment','center','tooltip','Higher frequency band (Hz)');
-        UI.panel.general.plotEnergy = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String','Absolute smoothing (sec)', 'value', 0, 'Units','normalized', 'Position', [0.01 0.26 0.68 0.12],'Callback',@plotEnergy,'HorizontalAlignment','left');
-        UI.panel.general.energyWindow = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.energyWindow), 'Units','normalized', 'Position', [0.7 0.26 0.29 0.12],'Callback',@plotEnergy,'HorizontalAlignment','center','tooltip','Smoothing window (seconds)');
-        UI.panel.general.detectEvents = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect events (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.01 0.135 0.68 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','left');
-        UI.panel.general.eventThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.eventThreshold), 'Units','normalized', 'Position', [0.7 0.135 0.29 0.12],'Callback',@toogleDetectEvents,'HorizontalAlignment','center','tooltip',['Event detection threshold (',char(181),'V)']);
-        UI.panel.general.detectSpikes = uicontrol('Parent',UI.panel.general.filter,'Style', 'checkbox','String',['Detect spikes (',char(181),'V)'], 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.68 0.12],'Callback',@toogleDetectSpikes,'HorizontalAlignment','left');
-        UI.panel.general.detectThreshold = uicontrol('Parent',UI.panel.general.filter,'Style', 'Edit', 'String', num2str(UI.settings.spikesDetectionThreshold), 'Units','normalized', 'Position', [0.7 0.01 0.29 0.12],'Callback',@toogleDetectSpikes,'HorizontalAlignment','center','tooltip',['Spike detection threshold (',char(181),'V)']);
-        
+
         % Electrode groups
         UI.uitabgroup_channels = uiextras.TabPanel('Parent', UI.panel.general.main, 'Padding', 1,'FontSize',UI.settings.fontsize ,'TabSize',50);
         UI.panel.electrodeGroups.main  = uix.VBox('Parent',UI.uitabgroup_channels, 'Padding', 1);
@@ -519,9 +508,9 @@ end
         uicontrol('Parent',UI.panel.timeseriesdata.main,'Style','pushbutton','Units','normalized','Position',[0.5 0 0.49 0.19],'String','Metadata','Callback',@editIntanMeta,'KeyPressFcn', @keyPress,'tooltip','Edit session metadata');
             
         % Defining flexible panel heights
-        set(UI.panel.general.main, 'Heights', [65 210 -210 35 -90 35 100 40 150],'MinimumHeights',[65 210 200 35 140 35 50 30 150]);
+        set(UI.panel.general.main, 'Heights', [65 UI.traceSection.PreferredHeight -210 35 -90 35 100 40 150],'MinimumHeights',[65 UI.traceSection.PreferredHeight 200 35 140 35 50 30 150]);
         UI.panel.general.main1.MinimumWidths = 218;
-        UI.panel.general.main1.MinimumHeights = 975;
+        UI.traceSectionListener = ce.ui.layout.bindSection(UI.traceSection,UI.panel.general.main,UI.panel.general.main1);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 2. PANEL: Spikes related metrics
@@ -860,22 +849,22 @@ end
         end
         
         % Plotting RMS noise inset        
-        if UI.settings.plotRMSnoiseInset && ~isempty(UI.channelOrder)
+        if ephys.loaded && UI.settings.plotRMSnoiseInset && ~isempty(UI.channelOrder)
             plotRMSnoiseInset
         end
         
         % Showing detected spikes in a spike-waveform-PCA plot inset
-        if UI.settings.detectSpikes && ~isempty(UI.channelOrder) && UI.settings.showDetectedSpikesPCAspace
+        if ephys.loaded && UI.settings.detectSpikes && ~isempty(UI.channelOrder) && UI.settings.showDetectedSpikesPCAspace
             plotSpikesPCAspace(raster,UI.settings.primaryColor,true)
         end      
 
         % Showing amplitude distribution of detected spikes in plot inset
-        if UI.settings.detectSpikes && ~isempty(UI.channelOrder) && UI.settings.showDetectedSpikesAmplitudeDistribution
+        if ephys.loaded && UI.settings.detectSpikes && ~isempty(UI.channelOrder) && UI.settings.showDetectedSpikesAmplitudeDistribution
             plotSpikesAmplitudeDistribution(raster,UI.settings.primaryColor,true)
         end      
 
         % Showing amplitude distribution of detected spikes in plot inset
-        if UI.settings.detectSpikes && ~isempty(UI.channelOrder) && UI.settings.showDetectedSpikesCountAcrossChannels
+        if ephys.loaded && UI.settings.detectSpikes && ~isempty(UI.channelOrder) && UI.settings.showDetectedSpikesCountAcrossChannels
             plotSpikesCountAcrossChannels(raster,UI.settings.primaryColor,true)
         end      
 
@@ -914,6 +903,8 @@ end
         % Setting booleans for validating ephys loading and plotting        
         ephys.loaded = false;
         ephys.plotted = false;
+        ephys.traces = [];
+        ephys.raw = [];
         if UI.settings.plotStyle == 4 % lfp file
             if UI.fid.lfp == -1
                 UI.settings.stream = false;
@@ -941,55 +932,42 @@ end
             fileID = UI.fid.ephys;
         end
         
-        if strcmp(UI.settings.fileRead,'bof')
-            % Loading data
-            if UI.t0>UI.t1 && UI.t0 < UI.t1 + UI.settings.windowDuration && ~UI.forceNewData
-                t_offset = UI.t0-UI.t1;
-                newSamples = round(UI.samplesToDisplay*t_offset/UI.settings.windowDuration);
-                existingSamples = UI.samplesToDisplay-newSamples;
-                % Keeping existing samples
-                ephys.raw(1:existingSamples,:) = ephys.raw(newSamples+1:UI.samplesToDisplay,:);
-                % Loading new samples
-                fseek(fileID,round((UI.t0+UI.settings.windowDuration-t_offset)*ephys.sr)*data.session.extracellular.nChannels*2,'bof'); % bof: beginning of file
-                try
-                    ephys.raw(existingSamples+1:UI.samplesToDisplay,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],UI.settings.precision))'*UI.settings.leastSignificantBit;
-                    ephys.loaded = true;
-                catch 
-                    UI.settings.stream = false;
-                    text_center('Failed to read file')
-                end
-            elseif UI.t0 < UI.t1 && UI.t0 > UI.t1 - UI.settings.windowDuration && ~UI.forceNewData
-                t_offset = UI.t1-UI.t0;
-                newSamples = round(UI.samplesToDisplay*t_offset/UI.settings.windowDuration);
-                % Keeping existing samples
-                existingSamples = UI.samplesToDisplay-newSamples;
-                ephys.raw(newSamples+1:UI.samplesToDisplay,:) = ephys.raw(1:existingSamples,:);
-                % Loading new data
-                fseek(fileID,round(UI.t0*ephys.sr)*data.session.extracellular.nChannels*2,'bof');
-                ephys.raw(1:newSamples,:) = double(fread(fileID, [data.session.extracellular.nChannels, newSamples],UI.settings.precision))'*UI.settings.leastSignificantBit;
-                ephys.loaded = true;
-            elseif UI.t0==UI.t1 && ~UI.forceNewData
-                ephys.loaded = true;
-            else
-                fseek(fileID,round(UI.t0*ephys.sr)*data.session.extracellular.nChannels*2,'bof');
-                ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],UI.settings.precision))'*UI.settings.leastSignificantBit;
-                ephys.loaded = true;
+        % Offsets are zero-based samples; the cache contains unscaled samples.
+        precision = tracePrecision;
+        try
+            available = ce.io.binarySampleCount(fileID,data.session.extracellular.nChannels,precision);
+            UI.t_total = available/ephys.sr;
+            count = min(round(UI.samplesToDisplay),available);
+            if count == 0
+                error('NeuroScope2:EmptyRecording','The recording contains no complete samples.');
             end
-            UI.forceNewData = false;
-        else
-            fseek(fileID,ceil(-UI.settings.windowDuration*ephys.sr)*data.session.extracellular.nChannels*2,'eof'); % eof: end of file
-            ephys.raw = double(fread(fileID, [data.session.extracellular.nChannels, UI.samplesToDisplay],UI.settings.precision))'*UI.settings.leastSignificantBit;
-            UI.forceNewData = true;
+            if count ~= UI.samplesToDisplay
+                UI.settings.windowDuration = count/ephys.sr;
+                initTraces
+            end
+            if strcmp(UI.settings.fileRead,'bof')
+                first = min(round(UI.t0*ephys.sr),available-count);
+            else
+                first = available-count;
+            end
+            UI.t0 = first/ephys.sr;
+            if UI.forceNewData, binaryCache = []; end
+            [raw,binaryCache] = ce.io.readBinaryWindow(fileID,data.session.extracellular.nChannels,precision,first,count,binaryCache);
+            ephys.raw = raw*UI.settings.leastSignificantBit;
+            UI.forceNewData = ~strcmp(UI.settings.fileRead,'bof');
             ephys.loaded = true;
+        catch exception
+            binaryCache = [];
+            ephys.raw = [];
+            ephys.traces = [];
+            UI.settings.stream = false;
+            text_center(['Failed to read recording: ',exception.message]);
+            return
         end
         ephys.nChannels = size(ephys.raw,2);
         ephys.nSamples = size(ephys.raw,1);
         UI.t1 = UI.t0;
-        
-        if ~ephys.loaded
-            return
-        end
-        
+
         % Removing DC (substraction of the mean of each channel)
         if UI.settings.removeDC
             ephys.traces = ephys.raw-mean(ephys.raw);
@@ -1043,6 +1021,7 @@ end
     end
     
     function plot_ephys
+        if ~ephys.loaded, return; end
         % Loading and plotting ephys data
         % There are five plot styles, for optimized plotting performance
         % 1. Downsampled: Shows every 16th sample of the raw data (no filter or averaging)
@@ -1355,17 +1334,28 @@ end
         ephys.plotted = true;
     end
 
+    function [values,count] = readAuxiliary(signal,channels,sr,precision)
+        values = []; count = 0;
+        try
+            fid = UI.fid.timeSeries.(signal);
+            available = ce.io.binarySampleCount(fid,channels,precision);
+            requested = round(UI.settings.windowDuration*sr);
+            first = round(UI.t0*sr);
+            if ~strcmp(UI.settings.fileRead,'bof'), first = max(0,available-requested); end
+            count = max(0,min(requested,available-first));
+            if count == 0, return; end
+            values = ce.io.readBinaryWindow(fid,channels,precision,first,count);
+        catch exception
+            count = 0;
+            text_center(['Failed to read ',signal,': ',exception.message]);
+        end
+    end
+
     function plotAnalog(signal)
         sr = data.session.timeSeries.(signal).sr;
         precision = data.session.timeSeries.(signal).precision;
-        nDispSamples = UI.settings.windowDuration*sr;
-        % Plotting analog traces
-        if strcmp(UI.settings.fileRead,'bof')
-            fseek(UI.fid.timeSeries.(signal),round(UI.t0*sr)*data.session.timeSeries.(signal).nChannels*2,'bof'); % eof: end of file
-        else 
-            fseek(UI.fid.timeSeries.(signal),ceil(-UI.settings.windowDuration*sr)*data.session.timeSeries.(signal).nChannels*2,'eof'); % eof: end of file
-        end
-        traces_analog = fread(UI.fid.timeSeries.(signal), [data.session.timeSeries.(signal).nChannels, nDispSamples],precision)';
+        [traces_analog,nDispSamples] = readAuxiliary(signal,data.session.timeSeries.(signal).nChannels,sr,precision);
+        if nDispSamples == 0, return; end
         if UI.settings.showTimeseriesBelowTrace
             line(UI.plot_axis1,(1:nDispSamples)/sr,traces_analog./2^16*diff(UI.dataRange.intan)+UI.dataRange.intan(1), 'HitTest','off','Marker','none','LineStyle','-','linewidth',1);
         else
@@ -1380,15 +1370,8 @@ end
     function plotDigital(signal)
         sr = data.session.timeSeries.(signal).sr;
         precision = data.session.timeSeries.(signal).precision;
-        nDispSamples = UI.settings.windowDuration*sr;
-        
-        % Plotting digital traces
-        if strcmp(UI.settings.fileRead,'bof')
-            fseek(UI.fid.timeSeries.(signal),round(UI.t0*sr)*2,'bof');
-        else
-            fseek(UI.fid.timeSeries.(signal),ceil(-UI.settings.windowDuration*sr)*2,'eof');
-        end
-        traces_digital = fread(UI.fid.timeSeries.(signal), nDispSamples,precision)';
+        [traces_digital,nDispSamples] = readAuxiliary(signal,1,sr,precision);
+        if nDispSamples == 0, return; end
         traces_digital2 = [];
         for i = 1:data.session.timeSeries.(signal).nChannels
             traces_digital2(:,i) = bitget(traces_digital,i)+i*0.001;
@@ -4874,7 +4857,32 @@ end
         uiresume(UI.fig);
     end
 
+    function precision = lfpPrecision
+        precision = 'int16';
+        if isfield(data.session.extracellular,'precisionLfp') && ~isempty(data.session.extracellular.precisionLfp)
+            precision = data.session.extracellular.precisionLfp;
+        end
+    end
+
+    function precision = tracePrecision
+        precision = UI.settings.precision;
+        if UI.settings.plotStyle == 4, precision = lfpPrecision; end
+    end
+
     function initTraces
+        % Bound the requested window to complete samples in the active stream.
+        if UI.settings.plotStyle == 4
+            fid = UI.fid.lfp; sr = data.session.extracellular.srLfp;
+        else
+            fid = UI.fid.ephys; sr = data.session.extracellular.sr;
+        end
+        if fid >= 0
+            count = ce.io.binarySampleCount(fid,data.session.extracellular.nChannels,tracePrecision);
+            UI.t_total = count/sr;
+            if count > 0
+                UI.settings.windowDuration = max(1,min(round(UI.settings.windowDuration*sr),count))/sr;
+            end
+        end
         set(UI.fig,'Renderer','opengl');
         % Determining data offsets
         UI.offsets.intan    = 0.10 * (UI.settings.showTimeseriesBelowTrace & (UI.settings.intan_showAnalog | UI.settings.intan_showAux | UI.settings.intan_showDigital));
@@ -5031,11 +5039,11 @@ end
         UI.channelOffset(UI.channelOrder) = channelOffset-1;
         UI.ephys_offset = offset;
         if UI.settings.plotStyle == 4
-            UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.srLfp),1)*UI.channelOffset;
-            UI.samplesToDisplay = UI.settings.windowDuration*data.session.extracellular.srLfp;
+            UI.channelScaling = ones(round(UI.settings.windowDuration*data.session.extracellular.srLfp),1)*UI.channelOffset;
+            UI.samplesToDisplay = round(UI.settings.windowDuration*data.session.extracellular.srLfp);
         else
-            UI.channelScaling = ones(ceil(UI.settings.windowDuration*data.session.extracellular.sr),1)*UI.channelOffset;
-            UI.samplesToDisplay = UI.settings.windowDuration*data.session.extracellular.sr;
+            UI.channelScaling = ones(round(UI.settings.windowDuration*data.session.extracellular.sr),1)*UI.channelOffset;
+            UI.samplesToDisplay = round(UI.settings.windowDuration*data.session.extracellular.sr);
         end
 
         UI.dispSamples = floor(linspace(1,UI.samplesToDisplay,UI.Pix_SS));
@@ -5075,6 +5083,8 @@ end
     end
     
     function initData(basepath,basename)
+        readers.close();
+        binaryCache = [];
         
         % Init data and UI settings
         UI.settings.stream = false;
@@ -5228,7 +5238,7 @@ end
         else
             UI.data.fileName = fullfile(basepath,[UI.data.basename '.dat']);
         end
-        UI.fid.ephys = fopen(UI.data.fileName, 'r');
+        UI.fid.ephys = readers.open('ephys',UI.data.fileName);
         s1 = dir(UI.data.fileName);
             
         if isfield(data.session.extracellular,'fileNameLFP') && ~isempty(data.session.extracellular.fileNameLFP)
@@ -5240,7 +5250,7 @@ end
         else
             UI.data.fileNameLFP = fullfile(basepath,[UI.data.basename '.lfp']);
         end
-        UI.fid.lfp = fopen(UI.data.fileNameLFP, 'r');
+        UI.fid.lfp = readers.open('lfp',UI.data.fileNameLFP);
         s2 = dir(UI.data.fileNameLFP);
             
         if ~isfield(UI,'priority')
@@ -5254,11 +5264,9 @@ end
         end
         
         if ~isempty(s1) && ~strcmp(UI.priority,'lfp')
-            filesize = s1.bytes;
-            UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.sr*2);
+            UI.t_total = ce.io.binarySampleCount(UI.fid.ephys,data.session.extracellular.nChannels,UI.settings.precision)/data.session.extracellular.sr;
         elseif ~isempty(s2)
-            filesize = s2.bytes;
-            UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.srLfp*2);
+            UI.t_total = ce.io.binarySampleCount(UI.fid.lfp,data.session.extracellular.nChannels,lfpPrecision)/data.session.extracellular.srLfp;
             UI.settings.plotStyle = 4;
             UI.panel.general.plotStyle.Value = UI.settings.plotStyle;
         else
@@ -5307,8 +5315,8 @@ end
         end
         tableHeights_Timeseries3 = nfiles*18+30;
         
-        set(UI.panel.general.main, 'MinimumHeights',[65 210 tableHeights_ElectrodeGroups 35 tableHeights_ChannelTags 35 50 30 tableHeights_Timeseries3]);
-        UI.panel.general.main1.MinimumHeights = 605 + tableHeights_ElectrodeGroups + tableHeights_ChannelTags + tableHeights_Timeseries3;
+        set(UI.panel.general.main, 'MinimumHeights',[65 UI.traceSection.PreferredHeight tableHeights_ElectrodeGroups 35 tableHeights_ChannelTags 35 50 30 tableHeights_Timeseries3]);
+        ce.ui.layout.fitScrollingStack(UI.panel.general.main,UI.panel.general.main1);
         
         % Defining flexible panel heights for events and timeseries files
         if isfield(UI.data.detectecFiles,'timeSeries') && ~isempty(data.session.timeSeries)
@@ -5401,12 +5409,10 @@ end
         UI.settings.stream = false;
         s1 = dir(UI.data.fileName);
         s2 = dir(UI.data.fileNameLFP);
-        if ~isempty(s1)
-            filesize = s1.bytes;
-            UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.sr*2);
+        if ~isempty(s1) && UI.settings.plotStyle ~= 4
+            UI.t_total = ce.io.binarySampleCount(UI.fid.ephys,data.session.extracellular.nChannels,UI.settings.precision)/data.session.extracellular.sr;
         elseif ~isempty(s2)
-            filesize = s2.bytes;
-            UI.t_total = filesize/(data.session.extracellular.nChannels*data.session.extracellular.srLfp*2);
+            UI.t_total = ce.io.binarySampleCount(UI.fid.lfp,data.session.extracellular.nChannels,lfpPrecision)/data.session.extracellular.srLfp;
         end        
     end
     
@@ -7115,7 +7121,7 @@ end
         if strcmp(tag,'adc')
             if value && ~isempty(UI.table.timeseriesdata.Data{evnt_indice,3}) && exist(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}),'file')
                 UI.settings.intan_showAnalog = true;
-                UI.fid.timeSeries.adc = fopen(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}), 'r');
+                UI.fid.timeSeries.adc = readers.open('adc',fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}));
                 
             elseif value
                 UI.table.timeseriesdata.Data{evnt_indice,1} = false;
@@ -7128,7 +7134,7 @@ end
         if strcmp(tag,'aux')
             if value && ~isempty(UI.table.timeseriesdata.Data{evnt_indice,3}) && exist(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}),'file')
                 UI.settings.intan_showAux = true;
-                UI.fid.timeSeries.aux = fopen(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}), 'r');
+                UI.fid.timeSeries.aux = readers.open('aux',fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}));
             elseif value
                 UI.table.timeseriesdata.Data{evnt_indice,1} = false;
                 UI.settings.intan_showAux = false;
@@ -7141,7 +7147,7 @@ end
         if strcmp(tag,'dig')
             if value && ~isempty(UI.table.timeseriesdata.Data{evnt_indice,3}) && exist(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}),'file')
                 UI.settings.intan_showDigital = true;
-                UI.fid.timeSeries.dig = fopen(fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}), 'r');
+                UI.fid.timeSeries.dig = readers.open('dig',fullfile(basepath,UI.table.timeseriesdata.Data{evnt_indice,3}));
             elseif value == 1
                 UI.table.timeseriesdata.Data{evnt_indice,1} = false;
                 MsgLog('Failed to load digital file',4);

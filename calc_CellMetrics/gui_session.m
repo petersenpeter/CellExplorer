@@ -13,7 +13,7 @@ function [session,parameters,statusExit] = gui_session(sessionIn,parameters,acti
 % OUTPUTS
 % session    : session struct
 % parameters : parameters struct
-% statusExit : Whether the GUI was closed via the OK button or canceled
+% statusExit : 1 for Apply & Close (formerly OK), 0 for Cancel/window close
 
 % gui_session is part of CellExplorer: https://cellexplorer.org/
 
@@ -27,6 +27,9 @@ if enableDatabase
 end
 
 uiLoaded = false;
+sourceFile = '';
+if nargin < 2, parameters = []; end
+parametersIn = parameters;
 
 % Lists
 UI.list.sortingMethod = sort({'KiloSort','KiloSort2','KiloSort3','KiloSort4','SpyKING CIRCUS','Klustakwik','MaskedKlustakwik','Klustasuite','MountainSort','IronClust','MClust','Wave_clus','custom'}); % Spike sorting methods
@@ -88,8 +91,9 @@ elseif exist('sessionIn','var') && isstruct(sessionIn)
     end
 elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'file') == 2
     disp(['Loading from session file: ' sessionIn]);
+    sourceFile = ce.io.canonicalPath(sessionIn);
     load(fullfile(sessionIn),'session');
-    [filepath,~,~] = fileparts(sessionIn);
+    [filepath,~,~] = fileparts(sourceFile);
     basepath = filepath;
     sessionIn = session;
 elseif exist('sessionIn','var') && ischar(sessionIn) && exist(sessionIn,'dir') == 7
@@ -111,7 +115,8 @@ else
         sessionIn = session;
     elseif exist(fullfile(basepath,'session.mat'),'file')
         disp('Loading session.mat from current path');
-        load(fullfile(basepath,'session.mat'),'session');
+        sourceFile = fullfile(basepath,'session.mat');
+        load(sourceFile,'session');
         sessionIn = session;
     else
         answer = questdlg([basename,'.session.mat does not exist. Would you like to create one from a template or locate an existing session file?'],'No basename.session.mat file found','Create with template script','Load session template file','Locate file','Create with template script');
@@ -124,7 +129,8 @@ else
                 [file,basepath] = uigetfile('*.mat','Please select a session.mat file','*.session.mat');
                 if ~isequal(file,0)
                     cd(basepath)
-                    temp = load(file,'session');
+                    sourceFile = fullfile(basepath,file);
+                    temp = load(sourceFile,'session');
                     sessionIn = temp.session;
                     session = sessionIn;
                 else
@@ -152,6 +158,15 @@ else
     end
 end
 
+% Capture the on-disk revision before editing; opening/upgrading never saves.
+if isempty(sourceFile)
+    sourceFile = fullfile(basepath,[session.general.name,'.session.mat']);
+end
+sourceFile = ce.io.canonicalPath(sourceFile);
+sourceHash = '';
+if isfile(sourceFile), sourceHash = ce.pipeline.fileFingerprint(sourceFile); end
+openedFile = sourceFile;
+
 % The session must have a field specifying the version as some changes to the structure has broken compatibility with earlier standard
 if ~isfield(session.general,'version') || session.general.version<4
     if isfield(session.general,'entryID')
@@ -167,13 +182,6 @@ if ~isfield(session.general,'version') || session.general.version<4
             case 'Update from template'
                 disp('Updating session using the template')
                 session = sessionTemplate(session);
-                disp(['Saving ',session.general.name,'.session.mat'])
-                try
-                    save(fullfile(session.general.name,[basepath,'session.mat']),'session','-v7.3','-nocompression');
-                    success = 1;
-                catch
-                    warning(['Failed to save ',session.general.name,'.session.mat. Location not available']);
-                end
             otherwise
                 return
         end
@@ -198,6 +206,7 @@ statusExit = 0;
 
 % Creating figure for the GUI
 UI.fig = figure('units','pixels','position',[50,50,780,550],'Name','Session metadata','NumberTitle','off','renderer','opengl', 'MenuBar', 'None','PaperOrientation','landscape','visible','off');
+UI.fig.CloseRequestFcn = @(~,~)cancelMetricsWindow;
 movegui(UI.fig,'center')
 
 %% % % % % % % % % % % % % % % % % % % % % %
@@ -299,9 +308,9 @@ for iTabs = 1:numel(tabsList)
     UI.tabs.(tabsList{iTabs}) = uipanel('Parent',UI.panel.main,'Visible','off','Units','normalized','Position',[0 0 600 600],'BorderType','none');
 end
 uipanel('position',[0 0 1 1],'BorderType','none','Parent',UI.panel.left);
-UI.button.ok = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[10, 5, 100, 30],'String','OK','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI whlie keeping changes. \nDoes not save changes to basename.session.mat file'));
+UI.button.ok = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[10, 5, 100, 30],'String','Apply & Close','Callback',@(src,evnt)CloseMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Validate and return edited metadata. \nDoes not save changes to basename.session.mat file'));
 UI.button.save = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[120, 5, 100, 30],'String','Save','Callback',@(src,evnt)saveSessionFile,'Units','normalized','Interruptible','off','tooltip',sprintf('Save changes to basename.session.mat file'));
-UI.button.cancel = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[230, 5, 100, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Exit GUI without keeping any changes'));
+UI.button.cancel = uicontrol('Parent',UI.panel.left,'Style','pushbutton','Position',[230, 5, 100, 30],'String','Cancel','Callback',@(src,evnt)cancelMetricsWindow,'Units','normalized','Interruptible','off','tooltip',sprintf('Discard edits since opening. Files already saved are kept.'));
 
 set(UI.panel.left, 'Heights', [20,32*ones(size(tabsList)),-1,30,30,30],'MinimumHeights',[20,32*ones(size(tabsList)),5,30,30,30],'Spacing', 3);
 
@@ -1240,8 +1249,8 @@ uiwait(UI.fig)
     end
     
     function readBackChanCoords
-        session.extracellular.chanCoords.x = eval(['[',UI.edit.chanCoords_x.String,']']);
-        session.extracellular.chanCoords.y = eval(['[',UI.edit.chanCoords_y.String,']']);
+        session.extracellular.chanCoords.x = ce.data.parseNumericText(UI.edit.chanCoords_x.String,'chanCoords.x',true,true);
+        session.extracellular.chanCoords.y = ce.data.parseNumericText(UI.edit.chanCoords_y.String,'chanCoords.y',true,true);
         session.extracellular.chanCoords.x = session.extracellular.chanCoords.x(:);
         session.extracellular.chanCoords.y = session.extracellular.chanCoords.y(:);
         session.extracellular.chanCoords.source = UI.edit.chanCoords_source.String;
@@ -1323,8 +1332,15 @@ uiwait(UI.fig)
 
     
     function performStructValidation(~,~)
-        readBackFields;
-        validateSessionStruct(session);
+        before = session; parametersBefore = parameters;
+        try
+            readBackFields;
+            validateDraft;
+            MsgLog('Session metadata passed editor validation.',2)
+        catch exception
+            session = before; parameters = parametersBefore;
+            MsgLog(exception.message,4)
+        end
     end
     
     function edit_preferences_ProcessCellMetrics(~,~)
@@ -1384,32 +1400,49 @@ uiwait(UI.fig)
     end
 
     function saveSessionFile
-        if ~contains(pwd,UI.edit.basepath.String)
-            answer = questdlg(['Where would you like to save the session struct to? basepath=' UI.edit.basepath.String,' pwd=',pwd],'basepath different from pwd','basepath','pwd','Select location','basepath');
-        else
-            answer = 'basepath';
-        end
-        switch answer
-            case 'basepath'
-                filepath1 = UI.edit.basepath.String;
-                filename1 = [UI.edit.session.String,'.session.mat'];  
-            case 'pwd'
-                filepath1 = pwd;
-                filename1 = [UI.edit.session.String,'.session.mat']; 
-            case 'Select location'
-                [filename1,filepath1] = uiputfile([UI.edit.session.String,'.session.mat']);
-            otherwise
-                return
-        end
-        
-        readBackFields;
+        before = session; parametersBefore = parameters;
         try
-            save(fullfile(filepath1, filename1),'session','-v7.3','-nocompression');
-            MsgLog(['Session struct saved: ' fullfile(filepath1, filename1)],2)
-        catch
-            MsgLog(['Failed to save ',filename1,'. Location not available'],4)
+            readBackFields;
+            validateDraft;
+            target = fullfile(session.general.basePath,[session.general.name,'.session.mat']);
+            % Retain an explicitly opened filename until name/path are edited.
+            if strcmp(session.general.name,sessionIn.general.name) && ...
+                    strcmp(ce.io.canonicalPath(session.general.basePath),ce.io.canonicalPath(basepath))
+                target = openedFile;
+            end
+            target = ce.io.canonicalPath(target);
+            if ~isfolder(fileparts(target))
+                [filename1,filepath1] = uiputfile('*.mat','Save session metadata',target);
+                if isequal(filename1,0) || isequal(filepath1,0)
+                    session = before; parameters = parametersBefore; return
+                end
+                target = ce.io.canonicalPath(fullfile(filepath1,filename1));
+            end
+            expectedHash = '';
+            if strcmp(target,sourceFile)
+                expectedHash = sourceHash;
+            elseif isfile(target)
+                expectedHash = ce.pipeline.fileFingerprint(target);
+                answer = questdlg(['Replace existing session file? ',target],'Save session metadata','Replace','Cancel','Cancel');
+                if ~strcmp(answer,'Replace')
+                    session = before; parameters = parametersBefore; return
+                end
+            end
+            receipt = ce.curation.saveSessionMetadata(session,target,expectedHash);
+            sourceFile = receipt.file; sourceHash = receipt.hash;
+            MsgLog(['Session struct saved: ',receipt.file],2)
+        catch exception
+            session = before; parameters = parametersBefore;
+            MsgLog(['Session not saved: ',exception.message],4)
         end
-        
+    end
+
+    function validateDraft
+        report = ce.data.validateSessionMetadata(session);
+        if ~report.valid
+            lines = arrayfun(@(item) [item.path,': ',item.message],report.errors,'UniformOutput',false);
+            error('ce:curation:InvalidSessionMetadata','%s',strjoin(lines,newline));
+        end
     end
 
     function UIsetString(StructName,StringName,StringName2)
@@ -1432,13 +1465,31 @@ uiwait(UI.fig)
     end
 
     function CloseMetricsWindow
-        readBackFields;
+        before = session; parametersBefore = parameters;
+        try
+            readBackFields;
+            validateDraft;
+        catch exception
+            session = before; parameters = parametersBefore;
+            MsgLog(['Cannot apply metadata: ',exception.message],4)
+            return
+        end
         delete(UI.fig);
         statusExit = 1;
         trackGoogleAnalytics('gui_session',1,'session',session); % Anonymous tracking of usage
     end
     
     function readBackFields
+        before = session; parametersBefore = parameters;
+        try
+            readBackFieldsUnchecked;
+        catch exception
+            session = before; parameters = parametersBefore;
+            rethrow(exception)
+        end
+    end
+
+    function readBackFieldsUnchecked
         % Saving parameters
         if exist('parameters','var') && ~isempty(parameters)
             for iParams = 1:length(UI.list.params)
@@ -1462,7 +1513,7 @@ uiwait(UI.fig)
         session.general.time = UI.edit.time.String;
         session.general.name = UI.edit.session.String;
         session.general.basePath = UI.edit.basepath.String;
-        session.general.duration = UI.edit.duration.String;
+        session.general.duration = ce.data.parseNumericText(UI.edit.duration.String,'general.duration',true);
         session.general.location = UI.edit.location.String;
         session.general.experimenters = UI.edit.experimenters.String;
         session.general.notes = UI.edit.notes.String;
@@ -1478,21 +1529,9 @@ uiwait(UI.fig)
         session.animal.strain = UI.edit.strain.String{UI.edit.strain.Value};
         session.animal.geneticLine = UI.edit.geneticLine.String;
         
-        % Extracellular
-        if ~strcmp(UI.edit.leastSignificantBit.String,'')
-            session.extracellular.leastSignificantBit = str2double(UI.edit.leastSignificantBit.String);
-        end
-        if ~strcmp(UI.edit.sr.String,'')
-            session.extracellular.sr = str2double(UI.edit.sr.String);
-        end
-        if ~strcmp(UI.edit.srLfp.String,'')
-            session.extracellular.srLfp = str2double(UI.edit.srLfp.String);
-        end
-        if ~strcmp(UI.edit.nSamples.String,'')
-            session.extracellular.nSamples = str2double(UI.edit.nSamples.String);
-        end
-        if ~strcmp(UI.edit.nChannels.String,'')
-            session.extracellular.nChannels = str2double(UI.edit.nChannels.String);
+        % Parse into the draft; scalar/range checks run before Apply or Save.
+        for field = {'leastSignificantBit','sr','srLfp','nSamples','nChannels'}
+            session.extracellular.(field{1}) = ce.data.parseNumericText(UI.edit.(field{1}).String,['extracellular.',field{1}],true);
         end
         session.extracellular.nElectrodeGroups = numel(session.extracellular.electrodeGroups.channels);
         session.extracellular.nSpikeGroups = numel(session.extracellular.spikeGroups.channels);
@@ -1506,6 +1545,7 @@ uiwait(UI.fig)
     
     function cancelMetricsWindow
         session = sessionIn;
+        parameters = parametersIn;
         delete(UI.fig)
         trackGoogleAnalytics('gui_session',1); % Anonymous tracking of usage
     end
@@ -1914,7 +1954,7 @@ uiwait(UI.fig)
                     SelectedBrainRegion = brainRegions_acronym{indx};
                     if ~isempty(brainRegionsChannels.String)
                         try
-                            session.brainRegions.(SelectedBrainRegion).channels = eval(['[',brainRegionsChannels.String,']']);
+                            session.brainRegions.(SelectedBrainRegion).channels = ce.data.parseNumericText(brainRegionsChannels.String,'Numeric field',true);
                         catch
                             helpdlg('Channels not formatted correctly','Error')
                             uicontrol(brainRegionsChannels);
@@ -1922,7 +1962,7 @@ uiwait(UI.fig)
                     end
                     if ~isempty(brainRegionsElectrodeGroups.String)
                         try
-                            session.brainRegions.(SelectedBrainRegion).electrodeGroups = eval(['[',brainRegionsElectrodeGroups.String,']']);
+                            session.brainRegions.(SelectedBrainRegion).electrodeGroups = ce.data.parseNumericText(brainRegionsElectrodeGroups.String,'Numeric field',true);
                         catch
                             helpdlg('Spike groups not formatted correctly','Error')
                             uicontrol(brainRegionsElectrodeGroups);
@@ -2010,7 +2050,7 @@ uiwait(UI.fig)
                 SelectedTag = tagsTextfield.String;
                 if ~isempty(tagsChannels.String)
                     try
-                        session.channelTags.(SelectedTag).channels = eval(['[',tagsChannels.String,']']);
+                        session.channelTags.(SelectedTag).channels = ce.data.parseNumericText(tagsChannels.String,'Numeric field',true);
                     catch
                        helpdlg('Channels not formatted correctly','Error')
                         uicontrol(tagsChannels);
@@ -2021,7 +2061,7 @@ uiwait(UI.fig)
                 end
                 if ~isempty(tagsElectrodeGroups.String)
                     try
-                        session.channelTags.(SelectedTag).electrodeGroups = eval(['[',tagsElectrodeGroups.String,']']);
+                        session.channelTags.(SelectedTag).electrodeGroups = ce.data.parseNumericText(tagsElectrodeGroups.String,'Numeric field',true);
                     catch
                         helpdlg('Spike groups not formatted correctly','Error')
                         uicontrol(tagsElectrodeGroups);
@@ -2129,7 +2169,7 @@ uiwait(UI.fig)
                 Selectedinput = inputsTextfield.String;
                 if ~isempty(inputsChannels.String)
                     try
-                        session.inputs.(Selectedinput).channels = eval(['[',inputsChannels.String,']']);
+                        session.inputs.(Selectedinput).channels = ce.data.parseNumericText(inputsChannels.String,'Numeric field',true);
                     catch
                         helpdlg('Channels not formatted correctly','Error')
                         uicontrol(inputsChannels);
@@ -2776,7 +2816,7 @@ uiwait(UI.fig)
                         if any(isletter(analysisValue.String))
                             session.analysisTags.(SelectedTag) = analysisValue.String;
                         else
-                            session.analysisTags.(SelectedTag) = eval(['[',analysisValue.String,']']);
+                            session.analysisTags.(SelectedTag) = ce.data.parseNumericText(analysisValue.String,'Numeric field',true);
                         end
                     catch
                        helpdlg('Values not formatted correctly','Error')
@@ -3041,7 +3081,7 @@ uiwait(UI.fig)
             spikeGroup = str2double(spikeGroupsSpikeGroups.String);
             if ~isempty(spikeGroupsChannels.String)
                 try
-                    session.extracellular.(group).channels{spikeGroup} = eval(['[',spikeGroupsChannels.String,']']);
+                    session.extracellular.(group).channels{spikeGroup} = ce.data.parseNumericText(spikeGroupsChannels.String,'Numeric field',true);
                 catch
                     helpdlg(['Channels not formatted correctly'],'Error')
                     uicontrol(spikeGroupsChannels);
@@ -3090,7 +3130,7 @@ uiwait(UI.fig)
             session.epochs{edit_group}.name = evnt.NewData;
         elseif evnt.Indices(1,2)==4
             try
-                newNumber = eval(['[',evnt.EditData,']']);
+                newNumber = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
                 if isnumeric(newNumber) && numel(newNumber)==1
                     session.epochs{edit_group}.startTime = newNumber;
                 end
@@ -3100,7 +3140,7 @@ uiwait(UI.fig)
             updateEpochsList
         elseif evnt.Indices(1,2)==5
             try
-                newNumber = eval(['[',evnt.EditData,']']);
+                newNumber = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
                 if isnumeric(newNumber) && numel(newNumber)==1
                     session.epochs{edit_group}.stopTime = newNumber;
                 end
@@ -3125,7 +3165,7 @@ uiwait(UI.fig)
         edit_group = evnt.Indices(1,1);
         if evnt.Indices(1,2)==3
             try
-                session.extracellular.(src.Tag).channels{edit_group} = eval(['[',evnt.NewData,']']);
+                session.extracellular.(src.Tag).channels{edit_group} = ce.data.parseNumericText(evnt.NewData,'Numeric field',true);
             catch
                 helpdlg('Channels not formatted correctly','Error')
             end
@@ -3145,7 +3185,7 @@ uiwait(UI.fig)
             session.spikeSorting{edit_group}.relativePath = evnt.NewData;
         elseif evnt.Indices(1,2)==5
             try
-                session.spikeSorting{edit_group}.channels = eval(['[',evnt.EditData,']']);
+                session.spikeSorting{edit_group}.channels = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('Channels not formatted correctly','Error')
             end
@@ -3166,14 +3206,14 @@ uiwait(UI.fig)
         region = src.Data{edit_group,2};
         if evnt.Indices(1,2)==3
             try
-                session.brainRegions.(region).channels = eval(['[',evnt.EditData,']']);
+                session.brainRegions.(region).channels = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('Channels not formatted correctly','Error')
             end
             updateBrainRegionList
         elseif evnt.Indices(1,2)==4
             try
-                session.brainRegions.(region).electrodeGroups = eval(['[',evnt.EditData,']']);
+                session.brainRegions.(region).electrodeGroups = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('Electrode groups not formatted correctly','Error')
             end
@@ -3188,14 +3228,14 @@ uiwait(UI.fig)
         tag = src.Data{edit_group,2};
         if evnt.Indices(1,2)==3
             try
-                session.channelTags.(tag).channels = eval(['[',evnt.EditData,']']);
+                session.channelTags.(tag).channels = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('Channels not formatted correctly','Error')
             end
             updateTagList
         elseif evnt.Indices(1,2)==4
             try
-                session.channelTags.(tag).electrodeGroups = eval(['[',evnt.EditData,']']);
+                session.channelTags.(tag).electrodeGroups = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('Electrode groups not formatted correctly','Error')
             end
@@ -3209,7 +3249,7 @@ uiwait(UI.fig)
         if evnt.Indices(1,2)==3
             if isnumeric(session.analysisTags.(tag))
                 try
-                    session.analysisTags.(tag) = eval(['[',evnt.EditData,']']);
+                    session.analysisTags.(tag) = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
                 catch
                     helpdlg('analysis tag not formatted correctly. Must be numeric','Error')
                 end
@@ -3225,7 +3265,7 @@ uiwait(UI.fig)
         input = src.Data{edit_group,2};
         if evnt.Indices(1,2)==3
             try
-                session.inputs.(input).channels = eval(['[',evnt.EditData,']']);
+                session.inputs.(input).channels = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('Channels not formatted correctly. Must be numeric','Error')
             end
@@ -3248,28 +3288,28 @@ uiwait(UI.fig)
             session.timeSeries.(timeSeries).precision = evnt.EditData;
         elseif evnt.Indices(1,2)==5
             try
-                session.timeSeries.(timeSeries).nChannels = eval(['[',evnt.EditData,']']);
+                session.timeSeries.(timeSeries).nChannels = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('nChannels not formatted correctly. Must be numeric','Error')
             end
             updateTimeSeriesList
         elseif evnt.Indices(1,2)==6
             try
-                session.timeSeries.(timeSeries).sr = eval(['[',evnt.EditData,']']);
+                session.timeSeries.(timeSeries).sr = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('Sampling rate not formatted correctly. Must be numeric','Error')
             end
             updateTimeSeriesList
         elseif evnt.Indices(1,2)==7
             try
-                session.timeSeries.(timeSeries).nSamples = eval(['[',evnt.EditData,']']);
+                session.timeSeries.(timeSeries).nSamples = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('nSamples not formatted correctly. Must be numeric','Error')
             end
             updateTimeSeriesList
         elseif evnt.Indices(1,2)==8
             try
-                session.timeSeries.(timeSeries).leastSignificantBit = eval(['[',evnt.EditData,']']);
+                session.timeSeries.(timeSeries).leastSignificantBit = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('Least significant bit not formatted correctly. Must be numeric','Error')
             end
@@ -3287,7 +3327,7 @@ uiwait(UI.fig)
             session.behavioralTracking{edit_group}.equipment = evnt.EditData;
         elseif evnt.Indices(1,2)==4
             try
-                epoch = eval(['[',evnt.EditData,']']);
+                epoch = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
                 if epoch>0 & epoch<=numel(session.epochs)
                     session.behavioralTracking{edit_group}.epoch = epoch;
                 else
@@ -3301,7 +3341,7 @@ uiwait(UI.fig)
             session.behavioralTracking{edit_group}.type = evnt.EditData;
         elseif evnt.Indices(1,2)==6
             try
-                session.behavioralTracking{edit_group}.framerate = eval(['[',evnt.EditData,']']);
+                session.behavioralTracking{edit_group}.framerate = ce.data.parseNumericText(evnt.EditData,'Numeric field',true);
             catch
                 helpdlg('Framerate not formatted correctly. Must be numeric','Error')
             end

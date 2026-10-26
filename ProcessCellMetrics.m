@@ -39,8 +39,9 @@ function cell_metrics = ProcessCellMetrics(varargin)
 %   ignoreEventTypes       - exclude .events files of specific types
 %   ignoreManipulationTypes- exclude .manipulations files of specific types
 %   ignoreStateTypes       - exclude .states files of specific types
+%   spikeImport            - Optional managed Neurosuite/Phy import options struct (headless only).
 %   headless               - logical. Validate local inputs and run without dialogs (default false).
-%                            Requires supplied/cached spikes; import sorting outputs separately.
+%                            Use supplied/cached spikes or explicit spikeImport options.
 %   showGUI                - logical. Show a GUI that allows you to adjust the input parameters/settings
 %   randomSeed             - Seed for migrated stages and waveform sampling (default 0); caller RNG is restored.
 %   forceReload            - logical. Recalculate existing metrics
@@ -89,6 +90,10 @@ sessionin = parameters.sessionName;
 sessionStruct = parameters.session;
 basepath = parameters.basepath;
 timerCalcMetrics = tic;
+spikeImportPreparation = [];
+if ~parameters.headless && ~isempty(parameters.spikeImport)
+    error('ce:pipeline:InvalidSpikeImport','Managed spike import requires headless=true.');
+end
 
 if parameters.headless
     [preflightReport, context] = ce.pipeline.preflight(varargin{:});
@@ -101,6 +106,7 @@ if parameters.headless
     basepath = session.general.basePath;
     parameters = context.parameters;
     parameters.spikes = context.spikes;
+    spikeImportPreparation = context.spikeImport;
     clear context
 end
 
@@ -272,6 +278,8 @@ if parameters.getWaveformsFromDat && ~managedWaveforms && (ce.pipeline.needsWave
     end
 end
 
+inputSortingRevision = ce.pipeline.spikeSortingRevision(spikes{1});
+
 spikes{1}.numcells = length(spikes{1}.times);
 
 if ~isfield(spikes{1},'total')
@@ -386,6 +394,10 @@ else
     cell_metrics = [];
 end
 
+if ~isempty(cell_metrics) && ~strcmp(ce.data.metricSortingRevision(cell_metrics),inputSortingRevision)
+    error('ce:pipeline:SortingRevisionMismatch','Cached metrics and spikes have different or missing sorting revisions. Use a new saveAs or recompute all required metrics.');
+end
+
 % Interval filtering must not attach cached annotations/metrics to different cells.
 if ~isempty(cell_metrics) && isfield(cell_metrics,'UID') && ~isequal(cell_metrics.UID(:),spikes{1}.UID(:))
     error('ce:pipeline:FilteredIdentityMismatch','Filtered spikes differ from cached cell identities. Use a new saveAs name or recompute all metrics with forceReload.');
@@ -407,6 +419,9 @@ cell_metrics.general.basepath = basepath;
 cell_metrics.general.basename = basename;
 cell_metrics.general.cellCount = numel(spikes{1}.times);
 cell_metrics.general.saveAs = parameters.saveAs;
+if ~isempty(inputSortingRevision)
+    cell_metrics.general.sortingRevision = inputSortingRevision;
+end
 
 % Saving spike times to metrics
 cell_metrics.spikes.times = spikes{1}.times;
@@ -416,6 +431,10 @@ cell_metrics.spikes.times = spikes{1}.times;
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 
 stageResults = struct([]);
+if ~isempty(spikeImportPreparation)
+    stageResults = spikeImportPreparation.result;
+    cell_metrics.general.processinginfo.stages.spike_import = spikeImportPreparation.result.provenance;
+end
 if any(contains(parameters.metrics,{'waveform_metrics','all'})) && ~any(contains(parameters.excludeMetrics,{'waveform_metrics'}))
     spkExclu = setSpkExclu('waveform_metrics',parameters);
 
@@ -760,6 +779,10 @@ if exist('waveformCache','var')
     outputs.waveforms = struct('file',waveformCacheFile,'data',waveformCache);
 end
 if parameters.saveMat, dispLog(['Saving cells to: ',saveAsFullfile],basename); end
+if ~isempty(spikeImportPreparation)
+    if ~parameters.saveMat, ce.pipeline.verifySpikeImport(spikeImportPreparation.pending); end
+    outputs.spikeImport = spikeImportPreparation;
+end
 ce.pipeline.saveOutputs(cell_metrics,session,persistencePlan,outputs);
 
 %% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %%

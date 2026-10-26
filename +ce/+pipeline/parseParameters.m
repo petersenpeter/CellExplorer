@@ -5,6 +5,7 @@ addParameter(p,'sessionID',[],@isnumeric);
 addParameter(p,'sessionName',[],@isstr);
 addParameter(p,'session',[],@isstruct);
 addParameter(p,'spikes',[],@isstruct);
+addParameter(p,'spikeImport',[],@(x) isempty(x) || isstruct(x) && isscalar(x));
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'metrics','all',@(x) ischar(x) || iscellstr(x));
 addParameter(p,'excludeMetrics',{'none'},@iscellstr);
