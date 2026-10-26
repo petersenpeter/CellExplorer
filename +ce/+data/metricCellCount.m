@@ -16,9 +16,13 @@ if ~isnumeric(ids) || ~isreal(ids) || ~isequal(size(ids),[1 count]) || any(~isfi
 end
 if isfield(metrics,'batchIDs')
     batch = metrics.batchIDs;
-    if ~allowBatch || ~isnumeric(batch) || ~isreal(batch) || ~isequal(size(batch),[1 count]) || ...
+    if ~isnumeric(batch) || ~isreal(batch) || ~isequal(size(batch),[1 count]) || ...
             any(~isfinite(batch) | batch < 1 | batch ~= fix(batch))
         error('ce:data:InvalidMetricIdentity','Nested batches are unsupported; batchIDs must identify each cell in a loaded batch.');
+    end
+    % The viewer adds all-one batchIDs even to a single session before saving.
+    if ~allowBatch && (isfield(metrics.general,'batch') || any(batch ~= 1))
+        error('ce:data:InvalidMetricIdentity','Nested batches are unsupported; load their individual sessions.');
     end
     for index = unique(batch)
         selected = ids(batch == index);

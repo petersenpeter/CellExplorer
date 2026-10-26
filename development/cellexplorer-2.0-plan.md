@@ -560,3 +560,168 @@ merely because its directories exist.
   session-switch/reload UI, preserving the current metrics and unsaved edits when
   loading fails. Then profile large-batch opening and rendering before selecting
   UI performance changes. Upstream preparation and persistence recovery stay open.
+
+### Guarded viewer reload and session switching (2026-10-26)
+
+- Routed primary reload, file-picker and database-session selection callbacks
+  through a shared load/confirm/capture/apply/restore boundary. Reads and identity
+  checks happen before active-state replacement; closed progress windows and
+  invalid files leave the current metrics and edits intact. File selection now
+  loads only the named variable and does not change cwd.
+- Added explicit discard confirmation for unsaved edits, defaulting to Cancel.
+  State capture follows loading/confirmation, covering edits made while progress
+  callbacks yield. Reentrant load requests are guarded. Success/cancellation are
+  logged without an extra modal dialog; errors retain their actual cause.
+- Initialization failures restore the data model, dirty tracking, undo history,
+  selection, cell-type assignments, preferences, plot/reference state, paths and
+  RNG state. Existing control properties and dynamic tags are restored as well.
+  Tag-button destruction is deferred until initialization finishes. A secondary
+  graphics-restoration failure is reported separately after model restoration.
+- Reload resolves the actual selected filename or `saveAs`, including dotted
+  basenames and mixed per-session batch names. Fixed batch assembly of legitimate
+  single-session viewer saves carrying all-one `batchIDs`; true nested batches
+  remain rejected.
+- **170/170 regression tests passed** in MATLAB R2024b Update 9. Code Analyzer
+  found no parse diagnostics in 136 package/test/pipeline/viewer/loader/wrapper
+  files. New tests cover failed reads/initialization, cancellation, confirmation,
+  edits during loading, rollback failures, control restoration and reload source
+  resolution.
+- Actual viewer smoke checks used **151 tutorial cells and a 302-cell batch**
+  from temporary copies. Missing files, a late initialization failure after
+  history/control updates, declined discard and a closed batch progress window
+  preserved edits/history/selection. Successful reload, file selection and batch
+  selection passed. Save indicator/title restoration and unchanged cwd/source
+  hashes were checked. Dialogs, database and analytics/preferences were isolated
+  with test stubs; PCA was used for visualization.
+- Limits: the legacy rendering loop after commit, reference/ground-truth loaders,
+  explicit reinitialization and other startup paths are not made transactional by
+  this change. Arbitrary callback side effects cannot be rolled back. Replacement
+  retains both datasets in memory. Live database services and all plot types were
+  not tested.
+- Next: profile opening/rendering on larger batches, then extract the expensive
+  viewer preparation work from graphics updates. Extend guarded loading to
+  reference/ground-truth inputs and preserve edits during explicit reinitialization.
+  Upstream preparation and multi-file persistence recovery remain open.
+
+### Viewer profiling and display-preparation extraction (2026-10-26)
+
+- Added a reproducible viewer profiler for first display and three redraws, and a
+  paired numerical/timing check against frozen legacy display preparation. The
+  scaling fixture repeats the tutorial recording 10 times (1,510 cells); it is not
+  a collection of independent recordings. GUI profiling uses PCA and isolates
+  database, analytics and preference persistence.
+- The measurements identify UI/table construction as a larger opening cost than
+  file reading or display-array preparation. Profiled first-ready observations
+  were approximately 9–10 seconds. Timer polling, profiler overhead and separate
+  MATLAB process startup prevent interpreting these as a before/after speedup.
+  Raw summaries are recorded in `development/benchmarks/viewer-2026-10-26.json`.
+- Extracted waveform interpolation/z-scores, ACG/ISI normalization and theta
+  display curves into `ce.ui.prepareDisplayData`, independent of graphics and
+  mutable UI state. It runs before control/history updates, preallocates waveform
+  matrices and reports invalid waveform/time dimensions explicitly. A partially
+  present waveform display cache is now regenerated instead of skipped.
+- Preserved per-cell spline evaluation and all existing zero/NaN/range conventions.
+  Matrix-valued spline evaluation was rejected after exact tests detected tiny
+  floating-point differences. No scientific formulas or embedding defaults changed.
+- **179/179 regression tests passed** in MATLAB R2024b Update 9. The new tests
+  compare frozen outputs for common/different axes, missing/NaN/constant waveforms,
+  per-session theta axes, single cells, optional fields and cache handling.
+  Code Analyzer found no parse diagnostics in 140 package/test/viewer/pipeline/
+  loader/wrapper files.
+- Every prepared field matched exactly on **1,510 tutorial-derived cells**. Five
+  alternating warmed measurements gave medians of **53.9 ms legacy / 44.5 ms
+  extracted preparation**. This is a small component-level improvement, not an
+  application startup claim. Actual viewer load/rollback/cancellation checks also
+  passed with 151 cells and a 302-cell batch. Original source hashes were unchanged.
+- Limits: display reuse still follows the legacy initialized flag rather than
+  dependency fingerprints. Reference preparation and dimensionality reduction
+  remain inline; the main rendering loop is unchanged. Default t-SNE/UMAP, distinct
+  large recordings and peak-memory limits were not benchmarked.
+- Next: investigate deferring construction/population of costly tables until they
+  are visible, with measured startup/redraw comparisons. Continue separating viewer
+  preparation from graphics, and extend guarded loading/reinitialization coverage.
+
+
+### Deferred tables and selected-cell formatting (2026-10-26)
+
+- Removed the full-batch metric string cache. `ce.ui.metricTableData` formats only
+  the selected cell when its table is visible, preserving numeric/text display
+  conventions. Visible values now reflect the current metrics. Scientific arrays
+  and calculation formulas are unchanged.
+- Deferred the Tags widget until first opening its tab. Starting with Table data
+  set to None also defers the main widget; a placeholder retains its layout slot.
+  Existing widgets are reused, and tag checkboxes are restored from filter state.
+- Fixed custom cell-list headings reverting on mode switches. Live testing also
+  exposed missing-field errors when highlighting preference tags absent from the
+  session; the affected rendering paths now check whether the tag exists.
+- The component suite includes exact comparisons with the former string conversion
+  for numeric/text fields, NaNs, infinities and empty values. Live viewer checks
+  passed for all three starting table modes with 151 cells and a 302-cell batch:
+  lazy creation/reuse, custom columns, sorted navigation, checkbox selection,
+  tag-filtered list rows, rollback, successful switches and progress cancellation.
+  All three original tutorial input hashes remain unchanged.
+- **181/181 regression tests passed** in MATLAB R2024b Update 9; Code Analyzer
+  found no parse diagnostics in 140 package/test/viewer/pipeline/loader files.
+- Eight balanced measurements after warming both versions used 1,510 cells.
+  Median session initialization fell from **357 ms to 281 ms**. First-ready
+  medians were **2.705 s before / 2.567 s after**, with overlapping ranges;
+  navigation observations were approximately **264 ms in both**, constrained by
+  the 250 ms polling interval. This is a reduction in initialization work, not
+  evidence of a broad startup/navigation speedup. Selected profile results and
+  methodology are in `development/benchmarks/viewer-tables-2026-10-26.json`.
+- Limits: first opening a deferred table still pays its construction cost. The
+  cell list remains eager over the filtered subset, and plots still use the legacy
+  rendering loop. PCA and repeated copies of one recording are the measured scope;
+  this does not complete the interface or implementation-migration work packages.
+- Next: extend edit-preservation guards to explicit reinitialization and
+  reference/ground-truth loading. Then return to upstream preparation/remaining
+  processing migration, with recovery journaling and broader recording validation
+  still outstanding.
+
+
+### Guarded reinitialization and comparison datasets (2026-10-26)
+
+- Explicit reinitialization now uses current in-memory annotations and embedding,
+  preserving dirty tracking, undo history, selection and filters. It refreshes
+  preparation without a discard prompt; failures restore the earlier model,
+  controls and RNG state. Undo remains usable after success.
+- Fixed initialization using missing animal names to blank unrelated text fields;
+  the live fixture now verifies labels survive absent animal metadata.
+- Routed reference/ground-truth cache reads and selected batches through staged
+  loading and rollback. Only the expected named MAT variable is read. Display
+  modes are enabled only after successful loading; existing comparison controls
+  are reused. Rollback includes comparison axis bounds, menu checks, selected tabs
+  and removal of newly created comparison tabs.
+- Extracted comparison preparation into `ce.ui.prepareComparisonData` with
+  explicit inputs and frozen legacy comparisons. Histogram, smoothing, waveform,
+  normalization and class-mapping formulas are unchanged.
+- Comparison cache writes now use verified staged replacement as the final
+  fallible commit step. Preparation or write failures retain current comparison
+  data and primary-session edits. Local reference paths are used directly when
+  available; repository/download fallbacks stage and validate transferred files.
+- Exploring either comparison as primary data now honours unsaved-change
+  confirmation and initialization rollback.
+- **186/186 component tests passed** in MATLAB R2024b Update 9. Code Analyzer
+  found no parse diagnostics in 142 package/test/viewer/pipeline/loader files.
+  New tests cover named caches, identity errors, selected-tab/menu restoration and
+  exact legacy comparison preparation, including empty/NaN waveforms.
+- Live checks passed in all three initial table modes, using an exact temporary
+  viewer copy with 151 cells and a 302-cell batch. They exercised reinitialization
+  success/failure and subsequent undo; rendered both overlays; tested comparison
+  selection, preparation/write failures, closed progress windows and declined/
+  accepted exploration. Missing animal metadata did not erase labels. All
+  comparison caches/catalogues were temporary; all three tutorial source hashes
+  were unchanged.
+- Every comparison-preparation output matched the frozen legacy exactly for
+  **151 and 1,510 tutorial-derived cells**, for both reference and ground-truth
+  modes. The ground-truth fixture uses a synthetic all-cell classification to
+  test preparation, not to validate biological ground truth.
+- Limits: post-commit rendering and arbitrary custom callback side effects remain
+  outside rollback. The ground-truth catalogue still selects sessions and uses
+  its legacy best-effort list cache. Downloads are individually verified, not a
+  multi-file transaction. Live database/network services and all custom plots
+  remain untested.
+- Next: return to upstream sorting/spike preparation and remaining processing
+  migration, starting with explicit importer inputs and headless failure behavior.
+  Recovery journaling, sorting revision identity and broader recording validation
+  remain outstanding; work packages 2–4 are still incomplete.

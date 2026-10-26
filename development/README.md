@@ -137,6 +137,9 @@ deepSummary = runTutorialDeepSuperficialSmoke('/path/to/tutorial/session');
 coreSummary = runTutorialCoreSmoke('/path/to/tutorial/session');
 classSummary = runTutorialCellClassSmoke('/path/to/tutorial/session');
 loaderSummary = runTutorialLoaderSmoke('/path/to/tutorial/session');
+viewerSummary = runTutorialViewerLoadSmoke('/path/to/tutorial/session');
+displaySummary = runTutorialDisplaySmoke('/path/to/tutorial/session', 10);
+profileSummary = profileTutorialViewer('/path/to/tutorial/session', 10);
 ```
 
 This integration check needs the recording and the relevant MATLAB toolboxes. It
@@ -616,7 +619,9 @@ Group indices and connection pairs are validated as local one-based positions
 before adding session offsets. Legacy per-cell tag/group lists are normalized by
 `ce.data.metricGroups`. Session and animal metadata still produce repeated
 `session_*`/`animal_*` fields. Nested batches are rejected; load their individual
-sessions instead. `truePositive` and `falsePositive` remain excluded from assembly,
+sessions instead. Single-session files saved by the viewer may contain all-one
+`batchIDs`; those remain valid single-session inputs. `truePositive` and
+`falsePositive` remain excluded from assembly,
 and the existing excitatory/inhibitory connection representation is retained.
 
 Progress windows belong to `ce.ui.metricLoadProgress`. `headless=true` or
@@ -645,9 +650,182 @@ Compatibility changes: missing/malformed files and incompatible batch dimensions
 now raise errors instead of returning empty/partial results or silently skipping
 data. Batch loading supports MAT only; non-MAT batch requests are rejected.
 Single-session JSON/NWB loading still uses the legacy adapters and was not
-validated in this milestone. The full CellExplorer GUI has not been smoke-tested.
+validated in the loader milestone. Viewer replacement checks are described below.
 
 The tutorial check assembles 302 cells from two temporary copies of the complete
 151-cell metrics file. All fields match the frozen legacy batch loader exactly,
 excluding benchmark timings. It also checks single-session filtering, no progress
 figures in headless mode, unchanged cwd and unchanged source/copy file hashes.
+
+## Guarded viewer reload and session switching
+
+CellExplorer's reload, file-picker and database-session selection callbacks now
+use `ce.ui.tryMetricLoad`. Loading and identity validation happen before replacing
+the active metrics. A failed read or closed progress window retains the current
+dataset, selected cell, edits and undo history. Successful file reads use only the
+named `cell_metrics` variable and do not change the working directory.
+
+After loading, the viewer asks before discarding unsaved changes, defaulting to
+Cancel. The prompt does not save or discard anything itself. A clean reload also
+asks for confirmation. The state snapshot is taken after loading/confirmation,
+so edits made while a progress callback yields are included. Reentrant load
+requests are ignored while a replacement is in progress. Success and cancellation
+are logged without another modal confirmation; errors report the actual cause.
+
+If legacy session initialization fails after starting to update state, the viewer
+restores metrics, dirty-cell tracking, undo history, cell-type assignments, selected
+cell, preferences, plotting data, reference/ground-truth state and source paths.
+It also restores the captured random state and working directory. Surviving
+control properties, the Save indicator and figure title are restored; dynamic tag
+buttons are rebuilt. Destructive tag-button rebuilding is deferred until the end
+of initialization. If graphics restoration itself fails, the model remains
+restored and the error explicitly advises saving before reopening the viewer.
+
+`ce.ui.readMetricSelection` records the selected filename and handles basenames
+containing dots. `ce.ui.reloadMetricSelection` honors that filename or the single
+session's `saveAs`; batches honor each session's own `saveAs`, including mixed
+names. Reload no longer silently selects the default `cell_metrics` file when
+the user opened another metrics file.
+
+The same boundary also covers explicit reinitialization, cached and selected
+reference/ground-truth loads, and exploring those comparisons as primary data.
+Initial command-line loading and other legacy entry points still need review. It does not provide disk rollback or undo external work
+performed by custom plotting/spike callbacks. Keeping current and candidate
+datasets available during replacement increases peak memory use. Rendering after
+a successful commit remains in the existing main loop.
+
+`runTutorialViewerLoadSmoke` exercises the actual viewer and menu callbacks with
+temporary copies of the 151-cell tutorial metrics, then a 302-cell batch. Dialogs,
+database selection, analytics and preference persistence are stubbed; PCA is used
+for test visualization. Checks cover missing files, a deliberately late
+initialization error, cancelled discard, successful reload/file/batch switches,
+and a real progress window closed by the test immediately after construction.
+They verify retained metrics/history/selection and the Save indicator, unchanged
+cwd and an unchanged original metrics file. This is a focused GUI smoke check,
+not coverage of every plot or a live database service.
+
+## Viewer display preparation and profiling
+
+`ce.ui.prepareDisplayData(metrics, logIntervals)` prepares interpolated waveform
+arrays, waveform z-scores, normalized ACG/ISI arrays and theta display curves
+without graphics, file access, cwd changes or random sampling. The viewer calls it
+before updating controls and edit history. It preallocates waveform matrices and
+validates waveform/time dimensions and finite increasing time axes.
+
+The formulas retain the legacy common time grid, per-cell spline calls, zero
+columns for missing/NaN waveforms, NaN theta handling and division by range without
+minimum subtraction. Matrix-valued spline interpolation was evaluated but rejected
+because it introduced floating-point differences. The frozen legacy implementation
+is kept as a test fixture. A partially present waveform display cache is now
+repaired; previously the vector-valued cache check could skip it.
+
+The existing `general.initialized` display-cache convention remains in use. It
+does not establish freshness when inputs change. This component does not migrate
+embedding calculations or reference-data preparation, and rendering after a
+successful replacement remains in the legacy main loop.
+
+`profileTutorialViewer` builds a scaling fixture from repeated tutorial metrics,
+opens the actual viewer and profiles the first display plus three cell advances.
+`runTutorialDisplaySmoke` checks every prepared field against the frozen code and
+alternates five warmed preparation measurements. Both keep source files read-only;
+the GUI profiler disables database/analytics and preference writes and explicitly
+uses PCA. These checks need a MATLAB graphics environment and are separate from CI.
+
+The [recorded measurements](benchmarks/viewer-2026-10-26.json) use 10 copies of 151
+cells, not 10 independent recordings. Profiled first-ready observations were about
+9–10 seconds, with UI/table construction a larger cost than file reading or display
+preparation. Timer polling, profiling overhead and graphics startup affect these
+observations; they do not establish a startup speedup. In the paired warmed run,
+median preparation time was 53.9 ms for the old block and 44.5 ms for the extracted
+component. All resulting fields matched exactly. Larger/different recordings,
+default t-SNE/UMAP configurations and memory ceilings remain to be profiled.
+
+
+## Tables created and populated on demand
+
+`ce.ui.metricTableData(metrics, fields, cellIndex)` formats only the selected
+cell, preserving the legacy numeric/text conversion and older MATLAB NaN rule.
+The viewer no longer stores a string table for every cell in the batch. Visible
+metrics are read from current values rather than a session-initialization cache.
+The filtered/sorted cell list retains its existing behavior and preserves custom
+column headings when switching table modes.
+
+The Tags table is created on first opening its tab, then reused. Its checkboxes
+are populated from the active highlight/include/exclude state, including after
+failed-load restoration. Preference tags absent from the current recording no
+longer cause highlight rendering to access missing fields. When the Table data
+preference is None, the main table is also deferred until the user selects a
+visible table mode; an empty panel preserves the layout slot.
+
+`runTutorialViewerLoadSmoke(source, tableMode)` accepts initial table modes 1, 2
+and 3. It verifies initial widget counts, opening/reusing tables, custom columns,
+sorted row identity, cell selection, tag-filtered list rows, navigation, and
+restoring visible table values and tag state after a failed reload. A test-only
+tag is added to the temporary fixture; original tutorial files remain untouched.
+The harness explicitly cleans up dialog stubs so all three modes can run in one
+MATLAB process. These checks use PCA and do not cover every custom plot.
+
+The [table measurements](benchmarks/viewer-tables-2026-10-26.json) compare four
+runs per version in balanced order after warming both versions, using 1,510 cells.
+Median session initialization decreased from 357 ms to 281 ms; first-ready
+medians were 2.705 s and 2.567 s, with overlapping ranges. Navigation observations
+were about 264 ms for both versions, limited by the 250 ms timer polling interval.
+These results support reduced initialization work, not a broad navigation or
+startup-speed claim. The first opening of each deferred table still incurs its
+widget cost, and the filtered cell list is not virtualized.
+
+
+## Reinitialization and comparison loading
+
+Explicit reinitialization uses the current in-memory annotations and embedding.
+It refreshes prepared data while retaining dirty-cell tracking, undo history,
+selected cell, class selection, text/tag filters and comparison selections. It
+requires no discard prompt because it preserves curation. Preparation failures
+restore the previous metrics, view and RNG state; a successful reinitialization
+still allows undoing earlier edits. Initialization also no longer blanks unrelated
+text fields when a cell lacks animal metadata.
+
+Reference and ground-truth loading uses the same guarded operation boundary.
+`ce.io.readCellMetrics(file, variableName)` reads only `cell_metrics`,
+`reference_cell_metrics` or `groundTruth_cell_metrics`, validating cell identity.
+`ce.ui.prepareComparisonData` takes explicit preferences, axis bounds, log
+intervals and a smoothing kernel, and returns prepared metrics, display data and
+comparison limits without mutating the viewer. Its legacy histogram, smoothing,
+waveform and ACG formulas are preserved and compared to a frozen reference.
+
+A candidate is prepared before replacing an active comparison. Existing tabs and
+listboxes are reused. Rollback restores comparison data, axis bounds, list values,
+menu checks and selected tabs, and removes tabs created by an unsuccessful load.
+A failed or cancelled first load does not enable an empty overlay. Comparison
+loading does not discard primary-session annotations. Exploring a comparison as
+primary data uses the ordinary unsaved-change confirmation and rollback path.
+
+Selected comparison batches are cached through verified `ce.io.writeMat` only
+after preparation and control updates succeed. Cache-write failures restore the
+previous active comparison; existing files are protected by staged replacement.
+The established cache filenames, named variables and raw-cache representation
+remain unchanged. Reference selection can use the local paths returned by the
+selector; missing inputs retain the repository/download fallback. Downloads and
+copies are staged and validated before entering the per-session cache.
+
+The viewer smoke test runs an exact temporary copy of `CellExplorer.m`, keeping
+all comparison caches and catalogue files outside the repository. It exercises
+successful and failed reinitialization, undo, cancelled comparison selection,
+wrong-variable caches, malformed comparison preparation, cache-write failure,
+ground-truth selection controls, progress cancellation and declined/accepted
+exploration. It yields back to the main loop to render both comparison overlays.
+The ground-truth dialog's controls are real; its wait/selection is automated.
+
+Limits: rendering after commit remains in the legacy loop. Arbitrary custom
+callback side effects are outside rollback. The ground-truth catalogue retains
+its existing session-based selection and best-effort list-cache behavior.
+Successful per-session downloads may remain cached after later cancellation;
+this is not a multi-file transaction. Live database/network services, other MATLAB
+releases and every custom plot were not exercised.
+
+Validation on MATLAB R2024b Update 9: 186 component tests passed, and all three
+initial table modes passed the live smoke. Comparison preparation matched the
+frozen code exactly on 151 and 1,510 tutorial-derived cells. The ground-truth
+comparison fixture assigns a synthetic class to all cells; it tests preparation
+compatibility, not biological classification accuracy. Original session, spikes
+and metrics file hashes were unchanged.

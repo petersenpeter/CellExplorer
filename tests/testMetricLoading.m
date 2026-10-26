@@ -78,7 +78,7 @@ first = fixture; bad = first; bad.UID = [7 7];
 verifyError(testCase,@() assemble(first,bad),'ce:data:InvalidMetricIdentity');
 bad = first; bad.general.cellCount = 3;
 verifyError(testCase,@() assemble(first,bad),'ce:data:InvalidMetricIdentity');
-bad = first; bad.batchIDs = [1 1];
+bad = first; bad.batchIDs = [1 1]; bad.general.batch = {first.general};
 verifyError(testCase,@() assemble(first,bad),'ce:data:InvalidMetricIdentity');
 first.acg.narrow = zeros(3,2); bad = fixture; bad.acg.narrow = zeros(4,2);
 verifyError(testCase,@() assemble(first,bad),'ce:data:MetricShapeConflict');

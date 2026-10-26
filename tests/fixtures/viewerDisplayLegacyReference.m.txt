@@ -1,0 +1,83 @@
+function [cell_metrics,thetaBins] = viewerDisplayLegacyReference(cell_metrics,logIntervals)
+% Frozen from CellExplorer initializeSession before display-preparation extraction.
+UI.params.ACGLogIntervals = logIntervals;
+UI.BatchMode = isfield(cell_metrics.general,'batch');
+        step_size = [cellfun(@diff,cell_metrics.waveforms.time,'UniformOutput',false)];
+        cell_metrics.waveforms.time_zscored = [max(cellfun(@min, cell_metrics.waveforms.time)):min([step_size{:}]):min(cellfun(@max, cell_metrics.waveforms.time))];
+        
+        % Response curves
+        UI.x_bins.thetaPhase = [-1:0.05:1]*pi;
+        UI.x_bins.thetaPhase = UI.x_bins.thetaPhase(1:end-1)+diff(UI.x_bins.thetaPhase([1,2]))/2;
+        
+        % Generating extra fields if necessary
+        if ~cell_metrics.general.initialized | ~isfield(cell_metrics.waveforms,{'filt_zscored','filt_absolute'})
+            
+% Legacy status logging omitted from this numerical reference.
+            % waveform initialization
+            filtWaveform = [];
+            for i = 1:length(cell_metrics.waveforms.filt)
+                if isempty(cell_metrics.waveforms.filt{i}) || any(isnan(cell_metrics.waveforms.filt{i}))
+                    filtWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
+                else
+                    filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},cell_metrics.waveforms.time_zscored,'spline',nan);
+                end
+            end
+            cell_metrics.waveforms.filt_absolute = filtWaveform;
+            cell_metrics.waveforms.filt_zscored = (filtWaveform-mean(filtWaveform,'omitnan'))./std(filtWaveform,'omitnan');
+            
+            % 'All raw waveforms'
+            if isfield(cell_metrics.waveforms,'raw')
+            rawWaveform = [];
+            for i = 1:length(cell_metrics.waveforms.raw)
+                if isempty(cell_metrics.waveforms.raw{i}) || any(isnan(cell_metrics.waveforms.raw{i}))
+                    rawWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
+                else
+                    rawWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.raw{i},cell_metrics.waveforms.time_zscored,'spline',nan);
+                end
+            end
+            cell_metrics.waveforms.raw_absolute = rawWaveform;
+            cell_metrics.waveforms.raw_zscored = (rawWaveform-mean(rawWaveform,'omitnan'))./std(rawWaveform,'omitnan');
+            clear rawWaveform
+            end
+            
+            % ACGs
+            cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide);
+            cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow);
+            
+            if isfield(cell_metrics.acg,'log10')
+            cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
+            cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.params.ACGLogIntervals)');
+            end
+            
+            if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')
+            cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
+            cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.params.ACGLogIntervals)');
+            end
+            
+            if isfield(cell_metrics.responseCurves,'thetaPhase')
+                thetaPhaseCurves = nan(length(UI.x_bins.thetaPhase),cell_metrics.general.cellCount);
+                for i = 1:length(cell_metrics.responseCurves.thetaPhase)
+                    if isempty(cell_metrics.responseCurves.thetaPhase{i})
+                        cell_metrics.responseCurves.thetaPhase{i} = nan(size(UI.x_bins.thetaPhase'));
+                    end
+                    if isempty(cell_metrics.responseCurves.thetaPhase{i}) || any(isnan(cell_metrics.responseCurves.thetaPhase{i}))
+                        thetaPhaseCurves(:,i) = nan(size(UI.x_bins.thetaPhase));
+                    elseif UI.BatchMode
+                        thetaPhaseCurves(:,i) = interp1(cell_metrics.general.batch{cell_metrics.batchIDs(i)}.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i}',UI.x_bins.thetaPhase,'spline',nan);
+                    elseif isfield(cell_metrics.general,'responseCurves')
+                        thetaPhaseCurves(:,i) = interp1(cell_metrics.general.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i},UI.x_bins.thetaPhase,'spline',nan);
+                    else
+                        thetaPhaseCurves(:,i) = cell_metrics.responseCurves.thetaPhase{i};
+                    end
+                end
+                cell_metrics.responseCurves.thetaPhase_zscored = thetaPhaseCurves;%(thetaPhaseCurves-mean(thetaPhaseCurves,'omitnan'))./std(thetaPhaseCurves,'omitnan');
+                clear thetaPhaseCurves
+            end
+        end
+        
+thetaBins = UI.x_bins.thetaPhase;
+end
+
+function data = normalize_range(data)
+data = data./range(data);
+end

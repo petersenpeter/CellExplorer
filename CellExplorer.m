@@ -149,11 +149,12 @@ classes2plot = []; classes2plotSubset = []; ii = []; history_classification = []
 cell_class_count = [];  plotOptions = ''; colorMenu = []; GroupVal = 1; ColorVal = 1; 
 plotAcgFit = 0; plotAcgYLog = 0; plotAcgZscore = 0; clasLegend = 0; groups2plot = []; groups2plot2 = []; connectivityGraph = []; 
 tSNE_metrics = [];  spikesPlots = {}; gauss2d = ce_gausswin(10)*ce_gausswin(10)'; gauss2d = 1.*gauss2d/sum(gauss2d(:));
-idx_textFilter = []; freeText = {''}; table_metrics = []; table_fieldsNames = {}; tableDataOrder = []; 
+idx_textFilter = []; freeText = {''}; table_fieldsNames = {}; tableDataOrder = [];
 groundTruthSelection = []; subsetGroundTruth = []; groundTruthCelltypesList = {''}; db = {}; gt = {}; 
 customPlotOptions = {}; timerInterface = tic; timerHover = tic; highlightCurrentCell = true;
 
 spikes = []; events = []; states = [];
+cell_metrics = []; metricLoadInProgress = false;
 referenceData=[]; reference_cell_metrics = []; groundTruth_cell_metrics = []; groundTruthData=[]; 
 
 createStruct1.Interpreter = 'none'; createStruct1.WindowStyle = 'modal';
@@ -242,7 +243,7 @@ elseif ~isempty(id) || ~isempty(sessionName) || ~isempty(session)
         end
         try
             LoadSession;
-            if ~exist('cell_metrics','var')
+            if isempty(cell_metrics)
                 return
             end
         catch
@@ -636,7 +637,7 @@ function updateUI
     % Updating table for selected cell
     updateTableColumnWidth
     if UI.preferences.metricsTable==1 && highlightCurrentCell
-        UI.table.Data(:,2) = table_metrics(:,ii);
+        UI.table.Data = ce.ui.metricTableData(cell_metrics,table_fieldsNames,ii);
     elseif UI.preferences.metricsTable==2 && highlightCurrentCell
         updateCellTableData;
     end
@@ -1229,7 +1230,7 @@ function updateUI
                 if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
                     fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj}) && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
                             idx_groupData1 = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX(idx_groupData), plotY(idx_groupData), plotZ(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
@@ -3661,7 +3662,7 @@ end
                 if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
                     fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj}) && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
                             idx_groupData = intersect(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj}));
                             line(plotX1(idx_groupData), plotY1(idx_groupData),'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'HitTest','off','LineWidth', 1.5, 'MarkerSize',8);
                         end
@@ -4123,34 +4124,10 @@ end
     end
 
     function loadFromFile(~,~)
-        [file,path] = uigetfile('*.mat','Please select a cell_metrics.mat file','.cell_metrics.cellinfo.mat');
-        if ~isequal(file,0)
-            cd(path)
-            load(file);
-            cell_metrics.general.basepath = path;
-            temp = strsplit(file,'.');
-            if length(temp)==4
-                cell_metrics.general.saveAs = temp{end-2};
-            else
-                cell_metrics.general.filename = file;
-            end
-            try
-                initializeSession;
-            catch
-                if isfield(UI,'panel')
-                    MsgLog(['Error loading cell metrics:' path, file],2)
-                else
-                    disp(['Error loading cell metrics:' path, file]);
-                end
-                return
-            end
-            uiresume(UI.fig);
-            if isfield(UI,'panel')
-                MsgLog('Session loaded succesful',2)
-            else
-                disp(['Session loaded succesful']);
-            end
-        end
+        if metricLoadInProgress, return; end
+        [file,folder] = uigetfile('*.mat','Please select a cell_metrics.mat file','.cell_metrics.cellinfo.mat');
+        if isequal(file,0), return; end
+        replaceMetricSelection(@() ce.ui.readMetricSelection(fullfile(folder,file)),'Load cell metrics',false);
     end
 
     function highlightExcitatoryCells(~,~)
@@ -4202,47 +4179,182 @@ end
     end
 
     function reloadCellMetrics(~,~)
-        answer = questdlg('Are you sure you want to reload the cell metrics?', 'Reload cell metrics', 'Yes','Cancel','Cancel');
-        if strcmp(answer,'Yes') && UI.BatchMode
-            ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
-            try
-                cell_metrics1 = loadCellMetricsBatch('basenames',cell_metrics.general.basenames,'basepaths',cell_metrics.general.basepaths,'waitbar_handle',ce_waitbar);
-                if ~isempty(cell_metrics1)
-                    cell_metrics = cell_metrics1;
-                else
-                    return
-                end
-                statusUpdate('Initializing session(s)')
-                initializeSession
-                if ishandle(ce_waitbar)
-                    close(ce_waitbar)
-                end
-                uiresume(UI.fig);
-                MsgLog([num2str(length(cell_metrics.general.basenames)),' session(s) reloaded succesfully'],2);
-            catch
-                MsgLog(['Failed to reload dataset from database: ',strjoin(cell_metrics.general.basenames)],4);
-            end
-        elseif strcmp(answer,'Yes')
-            if isfield(cell_metrics.general,'basepath') && exist(cell_metrics.general.basepath,'dir')
-                path1 = cell_metrics.general.basepath;
-                file = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename,'.cell_metrics.cellinfo.mat']);
-            end
-            if exist(file,'file')
-                load(file);
-                initializeSession;
-                uiresume(UI.fig);
-                cell_metrics.general.basepath = path1;
-                temp = strsplit(file,'.');
-                if length(temp)==4
-                    cell_metrics.general.saveAs = temp{end-2};
-                else
-                    cell_metrics.general.filename = file;
-                end
-                MsgLog('Session loaded succesful',2)
-            else
-                MsgLog('Could not reload cell_metrics. cell_metrics file not found.',2)
+        replaceMetricSelection(@readReloadSelection,'Reload cell metrics',true);
+    end
+
+    function candidate = readReloadSelection
+        [progress,progressCleanup] = ce.ui.metricLoadProgress(UI.BatchMode,[]); %#ok<ASGLU>
+        candidate = ce.ui.reloadMetricSelection(cell_metrics,progress);
+    end
+
+    function result = replaceMetricSelection(reader,action,confirmClean)
+        result = runMetricOperation(reader,@applyMetricSession,action,@confirmMetricReplacement);
+        function allowed = confirmMetricReplacement
+            allowed = true;
+            if ~isempty(classificationTrackChanges)
+                answer = questdlg(sprintf('%d cells have unsaved changes. Discard those changes and continue?', ...
+                    numel(unique(classificationTrackChanges))),action,'Discard changes','Cancel','Cancel');
+                allowed = strcmp(answer,'Discard changes');
+            elseif confirmClean
+                answer = questdlg('Reload the cell metrics from disk?',action,'Reload','Cancel','Cancel');
+                allowed = strcmp(answer,'Reload');
             end
         end
+    end
+
+    function result = runMetricOperation(reader,apply,action,confirm)
+        if metricLoadInProgress
+            result = struct('status','cancelled'); return
+        end
+        metricLoadInProgress = true;
+        loadingCleanup = onCleanup(@finishMetricLoad); %#ok<NASGU>
+        result = ce.ui.tryMetricLoad(reader,confirm, ...
+            @captureMetricSession,apply,@restoreMetricSession);
+        if strcmp(result.status,'loaded')
+            if isfield(UI,'panel'), MsgLog([action,': complete.'],1); end
+            if isgraphics(UI.fig), uiresume(UI.fig); end
+        elseif strcmp(result.status,'cancelled')
+            if isfield(UI,'panel'), MsgLog([action,': cancelled. Current metrics and edits retained.'],1); end
+        else
+            message = [action,' failed: ',result.error.message];
+            if ~isempty(result.restoreError)
+                message = [message,' View restoration also failed: ',result.restoreError.message, ...
+                    '. Metrics and edit history were restored; save your work before reopening the viewer.'];
+            else
+                message = [message,' Current metrics and edits retained.'];
+            end
+            if isfield(UI,'panel'), MsgLog(message,4); else, warning('ce:ui:MetricLoadFailed','%s',message); end
+        end
+    end
+
+    function finishMetricLoad
+        metricLoadInProgress = false;
+    end
+
+    function applyMetricSession(candidate)
+        cell_metrics = candidate;
+        initializeSession;
+        if ~UI.BatchMode
+            basepath = cell_metrics.general.basepath;
+            basename = cell_metrics.general.basename;
+        end
+    end
+
+    function snapshot = captureMetricSession
+        snapshot.cell_metrics = cell_metrics;
+        snapshot.UI = UI;
+        snapshot.ii = ii;
+        snapshot.history_classification = history_classification;
+        snapshot.classificationTrackChanges = classificationTrackChanges;
+        snapshot.clusClas = clusClas;
+        snapshot.colored_string = colored_string;
+        snapshot.cell_class_count = cell_class_count;
+        snapshot.groups_ids = groups_ids;
+        snapshot.meanCCG = meanCCG;
+        snapshot.freeText = freeText;
+        snapshot.idx_textFilter = idx_textFilter;
+        snapshot.table_fieldsNames = table_fieldsNames;
+        snapshot.plotX = plotX;
+        snapshot.plotY = plotY;
+        snapshot.plotZ = plotZ;
+        snapshot.plotMarkerSize = plotMarkerSize;
+        snapshot.classes2plot = classes2plot;
+        snapshot.classes2plotSubset = classes2plotSubset;
+        snapshot.tSNE_metrics = tSNE_metrics;
+        snapshot.plotOptions = plotOptions;
+        snapshot.colorMenu = colorMenu;
+        snapshot.ColorVal = ColorVal;
+        snapshot.GroupVal = GroupVal;
+        snapshot.clasLegend = clasLegend;
+        snapshot.spikes = spikes;
+        snapshot.events = events;
+        snapshot.spikesPlots = spikesPlots;
+        snapshot.customPlotOptions = customPlotOptions;
+        snapshot.subsetGroundTruth = subsetGroundTruth;
+        snapshot.reference_cell_metrics = reference_cell_metrics;
+        snapshot.referenceData = referenceData;
+        snapshot.groundTruth_cell_metrics = groundTruth_cell_metrics;
+        snapshot.groundTruthData = groundTruthData;
+        snapshot.fig2_axislimit_x = fig2_axislimit_x;
+        snapshot.fig2_axislimit_y = fig2_axislimit_y;
+        snapshot.fig3_axislimit_x = fig3_axislimit_x;
+        snapshot.fig3_axislimit_y = fig3_axislimit_y;
+        snapshot.fig2_axislimit_x_reference = fig2_axislimit_x_reference;
+        snapshot.fig2_axislimit_y_reference = fig2_axislimit_y_reference;
+        snapshot.fig2_axislimit_x_groundTruth = fig2_axislimit_x_groundTruth;
+        snapshot.fig2_axislimit_y_groundTruth = fig2_axislimit_y_groundTruth;
+        snapshot.hover2highlight = hover2highlight;
+        snapshot.basepath = basepath;
+        snapshot.basename = basename;
+        snapshot.view = ce.ui.captureMetricView(UI.fig);
+        snapshot.randomState = rng; snapshot.directory = pwd;
+    end
+
+    function restoreMetricSession(snapshot)
+        % Restore all model state first, even if graphics restoration later fails.
+        newComparisonTabs = gobjects(0);
+        for key = {'referenceData','groundTruthData'}
+            if isfield(UI,'tabs') && isfield(UI.tabs,key{1}) && (~isfield(snapshot.UI,'tabs') || ~isfield(snapshot.UI.tabs,key{1}) || ~isequal(UI.tabs.(key{1}),snapshot.UI.tabs.(key{1})))
+                newComparisonTabs(end+1) = UI.tabs.(key{1});
+            end
+        end
+        currentTagButtons = [];
+        if isfield(UI,'togglebutton') && isfield(UI.togglebutton,'tag'), currentTagButtons = UI.togglebutton.tag; end
+        cell_metrics = snapshot.cell_metrics;
+        UI = snapshot.UI;
+        ii = snapshot.ii;
+        history_classification = snapshot.history_classification;
+        classificationTrackChanges = snapshot.classificationTrackChanges;
+        clusClas = snapshot.clusClas;
+        colored_string = snapshot.colored_string;
+        cell_class_count = snapshot.cell_class_count;
+        groups_ids = snapshot.groups_ids;
+        meanCCG = snapshot.meanCCG;
+        freeText = snapshot.freeText;
+        idx_textFilter = snapshot.idx_textFilter;
+        table_fieldsNames = snapshot.table_fieldsNames;
+        plotX = snapshot.plotX;
+        plotY = snapshot.plotY;
+        plotZ = snapshot.plotZ;
+        plotMarkerSize = snapshot.plotMarkerSize;
+        classes2plot = snapshot.classes2plot;
+        classes2plotSubset = snapshot.classes2plotSubset;
+        tSNE_metrics = snapshot.tSNE_metrics;
+        plotOptions = snapshot.plotOptions;
+        colorMenu = snapshot.colorMenu;
+        ColorVal = snapshot.ColorVal;
+        GroupVal = snapshot.GroupVal;
+        clasLegend = snapshot.clasLegend;
+        spikes = snapshot.spikes;
+        events = snapshot.events;
+        spikesPlots = snapshot.spikesPlots;
+        customPlotOptions = snapshot.customPlotOptions;
+        subsetGroundTruth = snapshot.subsetGroundTruth;
+        reference_cell_metrics = snapshot.reference_cell_metrics;
+        referenceData = snapshot.referenceData;
+        groundTruth_cell_metrics = snapshot.groundTruth_cell_metrics;
+        groundTruthData = snapshot.groundTruthData;
+        fig2_axislimit_x = snapshot.fig2_axislimit_x;
+        fig2_axislimit_y = snapshot.fig2_axislimit_y;
+        fig3_axislimit_x = snapshot.fig3_axislimit_x;
+        fig3_axislimit_y = snapshot.fig3_axislimit_y;
+        fig2_axislimit_x_reference = snapshot.fig2_axislimit_x_reference;
+        fig2_axislimit_y_reference = snapshot.fig2_axislimit_y_reference;
+        fig2_axislimit_x_groundTruth = snapshot.fig2_axislimit_x_groundTruth;
+        fig2_axislimit_y_groundTruth = snapshot.fig2_axislimit_y_groundTruth;
+        hover2highlight = snapshot.hover2highlight;
+        basepath = snapshot.basepath;
+        basename = snapshot.basename;
+        rng(snapshot.randomState);
+        if ~strcmp(pwd,snapshot.directory), cd(snapshot.directory); end
+        if isfield(UI,'tabs') && isfield(UI.tabs,'tags')
+            % initTags may have replaced the handles after the model snapshot.
+            UI.togglebutton.tag = currentTagButtons(isgraphics(currentTagButtons));
+            initTags;
+            updateTags;
+        end
+        delete(newComparisonTabs(isgraphics(newComparisonTabs)));
+        ce.ui.restoreMetricView(snapshot.view);
     end
 
     function restoreBackup(~,~)
@@ -4628,6 +4740,12 @@ end
     end
 
     function showReferenceData(src,~)
+        if metricLoadInProgress, return; end
+        if src.Position > 1 && isempty(reference_cell_metrics)
+            cache = fullfile(fileparts(which('CellExplorer.m')),'+referenceData','reference_cell_metrics.cellinfo.mat');
+            if isfile(cache), loaded = loadReferenceData(true); else, loaded = defineReferenceData; end
+            if ~loaded, return; end
+        end
         if src.Position == 1
             UI.preferences.referenceData = 'None';
             UI.menu.referenceData.ops(1).Checked = 'on';
@@ -4658,12 +4776,6 @@ end
             UI.menu.referenceData.ops(4).Checked = 'on';
         end
         if ~isfield(UI.tabs,'referenceData') && src.Position > 1
-            if isempty(reference_cell_metrics)
-                out = loadReferenceData;
-                if ~out
-                    defineReferenceData;
-                end
-            end
             UI.tabs.referenceData = uitab(UI.panel.tabgroup2,'Title','Reference');
             UI.listbox.referenceData = uicontrol('Parent',UI.tabs.referenceData,'Style','listbox','Position',getpixelposition(UI.tabs.referenceData),'Units','normalized','String',referenceData.cellTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)referenceDataSelection,'KeyPressFcn', {@keyPress});
             UI.panel.tabgroup2.SelectedTab = UI.tabs.referenceData;
@@ -4690,6 +4802,12 @@ end
     end
 
     function showGroundTruthData(src,~)
+        if metricLoadInProgress, return; end
+        if src.Position > 1 && isempty(groundTruth_cell_metrics)
+            cache = fullfile(fileparts(which('CellExplorer.m')),'+groundTruthData','groundTruth_cell_metrics.cellinfo.mat');
+            if isfile(cache), loaded = loadGroundTruthData(true); else, loaded = defineGroundTruthData; end
+            if ~loaded, return; end
+        end
         if src.Position == 1
             UI.preferences.groundTruthData = 'None';
             UI.menu.groundTruth.ops(1).Checked = 'on';
@@ -4721,12 +4839,6 @@ end
         end
         
         if ~isfield(UI.tabs,'groundTruthData') && src.Position > 1
-            if isempty(groundTruth_cell_metrics)
-                out = loadGroundTruthData;
-                if ~out
-                    defineGroundTruthData;
-                end
-            end
             UI.tabs.groundTruthData = uitab(UI.panel.tabgroup2,'Title','GroundTruth');
             UI.listbox.groundTruthData = uicontrol('Parent',UI.tabs.groundTruthData,'Style','listbox','Position',getpixelposition(UI.tabs.groundTruthData),'Units','normalized','String',groundTruthData.groundTruthTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)groundTruthDataSelection,'KeyPressFcn', {@keyPress});
             UI.panel.tabgroup2.SelectedTab = UI.tabs.groundTruthData;
@@ -4738,7 +4850,7 @@ end
 
     function initGroundTruthTab
         % Defining Cell count for listbox
-        if isfield(UI.listbox,'groundTruthData')
+        if isfield(UI.listbox,'groundTruthData') && isgraphics(UI.listbox.groundTruthData)
             UI.listbox.groundTruthData.String = strcat(groundTruthData.groundTruthTypes,' (',groundTruthData.counts,')');
             if ~isfield(groundTruthData,'selection')
                 groundTruthData.selection = 1:length(groundTruthData.groundTruthTypes);
@@ -4752,40 +4864,65 @@ end
         uiresume(UI.fig);
     end
 
-    function out = loadReferenceData
-        [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
-        referenceData_path = fullfile(referenceData_path,'+referenceData','reference_cell_metrics.cellinfo.mat');
-        if exist(referenceData_path,'file')
-            load(referenceData_path);
-            if ~isempty(reference_cell_metrics)
-                [reference_cell_metrics,referenceData,fig2_axislimit_x_reference,fig2_axislimit_y_reference] = initializeReferenceData(reference_cell_metrics,'reference');
-                out = true;
-            else
-                out = false;
-            end
-        else
-            out = false;
+    function out = loadReferenceData(showTab)
+        if nargin < 1, showTab = false; end
+        file = fullfile(fileparts(which('CellExplorer.m')),'+referenceData','reference_cell_metrics.cellinfo.mat');
+        out = false;
+        if isfile(file)
+            result = replaceComparison(@() ce.io.readCellMetrics(file,'reference_cell_metrics'),'reference','',showTab);
+            out = strcmp(result.status,'loaded');
         end
     end
 
-    function out = loadGroundTruthData
-        [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
-        referenceData_path = fullfile(referenceData_path,'+groundTruthData','groundTruth_cell_metrics.cellinfo.mat');
-        if exist(referenceData_path,'file')
-            load(referenceData_path);
-            [groundTruth_cell_metrics,groundTruthData,fig2_axislimit_x_groundTruth,fig2_axislimit_y_groundTruth] = initializeReferenceData(groundTruth_cell_metrics,'groundTruth');
-            out = true;
-        else
-            out = false;
+    function out = loadGroundTruthData(showTab)
+        if nargin < 1, showTab = false; end
+        file = fullfile(fileparts(which('CellExplorer.m')),'+groundTruthData','groundTruth_cell_metrics.cellinfo.mat');
+        out = false;
+        if isfile(file)
+            result = replaceComparison(@() ce.io.readCellMetrics(file,'groundTruth_cell_metrics'),'groundTruth','',showTab);
+            out = strcmp(result.status,'loaded');
+        end
+    end
+
+    function result = replaceComparison(reader,kind,cacheFile,showTab)
+        result = runMetricOperation(reader,@applyComparison,['Load ',kind,' data'],@() true);
+        function applyComparison(candidate)
+            % Prepare in local outputs before mutating any active comparison.
+            [prepared,data,axisX,axisY] = initializeReferenceData(candidate,kind);
+            if strcmp(kind,'reference')
+                reference_cell_metrics = prepared;
+                referenceData = data;
+                fig2_axislimit_x_reference = axisX;
+                fig2_axislimit_y_reference = axisY;
+                tabName = 'referenceData'; title = 'Reference';
+                labels = data.cellTypes; selectionCallback = @referenceDataSelection;
+                variableName = 'reference_cell_metrics';
+            else
+                groundTruth_cell_metrics = prepared;
+                groundTruthData = data;
+                fig2_axislimit_x_groundTruth = axisX;
+                fig2_axislimit_y_groundTruth = axisY;
+                tabName = 'groundTruthData'; title = 'GroundTruth';
+                labels = data.groundTruthTypes; selectionCallback = @groundTruthDataSelection;
+                variableName = 'groundTruth_cell_metrics';
+            end
+            if showTab && (~isfield(UI.tabs,tabName) || ~isgraphics(UI.tabs.(tabName)))
+                UI.tabs.(tabName) = uitab(UI.panel.tabgroup2,'Title',title);
+                UI.listbox.(tabName) = uicontrol('Parent',UI.tabs.(tabName),'Style','listbox', ...
+                    'Units','normalized','Position',[0 0 1 1],'String',labels,'Max',99,'Min',1, ...
+                    'Value',1,'Callback',selectionCallback,'KeyPressFcn',{@keyPress});
+            end
+            if strcmp(kind,'reference'), initReferenceDataTab; else, initGroundTruthTab; end
+            if showTab, UI.panel.tabgroup2.SelectedTab = UI.tabs.(tabName); end
+            % Final fallible step: failed writes preserve the prior cache and view.
+            % Keep the established raw cache representation and variable name.
+            if ~isempty(cacheFile), ce.io.writeMat(cacheFile,struct(variableName,candidate)); end
         end
     end
 
     function exploreGroundTruth(~,~)
         if ~isempty(groundTruth_cell_metrics)
-            cell_metrics = groundTruth_cell_metrics;
-            initializeSession;
-            uiresume(UI.fig);
-            MsgLog('Ground truth data loaded as primary data',2)
+            replaceMetricSelection(@() groundTruth_cell_metrics,'Explore ground truth data',false);
         else
             MsgLog('Ground truth data must be loaded first before exploring',4)
         end
@@ -4793,10 +4930,7 @@ end
 
     function exploreReferenceData(~,~)
         if ~isempty(reference_cell_metrics)
-            cell_metrics = reference_cell_metrics;
-            initializeSession;
-            uiresume(UI.fig);
-            MsgLog('Reference data loaded as primary data',2)
+            replaceMetricSelection(@() reference_cell_metrics,'Explore reference data',false);
         else
             MsgLog('Reference data must be loaded first before exploring',4)
         end
@@ -4932,6 +5066,9 @@ end
     end
     
     function updateGrouptagsTable
+        if ~isfield(UI,'tables') || ~isfield(UI.tables,'grouptags') || isempty(UI.tables.grouptags) || ~isgraphics(UI.tables.grouptags)
+            return
+        end
         for i = 1:numel(UI.preferences.tags)
             if isfield(UI.groupData1,'tags') && isfield(UI.groupData1.tags,'highlight') && isfield(UI.groupData1.tags.highlight,UI.preferences.tags{i})
                 UI.tables.grouptags.Data{i,2} = UI.groupData1.tags.highlight.(UI.preferences.tags{i});
@@ -5268,22 +5405,27 @@ end
         end
     end
 
-    function defineGroundTruthData(~,~)
+    function out = defineGroundTruthData(~,~)
+        out = false;
+        if metricLoadInProgress, return; end
         loadDB = {};
-        if isempty(groundTruth_cell_metrics)
-            out = loadGroundTruthData;
-        end
         [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
         referenceData_path = fullfile(referenceData_path,'+groundTruthData');
         listing = dir(fullfile(referenceData_path,'*.cell_metrics.cellinfo.mat'));
         listing = {listing.name};
         listing = cellfun(@(x) x(1:end-26), listing(:),'uni',0);
-        if isempty(groundTruth_cell_metrics) || any(ismember(listing',groundTruth_cell_metrics.sessionName)==0)
-            ReloadSessionlist;
-        elseif isempty(gt) && exist(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'file')
-            load(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'gt');
-        elseif isempty(gt)
-            ReloadSessionlist;
+        try
+            if isempty(groundTruth_cell_metrics) || any(ismember(listing',groundTruth_cell_metrics.sessionName)==0)
+                ReloadSessionlist;
+            elseif isempty(gt) && exist(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'file')
+                stored = load(fullfile(referenceData_path,'groundTruth_cell_list.mat'),'gt');
+                gt = stored.gt;
+            elseif isempty(gt)
+                ReloadSessionlist;
+            end
+        catch exception
+            MsgLog(['Ground truth catalogue could not be loaded: ',exception.message],4);
+            return
         end
         drawnow nocallbacks;
         loadDB.dialog = dialog('Position', [300, 300, 840, 565],'Name','CellExplorer: ground truth data','WindowStyle','modal', 'resize', 'on','visible','off'); movegui(loadDB.dialog,'center'), set(loadDB.dialog,'visible','on')
@@ -5387,187 +5529,89 @@ end
         end
         
         function CloseDB_dialog
+            if metricLoadInProgress, return; end
             indx = cell2mat(cellfun(@str2double,loadDB.sessionList.Data(find([loadDB.sessionList.Data{:,1}])',2),'un',0));
-            if ~isempty(indx)
-                list_Session = gt.menu_name(indx);
-                list_UID = gt.menu_UID(indx);
-                delete(loadDB.dialog);
-                listSession2 = unique(list_Session);
-                referenceData_path1 = cell(1,length(listSession2));
-                referenceData_path1(:) = {referenceData_path};
-                % Loading metrics
-                groundTruth_cell_metrics = loadCellMetricsBatch('basenames',listSession2,'basepaths',referenceData_path1); % 'waitbar_handle',ce_waitbar
-                
-                % Saving batch metrics
-                save(fullfile(referenceData_path,'groundTruth_cell_metrics.cellinfo.mat'),'groundTruth_cell_metrics');
-                
-                % Initializing
-                [groundTruth_cell_metrics,groundTruthData] = initializeReferenceData(groundTruth_cell_metrics,'groundTruth');
-                if isfield(UI.tabs,'groundTruthData')
-                    delete(UI.tabs.groundTruthData);
-                    UI.tabs = rmfield(UI.tabs,'groundTruthData');
-                end
-                if isfield(UI.listbox,'groundTruthData')
-                    delete(UI.listbox.groundTruthData);
-                    UI.listbox = rmfield(UI.listbox,'groundTruthData');
-                end
-                UI.tabs.groundTruthData = uitab(UI.panel.tabgroup2,'Title','GroundTruth');
-                UI.listbox.groundTruthData = uicontrol('Parent',UI.tabs.groundTruthData,'Style','listbox','Position',getpixelposition(UI.tabs.groundTruthData),'Units','normalized','String',groundTruthData.groundTruthTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)groundTruthDataSelection,'KeyPressFcn', {@keyPress});
-                UI.panel.tabgroup2.SelectedTab = UI.tabs.groundTruthData;
-                initGroundTruthTab
-                uiresume(UI.fig);
-            else
-                delete(loadDB.dialog);
-            end
-            if ishandle(UI.fig)
-                uiresume(UI.fig);
-            end
+            if isempty(indx), delete(loadDB.dialog); return; end
+            listSession2 = unique(gt.menu_name(indx));
+            paths = repmat({referenceData_path},size(listSession2));
+            result = replaceComparison(@() loadCellMetricsBatch('basenames',listSession2, ...
+                'basepaths',paths), 'groundTruth', ...
+                fullfile(referenceData_path,'groundTruth_cell_metrics.cellinfo.mat'),true);
+            out = strcmp(result.status,'loaded');
+            if out, delete(loadDB.dialog); end
         end
-        
+
         function  CancelDB_dialog
             % Closes the dialog
             delete(loadDB.dialog);
         end
     end
 
-    function defineReferenceData(~,~)
-        % Load reference data from NYU, through either local or internet connection
-        % Dialog is shown with sessions from the database with calculated cell metrics.
-        % Then selected sessions are loaded from the database
-        if isempty(reference_cell_metrics)
-            out = loadReferenceData;
-            ref_sessionNames = '';
-        end
-        
-        if ~isempty(reference_cell_metrics)
+    function out = defineReferenceData(~,~)
+        out = false;
+        if metricLoadInProgress, return; end
+        ref_sessionNames = {};
+        if ~isempty(reference_cell_metrics) && isfield(reference_cell_metrics,'sessionName')
             ref_sessionNames = unique(reference_cell_metrics.sessionName);
         end
-        
-        [basenames,basepaths,exitMode] = gui_db_sessions(ref_sessionNames,[],false);
-        
-        if ~isempty(basenames)
-            % Loading multiple sessions
-            if isempty(db) && exist('db_cell_metrics_session_list.mat','file')
-                load('db_cell_metrics_session_list.mat','db')
-            elseif isempty(db)
-                db = db_load_sessionlist;
-            end
-            i_db_subset_all = find(ismember(db.sessionName,basenames));
-            basenames = db.sessionName(i_db_subset_all);
-            
-            
-            % Setting paths from reference data folder/nyu share
-            [referenceData_path,~,~] = fileparts(which('CellExplorer.m'));
-            if ~exist(fullfile(referenceData_path,'+referenceData'), 'dir')
-                mkdir(referenceData_path,'+referenceData');
-            end
-            referenceData_path = fullfile(referenceData_path,'+referenceData');
-            nyu_url = 'https://buzsakilab.nyumc.org/datasets/';
-            
-            ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading reference data');
-            
-            if isempty(db_settings.repositories)
-                db_settings.repositories.random576 = '';
-            end
-            for i_db = 1:length(i_db_subset_all)
-                i_db2 = find(strcmp(basenames{i_db},cellfun(@(X) X.name,db.sessions,'UniformOutput',0)));
-                if ~any(strcmp(db.sessions{i_db2}.repositories{1},fieldnames(db_settings.repositories))) && ~strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
-                    MsgLog(['The respository ', db.sessions{i_db2}.repositories{1} ,' has not been defined on this computer. Please edit db_local_repositories.m and provide the path'],4)
-%                     edit db_local_repositories.m
-                    return
+        try
+            [names,paths,~] = gui_db_sessions(ref_sessionNames,[],false);
+        catch exception
+            MsgLog(['Reference selection failed: ',exception.message],4); return
+        end
+        if isempty(names), return; end
+        referencePath = fullfile(fileparts(which('CellExplorer.m')),'+referenceData');
+        result = replaceComparison(@readSelectedReference,'reference', ...
+            fullfile(referencePath,'reference_cell_metrics.cellinfo.mat'),true);
+        out = strcmp(result.status,'loaded');
+
+        function candidate = readSelectedReference
+            if ~isfolder(referencePath), mkdir(referencePath); end
+            [progress,progressCleanup] = ce.ui.metricLoadProgress(true,[]); %#ok<ASGLU>
+            resolved = repmat({referencePath},size(names));
+            for index = 1:numel(names)
+                progress((index-1)/(numel(names)+1),['Resolving reference: ',names{index}]);
+                file = [names{index},'.cell_metrics.cellinfo.mat'];
+                if isfile(fullfile(referencePath,file)), continue; end
+                if numel(paths)>=index && isfile(fullfile(paths{index},file))
+                    resolved{index} = paths{index}; continue
                 end
-                
-                db_basepath{i_db} = referenceData_path;
-                if ~exist(fullfile(db_basepath{i_db},[basenames{i_db},'.cell_metrics.cellinfo.mat']),'file')
-                    waitbar((i_db-1)/length(i_db_subset_all),ce_waitbar,['Downloading missing reference data : ' basenames{i_db}]);
-                    Investigator_name = strsplit(db.sessions{i_db2}.investigator,' ');
-                    path_Investigator = [Investigator_name{2},Investigator_name{1}(1)];
-                    filename = fullfile(referenceData_path,[basenames{i_db},'.cell_metrics.cellinfo.mat']);
-                    
-                    if ~any(strcmp(db.sessions{i_db2}.repositories{1},fieldnames(db_settings.repositories))) && strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
-                        url = [nyu_url,path_Investigator,'/',db.sessions{i_db2}.animal,'/', basenames{i_db},'/',[basenames{i_db},'.cell_metrics.cellinfo.mat']];
-                        options = weboptions('Timeout', 30);
-                        try
-                            outfilename = websave(filename,url,options);
-                        catch
-                            disp(['Failed to download cell metrics file: ' url])
-                        end
+                if isempty(db)
+                    if isfile('db_cell_metrics_session_list.mat')
+                        stored = load('db_cell_metrics_session_list.mat','db'); db = stored.db;
                     else
-                        if strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_Datasets')
-                            url = fullfile(db_settings.repositories.(db.sessions{i_db2}.repositories{1}), path_Investigator,db.sessions{i_db2}.animal, db.sessions{i_db2}.name);
-                        elseif strcmp(db.sessions{i_db2}.repositories{1},'NYUshare_AllenInstitute')
-                            url = fullfile(db_settings.repositories.(db.sessions{i_db2}.repositories{1}), db.sessions{i_db2}.name);
-                        else
-                            url = fullfile(db_settings.repositories.(db.sessions{i_db2}.repositories{1}), db.sessions{i_db2}.animal, db.sessions{i_db2}.name);
-                        end
-                        url = fullfile(url,[basenames{i_db},'.cell_metrics.cellinfo.mat']);
-                        status = copyfile(url,filename);
-                        if ~status
-                            MsgLog(['Copying cell metrics failed: ' url],4)
-                            return
-                        end
+                        db = db_load_sessionlist;
                     end
                 end
-            end
-            
-            cell_metrics1 = loadCellMetricsBatch('basenames',basenames,'basepaths',db_basepath,'waitbar_handle',ce_waitbar);
-            if ~isempty(cell_metrics1)
-                reference_cell_metrics = cell_metrics1;
-            else
-                return
-            end
-            
-            if ishandle(ce_waitbar)
-                waitbar(1,ce_waitbar,'Initializing session(s)');
-            else
-                disp(['Initializing session(s)']);
-            end
-            save(fullfile(referenceData_path,'reference_cell_metrics.cellinfo.mat'),'reference_cell_metrics');
-            
-            [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
-            if isfield(UI.tabs,'referenceData')
-                delete(UI.tabs.referenceData);
-                UI.tabs = rmfield(UI.tabs,'referenceData');
-            end
-            if isfield(UI.listbox,'referenceData')
-                delete(UI.listbox.referenceData);
-                UI.listbox = rmfield(UI.listbox,'referenceData');
-            end
-            UI.tabs.referenceData = uitab(UI.panel.tabgroup2,'Title','Reference');
-            UI.listbox.referenceData = uicontrol('Parent',UI.tabs.referenceData,'Style','listbox','Position',getpixelposition(UI.tabs.referenceData),'Units','normalized','String',referenceData.cellTypes,'max',99,'min',1,'Value',1,'Callback',@(src,evnt)referenceDataSelection,'KeyPressFcn', {@keyPress});
-            UI.panel.tabgroup2.SelectedTab = UI.tabs.referenceData;
-            initReferenceDataTab
-            
-            if ishandle(ce_waitbar)
-                close(ce_waitbar)
-            end
-            try
-                if isfield(UI,'panel')
-                    MsgLog([num2str(length(i_db_subset_all)),' session(s) loaded succesfully'],2);
-                else
-                    disp([num2str(length(i_db_subset_all)),' session(s) loaded succesfully']);
+                match = find(strcmp(names{index},cellfun(@(item) item.name,db.sessions,'UniformOutput',false)));
+                if numel(match)~=1
+                    error('ce:ui:MissingReferenceSession','Cannot resolve reference session %s.',names{index});
                 end
-                
-            catch
-                if isfield(UI,'panel')
-                    MsgLog(['Failed to load dataset from database: ',strjoin(basenames)],4);
+                sessionInfo = db.sessions{match}; repository = sessionInfo.repositories{1};
+                investigator = strsplit(sessionInfo.investigator,' ');
+                investigatorPath = [investigator{2},investigator{1}(1)];
+                destination = fullfile(referencePath,file);
+                if ~isfield(db_settings.repositories,repository)
+                    if ~strcmp(repository,'NYUshare_Datasets')
+                        error('ce:ui:MissingReferenceRepository','Repository %s is not configured.',repository);
+                    end
+                    url = ['https://buzsakilab.nyumc.org/datasets/',investigatorPath,'/',sessionInfo.animal,'/',names{index},'/',file];
+                    options = weboptions('Timeout',30);
+                    ce.io.writeAtomic(destination,@(temporary) websave(temporary,url,options),@(temporary) ce.io.readCellMetrics(temporary));
                 else
-                    disp(['Failed to load dataset from database: ',strjoin(basenames)]);
+                    switch repository
+                        case 'NYUshare_Datasets'
+                            sourcePath = fullfile(db_settings.repositories.(repository),investigatorPath,sessionInfo.animal,sessionInfo.name);
+                        case 'NYUshare_AllenInstitute'
+                            sourcePath = fullfile(db_settings.repositories.(repository),sessionInfo.name);
+                        otherwise
+                            sourcePath = fullfile(db_settings.repositories.(repository),sessionInfo.animal,sessionInfo.name);
+                    end
+                    ce.io.writeAtomic(destination,@(temporary) copyfile(fullfile(sourcePath,file),temporary),@(temporary) ce.io.readCellMetrics(temporary));
                 end
-                
             end
-        elseif exitMode == 1
-            if isfield(UI,'panel')
-                MsgLog('No datasets selected.',2);
-            else
-                disp('No datasets selected');
-            end
+            candidate = ce.io.loadMetricBatch(resolved,names,'cell_metrics',progress);
         end
-        
-        if ishandle(UI.fig)
-            uiresume(UI.fig);
-        end
-        
     end
 
     function tSNE_redefineMetrics(~,~)
@@ -5895,8 +5939,18 @@ end
         uiresume(UI.fig);
     end
     
+    function ensureGrouptagsTable
+        if isempty(UI.tables.grouptags) || ~isgraphics(UI.tables.grouptags)
+            UI.tables.grouptags = uitable(UI.tabs.dispTags,'Data', {'',false,false,false},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{75 20 20 20},'columnname',{'Tags',char(8226),'+','-'},'RowName',[],'ColumnEditable',[false true true true],'CellEditCallback',@buttonTags_table);
+        end
+        initGrouptagsTable
+    end
+
     function initGrouptagsTable
-        tableData = {};
+        if ~isfield(UI,'tables') || ~isfield(UI.tables,'grouptags') || isempty(UI.tables.grouptags) || ~isgraphics(UI.tables.grouptags)
+            return
+        end
+        tableData = cell(0,4);
         for m = 1:length(UI.preferences.tags)
             tableData{m,1} = UI.preferences.tags{m};
             tableData{m,2} = false;
@@ -5904,6 +5958,7 @@ end
             tableData{m,4} = false;
         end
         UI.tables.grouptags.Data = tableData;
+        updateGrouptagsTable
     end
         
     function updateTags
@@ -6135,7 +6190,7 @@ end
                 if isfield(UI.groupData1,dataTypes{jjj}) && isfield(UI.groupData1.(dataTypes{jjj}),'highlight')
                     fields1 = fieldnames(UI.groupData1.(dataTypes{jjj}).highlight);
                     for jj = 1:numel(fields1)
-                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))                            
+                        if UI.groupData1.(dataTypes{jjj}).highlight.(fields1{jj}) == 1 && isfield(cell_metrics.(dataTypes{jjj}),fields1{jj}) && ~isempty(cell_metrics.(dataTypes{jjj}).(fields1{jj})) && any(ismember(UI.params.subset,cell_metrics.(dataTypes{jjj}).(fields1{jj})))
                             line(0, nLegends,'Marker',UI.preferences.groupDataMarkers{jj}(1),'LineStyle','none','color',UI.preferences.groupDataMarkers{jj}(2),'LineWidth', 1.5, 'MarkerSize',8,'HitTest','off');
                             text(0.2,nLegends,[fields1{jj},' (',dataTypes{jjj},')'], 'interpreter', 'none','HitTest','off')
                             nLegends = nLegends - 1;
@@ -6256,6 +6311,8 @@ end
             set(UI.fig,'CurrentAxes',UI.axis.legends)
             delete(UI.axis.legends.Children)
             plotLegends
+        elseif strcmp(UI.panel.tabgroup2.SelectedTab.Title,'Tags')
+            ensureGrouptagsTable
         end
     end
 
@@ -8463,6 +8520,7 @@ end
 
     function updateTableColumnWidth
         % Updating table column width
+        if ~isfield(UI,'table') || isempty(UI.table) || ~isgraphics(UI.table), return; end
         if UI.preferences.metricsTable==1
             pos1 = getpixelposition(UI.table,true);
             pos1 = max(pos1(3),160);
@@ -9073,7 +9131,14 @@ end
         end
     end
 
+    function ensureMetricTable
+        if isempty(UI.table) || ~isgraphics(UI.table)
+            UI.table = uitable('Parent',UI.panel.metricTable,'Data',cell(0,2),'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{100,100},'ColumnName',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn',{@keyPress});
+        end
+    end
+
     function buttonShowMetrics(src23,~)
+        if verLessThan('matlab','9.5'), tooltip = 'TooltipString'; else, tooltip = 'Tooltip'; end
         
         if exist('src23','var')
             if isfield(src23,'Text')
@@ -9090,13 +9155,17 @@ end
                     UI.preferences.metricsTable = 3;
             end
         end
+        if ismember(UI.preferences.metricsTable,[1 2])
+            ensureMetricTable;
+        end
         if UI.preferences.metricsTable==1
             UI.menu.tableData.ops(1).Checked = 'on';
             UI.menu.tableData.ops(2).Checked = 'off';
             UI.menu.tableData.ops(3).Checked = 'off';
             updateTableColumnWidth
+            UI.table.(tooltip) = sprintf('Metrics for current cell. \nClick left/right column to select the x/y metric. \nChange table data in Table data menu');
             UI.table.ColumnName = {'Metrics',''};
-            UI.table.Data = [table_fieldsNames,table_metrics(:,ii)];
+            UI.table.Data = ce.ui.metricTableData(cell_metrics,table_fieldsNames,ii);
             UI.table.Visible = 'on';
             UI.table.ColumnEditable = [false false];
         elseif UI.preferences.metricsTable==2
@@ -9104,13 +9173,14 @@ end
             UI.menu.tableData.ops(2).Checked = 'on';
             UI.menu.tableData.ops(3).Checked = 'off';
             updateTableColumnWidth
-            UI.table.ColumnName = {'','#','Cell type','Region'};
+            UI.table.ColumnName = {'','#',UI.tableData.Column1,UI.tableData.Column2};
+            UI.table.(tooltip) = sprintf('List of filtered cells. \nClick any row to go to that cell. \nCustomize columns and sorting in Table data menu.');
             UI.table.ColumnEditable = [true false false false];
             updateCellTableData
             UI.table.Visible = 'on';
             updateTableClickedCells
         elseif UI.preferences.metricsTable==3
-            UI.table.Visible = 'off';
+            if ~isempty(UI.table) && isgraphics(UI.table), UI.table.Visible = 'off'; end
             UI.menu.tableData.ops(1).Checked = 'off';
             UI.menu.tableData.ops(2).Checked = 'off';
             UI.menu.tableData.ops(3).Checked = 'on';
@@ -10642,13 +10712,20 @@ end
         % % % % % % % % % % % % % % % % % % %
         
         % Table with metrics for selected cell
-        UI.table = uitable('Parent',UI.panel.right,'Data',[table_fieldsNames,table_metrics(:,1)],'Units','normalized','Position',[0 0.003 1 0.485],'ColumnWidth',{100,  100},'columnname',{'Metrics',''},'RowName',[],'CellSelectionCallback',@ClicktoSelectFromTable,'CellEditCallback',@EditSelectFromTable,'KeyPressFcn', {@keyPress},'tooltip',sprintf('Metrics for current cell. \nClick left column to select metric in custom group plot on x axis. \nClick right column to select metric in custom group plot on y axis  \nChange table data in Table data menu'));
+        % Keep a layout slot even when the table is disabled. Create the
+        % expensive widget only when a table mode is visible.
+        UI.panel.metricTable = uipanel('Parent',UI.panel.right,'BorderType','none');
+        UI.table = [];
+        if ismember(UI.preferences.metricsTable,[1 2])
+            ensureMetricTable;
+        end
         
         set(UI.panel.right, 'Heights', [48 48 230 180 -1], 'Spacing', 8,'MinimumHeights',[48 48 20 20 20]);
         
         
         if UI.preferences.metricsTable==1
             UI.menu.tableData.ops(1).Checked = 'On';
+            UI.table.Data = ce.ui.metricTableData(cell_metrics,table_fieldsNames,ii);
             UI.table.(tooltip) = sprintf('Metrics for current cell. \nClick left column to select metric in custom group plot on x axis. \nClick right column to select metric in custom group plot on y axis. \nChange table data in Table data menu');
         elseif UI.preferences.metricsTable==2
             UI.table.ColumnName = {'','#',UI.tableData.Column1,UI.tableData.Column2};
@@ -10656,7 +10733,7 @@ end
             UI.table.(tooltip) = sprintf('List of filtered cells. \nClick any row to go to that cell. \nChange table data in Table data menu. \nYou can customize the order, and data shown in the two columns from the menu.');
             UI.menu.tableData.ops(2).Checked = 'On';
         else
-            UI.preferences.metricsTable=3; UI.table.Visible='Off';
+            UI.preferences.metricsTable=3;
             UI.menu.tableData.ops(3).Checked = 'On';
         end
         % % % % % % % % % % % % % % % % % % % %
@@ -10801,28 +10878,39 @@ end
         UI.axis.legends = axes(UI.tabs.legends,'Position',[0 0 1 1],'NextPlot','add');
         set(UI.axis.legends,'ButtonDownFcn',@createLegend)
         
-        UI.tables.grouptags = uitable(UI.tabs.dispTags,'Data', {'',false,false,false},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{75 20 20 20},'columnname',{'Tags',char(8226),'+','-'},'RowName',[],'ColumnEditable',[false true true true],'CellEditCallback',@buttonTags_table);
-        initGrouptagsTable
+        UI.tables.grouptags = [];
+        % The Tags tab creates its table on first selection.
         
         set(UI.panel.left, 'MinimumHeights',[25 230 10 10 50]);
         
     end
     
     function reInitializeSession(~,~)
-        cell_metrics.general.initialized = 0;
-        initializeSession
-        uiresume(UI.fig);
-        MsgLog('Cell metrics initialized again',2);
+        runMetricOperation(@readReinitialization,@applyReinitialization, ...
+            'Reinitialize cell metrics',@() true);
     end
-    
-    function initializeSession
-        
-        ii = 1;
+
+    function candidate = readReinitialization
+        candidate = cell_metrics;
+        candidate.putativeCellType = UI.preferences.cellTypes(clusClas);
+        candidate.general.classificationTrackChanges = classificationTrackChanges;
+        candidate.general.tSNE_metrics = tSNE_metrics;
+        candidate.general.initialized = 0;
+    end
+
+    function applyReinitialization(candidate)
+        cell_metrics = candidate;
+        initializeSession(true);
+    end
+
+    function initializeSession(preserveCuration)
+        if nargin < 1, preserveCuration = false; end
+        if ~preserveCuration, ii = 1; end
         hover2highlight.handle1 = [];
         hover2highlight.handle2 = [];
         hover2highlight.handle3 = [];
         hover2highlight.handle4 = [];
-        UI.params.ii_history = 1;
+        if ~preserveCuration, UI.params.ii_history = 1; end
         if ~isfield(cell_metrics,'electrodeGroup') && isfield(cell_metrics,'spikeGroup')
             cell_metrics.electrodeGroup = cell_metrics.spikeGroup;
         end
@@ -10834,6 +10922,8 @@ end
         if ~isfield(cell_metrics.general,'initialized')
             cell_metrics.general.initialized = 0;
         end
+        % Prepare display arrays before changing controls or edit history.
+        [cell_metrics,UI.x_bins.thetaPhase] = ce.ui.prepareDisplayData(cell_metrics,UI.params.ACGLogIntervals);
         % Initialize labels
         if ~isfield(cell_metrics, 'labels')
             cell_metrics.labels = repmat({''},1,cell_metrics.general.cellCount);
@@ -10850,8 +10940,10 @@ end
         meanCCG = [];
         
         % Init group data
-        UI.groupData1 = [];
-        UI.groupData1.groupsList = {'groups','tags','groundTruthClassification'};
+        if ~preserveCuration
+            UI.groupData1 = [];
+            UI.groupData1.groupsList = {'groups','tags','groundTruthClassification'};
+        end
         
         % Updates format of tags if outdated
         cell_metrics = validateGroupFormat(cell_metrics,'tags');
@@ -10862,10 +10954,7 @@ end
         UI.preferences.tags = unique([UI.preferences.tags tagsInMetrics]);
         UI.preferences.tags(cellfun(@isempty, UI.preferences.tags)) = [];
         
-        % Initialize tags
-        if isfield(UI,'tabs')
-            initTags
-        end
+        % Dynamic tag controls are rebuilt only after initialization succeeds.
 
         % Initialize ground truth classification
         cell_metrics = validateGroupFormat(cell_metrics,'groundTruthClassification');
@@ -10879,8 +10968,10 @@ end
         UI.preferences.groundTruth(cellfun(@isempty, UI.preferences.groundTruth)) = [];
         
         % Initialize text filter
-        freeText = {''};
-        idx_textFilter = 1:cell_metrics.general.cellCount;
+        if ~preserveCuration
+            freeText = {''};
+            idx_textFilter = 1:cell_metrics.general.cellCount;
+        end
         
         % Batch initialization
         if isfield(cell_metrics.general,'batch')
@@ -10939,7 +11030,7 @@ end
                 end
                 groups_ids.deepSuperficial_num = UI.preferences.deepSuperficial;
             elseif iscell(cell_metrics.(fieldsMenuCells{i})) && size(cell_metrics.(fieldsMenuCells{i}),1) == 1 && size(cell_metrics.(fieldsMenuCells{i}),2) == cell_metrics.general.cellCount
-                cell_metrics.(fieldsMenuCells{i})(find(cell2mat(cellfun(@(X) isempty(X), cell_metrics.animal,'uni',0)))) = {''};
+                cell_metrics.(fieldsMenuCells{i})(cellfun(@isempty,cell_metrics.(fieldsMenuCells{i}))) = {''};
                 [cell_metrics.([fieldsMenuCells{i},'_num']),ID] = findgroups(cell_metrics.(fieldsMenuCells{i}));
                 groups_ids.([fieldsMenuCells{i},'_num']) = ID;
             end
@@ -10952,94 +11043,9 @@ end
         structNumeric = cell2mat(struct2cell(structfun(@isnumeric,cell_metrics,'UniformOutput',0)));
         UI.lists.metrics = sort(UI.lists.metrics(structDouble & structNumeric & structSize(:,1) == 1 & structSize(:,2) == cell_metrics.general.cellCount));
         
-        % Metric table initialization
-        table_metrics = cell(size(table_fieldsNames,1),cell_metrics.general.cellCount);
-        for i = 1:size(table_fieldsNames,1)
-            if isnumeric(cell_metrics.(table_fieldsNames{i})') && verLessThan('matlab', '9.3')
-                table_string = string(cell_metrics.(table_fieldsNames{i}));
-                table_string(isnan(cell_metrics.(table_fieldsNames{i}))) = "";
-                table_metrics(i,:) = cellstr(table_string);
-            elseif isnumeric(cell_metrics.(table_fieldsNames{i})')
-                table_metrics(i,:) = cellstr(string(cell_metrics.(table_fieldsNames{i})));
-            else
-                table_metrics(i,:) = cellstr(cell_metrics.(table_fieldsNames{i}));
-            end
-        end
-        if UI.preferences.metricsTable==1
-            UI.table.Data = [table_fieldsNames, table_metrics(:,ii)];
-        end
-        
-        step_size = [cellfun(@diff,cell_metrics.waveforms.time,'UniformOutput',false)];
-        cell_metrics.waveforms.time_zscored = [max(cellfun(@min, cell_metrics.waveforms.time)):min([step_size{:}]):min(cellfun(@max, cell_metrics.waveforms.time))];
-        
-        % Response curves
-        UI.x_bins.thetaPhase = [-1:0.05:1]*pi;
-        UI.x_bins.thetaPhase = UI.x_bins.thetaPhase(1:end-1)+diff(UI.x_bins.thetaPhase([1,2]))/2;
-        
-        % Generating extra fields if necessary
-        if ~cell_metrics.general.initialized | ~isfield(cell_metrics.waveforms,{'filt_zscored','filt_absolute'})
-            
-            statusUpdate('Initializing session')
-            % waveform initialization
-            filtWaveform = [];
-            for i = 1:length(cell_metrics.waveforms.filt)
-                if isempty(cell_metrics.waveforms.filt{i}) || any(isnan(cell_metrics.waveforms.filt{i}))
-                    filtWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
-                else
-                    filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},cell_metrics.waveforms.time_zscored,'spline',nan);
-                end
-            end
-            cell_metrics.waveforms.filt_absolute = filtWaveform;
-            cell_metrics.waveforms.filt_zscored = (filtWaveform-mean(filtWaveform,'omitnan'))./std(filtWaveform,'omitnan');
-            
-            % 'All raw waveforms'
-            if isfield(cell_metrics.waveforms,'raw')
-            rawWaveform = [];
-            for i = 1:length(cell_metrics.waveforms.raw)
-                if isempty(cell_metrics.waveforms.raw{i}) || any(isnan(cell_metrics.waveforms.raw{i}))
-                    rawWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
-                else
-                    rawWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.raw{i},cell_metrics.waveforms.time_zscored,'spline',nan);
-                end
-            end
-            cell_metrics.waveforms.raw_absolute = rawWaveform;
-            cell_metrics.waveforms.raw_zscored = (rawWaveform-mean(rawWaveform,'omitnan'))./std(rawWaveform,'omitnan');
-            clear rawWaveform
-            end
-            
-            % ACGs
-            cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide);
-            cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow);
-            
-            if isfield(cell_metrics.acg,'log10')
-            cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
-            cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.params.ACGLogIntervals)');
-            end
-            
-            if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')
-            cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
-            cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.params.ACGLogIntervals)');
-            end
-            
-            if isfield(cell_metrics.responseCurves,'thetaPhase')
-                thetaPhaseCurves = nan(length(UI.x_bins.thetaPhase),cell_metrics.general.cellCount);
-                for i = 1:length(cell_metrics.responseCurves.thetaPhase)
-                    if isempty(cell_metrics.responseCurves.thetaPhase{i})
-                        cell_metrics.responseCurves.thetaPhase{i} = nan(size(UI.x_bins.thetaPhase'));
-                    end
-                    if isempty(cell_metrics.responseCurves.thetaPhase{i}) || any(isnan(cell_metrics.responseCurves.thetaPhase{i}))
-                        thetaPhaseCurves(:,i) = nan(size(UI.x_bins.thetaPhase));
-                    elseif UI.BatchMode
-                        thetaPhaseCurves(:,i) = interp1(cell_metrics.general.batch{cell_metrics.batchIDs(i)}.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i}',UI.x_bins.thetaPhase,'spline',nan);
-                    elseif isfield(cell_metrics.general,'responseCurves')
-                        thetaPhaseCurves(:,i) = interp1(cell_metrics.general.responseCurves.thetaPhase.x_bins,cell_metrics.responseCurves.thetaPhase{i},UI.x_bins.thetaPhase,'spline',nan);
-                    else
-                        thetaPhaseCurves(:,i) = cell_metrics.responseCurves.thetaPhase{i};
-                    end
-                end
-                cell_metrics.responseCurves.thetaPhase_zscored = thetaPhaseCurves;%(thetaPhaseCurves-mean(thetaPhaseCurves,'omitnan'))./std(thetaPhaseCurves,'omitnan');
-                clear thetaPhaseCurves
-            end
+        % Format only the selected cell, and only if its table already exists.
+        if UI.preferences.metricsTable==1 && isfield(UI,'table') && ~isempty(UI.table) && isgraphics(UI.table)
+            UI.table.Data = ce.ui.metricTableData(cell_metrics,table_fieldsNames,ii);
         end
         
         % filtWaveform, acg2, acg1, plot
@@ -11126,8 +11132,10 @@ end
         UI.plot.yTitle = UI.preferences.plotYdata;
         UI.plot.zTitle = UI.preferences.plotZdata;
         
-        UI.listbox.cellTypes.Value = 1:length(UI.preferences.cellTypes);
-        classes2plot = 1:length(UI.preferences.cellTypes);
+        if ~preserveCuration
+            UI.listbox.cellTypes.Value = 1:length(UI.preferences.cellTypes);
+            classes2plot = 1:length(UI.preferences.cellTypes);
+        end
         
         if isfield(cell_metrics,'putativeConnections')
             UI.monoSyn.disp = UI.preferences.monoSynDisp;
@@ -11135,29 +11143,31 @@ end
             UI.monoSyn.disp = 'None';
         end
         
-        % History function initialization
-        if isfield(cell_metrics.general,'classificationTrackChanges') && ~isempty(cell_metrics.general.classificationTrackChanges)
-            classificationTrackChanges = cell_metrics.general.classificationTrackChanges;
-            if isfield(UI,'pushbutton')
-                UI.menu.file.save.ForegroundColor = [0.6350 0.0780 0.1840];
+        if ~preserveCuration
+            % History function initialization
+            if isfield(cell_metrics.general,'classificationTrackChanges') && ~isempty(cell_metrics.general.classificationTrackChanges)
+                classificationTrackChanges = cell_metrics.general.classificationTrackChanges;
+                if isfield(UI,'pushbutton')
+                    UI.menu.file.save.ForegroundColor = [0.6350 0.0780 0.1840];
+                end
+            else
+                classificationTrackChanges = [];
+                if isfield(UI,'pushbutton')
+                    UI.menu.file.save.ForegroundColor = 'k';
+                end
             end
-        else
-            classificationTrackChanges = [];
-            if isfield(UI,'pushbutton')
-                UI.menu.file.save.ForegroundColor = 'k';
-            end
+            history_classification = [];
+            history_classification(1).cellIDs = 1:cell_metrics.general.cellCount;
+            history_classification(1).cellTypes = clusClas;
+            history_classification(1).deepSuperficial = cell_metrics.deepSuperficial;
+            history_classification(1).labels = cell_metrics.labels;
+            history_classification(1).tags = cell_metrics.tags;
+            history_classification(1).groups = cell_metrics.groups;
+            history_classification(1).groundTruthClassification = cell_metrics.groundTruthClassification;
+            history_classification(1).brainRegion = cell_metrics.brainRegion;
+            history_classification(1).brainRegion_num = cell_metrics.brainRegion_num;
+            history_classification(1).deepSuperficial_num = cell_metrics.deepSuperficial_num;
         end
-        history_classification = [];
-        history_classification(1).cellIDs = 1:cell_metrics.general.cellCount;
-        history_classification(1).cellTypes = clusClas;
-        history_classification(1).deepSuperficial = cell_metrics.deepSuperficial;
-        history_classification(1).labels = cell_metrics.labels;
-        history_classification(1).tags = cell_metrics.tags;
-        history_classification(1).groups = cell_metrics.groups;
-        history_classification(1).groundTruthClassification = cell_metrics.groundTruthClassification;
-        history_classification(1).brainRegion = cell_metrics.brainRegion;
-        history_classification(1).brainRegion_num = cell_metrics.brainRegion_num;
-        history_classification(1).deepSuperficial_num = cell_metrics.deepSuperficial_num;
 
         % Cell count for menu
         updateCellCount
@@ -11270,11 +11280,13 @@ end
         updateColorMenuCount
         
         UI.classes.plot = clusClas;
-        UI.popupmenu.groups.Value = 1;
-        UI.popupmenu.colors.Value = 1;
-        ColorVal = 1;
-        GroupVal = 1;
-        clasLegend = 0;
+        if ~preserveCuration
+            UI.popupmenu.groups.Value = 1;
+            UI.popupmenu.colors.Value = 1;
+            ColorVal = 1;
+            GroupVal = 1;
+            clasLegend = 0;
+        end
         
         % Init synaptic connections
         if isfield(cell_metrics,'synapticEffect')
@@ -11293,8 +11305,10 @@ end
         end
         
         % Spikes and event initialization
-        spikes = [];
-        events = [];
+        if ~preserveCuration
+            spikes = [];
+            events = [];
+        end
         
         % fixed axes limits for subfig2 and subfig3 to increase performance
         fig2_axislimit_x = [min(cell_metrics.troughToPeak * 1000),max(cell_metrics.troughToPeak * 1000)];
@@ -11303,18 +11317,24 @@ end
         fig3_axislimit_y = [min(tSNE_metrics.plot(:,2)), max(tSNE_metrics.plot(:,2))];
         
         % Updating reference and ground truth data if already loaded
-        UI.preferences.referenceData = 'None';
-        UI.preferences.groundTruthData = 'None';
+        if ~preserveCuration
+            UI.preferences.referenceData = 'None';
+            UI.preferences.groundTruthData = 'None';
+        end
         if ~isempty(reference_cell_metrics)
-            [reference_cell_metrics,referenceData] = initializeReferenceData(reference_cell_metrics,'reference');
+            previousSelection = referenceData.selection;
+            [reference_cell_metrics,referenceData,fig2_axislimit_x_reference,fig2_axislimit_y_reference] = initializeReferenceData(reference_cell_metrics,'reference');
+            if preserveCuration, referenceData.selection = previousSelection; end
             initReferenceDataTab
         end
         if ~isempty(groundTruth_cell_metrics)
-            [groundTruth_cell_metrics,groundTruthData] = initializeReferenceData(groundTruth_cell_metrics,'groundTruth');
+            previousSelection = groundTruthData.selection;
+            [groundTruth_cell_metrics,groundTruthData,fig2_axislimit_x_groundTruth,fig2_axislimit_y_groundTruth] = initializeReferenceData(groundTruth_cell_metrics,'groundTruth');
+            if preserveCuration, groundTruthData.selection = previousSelection; end
             initGroundTruthTab
         end
         
-        subsetGroundTruth = [];
+        if ~preserveCuration, subsetGroundTruth = []; end
         % Updating figure name
         UI.fig.Name = ['CellExplorer v' num2str(CellExplorerVersion), ': ',cell_metrics.general.basename];
         
@@ -11334,6 +11354,7 @@ end
                 spikesPlots.(customSpikePlotOptions{i}) = customSpikesPlots.(customSpikePlotOptions{i});
             end
         end
+        if isfield(UI,'tabs'), initTags; end
         cell_metrics.general.initialized = 1;
         
     end
@@ -11358,108 +11379,9 @@ end
         end
     end
 
-    function [cell_metrics,referenceData,fig2_axislimit_x1,fig2_axislimit_y1] = initializeReferenceData(cell_metrics,inputType)
-        
-        if strcmp(inputType,'reference')
-            % Cell type initialization
-            referenceData.cellTypes = unique([UI.preferences.cellTypes,cell_metrics.putativeCellType],'stable');
-            clear referenceData1
-            referenceData.clusClas = ones(1,length(cell_metrics.putativeCellType));
-            for i = 1:length(referenceData.cellTypes)
-                referenceData.clusClas(strcmp(cell_metrics.putativeCellType,referenceData.cellTypes{i}))=i;
-            end
-            referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas,[1:length(referenceData.cellTypes)+1])'))';
-        else
-            % Ground truth initialization
-            clear groundTruthData1
-%             referenceData.clusClas = ones(1,length(referenceData.clusClas));
-            referenceData.groundTruthTypes = fieldnames(cell_metrics.groundTruthClassification)';
-            for i = 1:numel(referenceData.groundTruthTypes)
-                referenceData.clusClas(cell_metrics.groundTruthClassification.(referenceData.groundTruthTypes{i})) = i;
-            end
-%             [referenceData.clusClas, referenceData.groundTruthTypes] = findgroups([cell_metrics.groundTruthClassification{:}]);
-            referenceData.counts = cellstr(num2str(histcounts(referenceData.clusClas)'))';
-        end
-        fig2_axislimit_x1 = [min([cell_metrics.troughToPeak * 1000,fig2_axislimit_x(1)]),max([cell_metrics.troughToPeak * 1000, fig2_axislimit_x(2)])];
-        fig2_axislimit_y1 = [min([cell_metrics.acg_tau_rise(cell_metrics.acg_tau_rise>0),fig2_axislimit_y(1)]),max([cell_metrics.acg_tau_rise(cell_metrics.acg_tau_rise<Inf),fig2_axislimit_y(2)])];
-        
-        % Creating surface of reference points
-        referenceData.x = linspace(fig2_axislimit_x1(1),fig2_axislimit_x1(2),UI.preferences.binCount);
-        referenceData.y = 10.^(linspace(log10(fig2_axislimit_y1(1)),log10(fig2_axislimit_y1(2)),UI.preferences.binCount));
-        referenceData.y1 = linspace(log10(fig2_axislimit_y1(1)),log10(fig2_axislimit_y1(2)),UI.preferences.binCount);
-        
-        if strcmp(inputType,'reference')
-            colors = (1-(UI.preferences.cellTypeColors)) * 250;
-        else
-            colors = (1-(UI.preferences.groundTruthColors)) * 250;
-        end
-        temp = unique(referenceData.clusClas);
-        
-        referenceData.z = zeros(length(referenceData.x)-1,length(referenceData.y)-1,3,size(colors,1));
-        for i = temp
-            idx = find(referenceData.clusClas==i);
-            [z_referenceData_temp,~,~] = histcounts2(cell_metrics.troughToPeak(idx) * 1000, cell_metrics.acg_tau_rise(idx),referenceData.x,referenceData.y,'norm','probability');
-            referenceData.z(:,:,:,i) = bsxfun(@times,repmat(conv2(z_referenceData_temp,gauss2d,'same'),1,1,3),reshape(colors(i,:),1,1,[]));
-            
-        end
-        referenceData.x = referenceData.x(1:end-1)+diff(referenceData.x([1,2]));
-        referenceData.y = 10.^(linspace(log10(fig2_axislimit_y(1)),log10(fig2_axislimit_y(2)),UI.preferences.binCount) + (log10(fig2_axislimit_y(2))-log10(fig2_axislimit_y(1)))/UI.preferences.binCount/2);
-        referenceData.y = referenceData.y(1:end-1);
-        
-        referenceData.selection = temp;
-        
-        % 'All filt waveforms'
-        if ~isfield(cell_metrics.waveforms,'time_zscored')
-            step_size = [cellfun(@diff,cell_metrics.waveforms.time,'UniformOutput',false)];
-            cell_metrics.waveforms.time_zscored = [max(cellfun(@min, cell_metrics.waveforms.time)):min([step_size{:}]):min(cellfun(@max, cell_metrics.waveforms.time))];
-        end
-        if isfield(cell_metrics.waveforms,'filt')
-            filtWaveform = [];
-            for i = 1:length(cell_metrics.waveforms.filt)
-                if isempty(cell_metrics.waveforms.filt{i})
-                    filtWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
-                else
-                    filtWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.filt{i},cell_metrics.waveforms.time_zscored,'spline',nan);
-                end
-            end
-            if ~isfield(cell_metrics.waveforms,'filt_zscored')  || size(cell_metrics.waveforms.filt,2) ~= size(cell_metrics.waveforms.filt_zscored,2)
-                cell_metrics.waveforms.filt_zscored = (filtWaveform-mean(filtWaveform,'omitnan'))./std(filtWaveform,'omitnan');
-            end
-            clear filtWaveform
-        end
-        
-        % 'All raw waveforms'
-        if isfield(cell_metrics.waveforms,'raw')
-            rawWaveform = [];
-            for i = 1:length(cell_metrics.waveforms.raw)
-                if isempty(cell_metrics.waveforms.raw{i})
-                    rawWaveform(:,i) = zeros(size(cell_metrics.waveforms.time_zscored));
-                else
-                    rawWaveform(:,i) = interp1(cell_metrics.waveforms.time{i},cell_metrics.waveforms.raw{i},cell_metrics.waveforms.time_zscored,'spline',nan);
-                end
-            end
-            if ~isfield(cell_metrics.waveforms,'raw_zscored')  || size(cell_metrics.waveforms.raw,2) ~= size(cell_metrics.waveforms.raw_zscored,2)
-                cell_metrics.waveforms.raw_zscored = (rawWaveform-mean(rawWaveform,'omitnan'))./std(rawWaveform,'omitnan');
-            end
-            clear rawWaveform
-        end
-        
-        if ~isfield(cell_metrics.acg,'wide_normalized')
-            cell_metrics.acg.wide_normalized = normalize_range(cell_metrics.acg.wide);
-        end
-        if ~isfield(cell_metrics.acg,'narrow_normalized')
-            cell_metrics.acg.narrow_normalized = normalize_range(cell_metrics.acg.narrow);
-        end
-        
-        if isfield(cell_metrics.acg,'log10') && (~isfield(cell_metrics.acg,'log10_rate') || size(cell_metrics.acg.log10_rate,2) ~= size(cell_metrics.acg.log10,2))
-            cell_metrics.acg.log10_rate = normalize_range(cell_metrics.acg.log10);
-            cell_metrics.acg.log10_occurrence = normalize_range(cell_metrics.acg.log10.*diff(10.^UI.params.ACGLogIntervals)');
-        end
-        
-        if isfield(cell_metrics,'isi') && isfield(cell_metrics.isi,'log10')  && (~isfield(cell_metrics.isi,'log10_rate') || size(cell_metrics.isi.log10_rate,2) ~= size(cell_metrics.isi.log10,2))
-            cell_metrics.isi.log10_rate = normalize_range(cell_metrics.isi.log10);
-            cell_metrics.isi.log10_occurrence = normalize_range(cell_metrics.isi.log10.*diff(10.^UI.params.ACGLogIntervals)');
-        end
+    function [metrics,data,axisX,axisY] = initializeReferenceData(metrics,inputType)
+        [metrics,data,axisX,axisY] = ce.ui.prepareComparisonData(metrics,inputType, ...
+            UI.preferences,fig2_axislimit_x,fig2_axislimit_y,UI.params.ACGLogIntervals,gauss2d);
     end
 
     function ToggleHeatmapFiringRateMaps(~,~)
@@ -11511,66 +11433,22 @@ end
     end
 
     function DatabaseSessionDialog(~,~)
-        % Load sessions from the database.
-        % Dialog is shown with sessions from the database with calculated cell metrics.
-        % Then selected sessions are loaded from the database
-        if exist('cell_metrics','var') && isfield(cell_metrics,'sessionName')
-            sessionNames = cell_metrics.sessionName;
-        else
-            sessionNames = '';
+        if metricLoadInProgress, return; end
+        if isfield(cell_metrics,'sessionName'), sessionNames = cell_metrics.sessionName;
+        else, sessionNames = ''; end
+        try
+            [selectedNames,selectedPaths,exitMode] = gui_db_sessions(sessionNames);
+            if ~isempty(selectedNames)
+                replaceMetricSelection(@() loadCellMetricsBatch('basenames',selectedNames, ...
+                    'basepaths',selectedPaths),'Load selected sessions',false);
+            elseif exitMode == 1 && isfield(UI,'panel')
+                MsgLog('No datasets selected. Current metrics and edits retained.',2);
+            end
+        catch exception
+            if isfield(UI,'panel'), MsgLog(['Session selection failed: ',exception.message],4);
+            else, warning('ce:ui:MetricLoadFailed','%s',exception.message); end
         end
-        [basenames,basepaths,exitMode] = gui_db_sessions(sessionNames);
-        
-        if ~isempty(basenames)
-            % Setting paths from db struct
-            ce_waitbar = waitbar(0,' ','name','Cell-metrics: loading batch');
-            cell_metrics1 = loadCellMetricsBatch('basenames',basenames,'basepaths',basepaths,'waitbar_handle',ce_waitbar);
-            if ~isempty(cell_metrics1)
-                cell_metrics = cell_metrics1;
-            else
-                if ishandle(ce_waitbar)
-                    close(ce_waitbar)
-                end
-                if isfield(UI,'panel')
-                    MsgLog('Failed to load datasets from database. Check the Command Window for further details',4);
-                else
-                    warning('Failed to load datasets from database.');
-                end
-                return
-            end
-            
-            statusUpdate('Initializing session(s)')
-            initializeSession
-            if ishandle(ce_waitbar)
-                close(ce_waitbar)
-            end
-            try
-                if isfield(UI,'panel')
-                    MsgLog([num2str(numel(basenames)),' session(s) loaded succesfully'],2);
-                else
-                    disp([num2str(numel(basenames)),' session(s) loaded succesfully']);
-                end
-                
-            catch
-                if isfield(UI,'panel')
-                    MsgLog(['Failed to load dataset from database: ',strjoin(basenames)],4);
-                else
-                    disp(['Failed to load dataset from database: ',strjoin(basenames)]);
-                end
-            end
-        elseif exitMode == 1
-            if isfield(UI,'panel')
-                MsgLog('No datasets selected.',2);
-            else
-                disp('No datasets selected');
-            end
-        end
-        
-        if ishandle(UI.fig)
-            uiresume(UI.fig);
-        end
-        
-    end    
+    end
 
     function editDBcredentials(~,~)
         edit db_credentials.m
@@ -11581,33 +11459,9 @@ end
     end
 
     function successMessage = LoadSession
-        % Loads cell_metrics from a single session and initializes it.
-        % Returns sucess/error message
-        successMessage = '';
-        messagePriority = 1;
-        if exist(basepath,'dir')
-            if exist(fullfile(basepath,[basename, '.cell_metrics.cellinfo.mat']),'file')
-                cd(basepath);
-                load(fullfile(basepath,[basename, '.cell_metrics.cellinfo.mat']));
-                cell_metrics.general.basepath = basepath;
-                initializeSession;
-                
-                successMessage = [basename ' with ' num2str(cell_metrics.general.cellCount)  ' cells loaded from database'];
-                messagePriority = 2;
-            else
-                successMessage = ['Error: ', basename, ' has no cell metrics'];
-                messagePriority = 3;
-            end
-        else
-            successMessage = ['Error: ',basename ' path not available'];
-            messagePriority = 3;
-        end
-        
-        if isfield(UI,'panel')
-            MsgLog(successMessage,messagePriority);
-        else
-            disp(successMessage);
-        end
+        file = fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']);
+        result = replaceMetricSelection(@() ce.ui.readMetricSelection(file),'Load session',false);
+        successMessage = result.status;
     end
 
     function AdjustGUIbutton

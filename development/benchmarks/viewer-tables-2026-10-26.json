@@ -1,0 +1,1121 @@
+{
+  "date": "2026-10-26",
+  "matlab": "24.2.0.3212159 (R2024b) Update 9",
+  "fixture": "10 copies of one 151-cell tutorial session; PCA; default visible metric table",
+  "method": "Same process; discarded warmup for each version; before/after/after/before repeated twice; profiler enabled; 250 ms timer polling; three actual cell advances per run",
+  "runs": [
+    {
+      "label": "before",
+      "result": {
+        "cells": 1510,
+        "copies": 10,
+        "readSeconds": 0.22572595833333334,
+        "assembleSeconds": 0.104252125,
+        "firstReadySeconds": 2.6509462916666666,
+        "initialTableCount": 2,
+        "navigationObservedSeconds": [
+          0.2658444166666667,
+          0.26323983333333334,
+          0.26467708333333334
+        ],
+        "timings": [
+          {
+            "name": "ce_viewerBeforeTables>updateUI",
+            "calls": 4,
+            "totalSeconds": 0.7877746250000001,
+            "selfSeconds": 0.04693512500000019
+          },
+          {
+            "name": "ce_viewerBeforeTables>initializeUI",
+            "calls": 1,
+            "totalSeconds": 0.696541375,
+            "selfSeconds": 0.1168851666666666
+          },
+          {
+            "name": "ce_viewerBeforeTables>initializeSession",
+            "calls": 1,
+            "totalSeconds": 0.33181679166666667,
+            "selfSeconds": 0.10507841666666667
+          },
+          {
+            "name": "prepareDisplayData",
+            "calls": 1,
+            "totalSeconds": 0.1443634166666667,
+            "selfSeconds": 0.016768041666666678
+          },
+          {
+            "name": "prepareDisplayData>resampleWaveforms",
+            "calls": 2,
+            "totalSeconds": 0.11906595833333335,
+            "selfSeconds": 0.013501958333333341
+          },
+          {
+            "name": "interp1",
+            "calls": 3020,
+            "totalSeconds": 0.105564,
+            "selfSeconds": 0.045453
+          },
+          {
+            "name": "uitable",
+            "calls": 2,
+            "totalSeconds": 0.04320204166666667,
+            "selfSeconds": 0.008695750000000009
+          },
+          {
+            "name": "interp1>parseinputs",
+            "calls": 3020,
+            "totalSeconds": 0.03718129166666667,
+            "selfSeconds": 0.013973916666666673
+          },
+          {
+            "name": "interp1>reshapeAndSortXandV",
+            "calls": 3020,
+            "totalSeconds": 0.022929708333333333,
+            "selfSeconds": 0.010327041666666668
+          },
+          {
+            "name": "interp1>isScalarTextArg",
+            "calls": 6040,
+            "totalSeconds": 0.017798083333333332,
+            "selfSeconds": 0.017798083333333332
+          },
+          {
+            "name": "interp1>reshapeValuesV",
+            "calls": 3020,
+            "totalSeconds": 0.012602666666666665,
+            "selfSeconds": 0.012602666666666665
+          },
+          {
+            "name": "findgroups",
+            "calls": 13,
+            "totalSeconds": 0.009340125000000001,
+            "selfSeconds": 0.0020472916666666677
+          },
+          {
+            "name": "interp1>sanitycheckmethod",
+            "calls": 3020,
+            "totalSeconds": 0.005409291666666666,
+            "selfSeconds": 0.005409291666666666
+          },
+          {
+            "name": "uitools/private/uitable_parseold",
+            "calls": 2,
+            "totalSeconds": 0.00489625,
+            "selfSeconds": 0.0007974583333333332
+          },
+          {
+            "name": "pca",
+            "calls": 1,
+            "totalSeconds": 0.0036062083333333337,
+            "selfSeconds": 0.001022666666666667
+          },
+          {
+            "name": "prepareDisplayData>normalizeRange",
+            "calls": 6,
+            "totalSeconds": 0.003207833333333333,
+            "selfSeconds": 0.0014717499999999995
+          },
+          {
+            "name": "findgroups>parseInput",
+            "calls": 13,
+            "totalSeconds": 0.0016346666666666669,
+            "selfSeconds": 0.001511166666666667
+          },
+          {
+            "name": "pca>localSVD",
+            "calls": 1,
+            "totalSeconds": 0.00046583333333333334,
+            "selfSeconds": 0.000288
+          },
+          {
+            "name": "istable",
+            "calls": 13,
+            "totalSeconds": 9.604166666666665e-05,
+            "selfSeconds": 9.604166666666665e-05
+          }
+        ]
+      }
+    },
+    {
+      "label": "after",
+      "result": {
+        "cells": 1510,
+        "copies": 10,
+        "readSeconds": 0.21520804166666666,
+        "assembleSeconds": 0.10435066666666666,
+        "firstReadySeconds": 2.4664733333333335,
+        "initialTableCount": 1,
+        "navigationObservedSeconds": [
+          0.2652205833333333,
+          0.26044816666666665,
+          0.261355
+        ],
+        "timings": [
+          {
+            "name": "CellExplorer>updateUI",
+            "calls": 4,
+            "totalSeconds": 0.778061802310235,
+            "selfSeconds": 0.04830183399408272
+          },
+          {
+            "name": "CellExplorer>initializeUI",
+            "calls": 1,
+            "totalSeconds": 0.7284500932982336,
+            "selfSeconds": 0.12453808503696373
+          },
+          {
+            "name": "CellExplorer>initializeSession",
+            "calls": 1,
+            "totalSeconds": 0.2760920454434933,
+            "selfSeconds": 0.04475970894562792
+          },
+          {
+            "name": "prepareDisplayData",
+            "calls": 1,
+            "totalSeconds": 0.1463128353348333,
+            "selfSeconds": 0.01642020855795509
+          },
+          {
+            "name": "prepareDisplayData>resampleWaveforms",
+            "calls": 2,
+            "totalSeconds": 0.12201471000244483,
+            "selfSeconds": 0.012789708508291323
+          },
+          {
+            "name": "interp1",
+            "calls": 3020,
+            "totalSeconds": 0.10922500149415351,
+            "selfSeconds": 0.0450258339492684
+          },
+          {
+            "name": "interp1>parseinputs",
+            "calls": 3020,
+            "totalSeconds": 0.040105375548625186,
+            "selfSeconds": 0.014283833528730347
+          },
+          {
+            "name": "interp1>reshapeAndSortXandV",
+            "calls": 3020,
+            "totalSeconds": 0.02409379199625992,
+            "selfSeconds": 0.011314583488112224
+          },
+          {
+            "name": "interp1>isScalarTextArg",
+            "calls": 6040,
+            "totalSeconds": 0.018345125250953838,
+            "selfSeconds": 0.018345125250953838
+          },
+          {
+            "name": "findgroups",
+            "calls": 13,
+            "totalSeconds": 0.013320833515556905,
+            "selfSeconds": 0.003280666711544849
+          },
+          {
+            "name": "interp1>reshapeValuesV",
+            "calls": 3020,
+            "totalSeconds": 0.012779208508147698,
+            "selfSeconds": 0.012779208508147698
+          },
+          {
+            "name": "metricTableData",
+            "calls": 5,
+            "totalSeconds": 0.012228833500618791,
+            "selfSeconds": 0.01126912515415704
+          },
+          {
+            "name": "uitable",
+            "calls": 1,
+            "totalSeconds": 0.009863166801590769,
+            "selfSeconds": 0.004434583393996627
+          },
+          {
+            "name": "interp1>sanitycheckmethod",
+            "calls": 3020,
+            "totalSeconds": 0.007476416768941001,
+            "selfSeconds": 0.007476416768941001
+          },
+          {
+            "name": "uitools/private/uitable_parseold",
+            "calls": 1,
+            "totalSeconds": 0.004719291731224654,
+            "selfSeconds": 0.0005922083414345025
+          },
+          {
+            "name": "pca",
+            "calls": 1,
+            "totalSeconds": 0.003569500048829306,
+            "selfSeconds": 0.000994625013606065
+          },
+          {
+            "name": "prepareDisplayData>normalizeRange",
+            "calls": 6,
+            "totalSeconds": 0.002440791700055702,
+            "selfSeconds": 0.0006637500090798292
+          },
+          {
+            "name": "findgroups>parseInput",
+            "calls": 13,
+            "totalSeconds": 0.002120833362345469,
+            "selfSeconds": 0.001975625027025745
+          },
+          {
+            "name": "pca>localSVD",
+            "calls": 1,
+            "totalSeconds": 0.0004373333393158752,
+            "selfSeconds": 0.0002752500037653079
+          },
+          {
+            "name": "istable",
+            "calls": 13,
+            "totalSeconds": 0.00020266666943906408,
+            "selfSeconds": 0.00020266666943906408
+          }
+        ]
+      }
+    },
+    {
+      "label": "after",
+      "result": {
+        "cells": 1510,
+        "copies": 10,
+        "readSeconds": 0.22012275,
+        "assembleSeconds": 0.12146158333333333,
+        "firstReadySeconds": 2.5868263333333332,
+        "initialTableCount": 1,
+        "navigationObservedSeconds": [
+          0.26094316666666667,
+          0.26385870833333336,
+          0.261905375
+        ],
+        "timings": [
+          {
+            "name": "CellExplorer>initializeUI",
+            "calls": 1,
+            "totalSeconds": 0.7807710412561298,
+            "selfSeconds": 0.13108854859341723
+          },
+          {
+            "name": "CellExplorer>updateUI",
+            "calls": 4,
+            "totalSeconds": 0.7711232074130027,
+            "selfSeconds": 0.04649937745703836
+          },
+          {
+            "name": "CellExplorer>initializeSession",
+            "calls": 1,
+            "totalSeconds": 0.2560090551942468,
+            "selfSeconds": 0.040779585488136455
+          },
+          {
+            "name": "prepareDisplayData",
+            "calls": 1,
+            "totalSeconds": 0.14905284120932139,
+            "selfSeconds": 0.017612625930655407
+          },
+          {
+            "name": "prepareDisplayData>resampleWaveforms",
+            "calls": 2,
+            "totalSeconds": 0.12184175643814776,
+            "selfSeconds": 0.012347167319093952
+          },
+          {
+            "name": "interp1",
+            "calls": 3020,
+            "totalSeconds": 0.10949458911905381,
+            "selfSeconds": 0.04764596085095739
+          },
+          {
+            "name": "uitable",
+            "calls": 1,
+            "totalSeconds": 0.05066975267740194,
+            "selfSeconds": 0.0047815002526556336
+          },
+          {
+            "name": "interp1>parseinputs",
+            "calls": 3020,
+            "totalSeconds": 0.03876825204852378,
+            "selfSeconds": 0.013871250732960232
+          },
+          {
+            "name": "interp1>reshapeAndSortXandV",
+            "calls": 3020,
+            "totalSeconds": 0.02308037621957264,
+            "selfSeconds": 0.010691583898279204
+          },
+          {
+            "name": "interp1>isScalarTextArg",
+            "calls": 6040,
+            "totalSeconds": 0.018646417651947866,
+            "selfSeconds": 0.018646417651947866
+          },
+          {
+            "name": "metricTableData",
+            "calls": 5,
+            "totalSeconds": 0.012881500680661599,
+            "selfSeconds": 0.011994208967110224
+          },
+          {
+            "name": "interp1>reshapeValuesV",
+            "calls": 3020,
+            "totalSeconds": 0.012388792321293437,
+            "selfSeconds": 0.012388792321293437
+          },
+          {
+            "name": "findgroups",
+            "calls": 13,
+            "totalSeconds": 0.011238750593858288,
+            "selfSeconds": 0.0027895001473978564
+          },
+          {
+            "name": "interp1>sanitycheckmethod",
+            "calls": 3020,
+            "totalSeconds": 0.006250583663615679,
+            "selfSeconds": 0.006250583663615679
+          },
+          {
+            "name": "uitools/private/uitable_parseold",
+            "calls": 1,
+            "totalSeconds": 0.0051802086070568045,
+            "selfSeconds": 0.0007627917069727647
+          },
+          {
+            "name": "prepareDisplayData>normalizeRange",
+            "calls": 6,
+            "totalSeconds": 0.0037342085306498116,
+            "selfSeconds": 0.0008176667098723721
+          },
+          {
+            "name": "pca",
+            "calls": 1,
+            "totalSeconds": 0.0033412501765524645,
+            "selfSeconds": 0.0009039167144298437
+          },
+          {
+            "name": "findgroups>parseInput",
+            "calls": 13,
+            "totalSeconds": 0.0014833334117130283,
+            "selfSeconds": 0.0013681250722920586
+          },
+          {
+            "name": "pca>localSVD",
+            "calls": 1,
+            "totalSeconds": 0.0004270000225627841,
+            "selfSeconds": 0.00027166668102159957
+          },
+          {
+            "name": "istable",
+            "calls": 13,
+            "totalSeconds": 0.00010479167220388387,
+            "selfSeconds": 0.00010479167220388387
+          }
+        ]
+      }
+    },
+    {
+      "label": "before",
+      "result": {
+        "cells": 1510,
+        "copies": 10,
+        "readSeconds": 0.22002225,
+        "assembleSeconds": 0.114904125,
+        "firstReadySeconds": 2.7593064583333335,
+        "initialTableCount": 2,
+        "navigationObservedSeconds": [
+          0.2678851666666667,
+          0.2668115,
+          0.26645420833333333
+        ],
+        "timings": [
+          {
+            "name": "ce_viewerBeforeTables>initializeUI",
+            "calls": 1,
+            "totalSeconds": 0.9485836484957291,
+            "selfSeconds": 0.25526129798930397
+          },
+          {
+            "name": "ce_viewerBeforeTables>updateUI",
+            "calls": 4,
+            "totalSeconds": 0.7386558099626354,
+            "selfSeconds": 0.0476310845131207
+          },
+          {
+            "name": "ce_viewerBeforeTables>initializeSession",
+            "calls": 1,
+            "totalSeconds": 0.35432271710965013,
+            "selfSeconds": 0.1169982945646296
+          },
+          {
+            "name": "prepareDisplayData",
+            "calls": 1,
+            "totalSeconds": 0.1484222120096439,
+            "selfSeconds": 0.013280333662277571
+          },
+          {
+            "name": "prepareDisplayData>resampleWaveforms",
+            "calls": 2,
+            "totalSeconds": 0.12643129479827817,
+            "selfSeconds": 0.019012542137593555
+          },
+          {
+            "name": "interp1",
+            "calls": 3020,
+            "totalSeconds": 0.10741875266068461,
+            "selfSeconds": 0.0449480844466648
+          },
+          {
+            "name": "interp1>parseinputs",
+            "calls": 3020,
+            "totalSeconds": 0.040719334341921716,
+            "selfSeconds": 0.016489958741777652
+          },
+          {
+            "name": "uitable",
+            "calls": 2,
+            "totalSeconds": 0.02498416728550637,
+            "selfSeconds": 0.007795083526411898
+          },
+          {
+            "name": "interp1>reshapeAndSortXandV",
+            "calls": 3020,
+            "totalSeconds": 0.021751333872098096,
+            "selfSeconds": 0.010101375250203737
+          },
+          {
+            "name": "interp1>isScalarTextArg",
+            "calls": 6040,
+            "totalSeconds": 0.018323958787204504,
+            "selfSeconds": 0.018323958787204504
+          },
+          {
+            "name": "interp1>reshapeValuesV",
+            "calls": 3020,
+            "totalSeconds": 0.011649958621894359,
+            "selfSeconds": 0.011649958621894359
+          },
+          {
+            "name": "findgroups",
+            "calls": 13,
+            "totalSeconds": 0.011501916951560808,
+            "selfSeconds": 0.0024913750617095547
+          },
+          {
+            "name": "uitools/private/uitable_parseold",
+            "calls": 2,
+            "totalSeconds": 0.007122875176428453,
+            "selfSeconds": 0.0010378750257074125
+          },
+          {
+            "name": "interp1>sanitycheckmethod",
+            "calls": 3020,
+            "totalSeconds": 0.005905416812939558,
+            "selfSeconds": 0.005905416812939558
+          },
+          {
+            "name": "pca",
+            "calls": 1,
+            "totalSeconds": 0.003991208432192672,
+            "selfSeconds": 0.0009678750239735627
+          },
+          {
+            "name": "prepareDisplayData>normalizeRange",
+            "calls": 6,
+            "totalSeconds": 0.0028859584048164305,
+            "selfSeconds": 0.0007108333509401603
+          },
+          {
+            "name": "findgroups>parseInput",
+            "calls": 13,
+            "totalSeconds": 0.0016532500409498045,
+            "selfSeconds": 0.0015244583710930617
+          },
+          {
+            "name": "pca>localSVD",
+            "calls": 1,
+            "totalSeconds": 0.0004466666777302764,
+            "selfSeconds": 0.00028512500706233965
+          },
+          {
+            "name": "istable",
+            "calls": 13,
+            "totalSeconds": 9.925000245835058e-05,
+            "selfSeconds": 9.925000245835058e-05
+          }
+        ]
+      }
+    },
+    {
+      "label": "before",
+      "result": {
+        "cells": 1510,
+        "copies": 10,
+        "readSeconds": 0.22542975,
+        "assembleSeconds": 0.11947670833333333,
+        "firstReadySeconds": 2.8288852916666665,
+        "initialTableCount": 2,
+        "navigationObservedSeconds": [
+          0.2628732916666667,
+          0.26339425,
+          0.26335579166666667
+        ],
+        "timings": [
+          {
+            "name": "ce_viewerBeforeTables>initializeUI",
+            "calls": 1,
+            "totalSeconds": 0.853818510346596,
+            "selfSeconds": 0.12150000147234008
+          },
+          {
+            "name": "ce_viewerBeforeTables>updateUI",
+            "calls": 4,
+            "totalSeconds": 0.7926086346048531,
+            "selfSeconds": 0.04520150054775307
+          },
+          {
+            "name": "ce_viewerBeforeTables>initializeSession",
+            "calls": 1,
+            "totalSeconds": 0.37885179625760307,
+            "selfSeconds": 0.12716433487431428
+          },
+          {
+            "name": "prepareDisplayData",
+            "calls": 1,
+            "totalSeconds": 0.15011496015243053,
+            "selfSeconds": 0.01848791689070378
+          },
+          {
+            "name": "prepareDisplayData>resampleWaveforms",
+            "calls": 2,
+            "totalSeconds": 0.12341504316221354,
+            "selfSeconds": 0.013094166825342132
+          },
+          {
+            "name": "interp1",
+            "calls": 3020,
+            "totalSeconds": 0.1103208763368714,
+            "selfSeconds": 0.05065754228053616
+          },
+          {
+            "name": "interp1>parseinputs",
+            "calls": 3020,
+            "totalSeconds": 0.037182708783914414,
+            "selfSeconds": 0.013366125161971068
+          },
+          {
+            "name": "uitable",
+            "calls": 2,
+            "totalSeconds": 0.024121958625643886,
+            "selfSeconds": 0.0075510417581703924
+          },
+          {
+            "name": "interp1>reshapeAndSortXandV",
+            "calls": 3020,
+            "totalSeconds": 0.022480625272420833,
+            "selfSeconds": 0.010052708455152331
+          },
+          {
+            "name": "interp1>isScalarTextArg",
+            "calls": 6040,
+            "totalSeconds": 0.018060041885518748,
+            "selfSeconds": 0.018060041885518748
+          },
+          {
+            "name": "interp1>reshapeValuesV",
+            "calls": 3020,
+            "totalSeconds": 0.012427916817268502,
+            "selfSeconds": 0.012427916817268502
+          },
+          {
+            "name": "findgroups",
+            "calls": 13,
+            "totalSeconds": 0.011776083476036234,
+            "selfSeconds": 0.0027067083661332977
+          },
+          {
+            "name": "uitools/private/uitable_parseold",
+            "calls": 2,
+            "totalSeconds": 0.006490083411980342,
+            "selfSeconds": 0.001092916679910661
+          },
+          {
+            "name": "interp1>sanitycheckmethod",
+            "calls": 3020,
+            "totalSeconds": 0.005756541736424597,
+            "selfSeconds": 0.005756541736424597
+          },
+          {
+            "name": "pca",
+            "calls": 1,
+            "totalSeconds": 0.0033895417077412257,
+            "selfSeconds": 0.0009038333442860109
+          },
+          {
+            "name": "prepareDisplayData>normalizeRange",
+            "calls": 6,
+            "totalSeconds": 0.0027928750338441356,
+            "selfSeconds": 0.0006382083410671592
+          },
+          {
+            "name": "findgroups>parseInput",
+            "calls": 13,
+            "totalSeconds": 0.001698375020580955,
+            "selfSeconds": 0.0015528333521506103
+          },
+          {
+            "name": "pca>localSVD",
+            "calls": 1,
+            "totalSeconds": 0.0004647083389646817,
+            "selfSeconds": 0.00028829167016019305
+          },
+          {
+            "name": "istable",
+            "calls": 13,
+            "totalSeconds": 0.00011404166804862673,
+            "selfSeconds": 0.00011404166804862673
+          }
+        ]
+      }
+    },
+    {
+      "label": "after",
+      "result": {
+        "cells": 1510,
+        "copies": 10,
+        "readSeconds": 0.26813620833333335,
+        "assembleSeconds": 0.3665714583333333,
+        "firstReadySeconds": 3.061750375,
+        "initialTableCount": 1,
+        "navigationObservedSeconds": [
+          0.26418733333333333,
+          0.26520208333333334,
+          0.2633417083333333
+        ],
+        "timings": [
+          {
+            "name": "CellExplorer>initializeUI",
+            "calls": 1,
+            "totalSeconds": 0.9376805114854011,
+            "selfSeconds": 0.17061104375643632
+          },
+          {
+            "name": "CellExplorer>updateUI",
+            "calls": 4,
+            "totalSeconds": 0.7650266343706092,
+            "selfSeconds": 0.04781695891903048
+          },
+          {
+            "name": "CellExplorer>initializeSession",
+            "calls": 1,
+            "totalSeconds": 0.2853746284954785,
+            "selfSeconds": 0.047323083912981345
+          },
+          {
+            "name": "prepareDisplayData",
+            "calls": 1,
+            "totalSeconds": 0.14651016846123105,
+            "selfSeconds": 0.01713512520988364
+          },
+          {
+            "name": "prepareDisplayData>resampleWaveforms",
+            "calls": 2,
+            "totalSeconds": 0.1199022931353182,
+            "selfSeconds": 0.013001958492590865
+          },
+          {
+            "name": "interp1",
+            "calls": 3020,
+            "totalSeconds": 0.10690033464272733,
+            "selfSeconds": 0.04467441721387183
+          },
+          {
+            "name": "interp1>parseinputs",
+            "calls": 3020,
+            "totalSeconds": 0.03953166715087962,
+            "selfSeconds": 0.015037208517520127
+          },
+          {
+            "name": "uitable",
+            "calls": 1,
+            "totalSeconds": 0.033481875410110655,
+            "selfSeconds": 0.02860175035033529
+          },
+          {
+            "name": "interp1>reshapeAndSortXandV",
+            "calls": 3020,
+            "totalSeconds": 0.02269425027797588,
+            "selfSeconds": 0.009956041788615595
+          },
+          {
+            "name": "findgroups",
+            "calls": 13,
+            "totalSeconds": 0.02123208359339952,
+            "selfSeconds": 0.0037647917127806053
+          },
+          {
+            "name": "interp1>isScalarTextArg",
+            "calls": 6040,
+            "totalSeconds": 0.018246125223491973,
+            "selfSeconds": 0.018246125223491973
+          },
+          {
+            "name": "metricTableData",
+            "calls": 5,
+            "totalSeconds": 0.015058916851119366,
+            "selfSeconds": 0.01400250017151293
+          },
+          {
+            "name": "interp1>reshapeValuesV",
+            "calls": 3020,
+            "totalSeconds": 0.012738208489360286,
+            "selfSeconds": 0.012738208489360286
+          },
+          {
+            "name": "interp1>sanitycheckmethod",
+            "calls": 3020,
+            "totalSeconds": 0.006248333409867519,
+            "selfSeconds": 0.006248333409867519
+          },
+          {
+            "name": "uitools/private/uitable_parseold",
+            "calls": 1,
+            "totalSeconds": 0.0038229583801597414,
+            "selfSeconds": 0.0004503750055165241
+          },
+          {
+            "name": "prepareDisplayData>normalizeRange",
+            "calls": 6,
+            "totalSeconds": 0.0036243333777268368,
+            "selfSeconds": 0.0009463333449247213
+          },
+          {
+            "name": "pca",
+            "calls": 1,
+            "totalSeconds": 0.003497791709510194,
+            "selfSeconds": 0.0009082916777920919
+          },
+          {
+            "name": "findgroups>parseInput",
+            "calls": 13,
+            "totalSeconds": 0.0019118750234180526,
+            "selfSeconds": 0.0017627083549242827
+          },
+          {
+            "name": "pca>localSVD",
+            "calls": 1,
+            "totalSeconds": 0.0004826666725787233,
+            "selfSeconds": 0.0003245000039747149
+          },
+          {
+            "name": "istable",
+            "calls": 13,
+            "totalSeconds": 0.00011162500136726519,
+            "selfSeconds": 0.00011162500136726519
+          }
+        ]
+      }
+    },
+    {
+      "label": "after",
+      "result": {
+        "cells": 1510,
+        "copies": 10,
+        "readSeconds": 0.2118485,
+        "assembleSeconds": 0.10886566666666667,
+        "firstReadySeconds": 2.5472873333333332,
+        "initialTableCount": 1,
+        "navigationObservedSeconds": [
+          0.29047558333333334,
+          0.26368129166666665,
+          0.2609849166666667
+        ],
+        "timings": [
+          {
+            "name": "CellExplorer>initializeUI",
+            "calls": 1,
+            "totalSeconds": 0.8485886889435894,
+            "selfSeconds": 0.19531350512731782
+          },
+          {
+            "name": "CellExplorer>updateUI",
+            "calls": 4,
+            "totalSeconds": 0.7880631456880223,
+            "selfSeconds": 0.051489501351688505
+          },
+          {
+            "name": "CellExplorer>initializeSession",
+            "calls": 1,
+            "totalSeconds": 0.29069488263124416,
+            "selfSeconds": 0.050543626326857743
+          },
+          {
+            "name": "prepareDisplayData",
+            "calls": 1,
+            "totalSeconds": 0.14499804547311648,
+            "selfSeconds": 0.018015875472947945
+          },
+          {
+            "name": "prepareDisplayData>resampleWaveforms",
+            "calls": 2,
+            "totalSeconds": 0.11805450309913516,
+            "selfSeconds": 0.01186983364493703
+          },
+          {
+            "name": "interp1",
+            "calls": 3020,
+            "totalSeconds": 0.10618466945419813,
+            "selfSeconds": 0.044364042831299626
+          },
+          {
+            "name": "interp1>parseinputs",
+            "calls": 3020,
+            "totalSeconds": 0.039520709370820396,
+            "selfSeconds": 0.015253292067092
+          },
+          {
+            "name": "interp1>reshapeAndSortXandV",
+            "calls": 3020,
+            "totalSeconds": 0.02229991725207811,
+            "selfSeconds": 0.010466750274770316
+          },
+          {
+            "name": "interp1>isScalarTextArg",
+            "calls": 6040,
+            "totalSeconds": 0.018481417151835874,
+            "selfSeconds": 0.018481417151835874
+          },
+          {
+            "name": "metricTableData",
+            "calls": 5,
+            "totalSeconds": 0.012365000324602672,
+            "selfSeconds": 0.01151845863571282
+          },
+          {
+            "name": "interp1>reshapeValuesV",
+            "calls": 3020,
+            "totalSeconds": 0.011833166977307795,
+            "selfSeconds": 0.011833166977307795
+          },
+          {
+            "name": "uitable",
+            "calls": 1,
+            "totalSeconds": 0.011397333632533079,
+            "selfSeconds": 0.004770250125227325
+          },
+          {
+            "name": "findgroups",
+            "calls": 13,
+            "totalSeconds": 0.011155833626193285,
+            "selfSeconds": 0.0024326250638606207
+          },
+          {
+            "name": "interp1>sanitycheckmethod",
+            "calls": 3020,
+            "totalSeconds": 0.005786000151892524,
+            "selfSeconds": 0.005786000151892524
+          },
+          {
+            "name": "uitools/private/uitable_parseold",
+            "calls": 1,
+            "totalSeconds": 0.004785125125617822,
+            "selfSeconds": 0.000612583349414708
+          },
+          {
+            "name": "prepareDisplayData>normalizeRange",
+            "calls": 6,
+            "totalSeconds": 0.003680708429958304,
+            "selfSeconds": 0.0011927500313117542
+          },
+          {
+            "name": "pca",
+            "calls": 1,
+            "totalSeconds": 0.0036714167630477147,
+            "selfSeconds": 0.000954541691725039
+          },
+          {
+            "name": "findgroups>parseInput",
+            "calls": 13,
+            "totalSeconds": 0.0015985000419633942,
+            "selfSeconds": 0.0014593333716433614
+          },
+          {
+            "name": "pca>localSVD",
+            "calls": 1,
+            "totalSeconds": 0.000515833346874852,
+            "selfSeconds": 0.0003567083426975451
+          },
+          {
+            "name": "istable",
+            "calls": 13,
+            "totalSeconds": 0.00011333333630852968,
+            "selfSeconds": 0.00011333333630852968
+          }
+        ]
+      }
+    },
+    {
+      "label": "before",
+      "result": {
+        "cells": 1510,
+        "copies": 10,
+        "readSeconds": 0.21196991666666667,
+        "assembleSeconds": 0.103894375,
+        "firstReadySeconds": 2.612789375,
+        "initialTableCount": 2,
+        "navigationObservedSeconds": [
+          0.263594625,
+          0.26073179166666666,
+          0.26292666666666664
+        ],
+        "timings": [
+          {
+            "name": "ce_viewerBeforeTables>initializeUI",
+            "calls": 1,
+            "totalSeconds": 0.8299416774801354,
+            "selfSeconds": 0.17903258566598323
+          },
+          {
+            "name": "ce_viewerBeforeTables>updateUI",
+            "calls": 4,
+            "totalSeconds": 0.7317470928674061,
+            "selfSeconds": 0.047773500622450116
+          },
+          {
+            "name": "ce_viewerBeforeTables>initializeSession",
+            "calls": 1,
+            "totalSeconds": 0.36017067135939923,
+            "selfSeconds": 0.11951758489055081
+          },
+          {
+            "name": "prepareDisplayData",
+            "calls": 1,
+            "totalSeconds": 0.14881391860559168,
+            "selfSeconds": 0.017595041895915847
+          },
+          {
+            "name": "prepareDisplayData>resampleWaveforms",
+            "calls": 2,
+            "totalSeconds": 0.12275916826611932,
+            "selfSeconds": 0.020017416927477424
+          },
+          {
+            "name": "interp1",
+            "calls": 3020,
+            "totalSeconds": 0.1027417513386419,
+            "selfSeconds": 0.04657329227347898
+          },
+          {
+            "name": "uitable",
+            "calls": 2,
+            "totalSeconds": 0.06565354252207922,
+            "selfSeconds": 0.049565958979137695
+          },
+          {
+            "name": "interp1>parseinputs",
+            "calls": 3020,
+            "totalSeconds": 0.03695904214821309,
+            "selfSeconds": 0.013997833515713785
+          },
+          {
+            "name": "interp1>reshapeAndSortXandV",
+            "calls": 3020,
+            "totalSeconds": 0.019209416916949832,
+            "selfSeconds": 0.008142875106095076
+          },
+          {
+            "name": "interp1>isScalarTextArg",
+            "calls": 6040,
+            "totalSeconds": 0.01760141689599889,
+            "selfSeconds": 0.01760141689599889
+          },
+          {
+            "name": "interp1>reshapeValuesV",
+            "calls": 3020,
+            "totalSeconds": 0.011066541810854756,
+            "selfSeconds": 0.011066541810854756
+          },
+          {
+            "name": "findgroups",
+            "calls": 13,
+            "totalSeconds": 0.010300250134203928,
+            "selfSeconds": 0.0019275416917809759
+          },
+          {
+            "name": "uitools/private/uitable_parseold",
+            "calls": 2,
+            "totalSeconds": 0.006465791750910702,
+            "selfSeconds": 0.0008950833449955439
+          },
+          {
+            "name": "interp1>sanitycheckmethod",
+            "calls": 3020,
+            "totalSeconds": 0.005359791736500417,
+            "selfSeconds": 0.005359791736500417
+          },
+          {
+            "name": "pca",
+            "calls": 1,
+            "totalSeconds": 0.003630791713972946,
+            "selfSeconds": 0.0009530000124168187
+          },
+          {
+            "name": "prepareDisplayData>normalizeRange",
+            "calls": 6,
+            "totalSeconds": 0.003468583378526169,
+            "selfSeconds": 0.0008770000114266003
+          },
+          {
+            "name": "findgroups>parseInput",
+            "calls": 13,
+            "totalSeconds": 0.0015725833538228224,
+            "selfSeconds": 0.0014537916856083963
+          },
+          {
+            "name": "pca>localSVD",
+            "calls": 1,
+            "totalSeconds": 0.0004617083393490195,
+            "selfSeconds": 0.0002967500038664125
+          },
+          {
+            "name": "istable",
+            "calls": 13,
+            "totalSeconds": 0.00010083333464711011,
+            "selfSeconds": 0.00010083333464711011
+          }
+        ]
+      }
+    }
+  ],
+  "notes": [
+    "Four measured runs per version after a discarded warmup of each version. Both versions use the extracted display preparation; the baseline precedes the deferred-table changes.",
+    "Repeated copies of one recording, PCA, profiler overhead and 250 ms polling limit generalization. Read and assembly times are outside first-ready timing.",
+    "First-ready ranges overlap. Median startup was modestly lower; these measurements do not establish a general application speedup. Navigation observations are constrained by polling and showed no meaningful difference.",
+    "Default startup creates one table instead of two. A separate live smoke verified zero initial tables in None mode and successful later creation.",
+    "Metric string conversion now occurs for the selected cell; its formatting work is included in updateUI. The filtered cell list is still populated eagerly.",
+    "The profiling script entry was excluded from selected function timings. Source recording files were read-only; hashes were unchanged."
+  ],
+  "viewerSourceSHA256": {
+    "beforeRenamedSnapshot": "0fada4a29307b4e2d0c9af4811122c7909349e81f876a4754b7a508952e9da2b",
+    "after": "ebba262f15422f4defe68b6e29bfb11907439cc173dbf9735805291c5a3ff7ea"
+  },
+  "summary": {
+    "before": {
+      "medianFirstReadySeconds": 2.705126375,
+      "medianNavigationObservedSeconds": 0.2634944375,
+      "initialTableCount": 2,
+      "medianInitializeSessionTotalSeconds": 0.3572466942345247,
+      "medianInitializeUITotalSeconds": 0.8418800939133657,
+      "medianUpdateUITotalSeconds": 0.7632152174813177,
+      "medianUitableTotalSeconds": 0.034093104476086517
+    },
+    "after": {
+      "medianFirstReadySeconds": 2.567056833333333,
+      "medianNavigationObservedSeconds": 0.2635115,
+      "initialTableCount": 1,
+      "medianInitializeSessionTotalSeconds": 0.2807333369694859,
+      "medianInitializeUITotalSeconds": 0.8146798650998597,
+      "medianUpdateUITotalSeconds": 0.7745925048616189,
+      "medianMetricTableDataTotalSeconds": 0.012623250502632136,
+      "medianUitableTotalSeconds": 0.022439604521321866
+    }
+  }
+}

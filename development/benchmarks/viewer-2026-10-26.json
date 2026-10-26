@@ -1,0 +1,262 @@
+{
+  "date": "2026-10-26",
+  "matlab": "R2024b Update 9",
+  "fixture": "10 repeated copies of the 151-cell tutorial metrics (1510 cells); PCA display preference",
+  "notes": [
+    "Profiled opening and three redraws; timer polling adds latency to readiness/redraw observations.",
+    "Separate MATLAB processes and profiler/graphics startup overhead make before/after wall times unsuitable for speedup claims.",
+    "Preparation timings alternate five warmed legacy/package calls in the same process.",
+    "All prepared fields matched the frozen legacy implementation exactly; original recording files were read-only."
+  ],
+  "before": {
+    "cells": 1510,
+    "copies": 10,
+    "readSeconds": 0.34398229166666666,
+    "assembleSeconds": 0.18830229166666668,
+    "firstReadySeconds": 8.992192541666666,
+    "redrawObservedSeconds": [
+      1.142194375,
+      0.26095195833333334,
+      0.26327795833333334
+    ],
+    "timings": [
+      {
+        "name": "CellExplorer>updateUI",
+        "calls": 4,
+        "totalSeconds": 1.2284316829816286,
+        "selfSeconds": 0.08945058452133825
+      },
+      {
+        "name": "uitable",
+        "calls": 2,
+        "totalSeconds": 1.226907641294721,
+        "selfSeconds": 1.1435648485211678
+      },
+      {
+        "name": "CellExplorer>initializeSession",
+        "calls": 1,
+        "totalSeconds": 0.726036884642591,
+        "selfSeconds": 0.340755962858958
+      },
+      {
+        "name": "interp1",
+        "calls": 3020,
+        "totalSeconds": 0.1207386266035455,
+        "selfSeconds": 0.08452825112263077
+      },
+      {
+        "name": "pca",
+        "calls": 1,
+        "totalSeconds": 0.0978691679664799,
+        "selfSeconds": 0.02034862527025276
+      },
+      {
+        "name": "pca>localSVD",
+        "calls": 1,
+        "totalSeconds": 0.03633020881583959,
+        "selfSeconds": 0.03374408378149293
+      },
+      {
+        "name": "findgroups",
+        "calls": 13,
+        "totalSeconds": 0.031046208745662097,
+        "selfSeconds": 0.009396458458128927
+      },
+      {
+        "name": "CellExplorer>normalize_range",
+        "calls": 6,
+        "totalSeconds": 0.023620458647039738,
+        "selfSeconds": 0.010608250140889558
+      },
+      {
+        "name": "interp1>parseinputs",
+        "calls": 3020,
+        "totalSeconds": 0.020320791936549763,
+        "selfSeconds": 0.011405416818143499
+      },
+      {
+        "name": "interp1>reshapeAndSortXandV",
+        "calls": 3020,
+        "totalSeconds": 0.015889583544364972,
+        "selfSeconds": 0.010806291810186441
+      },
+      {
+        "name": "uitools/private/uitable_parseold",
+        "calls": 2,
+        "totalSeconds": 0.00819629177552269,
+        "selfSeconds": 0.0022587500299987547
+      },
+      {
+        "name": "interp1>sanitycheckmethod",
+        "calls": 3020,
+        "totalSeconds": 0.005170750068673409,
+        "selfSeconds": 0.005170750068673409
+      },
+      {
+        "name": "interp1>isScalarTextArg",
+        "calls": 6040,
+        "totalSeconds": 0.0037446250497328555,
+        "selfSeconds": 0.0037446250497328555
+      },
+      {
+        "name": "interp1>reshapeValuesV",
+        "calls": 3020,
+        "totalSeconds": 0.0036817500488978043,
+        "selfSeconds": 0.0036817500488978043
+      },
+      {
+        "name": "findgroups>parseInput",
+        "calls": 13,
+        "totalSeconds": 0.0029046250385767053,
+        "selfSeconds": 0.002784333370312429
+      },
+      {
+        "name": "istable",
+        "calls": 13,
+        "totalSeconds": 0.000113166668169648,
+        "selfSeconds": 0.000113166668169648
+      }
+    ]
+  },
+  "after": {
+    "cells": 1510,
+    "copies": 10,
+    "readSeconds": 0.4068297083333333,
+    "assembleSeconds": 0.2649425833333333,
+    "firstReadySeconds": 10.296721583333333,
+    "redrawObservedSeconds": [
+      0.9196267083333334,
+      0.2656522083333333,
+      0.268229875
+    ],
+    "timings": [
+      {
+        "name": "uitable",
+        "calls": 2,
+        "totalSeconds": 1.5901613042491434,
+        "selfSeconds": 1.4623653449045984
+      },
+      {
+        "name": "CellExplorer>updateUI",
+        "calls": 4,
+        "totalSeconds": 1.3328231772129029,
+        "selfSeconds": 0.08703604235535711
+      },
+      {
+        "name": "CellExplorer>initializeSession",
+        "calls": 1,
+        "totalSeconds": 0.7362925891593993,
+        "selfSeconds": 0.2683387104566185
+      },
+      {
+        "name": "prepareDisplayData",
+        "calls": 1,
+        "totalSeconds": 0.23641050187064652,
+        "selfSeconds": 0.029675416901479484
+      },
+      {
+        "name": "prepareDisplayData>resampleWaveforms",
+        "calls": 2,
+        "totalSeconds": 0.16101400127405627,
+        "selfSeconds": 0.030854375244141585
+      },
+      {
+        "name": "interp1",
+        "calls": 3020,
+        "totalSeconds": 0.13015962602991468,
+        "selfSeconds": 0.06728275053238852
+      },
+      {
+        "name": "pca",
+        "calls": 1,
+        "totalSeconds": 0.08991200071144712,
+        "selfSeconds": 0.02264795851253995
+      },
+      {
+        "name": "findgroups",
+        "calls": 13,
+        "totalSeconds": 0.045829625362636295,
+        "selfSeconds": 0.012464916765297866
+      },
+      {
+        "name": "interp1>reshapeAndSortXandV",
+        "calls": 3020,
+        "totalSeconds": 0.040347666985925845,
+        "selfSeconds": 0.02751050021768247
+      },
+      {
+        "name": "pca>localSVD",
+        "calls": 1,
+        "totalSeconds": 0.029316666898640795,
+        "selfSeconds": 0.02668270854446573
+      },
+      {
+        "name": "prepareDisplayData>normalizeRange",
+        "calls": 6,
+        "totalSeconds": 0.02475462519587604,
+        "selfSeconds": 0.009098583405327737
+      },
+      {
+        "name": "interp1>parseinputs",
+        "calls": 3020,
+        "totalSeconds": 0.02252920851160031,
+        "selfSeconds": 0.011980833428134132
+      },
+      {
+        "name": "interp1>reshapeValuesV",
+        "calls": 3020,
+        "totalSeconds": 0.012837166768243377,
+        "selfSeconds": 0.012837166768243377
+      },
+      {
+        "name": "uitools/private/uitable_parseold",
+        "calls": 2,
+        "totalSeconds": 0.011225458422157072,
+        "selfSeconds": 0.0029394166899254035
+      },
+      {
+        "name": "interp1>sanitycheckmethod",
+        "calls": 3020,
+        "totalSeconds": 0.007057875055846882,
+        "selfSeconds": 0.007057875055846882
+      },
+      {
+        "name": "findgroups>parseInput",
+        "calls": 13,
+        "totalSeconds": 0.005746458378803361,
+        "selfSeconds": 0.00552000004367813
+      },
+      {
+        "name": "interp1>isScalarTextArg",
+        "calls": 6040,
+        "totalSeconds": 0.0034905000276192963,
+        "selfSeconds": 0.0034905000276192963
+      },
+      {
+        "name": "istable",
+        "calls": 13,
+        "totalSeconds": 0.00014408333447342222,
+        "selfSeconds": 0.00014408333447342222
+      }
+    ]
+  },
+  "preparation": {
+    "cells": 1510,
+    "legacySeconds": [
+      0.059594708333333336,
+      0.04879683333333333,
+      0.05389616666666667,
+      0.065246375,
+      0.03574320833333333
+    ],
+    "packageSeconds": [
+      0.045046875,
+      0.04446395833333333,
+      0.06804191666666666,
+      0.03515729166666667,
+      0.0270835
+    ],
+    "legacyMedianSeconds": 0.05389616666666667,
+    "packageMedianSeconds": 0.04446395833333333
+  }
+}
