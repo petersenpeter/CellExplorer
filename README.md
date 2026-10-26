@@ -1,6 +1,8 @@
 # CellExplorer
 CellExplorer is a graphical user interface, a standardized processing module and data structure for exploring and classifying single cells acquired using extracellular electrodes. Visit [CellExplorer.org](https://cellexplorer.org/) to learn more about features, installation instructions, tutorials and general documentation.
 
+Development of CellExplorer 2.0 follows the [restructuring plan](development/cellexplorer-2.0-plan.md). See the [developer guide](development/README.md) for component boundaries and regression tests.
+
 <a href="https://cellexplorer.org/">![CellExplorer](https://buzsakilab.com/wp/wp-content/uploads/2020/05/CellExplorerInterface-1200x730-1.jpg)</a>
 
 ### Citing CellExplorer in research and publications

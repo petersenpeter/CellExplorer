@@ -1,0 +1,13 @@
+function patch = extractWaveforms(spikes, session, settings, showWaveforms)
+%EXTRACTWAVEFORMS Run the legacy numerical extractor with explicit configuration.
+spikes = getWaveformsFromDat(spikes,session, ...
+    'nPull',settings.preferences.nPull,'wfWin_sec',settings.preferences.wfWin_sec, ...
+    'wfWinKeep',settings.preferences.wfWinKeep,'filtFreq',settings.filtFreq, ...
+    'showWaveforms',showWaveforms,'saveMat',false,'saveFig',false, ...
+    'saveSummaryFigure',false,'strictBadChannels',true);
+fields = ce.pipeline.waveformFields;
+for index = 1:numel(fields), patch.data.(fields{index}) = spikes.(fields{index}); end
+names = fieldnames(spikes.processinginfo.params);
+names = names(startsWith(names,'Waveforms'));
+for index = 1:numel(names), patch.waveformParameters.(names{index}) = spikes.processinginfo.params.(names{index}); end
+end

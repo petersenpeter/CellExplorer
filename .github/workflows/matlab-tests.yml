@@ -1,0 +1,25 @@
+name: MATLAB component tests
+
+on:
+  push:
+    branches: [master, main, CellExplorer-2.0]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2024b
+          products: Statistics_and_Machine_Learning_Toolbox Curve_Fitting_Toolbox Signal_Processing_Toolbox
+      - name: Run synthetic component regressions
+        uses: matlab-actions/run-command@v3
+        with:
+          command: run('tests/run_tests.m')

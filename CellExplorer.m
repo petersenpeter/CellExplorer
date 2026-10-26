@@ -163,7 +163,7 @@ maxFigureSize = get(groot,'ScreenSize');
 UI.params.figureSize = [50, 50, min([1200,maxFigureSize(3)-300]), min([800,maxFigureSize(4)-300])];
 
 if isempty(basename)
-    basename = basenameFromBasepath(basepath);
+    basename = ce.io.basenameFromBasepath(basepath);
 end
 
 CellExplorerVersion = 1.72;
@@ -295,7 +295,7 @@ else
         close(UI.fig)
         return
     end
-    basename = basenameFromBasepath(basepath);
+    basename = ce.io.basenameFromBasepath(basepath);
     if exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
         disp('Loading local cell_metrics')
         load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
@@ -9059,7 +9059,7 @@ end
                 MsgLog(['Session metadata file not available:' sessionMetaFilename],2)
             end
         else
-            basename = basenameFromBasepath(pwd);
+            basename = ce.io.basenameFromBasepath(pwd);
             sessionMetaFilename = fullfile(cell_metrics.general.basepath,[cell_metrics.general.basename,'.session.mat']);
             if exist(sessionMetaFilename,'file')
                 gui_session(sessionMetaFilename);
@@ -9917,12 +9917,6 @@ end
         [file,SavePath] = uiputfile(filter,'Save metrics',file);
         if SavePath ~= 0
             saveMetrics(cell_metrics,fullfile(SavePath,file));
-            try
-                1
-            catch exception
-                disp(exception.identifier)
-                MsgLog('Failed to save file - see Command Window for details',[3,4]);
-            end
         end
     end
     
@@ -9947,12 +9941,11 @@ end
         cell_metrics = saveCellMetricsStruct(cell_metrics);
         
         if nargin > 1
-            saveCellMetrics(cell_metrics,file);
             try
-                
+                ce.io.saveCellMetrics(cell_metrics,file);
                 MsgLog(['Cell metrics saved to: ', file],[1,2]);
-            catch
-                MsgLog(['Error saving metrics: ' file],4);
+            catch exception
+                MsgLog(['Error saving metrics: ' file, ' - ', exception.message],4);
             end
             
         elseif UI.BatchMode
@@ -9971,7 +9964,8 @@ end
             end
             cell_metricsTemp = cell_metrics; % clear cell_metrics
             ce_waitbar = waitbar(0,[num2str(sessionWithChanges),' sessions with changes'],'name','Saving cell metrics from batch','WindowStyle','modal');
-            errorSaving = zeros(1,length(sessionWithChanges));
+            % Unattempted/canceled sessions remain unsaved until a write succeeds.
+            errorSaving = ones(1,length(sessionWithChanges));
             for j = 1:length(sessionWithChanges)
                 if ~ishandle(ce_waitbar)
                     MsgLog(['Saving canceled']);
@@ -9985,44 +9979,26 @@ end
                 else
                     saveAs = 'cell_metrics';
                 end
-                try
-                    % Creating backup metrics
-                    createBackup(cell_metricsTemp,cellSubset)
-                catch
-                    MsgLog(['Error saving backup for session: ' cell_metricsTemp.general.basenames{sessionID}],2);
-                end
                 try 
-                    % Saving new metrics to file
                     matpath = fullfile(cell_metricsTemp.general.basepaths{sessionID},[cell_metricsTemp.general.basenames{sessionID}, '.',saveAs,'.cellinfo.mat']);
-                    matFileCell_metrics = matfile(matpath,'Writable',true);
-                    
-                    cell_metrics = matFileCell_metrics.cell_metrics;
-                    if length(cellSubset) == size(cell_metrics.putativeCellType,2)
-                        % String fields
-                        cell_metrics.labels = cell_metricsTemp.labels(cellSubset);
-                        cell_metrics.deepSuperficial = cell_metricsTemp.deepSuperficial(cellSubset);
-                        cell_metrics.deepSuperficialDistance = cell_metricsTemp.deepSuperficialDistance(cellSubset);
-                        cell_metrics.brainRegion = cell_metricsTemp.brainRegion(cellSubset);
-                        cell_metrics.putativeCellType = cell_metricsTemp.putativeCellType(cellSubset);
-                        % Struct/group fields
-                        cell_metrics.groups = getSubsetCellMetrics(cell_metricsTemp.groups,cellSubset);
-                        cell_metrics.tags = getSubsetCellMetrics(cell_metricsTemp.tags,cellSubset);
-                        cell_metrics.groundTruthClassification = getSubsetCellMetrics(cell_metricsTemp.groundTruthClassification,cellSubset);
-                        matFileCell_metrics.cell_metrics = cell_metrics;
-                        
-                    end
-                catch
-                    MsgLog(['Error saving metrics for session: ' cell_metricsTemp.general.basenames{sessionID}],4);
-                    errorSaving(j) = 1;
+                    ce.curation.saveSessionAnnotations(matpath,cell_metricsTemp,cellSubset);
+                    errorSaving(j) = 0;
+                catch exception
+                    MsgLog(['Error saving metrics for session: ' cell_metricsTemp.general.basenames{sessionID}, ' - ', exception.message],4);
                 end
             end
-            if ishandle(ce_waitbar) && all(errorSaving==0)
+            savedSessions = sessionWithChanges(errorSaving==0);
+            classificationTrackChanges = ce.curation.remainingChanges(classificationTrackChanges,cell_metricsTemp.batchIDs,savedSessions);
+            if ishandle(ce_waitbar)
                 close(ce_waitbar)
-                classificationTrackChanges = [];
+            end
+            if isempty(classificationTrackChanges)
                 UI.menu.file.save.ForegroundColor = 'k';
+            end
+            if all(errorSaving==0)
                 MsgLog(['Classifications succesfully saved to existing cell metrics files'],[1,2]);
             else
-                MsgLog('Metrics were not succesfully saved for all sessions in batch',4);
+                MsgLog('Some sessions were not saved. Their changes remain unsaved; retry after resolving the errors.',4);
             end
         else
             if isfield(cell_metrics.general,'saveAs')
@@ -10035,7 +10011,10 @@ end
                 MsgLog(['Basepath does not exist, please save metrics via dialog'],4);
                 filter = {'*.mat','MATLAB file (*.mat)';'*.json','JSON-formatted text file (*.json)';'*.nwb','Neurodata Without Borders (NWB) file (*.nwb)';'*.*','Any format (*.*)'};
                 [file,SavePath] = uiputfile(filter,'Save metrics',file);
-                cell_metrics.general.basename = SavePath;
+                if ~isequal(SavePath,0)
+                    saveMetrics(cell_metrics,fullfile(SavePath,file));
+                end
+                return
             end
             try
                 createBackup(cell_metrics)
@@ -10057,14 +10036,7 @@ end
     end
     
     function subsetOut = getSubsetCellMetrics(subsetIn,cellSubset)
-        subsetOut = struct();
-    	fields1 = fieldnames(subsetIn);
-        for i = 1:numel(fields1)
-            temp = intersect(subsetIn.(fields1{i}),cellSubset);
-            if ~isempty(temp)
-                subsetOut.(fields1{i}) = find(ismember(cellSubset,temp));
-            end
-        end
+        subsetOut = ce.curation.subsetGroups(subsetIn,cellSubset);
     end
 
     function SignificanceMetricsMatrix(~,~)

@@ -1,103 +1,16 @@
-function success = saveStruct(data,datatype,varargin)
-% Saves event, manipulation, behavior data to appropiate .mat files
-% TODO: Perform validation of the content before saving
-%
-% Example calls:
-% saveStruct(cell_metrics,'cellinfo','session',session); % Saving cell metrics
-% saveStruct(ripples,'events','session',session); % Saving ripples
-% saveStruct(session); Saving session metadata struct
-% saveStruct(temperature,'timeseries','session',session);
-
-% By Peter Petersen
-% petersen.peter@gmail.com
-% Last updated: 18-06-2021
-
-p = inputParser;
-addParameter(p,'basepath',pwd,@isstr); 
-addParameter(p,'basename','',@isstr);
-addParameter(p,'session',{},@isstruct);
-addParameter(p,'dataName','',@isstr);
-addParameter(p,'fileformat','mat',@isstr);
-addParameter(p,'commandDisp',true,@islogical);
-parse(p,varargin{:});
-
-basepath = p.Results.basepath;
-basename = p.Results.basename;
-session = p.Results.session;
-dataName = p.Results.dataName;
-fileformat = p.Results.fileformat;
-commandDisp = p.Results.commandDisp;
-success = false;
-
-if strcmp(inputname(1),'session')
-    session = data;
+function success = saveStruct(data, datatype, varargin)
+%SAVESTRUCT Save CellExplorer data using the established naming conventions.
+% Retains caller-variable inference, including saveStruct(session).
+% New code should call ce.io.saveStruct with an explicit dataName.
+callerName = inputname(1);
+if strcmp(callerName, 'session')
     datatype = 'session';
+    varargin = [varargin, {'session', data}];
+elseif nargin < 2
+    error('ce:io:MissingDatatype', 'Specify a datatype when the input is not named session.');
 end
-% Importing parameters from session struct
-if ~isempty(session)
-    basename = session.general.name;
-    basepath = session.general.basePath;
-elseif isempty(basename)
-    basename = basenameFromBasepath(basepath);
+if ~any(strcmpi(varargin(1:2:end), 'dataName'))
+    varargin = [varargin, {'dataName', callerName}];
 end
-
-% Validation
-% No validation implemented yet
-
-% Saving data to basepath
-supportedDataTypes = {'session','behavior','cellinfo','events','manipulation','states','channelInfo','timeseries','digitalseries','firingRateMap','lfp'};
-if any(strcmp(datatype,supportedDataTypes))
-    if isempty(dataName)
-        dataName = inputname(1);
-    end
-    switch datatype
-        case {'sessionInfo','session'}
-            filename = fullfile(basepath,[basename,'.',datatype,'.',fileformat]);
-        otherwise
-            filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.',fileformat]);
-    end
-    
-    % Saving struct  
-    switch lower(fileformat)
-        case 'mat'
-            % MATLABs own mat format
-            % Saving to a struct to maintain intented variable name
-            if contains(dataName,'cell_metrics') % this is to not create cell_metrics.intervalName fir intervals (if the saveAs is cell_metrics.intervalName, e.g.cell_metrics_NREM)
-                S.('cell_metrics') = data; 
-            else
-                S.(dataName) = data;
-            end
-            
-            % Checks byte size of struct to determine optimal mat format
-            structSize = whos('S');
-            if structSize.bytes/1000000000 > 2
-                save(filename, '-struct', 'S','-v7.3','-nocompression')
-                if commandDisp
-                    disp(['Saved variable ''', dataName, ''' to ', filename,' (v7.3)'])
-                end
-            else
-                save(filename, '-struct', 'S')
-                if commandDisp
-                    disp(['Saved variable ''', dataName, ''' to ', filename])
-                end
-            end
-            success = true;
-        case 'json'
-            % Saves session struct or cell_metrics to a json file
-            if any(strcmp(datatype,{'session','cell_metrics'}))
-                encodedJSON = jsonencode(data);
-                fid=fopen(file,'w');
-                fprintf(fid, encodedJSON);
-                fclose(fid);
-            end
-        case 'nwb'
-            % saves to a NeurodataWithoutBorder nwb container file
-            if strcmp(datatype,'cell_metrics')
-                saveCellMetrics2nwb(cell_metrics,file)
-            end
-        otherwise
-            warning(['File format not supported: ' fileformat])
-    end
-else
-    error(['Not a valid datatype: ', datatype,', basename: ' basename])
+success = ce.io.saveStruct(data, datatype, varargin{:});
 end

@@ -20,6 +20,8 @@ addParameter(p,'showWaveforms', true, @islogical);
 addParameter(p,'filtFreq',[500,8000], @isnumeric); % Band pass filter (default: 500Hz - 8000Hz)
 addParameter(p,'keepWaveforms_filt', false, @islogical); % Keep all extracted filtered waveforms
 addParameter(p,'keepWaveforms_raw', false, @islogical); % Keep all extracted raw waveforms
+addParameter(p,'saveSummaryFigure',true,@islogical); % Legacy interactive summary export
+addParameter(p,'strictBadChannels',false,@islogical); % Propagate detector failures in managed stages
 addParameter(p,'saveFig', false, @islogical); % Save figure with data
 addParameter(p,'saveMat', true, @islogical); % Save figure with data
 addParameter(p,'extraLabel', '', @ischar); % Extra labels in figures
@@ -61,6 +63,8 @@ end
 if params.getBadChannelsFromDat
     try
         session = getBadChannelsFromDat(session,'filtFreq',params.filtFreq,'saveMat',params.saveMat);
+    catch exception
+        if params.strictBadChannels, rethrow(exception); end
     end
 end
 
@@ -287,8 +291,10 @@ if params.showWaveforms && ishandle(fig1)
     % Saving a summary figure for all cells
     timestamp = datestr(now, '_dd-mm-yyyy_HH.MM.SS');
     try
-        ce_savefigure(fig1,basepath,[basename, '.getWaveformsFromDat' timestamp])
-        disp(['getWaveformsFromDat: Summary figure saved to ', fullfile(basepath, 'SummaryFigures', [basename, '.getWaveformsFromDat', timestamp]),'.png'])
+        if params.saveSummaryFigure
+            ce_savefigure(fig1,basepath,[basename, '.getWaveformsFromDat' timestamp])
+            disp(['getWaveformsFromDat: Summary figure saved to ', fullfile(basepath, 'SummaryFigures', [basename, '.getWaveformsFromDat', timestamp]),'.png'])
+        end
     end
 end
 disp(['Waveform extraction complete. Total duration: ' num2str(round(toc(timerVal)/60)),' minutes'])

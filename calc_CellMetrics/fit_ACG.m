@@ -1,45 +1,47 @@
-function fit_params_out = fit_ACG(acg_narrow,plots)
+function fit_params_out = fit_ACG(acg_narrow,plots,useParallel)
     % This function is part of CellExplorer
     % Fits a tripple exponential to the autocorrelogram with 0.5ms bins from -50ms -> 50ms
     % This function requires the Curve Fitting Toolbox
     %
     % By Peter Petersen
     % Last edited: 21-09-2021;
-    
+
     if ~exist('plots','var')
         plots = true;
     end
-    
+
+    if nargin < 3, useParallel = true; end
+
     % acg_narrow = cell_metrics.acg.narrow;
     acg_narrow(100:102) = 0; % Sets the time-zero bin to zero (-0.5ms -> 0.5ms)
     offset = 101;
     x = ([1:100]/2)';
-    
+
     % Variables
     a0 = [20, 1, 30, 2, 0.5, 5, 1.5,2];
     lb = [1, 0.1, 0, 0, -30, 0,0.1,0];
     ub = [500, 50, 500, 15, 50, 20,5,100];
-    
+
     fit_params = nan(8,size(acg_narrow,2));
     rsquare = nan(1,size(acg_narrow,2));
     plotf0 = zeros(100,size(acg_narrow,2));
-    
-    
+
+
     % Turning off interation limit warning
     warning('off','stats:nlinfit:IterationLimitExceeded')
-    
+
     % Validating that Parallel Computing Toolbox is installed
-    parallel_toolbox_installed = isToolboxInstalled('Parallel Computing Toolbox');
+    parallel_toolbox_installed = useParallel && isToolboxInstalled('Parallel Computing Toolbox');
     curve_fitting_toolbox_installed = isToolboxInstalled('Curve Fitting Toolbox');
-    
-    
-    
+
+
+
     % % % % % % % % % % % % % % % % % % % % %
     % Curve Fitting Toolbox
     % % % % % % % % % % % % % % % % % % % % %
-    
+
     fit_equation = fittype('max(c*(exp(-(x-f)/a)-d*exp(-(x-f)/b))+h*exp(-(x-f)/g)+e,0)','dependent',{'y'},'independent',{'x'},'coefficients',{'a','b','c','d','e','f','g','h'});
-    
+
     if parallel_toolbox_installed
         % Fitting ACGs in parfor
         gcp;
@@ -58,25 +60,27 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
                 plotf0(:,j) = f0(x);
                 fit_params(:,j) = coeffvalues(f0);
                 rsquare(j) = gof.rsquare;
-                
-                a = fit_params(1);
-                b = fit_params(2);
-                c = fit_params(3);
-                d = fit_params(4);
-                e = fit_params(5);
-                f = fit_params(6);
-                g = fit_params(7);
-                h = fit_params(8);
-                x_fit = ([1:0.1:100]/2)';
-                fiteqn = max(c*(exp(-(x_fit-f)/a)-d*exp(-(x_fit-f)/b))+h*exp(-(x_fit-f)/g)+e,0);
-                figure(3), clf
-                plot(x,acg_narrow(x*2+offset,j)), hold on
-                plot(x_fit,fiteqn),
-                text(0.5,0.5,num2str(fit_params),'Units','normalized')
+
+                if plots
+                    a = fit_params(1);
+                    b = fit_params(2);
+                    c = fit_params(3);
+                    d = fit_params(4);
+                    e = fit_params(5);
+                    f = fit_params(6);
+                    g = fit_params(7);
+                    h = fit_params(8);
+                    x_fit = ([1:0.1:100]/2)';
+                    fiteqn = max(c*(exp(-(x_fit-f)/a)-d*exp(-(x_fit-f)/b))+h*exp(-(x_fit-f)/g)+e,0);
+                    figure(3), clf
+                    plot(x,acg_narrow(x*2+offset,j)), hold on
+                    plot(x_fit,fiteqn),
+                    text(0.5,0.5,num2str(fit_params),'Units','normalized')
+                end
             end
         end
     end
-    
+
     fit_params_out.acg_tau_decay = fit_params(1,:);
     fit_params_out.acg_tau_rise = fit_params(2,:);
     fit_params_out.acg_c = fit_params(3,:);
@@ -86,17 +90,17 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
     fit_params_out.acg_tau_burst = fit_params(7,:);
     fit_params_out.acg_h = fit_params(8,:);
     fit_params_out.acg_fit_rsquare = rsquare;
-    
-    
+
+
 %     % % % % % % % % % % % % % % % % % % % % %
 %     % Optimization Toolbox
 %     % % % % % % % % % % % % % % % % % % % % %
 %     predicted = @(a,x) max(a(3)*(exp(-(x-a(6))/a(1))-a(4)*exp(-(x-a(6))/a(2)))+a(8)*exp(-(x-a(6))/a(7))+a(5),0);
-%     
+%
 %     for j = 1%:size(acg_narrow,2)
 %         ydata = acg_narrow(x*2+offset,j);
 %         ahat = lsqcurvefit(predicted,a0,x,ydata,lb,ub);
-%         
+%
 %         a = ahat(1);
 %         b = ahat(2);
 %         c = ahat(3);
@@ -111,10 +115,10 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
 %         plot(x,ydata), hold on
 %         plot(x_fit,fiteqn),
 %         text(0.5,0.5,num2str(ahat'),'Units','normalized')
-%         
+%
 %         pause(1)
 %     end
-%     
+%
 %     % % % % % % % % % % % % % % % % % % % % %
 %     % fmin search fitting
 %     % % % % % % % % % % % % % % % % % % % % %
@@ -134,18 +138,18 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
 %     h = a_new(8);
 %     x_fit = ([1:0.1:100]/2)';
 %     fiteqn = max(c*(exp(-(x_fit-f)/a)-d*exp(-(x_fit-f)/b))+h*exp(-(x_fit-f)/g)+e,0);
-%     
+%
 %     figure(2), clf
 %     plot(x,ydata), hold on
 %     plot(x_fit,fiteqn),
 %     text(0.5,0.5,num2str(a_new'),'Units','normalized')
-    
-    
+
+
     % Plots
     if plots
         jj = 1;
         for j = 1:size(acg_narrow,2)
-            
+
             if rem(j,12)==1
                 fig = figure('Name','Fitting individual ACGs','pos',[50,50,1000,700]);
                 movegui(fig,'center')
@@ -162,41 +166,41 @@ function fit_params_out = fit_ACG(acg_narrow,plots)
             end
             jj = jj + 1;
         end
-        
+
         fig1 = figure('Name','Fitting ACGs','pos',[50,50,1000,700],'visible','off');
         movegui(fig1,'center')
         subplot(3,3,1), x1 = fit_params(1,:);
         [~,edges] = histcounts(log10(x1),40);
         histogram(x1,10.^edges), xlabel('\tau_{decay} [ms]'), axis tight, ylabel('A')
         set(gca, 'xscale','log')
-        
+
         subplot(3,3,2), x1 = fit_params(2,:);
         [~,edges] = histcounts(log10(x1),40);
         histogram(x1,10.^edges), xlabel('\tau_{rise} [ms]'), axis tight, title('double-exponential fit to the ACG'), ylabel('B')
         set(gca, 'xscale','log')
-        
+
         subplot(3,3,3), x1 = fit_params(3,:);
         [~,edges] = histcounts(log10(x1),40);
         histogram(x1,10.^edges), xlabel('constant c'), axis tight, ylabel('C')
         set(gca, 'xscale','log')
-        
+
         subplot(3,3,4), x1 = fit_params(4,:);
         [~,edges] = histcounts(log10(x1),40);
         histogram(x1,10.^edges), xlabel('constant d'), axis tight, ylabel('D')
         set(gca, 'xscale','log')
-        
+
         subplot(3,3,5), x1 = fit_params(5,:);
         histogram(x1,40), xlabel('constant e'), axis tight, ylabel('E')
-        
+
         subplot(3,3,6), x1 = fit_params(6,:);
         histogram(x1,40), xlabel('t_0 Refractory time (ms)'), axis tight, ylabel('F')
-        
+
         subplot(3,3,7), x1 = fit_params(7,:);
         histogram(x1,40), xlabel('\tau_{burst}'), axis tight, ylabel('G')
-        
+
         subplot(3,3,8), x1 = fit_params(8,:);
         histogram(x1,40), xlabel('Burst constant'), axis tight, title('fit = max(c*(exp(-(x-t_0)/\tau_{decay})-d*exp(-(x-t_0)/\tau_{rise}))+h*exp(-(x-t_0)/\tau_{burst})+e,0)'), ylabel('H')
-        
+
         subplot(3,3,9), x1 = rsquare;
         histogram(x1,40), xlabel('r^2'), axis tight, ylabel('r^2')
         set(fig1,'visible','on')

@@ -7,6 +7,7 @@ function acg = calc_logACGs(spikes_times,varargin)
     
     p = inputParser;
     addParameter(p,'showFigures',true,@islogical);
+    addParameter(p,'useParallel',true,@(x) islogical(x) && isscalar(x));
     parse(p,varargin{:})
     intervals = -3:0.04:1;
     intervals2 = intervals(1:end-1)+.02;
@@ -15,7 +16,7 @@ function acg = calc_logACGs(spikes_times,varargin)
     acg.log10_bins = 10.^intervals2';
     acg_log10 = zeros(length(intervals2),size(spikes_times,2));
     
-    parallel_toolbox_installed = isToolboxInstalled('Parallel Computing Toolbox'); % Validating that Parallel Computing Toolbox is installed
+    parallel_toolbox_installed = p.Results.useParallel && isToolboxInstalled('Parallel Computing Toolbox'); % Validating that Parallel Computing Toolbox is installed
     if parallel_toolbox_installed
         gcp;
         parfor j = 1:size(spikes_times,2)

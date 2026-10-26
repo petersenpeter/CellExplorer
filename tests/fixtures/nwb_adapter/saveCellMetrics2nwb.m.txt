@@ -1,0 +1,8 @@
+function saveCellMetrics2nwb(cell_metrics, file)
+% Synthetic HDF5 writer used ONLY to test routing/staging, not the NWB schema.
+h5create(file, '/UID', size(cell_metrics.UID));
+h5write(file, '/UID', cell_metrics.UID);
+if isfield(cell_metrics, 'failExport') && cell_metrics.failExport
+    error('ce:test:ExportFailed', 'Simulated adapter failure after creating output.');
+end
+end

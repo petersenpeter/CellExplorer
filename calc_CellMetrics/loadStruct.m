@@ -11,53 +11,6 @@ function output = loadStruct(dataName,datatype,varargin)
 % petersen.peter@gmail.com
 % Last updated: 24-02-2020
 
-p = inputParser;
-addParameter(p,'basepath',pwd,@isstr); 
-addParameter(p,'basename','',@isstr);
-addParameter(p,'session',{},@isstruct);
-addParameter(p,'recording',{},@isstruct);
-parse(p,varargin{:})
-
-basepath = p.Results.basepath;
-basename = p.Results.basename;
-session = p.Results.session;
-recording = p.Results.recording;
-
-% Supported data types
-supportedDataTypes = {'timeseries', 'events', 'manipulation', 'behavior', 'cellinfo', 'channelInfo', 'sessionInfo', 'states', 'firingRateMap', 'lfp', 'session','digitalseries'};
-
-% Importing parameters from session or recording struct
-if ~isempty(session)
-    basename = session.general.name;
-    basepath = session.general.basePath;    
-elseif ~isempty(recording)
-    basename = recording.name;
-    basepath = pwd;
-elseif isempty(basename)
-    s = regexp(basepath, filesep, 'split');
-    basename = s{end};
-end
-
-% Validation
-% No validation implemented yet
-
-
-if any(strcmp(datatype,supportedDataTypes))
-    switch datatype
-        case {'sessionInfo','session'}
-            filename = fullfile(basepath,[basename,'.',datatype,'.mat']);
-        otherwise
-            filename = fullfile(basepath,[basename,'.',dataName,'.',datatype,'.mat']);
-    end
-    dataStructure = load(filename);
-    if isfield(dataStructure,dataName)
-        output = dataStructure.(dataName);
-    else
-        temp = fieldnames(dataStructure);
-        output = dataStructure.(temp{1});
-        warning(['naming convention not upheld in loaded data: ' dataName,' => ',temp{1}])
-    end
-%     disp(['Successfully loaded ', filename])
-else
-    error(['Not a valid datatype: ', datatype,', filename: ' filename])
+% Compatibility entry point; implementation: ce.io.loadStruct.
+output = ce.io.loadStruct(dataName, datatype, varargin{:});
 end
