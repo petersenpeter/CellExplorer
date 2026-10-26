@@ -1426,3 +1426,41 @@ The live synthetic layout/filter/LFP smoke passed, and the
 [settled layout preview](benchmarks/neuroscope-row-layout-2026-10-26/neuroscope.png)
 was visually inspected on MATLAB R2024b Update 9/macOS. Windows and HiDPI-specific
 review remain pending.
+
+## NeuroScope2 navigation, event and spectral rows (2026-10-26)
+
+Navigation, Event controls and Spectrogram have builders beside
+`buildTraceSection` in `+ce/+ui/+neuroscope`. Events and Spectrogram use
+`RowSection` and `bindSection` to determine the required height. Navigation
+retains the original compact arrangement and 65-pixel height, following user
+feedback: playback/back on the left, stacked amplitude arrows in the center,
+and forward/end playback on the right. All four sidebar
+tabs derive their scrolling minima from their child sections. Remaining legacy
+sections still declare their individual heights.
+
+For a full-width control or a row of equally sized buttons:
+
+```matlab
+controls.show = section.addControl('show', 'checkbox', ...
+    'String', 'Show overlay', 'Callback', callbacks.showOverlay);
+buttons = section.addButtons('browse', {
+    {'String', 'Previous', 'Callback', callbacks.previous}, ...
+    {'String', 'Next', 'Callback', callbacks.next}});
+```
+
+Button groups stack vertically when their labels no longer fit. Handles, keyboard
+callbacks and typed values survive resizing. Keep scientific computation and
+state changes in callbacks; section builders only create controls. The new event
+buttons call the existing event-editing and saving routines.
+
+Live smoke scenario 10 exercises time/amplitude navigation, event loading,
+selection/next/previous/flagging, and spectrogram enable/edit/render/disable. It
+also checks collapse/reflow without changing data or analysis settings. All
+recordings/events and writes are temporary; the tutorial metadata is only read.
+`runUIRobustnessSmoke(source,10,captureFile)` writes `-general`, `-events` and
+`-spectrogram` captures beside the supplied capture filename.
+
+Verification for this increment: 299 component tests passed; 213 files passed
+parse checks. Live scenario 10 passed and all three captures were visually
+inspected on MATLAB R2024b Update 9/macOS. See the
+[implementation record and previews](cellexplorer-2.0-plan.md#neuroscope2-measured-sections-expanded-2026-10-26).

@@ -443,15 +443,14 @@ end
 
         % % % % % % % % % % % % % % % % % % % % % %
         % 1. PANEL: General elements
-        % Navigation
-        UI.panel.general.navigation = uipanel('Parent',UI.panel.general.main,'title','Navigation');
-        UI.buttons.play1 = uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.15 0.98],'String',char(9654),'Callback',@(~,~)streamDataButtons,'KeyPressFcn', @keyPress,'tooltip','Stream from current timepoint'); 
-        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.17 0.01 0.15 0.98],'String',char(8592),'Callback',@(src,evnt)back,'KeyPressFcn', @keyPress,'tooltip','Go back in time');
-        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.33 0.5 0.34 0.49],'String',char(8593),'Callback',@(src,evnt)increaseAmplitude,'KeyPressFcn', @keyPress,'tooltip','Increase amplitude of ephys data');
-        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.33 0.01 0.34 0.49],'String',char(8595),'Callback',@(src,evnt)decreaseAmplitude,'KeyPressFcn', @keyPress,'tooltip','Decrease amplitude of ephys data');
-        uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.68 0.01 0.15 0.98],'String',char(8594),'Callback',@(src,evnt)advance,'KeyPressFcn', @keyPress,'tooltip','Forward in time');
-        UI.buttons.play2 = uicontrol('Parent',UI.panel.general.navigation,'Style','pushbutton','Units','normalized','Position',[0.84 0.01 0.15 0.98],'String',[char(9655) char(9654)],'Callback',@(~,~)streamDataButtons2,'KeyPressFcn', @keyPress,'tooltip','Stream from end of file');
-        
+        % Keep the original compact navigation arrangement.
+        navigationCallbacks=struct('play',@(~,~)streamDataButtons,'playEnd',@(~,~)streamDataButtons2, ...
+            'back',@(~,~)back,'advance',@(~,~)advance,'increaseAmplitude',@(~,~)increaseAmplitude, ...
+            'decreaseAmplitude',@(~,~)decreaseAmplitude,'keyPress',@keyPress);
+        [UI.panel.general.navigation,UI.navigationControls]=ce.ui.neuroscope.buildNavigationSection(UI.panel.general.main,UI.settings,navigationCallbacks);
+        UI.buttons.play1=UI.navigationControls.play1;
+        UI.buttons.play2=UI.navigationControls.play2;
+
         % Trace rows own their geometry; retain existing control handles/callbacks.
         traceCallbacks = struct('changePlotStyle',@changePlotStyle,'changeColorScale',@changeColorScale, ...
             'changeTraceFilter',@changeTraceFilter,'extraSpacing',@extraSpacing, ...
@@ -580,7 +579,7 @@ end
         % Defining flexible panel heights
         set(UI.panel.spikedata.main, 'Heights', [160 170 100 -200 35 100 95],'MinimumHeights',[160 170 60 160 35 60 95]);
         UI.panel.spikedata.main1.MinimumWidths = 218;
-        UI.panel.spikedata.main1.MinimumHeights = 825;
+        ce.ui.layout.fitScrollingStack(UI.panel.spikedata.main,UI.panel.spikedata.main1);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 3. PANEL: Other datatypes
@@ -589,21 +588,15 @@ end
         UI.panel.events.table = uipanel('Parent',UI.panel.other.main,'title','Events (*.events.mat)');
         UI.table.events_data = uitable(UI.panel.events.table,'Data', {'','',false,false,false},'Units','normalized','Position',[0 0 1 1],'ColumnWidth',{20 85 42 50 45},'columnname',{'','Name','Show','Active','Below'},'RowName',[],'ColumnEditable',[false false true true true],'CellEditCallback',@setEventData,'CellSelectionCallback',@table_events_click);
 
-        UI.panel.events.main = uipanel('Parent',UI.panel.other.main);
-        UI.panel.events.showEventsIntervals = uicontrol('Parent',UI.panel.events.main,'Style','checkbox','Units','normalized','Position',[0.01 0.8 0.32 0.19], 'value', 0,'String','Intervals','Callback',@showEventsIntervals,'KeyPressFcn', @keyPress,'tooltip','Show events intervals');
-        UI.panel.events.processing_steps = uicontrol('Parent',UI.panel.events.main,'Style','checkbox','Units','normalized','Position',[0.34 0.8 0.32 0.19], 'value', 0,'String','Processing','Callback',@processing_steps,'KeyPressFcn', @keyPress,'tooltip','Show processing steps');
-        uicontrol('Parent',UI.panel.events.main,'Style','pushbutton','Units','normalized','Position',[0.665 0.8 0.32 0.20],'String','Save events','Callback',@saveEvent,'KeyPressFcn', @keyPress,'tooltip','Save');
-        UI.panel.events.eventNumber = uicontrol('Parent',UI.panel.events.main,'Style', 'Edit', 'String', '', 'Units','normalized', 'Position', [0.01 0.6 0.485 0.19],'HorizontalAlignment','center','tooltip','Event number','Callback',@gotoEvents);
-        UI.panel.events.eventCount = uicontrol('Parent',UI.panel.events.main,'Style', 'Edit', 'String', 'nEvents', 'Units','normalized', 'Position', [0.505 0.6 0.485 0.19],'HorizontalAlignment','center','Enable','off');
-        uicontrol('Parent',UI.panel.events.main,'Style','pushbutton','Units','normalized','Position',[0.01 0.4 0.32 0.19],'String',char(8592),'Callback',@previousEvent,'KeyPressFcn', @keyPress,'tooltip','Previous event');
-        uicontrol('Parent',UI.panel.events.main,'Style','pushbutton','Units','normalized','Position',[0.34 0.4 0.32 0.19],'String','Random','Callback',@(src,evnt)randomEvent,'KeyPressFcn', @keyPress,'tooltip','Random event');
-        uicontrol('Parent',UI.panel.events.main,'Style','pushbutton','Units','normalized','Position',[0.67 0.4 0.32 0.19],'String',char(8594),'Callback',@nextEvent,'KeyPressFcn', @keyPress,'tooltip','Next event');
-        uicontrol('Parent',UI.panel.events.main,'Style','pushbutton','Units','normalized','Position',[0.01 0.2 0.485 0.19],'String','Flag event','Callback',@flagEvent,'KeyPressFcn', @keyPress,'tooltip','Flag selected event');
-        UI.panel.events.flagCount = uicontrol('Parent',UI.panel.events.main,'Style', 'Edit', 'String', 'nFlags', 'Units','normalized', 'Position', [0.505 0.2 0.485 0.19],'HorizontalAlignment','center','Enable','off');
-        uicontrol('Parent',UI.panel.events.main,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.32 0.19],'String','+ event','Callback',@addEvent,'KeyPressFcn', @keyPress,'tooltip','Add event. Define single timestamps with cursor. Also allows for removing added timestamps. Saved to .added');
-        uicontrol('Parent',UI.panel.events.main,'Style','pushbutton','Units','normalized','Position',[0.34 0.01 0.32 0.19],'String','+ interval','Callback',@addInterval,'KeyPressFcn', @keyPress,'tooltip','Add intervals. Define boundaries with mouse cursor. Saved to .added_intervals');
-        uicontrol('Parent',UI.panel.events.main,'Style','pushbutton','Units','normalized','Position',[0.67 0.01 0.32 0.19],'String','- interval','Callback',@removeInterval,'KeyPressFcn', @keyPress,'tooltip','Remove intervals. Define boundaries with mouse cursor. Affects only manually added intervals. Saved to .added_intervals');
-        
+        eventCallbacks=struct('showEventsIntervals',@showEventsIntervals,'processing_steps',@processing_steps, ...
+            'saveEvent',@saveEvent,'gotoEvents',@gotoEvents,'previousEvent',@previousEvent, ...
+            'randomEvent',@(~,~)randomEvent,'nextEvent',@nextEvent,'flagEvent',@flagEvent, ...
+            'addEvent',@addEvent,'addInterval',@addInterval,'removeInterval',@removeInterval,'keyPress',@keyPress);
+        [UI.eventsSection,eventControls]=ce.ui.neuroscope.buildEventsSection(UI.panel.other.main,UI.settings,eventCallbacks);
+        for field=fieldnames(eventControls)'
+            UI.panel.events.(field{1})=eventControls.(field{1});
+        end
+
         % States
         UI.panel.states.main = uipanel('Parent',UI.panel.other.main,'title','States (*.states.mat)');
         UI.panel.states.files = uicontrol('Parent',UI.panel.states.main,'Style', 'popup', 'String', {''}, 'Units','normalized', 'Position', [0.01 0.67 0.98 0.31],'HorizontalAlignment','left','Callback',@setStatesData);
@@ -634,30 +627,16 @@ end
         uicontrol('Parent',UI.panel.timeseries.main,'Style','pushbutton','Units','normalized','Position',[0.01 0.01 0.98 0.98],'String','Plot full timeseries','Callback',@plotTimeSeries,'KeyPressFcn', @keyPress,'tooltip','Show full trace in separate figure');
         
         % Defining flexible panel heights
-        set(UI.panel.other.main, 'Heights', [-120 150 95 140 -120 40],'MinimumHeights',[120 150 100 150 120 40]);
+        set(UI.panel.other.main, 'Heights', [-120 UI.eventsSection.PreferredHeight 95 140 -120 40],'MinimumHeights',[120 UI.eventsSection.PreferredHeight 100 150 120 40]);
         UI.panel.other.main1.MinimumWidths = 218;
-        UI.panel.other.main1.MinimumHeights = 760;
+        UI.eventsSectionBinding = ce.ui.layout.bindSection(UI.eventsSection,UI.panel.other.main,UI.panel.other.main1);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % 4. PANEL: Analysis
         
         % Spectrogram
-        UI.panel.spectrogram.main = uipanel('Parent',UI.panel.analysis.main,'title','Spectrogram');
-        UI.panel.spectrogram.showSpectrogram = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'checkbox','String','Show spectrogram', 'value', 0, 'Units','normalized', 'Position', [0.01 0.80 0.99 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','left');
-        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Channel', 'Units','normalized', 'Position', [0.01 0.60 0.49 0.17],'HorizontalAlignment','left');
-        UI.panel.spectrogram.spectrogramChannel = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.channel), 'Units','normalized', 'Position', [0.505 0.60 0.485 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
-        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Window width (sec)', 'Units','normalized', 'Position', [0.01 0.40 0.49 0.17],'HorizontalAlignment','left');
-        UI.panel.spectrogram.spectrogramWindow = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.window), 'Units','normalized', 'Position', [0.505 0.40 0.485 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
-        
-        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Low freq (Hz)', 'Units','normalized', 'Position', [0.01 0.20 0.32 0.14],'HorizontalAlignment','left');
-        UI.panel.spectrogram.freq_low = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.freq_low), 'Units','normalized', 'Position', [0.01 0.01 0.32 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
-        
-        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','Step size (Hz)', 'Units','normalized', 'Position', [0.34 0.20 0.32 0.14],'HorizontalAlignment','center');
-        UI.panel.spectrogram.freq_step_size = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.freq_step_size), 'Units','normalized', 'Position', [0.34 0.01 0.32 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
-        
-        uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'text','String','High freq (Hz)', 'Units','normalized', 'Position', [0.67 0.20 0.32 0.14],'HorizontalAlignment','right');
-        UI.panel.spectrogram.freq_high = uicontrol('Parent',UI.panel.spectrogram.main,'Style', 'Edit', 'String', num2str(UI.settings.spectrogram.freq_high), 'Units','normalized', 'Position', [0.67 0.01 0.32 0.19],'Callback',@toggleSpectrogram,'HorizontalAlignment','center');
-        
+        [UI.spectrogramSection,UI.panel.spectrogram]=ce.ui.neuroscope.buildSpectrogramSection(UI.panel.analysis.main,UI.settings,@toggleSpectrogram);
+
         % Current Source Density
         UI.panel.csd.main = uipanel('Parent',UI.panel.analysis.main,'title','Current Source Density');
         UI.panel.csd.showCSD = uicontrol('Parent',UI.panel.csd.main,'Style', 'checkbox','String','Show Current Source Density', 'value', 0, 'Units','normalized', 'Position', [0.01 0.01 0.98 0.98],'Callback',@show_CSD,'HorizontalAlignment','left');
@@ -694,9 +673,9 @@ end
         UI.panel.audio.rightChannel = uicontrol('Parent',UI.panel.audio.main,'Style', 'Edit', 'String', num2str(UI.settings.audioChannels(2)), 'Units','normalized', 'Position', [0.505 0 0.485 0.36],'HorizontalAlignment','center','tooltip','Right channel','Callback',@togglePlayAudio);
                 
         % Defining flexible panel heights
-        set(UI.panel.analysis.main, 'Heights', [150 60 100 100 100],'MinimumHeights',[150 60 100 100 100]);
+        set(UI.panel.analysis.main, 'Heights', [UI.spectrogramSection.PreferredHeight 60 100 100 100],'MinimumHeights',[UI.spectrogramSection.PreferredHeight 60 100 100 100]);
         UI.panel.analysis.main1.MinimumWidths = 218;
-        UI.panel.analysis.main1.MinimumHeights = 510;
+        UI.spectrogramSectionBinding = ce.ui.layout.bindSection(UI.spectrogramSection,UI.panel.analysis.main,UI.panel.analysis.main1);
         
         % % % % % % % % % % % % % % % % % % % % % %
         % Lower info panel elements
@@ -5333,8 +5312,8 @@ end
         end
         tableHeights_TimeSeries = nfiles*18+30;
         
-        set(UI.panel.other.main, 'MinimumHeights',[tableHeights_Events 150 100 150 tableHeights_TimeSeries 40]);
-        UI.panel.other.main1.MinimumHeights = 520 + tableHeights_Events + tableHeights_TimeSeries;
+        set(UI.panel.other.main, 'MinimumHeights',[tableHeights_Events UI.eventsSection.PreferredHeight 100 150 tableHeights_TimeSeries 40]);
+        ce.ui.layout.fitScrollingStack(UI.panel.other.main,UI.panel.other.main1);
         
         
         % Generating epoch interval-visualization

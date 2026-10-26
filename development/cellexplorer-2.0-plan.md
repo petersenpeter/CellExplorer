@@ -1445,3 +1445,52 @@ metadata unchanged, and its settled view was visually inspected. The synthetic
 the migrated section after exercising filtering and LFP switching. MATLAB emitted
 its previously observed Java code-cache warning during GUI checks; no response-time
 benchmark or cross-platform rendering claim is made here.
+
+### NeuroScope2 measured sections expanded (2026-10-26)
+
+Navigation, Event controls and Spectrogram now use dedicated row-based builders.
+Navigation retains playback/time/amplitude callbacks; events retain their table,
+selection, flagging, editing and save callbacks; spectrogram settings retain the
+existing calculation and validation. Labeled event counts and frequency fields
+make their meaning visible without relying on tooltips. Button groups reflow
+vertically when needed, and all three sections support collapse/expand.
+
+All four sidebar tabs now calculate their scrolling minima from section heights,
+minimum sizes, spacing and padding. This removes the remaining duplicated tab
+height totals. Legacy sections still specify their own individual dimensions;
+only the four migrated sections automatically measure their contents.
+
+Next: migrate the remaining analysis controls (CSD, instantaneous metrics,
+RMS noise and audio), then spike/state/behavior controls and the lower
+status strip. Saved layout preferences and an external section registry remain
+follow-ups. The proposed overview/bookmark and probe-quality plots are still
+pending. Event persistence and transactional session reload remain separate
+robustness work; this increment does not change their behavior.
+
+Verification: **299 component tests passed** and **213 files passed parse checks**
+on MATLAB R2024b Update 9/macOS. Live scenario 10 passed with the tutorial session
+SHA-256 unchanged across the run. The synthetic
+[General](benchmarks/neuroscope-sections-2026-10-26/neuroscope-general.png),
+[Events](benchmarks/neuroscope-sections-2026-10-26/neuroscope-events.png) and
+[Spectrogram](benchmarks/neuroscope-sections-2026-10-26/neuroscope-spectrogram.png)
+captures were visually inspected. Windows/HiDPI review and performance benchmarks
+remain pending. MATLAB again emitted its Java code-cache warning during GUI tests.
+
+
+Navigation follow-up: restored the original compact arrangement at the user's
+request, including its 65-pixel panel and stacked central amplitude arrows.
+Its builder and existing callbacks remain separate from the main viewer. The
+sidebar still derives its total scroll height; Events, Spectrogram and trace
+controls retain their measured rows. Navigation no longer collapses or reflows
+into separate button rows. The earlier General preview shows the superseded
+navigation arrangement. The
+[restored navigation preview](benchmarks/neuroscope-sections-2026-10-26/neuroscope-navigation-restored.png)
+was visually checked, and live smoke scenario 10 passed again.
+The regression run also exposed a timer firing while a sidebar container's child
+list and size vectors were temporarily out of sync. SectionBinding now defers
+that update until the container finishes registering its children.
+It also skips updates while any parent is being deleted: MATLAB can dispatch a
+timer after the scrolling panel's internal controls are removed but before the
+section destruction listener runs.
+Final follow-up verification: 299 component tests passed, plus three consecutive
+runs of the ten layout tests, with no layout timer errors in the final run.

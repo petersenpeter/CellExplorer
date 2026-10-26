@@ -94,3 +94,66 @@ binding=t.TestData.listener; delete(s.Panel);
 verifyFalse(t,isvalid(binding));
 verifyEmpty(t,timerfindall('Name','CellExplorer section layout'));
 end
+
+function testButtonRowsReflowInOrderAndKeepCallbacks(t)
+s=t.TestData.section; called=0;
+buttons=s.addButtons('actions',{{'String','Previous event','Callback',@callback}, ...
+    {'String','Random event','Callback',@callback},{'String','Next event','Callback',@callback}});
+check=s.addControl('show','checkbox','String','Show events','Value',1);
+t.TestData.figure.Position(3)=650; settle(t); wide=s.PreferredHeight;
+positions=arrayfun(@(h) getpixelposition(h),buttons,'UniformOutput',false);
+verifyEqual(t,positions{1}(4),positions{3}(4)); verifyLessThan(t,positions{1}(1),positions{3}(1));
+t.TestData.figure.Position(3)=220; settle(t);
+verifyGreaterThan(t,s.PreferredHeight,wide);
+positions=arrayfun(@(h) getpixelposition(h),buttons,'UniformOutput',false);
+verifyGreaterThan(t,positions{1}(2),positions{2}(2)); verifyGreaterThan(t,positions{2}(2),positions{3}(2));
+verifyEqual(t,check.Value,1); verifyEqual(t,called,0);
+buttons(2).Callback([],[]); verifyEqual(t,called,1);
+verifyError(t,@() s.addButtons('empty',{}),'ce:ui:EmptyRow');
+    function callback(~,~), called=called+1; end
+end
+
+function testMultipleSectionsShareMeasuredStack(t)
+s=t.TestData.section; s.addField('first','First field','edit');
+second=ce.ui.layout.RowSection(t.TestData.stack,'Second',10);
+second.addField('long','A longer descriptive field label','edit','String','draft');
+binding=ce.ui.layout.bindSection(second,t.TestData.stack,t.TestData.scroll);
+for width=[600 220 400 220]
+    t.TestData.figure.Position(3)=width; settle(t); binding.flush(); settle(t);
+    verifyEqual(t,t.TestData.stack.Heights,[s.PreferredHeight;second.PreferredHeight]);
+    verifyEqual(t,t.TestData.scroll.MinimumHeights,s.PreferredHeight+second.PreferredHeight+11);
+    firstBounds=getpixelposition(s.Panel); secondBounds=getpixelposition(second.Panel);
+    verifyLessThanOrEqual(t,secondBounds(2)+secondBounds(4),firstBounds(2));
+end
+s.setCollapsed(true); settle(t); binding.flush(); settle(t);
+verifyEqual(t,t.TestData.scroll.MinimumHeights,s.PreferredHeight+second.PreferredHeight+11);
+delete(second); verifyFalse(t,isvalid(binding));
+end
+
+function testNewBuildersPreserveDefaultsAndCallbackWiring(t)
+delete(t.TestData.section); called=0; key=@callback;
+names={'play','playEnd','back','advance','increaseAmplitude','decreaseAmplitude','keyPress', ...
+    'showEventsIntervals','processing_steps','saveEvent','gotoEvents','previousEvent','randomEvent', ...
+    'nextEvent','flagEvent','addEvent','addInterval','removeInterval'};
+callbacks=struct; for name=names, callbacks.(name{1})=key; end
+settings=struct('fontsize',10,'spectrogram',struct('channel',2,'window',.2,'freq_low',4,'freq_step_size',2,'freq_high',250));
+[nav,n]=ce.ui.neuroscope.buildNavigationSection(t.TestData.stack,settings,callbacks);
+[events,e]=ce.ui.neuroscope.buildEventsSection(t.TestData.stack,settings,callbacks);
+[spectral,p]=ce.ui.neuroscope.buildSpectrogramSection(t.TestData.stack,settings,key);
+t.TestData.stack.Heights=[65 events.PreferredHeight spectral.PreferredHeight];
+verifyEqual(t,n.increaseAmplitude.Position,[0.33 0.5 0.34 0.49]);
+verifyEqual(t,n.back.Position,[0.17 0.01 0.15 0.98]);
+verifyEqual(t,n.main,nav);
+bindings={ce.ui.layout.bindSection(events,t.TestData.stack,t.TestData.scroll), ...
+    ce.ui.layout.bindSection(spectral,t.TestData.stack,t.TestData.scroll)};
+verifyEqual(t,p.spectrogramChannel.String,'2'); verifyEqual(t,p.freq_high.String,'250');
+verifyEqual(t,e.eventCount.Enable,'off'); verifyEqual(t,e.flagCount.Enable,'off');
+verifyEqual(t,n.play2.KeyPressFcn,key); verifyEqual(t,e.nextEvent.KeyPressFcn,key);
+n.advance.Callback([],[]); e.nextEvent.Callback([],[]); p.freq_high.Callback([],[]);
+verifyEqual(t,called,3);
+t.TestData.figure.Position(3)=220; drawnow;
+for k=1:numel(bindings), bindings{k}.flush(); end
+events.setCollapsed(true); events.setCollapsed(false); drawnow;
+verifyEqual(t,called,3,'Resizing must not run navigation or analysis callbacks.');
+    function callback(~,~), called=called+1; end
+end

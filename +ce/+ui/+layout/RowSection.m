@@ -7,7 +7,7 @@ classdef RowSection < handle
         PreferredHeight = 1
     end
     properties (Access=private)
-        Rows = struct('id',{},'grid',{},'controls',{},'label',{},'visible',{})
+        Rows = struct('id',{},'grid',{},'controls',{},'label',{},'visible',{},'kind',{})
         Busy = false
         FontSize = 10
     end
@@ -30,23 +30,15 @@ classdef RowSection < handle
             control=controls(2);
         end
         function controls=addRow(obj,id,leftProperties,rightProperties)
-            id=char(id);
-            if any(strcmp({obj.Rows.id},id))
-                error('ce:ui:DuplicateRow','Row ID already exists: %s.',id);
-            end
-            obj.Busy=true; mutation=onCleanup(@() obj.unlock()); %#ok<NASGU>
-            grid=uix.Grid('Parent',obj.Body,'Padding',2,'Spacing',4);
-            try
-                left=uicontrol('Parent',grid,'FontUnits','points','FontSize',obj.FontSize,leftProperties{:});
-                right=uicontrol('Parent',grid,'FontUnits','points','FontSize',obj.FontSize,rightProperties{:});
-            catch exception
-                delete(grid); rethrow(exception);
-            end
-            controls=[left right];
-            label=''; if strcmp(left.Style,'text'), label=left.String; end
-            obj.Rows(end+1)=struct('id',id,'grid',grid,'controls',controls,'label',{label},'visible',true);
-            clear mutation
-            obj.refresh();
+            controls=obj.createRow(id,{leftProperties,rightProperties},'pair');
+        end
+        function control=addControl(obj,id,style,varargin)
+            control=obj.createRow(id,{[{'Style',style},varargin]},'group');
+        end
+        function controls=addButtons(obj,id,properties)
+            % Each cell supplies one button's normal uicontrol properties.
+            properties=cellfun(@(item) [{'Style','pushbutton'},item],properties,'UniformOutput',false);
+            controls=obj.createRow(id,properties,'group');
         end
         function setRowVisible(obj,id,visible)
             validateattributes(visible,{'logical'},{'scalar'});
@@ -82,12 +74,28 @@ classdef RowSection < handle
                 if ~row.visible, continue; end
                 controls=row.controls;
                 if ~isempty(row.label), controls(1).String=row.label; end
+                height=max(26,ceil(max([controls.FontSize])*1.7+8));
+                if strcmp(row.kind,'group')
+                    minimum=32;
+                    for control=controls
+                        extra=20; if strcmp(control.Style,'checkbox'), extra=28; end
+                        minimum=max(minimum,control.Extent(3)+extra);
+                    end
+                    count=numel(controls);
+                    if count*minimum+(count-1)*row.grid.Spacing<=width || count==1
+                        row.grid.Widths=-ones(1,count); row.grid.Heights=height;
+                        heights(index)=height+2*row.grid.Padding;
+                    else
+                        row.grid.Widths=-1; row.grid.Heights=height*ones(1,count);
+                        heights(index)=count*height+(count-1)*row.grid.Spacing+2*row.grid.Padding;
+                    end
+                    continue
+                end
                 leftWidth=controls(1).Extent(3)+8;
                 if strcmp(controls(1).Style,'checkbox'), leftWidth=leftWidth+20; end
                 rightWidth=80;
                 if strcmp(controls(2).Style,'checkbox'), rightWidth=controls(2).Extent(3)+28; end
                 if strcmp(controls(2).Style,'popupmenu'), rightWidth=110; end
-                height=max(26,ceil(max([controls.FontSize])*1.7+8));
                 if leftWidth+rightWidth+row.grid.Spacing <= width
                     row.grid.Widths=[leftWidth -1]; row.grid.Heights=height;
                     heights(index)=height+2*row.grid.Padding;
@@ -118,6 +126,28 @@ classdef RowSection < handle
         end
     end
     methods (Access=private)
+        function controls=createRow(obj,id,properties,kind)
+            id=char(id);
+            if any(strcmp({obj.Rows.id},id))
+                error('ce:ui:DuplicateRow','Row ID already exists: %s.',id);
+            end
+            if isempty(properties), error('ce:ui:EmptyRow','A row needs at least one control.'); end
+            obj.Busy=true; mutation=onCleanup(@() obj.unlock()); %#ok<NASGU>
+            grid=uix.Grid('Parent',obj.Body,'Padding',2,'Spacing',4);
+            controls=gobjects(1,numel(properties));
+            try
+                for index=1:numel(properties)
+                    controls(index)=uicontrol('Parent',grid,'FontUnits','points','FontSize',obj.FontSize,properties{index}{:});
+                end
+            catch exception
+                delete(grid); rethrow(exception);
+            end
+            label='';
+            if strcmp(kind,'pair') && strcmp(controls(1).Style,'text'), label=controls(1).String; end
+            obj.Rows(end+1)=struct('id',id,'grid',grid,'controls',controls,'label',{label},'visible',true,'kind',kind);
+            clear mutation
+            obj.refresh();
+        end
         function index=rowIndex(obj,id)
             index=find(strcmp({obj.Rows.id},char(id)),1);
             if isempty(index), error('ce:ui:UnknownRow','Unknown row ID: %s.',char(id)); end

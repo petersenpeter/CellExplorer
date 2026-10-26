@@ -46,12 +46,16 @@ for scenario=scenarios
         if scenario==4, session.extracellular.precision='int16'; end
         n=12000; if scenario==7, n=40; elseif scenario==8, n=0; end
         samples=repmat(1:n,16,1);
-        if scenario==9
+        if scenario>=9
             time=(1:n)/2000; samples=round(120*sin(2*pi*8*time+(0:15)')+30*cos(2*pi*120*time));
         end
         fid=fopen(fullfile(folder,'synthetic.dat'),'w'); fwrite(fid,samples,session.extracellular.precision); fclose(fid);
         fid=fopen(fullfile(folder,'synthetic.lfp'),'w'); fwrite(fid,samples(:,1:2:end),'int16'); fclose(fid);
         ce.io.writeMat(fullfile(folder,'synthetic.session.mat'),struct('session',session));
+        if scenario==10
+            events=struct('timestamps',[1.9 2.1;2.9 3.1;3.9 4.1],'peaks',[2;3;4]);
+            ce.io.writeMat(fullfile(folder,'synthetic.layout.events.mat'),struct('layout',events));
+        end
         sentinel=fopen(fullfile(folder,'unrelated-reader.txt'),'w');
     end
     setappdata(0,'ceUIRobustnessCallback',@exercise);
@@ -118,7 +122,65 @@ summary.sourceUnchanged=true; disp(summary);
                 completed=true;
             else
                 s=state(findCallback(fig,'loadFromFile'));
-                if scenario==9
+                if scenario==10
+                    if phase==0
+                        initialTime=s.UI.t0; initialScale=s.UI.settings.scalingFactor;
+                        s.UI.navigationControls.advance.Callback([],[]);
+                        current=state(findCallback(fig,'loadFromFile')); assert(current.UI.t0>initialTime);
+                        s.UI.navigationControls.back.Callback([],[]);
+                        s.UI.navigationControls.increaseAmplitude.Callback([],[]);
+                        current=state(findCallback(fig,'loadFromFile')); assert(current.UI.settings.scalingFactor>initialScale);
+                        s.UI.navigationControls.decreaseAmplitude.Callback([],[]);
+                        current=state(findCallback(fig,'loadFromFile'));
+                        assert(abs(current.UI.settings.scalingFactor-initialScale)<1e-10 && abs(current.UI.t0-initialTime)<1e-10);
+                        s.UI.grid_panels.Widths=[330 -1]; settleSections(s);
+                        phase=1; return
+                    elseif phase==1
+                        capture(fig,'general');
+                        s.UI.uitabgroup.Selection=3; settleSections(s);
+                        row=find(strcmp(s.UI.data.detectecFiles.events,'layout')); assert(isscalar(row));
+                        s.UI.table.events_data.Data{row,3}=true;
+                        s.UI.table.events_data.CellEditCallback(s.UI.table.events_data,struct('Indices',[row 3],'EditData',true));
+                        s.UI.panel.events.eventNumber.String='2'; s.UI.panel.events.eventNumber.Callback([],[]);
+                        phase=2; return
+                    elseif phase==2
+                        assert(s.UI.settings.iEvent==2 && abs(s.UI.t0+s.UI.settings.windowDuration/2-3)<1e-10);
+                        s.UI.panel.events.flagEvent.Callback([],[]);
+                        current=state(findCallback(fig,'loadFromFile')); assert(isequal(current.data.events.layout.flagged,2));
+                        s.UI.panel.events.nextEvent.Callback([],[]);
+                        current=state(findCallback(fig,'loadFromFile')); assert(current.UI.settings.iEvent==3);
+                        s.UI.panel.events.previousEvent.Callback([],[]);
+                        current=state(findCallback(fig,'loadFromFile')); assert(current.UI.settings.iEvent==2);
+                        phase=3; return
+                    elseif phase==3
+                        settleSections(s); capture(fig,'events');
+                        s.UI.uitabgroup.Selection=4; settleSections(s);
+                        s.UI.panel.spectrogram.showSpectrogram.Value=1;
+                        s.UI.panel.spectrogram.freq_high.String='120';
+                        s.UI.panel.spectrogram.showSpectrogram.Callback([],[]);
+                        phase=4; return
+                    elseif phase==4
+                        assert(s.UI.settings.spectrogram.show && s.UI.settings.spectrogram.freq_high==120);
+                        assert(~isempty(findall(s.UI.plot_axis1,'Type','image')),'Spectrogram did not render.');
+                        raw=s.ephys.raw; settings=s.UI.settings;
+                        for width=[240 330]
+                            s.UI.grid_panels.Widths=[width -1]; settleSections(s);
+                        end
+                        s.UI.spectrogramSection.setCollapsed(true); settleSections(s);
+                        s.UI.spectrogramSection.setCollapsed(false); settleSections(s);
+                        current=state(findCallback(fig,'loadFromFile'));
+                        assert(isequaln(current.ephys.raw,raw) && isequaln(current.UI.settings,settings));
+                        % Request a plot pass after the viewport resizes before capture.
+                        s.UI.panel.spectrogram.showSpectrogram.Callback([],[]);
+                        phase=5; return
+                    elseif phase==5
+                        settleSections(s); capture(fig,'spectrogram');
+                        s.UI.panel.spectrogram.showSpectrogram.Value=0;
+                        s.UI.panel.spectrogram.showSpectrogram.Callback([],[]); phase=6; return
+                    else
+                        assert(~s.UI.settings.spectrogram.show && isempty(findall(s.UI.plot_axis1,'Type','image')));
+                    end
+                elseif scenario==9
                     if phase==0
                         raw=s.ephys.raw; settings=s.UI.settings;
                         originalHeight=s.UI.panel.general.main1.MinimumHeights;
@@ -178,6 +240,18 @@ summary.sourceUnchanged=true; disp(summary);
         catch exception
             failure=exception; completed=true; delete(figs(isgraphics(figs)));
         end
+    end
+    function settleSections(s)
+        drawnow;
+        for pass=1:2
+            s.UI.traceSectionListener.flush();
+            s.UI.eventsSectionBinding.flush(); s.UI.spectrogramSectionBinding.flush(); drawnow;
+        end
+    end
+    function capture(fig,label)
+        if isempty(captureFile), return; end
+        [directory,name,extension]=fileparts(captureFile);
+        frame=getframe(fig); imwrite(frame.cdata,fullfile(directory,[name,'-',label,extension]));
     end
     function writeStub(name,value)
         fid=fopen(fullfile(folder,[name,'.m']),'w'); c=onCleanup(@() fclose(fid)); fprintf(fid,'%s\n',value);
