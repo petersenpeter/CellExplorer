@@ -7,6 +7,7 @@ function optitrack = loadOptitrack(varargin)
 % optitrack = loadOptitrack('basepath',basepath,'basename',basename,'filenames',filenames)
 % theta_maze = loadOptitrack('session',session,'dataName','theta_maze')
 % linear_track = loadOptitrack('session',session,'dataName','linear_track')
+% open_field = loadOptitrack('session',session,'trackingEntry',2,'dataName','open_field') % files of session.behavioralTracking{2}
 
 p = inputParser;
 addParameter(p,'session', [], @isstruct); % A session struct
@@ -14,6 +15,7 @@ addParameter(p,'basepath', pwd, @isstr); % Basepath of the session
 addParameter(p,'basename', [], @isstr); % Name of the session
 addParameter(p,'dataName','',@isstr); % Any renaming of the behavior struct
 addParameter(p,'filenames', '',@iscellstr); % List of tracking files 
+addParameter(p,'trackingEntry', 1, @(x) isnumeric(x) && isscalar(x) && x>=1 && x==round(x)); % Index into session.behavioralTracking whose filenames are loaded (only used with a session struct; 'filenames' overrides it)
 addParameter(p,'scaling_factor', 1, @isnumeric); % A scaling-factor to apply to the x,y,z data.
 addParameter(p,'offset_origin', [0,0,0], @isnumeric); % An offset to apply to the x,y,z data (shift of origin). Applied after the scaling. In cm
 addParameter(p,'rotation', [], @isnumeric); % A rotation to apply to the x,y data (in degrees). Applied after the offset.
@@ -28,7 +30,11 @@ if ~isempty(parameters.session)
     session = parameters.session;
     basename = session.general.name;
     basepath = session.general.basePath;
-    filenames = session.behavioralTracking{1}.filenames;
+    if isfield(session,'behavioralTracking') && numel(session.behavioralTracking) >= parameters.trackingEntry
+        filenames = session.behavioralTracking{parameters.trackingEntry}.filenames;
+    elseif isempty(parameters.filenames)
+        error('loadOptitrack: session.behavioralTracking{%d} does not exist; provide filenames or a valid trackingEntry',parameters.trackingEntry)
+    end
 else
     basepath = p.Results.basepath;
     basename = p.Results.basename;
@@ -112,8 +118,11 @@ position3D = 100*[-optitrack_temp.X,optitrack_temp.Z,optitrack_temp.Y]*parameter
 
 % Rotationg X,Y coordinates around origin if a rotation parameter is given
 if ~isempty(parameters.rotation)
-    position3D(:,1) = position3D(:,1) * cosd(parameters.rotation) - position3D(:,2) * sind(parameters.rotation);
-    position3D(:,2) = position3D(:,1) * sind(parameters.rotation) + position3D(:,2) * cosd(parameters.rotation);
+    % Both rotated coordinates are computed from the unrotated x and y (previously y used the already rotated x)
+    x0 = position3D(:,1);
+    y0 = position3D(:,2);
+    position3D(:,1) = x0 * cosd(parameters.rotation) - y0 * sind(parameters.rotation);
+    position3D(:,2) = x0 * sind(parameters.rotation) + y0 * cosd(parameters.rotation);
 end
 
 % Estimating the speed of the rat
@@ -153,6 +162,7 @@ optitrack.processinginfo.date = now;
 optitrack.processinginfo.params.basepath = basepath;
 optitrack.processinginfo.params.basename = basename;
 optitrack.processinginfo.params.filenames = filenames;
+optitrack.processinginfo.params.trackingEntry = parameters.trackingEntry;
 optitrack.processinginfo.params.dataName = dataName;
 optitrack.processinginfo.params.rotation = parameters.rotation;
 optitrack.processinginfo.params.scaling_factor = parameters.scaling_factor;

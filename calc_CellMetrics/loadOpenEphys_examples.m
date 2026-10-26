@@ -72,10 +72,16 @@ circular_track = linearize_theta_maze(circular_track,maze);
 % Setting a minimum speed threshold
 circular_track.speed_th = 10;
 
-% Generating left_right states data
+% Generating left_right states data: expand the per-trial labels from getTrials_thetamaze
+% (1 = left, 2 = right, 0 = undetermined) to one value per sample; samples outside trials and
+% undetermined trials stay NaN. The per-trial labels are kept in trials.alternation.left_right.
+leftRightPerTrial = circular_track.states.left_right;
+circular_track.trials.alternation.left_right = leftRightPerTrial;
 circular_track.states.left_right = nan(size(circular_track.timestamps));
 for i = 1:circular_track.trials.alternation.nTrials
-    circular_track.states.left_right(circular_track.trials.alternation.trials==i) = circular_track.states.left_right(i);
+    if leftRightPerTrial(i) > 0
+        circular_track.states.left_right(circular_track.trials.alternation.trials==i) = leftRightPerTrial(i);
+    end
 end
 circular_track.stateNames.left_right = {'Left','Right'};
 
