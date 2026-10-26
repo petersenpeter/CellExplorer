@@ -5,8 +5,13 @@ function openephysDig = loadOpenEphysDigital(session)
 % session: session struct
 %
 % OUTPUTS
-% intanDig.on: on-state changes for each channel [in seconds]
-% intanDig.off: off-state changes for each channel [in seconds]
+% openephysDig.on: on-state changes for each TTL line [in seconds], on{L} for line L (1-indexed)
+% openephysDig.off: off-state changes for each TTL line [in seconds]
+% openephysDig.ttlLines: TTL lines with at least one state change
+% openephysDig.nOnPrFile, nOffPrFile, nTimestampsPrFile: counts per epoch for line 1 (also set for a single epoch)
+%
+% The states arrays hold the signed line number of each event (+L rising, -L falling) in both the
+% legacy (channel_states.npy) and the new (states.npy) format.
 %
 % By Peter Petersen
 % petersen.peter@gmail.com
@@ -80,13 +85,19 @@ end
 
 openephysDig.on{1} = double(openephysDig.timestamps(openephysDig.channel_states == 1));
 openephysDig.off{1} = double(openephysDig.timestamps(openephysDig.channel_states == -1));
+% All other TTL lines (line 1 is handled above)
+for line = setdiff(unique(abs(double(openephysDig.channel_states(:))))',[0,1])
+    openephysDig.on{line} = double(openephysDig.timestamps(openephysDig.channel_states == line));
+    openephysDig.off{line} = double(openephysDig.timestamps(openephysDig.channel_states == -line));
+end
+
+% Counts per epoch (line 1); now also set when there is a single epoch
+openephysDig.nTimestampsPrFile(1) = numel(openephysDig.timestamps);
+openephysDig.nOnPrFile(1) = numel(openephysDig.on{1});
+openephysDig.nOffPrFile(1) = numel(openephysDig.off{1});
 
 % Process additional epochs if present
 if length(TTL_paths) > 1
-    openephysDig.nTimestampsPrFile(1) = numel(openephysDig.timestamps);
-    openephysDig.nOnPrFile(1) = numel(openephysDig.on{1});
-    openephysDig.nOffPrFile(1) = numel(openephysDig.off{1});
-    
     for i = 2:length(TTL_paths)
         basePath = fullfile(session.general.basePath, TTL_paths{i});
         timestamps = readNPY(fullfile(basePath,'timestamps.npy'));
@@ -111,11 +122,21 @@ if length(TTL_paths) > 1
         openephysDig.full_words = [openephysDig.full_words; readNPY(fullfile(basePath,'full_words.npy'))];
         openephysDig.on{1} = [openephysDig.on{1}; double(timestamps(channel_states == 1))];
         openephysDig.off{1} = [openephysDig.off{1}; double(timestamps(channel_states == -1))];
+        for line = setdiff(unique(abs(double(channel_states(:))))',[0,1])
+            if numel(openephysDig.on) < line
+                openephysDig.on{line} = [];
+                openephysDig.off{line} = [];
+            end
+            openephysDig.on{line} = [openephysDig.on{line}; double(timestamps(channel_states == line))];
+            openephysDig.off{line} = [openephysDig.off{line}; double(timestamps(channel_states == -line))];
+        end
         openephysDig.nTimestampsPrFile(i) = numel(timestamps);
         openephysDig.nOnPrFile(i) = sum(channel_states == 1);
         openephysDig.nOffPrFile(i) = sum(channel_states == -1);
     end
 end
+
+openephysDig.ttlLines = find(~cellfun(@isempty,openephysDig.on) | ~cellfun(@isempty,openephysDig.off));
 
 % Attaching info about how the data was processed
 openephysDig.processinginfo.function = 'loadOpenEphysDigital';

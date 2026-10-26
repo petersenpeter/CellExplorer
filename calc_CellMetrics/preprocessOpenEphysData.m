@@ -9,6 +9,13 @@ function session = preprocessOpenEphysData(varargin)
     % 5. Merge dat/bin files to single binary .dat file in basepath
     % 6. Merge lfp files
     % 7. Merge digital timeseries
+    %
+    % Notes for repeated runs:
+    % - Steps 2-4 re-import the extracellular metadata from structure.oebin and save the session
+    %   struct. Pass 'saveMat',false (and re-apply your reviewed fields) to avoid overwriting a
+    %   session struct you have edited, e.g. in gui_session.
+    % - An existing basename.dat/.lfp of the expected size is kept. One of a different size is
+    %   re-concatenated (overwritten) by default; pass 'overwrite',false to stop with an error instead.
     
     p = inputParser;
     addParameter(p,'session', [], @isstruct); % A session struct
@@ -17,6 +24,7 @@ function session = preprocessOpenEphysData(varargin)
     addParameter(p,'saveMat', true, @islogical); % Saves basename.session.mat file
     addParameter(p,'showGUI',false,@islogical);
     addParameter(p,'processData',true,@islogical);
+    addParameter(p,'overwrite',true,@islogical); % Re-concatenate an existing .dat/.lfp whose size differs from the inputs (false: error instead)
     parse(p,varargin{:})
 
     parameters = p.Results;
@@ -72,7 +80,7 @@ function session = preprocessOpenEphysData(varargin)
 
         disp('Attempting to concatenate binary files with spiking data.')
         outputFile = fullfile(basepath,[session.general.name,'.dat']);
-        binaryMergeWrapper(inputFiles, outputFile)
+        binaryMergeWrapper(inputFiles, outputFile, parameters.overwrite)
 
         % 6. Merge lfp files
         inputFiles_lfp = {};
@@ -89,7 +97,7 @@ function session = preprocessOpenEphysData(varargin)
 
 
         disp('Attempting to concatenate binary LFP files.')
-        binaryMergeWrapper(inputFiles_lfp, outputFile_lfp)
+        binaryMergeWrapper(inputFiles_lfp, outputFile_lfp, parameters.overwrite)
 
 
         % 7. Merge digital timeseries
@@ -108,8 +116,8 @@ end
 
 
 %% Local functions
-function binaryMergeWrapper(inputFiles, outputFile)
-% binaryMergeWrapper(inputFiles, outputFile)
+function binaryMergeWrapper(inputFiles, outputFile, overwrite)
+% binaryMergeWrapper(inputFiles, outputFile, overwrite)
 %
 % Function merges multiple binary files into a single binary file.
 %
@@ -118,12 +126,15 @@ function binaryMergeWrapper(inputFiles, outputFile)
 %     for concatenation (required).
 %   outputFile (char): a shape-(1, N) full path output filename string
 %     (required).
+%   overwrite (logical): re-concatenate an existing output file whose size
+%     differs from the inputs (default true); false raises an error instead.
 % Returns:
 %   None.
 
 arguments
   inputFiles cell
   outputFile (1,:) char
+  overwrite (1,1) logical = true
 end
 
 concatenatedFiles = false;
@@ -141,10 +152,14 @@ else
     disp('Skipping concatenation.')
   else
     % Concatenate files if an existing concatenated file is of different size than expected.
+    if ~overwrite
+      error(['Concatenated binary file already exists with a different size than all input files taken together (', ...
+        num2str(outputFileSize), ' vs ', num2str(inputFileSize), ' bytes): ', outputFile, '. It was not changed (overwrite is false).']);
+    end
     if inputFileSize < outputFileSize
-      warning(['Concatenated binary file already exists but is larger than all input files taken together. Overwriting file ', outputFile]);
+      warning(['Concatenated binary file already exists but is larger than all input files taken together. Overwriting file ', outputFile, ' (pass ''overwrite'',false to keep it and stop instead)']);
     elseif inputFileSize > outputFileSize
-      warning(['Concatenated binary file already exists but is smaller than all input files taken together. Overwriting file ', outputFile]);
+      warning(['Concatenated binary file already exists but is smaller than all input files taken together. Overwriting file ', outputFile, ' (pass ''overwrite'',false to keep it and stop instead)']);
     end
     concatenate_binary_files(inputFiles, outputFile)
     concatenatedFiles = true;
