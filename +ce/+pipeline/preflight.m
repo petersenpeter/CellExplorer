@@ -88,16 +88,13 @@ end
 knownMetrics = {'all','other_metrics','waveform_metrics','PCA_features','acg_metrics', ...
     'monoSynaptic_connections','deepSuperficial','theta_metrics','spatial_metrics', ...
     'event_metrics','manipulation_metrics','state_metrics','psth_metrics'};
-custom = what('customCalculations');
-if ~isempty(custom)
-    names = custom(1).m;
-    for index = 1:numel(names)
-        [~,name] = fileparts(names{index});
-        if ~strcmpi(name,'template'), knownMetrics{end+1} = name; end %#ok<AGROW>
-        if parameters.headless && ~strcmpi(name,'template') && selected(name)
-            add('UnverifiedExtension',['customCalculations.',name],'error', ...
-                'Exclude this custom calculation or run interactively; its headless behavior has not been declared.');
-        end
+names = ce.pipeline.customCalculationNames;
+for index = 1:numel(names)
+    name = names{index};
+    knownMetrics{end+1} = name; %#ok<AGROW>
+    if parameters.headless && selected(name)
+        add('UnverifiedExtension',['customCalculations.',name],'error', ...
+            'Exclude this custom calculation or run interactively; its headless behavior has not been declared.');
     end
 end
 requested = parameters.metrics;
@@ -151,34 +148,52 @@ if selected('monoSynaptic_connections')
     end
 end
 needsCCG = selected('acg_metrics') || selected('monoSynaptic_connections') || selected('event_metrics') || ...
-    selected('manipulation_metrics') || selected('state_metrics');
+    selected('manipulation_metrics');
 if needsCCG
     requireFunction('CCG',false);
     requireFunction('CCGHeart',true);
 end
-if selected('monoSynaptic_connections') || ~isempty(parameters.restrictToIntervals) || ~isempty(parameters.excludeIntervals) || parameters.excludeManipulationIntervals
+if selected('event_metrics') || selected('manipulation_metrics')
+    requiredToolboxes{end+1} = 'Statistics and Machine Learning Toolbox';
+    for dependencyName = {'calc_PSTH','nanconv','ce_gausswin','isdscalar','isdvector'}
+        requireFunction(dependencyName{1},false);
+    end
+end
+if selected('state_metrics')
+    requireFunction('ce_InIntervals',false);
+    requireFunction('isdmatrix',false);
+end
+if selected('spatial_metrics')
+    for dependencyName = {'place_cell_condition','SpatialCoherence','nanconv'}
+        requireFunction(dependencyName{1},false);
+    end
+end
+if selected('monoSynaptic_connections') || selected('state_metrics') || ~isempty(parameters.restrictToIntervals) || ~isempty(parameters.excludeIntervals) || parameters.excludeManipulationIntervals
     requireFunction('FindInInterval',true);
 end
-lfp = fullfile(basepath,[basename,'.lfp']);
 if selected('deepSuperficial')
-    ripples = fullfile(basepath,[basename,'.ripples.events.mat']);
-    hasRippleChannel = isfield(session.channelTags,'Ripple');
-    if parameters.headless && (isfile(ripples) || hasRippleChannel)
-        requireFile(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']), ...
-            'deepSuperficial','Generate deep/superficial channel classification interactively first, or exclude deepSuperficial.');
-        if ~isfile(ripples)
-            add('InteractivePreparationRequired','deepSuperficial','error', ...
-                'Generate the ripples.events.mat file before headless processing, or exclude deepSuperficial.');
+    try
+        ce.pipeline.deepSuperficialInput(session);
+    catch exception
+        code = 'InvalidDeepSuperficialInput';
+        if strcmp(exception.identifier,'ce:pipeline:DeepSuperficialPreparationRequired')
+            code = 'InteractivePreparationRequired';
         end
+        add(code,'deepSuperficial','error',exception.message);
     end
 end
-if selected('theta_metrics') && isfield(session.channelTags,'Theta') && isfile(fullfile(basepath,[basename,'.animal.behavior.mat']))
-    requireFile(lfp,'theta_metrics','Theta analysis requires an existing LFP file.');
-    if ~isfield(session.extracellular,'srLfp') || ~isnumeric(session.extracellular.srLfp) || ...
-            ~isscalar(session.extracellular.srLfp) || ~isfinite(session.extracellular.srLfp) || session.extracellular.srLfp <= 0
-        add('MissingLfpRate','extracellular.srLfp','error','Define a positive LFP sampling rate.');
+if selected('theta_metrics')
+    requireFunction('nanconv',false);
+    if isfield(session.channelTags,'Theta') && isfile(fullfile(basepath,[basename,'.animal.behavior.mat']))
+        requiredToolboxes = [requiredToolboxes, {'Signal Processing Toolbox','Image Processing Toolbox'}];
+        requireFunction('ce_gausswin',false);
+        try
+            ce.pipeline.thetaRecording(session,false); % Check framing, not the full LFP hash in preflight.
+            ce.pipeline.thetaBehavior(session);
+        catch exception
+            add('InvalidThetaInput','theta_metrics','error',exception.message);
+        end
     end
-    requiredToolboxes = [requiredToolboxes, {'Signal Processing Toolbox','Image Processing Toolbox'}];
 end
 installed = ver;
 requiredToolboxes = unique(requiredToolboxes,'stable');
@@ -220,6 +235,33 @@ else
         end
         if ~selected('waveform_metrics') && ~isfield(cached,'troughToPeak')
             add('MissingCachedMetric','troughToPeak','error','Standard classification requires waveform_metrics or cached troughToPeak.');
+        end
+    end
+end
+if isstruct(cached) && isscalar(cached)
+    try
+        ce.pipeline.intervalStagePlans(cached,session,parameters,[]);
+        if parameters.excludeManipulationIntervals
+            ce.pipeline.intervalFiles(session,'manipulation_metrics',parameters.ignoreManipulationTypes);
+        end
+    catch exception
+        add('InvalidIntervalInput','intervalStages','error',exception.message);
+    end
+end
+if isstruct(spikes) && isscalar(spikes) && isfield(spikes,'UID')
+    % CellClass import is unconditional in the legacy pipeline, including partial
+    % metric runs. Validate it before any expensive calculations or saving.
+    try
+        ce.pipeline.cellClassInput(session,spikes);
+    catch exception
+        add('InvalidCellClassInput','CellClass','error',exception.message);
+    end
+    for kind = {'spatial_metrics','psth_metrics'}
+        if ~selected(kind{1}), continue; end
+        try
+            ce.pipeline.importedCellFiles(session,kind{1},spikes);
+        catch exception
+            add('InvalidCellImport',kind{1},'error',exception.message);
         end
     end
 end
@@ -278,6 +320,9 @@ finish;
                 add('InvalidSpikeTimes',sprintf('spikes.times{%d}',cellIndex),'error', ...
                     'Use a nonempty sorted column of finite spike times in seconds; remove empty units before processing.');
             end
+        end
+        if isfield(spikes,'total') && ~isequal(spikes.total,cellfun(@numel,spikes.times))
+            add('InvalidSpikeTotals','spikes.total','error','Spike totals must match the number of times for each cell; refresh the spike cache.');
         end
         if selected('waveform_metrics') && ~parameters.getWaveformsFromDat
             names = {'filtWaveform','timeWaveform','peakVoltage'};

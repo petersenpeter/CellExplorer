@@ -18,7 +18,7 @@ jobs:
       - uses: matlab-actions/setup-matlab@v3
         with:
           release: R2024b
-          products: Statistics_and_Machine_Learning_Toolbox Curve_Fitting_Toolbox Signal_Processing_Toolbox
+          products: Statistics_and_Machine_Learning_Toolbox Curve_Fitting_Toolbox Signal_Processing_Toolbox Image_Processing_Toolbox
       - name: Run synthetic component regressions
         uses: matlab-actions/run-command@v3
         with:

@@ -232,7 +232,7 @@ options = coreOptions(testCase);
 before = sessionFiles(testCase.TestData.folder);
 cwd = pwd;
 figures = findall(0,'Type','figure');
-metrics = ProcessCellMetrics(options{:},'headless',true,'saveMat',false,'saveBackup',false);
+metrics = ProcessCellMetrics(options{:},'headless',true,'saveMat',false,'saveBackup',true);
 verifyEqual(testCase,metrics.general.cellCount,1);
 verifyEqual(testCase,metrics.spikeCount,11);
 verifyEqual(testCase,metrics.firingRate,.11,'AbsTol',1e-12);
@@ -243,6 +243,83 @@ verifyEqual(testCase,findall(0,'Type','figure'),figures);
 verifyEqual(testCase,sessionFiles(testCase.TestData.folder),before);
 end
 
+function testMalformedEventReportedBeforeProcessing(testCase)
+writeCachedSession(testCase);
+flash.timestamps = [3 2];
+save(fullfile(testCase.TestData.folder,'synthetic.flash.events.mat'),'flash');
+options = coreOptions(testCase);
+report = ce.pipeline.preflight(options{:},'metrics',{'event_metrics'});
+verifyTrue(testCase,ismember('InvalidIntervalInput',{report.errors.code}));
+verifyTrue(testCase,any(contains({report.errors.message},'finite Nx2 intervals')));
+end
+
+function testManipulationExclusionInputsValidatedWhenStageSkipped(testCase)
+writeCachedSession(testCase);
+pulse.timestamps = [3 2];
+save(fullfile(testCase.TestData.folder,'synthetic.pulse.manipulation.mat'),'pulse');
+options = coreOptions(testCase);
+report = ce.pipeline.preflight(options{:},'excludeManipulationIntervals',true);
+verifyTrue(testCase,ismember('InvalidIntervalInput',{report.errors.code}));
+end
+
+function testImportedIdentityCheckedBeforeProcessing(testCase)
+writeCachedSession(testCase);
+flash.unit = [1;2]; flash.x_bins = [0 1];
+save(fullfile(testCase.TestData.folder,'synthetic.flash.psth.mat'),'flash');
+options = coreOptions(testCase);
+report = ce.pipeline.preflight(options{:},'metrics',{'psth_metrics'});
+verifyTrue(testCase,ismember('InvalidCellImport',{report.errors.code}));
+verifyTrue(testCase,any(contains({report.errors.message},'no cell identity')));
+flash.UID = 1;
+save(fullfile(testCase.TestData.folder,'synthetic.flash.psth.mat'),'flash');
+report = ce.pipeline.preflight(options{:},'metrics',{'psth_metrics'});
+verifyTrue(testCase,report.valid);
+end
+
+function testThetaPreflightRejectsBadInputsWithoutCreatingLfp(testCase)
+writeCachedSession(testCase);
+session = testCase.TestData.session;
+session.channelTags.Theta.channels = 1;
+session.extracellular.srLfp = 1250;
+animal.time = [0 1]; animal.speed = [20 20];
+file = fullfile(testCase.TestData.folder,'synthetic.animal.behavior.mat');
+save(file,'animal');
+options = coreOptions(testCase);
+report = ce.pipeline.preflight(options{:},'session',session,'metrics',{'theta_metrics'});
+verifyTrue(testCase,ismember('InvalidThetaInput',{report.errors.code}));
+lfp = fullfile(testCase.TestData.folder,'synthetic.lfp');
+verifyFalse(testCase,isfile(lfp));
+fid = fopen(lfp,'w'); fwrite(fid,zeros(2,2500),'int16'); fclose(fid);
+animal.time = [1 1]; save(file,'animal');
+report = ce.pipeline.preflight(options{:},'session',session,'metrics',{'theta_metrics'});
+verifyTrue(testCase,ismember('InvalidThetaInput',{report.errors.code}));
+verifyTrue(testCase,any(contains({report.errors.message},'strictly increasing')));
+end
+
+function testReviewedChannelsDoNotRequireRippleOrLfpFiles(testCase)
+writeCachedSession(testCase);
+session = testCase.TestData.session; session.channelTags.Ripple.channels = 1;
+deepSuperficialfromRipple = struct('channel',[1;2],'channelClass',{{'Deep';'Superficial'}},'channelDistance',[-10;10]);
+file = fullfile(testCase.TestData.folder,'synthetic.deepSuperficialfromRipple.channelinfo.mat');
+save(file,'deepSuperficialfromRipple');
+options = coreOptions(testCase);
+report = ce.pipeline.preflight(options{:},'session',session,'metrics',{'deepSuperficial'});
+verifyTrue(testCase,report.valid);
+deepSuperficialfromRipple = rmfield(deepSuperficialfromRipple,'channel');
+save(file,'deepSuperficialfromRipple');
+report = ce.pipeline.preflight(options{:},'session',session,'metrics',{'deepSuperficial'});
+verifyTrue(testCase,ismember('InvalidDeepSuperficialInput',{report.errors.code}));
+end
+
+function testStaleSpikeCountsRejectedBeforeProcessing(testCase)
+writeCachedSession(testCase);
+file = fullfile(testCase.TestData.folder,'synthetic.spikes.cellinfo.mat');
+loaded = load(file,'spikes'); spikes = loaded.spikes; spikes.total = 999;
+save(file,'spikes'); options = coreOptions(testCase);
+report = ce.pipeline.preflight(options{:});
+verifyTrue(testCase,ismember('InvalidSpikeTotals',{report.errors.code}));
+end
+
 function files = sessionFiles(folder)
 files = dir(folder);
 files = files(~ismember({files.name},{'.','..'}));
@@ -251,6 +328,24 @@ end
 function options = coreOptions(testCase)
 options = {'basepath',testCase.TestData.folder,'metrics',{'other_metrics'}, ...
     'getWaveformsFromDat',false,'excludeManipulationIntervals',false};
+end
+
+function testCellClassIdentityCheckedBeforeProcessing(testCase)
+writeCachedSession(testCase);
+CellClass.label = {'pE'};
+file = fullfile(testCase.TestData.folder,'synthetic.CellClass.cellinfo.mat');
+save(file,'CellClass');
+options = {'session',testCase.TestData.session,'headless',true,'metrics',{'other_metrics'}, ...
+    'getWaveformsFromDat',false,'excludeManipulationIntervals',false};
+report = ce.pipeline.preflight(options{:});
+verifyTrue(testCase,ismember('InvalidCellClassInput',{report.errors.code}));
+metricsFile = fullfile(testCase.TestData.folder,'synthetic.cell_metrics.cellinfo.mat');
+before = ce.pipeline.fileFingerprint(metricsFile);
+verifyError(testCase,@() ProcessCellMetrics(options{:}),'ce:pipeline:PreflightFailed');
+verifyEqual(testCase,ce.pipeline.fileFingerprint(metricsFile),before);
+verifyFalse(testCase,isfolder(fullfile(testCase.TestData.folder,'revisions_cell_metrics')));
+CellClass.UID = 1; save(file,'CellClass');
+report = ce.pipeline.preflight(options{:}); verifyTrue(testCase,report.valid);
 end
 
 function writeCachedSession(testCase)

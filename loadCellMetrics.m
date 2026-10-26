@@ -41,10 +41,13 @@ addParameter(p,'session',[],@isstruct);
 addParameter(p,'sessionId',[],@isnumeric);
 addParameter(p,'sessionName',[],@isstr);
 
-% Batch input (not implemented)
-addParameter(p,'sessionIDs',{},@iscell);
+% Batch input (MAT files)
+addParameter(p,'sessionIDs',[],@isnumeric);
 addParameter(p,'sessionNames',{},@iscell);
 addParameter(p,'basepaths',{},@iscell);
+addParameter(p,'basenames',{},@iscellstr);
+addParameter(p,'headless',false,@(x) islogical(x) && isscalar(x));
+addParameter(p,'showProgress',true,@(x) islogical(x) && isscalar(x));
 
 % Extra inputs
 addParameter(p,'saveAs','cell_metrics',@isstr); % Cell metrics name
@@ -63,123 +66,44 @@ addParameter(p,'groundTruthClassification',[],@iscell);
 
 parse(p,varargin{:})
 
-% Provide existing cell metrics struct
-cell_metrics = p.Results.cell_metrics;
-
-% Single session input
-sessionId = p.Results.sessionId; 
-
-session = p.Results.session; 
-basepath = p.Results.basepath;
-basename = p.Results.basename;
-
-% Batch
-sessions = p.Results.sessionNames; 
-
 params = p.Results;
-
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Loading metrics
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
+cell_metrics = params.cell_metrics;
+cell_metrics_idxs = [];
 if ~isempty(cell_metrics)
-    
-elseif ~isempty(session)
-    basepath = session.general.basePath;
-    basename = session.general.name;
-
-elseif ~isempty(sessions)
-    cell_metrics = loadCellMetricsBatch('sessions',sessions);
-    
-elseif ~isempty(sessionId) || ~isempty(params.sessionName)
-    bz_database = db_credentials;
-    if ~isempty(sessionId)
-        [~, basename, basepath] = db_set_session('sessionId',sessionId);
-    else
-        [~, basename, basepath] = db_set_session('sessionName',params.sessionName);
+    % Supplied data are filtered directly; never attempt an unrelated file load.
+elseif ~isempty(params.basepaths) || ~isempty(params.sessionNames) || ~isempty(params.sessionIDs)
+    if ~strcmpi(params.fileFormat,'mat')
+        error('ce:io:UnsupportedBatchFormat','Batch loading supports MAT files; load JSON/NWB sessions individually.');
     end
+    cell_metrics = loadCellMetricsBatch('basepaths',params.basepaths,'basenames',params.basenames, ...
+        'sessions',params.sessionNames,'sessionIDs',params.sessionIDs,'saveAs',params.saveAs, ...
+        'headless',params.headless,'showProgress',params.showProgress);
 else
-    if isempty(basepath)
-        basepath = pwd;
+    basepath = params.basepath; basename = params.basename;
+    if ~isempty(params.session)
+        basepath = params.session.general.basePath; basename = params.session.general.name;
+    elseif ~isempty(params.sessionId) || ~isempty(params.sessionName)
+        names = {}; if ~isempty(params.sessionName), names = {params.sessionName}; end
+        [folders,names] = ce.integrations.resolveMetricSessions(names,params.sessionId);
+        if numel(folders) ~= 1, error('ce:io:AmbiguousMetricSource','Use sessionIDs for multiple sessions.'); end
+        basepath = folders{1}; basename = names{1};
     end
-    if isempty(basename)
-        basename = basenameFromBasepath(basepath);
-    end
-end
-
-file = fullfile(basepath,[basename,'.' ,params.saveAs,'.cellinfo.',params.fileFormat]);
-
-% Loading metrics
-
-if exist(file,'file')
+    if isempty(basepath), basepath = pwd; end
+    if isempty(basename), basename = ce.io.basenameFromBasepath(basepath); end
+    file = fullfile(basepath,[basename,'.',params.saveAs,'.cellinfo.',params.fileFormat]);
     switch lower(params.fileFormat)
         case 'mat'
-            load(file,'cell_metrics')
+            cell_metrics = ce.io.readCellMetrics(file);
             cell_metrics.general.basepath = basepath;
             cell_metrics.general.fileFormat = params.fileFormat;
             cell_metrics.general.saveAs = params.saveAs;
-            
-        case 'nwb'
-            cell_metrics = loadNwbCellMetrics(file);
-            
         case 'json'
-            cell_metrics = loadJsonCellMetrics(file);
-
+            cell_metrics = loadJsonCellMetrics(file); % Legacy format adapter.
+        case 'nwb'
+            cell_metrics = loadNwbCellMetrics(file); % Legacy MatNWB adapter.
         otherwise
-            warning(['Unknown cell_metrics file format: ' file])
-    end
-else
-    warning(['Error loading metrics: ' file])
-    return
-end
-
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% Filtering metrics
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
-filterIndx = ones(length(cell_metrics.UID),9);
-if ~isempty(params.brainRegion)
-    filterIndx(:,1) = strcmp(cell_metrics.brainRegion,params.brainRegion);
-end
-if ~isempty(params.synapticEffect)
-    filterIndx(:,2) = contains(cell_metrics.synapticEffect,params.synapticEffect);
-end
-if ~isempty(params.putativeCellType)
-    filterIndx(:,3) = contains(cell_metrics.putativeCellType,params.putativeCellType);
-end
-if ~isempty(params.deepSuperficial)
-    filterIndx(:,4) = contains(cell_metrics.deepSuperficial,params.deepSuperficial);
-end
-if ~isempty(params.animal)
-    filterIndx(:,5) = strcmp(cell_metrics.animal,params.animal);
-end
-if ~isempty(params.labels)
-    filterIndx(:,6) = strcmp(cell_metrics.labels,params.labels);
-end
-if ~isempty(params.tags)
-    filterIndx(:,7) = 0;
-    for i = 1:numel(params.tags)
-         if isfield(cell_metrics.tags,params.tags{i})
-             filterIndx(cell_metrics.tags.(params.tags{i}),7) = 1;
-         end
+            error('ce:io:UnsupportedFormat','Unsupported metrics format: %s.',params.fileFormat);
     end
 end
-
-if ~isempty(params.groups)
-    filterIndx(:,8) = 0;
-    for i = 1:numel(params.groups)
-         if isfield(cell_metrics.groups,params.groups{i})
-             filterIndx(cell_metrics.groups.(params.groups{i}),8) = 1;
-         end
-    end
+cell_metrics_idxs = ce.data.filterMetricCells(cell_metrics,params);
 end
-
-if ~isempty(params.groundTruthClassification)
-    filterIndx(:,9) = 0;
-    for i = 1:numel(params.groundTruthClassification)
-         if isfield(cell_metrics.tags,params.groundTruthClassification{i})
-             filterIndx(cell_metrics.groundTruthClassification.(params.groundTruthClassification{i}),9) = 1;
-         end
-    end
-end
-cell_metrics_idxs = find(sum(filterIndx')==9);

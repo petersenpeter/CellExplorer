@@ -43,7 +43,7 @@ calc_CellMetrics/LoadBinary.m,+ce/+io,public-or-external-use-review,planned,Revi
 calc_CellMetrics/LoadNeurosuiteFeatures.m,+ce/+io,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/LoadNeurosuiteWaveforms.m,+ce/+io,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/ProbSynMat.mat,component-owned-assets,asset,planned,"Trace resource lookup; move with owning UI, atlas or processing component."
-calc_CellMetrics/SpatialCoherence.m,+ce/+metrics,public-or-external-use-review,planned,Review callers and compatibility before moving.
+calc_CellMetrics/SpatialCoherence.m,+ce/+metrics,public-or-external-use-review,planned,Legacy spatial formulas retained unchanged; explicit dependencies of the identity-checked spatial import stage. Relocation remains planned.
 calc_CellMetrics/StateExplorer.m,+ce/+ui,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/SubtractIntervals.m,+ce/+processing/+intervals,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/alphafunction.m,+ce/+metrics/private,helper-review,planned,No repository callers found; investigate external use before removal or relocation.
@@ -52,11 +52,11 @@ calc_CellMetrics/brainGridData.npy,component-owned-assets,asset,planned,"Trace r
 calc_CellMetrics/brainRegions_relational_tree.mat,component-owned-assets,asset,planned,"Trace resource lookup; move with owning UI, atlas or processing component."
 calc_CellMetrics/bregma_to_CCF.m,+ce/+data,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/bz_PlotMonoSyn.m,+ce/+plotting,public-or-external-use-review,planned,Review callers and compatibility before moving.
-calc_CellMetrics/calcInstantaneousTheta2.m,+ce/+processing,public-or-external-use-review,planned,Review callers and compatibility before moving.
+calc_CellMetrics/calcInstantaneousTheta2.m,+ce/+processing/calcInstantaneousTheta2.m,public-or-external-use-review,migrated-with-wrapper,Legacy direct-call adapter retained; pure signal kernel shared with managed theta stages. Pipeline requires existing LFP and defers verified cache persistence.
 calc_CellMetrics/calc_ACG_metrics.m,+ce/+metrics,public-or-external-use-review,planned,Legacy numerical implementation retained unchanged; orchestration and cache policy moved to ce.pipeline.stages.acgMetrics.
 calc_CellMetrics/calc_Burstiness_Mizuseki2012.m,examples,public-or-external-use-review,planned,Script/demo behavior and external data dependencies require review.
 calc_CellMetrics/calc_IsolationDistance.m,+ce/+metrics,public-or-external-use-review,planned,Review callers and compatibility before moving.
-calc_CellMetrics/calc_PSTH.m,+ce/+metrics,public-or-external-use-review,planned,Review callers and compatibility before moving.
+calc_CellMetrics/calc_PSTH.m,+ce/+metrics,public-or-external-use-review,planned,Legacy numerical PSTH retained unchanged; called by event/manipulation stages with declared file dependencies and dynamic output ownership.
 calc_CellMetrics/calc_gini.m,+ce/+metrics/calc_gini.m,public-or-external-use-review,migrated-with-wrapper,Legacy entry point retained; regression coverage in tests/.
 calc_CellMetrics/calc_logACGs.m,+ce/+metrics,public-or-external-use-review,planned,Legacy implementation retained; called by acg_metrics stage; optional useParallel permits serial headless execution.
 calc_CellMetrics/calc_logISIs.m,+ce/+metrics/calc_logISIs.m,public-or-external-use-review,migrated-with-wrapper,Legacy entry point retained; regression coverage in tests/.
@@ -66,7 +66,7 @@ calc_CellMetrics/ce_Counter.m,+ce/+pipeline/private,helper-review,planned,Consol
 calc_CellMetrics/ce_EMGFromLFP.m,+ce/+processing,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/ce_FindRipples.m,+ce/+processing,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/ce_GetTransProb.m,+ce/+processing,public-or-external-use-review,planned,Legacy numerical implementation retained unchanged; dependency of monosynaptic_metrics stage.
-calc_CellMetrics/ce_InIntervals.m,+ce/+processing/+intervals,public-or-external-use-review,planned,Review callers and compatibility before moving.
+calc_CellMetrics/ce_InIntervals.m,+ce/+processing/+intervals,public-or-external-use-review,planned,Legacy interval membership retained unchanged; fingerprinted state and monosynaptic dependency.
 calc_CellMetrics/ce_LFPfromDat.m,+ce/+processing,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/ce_LoadBinary.m,+ce/+io,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/ce_MonoSynConvClick.m,+ce/+metrics,public-or-external-use-review,planned,Legacy scientific detector retained unchanged; called by monosynaptic_detection stage; manual review separated into ce.ui.reviewMonoSyn.
@@ -77,7 +77,7 @@ calc_CellMetrics/ce_gscatter.m,+ce/+plotting,public-or-external-use-review,plann
 calc_CellMetrics/ce_raincloud_plot.m,+ce/+plotting,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/ce_savefigure.m,+ce/+plotting,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/chanCoordsVisualization.m,+ce/+plotting,public-or-external-use-review,planned,Review callers and compatibility before moving.
-calc_CellMetrics/classification_DeepSuperficial.m,+ce/+processing,public-or-external-use-review,planned,Review callers and compatibility before moving.
+calc_CellMetrics/classification_DeepSuperficial.m,+ce/+processing,public-or-external-use-review,planned,Legacy classifier generation remains separate; pipeline now imports reviewed channel files with explicit channel identity and independent cell-annotation preservation.
 calc_CellMetrics/concatenate_binary_files.m,+ce/+io,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/content_dialog.m,+ce/+ui,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/content_dialog_example.m,examples,public-or-external-use-review,planned,Script/demo behavior and external data dependencies require review.
@@ -160,7 +160,7 @@ calc_CellMetrics/nwb_exist_path.m,+ce/+io/+nwb,public-or-external-use-review,pla
 calc_CellMetrics/nwb_fieldnames.m,+ce/+io/+nwb,public-or-external-use-review,planned,Requires MatNWB format tests and resource-path audit.
 calc_CellMetrics/nwb_spec/ndx-cell-explorer.extensions.yaml,+ce/+io/+nwb,public-or-external-use-review,planned,Requires MatNWB format tests and resource-path audit.
 calc_CellMetrics/nwb_spec/ndx-cell-explorer.namespace.yaml,+ce/+io/+nwb,public-or-external-use-review,planned,Requires MatNWB format tests and resource-path audit.
-calc_CellMetrics/place_cell_condition.m,+ce/+metrics,public-or-external-use-review,planned,Review callers and compatibility before moving.
+calc_CellMetrics/place_cell_condition.m,+ce/+metrics,public-or-external-use-review,planned,Legacy spatial formulas retained unchanged; explicit dependencies of the identity-checked spatial import stage. Relocation remains planned.
 calc_CellMetrics/plotAllenBrainGrid.m,+ce/+plotting,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/plot_states.m,+ce/+plotting,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/preprocessOpenEphysData.m,+ce/+processing,public-or-external-use-review,planned,Review callers and compatibility before moving.
@@ -188,12 +188,12 @@ calc_CellMetrics/uigetvariables.m,+ce/+ui,public-or-external-use-review,planned,
 calc_CellMetrics/validateCellMetricsStruct.m,+ce/+data/validateCellMetricsStruct.m,public-or-external-use-review,migrated-with-wrapper,Legacy entry point retained; regression coverage in tests/.
 calc_CellMetrics/validateGroupFormat.m,+ce/+data,public-or-external-use-review,planned,Review callers and compatibility before moving.
 calc_CellMetrics/validateSessionStruct.m,+ce/+data/validateSession.m; +ce/+ui/showValidationReport.m,public-or-external-use-review,split-with-legacy-ui-wrapper,Machine-readable metadata validation plus a separate report view; legacy function still opens the report window.
-util/ce_gausswin.m,owner-local-private,shared-helper-review,planned,Assign to plotting/UI/processing caller; avoid a new global utility bucket.
+util/ce_gausswin.m,owner-local-private,shared-helper-review,planned,Legacy smoothing window retained unchanged; explicit dependency of event/manipulation response stages.
 util/ce_tight_subplot.m,owner-local-private,shared-helper-review,planned,Assign to plotting/UI/processing caller; avoid a new global utility bucket.
 util/gpos.m,owner-local-private,shared-helper-review,planned,Assign to plotting/UI/processing caller; avoid a new global utility bucket.
 util/hex2rgb.m,owner-local-private,shared-helper-review,planned,Assign to plotting/UI/processing caller; avoid a new global utility bucket.
 util/nanUnique.m,owner-local-private,shared-helper-review,planned,Assign to plotting/UI/processing caller; avoid a new global utility bucket.
-util/nanconv.m,vendor-or-adapted-code,vendor-review,planned,Preserve attribution; determine original versus locally adapted implementation.
+util/nanconv.m,vendor-or-adapted-code,vendor-review,planned,Legacy convolution retained unchanged; explicit dependency of event/manipulation response stages.
 util/numSubplots.m,owner-local-private,shared-helper-review,planned,Assign to plotting/UI/processing caller; avoid a new global utility bucket.
 util/overobj2.m,owner-local-private,shared-helper-review,planned,Assign to plotting/UI/processing caller; avoid a new global utility bucket.
 util/point_to_line_distance.m,owner-local-private,shared-helper-review,planned,Assign to plotting/UI/processing caller; avoid a new global utility bucket.

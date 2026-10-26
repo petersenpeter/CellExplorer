@@ -83,7 +83,10 @@ to stages; noninteractive runs never require a dialog.
 
 Current coverage: `waveform_extraction`, `waveform_shape`,
 `waveform_localization`, `acg_metrics`, `monosynaptic_detection` and
-`monosynaptic_metrics` satisfy these stage/cache contracts.
+`monosynaptic_metrics`, plus `event_metrics`, `manipulation_metrics` and
+`state_metrics`, `spatial_metrics`, `psth_metrics`, `theta_signal` and
+`theta_metrics`, the `deepSuperficial` projection, `other_metrics` and
+`cell_class_import` satisfy these stage/cache contracts.
 The unchecked items above also cover the remaining stages and sorting import,
 and remain open until that migration is complete.
 
@@ -303,3 +306,257 @@ merely because its directories exist.
   GUI review, hosted CI and full-population native detection remain unrun.
 - Next: migrate optional event/manipulation/state metric stages and their input-file
   dependencies, followed by the remaining loaders and processing implementations.
+
+### Event, manipulation and state stages (2026-10-26)
+
+- Replaced their inline orchestration with three independently cached stages.
+  Named MAT-variable loading prevents unrelated saved variables from becoming
+  configuration. Complete file hashes, consumed data, preferences and selected
+  spike identities/times participate in cache decisions.
+- Added dynamic output ownership and retirement. Removed, renamed and ignored
+  inputs clear their old scalar metrics and plot metadata only after successful
+  computation. Legacy metadata supplies initial ownership; unattributable orphan
+  fields are not guessed. Skipped stages retain their results and provenance.
+- Added early schema/collision checks, including manipulation files used only for
+  exclusion. Duplicate state names and cross-family scalar-name collisions now
+  fail explicitly. Empty inputs retire undefined outputs rather than invoking
+  calculations with zero events or zero duration.
+- Preserved numerical expressions and effective preference differences between
+  event and manipulation PSTHs. The new native integration test compared all
+  event/manipulation/state outputs exactly with a captured pre-extraction pipeline
+  using two tutorial units and synthetic intervals. Reuse, changed files,
+  ignored/renamed/deleted inputs and failure preservation passed without figures.
+- **86/86 regression tests passed** in MATLAB R2024b Update 9. Code Analyzer found
+  no parse diagnostics in 70 package/test/pipeline files; `git diff --check` passed.
+  All three original tutorial input files retained their recorded SHA-256 hashes.
+- Scientific follow-up remains separate: audit the legacy state-mask/ISI indexing,
+  state-duration convention and PSTH center alignment before changing formulas.
+- Next: migrate spatial/theta and imported-PSTH orchestration, followed by remaining
+  loaders and processing implementations. Full-population validation and hosted CI
+  remain outstanding.
+
+### Spatial maps and imported PSTHs (2026-10-26)
+
+- Replaced the inline spatial/PSTH imports with two independently cached stages.
+  Named MAT-variable loads and complete-file hashes cover their dependencies.
+  Cell columns are aligned using explicit UID or cluster identity; matching counts
+  alone are rejected. Conflicting/duplicate identities, invalid dimensions and
+  the reserved spatial alias collision fail before headless processing.
+- Preserved spatial formulas and the conventional map filenames/variable names.
+  The special `ratemap` input produces the original scalar metrics and map alias;
+  state-dependent maps keep their per-cell matrices. Missing files retire both
+  maps and their metadata, and removal of `ratemap` clears its scalar metrics.
+- Fixed imported PSTH variable lookup, per-cell storage and axis-label copying.
+  Curves now populate the viewer's existing `psth` container. Validation and batch
+  loading recognize that container, including missing-session padding and retained
+  per-session axes. Unrelated custom PSTHs remain outside imported-field cleanup.
+- **98/98 regression tests passed** in MATLAB R2024b Update 9. Code Analyzer found
+  no parse diagnostics in 77 package/test/pipeline/loader files; `git diff --check`
+  passed. Tests cover identity alignment/rejection, malformed data, independent
+  reuse/invalidation, output edits, renamed/deleted files and batch alignment.
+- Tutorial integration passed using **all 151 cell identities**, their cached
+  metrics/spikes and synthetic map/PSTH inputs in a temporary directory. Spatial
+  calculations and fresh plot metadata matched the pre-extraction pipeline exactly.
+  Historical metadata for absent maps was excluded from the numerical baseline;
+  its intentional removal was tested separately. Reuse, no-write mode, malformed
+  input failure preservation and deleted outputs passed without figures. Original
+  session/spikes/metrics hashes remained unchanged. This is import validation,
+  not validation of upstream spatial-map estimation.
+- Compatibility change: existing imported files require producer-verified `UID`
+  or `cluID` metadata. Imports retain their upstream time selection; changing
+  pipeline spike intervals does not recompute imported curves. NWB PSTH export,
+  interactive viewer checks and hosted CI remain outside this milestone.
+- Next: split theta signal preparation from theta metrics. The current helper can
+  create an LFP and save a cache regardless of the pipeline's `saveMat` setting;
+  migrate its raw/cache dependencies and persistence before claiming a fully
+  controlled headless theta stage. Then continue remaining loaders, processing
+  functions and UI work.
+
+### Theta preparation, metrics and persistence (2026-10-26)
+
+- Extracted signal preparation and cell metrics into independent cached stages.
+  Full LFP content, channel/calibration/rate metadata, selected spike identities
+  and samples, behavior contents and preferences now participate in provenance.
+  Behavior or interval changes reuse signal preparation while refreshing metrics.
+- Moved the public theta helper behind a compatibility wrapper in `ce.processing`.
+  Both paths share the original numerical kernel. Direct-call defaults remain;
+  the managed pipeline requires an existing int16 LFP and never resamples one
+  implicitly. Named MAT-variable loading prevents saved variables from overriding
+  options. Interactive diagnostics are isolated in `ce.ui`.
+- Retained the conventional cache filename/variable with an embedded signal
+  provenance record. Cache preparation is read-only; verified persistence occurs
+  after successful pipeline calculation/validation and respects `saveMat`.
+  Intervening cache edits abort replacement; unchanged caches are not rewritten.
+  These writes remain independent of other pipeline outputs, not a transaction.
+- Added behavior/acquisition/frame checks and explicit seconds/sample-index
+  validation. Requested theta processing retires old metrics if its behavior file
+  or channel tag disappears; excluded theta stages retain their outputs.
+- **110/110 regression tests passed** in MATLAB R2024b Update 9. Signal outputs
+  matched a frozen pre-migration helper exactly. Tests cover channel reading,
+  raw-file edits, independent invalidation, cache edits/conflicts, failure
+  preservation, removed inputs and legacy option isolation. Code Analyzer reported
+  no parse diagnostics in 91 package/test/pipeline/loader/wrapper files.
+- Tutorial integration used units **80 and 135**, first 120 seconds, with synthetic
+  LFP and behavior in a temporary directory. Theta outputs matched the captured
+  pre-extraction pipeline exactly. Reuse, changed intervals/behavior, no-write
+  execution, malformed-input preservation and stale-output retirement passed
+  without figures. All three original tutorial input hashes remained unchanged.
+- CI now includes Image Processing Toolbox. Hosted CI, actual tutorial LFP/behavior,
+  full-recording resource use and interactive plots remain untested. Legacy speed
+  gating, phase-index and histogram conventions are preserved for a separate
+  scientific audit.
+- Next: migrate deep/superficial inputs and remaining core/finalization logic,
+  then continue loader separation and UI improvements.
+
+### Deep/superficial import and cell annotation preservation (2026-10-26)
+
+- Replaced inline detection/classification orchestration with an import stage for
+  the reviewed channel file. Full file contents, cell identities and peak channels
+  participate in cache decisions. Channel IDs are explicit and one-based; source
+  electrode-group order is validated when present. The assignment formulas are
+  unchanged; reordered channel rows are resolved by identity instead of position.
+- Separated the automatic projection from editable cell labels/distances. Edits
+  are compared with a verified previous projection and tracked independently of
+  the calculation cache. Known overrides, including empty/NaN values, survive
+  source changes, missing/restored files and forced computation. Unknown legacy
+  annotations are retained and reported rather than overwritten. A damaged
+  automatic baseline cannot be used to erase cell edits.
+- Forced pipeline rebuilds recover deep/superficial annotation context from the
+  previous MAT cache when identities match. This protection does not change the
+  legacy force-reload treatment of unrelated annotations. Classification source
+  files remain read-only; only normal metric persistence writes imported results.
+- Compatibility boundary: the pipeline now requires classification preparation
+  explicitly when ripple inputs/tags indicate it is needed, in both interactive
+  and headless modes. Existing reviewed classification files can be imported
+  without LFP/ripple files. The original classifier/review APIs retain their legacy
+  behavior and still await migration; import provenance does not certify their
+  freshness against upstream LFP, geometry or ripple changes.
+- **123/123 regression tests passed** in MATLAB R2024b Update 9. Code Analyzer found
+  no parse diagnostics in 98 package/test/pipeline/loader/wrapper files. Tests cover
+  channel/group identity, source/peak-channel edits, manual overrides, damaged
+  provenance, forced annotation recovery, missing inputs and headless preflight.
+- Tutorial integration used **all 151 cells and the actual 128-channel reviewed
+  classification**, with copies of five input files. Fresh assignment and metadata
+  matched the pre-extraction pipeline exactly. Legacy annotation preservation,
+  reuse, changed source files, manual cell edits, no-write execution and failure
+  preservation passed without figures. All original input hashes were unchanged.
+- GUI review, classifier numerical generation and hosted CI remain untested by
+  this milestone. Next: separate core metric calculation from pipeline
+  finalization/persistence, then continue upstream preparation and loader/UI work.
+
+### Core metrics and pipeline finalization (2026-10-26)
+
+- Extracted mandatory `other_metrics` calculations into a managed stage with
+  explicit spike/identity, interval, preference, implementation and output hashes.
+  Preserved existing formulas and the unconditional calculation contract; matching
+  inputs now reuse results. Stale spike totals and undefined duration inputs fail
+  explicitly. Legacy duration, histogram, CV2 and burst conventions remain unchanged
+  pending a separate scientific audit.
+- Separated metadata refresh, legacy output cleanup and invocation provenance from
+  numerical calculations. Optional owned metadata is retired when absent, and
+  database IDs use scalar numeric parsing rather than expression evaluation.
+  Generated Unknown/NaN deep/superficial defaults no longer become accidental manual
+  overrides when classification inputs become available.
+- Deferred metric backups until computation/validation succeeds. Saving verifies
+  metric/session revisions before writes, preserves the entire previous metrics
+  file in a hash-verified backup, and writes session MAT files through verified
+  replacement. Backup failures abort; session-save errors are no longer swallowed.
+  `saveMat=false` suppresses managed saving and metric backups.
+- **138/138 regression tests passed** in MATLAB R2024b Update 9. Code Analyzer
+  found no parse diagnostics in 108 package/test/pipeline/loader/wrapper files.
+  New tests cover numerical fixtures, cache repair/reuse, interval/preference
+  changes, metadata updates, stale totals, exact backups, concurrent destination
+  edits, invalid destinations and backup failures.
+- Tutorial integration used **all 151 cells** from temporary copies of the three
+  original input files. Every core-stage output matched the frozen pre-extraction
+  implementation exactly, including exclusion-duration behavior. Cache reuse,
+  metadata-only refresh, no-save runs, byte-identical backups and stale-input
+  failure preservation passed without figures. Original input hashes were unchanged.
+- Limits: individual verified saves are not a multi-file transaction or a lock;
+  later failures may leave earlier sidecars/metrics saved. Waveform sidecars still
+  lack concurrent-revision checks. Legacy preparation/custom callbacks, database
+  submission and summary figures retain their own side effects. GUI, NWB/JSON
+  pipeline round trips and hosted CI were not validated by this milestone.
+- Next: isolate the remaining custom/classification import boundary, replacing
+  count-only CellClass correspondence with explicit identity validation; then
+  continue upstream preparation, loader separation and UI work. Multi-file recovery
+  and waveform-sidecar revision checks remain persistence follow-ups.
+
+### Identity-safe CellClass import and custom callback dispatch (2026-10-26)
+
+- Replaced the inline Buzcode count-only import with `cell_class_import`, using
+  named-variable loading, complete source fingerprints and explicit cell identity.
+  UID or cluster IDs determine label order; both must agree when present. Source
+  supersets support filtered target cells. Empty labels retain the legacy Unknown
+  default, and classification formulas were not changed.
+- Extracted shared identity matching into `ce.data.cellIdentityOrder`; spatial and
+  PSTH imports retain their existing exact-cell-set contract. Managed CellClass
+  labels are cached independently of editable putative cell types/manual labels.
+  Missing sources retire managed outputs; absent sources preserve legacy values
+  without managed provenance. Source files are never rewritten by the importer.
+- Compatibility boundary: CellClass files without verified identities now fail,
+  even when counts match. Headless preflight detects invalid files before
+  calculation/saving. The unconditional import selection behavior is unchanged.
+  Producers must supply verified mappings; current spike order is not sufficient
+  evidence to annotate an unidentified historical file.
+- Extracted custom calculation discovery/dispatch while preserving package names,
+  callback arguments, discovery order and selection/exclusion behavior. Callbacks
+  must preserve cell count and declared identity/order. They remain uncached and
+  disallowed in headless runs; their own external side effects cannot be rolled
+  back. Putative-cell-type callback formulas remain unchanged.
+- **150/150 regression tests passed** in MATLAB R2024b Update 9. Code Analyzer
+  found no parse diagnostics in 117 package/test/pipeline/loader/wrapper files.
+  Tests cover missing/duplicate/conflicting identities, reordered sources, subsets,
+  malformed labels, source/output changes, deletion/restoration, preserved manual
+  fields, preflight failure preservation and callback selection/identity/failures.
+- Tutorial integration used **all 151 real cell identities with synthetic labels**
+  in temporary copies. Ordered imports matched the frozen previous implementation
+  exactly; reversed source order preserved correspondence. Reuse, edited sources,
+  removal, no-save behavior and missing-identity failures passed without figures.
+  All three original input hashes were unchanged. This validates import mechanics,
+  not biological labels or an upstream classifier implementation.
+- Next: separate local metric loading and batch assembly from database/UI progress
+  handling, retaining public loader APIs and per-session identity. This prepares
+  a testable foundation for UI improvements. Upstream sorting/classification
+  preparation, declared callback contracts and multi-file recovery remain open.
+
+### Local loaders, batch assembly and progress boundary (2026-10-26)
+
+- Replaced the mixed database/UI/file/assembly implementation of
+  `loadCellMetricsBatch` with a compatible public adapter over `ce.io.loadMetricBatch`
+  and pure `ce.data.assembleMetricBatch`. Local reads load only `cell_metrics`,
+  validate session identity and never access database settings. Public loaders
+  remain at their original paths; MAT loading requires only the repository root.
+- Preserved cell/session order, duplicate session requests, per-session metadata,
+  group and connection offsets, and UID/cellID/cluster values. Batch IDs scope
+  identities across sessions. Fixed implicit zero padding in missing nested
+  metrics; all gaps now receive NaN/empty padding. Logical fields survive assembly,
+  and incompatible dimensions/types fail instead of silently dropping arrays.
+- Separated progress-window ownership and cancellation into `ce.ui`. Local batches
+  accept `headless=true` or `showProgress=false`; component loading accepts a
+  progress callback. Owned windows close on failures, supplied windows remain
+  caller-owned, and cancellation cannot return a partially assembled batch.
+- Database resolution is explicit and separate, retains requested order and
+  duplicates, and disables resolver writes/cwd changes. Live database/network and
+  legacy configuration UI behavior were not exercised; stub tests cover dispatch.
+- Fixed single-loader routing for supplied metrics and batch inputs. Extracted
+  filtering into `ce.data.filterMetricCells`; multiple exact-match values now work
+  as alternatives, and ground-truth filters inspect the correct group container.
+- **161/161 regression tests passed** in MATLAB R2024b Update 9. Code Analyzer
+  found no parse diagnostics in 128 package/test/pipeline/public-loader/wrapper
+  files. Tests cover headless local loads with a rejecting database stub, session
+  identity, offsets, missing-data padding, type/shape conflicts, large integer
+  precision, filters, failures, cancellation and progress-window ownership.
+- Tutorial integration built a **302-cell batch from two temporary copies of the
+  151-cell metrics file**. Every field matched the frozen old loader exactly,
+  excluding benchmark timings. Single-session filtering, no headless figures,
+  unchanged cwd and unchanged source/copy hashes also passed.
+- Compatibility limits: missing/invalid files and conflicting shapes now throw
+  errors; nested batches are rejected. Batch loading remains eager/in-memory and
+  MAT-only. JSON/NWB adapters remain legacy and were not validated here. Progress
+  cancellation is checked between operations, not during individual MAT reads or
+  concatenation. Full CellExplorer GUI behavior remains to be exercised.
+- Next: wire structured loading failures and cancellation into CellExplorer's
+  session-switch/reload UI, preserving the current metrics and unsaved edits when
+  loading fails. Then profile large-batch opening and rendering before selecting
+  UI performance changes. Upstream preparation and persistence recovery stay open.

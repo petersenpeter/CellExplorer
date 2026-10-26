@@ -1,8 +1,9 @@
-function [metrics, result] = runStage(metrics, definition, inputs, settings, operation, force)
+function [metrics, result] = runStage(metrics, definition, inputs, settings, operation, force, retiredOutputs)
 %RUNSTAGE Verify a stage cache or compute/merge a patch and record provenance.
 % No files are written. A failed operation returns original metrics and a failed
 % result. The caller decides how to surface failure and whether to persist.
 if nargin < 6, force = false; end
+if nargin < 7, retiredOutputs = {}; end
 result = ce.pipeline.stageResult(definition.name,'failed','');
 timer = tic;
 try
@@ -10,6 +11,7 @@ try
     signature.name = definition.name;
     signature.stageVersion = definition.version;
     signature.definitionHash = ce.pipeline.fingerprint(definition);
+    signature.ownedOutputs = definition.outputs;
     signature.inputHash = ce.pipeline.fingerprint(inputs);
     signature.settings = settings;
     signature.parameterHash = ce.pipeline.fingerprint(settings);
@@ -63,8 +65,9 @@ try
         error('ce:pipeline:InvalidStageOutput','Stage %s must return a scalar struct patch.',definition.name);
     end
     candidate = metrics;
-    for index = 1:numel(definition.outputs)
-        candidate = removePath(candidate,strsplit(definition.outputs{index},'.'));
+    removeOutputs = unique([definition.outputs,retiredOutputs]);
+    for index = 1:numel(removeOutputs)
+        candidate = removePath(candidate,strsplit(removeOutputs{index},'.'));
     end
     candidate = merge(candidate,patch);
     required = ce.pipeline.outputSnapshot(candidate,definition.requiredOutputs);

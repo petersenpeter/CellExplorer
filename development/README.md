@@ -63,9 +63,9 @@ NWB verification checks the HDF5 container; full MatNWB compatibility still need
 format-specific integration tests.
 
 UID/cluster checks detect changed counts, reordered units and changed identifiers.
-They cannot detect a new sorting that reuses both identifiers, or concurrent edits
-with unchanged identities. Sorting revision IDs and file-revision conflict checks
-remain planned. Disk recovery, cache invalidation for the remaining pipeline
+They cannot detect a new sorting that reuses both identifiers. Pipeline saving now
+checks metric/session file revisions; this is not a general curation lock. Sorting
+revision IDs remain planned. Disk recovery, cache invalidation for the remaining pipeline
 stages and UI performance changes are subsequent work packages.
 
 ## Session validation and headless processing
@@ -115,8 +115,8 @@ The initial headless boundary has explicit limits:
 - MAT is the pipeline cache format; export JSON/NWB separately afterward.
 - Custom calculation/preference callbacks and database submission are rejected
   until their noninteractive behavior has a defined contract.
-- Deep/superficial processing requires existing ripple and channel-classification
-  files; its interactive preparation is not launched automatically.
+- Deep/superficial import uses an existing channel-classification file. Ripple
+  detection and classification preparation are separate operations.
 - Dependency checks are conservative for requested stages, including cached stages.
   Complete stage extraction and cache freshness outside the stages below remain
   future work; matching UIDs/cluster IDs does not prove unchanged input data.
@@ -130,6 +130,13 @@ addpath('tests/integration')
 summary = runTutorialSessionSmoke('/path/to/tutorial/session');
 acgSummary = runTutorialAcgSmoke('/path/to/tutorial/session');
 monoSummary = runTutorialMonoSynSmoke('/path/to/tutorial/session');
+intervalSummary = runTutorialIntervalSmoke('/path/to/tutorial/session');
+importSummary = runTutorialImportSmoke('/path/to/tutorial/session');
+thetaSummary = runTutorialThetaSmoke('/path/to/tutorial/session');
+deepSummary = runTutorialDeepSuperficialSmoke('/path/to/tutorial/session');
+coreSummary = runTutorialCoreSmoke('/path/to/tutorial/session');
+classSummary = runTutorialCellClassSmoke('/path/to/tutorial/session');
+loaderSummary = runTutorialLoaderSmoke('/path/to/tutorial/session');
 ```
 
 This integration check needs the recording and the relevant MATLAB toolboxes. It
@@ -142,7 +149,9 @@ CellExplorer installations on the MATLAB path when running interactive checks.
 `ProcessCellMetrics` now uses `ce.pipeline.runStage` for `waveform_extraction`,
 `waveform_shape`, `waveform_localization`, `acg_metrics` (wide/narrow and log
 ACGs, fits, log ISIs and optional population modulation), `monosynaptic_detection`
-and `monosynaptic_metrics`. Definitions declare
+`monosynaptic_metrics`, `event_metrics`, `manipulation_metrics`, `state_metrics`,
+`spatial_metrics`, `psth_metrics`, `theta_signal`, `theta_metrics` and
+`deepSuperficial`, `other_metrics` and `cell_class_import`. Definitions declare
 owned/required outputs and implementation dependencies. Legacy public metric
 functions remain available; their scientific formulas are unchanged.
 
@@ -224,7 +233,8 @@ that would hide later file edits. Existing explicit session coordinates still wi
 Synthetic tests exercise actual binary extraction, legacy numerical agreement,
 same-size raw-file edits, restricted inputs, deterministic reuse, failure paths,
 and complete pipeline sidecar persistence. CI requires Statistics, Curve Fitting
-and Signal Processing toolboxes. Tutorial checks additionally compare 151-cell
+and Signal Processing toolboxes; theta tests also require Image Processing.
+Tutorial checks additionally compare 151-cell
 localization to a captured pre-extraction baseline and test a coordinate shift
 on two units; no full tutorial raw extraction has been run.
 
@@ -275,3 +285,369 @@ tests interval/option invalidation and no-write execution, then uses coupled
 synthetic spike trains to verify manual rejection survives reruns and force reload.
 These native tests are separate from hosted CI. Interactive GUI review and
 full-population detection have not yet been validated in this milestone.
+
+## Event, manipulation and state inputs
+
+The three interval stages read only the named struct from each matching MAT file,
+hash the complete file, and record consumed data, effective preferences, selected
+spikes and output ownership. Changes to one input family invalidate that stage
+independently. Preflight validates the named structs, finite Nx2 intervals and
+output-name collisions without calling preference callbacks. Manipulation files
+used for spike exclusion are checked even when manipulation metrics are skipped.
+State processing requires `ints`; event/manipulation processing requires
+`timestamps`. Peak-aligned PSTHs additionally require one finite peak per event.
+
+Stages declare dynamic scalar fields alongside `events`, `manipulations` and their
+`general` metadata. Removing, renaming or ignoring inputs clears their old fields
+after successful calculation. Empty event files/empty state intervals do not
+produce undefined metrics. A skipped stage retains its outputs and provenance.
+Duplicate state names or event/manipulation names that would overwrite the same
+scalar metrics fail with an explicit collision error.
+
+Output ownership is stored in each stage's provenance. Existing legacy plot/state
+metadata also identifies fields to retire on the first managed run. Flat orphaned
+fields with neither ownership nor supporting metadata cannot be attributed safely
+and are not guessed from their suffix alone. Known retired fields are cleared only
+after the new calculation succeeds; unrelated fields remain outside stage cleanup.
+
+PSTH settings preserve existing behavior: events may have per-name preferences,
+while manipulations use the common settings and the legacy default `intervals`.
+Sampling rate comes from session metadata. This extraction preserves the legacy
+PSTH and state formulas, including state-mask/ISI indexing, denominator conventions
+and PSTH center alignment. Those numerical conventions need a separate scientific
+audit; agreement with the old implementation does not establish their correctness.
+
+The native interval smoke test uses two tutorial spike trains and synthetic event,
+manipulation and state files in a temporary directory. An optional function handle
+can compare results with a pre-extraction pipeline snapshot. Tests cover reuse,
+file changes, ignored/renamed/deleted inputs, malformed files and preservation of
+saved metrics on failure. Ripple detection and channel-classification generation
+remain separate legacy preparation operations.
+
+## Spatial maps and imported PSTHs
+
+`spatial_metrics` reads `basename.<name>.firingRateMap.mat` and its named struct;
+`psth_metrics` reads `basename.<name>.psth.mat` and its named struct. Source files
+are never rewritten. Each file needs a finite `x_bins` vector and either `UID` or
+`cluID` describing its cell-column order. Identities must be unique and match the
+selected spike population exactly. The importer reorders columns to that
+population; when both identity fields are supplied, their mappings must agree.
+Files without identity fail preflight, even when their cell counts match. Add
+identity metadata using the producer's verified mapping, never by assuming that
+the current spikes happen to have the same ordering. Existing filenames remain
+unchanged; this is a deliberate tightening of the legacy input contract.
+
+Maps use the established 1-by-cell-count `map` cell array, with a bins-by-states
+matrix in each cell. Every cell's dimensions are checked. The special `ratemap`
+input requires one state per cell and at least two bins for its scalar spatial
+metrics. Other names can hold multiple states. Its legacy `firingRateMap` alias
+is retained; a second input named `firingRateMap` would collide and is rejected.
+Place-field, coherence, coverage and Gini formulas remain unchanged, with explicit
+dependencies on the legacy spatial helpers pending their relocation.
+
+PSTHs use a bins-by-cell-count numeric `unit` matrix. They are imported as one
+column per cell under `cell_metrics.psth.<name>`, with metadata under
+`general.psth.<name>`, matching the existing viewer. This fixes the old importer's
+full-filename variable lookup, single-cell storage and incorrect `x_label` copy.
+The validator accepts this container; batch loading pads missing-session curves
+and retains each session's axis metadata. Interactive viewer behavior has not
+been smoke-tested in this milestone. NWB export of PSTHs remains unsupported by
+the legacy NWB adapter; use MAT for these outputs.
+
+Both stages fingerprint complete source files, aligned data, target identities,
+implementation and outputs. Removed/renamed files retire stage-owned outputs;
+spatial scalar metrics disappear when `ratemap` is removed. Imported PSTH cleanup
+preserves unrelated custom PSTHs. Skipped stages preserve their outputs and
+provenance. Unknown legacy fields named after full filenames are not guessed or
+deleted automatically.
+
+These are imports of precomputed curves. Restricting spike times cannot regenerate
+the source curves, and the import provenance does not claim to do so. Regenerate
+the source files upstream if maps or PSTHs should represent a different time
+selection. `saveMat=false` suppresses pipeline metric persistence for these stages.
+
+The tutorial import smoke test uses every tutorial cell and synthetic map/PSTH
+files in a temporary copy. An optional pre-extraction function handle compares
+all spatial outputs exactly. It also checks identity alignment, independent cache
+invalidation, removed files, no-write mode and preservation of saved metrics after
+an invalid input. This validates import behavior, not upstream map estimation.
+
+## Theta signal preparation and metrics
+
+Theta has separate `theta_signal` and `theta_metrics` stages. Signal preparation
+requires an existing `basename.lfp`, interpreted as interleaved, native-endian
+int16 samples. It fingerprints the complete file, selected one-based Theta
+channel, LFP sampling rate, channel count and calibration. A channel reader loads
+only the selected channel into memory. Preflight checks complete frames, at least
+one second of data and sampling-rate compatibility with the legacy spectrogram
+window. The full LFP is hashed on each preparation call; performance and memory
+use for full recordings have not been benchmarked.
+
+The conventional `basename.InstantaneousTheta.lfp.mat` and `InstantaneousTheta`
+variable are retained. `processinginfo.thetaSignal` stores generation provenance.
+Legacy caches without provenance are recomputed once; edited cached signal outputs
+also invalidate reuse. Managed computation produces only the selected channel,
+so old values for other channels are not carried forward as if they were verified.
+Signal preparation writes nothing and never generates an LFP. Create/resample
+LFP data separately before calling the pipeline.
+
+Theta metrics fingerprint the prepared phase, signal provenance, selected spike
+times/sample indices/identities, behavior-file contents and effective intervals
+and preferences. Changing behavior, spike intervals or histogram preferences can
+reuse the LFP-derived signal. Behavior is loaded only from the named `animal`
+struct and requires strictly increasing finite `time` plus matching `speed`
+samples; NaN speeds retain the legacy exclusion behavior. Spike `times` are
+seconds and `ts` are acquisition sample indices, aligned within one sample.
+Invalid zero/out-of-range phase indices fail with guidance rather than silently
+shifting timestamps. Spikes beyond the LFP duration remain excluded as before.
+
+When theta is requested but its behavior file or channel tag is absent, old theta
+metrics/curves are retired after a successful empty-stage update. The signal file
+is retained and the latest signal stage is marked skipped. An explicitly excluded
+theta stage retains all results and provenance. Malformed present inputs fail;
+they do not silently become empty results.
+
+Pipeline finalization saves the theta cache only after computation and metric
+validation succeed, and only when `saveMat=true`. Replacement uses verified MAT
+writing, rejects intervening cache edits and avoids rewriting unchanged data.
+This is revision checking, not a lock or a transaction across theta, metrics and
+other pipeline files. Other legacy operations can still write ancillary files;
+`saveMat=false` is not a global read-only guarantee for the whole pipeline.
+
+The public `calcInstantaneousTheta2` entry point now forwards to `ce.processing`.
+Its direct-call cache/LFP-creation defaults remain available. It uses scoped
+MAT loading so saved workspace variables cannot override its options. Numerical
+work is shared with `ce.processing.instantaneousTheta`; optional diagnostic plots
+live in `ce.ui.plotThetaMetrics` and are never invoked headlessly.
+
+Scientific conventions are preserved for separate review: the eligibility gate
+uses speed > 10, while histogram selection uses `speed_threshold`; spike samples
+map through `ceil(ts*srLfp/sr)`; smoothing, bin centers and peak/trough ratios are
+unchanged. Component tests compare all signal outputs to a frozen legacy helper.
+The tutorial smoke test compares theta metrics on two real spike trains with
+synthetic LFP/behavior, checks independent reuse and verifies no-write/failure
+preservation. Actual tutorial LFP/behavior, interactive plots and hosted CI have
+not been validated by this milestone.
+
+## Reviewed deep/superficial classifications
+
+The `deepSuperficial` stage reads only `deepSuperficialfromRipple` from the
+conventional `basename.deepSuperficialfromRipple.channelinfo.mat`. This is an
+import of reviewed channel assignments, not a rerun of the classifier. An existing
+classification does not require the LFP or ripple-event file. The pipeline never
+generates or overwrites those source files, including on `forceReload`.
+
+Channel identity must be explicit: `channel` lists every recording channel once
+using one-based IDs. `channelClass` and `channelDistance` must align with it.
+The importer normalizes these three fields to recording-channel order; distances
+remain in micrometers and NaN distances/empty labels are supported. If the source
+includes `ripple_channels`, each electrode group's channel order must match the
+session. Cells are mapped through the selected spikes' `maxWaveformCh1` values,
+with UID/cluster identity retained in the projection. Equal channel counts alone
+are not evidence of correspondence.
+
+Complete source contents, cell identities and peak channels determine cache reuse.
+The automatic projection is recorded under
+`general.processinginfo.deepSuperficialProjection`, separately from editable
+`deepSuperficial` and `deepSuperficialDistance` fields. The source metadata remains
+in `general.SWR` and `general.processinginfo.deepSuperficialfromRipple`.
+`general.processinginfo.deepSuperficialReview` records override masks, preserved
+values and the number of affected cells. Console output reports preservation.
+
+Cell edits are inferred from differences against a previous projection whose
+stored output hash still verifies. Known overrides survive reuse, source/peak
+channel changes, and later source removal/restoration, including empty labels and
+NaN distances. Existing annotations without a trustworthy baseline are retained
+conservatively and reported as `legacy_annotations_preserved`; the pipeline does
+not silently relabel them as newly computed results. For a forced pipeline rebuild,
+the previous MAT cache supplies this annotation context, subject to matching cell
+identities/order. This recovery applies to deep/superficial fields, not to every
+other legacy field discarded by `forceReload`.
+
+If no classification file, ripple file or Ripple tag exists, the requested stage
+retires its automatic assignment and source metadata. Curated cells retain their
+values; other cells become empty/NaN, or the fields disappear when no overrides
+remain. If ripples or a Ripple tag are present but classification is missing,
+preflight requires preparation instead of starting detection. Excluded stages
+retain their outputs and do not inspect the source. Malformed classification data
+fails before headless computation. `saveMat=false` leaves metric persistence to
+the existing pipeline controls and never writes the reviewed channel source.
+
+This import does not establish that a classification is current with respect to
+raw LFP, ripple detection, geometry or channel tags. Reconcile/regenerate the source
+separately when those upstream inputs change. The existing classifier and review
+GUI remain available with their legacy file/figure behavior; classifier numerical
+generation and GUI modernization are still outstanding.
+
+The tutorial check uses all 151 cells and the actual reviewed 128-channel file in
+a temporary copy. It compares fresh projections exactly with the old pipeline,
+preserves existing legacy annotations, checks source edits/manual cell overrides,
+and verifies no-write/failure behavior. All five original inputs remain unchanged.
+
+## Core metrics, finalization and saving
+
+`ce.pipeline.runCoreMetrics` manages the `other_metrics` stage. It owns spike counts,
+rates, rate variability and instability, CV2, the Mizuseki burst index, refractory
+violations and firing-rate response curves. As in the original pipeline, these
+metrics are mandatory on every invocation, regardless of `metrics`/`excludeMetrics`.
+Matching spike times, identities, totals, interval settings, bin-size preference,
+code and output hashes allow reuse. Preflight rejects stale cached spike totals.
+
+The numerical conventions are unchanged: first-to-last-spike duration, subtraction
+of exclusion intervals even when using the full spike subset, adaptive histogram
+bins with an omitted trailing partial bin, the CV2 cutoff, the burst-index loop and
+per-mille refractory violations. These require a separate scientific audit before
+changing formulas. An entirely zero-duration population, or an empty unit with
+duration exclusions, now fails explicitly instead of failing during indexing/binning.
+
+`updateMetadata`, `cleanMetrics` and `recordRun` separate session metadata, legacy
+output normalization and invocation provenance from numerical calculation.
+Metadata updates do not invalidate core calculations. Missing optional owned
+metadata is removed; database IDs accept finite numeric scalars instead of MATLAB
+expressions. Generated deep/superficial Unknown/NaN defaults are distinguished from
+manual annotations when a reviewed classification becomes available later.
+
+`beginPersistence` captures destination revisions before calculation.
+`saveOutputs` validates outputs and checks both metric/session revisions before
+writing. With `saveBackup=true`, it archives the exact previous metrics file,
+including extra MAT variables, under `revisions_cell_metrics` using the existing
+`cell_metrics_*` convention plus a content hash. Backup failure aborts saving.
+Backups occur after successful calculation/validation; `saveMat=false` creates
+neither managed outputs nor metric backups. Session files now use verified MAT
+replacement and report failures instead of silently swallowing them.
+
+Saving is still a sequence of individual replacements, not a multi-file transaction
+or a lock. A later failure can leave earlier sidecars/metrics saved; waveform
+sidecars do not yet have concurrent-revision checks. Legacy preparation, callbacks,
+database submission and summary figures retain their own side effects, so this
+does not make every `saveMat=false` pipeline configuration globally read-only.
+
+`tests/integration/runTutorialCoreSmoke` uses temporary copies of the tutorial
+session, spikes and metrics. An optional pre-extraction function handle enables
+exact numerical comparison. It checks all 151 cells, reuse, metadata-only updates,
+legacy exclusion denominators, exact backups, no-save execution and rejection of
+stale totals without changing the original files.
+
+## CellClass imports and custom calculation callbacks
+
+`cell_class_import` reads only the `CellClass` variable from the conventional
+`basename.CellClass.cellinfo.mat`. As before, an existing file is imported on every
+pipeline invocation, including partial metric runs; it is not controlled by metric
+selection or `keepCellClassification`. It writes only the derived
+`CellClassBuzcode` field, leaving `putativeCellType` and manual labels untouched.
+
+The source must declare unique finite `UID` or `cluID` values in label order.
+When both are supplied, both must agree on the mapping. Reordered sources are
+aligned by identity; a source can cover more cells than the selected spike subset.
+Every label must be a character row or empty, with empty labels becoming `Unknown`.
+Row and column cell arrays are normalized to the output row convention.
+`ce.data.cellIdentityOrder` also owns identity matching for spatial/PSTH imports,
+which retain their stricter requirement to cover exactly the selected cells.
+
+Compatibility change: count-only CellClass files now fail with an actionable error
+in both execution modes; headless preflight catches this before calculation.
+Have the producer attach identities using its verified source mapping. Copying the
+current spike IDs into an old file solely because the counts match is not a valid
+migration. The importer never writes or repairs the source file itself.
+
+The stage fingerprints the whole source file, aligned labels, target identities,
+implementation and outputs. Reuse retains generation provenance. Changes to spike
+intervals alone do not relabel the precomputed source as newly calculated.
+Editing `CellClassBuzcode` invalidates the derived cache and restores source labels
+on the next import; use the independent curation fields for manual classifications.
+Removing the source retires previously managed imported labels. Without managed
+provenance, existing legacy values are retained when no source exists. A forced
+rebuild retains the broader pipeline's legacy handling of unrelated old fields.
+
+`ce.pipeline.customCalculationNames` and `runCustomCalculations` separate extension
+discovery and dispatch from orchestration. They preserve the `+customCalculations`
+package, first-package discovery order, selection/exclusion behavior and callback
+signature `(cell_metrics, session, spikes, parameters)`, including both spike
+subsets. Callbacks remain uncached. Their output must preserve the metrics struct,
+cell count and any existing UID/cluster identity; returned identities must match
+the input spike order. Errors propagate before managed saving. This checks the
+declared identity, not whether a callback silently reordered unidentified arrays.
+
+Undeclared callbacks remain disallowed in headless runs. Interactive callbacks may
+perform their own file/GUI/network operations; dispatch cannot roll those effects
+back. The putative-cell-type classification callback and its formulas are unchanged.
+Plugin manifests, dependency declarations and callback cache ownership remain
+future work.
+
+The tutorial import check uses synthetic pE/pI/empty labels on all 151 real cell
+identities in a temporary copy. It checks legacy-compatible assignment, reversed
+source order, reuse, source edits, source removal and no-write/failure preservation.
+It does not validate biological classification accuracy or an upstream producer.
+
+## Local metric loading and batch assembly
+
+The public `loadCellMetrics` and `loadCellMetricsBatch` entry points remain in the
+repository root. Local MAT loading needs only that root on the MATLAB path; it
+does not look up database credentials, rewrite session files or change directory.
+
+```matlab
+metrics = ce.io.readCellMetrics('/path/session.cell_metrics.cellinfo.mat');
+batch = loadCellMetricsBatch('basepaths', {'/path/one','/path/two'}, ...
+    'basenames', {'one','two'}, 'headless', true);
+[metrics, indices] = loadCellMetrics('cell_metrics', metrics, ...
+    'brainRegion', {'CA1','CA3'}, 'putativeCellType', {'Pyramidal'});
+```
+
+`ce.io.readCellMetrics` loads only the named `cell_metrics` variable and validates
+cell count and identity. `ce.io.loadMetricBatch` loads local MAT files and accepts
+an optional `(fraction, message)` progress callback. `ce.data.assembleMetricBatch`
+combines already loaded structs without I/O or UI. It preserves requested session
+order, duplicates and local UID/cellID/cluster values. `batchIDs` supplies the
+session scope; UID values may repeat across sessions but must be unique within one.
+Local source paths are made absolute. Source metadata is retained in
+`general.batch`, alongside `general.basepaths`, `basenames` and `saveAs` mappings.
+
+Numeric metrics missing from any session receive NaN padding at every position,
+including gaps before the first occurrence. Missing nested cell-valued data receive
+empty cells; missing top-level labels receive empty strings. Complete numeric
+arrays retain their class; padding promotes values to double and rejects large
+integers that cannot be represented exactly. Per-cell logical fields now survive
+assembly. Nested numeric matrices must have compatible row counts and one column
+per cell. Incompatible shapes/types and unsupported metadata outside `general`
+fail explicitly instead of silently dropping data. No resampling or numerical
+metric calculation occurs in the loader.
+
+Group indices and connection pairs are validated as local one-based positions
+before adding session offsets. Legacy per-cell tag/group lists are normalized by
+`ce.data.metricGroups`. Session and animal metadata still produce repeated
+`session_*`/`animal_*` fields. Nested batches are rejected; load their individual
+sessions instead. `truePositive` and `falsePositive` remain excluded from assembly,
+and the existing excitatory/inhibitory connection representation is retained.
+
+Progress windows belong to `ce.ui.metricLoadProgress`. `headless=true` or
+`showProgress=false` suppresses this UI. On failure, windows created by the loader
+close; caller-supplied progress handles remain the caller's responsibility.
+Closing a progress window raises `ce:io:LoadCancelled`, with no partial batch
+returned. Cancellation is checked between loads and around assembly, not during
+a MAT read or a large concatenation. Batch loading is still eager and holds all
+session data in memory; streaming and resource limits remain future work.
+
+Database requests go through `ce.integrations.resolveMetricSessions` only when
+explicit session names/IDs are supplied. It preserves request order/duplicates
+and calls the existing resolver with `changeDir=false` and `saveMat=false`.
+The database integration can still perform its legacy configuration UI/network
+operations; only the local loading path has been verified without those effects.
+Database behavior is covered with stubs, not a live service.
+
+`loadCellMetrics` now filters supplied metrics directly and returns batch results
+without attempting a second unrelated file load. Filtering is OR within a filter
+and AND across filters. Brain-region/animal/label matching remains exact; cell
+type/synaptic-effect/deep-superficial matching remains substring-based. Ground-truth
+filters read the correct container, and absent fields/tags produce no matches.
+Filters return indices without modifying or subsetting the source data.
+
+Compatibility changes: missing/malformed files and incompatible batch dimensions
+now raise errors instead of returning empty/partial results or silently skipping
+data. Batch loading supports MAT only; non-MAT batch requests are rejected.
+Single-session JSON/NWB loading still uses the legacy adapters and was not
+validated in this milestone. The full CellExplorer GUI has not been smoke-tested.
+
+The tutorial check assembles 302 cells from two temporary copies of the complete
+151-cell metrics file. All fields match the frozen legacy batch loader exactly,
+excluding benchmark timings. It also checks single-session filtering, no progress
+figures in headless mode, unchanged cwd and unchanged source/copy file hashes.

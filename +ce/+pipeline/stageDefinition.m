@@ -3,6 +3,61 @@ function definition = stageDefinition(name)
 definition.name = name;
 definition.version = 1;
 switch name
+    case 'cell_class_import'
+        definition.requiredOutputs = {};
+        definition.outputs = {'CellClassBuzcode'};
+        definition.dependencies = {'ce.pipeline.cellClassInput','ce.data.cellIdentityOrder', ...
+            'ce.pipeline.runCellClass','ce.pipeline.stages.cellClass'};
+    case 'other_metrics'
+        definition.requiredOutputs = {'spikeCount','firingRate','firingRateGiniCoeff','firingRateCV', ...
+            'firingRateInstability','firingRateISI','cv2','burstIndex_Mizuseki2012', ...
+            'refractoryPeriodViolation','responseCurves.firingRateAcrossTime', ...
+            'general.responseCurves.firingRateAcrossTime'};
+        definition.outputs = definition.requiredOutputs;
+        definition.dependencies = {'ce.pipeline.stages.coreMetrics','ce.pipeline.runCoreMetrics','ce.metrics.calc_gini'};
+    case 'deepSuperficial'
+        definition.requiredOutputs = {'general.processinginfo.deepSuperficialProjection'};
+        definition.outputs = [definition.requiredOutputs, {'general.SWR','general.deepSuperficial_file', ...
+            'general.processinginfo.deepSuperficialfromRipple'}];
+        definition.dependencies = {'ce.pipeline.deepSuperficialInput','ce.pipeline.runDeepSuperficial', ...
+            'ce.pipeline.stages.deepSuperficial','ce.data.deepSuperficialChannels', ...
+            'ce.curation.reconcileDeepSuperficial'};
+    case 'theta_signal'
+        definition.requiredOutputs = {'data'};
+        definition.outputs = definition.requiredOutputs;
+        definition.dependencies = {'ce.pipeline.prepareTheta','ce.pipeline.thetaRecording', ...
+            'ce.processing.instantaneousTheta','ce.io.readLfpChannel','nanconv','ce_gausswin'};
+    case 'theta_metrics'
+        definition.requiredOutputs = {'thetaPhasePeak','thetaPhaseTrough','thetaEntrainment', ...
+            'responseCurves.thetaPhase','general.responseCurves.thetaPhase'};
+        definition.outputs = definition.requiredOutputs;
+        definition.dependencies = {'ce.pipeline.stages.thetaMetrics','ce.pipeline.runThetaStages', ...
+            'ce.pipeline.thetaSpikes','ce.pipeline.thetaBehavior','nanconv'};
+    case {'spatial_metrics','psth_metrics'}
+        definition.dependencies = {'ce.pipeline.importedCellFiles','ce.pipeline.runImportedStages','ce.data.cellIdentityOrder'};
+        if strcmp(name,'spatial_metrics')
+            definition.requiredOutputs = {'firingRateMaps','general.firingRateMaps'};
+            definition.outputs = [definition.requiredOutputs, {'spatialPeakRate','spatialCoherence', ...
+                'placeCell','placeFieldsCount','spatialCoverageIndex','spatialGiniCoeff'}];
+            definition.dependencies = [definition.dependencies, {'ce.pipeline.stages.spatialMetrics', ...
+                'place_cell_condition','SpatialCoherence','nanconv','ce.metrics.calc_gini'}];
+        else
+            definition.requiredOutputs = {};
+            definition.outputs = {};
+            definition.dependencies{end+1} = 'ce.pipeline.stages.importedPsth';
+        end
+    case {'event_metrics','manipulation_metrics','state_metrics'}
+        definition.requiredOutputs = {}; % Bound to the current named files by the planner.
+        definition.outputs = {};
+        definition.dependencies = {'ce.pipeline.intervalFiles','ce.pipeline.intervalOwnership', ...
+            'ce.pipeline.intervalStagePlans','ce.pipeline.runIntervalStages'};
+        if strcmp(name,'state_metrics')
+            definition.dependencies = [definition.dependencies, {'ce.pipeline.stages.stateMetrics', ...
+                'ce_InIntervals','FindInInterval','isdmatrix'}];
+        else
+            definition.dependencies = [definition.dependencies, {'ce.pipeline.stages.intervalResponses', ...
+                'calc_PSTH','CCG','CCGHeart','isdscalar','isdvector','nanconv','ce_gausswin'}];
+        end
     case 'monosynaptic_detection'
         definition.requiredOutputs = {'data'};
         definition.outputs = definition.requiredOutputs;
