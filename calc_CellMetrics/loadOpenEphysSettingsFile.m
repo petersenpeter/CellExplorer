@@ -254,21 +254,22 @@ if ~isempty(partNumbers)
     end
     source = ['probe part number ',pn];
 end
-% 2. Stream layout: Neuropixels 1.0 has a separate LFP stream for each probe, 2.0 does not
+% 2. Only AP/LFP streams belonging to the requested probe identify its geometry.
+% A different probe's LFP stream (or an unrelated 2500 Hz stream) is not evidence.
+% Unnamed/custom streams remain ambiguous and use the warning/default below.
 if isempty(probeType) && isfield(openEphys_metadata,'continuous')
-    names = {};
-    rates = [];
+    probeName = regexptranslate('escape',['Probe',upper(probeLetter)]);
+    streamPattern = ['(^|[. /\\])',probeName,'-(AP|LFP)($|[/\\ ])'];
     for k = 1:numel(openEphys_metadata.continuous)
         st = openEphys_metadata.continuous(k); if iscell(st), st = st{1}; end
-        nm = '';
-        if isfield(st,'stream_name'), nm = [nm,' ',st.stream_name]; end
-        if isfield(st,'folder_name'), nm = [nm,' ',st.folder_name]; end
-        names{k} = nm; %#ok<AGROW>
-        rates(k) = st.sample_rate; %#ok<AGROW>
-    end
-    if any(contains(names,'-LFP')) || any(contains(names,'-AP')) || (numel(rates) > 1 && any(rates == 2500))
-        probeType = 'NP1';
-        source = 'separate LFP stream';
+        names = {};
+        if isfield(st,'stream_name'), names{end+1} = st.stream_name; end
+        if isfield(st,'folder_name'), names{end+1} = st.folder_name; end
+        if any(~cellfun(@isempty,regexp(names,streamPattern,'once')))
+            probeType = 'NP1';
+            source = ['AP/LFP stream for Probe',upper(probeLetter)];
+            break
+        end
     end
 end
 if isempty(probeType)
